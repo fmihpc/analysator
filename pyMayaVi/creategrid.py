@@ -1,9 +1,10 @@
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
 from tvtk.api import tvtk
-from mayavi import mlab
-#from mayavi.api import engine
+import mayavi.api
+import mayavi.mlab
 import numpy as np
+
 
 
 class MayaviPlots:
@@ -12,6 +13,7 @@ class MayaviPlots:
    def __init__(self, vlsvReader):
       print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
+      self.__engine = 0
 
    def __picker_callback( self, picker ):
       """ Picker callback: this get called when on pick events.
@@ -20,21 +22,9 @@ class MayaviPlots:
       # we have to account for the fact that each data point is
       # represented by a glyph with several points
       #point_id = picker.point_id/glyph_points.shape[0]
-      point_id = picker.cell_id
       # If the no points have been selected, we have '-1'
-      print point_id
-#      if point_id != -1:
-#         # Retrieve the coordinnates coorresponding to that data
-#         # point
-#         x, y, z = x1[point_id], y1[point_id], z1[point_id]
-#         print x
-#         print y
-#         print z
-#         # Move the outline to the data point.
-#         outline.bounds = (x-0.1, x+0.1,
-#                       y-0.1, y+0.1,
-#                       z-0.1, z+0.1)
-   
+      point_id = picker.cell_id
+      self.__generate_velocity_grid(point_id)
    
    def __generate_grid( self, mins, lengths, cells, datas, names ):
       ''' Generates a grid from given data
@@ -42,10 +32,12 @@ class MayaviPlots:
           :param lengths        An array of cell lengths (the cell's lengths in x, y, z direction)
           :param cells          An array of number of cells in x, y, z direction
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
+          :param names          Name for the scalar data
       '''
-      figure = mlab.gcf()
-      mlab.clf()
+      figure = mayavi.mlab.gcf()
+      mayavi.mlab.clf()
       figure.scene.disable_render = True
+      self.__engine = mayavi.mlab.get_engine()
       # Create nodes
       #x, y, z = mgrid[0:0.1:5j, 0:0.1:5j, 0:0.1*2.0/5.0:2j]
       x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
@@ -85,27 +77,54 @@ class MayaviPlots:
       
       
       # Visualize the data
-      d = mlab.pipeline.add_dataset(sg)
-      iso = mlab.pipeline.surface(d)
+      d = mayavi.mlab.pipeline.add_dataset(sg)
+      iso = mayavi.mlab.pipeline.surface(d)
       picker = figure.on_mouse_pick( self.__picker_callback, type='cell' )
       picker.tolerance = 0
       #iso.contour.maximum_contour = 75.0
-      #vec = mlab.pipeline.vectors(d)
+      #vec = mayavi.mlab.pipeline.vectors(d)
       #vec.glyph.mask_input_points = True
       #vec.glyph.glyph.scale_factor = 1.5
       figure.scene.disable_render = False
-      mlab.show()
+      mayavi.mlab.show()
 
    def __generate_velocity_grid( self, cellid ):
       '''Generates a velocity grid from a given spatial cell id
          :param cellid           The spatial cell's ID
       '''
-      figure = mlab.gcf()
-      mlab.clf()
-      figure.scene.disable_render = True
       # Create nodes
+      # Get velocity blocks and avgs:
+      blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)
+      if len(blocksAndAvgs) == 0:
+         print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
+         return False
+      # Create a new scene
+      self.__engine.new_scene()
+      mayavi.mlab.set_engine(self.__engine)
+      # Create a new figure
+      figure = mayavi.mlab.gcf(engine=self.__engine)
+      #mayavi.mlab.clf()
+      figure.scene.disable_render = True
+      blocks = blocksAndAvgs[0]
+      avgs = blocksAndAvgs[1]
+      # Get nodes:
+      nodesAndKeys = self.__vlsvReader.construct_velocity_cell_nodes(blocks)
+      # Create an unstructured grid:
+      points = nodesAndKeys[0]
+      tets = nodesAndKeys[1]
+      tet_type=tvtk.Voxel().cell_type#VTK_VOXEL
 
-
+      ug=tvtk.UnstructuredGrid(points=points)
+      #Thissetsupthecells.
+      ug.set_cells(tet_type,tets)
+      #Attributedata.
+      values=np.ravel(avgs)
+      ug.cell_data.scalars=values
+      ug.cell_data.scalars.name='avgs'
+      d = mayavi.mlab.pipeline.add_dataset(ug)
+      iso = mayavi.mlab.pipeline.surface(d)
+      figure.scene.disable_render = False
+      return True
 
 
    def load_grid( self, variable ):
@@ -128,15 +147,7 @@ class MayaviPlots:
       for i in sorted_index_for_cellid_dict:
          variable_array_sorted.append(variable_array[i[1]])
       # Draw the grid:
-      self.__generate_grid( mins=mins, lengths=lengths, cells=cells, datas=variable_array_sorted, name=variable )
-   
-
-
-
-
-
-
-
+      self.__generate_grid( mins=mins, lengths=lengths, cells=cells, datas=variable_array_sorted, names=variable )
 
 
 
