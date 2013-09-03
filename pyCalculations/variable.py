@@ -8,3 +8,24 @@ class VariableInfo:
       self.data = data_array
       self.name = ""
       self.units = ""
+
+
+
+def get_data( variable ):
+   if isinstance(variable, VariableInfo):
+      return variable.data
+   else:
+      return variable
+
+def get_name( variable ):
+   if isinstance(variable, VariableInfo):
+      return variable.name
+   else:
+      return ""
+
+def get_units( variable ):
+   if isinstance(variable, VariableInfo):
+      return variable.units
+   else:
+      return ""
+
