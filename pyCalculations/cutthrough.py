@@ -69,6 +69,19 @@ def cut_through( vlsvReader, point1, point2 ):
    else:
       distances.append(distances[len(distances)-1])
    # Return the cut through:
-   #return [cellids[0:len(cellids)-2], coordinates[0:len(distances)-2], distances[0:len(distances)-2]]
-   return [np.array(cellids[0:len(cellids)-2]), np.array(distances[0:len(distances)-2])]
+   # Note: Make the output into dictionary
+   from output import output_1d
+   #return [np.array(cellids[0:len(cellids)-2]), np.array(distances[0:len(distances)-2])]
+   return output_1d( [np.array(cellids[0:len(cellids)-2]), np.array(distances[0:len(distances)-2])], ["CellID", "distances"], ["", "m"])
+
+
+
+
+
+
+
+
+
+
+
 
