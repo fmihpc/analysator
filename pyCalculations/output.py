@@ -11,6 +11,8 @@ def output_1d( arrays, names, units="" ):
        output_1d( [[2,1,23], [5,78,4], [2,3,2]], ["rho", "B", "Pressure"] )
        Note: This would interpret [2,1,23] as an array called \"rho\"
    '''
+   if units == "":
+      units = ["" for i in xrange(len(arrays))]
    if( (len(arrays) != len(names)) or (len(arrays) != len(units)) ):
       print "BAD ARRAY AND NAME LENGTH IN OUTPUT_1D (pyCalculations/output.py)"
       return []
