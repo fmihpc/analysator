@@ -1,5 +1,6 @@
 # Cut-throughs from vlsv files
 
+import numpy as np
 
 def cut_through( vlsvReader, point1, point2 ):
    ''' Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2

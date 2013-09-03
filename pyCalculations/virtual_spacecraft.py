@@ -1,5 +1,7 @@
 # This file contains static spacecraft function for fetching variable data from multiple vlsv files and looking at the data in time
 
+import numpy as np
+
 def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" )
    ''' Returns variable data from a time evolution of some certain cell ids
        :param vlsvReader_list         List containing VlsvFiles with a file open
@@ -31,6 +33,7 @@ def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" )
       # For optimization purposes we are now freeing vlsvReader's memory
       # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
       vlsvReader.clear_fileindex_for_cellid()
-   return output_1d(np.ravel(data), np.ravel([variable_names for i in xrange(len(cellids))]))
+   from output import output_1d
+   return output_1d(np.split(np.ravel(data), np.ravel(data)/len(data[0][0])), np.ravel([variable_names for i in xrange(len(cellids))]))
 
 
