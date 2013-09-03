@@ -19,7 +19,7 @@ class VlsvFile(object):
          if child.tag == "PARAMETER":
            if child.attrib["name"] == "version":
              self.__uses_new_vlsv_format = True
-      self.__read_fileindex_for_cellid()
+      #self.__read_fileindex_for_cellid()
       # Read parameters (Note: Reading the spatial cell locations and storing them will anyway take the most time and memory):
       self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
       self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
@@ -68,23 +68,15 @@ class VlsvFile(object):
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
       self.__xml_root = ET.fromstring(xml_string)
 
-   def __read_fileindex_for_cellid_old(self):
-      """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
-      """
-      cellids=self.read(name="SpatialGrid",tag="MESH")
-      for index,cellid in enumerate(np.atleast_1d(cellids)):
-         self.__fileindex_for_cellid[cellid]=index
-
    def __read_fileindex_for_cellid(self):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
       """
       if self.__uses_new_vlsv_format == True:
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         for index,cellid in enumerate(cellids):
-            self.__fileindex_for_cellid[cellid]=index
       else:
-         # Uses old format
-         self.__read_fileindex_for_cellid_old()
+         cellids=self.read(name="SpatialGrid",tag="MESH")
+      for index,cellid in enumerate(cellids):
+         self.__fileindex_for_cellid[cellid]=index
 
    def __list_old(self):
       ''' Print out a description of the content of the file. Useful
@@ -392,15 +384,6 @@ class VlsvFile(object):
                velocity_cell_ids.append(kv*16 + jv*4 + iv)
 
       for i in xrange(array_size):
-#         block_coordinate = data_block_ids[i]
-#         # The minimum corner coordinates of the blocks
-#         vx = block_coordinate[0]
-#         vy = block_coordinate[1]
-#         vz = block_coordinate[2]
-#         # The diff in blocks
-#         avgs = data_avgs[i]
-#         # Get the velocity cell id (First transform coordinates to block indices, then block indices to block id and then block id to velocity cell ids):
-#         velocity_block_indices = np.array([np.floor((vx - self.__vxmin) / (4*self.__dvx)), np.floor((vy - self.__vymin) / (4*self.__dvy)), np.floor((vz - self.__vzmin) / (4*self.__dvz))])
          velocity_block_id = data_block_ids[i]
          avgIndex = 0
 
@@ -436,13 +419,19 @@ class VlsvFile(object):
          self.__fileindex_for_cellid_blocks[cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
 
-   def clear_cell_offset_and_blocks(self):
+   def clear_fileindex_for_cellid_blocks(self):
       ''' Clears a private variable containing number of blocks and offsets for particular cell ids
+          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VELOCITY CELLS IS NO LONGER NEEDED
       '''
       self.__fileindex_for_cellid_blocks = {}
 
+   def clear_fileindex_for_cellid(self):
+      ''' Clears a private variable containing cell ids and their locations
+          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VARIABLES IS NO LONGER NEEDED
+      '''
+      self.__fileindex_for_cellid = {}
 
-   def list(self):
+  list(self):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
@@ -468,6 +457,8 @@ class VlsvFile(object):
    def get_cellid_locations(self):
       ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
       '''
+      if len( self.__fileindex_for_cellid ) == 0:
+         self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
    def read(self, name="", tag="", mesh="", read_single_cellid=-1):
@@ -480,6 +471,8 @@ class VlsvFile(object):
       :returns numpy array with the data
 
       '''
+      if len( self.__fileindex_for_cellid ) == 0:
+         self.__read_fileindex_for_cellid()
       if tag == "" and name == "" and tag == "":
          print "Bad arguments at read"
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
@@ -546,7 +539,12 @@ class VlsvFile(object):
       :param name Name of the variable
       :param cellids List of cellids
       :returns numpy array with the data
+      Note: Format of the numpy array:
+      [variableForCellid1, variableForCellid2, variableForCellid3, ..]
+      NOTE: THIS IS MAINLY USED FOR OPTIMIZATION PURPOSES
       '''
+      if len( self.__fileindex_for_cellid ) == 0:
+         self.__read_fileindex_for_cellid()
       # Read the variable:
       variablelist = self.read_variables(name)
       #Pick the variables with the cell ids in the list:
