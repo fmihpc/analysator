@@ -7,7 +7,7 @@ def cut_through( vlsvReader, point1, point2 ):
        :param vlsvReader       Some open VlsvFile
        :param point1           The starting point of a cut-through line
        :param point2           The ending point of a cut-through line
-       :returns an array containing cell ids, coordinates and distances in the following format: [np.array([cell ids]), np.array([distances]), np.array([coordinates])]
+       :returns an array containing cell ids, coordinates and distances in the following format: [cell ids, distances]
    '''
    # Transform point1 and point2 into numpy array:
    point1 = np.array(point1)

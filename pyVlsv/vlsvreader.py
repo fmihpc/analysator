@@ -19,7 +19,7 @@ class VlsvFile(object):
          if child.tag == "PARAMETER":
            if child.attrib["name"] == "version":
              self.__uses_new_vlsv_format = True
-      #self.__read_fileindex_for_cellid()
+      self.__read_fileindex_for_cellid()
       # Read parameters (Note: Reading the spatial cell locations and storing them will anyway take the most time and memory):
       self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
       self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
@@ -455,8 +455,8 @@ class VlsvFile(object):
    def get_cellid_locations(self):
       ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
       '''
-      if len( self.__fileindex_for_cellid ) == 0:
-         self.__read_fileindex_for_cellid()
+      #if len( self.__fileindex_for_cellid ) == 0:
+      #   self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
    def read(self, name="", tag="", mesh="", read_single_cellid=-1):
@@ -469,8 +469,8 @@ class VlsvFile(object):
       :returns numpy array with the data
 
       '''
-      if len( self.__fileindex_for_cellid ) == 0:
-         self.__read_fileindex_for_cellid()
+      #if len( self.__fileindex_for_cellid ) == 0:
+      #   self.__read_fileindex_for_cellid()
       if tag == "" and name == "" and tag == "":
          print "Bad arguments at read"
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
@@ -541,8 +541,8 @@ class VlsvFile(object):
       [variableForCellid1, variableForCellid2, variableForCellid3, ..]
       NOTE: THIS IS MAINLY USED FOR OPTIMIZATION PURPOSES
       '''
-      if len( self.__fileindex_for_cellid ) == 0:
-         self.__read_fileindex_for_cellid()
+      #if len( self.__fileindex_for_cellid ) == 0:
+      #   self.__read_fileindex_for_cellid()
       # Read the variable:
       variablelist = self.read_variables(name)
       #Pick the variables with the cell ids in the list:

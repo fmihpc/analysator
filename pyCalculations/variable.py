@@ -1,10 +1,10 @@
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 
 class VariableInfo:
-   def __init__(self, data_array):
+   def __init__(self, data_array, name="", units=""):
       self.data = data_array
-      self.name = ""
-      self.units = ""
+      self.name = name
+      self.units = units
 
 
 
