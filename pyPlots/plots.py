@@ -1,5 +1,8 @@
 # This class has a function for plotting multiple variables as subplots in one plot figure
 
+import pylab as pl
+
+
 def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
    ''' Plots multiple variables from the input with pylab
        :param variables_x_list        Some list of variables to be plotted in the x-axis
@@ -15,7 +18,6 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
        If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
    '''
    import numpy as np
-   import pylab as pl
    variables_x_list = np.atleast_1d(variables_x_list)
    variables_y_list = np.atleast_1d(variables_y_list)
    if len(variables_x_list) != len(variables_y_list):
@@ -34,31 +36,32 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
          fig.add_subplot(length_of_list,1,i+1)
 
    axes = fig.get_axes()
-
+   from variable import get_data, get_name, get_units
    for i in xrange(length_of_list):
+      
       x = variables_x_list[i]
       y = variables_y_list[i]
       # Check the length of the list
       if (len(np.atleast_1d(x)) == 0) or (len(np.atleast_1d(y)) == 0):
          continue
       ax = axes[i]
-      ax.plot(x, y)
+      ax.plot(get_data(x), get_data(y))
 
-      if x.units != "":
-         ax.set_xlabel(x.name + " [" + x.units + "]")
+      if get_units(x) != "":
+         ax.set_xlabel(get_name(x) + " [" + get_units(x) + "]")
       else:
-         ax.set_xlabel(x.name)
+         ax.set_xlabel(get_name(x))
 
-      if y.units != "":
-         ax.set_ylabel(y.name + " [" + y.units + "]")
+      if get_units(y) != "":
+         ax.set_ylabel(get_name(y) + " [" + get_units(y) + "]")
       else:
-         ax.set_ylabel(y.name)
+         ax.set_ylabel(get_name(y))
 
       # Set limits
-      xlength = max(x) - min(x)
-      ylength = max(y) - min(y)
-      ax.set_xlim([min(x) - 0.01*xlength, max(x) + 0.01*xlength])
-      ax.set_ylim([min(y) - 0.05*ylength, max(y) + 0.05*ylength])
+      xlength = max(get_data(x)) - min(get_data(x))
+      ylength = max(get_data(y)) - min(get_data(y))
+      ax.set_xlim([min(get_data(x)) - 0.01*xlength, max(get_data(x)) + 0.01*xlength])
+      ax.set_ylim([min(get_data(y)) - 0.05*ylength, max(get_data(y)) + 0.05*ylength])
 
       # Set format
       ax.ticklabel_format(style='sci', axis='y', scilimits=(-3,3))

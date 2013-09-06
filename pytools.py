@@ -16,3 +16,4 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 import pycalculations
 import vlsvreader
 import creategrid
+import plots
