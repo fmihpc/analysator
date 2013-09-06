@@ -339,8 +339,6 @@ class VlsvFile(object):
 
             # Navigate to the correct position
             offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
-#            for i in range(0, cells_with_blocks_index[0]):
-#               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
             fptr = open(self.__file_name,"rb")
             fptr.seek(offset_avgs)
@@ -431,7 +429,7 @@ class VlsvFile(object):
       '''
       self.__fileindex_for_cellid = {}
 
-  list(self):
+   def list(self):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
