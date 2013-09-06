@@ -16,19 +16,20 @@ def fourier( t, y, kaiserwindowparameter=0 ):
    t_data = get_data(t)
    y_data = get_data(y)
    # First check the t array whether it has a constant dt
-   dt = t_data[1] - t_data[0]
-   for i in xrange(len(t_data)-1):
-      if dt != t_data[i+1] - t_data[i]:
+   dt = get_data(t)[1] - get_data(t)[0]
+   for i in xrange(len(get_data(t))-1):
+      if dt != get_data(t)[i+1] - get_data(t)[i]:
          print "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
    # Use kaiser window on y
-   y_data = y_data*np.kaiser(len(y_data), kaiserwindowparameter)
+   import numpy as np
+   y_tmp = get_data(y) * np.kaiser(len(get_data(y)), kaiserwindowparameter)
    # Do FFT on the data
-   fourier=np.fft.fft(y_data)*(1/(float)(len(t_data)))
+   fourier=np.fft.fft(y_tmp) * (1/(float)(len(get_data(t))))
    # Get frequencies of the fourier
    freq=np.fft.fftfreq(len(fourier), d=dt)
    # Declare t2 (Note: This is the same as t but we want the steps to be thicker so the data looks smoother
    dt2=dt*0.01
-   t2=np.arange(len(t_data)*100)*dt2
+   t2=np.arange(len(get_data(t))*100)*dt2
    # Declare y2
    y2=np.array([np.sum(fourier*np.exp(complex(0,1)*2*np.pi*freq*T)) for T in t2])
    from output import output_1d
