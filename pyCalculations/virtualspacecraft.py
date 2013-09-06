@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" )
+def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
        :param vlsvReader_list         List containing VlsvFiles with a file open
        :param variable_names          Name of the variables
