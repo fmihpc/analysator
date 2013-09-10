@@ -24,7 +24,7 @@ def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
       vlsvReader = vlsvReader_list[t]
       # Go through variables:
       for j in xrange(len(variable_names)):
-         variable = variable_names[i]
+         variable = variable_names[j]
          # Read the variable for all cell ids
          variables_for_cellids = vlsvReader.read_variables_for_cellids( variable, cellids )
          # Save the data into the right slot in the data array:
