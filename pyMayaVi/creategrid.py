@@ -1,10 +1,17 @@
+
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
 from tvtk.api import tvtk
 import mayavi.api
 import mayavi.mlab
 import numpy as np
+import signal
 
+#Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
+def SigHandler(SIG, FRM):
+    print "Ctrl+C"
+    return
+signal.signal(signal.SIGINT, SigHandler)
 
 
 class MayaviPlots:

@@ -1,13 +1,14 @@
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 
 class VariableInfo:
-   ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units
+   ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
+       Variable info is in: data, name, units.
    '''
    def __init__(self, data_array, name="", units=""):
       self.data = data_array
       self.name = name
       self.units = units
-   def get_variable( index ):
+   def get_variable(self, index ):
       ''' Creates a new variable with identical data but only certain index is included
           E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
           :param index         Vector index
