@@ -2,10 +2,10 @@
 
 import numpy as np
 
-def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
+def virtual_spacecraft( vlsvReader_list, variables, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
        :param vlsvReader_list         List containing VlsvFiles with a file open
-       :param variable_names          Name of the variables
+       :param variables               Name of the variables
        :param cellids                 List of cell ids
        :param units                   List of units for the variables (OPTIONAL)
        :returns an array containing the data for the time evolution for every cell id
@@ -13,31 +13,34 @@ def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
        [cellid1variable1, cellid1variable2, cellid1variable3, cellid2variable1, cellid2variable2, cellid3variable3]
 
        Example of usage:
-       time_data = virtual_spacecraft( vlsvReader_list=[VlsvFile("bulk.000.vlsv"), VlsvFile("bulk.001.vlsv"), VlsvFile("bulk.002.vlsv")], variable_names=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+       time_data = virtual_spacecraft( vlsvReader_list=[VlsvFile("bulk.000.vlsv"), VlsvFile("bulk.001.vlsv"), VlsvFile("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
    '''
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
-   variable_names = np.atleast_1d(variable_names)
+   variables = np.atleast_1d(variables)
    cellids = np.atleast_1d(cellids)
-   data = [[[] for j in xrange(len(variable_names))] for i in xrange(len(cellids))]
+   data = [[] for i in xrange(len(cellids)*len(variables))]
    for t in xrange(len(vlsvReader_list)):
       # Get the vlsv reader
       vlsvReader = vlsvReader_list[t]
       # Open the vlsv reader's file:
       vlsvReader.optimize_open_file()
       # Go through variables:
-      for j in xrange(len(variable_names)):
-         variable = variable_names[j]
+      for j in xrange(len(variables)):
+         variable = variables[j]
          # Read the variable for all cell ids
-         variables_for_cellids = vlsvReader.read_variables_for_cellids( variable, cellids )
+         #variables_for_cellids = vlsvReader.read_variables_for_cellids( variable, cellids )
          # Save the data into the right slot in the data array:
          for i in xrange(len(cellids)):
-            data[i][j].append(variables_for_cellids[i])
+            data[i*len(variables)+j].append(vlsvReader.read_variable( variable, cellids[i] ))
       # For optimization purposes we are now freeing vlsvReader's memory
       # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
       vlsvReader.optimize_clear_fileindex_for_cellid()
       # Close the vlsv reader's file:
       vlsvReader.optimize_close_file()
    from output import output_1d
-   return output_1d(np.split(np.ravel(data), np.ravel(data)/len(data[0][0])), np.ravel([variable_names for i in xrange(len(cellids))]))
+   if (units == "") or (len(units) != len(variables)):
+      return output_1d( data, [variables[(int)(i)%(int)(len(variables))] for i in xrange(len(data))] )
+   else:
+      return output_1d( data, [variables[(int)(i)%(int)(len(variables))] for i in xrange(len(data))], [units[(int)(i)%(int)(len(units))] for i in xrange(len(data))] )
 
 

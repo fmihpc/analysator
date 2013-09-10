@@ -9,6 +9,13 @@ class VariableInfo:
       self.data = data_array
       self.name = name
       self.units = units
+
+   def __repr__(self):
+      return "VariableInfo(Name: \'" + str(self.name) + "\' Units: \'" + str(self.units) + "\')"
+
+   def __str__(self):
+      return self.__repr__()
+
    def get_variable(self, index ):
       ''' Creates a new variable with identical data but only certain index is included
           E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
