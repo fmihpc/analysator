@@ -2,7 +2,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
-
+from collections import Iterable
 
 class VlsvFile(object):
    ''' Class for reading VLSV files
@@ -82,9 +82,12 @@ class VlsvFile(object):
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
       else:
          cellids=self.read(name="SpatialGrid",tag="MESH")
+      #Check if it is not iterable. If it is a scale then make it a list
+      if(not isinstance(cellids, Iterable)):
+         cellids=[ cellids ]
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid]=index
-
+         
    def __list_old(self):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
@@ -570,6 +573,9 @@ class VlsvFile(object):
          self.__read_fileindex_for_cellid()
       # Read the variable:
       variablelist = self.read_variables(name)
+      #make a list, if variablelist is a scalar
+      if(not isinstance(variablelist, Iterable)):
+         variablelist=[ variablelist ]
       #Pick the variables with the cell ids in the list:
       returnvariablelist = []
       for cellid in cellids:
