@@ -4,7 +4,7 @@ def cellids( vlsvReader, cellids, variable, units="" ):
    ''' Reads the given variable's values for given cell ids
        :param vlsvReader           Some VlsvFile with a file open
        :param cellids              Some cell ids
-       :param variables            Some list of variable names E.g. ["rho", "B"]
+       :param variable             Some variable name
        :returns the variable values for given cell ids
    '''
    import numpy as np

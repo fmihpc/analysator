@@ -23,4 +23,7 @@ def output_1d( arrays, names, units="" ):
       variable.name = names[i]
       variable.units = units[i]
       new_format.append(variable)
-   return new_format
+   if len(new_format) == 1:
+      return new_format[0]
+   else:
+      return new_format
