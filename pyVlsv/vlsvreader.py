@@ -9,6 +9,7 @@ class VlsvFile(object):
    ''' 
    def __init__(self, file_name):
       self.__file_name = file_name
+      self.__fptr = open(self.__file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__fileindex_for_cellid_blocks={}
@@ -53,20 +54,26 @@ class VlsvFile(object):
       self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
       self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
 
+      self.__fptr.close()
+
 
    def __read_xml_footer(self):
       ''' Reads in the XML footer of the VLSV file and store all the content
       ''' 
       max_xml_size = 1000000
-      fptr = open(self.__file_name,"rb")
       #(endianness,) = struct.unpack("c", fptr.read(1))
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
       fptr.seek(8)
       (offset,) = struct.unpack("Q", fptr.read(8))
       fptr.seek(offset)
       xml_data = fptr.read(max_xml_size)
-      fptr.close() 
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
       self.__xml_root = ET.fromstring(xml_string)
+      if self.__fptr.closed:
+         fptr.close()
 
    def __read_fileindex_for_cellid(self):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
@@ -113,6 +120,12 @@ class VlsvFile(object):
          return []
       offset = self.__fileindex_for_cellid_blocks[cellid][0]
       num_of_blocks = self.__fileindex_for_cellid_blocks[cellid][1]
+
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
+
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
@@ -127,13 +140,11 @@ class VlsvFile(object):
 #            for i in range(0, cells_with_blocks_index[0]):
 #               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
                data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
 
          # Read in block coordinates:
@@ -145,15 +156,17 @@ class VlsvFile(object):
 
             offset_block_coordinates = offset * vector_size * element_size + ast.literal_eval(child.text)
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_block_coordinates)
             if datatype == "float" and element_size == 4:
                data_block_coordinates = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_block_coordinates = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
 
             data_block_coordinates = data_block_coordinates.reshape(num_of_blocks, vector_size)
+
+      if self.__fptr.closed:
+         fptr.close()
+
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_coordinates):
          print "BAD DATA SIZES"
@@ -185,6 +198,11 @@ class VlsvFile(object):
       num_of_blocks = self.__fileindex_for_cellid_blocks[1]
       offset = self.__fileindex_for_cellid_blocks[0]
 
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
+
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
@@ -199,13 +217,11 @@ class VlsvFile(object):
 #            for i in range(0, cells_with_blocks_index[0]):
 #               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
                data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
 
          # Read in block coordinates:
@@ -217,15 +233,16 @@ class VlsvFile(object):
 
             offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_block_ids)
             if datatype == "float" and element_size == 4:
                data_block_ids = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
+
+      if self.__fptr.closed:
+         fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
@@ -245,6 +262,11 @@ class VlsvFile(object):
 
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
 
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
+
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
@@ -259,13 +281,11 @@ class VlsvFile(object):
 #            for i in range(0, cells_with_blocks_index[0]):
 #               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
                data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if child.attrib["name"] == "SpatialGrid" and child.tag == "BLOCKCOORDINATES":
@@ -276,15 +296,16 @@ class VlsvFile(object):
 
             offset_block_coordinates = offset * vector_size * element_size + ast.literal_eval(child.text)
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_block_coordinates)
             if datatype == "float" and element_size == 4:
                data_block_coordinates = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_block_coordinates = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
 
             data_block_coordinates = data_block_coordinates.reshape(num_of_blocks, vector_size)
+
+      if self.__fptr.closed:
+         fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_coordinates):
@@ -328,6 +349,11 @@ class VlsvFile(object):
 
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
 
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
+
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
@@ -340,13 +366,11 @@ class VlsvFile(object):
             # Navigate to the correct position
             offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
                data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
@@ -357,15 +381,16 @@ class VlsvFile(object):
 
             offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
 
-            fptr = open(self.__file_name,"rb")
             fptr.seek(offset_block_ids)
             if datatype == "float" and element_size == 4:
                data_block_ids = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
             if datatype == "float" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            fptr.close()
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
+
+      if self.__fptr.closed:
+         fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
@@ -474,6 +499,12 @@ class VlsvFile(object):
             self.__read_fileindex_for_cellid()
       if tag == "" and name == "" and tag == "":
          print "Bad arguments at read"
+
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"rb")
+      else:
+         fptr = self.__fptr
+
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
       for child in self.__xml_root:
@@ -496,7 +527,6 @@ class VlsvFile(object):
                offset=offset+self.__fileindex_for_cellid[read_single_cellid]*element_size*vector_size
                array_size=1
 
-            fptr = open(self.__file_name, "rb")
             fptr.seek(offset)
 
             if datatype == "float" and element_size == 4:
@@ -511,7 +541,9 @@ class VlsvFile(object):
                data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*array_size)
             if datatype == "uint" and element_size == 8:
                data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*array_size)
-            fptr.close() 
+
+            if self.__fptr.closed:
+               fptr.close()
 
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
@@ -520,6 +552,10 @@ class VlsvFile(object):
                return data[0]
             else:
                return data
+
+      if self.__fptr.closed:
+         fptr.close()
+
 
    def read_variables(self, name):
       ''' Read variables from the open vlsv file. 

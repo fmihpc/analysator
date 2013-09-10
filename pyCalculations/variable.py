@@ -1,5 +1,6 @@
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 
+
 class VariableInfo:
    ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
        Variable info is in: data, name, units.
@@ -14,6 +15,7 @@ class VariableInfo:
           :param index         Vector index
           :returns an edited version of the variable
       '''
+      import numpy as np
       if len(self.data) <= 0:
          print "BAD DATA LENGTH"
          return []
