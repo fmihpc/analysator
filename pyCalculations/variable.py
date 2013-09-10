@@ -7,6 +7,19 @@ class VariableInfo:
       self.data = data_array
       self.name = name
       self.units = units
+   def get_variable( index ):
+      ''' Creates a new variable with identical data but only certain index is included
+          E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
+          :param index         Vector index
+          :returns an edited version of the variable
+      '''
+      if len(self.data) <= 0:
+         print "BAD DATA LENGTH"
+         return []
+      if len(np.atleast_1d(self.data[0])) <= index:
+         print "BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!"
+         return []
+      return VariableInfo( self.data[:,index], self.name, self.units )
 
 
 

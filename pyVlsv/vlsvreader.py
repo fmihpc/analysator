@@ -541,6 +541,7 @@ class VlsvFile(object):
       [variableForCellid1, variableForCellid2, variableForCellid3, ..]
       NOTE: THIS IS MAINLY USED FOR OPTIMIZATION PURPOSES
       '''
+      print name
       #if len( self.__fileindex_for_cellid ) == 0:
       #   self.__read_fileindex_for_cellid()
       # Read the variable:
@@ -548,6 +549,7 @@ class VlsvFile(object):
       #Pick the variables with the cell ids in the list:
       returnvariablelist = []
       for cellid in cellids:
+         print cellid
          if index == 3:
             returnvariablelist.append(np.array(variablelist[self.__fileindex_for_cellid[cellid]]))
          else:
@@ -561,27 +563,22 @@ class VlsvFile(object):
       Arguments:
       :param coordinates        The cell's coordinates
       :returns the cell id
+      NOTE: Returns 0 if the cellid is out of bounds!
       '''
-      # Get xmax, xmin and xcells_ini
-      xmax = self.read_parameter(name="xmax")
-      xmin = self.read_parameter(name="xmin")
-      xcells = (int)(self.read_parameter(name="xcells_ini"))
-      # Do the same for y
-      ymax = self.read_parameter(name="ymax")
-      ymin = self.read_parameter(name="ymin")
-      ycells = (int)(self.read_parameter(name="ycells_ini"))
-      # And for z
-      zmax = self.read_parameter(name="zmax")
-      zmin = self.read_parameter(name="zmin")
-      zcells = (int)(self.read_parameter(name="zcells_ini"))
-   
+      # Check that the coordinates are not out of bounds:
+      if (self.__xmax < coordinates[0]) or (self.__xmin > coordinates[0]):
+         return 0
+      if (self.__ymax < coordinates[1]) or (self.__ymin > coordinates[1]):
+         return 0
+      if (self.__zmax < coordinates[2]) or (self.__zmin > coordinates[2]):
+         return 0
       # Get cell lengths:
-      cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
    
       # Get cell indices:
-      cellindices = np.array([(int)((coordinates[0] - xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - zmin)/(float)(cell_lengths[2]))])
+      cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
       # Get the cell id:
-      cellid = cellindices[0] + cellindices[1] * xcells + cellindices[2] * xcells * ycells + 1
+      cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
       return cellid
 
    def get_cell_coordinates(self, cellid):

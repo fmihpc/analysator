@@ -17,12 +17,26 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
        Notee:
        If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
    '''
+   if (len(variables_x_list) == 0) or (len(variables_y_list) == 0):
+      print "BAD VARIABLE LENGTH ( X OR Y OF LENGTH 0 )"
+      return []
    import numpy as np
    variables_x_list = np.atleast_1d(variables_x_list)
    variables_y_list = np.atleast_1d(variables_y_list)
    if len(variables_x_list) != len(variables_y_list):
+      # Attempt to fix the lengths:
+      if (len(variables_x_list) == 1):
+         if (len(np.atleast_1d(variables_x_list[0])) == len(variables_y_list)):
+            variables_y_list = [variables_y_list]
+   
+      if (len(variables_y_list) == 1):
+         if (len(np.atleast_1d(variables_y_list[0])) == len(variables_x_list)):
+            variables_x_list = [variables_x_list]
+
+   if len(variables_x_list) != len(variables_y_list):
       print "BAD VARIABLE LENGTH"
       return []
+      
    length_of_list = len(variables_x_list)
 
    if figure != []:

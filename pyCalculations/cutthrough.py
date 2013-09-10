@@ -48,10 +48,15 @@ def cut_through( vlsvReader, point1, point2 ):
    curDists = []
    appDist = False
    for coordinate in coordinateList:
-      # Get the cell indices
-      cellindices = np.array([(int)((coordinate[0] - xmin)/(float)(cell_lengths[0])), (int)((coordinate[1] - ymin)/(float)(cell_lengths[1])), (int)((coordinate[2] - zmin)/(float)(cell_lengths[2]))])
+      ## Get the cell indices
+      #cellindices = np.array([(int)((coordinate[0] - xmin)/(float)(cell_lengths[0])), (int)((coordinate[1] - ymin)/(float)(cell_lengths[1])), (int)((coordinate[2] - zmin)/(float)(cell_lengths[2]))])
       # Get the cell id:
-      cellid = cellindices[0] + cellindices[1] * xcells + cellindices[2] * xcells * ycells + 1
+      #cellid = cellindices[0] + cellindices[1] * xcells + cellindices[2] * xcells * ycells + 1
+      cellid = vlsvReader.get_cellid(coordinate)
+      # If the cellid is invalid then don't append:
+      if cellid == 0:
+         print "ERROR, BAD CELLID -- CHECK THE INPUT COORDINATES (ARE THEY OUT OF BOUNDS?)"
+         return []
       curDists.append(np.linalg.norm(coordinate - point1))
       # If the cell id is already in the list, don't append:
       if len(cellids) > 0:
