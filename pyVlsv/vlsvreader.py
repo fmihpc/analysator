@@ -88,7 +88,7 @@ class VlsvFile(object):
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid]=index
          
-   def __list_old(self):
+   def __list_old_format(self):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
@@ -106,10 +106,10 @@ class VlsvFile(object):
             print "    tag = ", child.tag, " name = ", child.attrib["name"]
       return
 
-   def __read_parameter_old(self, name):
+   def __read_parameter_old_format(self, name):
       return self.read(name=name, tag="PARAMETERS")
 
-   def __read_blocks_old(self, cellid):
+   def __read_blocks_old_format(self, cellid):
       ''' Read raw block data from the open file.
       
       Arguments:
@@ -184,7 +184,7 @@ class VlsvFile(object):
 
       return [velocity_block_ids.astype(int), data_avgs.astype(float)]
 
-   def __read_blocks_new(self, cellid):
+   def __read_blocks_new_format(self, cellid):
       ''' Read raw block data from the open file.
       
       Arguments:
@@ -255,7 +255,7 @@ class VlsvFile(object):
 
 
 
-   def __read_velocity_cells_old( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index  ):
+   def __read_velocity_cells_old_format( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index  ):
       # Read in the coordinates:
       #block_coordinates = self.read(name="",tag="BLOCKCOORDINATES")
       # Navigate to the correct position:
@@ -342,7 +342,7 @@ class VlsvFile(object):
             avgIndex = avgIndex + 1
       return velocity_cells
 
-   def __read_velocity_cells_new( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index  ):
+   def __read_velocity_cells_new_format( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index  ):
       # Read in the coordinates:
       #block_ids = self.read(name="",tag="BLOCKCOORDINATES")
       # Navigate to the correct position:
@@ -450,7 +450,7 @@ class VlsvFile(object):
          for interactive usage
       '''
       if self.__uses_new_vlsv_format == False:
-         return self.__list_old()
+         return self.__list_old_format()
       print "tag = PARAMETER"
       for child in self.__xml_root:
          if child.tag == "PARAMETER":
@@ -898,7 +898,7 @@ class VlsvFile(object):
          return self.read(name=name, tag="PARAMETER")
       else:
          # Uses old format
-         return self.__read_parameter_old(name=name)
+         return self.__read_parameter_old_format(name=name)
 
 
 #getVelocityBlockCoordinates( cellStruct, blockId, blockCoordinates )
@@ -1023,10 +1023,10 @@ class VlsvFile(object):
       # Check for the old library
       if self.__uses_new_vlsv_format == False:
          # Uses old format
-         return self.__read_velocity_cells_old(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index)
+         return self.__read_velocity_cells_old_format(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index)
       else:
          # Uses new format:
-         return self.__read_velocity_cells_new(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index)
+         return self.__read_velocity_cells_new_format(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index)
 
 
    def read_blocks(self, cellid):
@@ -1042,10 +1042,10 @@ class VlsvFile(object):
 
       if self.__uses_new_vlsv_format == False:
          # Uses old format
-         return self.__read_blocks_old(cellid)
+         return self.__read_blocks_old_format(cellid)
       else:
          # Uses new format
-         return self.__read_blocks_new(cellid)
+         return self.__read_blocks_new_format(cellid)
 
       return []
 
