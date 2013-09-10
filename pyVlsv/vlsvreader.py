@@ -442,18 +442,6 @@ class VlsvFile(object):
          self.__fileindex_for_cellid_blocks[cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
 
-   def clear_fileindex_for_cellid_blocks(self):
-      ''' Clears a private variable containing number of blocks and offsets for particular cell ids
-          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VELOCITY CELLS IS NO LONGER NEEDED
-      '''
-      self.__fileindex_for_cellid_blocks = {}
-
-   def clear_fileindex_for_cellid(self):
-      ''' Clears a private variable containing cell ids and their locations
-          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VARIABLES IS NO LONGER NEEDED
-      '''
-      self.__fileindex_for_cellid = {}
-
    def list(self):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
@@ -1054,5 +1042,34 @@ class VlsvFile(object):
          return self.__read_blocks_new(cellid)
 
       return []
+
+   def optimize_open_file(self):
+      '''Opens the vlsv file for reading
+         NOTE: THIS SHOULD ONLY BE USED FOR OPTIMIZATION PURPOSES. FILES ARE OPENED AND CLOSED AUTOMATICALLY UPON READING BUT IN THE CASE OF HEAVY READING OPERATIONS OPEN_FILE WILL OPTIMIZE THE PROCESS
+      '''
+      self.__fptr = open(self.__file_name,"rb")
+
+
+   def optimize_close_file(self):
+      '''Closes the vlsv file
+         NOTE: THIS SHOULD ONLY BE USED FOR OPTIMIZATION PURPOSES. FILES ARE OPENED AND CLOSED AUTOMATICALLY UPON READING BUT IN THE CASE OF HEAVY READING OPERATIONS OPEN_FILE WILL OPTIMIZE THE PROCESS
+      '''
+      if self.__fptr.closed:
+         return
+      else:
+         self.__fptr.close()
+         return
+
+   def optimize_clear_fileindex_for_cellid_blocks(self):
+      ''' Clears a private variable containing number of blocks and offsets for particular cell ids
+          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VELOCITY CELLS IS NO LONGER NEEDED
+      '''
+      self.__fileindex_for_cellid_blocks = {}
+
+   def optimize_clear_fileindex_for_cellid(self):
+      ''' Clears a private variable containing cell ids and their locations
+          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VARIABLES IS NO LONGER NEEDED
+      '''
+      self.__fileindex_for_cellid = {}
 
 

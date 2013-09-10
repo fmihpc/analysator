@@ -22,6 +22,8 @@ def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
    for t in xrange(len(vlsvReader_list)):
       # Get the vlsv reader
       vlsvReader = vlsvReader_list[t]
+      # Open the vlsv reader's file:
+      vlsvReader.optimize_open_file()
       # Go through variables:
       for j in xrange(len(variable_names)):
          variable = variable_names[j]
@@ -32,7 +34,9 @@ def virtual_spacecraft( vlsvReader_list, variable_names, cellids, units="" ):
             data[i][j].append(variables_for_cellids[i])
       # For optimization purposes we are now freeing vlsvReader's memory
       # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
-      vlsvReader.clear_fileindex_for_cellid()
+      vlsvReader.optimize_clear_fileindex_for_cellid()
+      # Close the vlsv reader's file:
+      vlsvReader.optimize_close_file()
    from output import output_1d
    return output_1d(np.split(np.ravel(data), np.ravel(data)/len(data[0][0])), np.ravel([variable_names for i in xrange(len(cellids))]))
 

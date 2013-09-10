@@ -2,6 +2,18 @@
 
 import pylab as pl
 
+def plot_variables( x, y, figure=[] ):
+   ''' Plots x and y variables from the input with pylab
+       :param x        Some variable to be plotted in the x-axis
+       :param y        Some variable to be plotted in the y-axis
+       :param figure   If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
+       :returns a pylab figure with the plot
+       Example usage:
+       plot_variables( distances, rho )
+       This would plot rho as a function of distance
+   '''
+   return plot_multiple_variables( [x], [y], figure )
+
 
 def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
    ''' Plots multiple variables from the input with pylab
@@ -10,7 +22,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
        :param figure                  If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
        :returns a pylab figure with the plot
        Example usage:
-       multiplot( [distances, xcoordinates], [rho_values, B_x_values] )
+       plot_multiple_variables( [distances, xcoordinates], [rho, B_x] )
        This would plot rho_values as a function of distance and B_x_values as a function of xcoordinates
        Note:
        multiplot expects variables to be saved in the VariableInfo class
