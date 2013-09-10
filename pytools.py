@@ -13,7 +13,7 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 
 # Import modules
-import pycalculations
+import calculations
 import vlsvreader
 import creategrid
 import plots
