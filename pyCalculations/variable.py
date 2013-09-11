@@ -1,12 +1,12 @@
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
-
+import numpy as np
 
 class VariableInfo:
    ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
        Variable info is in: data, name, units.
    '''
    def __init__(self, data_array, name="", units=""):
-      self.data = data_array
+      self.data = np.asarray(data_array)
       self.name = name
       self.units = units
 
