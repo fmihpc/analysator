@@ -1,5 +1,8 @@
 # This file contains a function for retrieving a 2d cut from a 2d plane ( Retrieves the cell ids in that area )
 
+#NOT IMPLEMENTED YET
+
+
 def cut2d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax ):
    ''' Retrieves cell ids from the given 2d cut
        :param vlsvReader         Some VlsvFile with a file open
