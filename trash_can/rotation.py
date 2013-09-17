@@ -1,36 +1,5 @@
 import numpy as np
 
-#I = np.array([[1,0,0],
-#              [0,1,0],
-#              [0,0,1]])
-#B_vol = ..
-#PTensorDiagonal = variables["PTensorDiagonal"]
-#PTensorOffDiagonal = variables["PTensorOffDiagonal"]
-#PTensor = [np.array([[PTensorDiagonal[i][0], PTensorOffDiagonal[i][2], PTensorOffDiagonal[i][1]],
-#                     [PTensorOffDiagonal[i][2], PTensorDiagonal[i][1], PTensorOffDiagonal[i][0]],
-#                     [PTensorOffDiagonal[i][1], PTensorOffDiagonal[i][0], PTensorDiagonal[i][2]]]) for i in xrange(len(PTensorDiagonal))]
-#PTensor_rotated = []
-#for i in xrange(len(B_vol)):
-#   B_vol_iter = B_vol[i]
-#   PTensor_iter = PTensor[i]
-#   theta = np.arccos(np.dot(B_vol_iter,PTensor_iter)/(np.linalg.norm(B_vol_iter)*np.linalg.norm(PTensor_iter)))
-#   tensor_product = np.array([[B_vol_iter[0]**2, B_vol_iter[0]*B_vol_iter[1], B_vol_iter[0]*B_vol_iter[2]],
-#                              [B_vol_iter[0]*B_vol_iter[1], B_vol_iter[1]**2, B_vol_iter[1]*B_vol_iter[2]],
-#                              [B_vol_iter[0]*B_vol_iter[2], B_vol_iter[1]*B_vol_iter[2], B_vol_iter[2]**2]])
-#   PTensor_iter_rotated = np.dot(I, B_vol_iter)*np.cos(theta) + np.sin(theta) * numpy.cross(B_vol_iter, PTensor_iter) + (1-np.cos(theta))*np.dot(tensor_product, B_vol_iter)
-#   PTensor_rotated.append(PTensor_iter_rotated)
-#
-#
-#
-#PTensor_rotated = np.array(PTensor_rotated)
-#R = rotation_matrix(
-#PTensor_rotated = [np.dot(np.dot(rotation_matrix(B_vol[i], np.arccos(B_vol[i][2]/np.linalg.norm(B_vol))),PTensor[i]), rotation_matrix(B_vol[i], np.arccos(B_vol[i][2]/np.linalg.norm(B_vol))).transpose()) for i in xrange(len(B_vol))]
-
-#def rotate( vectorToRotate, vector ):
-#   vectorToRotate = v1
-#   vector = v2
-#   angle = np.arccos(v1.dot(v2)
-#   # Get rotation matrix
 
 def rotateTensorToVector( Tensor, vector ):
    '''
@@ -49,6 +18,13 @@ def rotateTensorToVector( Tensor, vector ):
    return Tensor_rotated
 
 def rotateVectorToVector( vector1, vector2 ):
+   ''' Applies rotation matrix that would rotate vector2 to z-axis on vector1 and then returns the rotated vector1
+
+       :param vector1        Vector to be rotated
+       :param vector2        Vector for creating the rotation matrix
+       :returns rotated vector1 vector
+       Note: vector1 and vector2 must be 3d vectors
+   '''
    vector_u = np.cross(vector2, np.array([0,0,1]))
    vector_u = vector_u / np.linalg.norm(vector_u)
    angle = np.arccos( vector2.dot(np.array([0,0,1])) / np.linalg.norm(vector2) )
