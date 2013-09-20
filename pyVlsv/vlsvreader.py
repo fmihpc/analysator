@@ -735,59 +735,6 @@ class VlsvFile(object):
       # Construct velocity cell coordinates from velocity cells and return them
       return self.get_velocity_cell_coordinates( self.construct_velocity_cells(blocks) )
 
-#   def construct_velocity_cell_nodes( blocks ):
-#      ''' Returns velocity cell nodes in given blocks
-#
-#          :param blocks         list of block ids
-#          :returns a numpy array containing velocity cell nodes
-#          NOTE: THIS IS USED FOR CONSTRUCTING VELOCITY SPACES WITH VISUALIZATION PROGRAMS LIKE MAYAVI
-#      '''
-#      # Get block coordinates:
-#      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks))
-#      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks))
-#      blockIndicesZ = blocks.astype(int)/(int)(self.__vxblocks*self.__vyblocks)
-#      blockCoordinatesX = blockIndicesX.astype(float) * self.__dvx * 4 + self.__vxmin
-#      blockCoordinatesY = blockIndicesY.astype(float) * self.__dvy * 4 + self.__vymin
-#      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__dvz * 4 + self.__vzmin
-#      # Get velocity cell min coordinates (per velocity block)
-#      vcellids = np.arange(64)
-#      minCellIndicesX = np.remainder(vcellids.astype(int), (int)(4))
-#      minCellIndicesY = np.remainder((vcellids.astype(int)/(int)(4)).astype(int), (int)(4))
-#      minCellIndicesZ = vcellids.astype(int)/(int)(16)
-#      minCellCoordinatesX = minCellIndicesX.astype(float) * (float)(self.__dvx)
-#      minCellCoordinatesY = minCellIndicesY.astype(float) * (float)(self.__dvy)
-#      minCellCoordinatesZ = minCellIndicesZ.astype(float) * (float)(self.__dvz)
-#      # Construct velocity cell nodes (per velocity block)
-#      # Note: Every velocity cell has 8 nodes
-#      cellNodesX = np.outer(minCellCoordinatesX, np.ones(8))
-#      cellNodesY = np.outer(minCellCoordinatesY, np.ones(8))
-#      cellNodesZ = np.outer(minCellCoordinatesZ, np.ones(8))
-#      # Get the coordinates of the codes:
-#      # Note: The arrays are a bit confusing but if you look up VTK_VOXEL in some vtk doc it will be clearer why the array looks like that
-#      cellNodesX = cellNodesX + np.array([0, 1, 0, 1, 0, 1, 0, 1]) * self.__dvx
-#      cellNodesY = cellNodesY + np.array([0, 0, 1, 1, 0, 0, 1, 1]) * self.__dvy
-#      cellNodesZ = cellNodesZ + np.array([0, 0, 0, 0, 1, 1, 1, 1]) * self.__dvz
-#      # The cellNodesX, y, z should now be a 64 * 8 matrix: Check to make sure:
-#      if (len(cellNodesX) != 64) or (len(cellNodesX[0]) != 8):
-#         print "BAD LENGTH CELL NODES X"
-#         return []
-#      if (len(cellNodesY) != 64) or (len(cellNodesY[0]) != 8):
-#         print "BAD LENGTH CELL NODES Y"
-#         return []
-#      if (len(cellNodesZ) != 64) or (len(cellNodesZ[0]) != 8):
-#         print "BAD LENGTH CELL NODES Z"
-#         return []
-#      # Ravel the cell nodes
-#      cellNodesX = np.ravel(cellNodesX)
-#      cellNodesY = np.ravel(cellNodesY)
-#      cellNodesZ = np.ravel(cellNodesZ)
-#      # Get all nodes:
-#      # Transform blockCoordinatesX into len(blockCoordinatesX) * 64 * 8 matrix (for calculation) and then ravel:
-#      nodeCoordinatesX = np.ravel(np.outer(blockCoordinatesX, np.ones(64*8)) + cellNodesX)
-#      nodeCoordinatesY = np.ravel(np.outer(blockCoordinatesY, np.ones(64*8)) + cellNodesY)
-#      nodeCoordinatesZ = np.ravel(np.outer(blockCoordinatesZ, np.ones(64*8)) + cellNodesZ)
-#      # Return the cell coordinates:
-#      return np.array([nodeCoordinatesX, nodeCoordinatesY, nodeCoordinatesZ]).transpose()
 
    def construct_velocity_cell_nodes( self, blocks ):
       ''' Returns velocity cell nodes in given blocks
@@ -822,6 +769,7 @@ class VlsvFile(object):
 
       nodesPerCell = 8
 
+      # NOTE: The ordering of the numpy array won't make sense to anyone who hasn't read VTK documentation. For further info check VTK_VOXEL. The numpy array is constructed according to VTK voxel's nodes
       cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1]).astype(int))
       cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1]).astype(int))
       cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1]).astype(int))
@@ -845,7 +793,7 @@ class VlsvFile(object):
       nodeIndices = np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ]).transpose().astype(int)
 
       # Put the node indices into keys:
-      
+      #NOTE: Maybe I should change the name of the node indices at this point to avoid confusion?
       nodeIndices = np.sum(nodeIndices * np.array([1, cellsPerDirection*self.__vxblocks+1, (cellsPerDirection*self.__vxblocks+1)*(cellsPerDirection*self.__vyblocks+1)]), axis=1)
 
       # Delete duplicate nodes and sort the list:
@@ -861,9 +809,13 @@ class VlsvFile(object):
       # Put the indices into keys:
       cellKeys = globalCellIndices
       # Transform into keys
+
       cellKeys = np.sum(cellKeys * np.array([1, cellsPerDirection*self.__vxblocks+1, (cellsPerDirection*self.__vxblocks+1)*(cellsPerDirection*self.__vyblocks+1)]), axis=1).astype(int)
       # Get the proper indexes with the keys
-      cellKeys = np.array(np.split(np.searchsorted(nodeIndices, cellKeys), 64*len(blocks))).astype(int)
+      cellKeys = np.searchsorted(nodeIndices, cellKeys).astype(int)
+      #asdf = np.array(np.array_split(cellKeys, 8)).astype(int)
+      #cellKeys = np.array(np.array_split(cellKeys, 64*len(blocks))).astype(int)
+      cellKeys = np.reshape(cellKeys, (64*len(blocks), 8))
 
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices

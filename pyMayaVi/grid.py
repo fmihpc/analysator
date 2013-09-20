@@ -23,15 +23,12 @@ class MayaviPlots:
       self.__engine = 0
 
    def __picker_callback( self, picker ):
-      """ Picker callback: this get called when on pick events.
+      """ This gets called when clicking on a cell
       """
-      # Find which data point corresponds to the point picked:
-      # we have to account for the fact that each data point is
-      # represented by a glyph with several points
-      #point_id = picker.point_id/glyph_points.shape[0]
-      # If the no points have been selected, we have '-1'
       point_id = picker.cell_id
-      self.__generate_velocity_grid(point_id)
+      print "CELL ID: " + str(point_id+1)
+      # NOTE: In vlasiator cell ids start from 1, in mayavi they start from 0, hence the +1
+      self.__generate_velocity_grid(point_id+1)
    
    def __generate_grid( self, mins, lengths, cells, datas, names ):
       ''' Generates a grid from given data
@@ -46,7 +43,6 @@ class MayaviPlots:
       figure.scene.disable_render = True
       self.__engine = mayavi.mlab.get_engine()
       # Create nodes
-      #x, y, z = mgrid[0:0.1:5j, 0:0.1:5j, 0:0.1*2.0/5.0:2j]
       x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
       # Cell coordinates:
       x2 = 0.1*0.5 + np.arange(4)/4.0*0.1
