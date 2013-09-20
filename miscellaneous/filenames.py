@@ -1,7 +1,8 @@
 import glob
 import os
 
-'''This module imports glob and os and has some miscellaneous functions for basic file manipulation
+'''@package docstring
+This module imports glob and os and has some miscellaneous functions for basic file manipulation
 '''
 
 def get_sorted_file_names(name="*.vlsv"):
