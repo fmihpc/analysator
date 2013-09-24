@@ -1,4 +1,12 @@
-
+from traits.api import HasTraits, Instance, Property, Enum
+from mayavi.core.ui.engine_view import EngineView
+from traits.api import HasTraits, Range, Instance, \
+                    on_trait_change
+from traitsui.api import View, Item, HGroup
+from tvtk.pyface.scene_editor import SceneEditor
+from mayavi.tools.mlab_scene_model import \
+                    MlabSceneModel
+from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
 from tvtk.api import tvtk
@@ -14,12 +22,32 @@ def SigHandler(SIG, FRM):
 signal.signal(signal.SIGINT, SigHandler)
 
 
-class MayaviPlots:
+class MayaviPlots(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   def __init__(self, vlsvReader):
+   test_attribute = 0
+
+   scene = Instance(MlabSceneModel, ())
+
+   engine_view = Instance(EngineView)
+
+   current_selection = Property
+
+   # Define the view:
+   view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
+               height=250, width=300, show_label=True, resizable=True),
+            HGroup(
+                  '_', 'test_attribute',
+               ),
+            resizable=True
+            )
+
+
+   def __init__(self, vlsvReader, **traits):
+      HasTraits.__init__(self, **traits)
       print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
+      self.engine_view = engine_view = EngineView(engine=self.scene.engine)
       self.__engine = 0
 
    def __picker_callback( self, picker ):
@@ -38,10 +66,10 @@ class MayaviPlots:
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
-      figure = mayavi.mlab.gcf()
-      mayavi.mlab.clf()
-      figure.scene.disable_render = True
-      self.__engine = mayavi.mlab.get_engine()
+      #figure = mayavi.mlab.gcf()
+      #mayavi.mlab.clf()
+      #figure.scene.disable_render = True
+      #self.__engine = mayavi.mlab.get_engine()
       # Create nodes
       x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
       # Cell coordinates:
@@ -80,16 +108,23 @@ class MayaviPlots:
       
       
       # Visualize the data
-      d = mayavi.mlab.pipeline.add_dataset(sg)
-      iso = mayavi.mlab.pipeline.surface(d)
-      picker = figure.on_mouse_pick( self.__picker_callback, type='cell' )
-      picker.tolerance = 0
+      d = self.scene.mlab.pipeline.add_dataset(sg)
+      iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
+      #picker = self.scene.on_mouse_pick( self.__picker_callback, type='cell' )
+      #picker.tolerance = 0
       #iso.contour.maximum_contour = 75.0
       #vec = mayavi.mlab.pipeline.vectors(d)
       #vec.glyph.mask_input_points = True
       #vec.glyph.glyph.scale_factor = 1.5
-      figure.scene.disable_render = False
-      mayavi.mlab.show()
+      #figure.scene.disable_render = False
+      #mayavi.mlab.show()
+
+      # Get the figure:
+      
+
+      # Configure traits
+      self.configure_traits()
+      
 
    def __generate_velocity_grid( self, cellid ):
       '''Generates a velocity grid from a given spatial cell id
