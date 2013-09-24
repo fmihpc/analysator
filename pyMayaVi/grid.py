@@ -1,8 +1,8 @@
-from traits.api import HasTraits, Instance, Property, Enum
+from traits.api import HasTraits, Instance, Property, Button, Enum
 from mayavi.core.ui.engine_view import EngineView
 from traits.api import HasTraits, Range, Instance, \
                     on_trait_change
-from traitsui.api import View, Item, HGroup
+from traitsui.api import View, Item, HGroup, Group
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import \
                     MlabSceneModel
@@ -25,7 +25,9 @@ signal.signal(signal.SIGINT, SigHandler)
 class MayaviPlots(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   test_attribute = 0
+   cell_pick = Button('cell_pick')
+   test_attribute2 = Button('test2')
+
 
    scene = Instance(MlabSceneModel, ())
 
@@ -34,12 +36,15 @@ class MayaviPlots(HasTraits):
    current_selection = Property
 
    # Define the view:
-   view = View(Item('scene', editor=SceneEditor(scene_class=MayaviScene),
-               height=250, width=300, show_label=True, resizable=True),
-            HGroup(
-                  '_', 'test_attribute',
-               ),
-            resizable=True
+   view = View(
+                Item('scene', editor=SceneEditor(scene_class=MayaviScene),
+                   height=250, width=300, show_label=False, resizable=True),
+                HGroup(
+                   'cell_pick',
+                   'test_attribute2',
+                   show_labels=False
+                ),
+                resizable=True
             )
 
 
@@ -49,6 +54,7 @@ class MayaviPlots(HasTraits):
       self.__vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
+      self.__pick_mode = True
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -141,9 +147,24 @@ class MayaviPlots(HasTraits):
       figure.scene.disable_render = False
       return True
 
+   def __do_nothing( self, picker ):
+      return
+
+   # Trait events:
    @on_trait_change('scene.activated')
    def set_mouse_click( self ):
       self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
+
+   @on_trait_change('cell_pick')
+   def switch_cell_pick(self):
+      if self.__pick_mode == True:
+         self.figure.on_mouse_pick( self.__picker_callback, remove=True )
+         self.__pick_mode = False
+         print "Turning cell pick off"
+      else:
+         self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
+         self.__pick_mode = True
+         print "Turning cell pick on"
 
    def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
