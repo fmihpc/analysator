@@ -143,6 +143,7 @@ class MayaviPlots:
    def load_grid( self, variable, pickertype="cell" ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
+          :param pickertype      Type of mouse click for plotting velocity space, 'cell' by default. The other option is 'world'
       '''
       # Get the cell params:
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
