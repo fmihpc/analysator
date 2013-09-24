@@ -66,7 +66,7 @@ class MayaviPlots(HasTraits):
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
-      #figure = mayavi.mlab.gcf()
+      self.figure = self.scene.mlab.gcf()
       #mayavi.mlab.clf()
       #figure.scene.disable_render = True
       #self.__engine = mayavi.mlab.get_engine()
@@ -110,8 +110,9 @@ class MayaviPlots(HasTraits):
       # Visualize the data
       d = self.scene.mlab.pipeline.add_dataset(sg)
       iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
-      #picker = self.scene.on_mouse_pick( self.__picker_callback, type='cell' )
-      #picker.tolerance = 0
+
+      #self.scene.add_trait('on_mouse_pick', self.__picker_callback)
+
       #iso.contour.maximum_contour = 75.0
       #vec = mayavi.mlab.pipeline.vectors(d)
       #vec.glyph.mask_input_points = True
@@ -124,6 +125,10 @@ class MayaviPlots(HasTraits):
 
       # Configure traits
       self.configure_traits()
+      #picker = figure.on_mouse_pick( self.__picker_callback, type='cell' )
+      #picker.tolerance = 0
+
+
       
 
    def __generate_velocity_grid( self, cellid ):
@@ -164,6 +169,9 @@ class MayaviPlots(HasTraits):
       figure.scene.disable_render = False
       return True
 
+   @on_trait_change('scene.activated')
+   def set_mouse_click( self ):
+      self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
 
    def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
