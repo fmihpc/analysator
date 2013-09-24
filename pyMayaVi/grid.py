@@ -22,18 +22,31 @@ class MayaviPlots:
       self.__vlsvReader = vlsvReader
       self.__engine = 0
 
-   def __picker_callback( self, picker ):
+   def __picker_callback_world( self, picker ):
       """ This gets called when clicking on a cell
       """
-      point_id = picker.cell_id
-      print "CELL ID: " + str(point_id+1)
-      # NOTE: In vlasiator cell ids start from 1, in mayavi they start from 0, hence the +1
-      self.__generate_velocity_grid(point_id+1)
+      point_coordinates = np.array([picker.pick_position[0], picker.pick_position[1], picker.pick_position[2]])
+      cellid = self.__vlsvReader.get_cellid(point_coordinates)
+      if cellid != 0:
+         print "CELL ID: " + str(cellid) + " COORDINATES: " + str(point_coordinates)
+         self.__generate_velocity_grid(cellid)
+      else:
+         print "INVALID CELL ID: " + str(cellid) + " COORDINATES: " + str(point_coordinates)
+
+   def __picker_callback_cell( self, picker ):
+      """ This gets called when clicking on a cell
+      """
+      cellid = picker.cell_id + 1
+      if cellid > 0:
+         print "CELL ID: " + str(cellid)
+         self.__generate_velocity_grid(cellid)
+      else:
+         print "INVALID CELL ID: " + str(cellid)
    
-   def __generate_grid( self, mins, lengths, cells, datas, names ):
+   def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
       ''' Generates a grid from given data
           :param mins           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
-          :param lengths        An array of cell lengths (the cell's lengths in x, y, z direction)
+          :param maxs           An array of maximum coordinates for the grid for ex. [-100, 0, 0]
           :param cells          An array of number of cells in x, y, z direction
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
@@ -43,11 +56,7 @@ class MayaviPlots:
       figure.scene.disable_render = True
       self.__engine = mayavi.mlab.get_engine()
       # Create nodes
-      x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
-      # Cell coordinates:
-      x2 = 0.1*0.5 + np.arange(4)/4.0*0.1
-      y2 = 0.1*0.5 + np.arange(4)/4.0*0.1
-      z2 = 0.1*2.0/5.0*0.5 + np.arange(1)
+      x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
       
       # Create points for the nodes:
       pts = empty(z.shape + (3,), dtype=float)
@@ -75,15 +84,16 @@ class MayaviPlots:
       sg = tvtk.StructuredGrid(dimensions=x.shape, points=pts)
       sg.cell_data.scalars = ravel(scalars.copy())
       sg.cell_data.scalars.name = names
-      #sg.point_data.vectors = vectors
-      #sg.point_data.vectors.name = 'velocity'
       
       
       # Visualize the data
       d = mayavi.mlab.pipeline.add_dataset(sg)
       iso = mayavi.mlab.pipeline.surface(d)
-      picker = figure.on_mouse_pick( self.__picker_callback, type='cell' )
-      picker.tolerance = 0
+      if pickertype == "world":
+         picker = figure.on_mouse_pick( self.__picker_callback_world, type='world' )
+      elif pickertype == "cell":
+         picker = figure.on_mouse_pick( self.__picker_callback_cell, type='cell' )
+         picker.tolerance = 0
       #iso.contour.maximum_contour = 75.0
       #vec = mayavi.mlab.pipeline.vectors(d)
       #vec.glyph.mask_input_points = True
@@ -130,7 +140,7 @@ class MayaviPlots:
       return True
 
 
-   def load_grid( self, variable ):
+   def load_grid( self, variable, pickertype="cell" ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
       '''
@@ -138,7 +148,6 @@ class MayaviPlots:
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
       cells = np.array([self.__vlsvReader.read_parameter("xcells_ini"), self.__vlsvReader.read_parameter("ycells_ini"), self.__vlsvReader.read_parameter("zcells_ini")])
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
-      lengths = (maxs - mins) / cells.astype(float)
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
       variable_array = self.__vlsvReader.read_variables( name=variable )
@@ -150,8 +159,7 @@ class MayaviPlots:
       for i in sorted_index_for_cellid_dict:
          variable_array_sorted.append(variable_array[i[1]])
       # Draw the grid:
-      self.__generate_grid( mins=mins, lengths=lengths, cells=cells, datas=variable_array_sorted, names=variable )
-
+      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable, pickertype=pickertype )
 
 
 
