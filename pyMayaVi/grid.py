@@ -47,8 +47,8 @@ class MayaviPlots(HasTraits):
       HasTraits.__init__(self, **traits)
       print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
-      self.engine_view = engine_view = EngineView(engine=self.scene.engine)
-      self.__engine = 0
+      self.engine_view = EngineView(engine=self.scene.engine)
+      self.__engine = self.scene.engine
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -67,9 +67,6 @@ class MayaviPlots(HasTraits):
           :param names          Name for the scalar data
       '''
       self.figure = self.scene.mlab.gcf()
-      #mayavi.mlab.clf()
-      #figure.scene.disable_render = True
-      #self.__engine = mayavi.mlab.get_engine()
       # Create nodes
       x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
       # Cell coordinates:
@@ -85,50 +82,25 @@ class MayaviPlots(HasTraits):
       
       # Input scalars
       scalars = np.array(datas)
-      # Input vectors
-      #vectors = empty(z.shape + (3,), dtype=float)
-      #vectors[...,0] = (4 - y*2)
-      #vectors[...,1] = (x*3 - 12)
-      #vectors[...,2] = sin(z*pi)
       
       # We reorder the points, scalars and vectors so this is as per VTK's
       # requirement of x first, y next and z last.
       pts = pts.transpose(2, 1, 0, 3).copy()
       pts.shape = pts.size/3, 3
       scalars = scalars.T.copy()
-      #vectors = vectors.transpose(2, 1, 0, 3).copy()
-      #vectors.shape = vectors.size/3, 3
       
       # Create the dataset.
       sg = tvtk.StructuredGrid(dimensions=x.shape, points=pts)
       sg.cell_data.scalars = ravel(scalars.copy())
       sg.cell_data.scalars.name = names
-      #sg.point_data.vectors = vectors
-      #sg.point_data.vectors.name = 'velocity'
       
       
       # Visualize the data
       d = self.scene.mlab.pipeline.add_dataset(sg)
       iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
 
-      #self.scene.add_trait('on_mouse_pick', self.__picker_callback)
-
-      #iso.contour.maximum_contour = 75.0
-      #vec = mayavi.mlab.pipeline.vectors(d)
-      #vec.glyph.mask_input_points = True
-      #vec.glyph.glyph.scale_factor = 1.5
-      #figure.scene.disable_render = False
-      #mayavi.mlab.show()
-
-      # Get the figure:
-      
-
       # Configure traits
       self.configure_traits()
-      #picker = figure.on_mouse_pick( self.__picker_callback, type='cell' )
-      #picker.tolerance = 0
-
-
       
 
    def __generate_velocity_grid( self, cellid ):
