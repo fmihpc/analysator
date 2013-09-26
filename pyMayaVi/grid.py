@@ -37,14 +37,16 @@ class MayaviPlots(HasTraits):
 
    # Define the view:
    view = View(
-                Item('scene', editor=SceneEditor(scene_class=MayaviScene),
-                   height=250, width=300, show_label=False, resizable=True),
                 HGroup(
-                   'cell_pick',
-                   'test_attribute2',
-                   show_labels=False
+                   Item('scene', editor=SceneEditor(scene_class=MayaviScene),
+                      height=250, width=300, show_label=False, resizable=True),
+                   Group(
+                      'cell_pick',
+                      'test_attribute2',
+                      show_labels=False
+                   ),
                 ),
-                resizable=True
+                resizable=True,
             )
 
 
@@ -55,6 +57,7 @@ class MayaviPlots(HasTraits):
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
       self.__pick_mode = True
+      self.__picker = []
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -124,7 +127,6 @@ class MayaviPlots(HasTraits):
       mayavi.mlab.set_engine(self.__engine)
       # Create a new figure
       figure = mayavi.mlab.gcf(engine=self.__engine)
-      #mayavi.mlab.clf()
       figure.scene.disable_render = True
       blocks = blocksAndAvgs[0]
       avgs = blocksAndAvgs[1]
@@ -153,12 +155,15 @@ class MayaviPlots(HasTraits):
    # Trait events:
    @on_trait_change('scene.activated')
    def set_mouse_click( self ):
-      self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
+      # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
+      self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
+      # Cell picker
+      self.__picker = self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
 
    @on_trait_change('cell_pick')
    def switch_cell_pick(self):
       if self.__pick_mode == True:
-         self.figure.on_mouse_pick( self.__picker_callback, remove=True )
+         self.figure.on_mouse_pick( self.__picker_callback, type='cell', remove=True )
          self.__pick_mode = False
          print "Turning cell pick off"
       else:
