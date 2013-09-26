@@ -21,12 +21,10 @@ def SigHandler(SIG, FRM):
     return
 signal.signal(signal.SIGINT, SigHandler)
 
-
 class MayaviPlots(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   cell_pick = Button('cell_pick')
-   test_attribute2 = Button('test2')
+   picker = Enum('None', 'Cell')
 
 
    scene = Instance(MlabSceneModel, ())
@@ -41,8 +39,8 @@ class MayaviPlots(HasTraits):
                    Item('scene', editor=SceneEditor(scene_class=MayaviScene),
                       height=250, width=300, show_label=False, resizable=True),
                    Group(
-                      'cell_pick',
-                      'test_attribute2',
+                      #'cell_pick',
+                      'picker',
                       show_labels=False
                    ),
                 ),
@@ -56,7 +54,6 @@ class MayaviPlots(HasTraits):
       self.__vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
-      self.__pick_mode = True
       self.__picker = []
 
    def __picker_callback( self, picker ):
@@ -156,20 +153,34 @@ class MayaviPlots(HasTraits):
    @on_trait_change('scene.activated')
    def set_mouse_click( self ):
       # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
-      self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
+      #self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
       # Cell picker
-      self.__picker = self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
+      func = self.__do_nothing
+      typeid = 'cell'
+      click = 'Left'
+      picker = self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
+      self.__picker = [func, typeid, click]
+      picker.tolerance = 0
 
-   @on_trait_change('cell_pick')
+   @on_trait_change('picker')
    def switch_cell_pick(self):
-      if self.__pick_mode == True:
-         self.figure.on_mouse_pick( self.__picker_callback, type='cell', remove=True )
-         self.__pick_mode = False
-         print "Turning cell pick off"
+      if self.picker == "Cell":
+         func = self.__picker_callback
+         typeid = 'cell'
+         click = 'Left'
+         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
+         pick.tolerance = 0
+      elif self.picker == "None":
+         func = self.__do_nothing
+         typeid = 'cell'
+         click = 'Left'
+         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
       else:
-         self.figure.on_mouse_pick( self.__picker_callback, type='cell' )
-         self.__pick_mode = True
-         print "Turning cell pick on"
+         return
+      # Remove the old picker
+      self.figure.on_mouse_pick( self.__picker[0], type=self.__picker[1], button=self.__picker[2], remove=True )
+      # Put the current picker as the active picker:
+      self.__picker = [func, typeid, click]
 
    def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
