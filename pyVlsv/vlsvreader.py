@@ -782,12 +782,13 @@ class VlsvFile(object):
       nodesPerBlock = (int)(nodesPerDirection * nodesPerDirection * nodesPerDirection)
 
       # Next create node  indices for the cells
-      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesX)
-      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesY)
-      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesZ)
+      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesX).astype(np.uint32)
+      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesY).astype(np.uint32)
+      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesZ).astype(np.uint32)
 
       #DEBUG MEMORY USE
       print str(globalCellIndicesX.nbytes)
+      print str(max(globalCellIndicesX))
 
       globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ])
       globalCellIndices = np.transpose(globalCellIndices)
