@@ -781,25 +781,25 @@ class VlsvFile(object):
 
       nodesPerBlock = (int)(nodesPerDirection * nodesPerDirection * nodesPerDirection)
 
-      # Next create node  indices for the cells
-      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesX)
-      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesY)
-      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesZ)
-
-      #DEBUG MEMORY USE
-      print str(globalCellIndicesX.nbytes)
-      print str(max(globalCellIndicesX))
-      print str(max(globalCellIndicesY))
-      print str(max(globalCellIndicesZ))
-
-      globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
-      globalCellIndices = np.transpose(globalCellIndices)
+      def calc_global_cell_indices( blockIndicesX, blockIndicesY, blockIndicesZ, cellNodeIndicesX, cellNodeIndicesY, cellNodeIndicesZ, cellsPerBlock, nodesPerCell, cellsPerDirection ):
+         # Next create node  indices for the cells
+         globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesX)
+         globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesY)
+         globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesZ)
+   
+         #DEBUG MEMORY USE
+         print str(globalCellIndicesX.nbytes)
+         print str(max(globalCellIndicesX))
+         print str(max(globalCellIndicesY))
+         print str(max(globalCellIndicesZ))
+   
+         globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
+         globalCellIndices = np.transpose(globalCellIndices)
+         return globalCellIndices
+      globalCellIndices = calc_global_cell_indices( blockIndicesX, blockIndicesY, blockIndicesZ, cellNodeIndicesX, cellNodeIndicesY, cellNodeIndicesZ, cellsPerBlock, nodesPerCell, cellsPerDirection )
       #DEBUG MEMORY USE
       print str(globalCellIndices.nbytes)
       globalCellIndices = globalCellIndices.astype(np.uint16)
-      del globalCellIndicesX
-      del globalCellIndicesY
-      del globalCellIndicesZ
       #DEBUG MEMORY USE
       print str(globalCellIndices.nbytes)
 
@@ -808,19 +808,21 @@ class VlsvFile(object):
       # Put the indices into keys:
       cellKeys = globalCellIndices
       # Transform into keys
-
       cellKeys = np.sum(cellKeys * np.array([1, cellsPerDirection*self.__vxblocks+1, (cellsPerDirection*self.__vxblocks+1)*(cellsPerDirection*self.__vyblocks+1)]), axis=1)
 
       #DEBUG MEMORY USE
       print str(cellKeys.nbytes)
 
-      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,0])
-      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,1])
-      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,2])
-      print str(nodeIndicesX.nbytes)
-
-
-      nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
+      def calculate_node_indices( blockIndicesX, blockIndicesY, blockIndicesZ, nodeIndices_local, nodesPerBlock, cellsPerDirection ):
+         nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,0])
+         nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,1])
+         nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,2])
+         print str(nodeIndicesX.nbytes)
+   
+   
+         nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
+         return nodeIndices
+      nodeIndices = calculate_node_indices( blockIndicesX, blockIndicesY, blockIndicesZ, nodeIndices_local, nodesPerBlock, cellsPerDirection )
       # DEBUG MEMORY USE
       print str(nodeIndices.nbytes)
 
@@ -845,7 +847,6 @@ class VlsvFile(object):
 
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
-      nodeIndices = nodeIndices.astype(np.uint64)
       nodeCoordinatesX = np.remainder(nodeIndices, (int)(cellsPerDirection*self.__vxblocks+1)).astype(np.float32) * self.__dvx + self.__vxmin
       nodeCoordinatesY = np.remainder(nodeIndices/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1).astype(np.float32) * self.__dvy + self.__vymin
       nodeCoordinatesZ = ( nodeIndices / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(np.float32) * self.__dvz + self.__vzmin
