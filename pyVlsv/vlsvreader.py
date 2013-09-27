@@ -799,6 +799,10 @@ class VlsvFile(object):
       del globalCellIndicesX
       del globalCellIndicesY
       del globalCellIndicesZ
+      globalCellIndices = globalCellIndices.astype(np.uint32)
+      #DEBUG MEMORY USE
+      print str(globalCellIndices.nbytes)
+
 
 
       # Put the indices into keys:
