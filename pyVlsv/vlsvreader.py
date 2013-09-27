@@ -777,23 +777,28 @@ class VlsvFile(object):
          for j in xrange(nodesPerDirection):
             for k in xrange(nodesPerDirection):
                nodeIndices_local.append(np.array([i,j,k]))
-      nodeIndices_local = np.array(nodeIndices_local)
+      nodeIndices_local = np.array(nodeIndices_local).astype(np.uint32)
 
       nodesPerBlock = (int)(nodesPerDirection * nodesPerDirection * nodesPerDirection)
 
       # Next create node  indices for the cells
-      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesX).astype(np.uint32)
-      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesY).astype(np.uint32)
-      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(int)) * cellsPerDirection + cellNodeIndicesZ).astype(np.uint32)
+      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesX)
+      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesY)
+      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesZ)
 
       #DEBUG MEMORY USE
       print str(globalCellIndicesX.nbytes)
       print str(max(globalCellIndicesX))
+      print str(max(globalCellIndicesY))
+      print str(max(globalCellIndicesZ))
 
       globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ])
       globalCellIndices = np.transpose(globalCellIndices)
       #DEBUG MEMORY USE
       print str(globalCellIndices.nbytes)
+      del globalCellIndicesX
+      del globalCellIndicesY
+      del globalCellIndicesZ
 
 
       # Put the indices into keys:
@@ -805,9 +810,10 @@ class VlsvFile(object):
       #DEBUG MEMORY USE
       print str(cellKeys.nbytes)
 
-      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(int)) * cellsPerDirection + nodeIndices_local[:,0])
-      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(int)) * cellsPerDirection + nodeIndices_local[:,1])
-      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(int)) * cellsPerDirection + nodeIndices_local[:,2])
+      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,0])
+      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,1])
+      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,2])
+      print str(nodeIndicesX.nbytes)
 
 
       nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ]))
