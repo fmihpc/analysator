@@ -746,27 +746,27 @@ class VlsvFile(object):
       '''
       blocks = np.array(blocks)
       # Get block coordinates:
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks)).astype(np.uint32)
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks)).astype(np.uint32)
-      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__vxblocks*self.__vyblocks)).astype(np.uint32)
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks)).astype(np.uint16)
+      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks)).astype(np.uint16)
+      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__vxblocks*self.__vyblocks)).astype(np.uint16)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
 
       # Get velocity cell min coordinates (per velocity block)
       vcellids = np.arange(cellsPerBlock).astype(np.uint32)
-      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint32)
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint32)
-      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint32)
+      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint16)
+      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
+      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
       nodesPerCell = 8
 
       # NOTE: The ordering of the numpy array won't make sense to anyone who hasn't read VTK documentation. For further info check VTK_VOXEL. The numpy array is constructed according to VTK voxel's nodes
-      cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1])).astype(np.uint32)
-      cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1])).astype(np.uint32)
-      cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1])).astype(np.uint32)
+      cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1])).astype(np.uint16)
+      cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1])).astype(np.uint16)
+      cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1])).astype(np.uint16)
       # DEBUG MEMORY USE
       print str(cellNodeIndicesX.nbytes)
 
@@ -777,14 +777,14 @@ class VlsvFile(object):
          for j in xrange(nodesPerDirection):
             for k in xrange(nodesPerDirection):
                nodeIndices_local.append(np.array([i,j,k]))
-      nodeIndices_local = np.array(nodeIndices_local).astype(np.uint32)
+      nodeIndices_local = np.array(nodeIndices_local).astype(np.uint16)
 
       nodesPerBlock = (int)(nodesPerDirection * nodesPerDirection * nodesPerDirection)
 
       # Next create node  indices for the cells
-      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesX)
-      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesY)
-      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint32)) * cellsPerDirection + cellNodeIndicesZ)
+      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesX)
+      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesY)
+      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesZ)
 
       #DEBUG MEMORY USE
       print str(globalCellIndicesX.nbytes)
@@ -792,14 +792,14 @@ class VlsvFile(object):
       print str(max(globalCellIndicesY))
       print str(max(globalCellIndicesZ))
 
-      globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ])
+      globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
       globalCellIndices = np.transpose(globalCellIndices)
       #DEBUG MEMORY USE
       print str(globalCellIndices.nbytes)
+      globalCellIndices = globalCellIndices.astype(np.uint16)
       del globalCellIndicesX
       del globalCellIndicesY
       del globalCellIndicesZ
-      globalCellIndices = globalCellIndices.astype(np.uint32)
       #DEBUG MEMORY USE
       print str(globalCellIndices.nbytes)
 
@@ -814,13 +814,13 @@ class VlsvFile(object):
       #DEBUG MEMORY USE
       print str(cellKeys.nbytes)
 
-      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,0])
-      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,1])
-      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint32)) * cellsPerDirection + nodeIndices_local[:,2])
+      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,0])
+      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,1])
+      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,2])
       print str(nodeIndicesX.nbytes)
 
 
-      nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ]))
+      nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
       # DEBUG MEMORY USE
       print str(nodeIndices.nbytes)
 
@@ -845,15 +845,16 @@ class VlsvFile(object):
 
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
-      nodeCoordinatesX = np.remainder(nodeIndices, cellsPerDirection*self.__vxblocks+1) * self.__dvx + self.__vxmin
-      nodeCoordinatesY = np.remainder(nodeIndices.astype(int)/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1) * self.__dvy + self.__vymin
-      nodeCoordinatesZ = ( nodeIndices.astype(int) / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(float) * self.__dvz + self.__vzmin
+      nodeIndices = nodeIndices.astype(np.uint64)
+      nodeCoordinatesX = np.remainder(nodeIndices, (int)(cellsPerDirection*self.__vxblocks+1)).astype(np.float32) * self.__dvx + self.__vxmin
+      nodeCoordinatesY = np.remainder(nodeIndices/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1).astype(np.float32) * self.__dvy + self.__vymin
+      nodeCoordinatesZ = ( nodeIndices / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(np.float32) * self.__dvz + self.__vzmin
       del nodeIndices
 
       #DEBUG MEMORY USE
       print str(nodeCoordinatesX.nbytes)
 
-      nodes = np.array([nodeCoordinatesX, nodeCoordinatesY, nodeCoordinatesZ])
+      nodes = np.array([nodeCoordinatesX, nodeCoordinatesY, nodeCoordinatesZ], copy=False)
       nodes = np.transpose(nodes)
 
       #DEBUG MEMORY USE
