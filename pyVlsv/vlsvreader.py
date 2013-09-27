@@ -748,7 +748,7 @@ class VlsvFile(object):
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks)).astype(np.uint32)
       blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks)).astype(np.uint32)
-      blockIndicesZ = blocks.astype(int)/(int)(self.__vxblocks*self.__vyblocks).astype(np.uint32)
+      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__vxblocks*self.__vyblocks)).astype(np.uint32)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
