@@ -2,6 +2,7 @@
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
 from tvtk.api import tvtk
+import traits.api
 import mayavi.api
 import mayavi.mlab
 import numpy as np
@@ -21,6 +22,8 @@ class MayaviPlots:
       print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
       self.__engine = 0
+      self.__structured_figures = []
+      self.__unstructured_figures = []
 
    def __picker_callback_world( self, picker ):
       """ This gets called when clicking on a cell
@@ -99,7 +102,10 @@ class MayaviPlots:
       #vec.glyph.mask_input_points = True
       #vec.glyph.glyph.scale_factor = 1.5
       figure.scene.disable_render = False
-      mayavi.mlab.show()
+      #figure.add_trait("button", traits.api.ToolbarButton("button"))
+      self.__structured_figures.append(figure)
+      figure.configure_traits()
+      #mayavi.mlab.show()
 
    def __generate_velocity_grid( self, cellid ):
       '''Generates a velocity grid from a given spatial cell id
@@ -137,6 +143,7 @@ class MayaviPlots:
       d = mayavi.mlab.pipeline.add_dataset(ug)
       iso = mayavi.mlab.pipeline.surface(d)
       figure.scene.disable_render = False
+      self.__unstructured_figures.append(figure)
       return True
 
 

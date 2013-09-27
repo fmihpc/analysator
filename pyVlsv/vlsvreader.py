@@ -753,26 +753,27 @@ class VlsvFile(object):
       cellsPerDirection = 4
       cellsPerBlock = 64
 
-      blockCoordinatesX = blockIndicesX.astype(float) * self.__dvx * cellsPerDirection + self.__vxmin
-      blockCoordinatesY = blockIndicesY.astype(float) * self.__dvy * cellsPerDirection + self.__vymin
-      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__dvz * cellsPerDirection + self.__vzmin
+#      blockCoordinatesX = blockIndicesX.astype(float) * self.__dvx * cellsPerDirection + self.__vxmin
+#      blockCoordinatesY = blockIndicesY.astype(float) * self.__dvy * cellsPerDirection + self.__vymin
+#      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__dvz * cellsPerDirection + self.__vzmin
       # Get velocity cell min coordinates (per velocity block)
       vcellids = np.arange(cellsPerBlock)
-      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection))
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection))
-      cellIndicesZ = vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)
-      minCellCoordinatesX = cellIndicesX.astype(float) * (float)(self.__dvx)
-      minCellCoordinatesY = cellIndicesY.astype(float) * (float)(self.__dvy)
-      minCellCoordinatesZ = cellIndicesZ.astype(float) * (float)(self.__dvz)
+#      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection))
+#      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection))
+#      cellIndicesZ = vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)
+#      minCellCoordinatesX = cellIndicesX.astype(float) * (float)(self.__dvx)
+#      minCellCoordinatesY = cellIndicesY.astype(float) * (float)(self.__dvy)
+#      minCellCoordinatesZ = cellIndicesZ.astype(float) * (float)(self.__dvz)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
       nodesPerCell = 8
 
       # NOTE: The ordering of the numpy array won't make sense to anyone who hasn't read VTK documentation. For further info check VTK_VOXEL. The numpy array is constructed according to VTK voxel's nodes
-      cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1]).astype(int))
-      cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1]).astype(int))
-      cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1]).astype(int))
+      cellNodeIndicesX = np.ravel(np.outer(np.remainder(vcellids.astype(int), (int)(cellsPerDirection)), np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1]).astype(int))
+      cellNodeIndicesY = np.ravel(np.outer(np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)), np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1]).astype(int))
+      cellNodeIndicesZ = np.ravel(np.outer(vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection), np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1]).astype(int))
+      del vcellids
 
       nodeIndices_local = []
       nodesPerDirection = 5
@@ -785,12 +786,13 @@ class VlsvFile(object):
 
       nodesPerBlock = (int)(nodesPerDirection * nodesPerDirection * nodesPerDirection)
 
-      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,0])
-      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,1])
-      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,2])
+#      nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,0])
+#      nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,1])
+#      nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,2])
 
 
-      nodeIndices = np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ]).transpose().astype(int)
+      nodeIndices = np.array([np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,0]), np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,1]), np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock)) * cellsPerDirection + nodeIndices_local[:,2])]).transpose().astype(int)
+
 
       # Put the node indices into keys:
       #NOTE: Maybe I should change the name of the node indices at this point to avoid confusion?
@@ -800,16 +802,18 @@ class VlsvFile(object):
       nodeIndices = np.unique(nodeIndices) #We now have all of the nodes in a list!
 
       # Next create node  indices for the cells
-      globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesX)
-      globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesY)
-      globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesZ)
+      #globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesX)
+      #globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesY)
+      #globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesZ)
 
-      globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ]).transpose().astype(int)
+      globalCellIndices = np.array([np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesX), np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesY), np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell)) * cellsPerDirection + cellNodeIndicesZ)]).transpose().astype(int)
+      del blockIndicesX
+      del blockIndicesY
+      del blockIndicesZ
 
       # Put the indices into keys:
       cellKeys = globalCellIndices
       # Transform into keys
-
       cellKeys = np.sum(cellKeys * np.array([1, cellsPerDirection*self.__vxblocks+1, (cellsPerDirection*self.__vxblocks+1)*(cellsPerDirection*self.__vyblocks+1)]), axis=1).astype(int)
       # Get the proper indexes with the keys
       cellKeys = np.searchsorted(nodeIndices, cellKeys).astype(int)
@@ -819,11 +823,13 @@ class VlsvFile(object):
 
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
-      nodeCoordinatesX = np.remainder(nodeIndices, cellsPerDirection*self.__vxblocks+1) * self.__dvx + self.__vxmin
-      nodeCoordinatesY = np.remainder(nodeIndices.astype(int)/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1) * self.__dvy + self.__vymin
-      nodeCoordinatesZ = ( nodeIndices.astype(int) / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(float) * self.__dvz + self.__vzmin
+#      nodeCoordinatesX = np.remainder(nodeIndices, cellsPerDirection*self.__vxblocks+1) * self.__dvx + self.__vxmin
+#      nodeCoordinatesY = np.remainder(nodeIndices.astype(int)/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1) * self.__dvy + self.__vymin
+#      nodeCoordinatesZ = ( nodeIndices.astype(int) / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(float) * self.__dvz + self.__vzmin
 
-      nodes = np.array([nodeCoordinatesX, nodeCoordinatesY, nodeCoordinatesZ]).transpose()
+      nodes = np.array([np.remainder(nodeIndices, cellsPerDirection*self.__vxblocks+1) * self.__dvx + self.__vxmin, 
+                        np.remainder(nodeIndices.astype(int)/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1) * self.__dvy + self.__vymin, 
+                        ( nodeIndices.astype(int) / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(float) * self.__dvz + self.__vzmin]).transpose()
 
       return [nodes, cellKeys]
 
