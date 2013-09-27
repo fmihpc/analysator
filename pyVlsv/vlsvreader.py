@@ -757,7 +757,7 @@ class VlsvFile(object):
       vcellids = np.arange(cellsPerBlock).astype(np.uint32)
       cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint32)
       cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint32)
-      cellIndicesZ = vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection).astype(np.uint32)
+      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint32)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
