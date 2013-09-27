@@ -831,7 +831,6 @@ class VlsvFile(object):
       nodeIndices = np.sum(nodeIndices * np.array([1, cellsPerDirection*self.__vxblocks+1, (cellsPerDirection*self.__vxblocks+1)*(cellsPerDirection*self.__vyblocks+1)]), axis=1)
       # DEBUG MEMORY USE
       print str(nodeIndices.nbytes)
-      print str(nodeIndicesX.nbytes)
 
 
       # Delete duplicate nodes and sort the list:
