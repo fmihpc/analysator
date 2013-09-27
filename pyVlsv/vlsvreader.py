@@ -746,27 +746,27 @@ class VlsvFile(object):
       '''
       blocks = np.array(blocks)
       # Get block coordinates:
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks)).astype(uint32)
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks)).astype(uint32)
-      blockIndicesZ = blocks.astype(int)/(int)(self.__vxblocks*self.__vyblocks).astype(uint32)
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks)).astype(np.uint32)
+      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks)).astype(np.uint32)
+      blockIndicesZ = blocks.astype(int)/(int)(self.__vxblocks*self.__vyblocks).astype(np.uint32)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
 
       # Get velocity cell min coordinates (per velocity block)
-      vcellids = np.arange(cellsPerBlock).astype(uint32)
-      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(uint32)
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(uint32)
-      cellIndicesZ = vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection).astype(uint32)
+      vcellids = np.arange(cellsPerBlock).astype(np.uint32)
+      cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint32)
+      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint32)
+      cellIndicesZ = vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection).astype(np.uint32)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
       nodesPerCell = 8
 
       # NOTE: The ordering of the numpy array won't make sense to anyone who hasn't read VTK documentation. For further info check VTK_VOXEL. The numpy array is constructed according to VTK voxel's nodes
-      cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1])).astype(uint32, copy=False)
-      cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1])).astype(uint32, copy=False)
-      cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1])).astype(uint32, copy=False)
+      cellNodeIndicesX = np.ravel(np.outer(cellIndicesX, np.ones(nodesPerCell)) + np.array([0, 1, 0, 1, 0, 1, 0, 1])).astype(np.uint32)
+      cellNodeIndicesY = np.ravel(np.outer(cellIndicesY, np.ones(nodesPerCell)) + np.array([0, 0, 1, 1, 0, 0, 1, 1])).astype(np.uint32)
+      cellNodeIndicesZ = np.ravel(np.outer(cellIndicesZ, np.ones(nodesPerCell)) + np.array([0, 0, 0, 0, 1, 1, 1, 1])).astype(np.uint32)
       # DEBUG MEMORY USE
       print str(cellNodeIndicesX.nbytes)
 
