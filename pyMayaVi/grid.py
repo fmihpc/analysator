@@ -27,6 +27,9 @@ class MayaviPlots(HasTraits):
    '''
    picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
 
+   args = ""
+
+   cut_through = []
 
    scene = Instance(MlabSceneModel, ())
 
@@ -42,7 +45,8 @@ class MayaviPlots(HasTraits):
                    Group(
                       #'cell_pick',
                       'picker',
-                      show_labels=False
+                      'args',
+                      show_labels=True
                    ),
                 ),
                 resizable=True,
@@ -58,6 +62,7 @@ class MayaviPlots(HasTraits):
       self.__picker = []
       self.__mins = []
       self.__maxs = []
+      self.__last_pick = []
 
 #   def __picker_callback( self, picker ):
 #      """ This gets called when clicking on a cell
@@ -69,6 +74,10 @@ class MayaviPlots(HasTraits):
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
       """
+      if (self.picker != "Cut_through"):
+         # Make sure the last pick is null (used in cut_through)
+         self.__last_pick = []
+
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
       for i in xrange(3):
@@ -81,6 +90,11 @@ class MayaviPlots(HasTraits):
       print "COORDINATES:" + str(coordinates)
       cellid = self.__vlsvReader.get_cellid(coordinates)
       print "CELL ID: " + str(cellid)
+      # Check for an invalid cell id
+      if cellid == 0:
+         print "Invalid cell id"
+         return
+
       if (self.picker == "Velocity_space"):
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Pitch_angle"):
@@ -90,7 +104,41 @@ class MayaviPlots(HasTraits):
          # plot:
          pl.hist(result[0].data, weights=result[1].data, bins=80, log=False)
          pl.show()
-
+      elif (self.picker == "Cut_through"):
+         if len(self.__last_pick) == 3:
+            from cutthrough import cut_through
+            # Get a cut-through
+            self.cut_through = cut_through( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
+            # Get cell ids and distances separately
+            cellids = self.cut_through[0].data
+            distances = self.cut_through[1]
+            # Get any arguments from the user:
+            args = self.args.split()
+            if len(args) == 0:
+               #Do nothing
+               print "Bad args"
+               self.__last_pick = []
+               return
+            plotCut = False
+            # Optimize file read:
+            self.__vlsvReader.optimize_open_file()
+            variables = []
+            # Save variables
+            for i in xrange(len(args)):
+               # Check if the user has given the plot argument
+               if args[i] == "plot":
+                  plotCut = True
+               else:
+                  # Read the variables:
+                  variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
+            if plotCut == True:
+               from plots import plot_multiple_variables
+               fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
+               pl.show()
+            # Read in the necessary variables:
+            self.__last_pick = []
+         else:
+            self.__last_pick = coordinates
    
    def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
       ''' Generates a grid from given data
@@ -184,10 +232,10 @@ class MayaviPlots(HasTraits):
       # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
       #self.figure.on_mouse_pick( self.__do_nothing, type='world' )
       # Cell picker
-      func = self.__do_nothing
+      func = self.__picker_callback
       typeid = 'world'
       click = 'Left'
-      picker = self.figure.on_mouse_pick( self.__do_nothing, type='world' )
+      picker = self.figure.on_mouse_pick( func, type='world' )
       self.__picker = [func, typeid, click]
       #picker.tolerance = 0
       # Show legend bar
@@ -195,24 +243,25 @@ class MayaviPlots(HasTraits):
       manager.scalar_lut_manager.show_scalar_bar = True
       manager.scalar_lut_manager.show_legend = True
 
-   @on_trait_change('picker')
-   def switch_cell_pick(self):
-      if (self.picker == "Velocity_space") or (self.picker == "Pitch_angle"):
-         func = self.__picker_callback
-         typeid = 'world'
-         click = 'Left'
-         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
-      elif self.picker == "None":
-         func = self.__do_nothing
-         typeid = 'world'
-         click = 'Left'
-         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
-      else:
-         return
-      # Remove the old picker
-      self.figure.on_mouse_pick( self.__picker[0], type=self.__picker[1], button=self.__picker[2], remove=True )
-      # Put the current picker as the active picker:
-      self.__picker = [func, typeid, click]
+   # This is currently not needed - might need it in the future
+#   @on_trait_change('picker')
+#   def switch_cell_pick(self):
+#      if (self.picker == "Velocity_space") or (self.picker == "Pitch_angle"):
+#         func = self.__picker_callback
+#         typeid = 'world'
+#         click = 'Left'
+#         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
+#      elif self.picker == "None":
+#         func = self.__do_nothing
+#         typeid = 'world'
+#         click = 'Left'
+#         pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
+#      else:
+#         return
+#      # Remove the old picker
+#      self.figure.on_mouse_pick( self.__picker[0], type=self.__picker[1], button=self.__picker[2], remove=True )
+#      # Put the current picker as the active picker:
+#      self.__picker = [func, typeid, click]
 
    def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
