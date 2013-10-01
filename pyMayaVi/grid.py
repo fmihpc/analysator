@@ -9,6 +9,7 @@ from mayavi.tools.mlab_scene_model import \
 from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
+import pylab as pl
 from tvtk.api import tvtk
 import mayavi.api
 import mayavi.mlab
@@ -24,7 +25,7 @@ signal.signal(signal.SIGINT, SigHandler)
 class MayaviPlots(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   picker = Enum('None', 'Cell')
+   picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
 
 
    scene = Instance(MlabSceneModel, ())
@@ -78,9 +79,17 @@ class MayaviPlots(HasTraits):
             # Correct the values
             coordinates[i] = self.__maxs[i] - 1
       print "COORDINATES:" + str(coordinates)
-      cell_id = self.__vlsvReader.get_cellid(coordinates)
-      print "CELL ID: " + str(cell_id)
-      self.__generate_velocity_grid(cell_id)
+      cellid = self.__vlsvReader.get_cellid(coordinates)
+      print "CELL ID: " + str(cellid)
+      if (self.picker == "Velocity_space"):
+         self.__generate_velocity_grid(cellid)
+      elif (self.picker == "Pitch_angle"):
+         # Plot pitch angle distribution:
+         from pitchangle import pitch_angles
+         result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
+         # plot:
+         pl.hist(result[0].data, weights=result[1].data, bins=80, log=False)
+         pl.show()
 
    
    def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
@@ -188,12 +197,11 @@ class MayaviPlots(HasTraits):
 
    @on_trait_change('picker')
    def switch_cell_pick(self):
-      if self.picker == "Cell":
+      if (self.picker == "Velocity_space") or (self.picker == "Pitch_angle"):
          func = self.__picker_callback
          typeid = 'world'
          click = 'Left'
          pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
-         #pick.tolerance = 0
       elif self.picker == "None":
          func = self.__do_nothing
          typeid = 'world'
