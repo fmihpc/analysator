@@ -161,6 +161,10 @@ class MayaviPlots(HasTraits):
       picker = self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
       self.__picker = [func, typeid, click]
       picker.tolerance = 0
+      # Show legend bar
+      manager = self.figure.children[0].children[0]
+      manager.scalar_lut_manager.show_scalar_bar = True
+      manager.scalar_lut_manager.show_legend = True
 
    @on_trait_change('picker')
    def switch_cell_pick(self):
