@@ -55,16 +55,35 @@ class MayaviPlots(HasTraits):
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
       self.__picker = []
+      self.__mins = []
+      self.__maxs = []
 
+#   def __picker_callback( self, picker ):
+#      """ This gets called when clicking on a cell
+#      """
+#      point_id = picker.cell_id
+#      print "CELL ID: " + str(point_id+1)
+#      # NOTE: In vlasiator cell ids start from 1, in mayavi they start from 0, hence the +1
+#      self.__generate_velocity_grid(point_id+1)
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
       """
-      point_id = picker.cell_id
-      print "CELL ID: " + str(point_id+1)
-      # NOTE: In vlasiator cell ids start from 1, in mayavi they start from 0, hence the +1
-      self.__generate_velocity_grid(point_id+1)
+      coordinates = picker.pick_position
+      coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
+      for i in xrange(3):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
+            # Correct the numberical inaccuracy
+            coordinates[i] = self.__mins[i] + 1
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
+            # Correct the values
+            coordinates[i] = self.__maxs[i] - 1
+      print "COORDINATES:" + str(coordinates)
+      cell_id = self.__vlsvReader.get_cellid(coordinates)
+      print "CELL ID: " + str(cell_id)
+      self.__generate_velocity_grid(cell_id)
+
    
-   def __generate_grid( self, mins, lengths, cells, datas, names ):
+   def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
       ''' Generates a grid from given data
           :param mins           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
           :param lengths        An array of cell lengths (the cell's lengths in x, y, z direction)
@@ -74,7 +93,8 @@ class MayaviPlots(HasTraits):
       '''
       self.figure = self.scene.mlab.gcf()
       # Create nodes
-      x, y, z = mgrid[mins[0]:lengths[0]*(cells[0]+1):(cells[0]+1)*complex(0,1), mins[1]:lengths[1]*(cells[1]+1):(cells[1]+1)*complex(0,1), mins[2]:lengths[2]*(cells[2]+1):(cells[2]+1)*complex(0,1)]
+      x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
+
       # Cell coordinates:
       x2 = 0.1*0.5 + np.arange(4)/4.0*0.1
       y2 = 0.1*0.5 + np.arange(4)/4.0*0.1
@@ -153,14 +173,14 @@ class MayaviPlots(HasTraits):
    @on_trait_change('scene.activated')
    def set_mouse_click( self ):
       # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
-      #self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
+      #self.figure.on_mouse_pick( self.__do_nothing, type='world' )
       # Cell picker
       func = self.__do_nothing
-      typeid = 'cell'
+      typeid = 'world'
       click = 'Left'
-      picker = self.figure.on_mouse_pick( self.__do_nothing, type='cell' )
+      picker = self.figure.on_mouse_pick( self.__do_nothing, type='world' )
       self.__picker = [func, typeid, click]
-      picker.tolerance = 0
+      #picker.tolerance = 0
       # Show legend bar
       manager = self.figure.children[0].children[0]
       manager.scalar_lut_manager.show_scalar_bar = True
@@ -170,13 +190,13 @@ class MayaviPlots(HasTraits):
    def switch_cell_pick(self):
       if self.picker == "Cell":
          func = self.__picker_callback
-         typeid = 'cell'
+         typeid = 'world'
          click = 'Left'
          pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
-         pick.tolerance = 0
+         #pick.tolerance = 0
       elif self.picker == "None":
          func = self.__do_nothing
-         typeid = 'cell'
+         typeid = 'world'
          click = 'Left'
          pick = self.figure.on_mouse_pick( func, type=typeid, button=click )
       else:
@@ -194,7 +214,6 @@ class MayaviPlots(HasTraits):
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
       cells = np.array([self.__vlsvReader.read_parameter("xcells_ini"), self.__vlsvReader.read_parameter("ycells_ini"), self.__vlsvReader.read_parameter("zcells_ini")])
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
-      lengths = (maxs - mins) / cells.astype(float)
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
       variable_array = self.__vlsvReader.read_variables( name=variable )
@@ -205,8 +224,11 @@ class MayaviPlots(HasTraits):
       variable_array_sorted = []
       for i in sorted_index_for_cellid_dict:
          variable_array_sorted.append(variable_array[i[1]])
+      # Store the mins and maxs:
+      self.__mins = mins
+      self.__maxs = maxs
       # Draw the grid:
-      self.__generate_grid( mins=mins, lengths=lengths, cells=cells, datas=variable_array_sorted, names=variable )
+      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
 
 
