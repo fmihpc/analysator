@@ -28,7 +28,7 @@ def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
    avgs = velocity_cell_data.values()
    # Get a list of velocity coordinates:
    if plasmaframe == True:
-      v = vlsvReader.get_velocity_cell_coordinates(vcellids) / bulk_velocity
+      v = vlsvReader.get_velocity_cell_coordinates(vcellids) - bulk_velocity
    else:
       v = vlsvReader.get_velocity_cell_coordinates(vcellids)
    # Get norms:
