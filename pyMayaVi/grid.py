@@ -102,7 +102,7 @@ class MayaviPlots(HasTraits):
          from pitchangle import pitch_angles
          result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
          # plot:
-         pl.hist(result[0].data, weights=result[1].data, bins=80, log=False)
+         pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
          pl.show()
       elif (self.picker == "Cut_through"):
          if len(self.__last_pick) == 3:
@@ -148,7 +148,6 @@ class MayaviPlots(HasTraits):
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
-      self.figure = self.scene.mlab.gcf()
       # Create nodes
       x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
 
@@ -198,7 +197,7 @@ class MayaviPlots(HasTraits):
          return False
       # Create a new scene
       self.__engine.new_scene()
-      mayavi.mlab.set_engine(self.__engine)
+      mayavi.mlab.set_engine(self.__engine)#CONTINUE
       # Create a new figure
       figure = mayavi.mlab.gcf(engine=self.__engine)
       figure.scene.disable_render = True
@@ -221,6 +220,8 @@ class MayaviPlots(HasTraits):
       d = mayavi.mlab.pipeline.add_dataset(ug)
       iso = mayavi.mlab.pipeline.surface(d)
       figure.scene.disable_render = False
+      # Name the figure
+      figure.name = str(cellid)
       return True
 
    def __do_nothing( self, picker ):
@@ -230,7 +231,8 @@ class MayaviPlots(HasTraits):
    @on_trait_change('scene.activated')
    def set_mouse_click( self ):
       # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
-      #self.figure.on_mouse_pick( self.__do_nothing, type='world' )
+      #self.figure.on_mouse_pick( self.__do_nothing, type='world' 
+      self.figure = self.scene.mlab.gcf()
       # Cell picker
       func = self.__picker_callback
       typeid = 'world'
