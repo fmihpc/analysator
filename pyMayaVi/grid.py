@@ -16,6 +16,7 @@ import mayavi.api
 import mayavi.mlab
 import numpy as np
 import signal
+import threading
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
@@ -66,6 +67,7 @@ class MayaviPlots(HasTraits):
       self.__last_pick = []
       self.__structured_figures = []
       self.__unstructured_figures = []
+      self.__thread = []
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -174,7 +176,8 @@ class MayaviPlots(HasTraits):
       iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
 
       # Configure traits
-      self.configure_traits()
+      self.__thread = threading.Thread(target=self.configure_traits, args=())
+      self.__thread.start()
       
 
    def __generate_velocity_grid( self, cellid ):
@@ -237,6 +240,10 @@ class MayaviPlots(HasTraits):
       manager = self.figure.children[0].children[0]
       manager.scalar_lut_manager.show_scalar_bar = True
       manager.scalar_lut_manager.show_legend = True
+
+   @on_trait_change('scene.closed')
+   def kill_thread( self ):
+      self.__thread.join()
 
 
    def load_grid( self, variable ):
