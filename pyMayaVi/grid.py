@@ -1,6 +1,15 @@
-
+from traits.api import HasTraits, Instance, Property, Button, Enum
+from mayavi.core.ui.engine_view import EngineView
+from traits.api import HasTraits, Range, Instance, \
+                    on_trait_change
+from traitsui.api import View, Item, HGroup, Group
+from tvtk.pyface.scene_editor import SceneEditor
+from mayavi.tools.mlab_scene_model import \
+                    MlabSceneModel
+from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvreader
 from numpy import mgrid, empty, sin, pi, ravel
+import pylab as pl
 from tvtk.api import tvtk
 import traits.api
 import mayavi.api
@@ -14,37 +23,119 @@ def SigHandler(SIG, FRM):
     return
 signal.signal(signal.SIGINT, SigHandler)
 
-
-class MayaviPlots:
+class MayaviPlots(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   def __init__(self, vlsvReader):
+   picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
+
+   args = ""
+
+   cut_through = []
+
+   scene = Instance(MlabSceneModel, ())
+
+   engine_view = Instance(EngineView)
+
+   current_selection = Property
+
+   # Define the view:
+   view = View(
+                HGroup(
+                   Item('scene', editor=SceneEditor(scene_class=MayaviScene),
+                      height=250, width=300, show_label=False, resizable=True),
+                   Group(
+                      #'cell_pick',
+                      'picker',
+                      'args',
+                      show_labels=True
+                   ),
+                ),
+                resizable=True,
+            )
+
+
+   def __init__(self, vlsvReader, **traits):
+      HasTraits.__init__(self, **traits)
       print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
-      self.__engine = 0
+      self.engine_view = EngineView(engine=self.scene.engine)
+      self.__engine = self.scene.engine
+      self.__picker = []
+      self.__mins = []
+      self.__maxs = []
+      self.__last_pick = []
       self.__structured_figures = []
       self.__unstructured_figures = []
 
-   def __picker_callback_world( self, picker ):
+   def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
       """
-      point_coordinates = np.array([picker.pick_position[0], picker.pick_position[1], picker.pick_position[2]])
-      cellid = self.__vlsvReader.get_cellid(point_coordinates)
-      if cellid != 0:
-         print "CELL ID: " + str(cellid) + " COORDINATES: " + str(point_coordinates)
-         self.__generate_velocity_grid(cellid)
-      else:
-         print "INVALID CELL ID: " + str(cellid) + " COORDINATES: " + str(point_coordinates)
+      if (self.picker != "Cut_through"):
+         # Make sure the last pick is null (used in cut_through)
+         self.__last_pick = []
 
-   def __picker_callback_cell( self, picker ):
-      """ This gets called when clicking on a cell
-      """
-      cellid = picker.cell_id + 1
-      if cellid > 0:
-         print "CELL ID: " + str(cellid)
+      coordinates = picker.pick_position
+      coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
+      for i in xrange(3):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
+            # Correct the numberical inaccuracy
+            coordinates[i] = self.__mins[i] + 1
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
+            # Correct the values
+            coordinates[i] = self.__maxs[i] - 1
+      print "COORDINATES:" + str(coordinates)
+      cellid = self.__vlsvReader.get_cellid(coordinates)
+      print "CELL ID: " + str(cellid)
+      # Check for an invalid cell id
+      if cellid == 0:
+         print "Invalid cell id"
+         return
+
+      if (self.picker == "Velocity_space"):
          self.__generate_velocity_grid(cellid)
-      else:
-         print "INVALID CELL ID: " + str(cellid)
+      elif (self.picker == "Pitch_angle"):
+         # Plot pitch angle distribution:
+         from pitchangle import pitch_angles
+         result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
+         # plot:
+         pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
+         pl.show()
+      elif (self.picker == "Cut_through"):
+         if len(self.__last_pick) == 3:
+            from cutthrough import cut_through
+            # Get a cut-through
+            self.cut_through = cut_through( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
+            # Get cell ids and distances separately
+            cellids = self.cut_through[0].data
+            distances = self.cut_through[1]
+            # Get any arguments from the user:
+            args = self.args.split()
+            if len(args) == 0:
+               #Do nothing
+               print "Bad args"
+               self.__last_pick = []
+               return
+            plotCut = False
+            # Optimize file read:
+            self.__vlsvReader.optimize_open_file()
+            variables = []
+            # Save variables
+            for i in xrange(len(args)):
+               # Check if the user has given the plot argument
+               if args[i] == "plot":
+                  plotCut = True
+               else:
+                  # Read the variables:
+                  variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
+            if plotCut == True:
+               from plots import plot_multiple_variables
+               fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
+               pl.show()
+            # Read in the necessary variables:
+            self.__last_pick = []
+         else:
+            self.__last_pick = coordinates
+
    
    def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
       ''' Generates a grid from given data
@@ -54,10 +145,6 @@ class MayaviPlots:
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
-      figure = mayavi.mlab.gcf()
-      mayavi.mlab.clf()
-      figure.scene.disable_render = True
-      self.__engine = mayavi.mlab.get_engine()
       # Create nodes
       x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
       
@@ -69,19 +156,12 @@ class MayaviPlots:
       
       # Input scalars
       scalars = np.array(datas)
-      # Input vectors
-      #vectors = empty(z.shape + (3,), dtype=float)
-      #vectors[...,0] = (4 - y*2)
-      #vectors[...,1] = (x*3 - 12)
-      #vectors[...,2] = sin(z*pi)
       
       # We reorder the points, scalars and vectors so this is as per VTK's
       # requirement of x first, y next and z last.
       pts = pts.transpose(2, 1, 0, 3).copy()
       pts.shape = pts.size/3, 3
       scalars = scalars.T.copy()
-      #vectors = vectors.transpose(2, 1, 0, 3).copy()
-      #vectors.shape = vectors.size/3, 3
       
       # Create the dataset.
       sg = tvtk.StructuredGrid(dimensions=x.shape, points=pts)
@@ -90,22 +170,12 @@ class MayaviPlots:
       
       
       # Visualize the data
-      d = mayavi.mlab.pipeline.add_dataset(sg)
-      iso = mayavi.mlab.pipeline.surface(d)
-      if pickertype == "world":
-         picker = figure.on_mouse_pick( self.__picker_callback_world, type='world' )
-      elif pickertype == "cell":
-         picker = figure.on_mouse_pick( self.__picker_callback_cell, type='cell' )
-         picker.tolerance = 0
-      #iso.contour.maximum_contour = 75.0
-      #vec = mayavi.mlab.pipeline.vectors(d)
-      #vec.glyph.mask_input_points = True
-      #vec.glyph.glyph.scale_factor = 1.5
-      figure.scene.disable_render = False
-      #figure.add_trait("button", traits.api.ToolbarButton("button"))
-      self.__structured_figures.append(figure)
-      figure.configure_traits()
-      #mayavi.mlab.show()
+      d = self.scene.mlab.pipeline.add_dataset(sg)
+      iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
+
+      # Configure traits
+      self.configure_traits()
+      
 
    def __generate_velocity_grid( self, cellid ):
       '''Generates a velocity grid from a given spatial cell id
@@ -119,10 +189,9 @@ class MayaviPlots:
          return False
       # Create a new scene
       self.__engine.new_scene()
-      mayavi.mlab.set_engine(self.__engine)
+      mayavi.mlab.set_engine(self.__engine)#CONTINUE
       # Create a new figure
       figure = mayavi.mlab.gcf(engine=self.__engine)
-      #mayavi.mlab.clf()
       figure.scene.disable_render = True
       blocks = blocksAndAvgs[0]
       avgs = blocksAndAvgs[1]
@@ -144,10 +213,33 @@ class MayaviPlots:
       iso = mayavi.mlab.pipeline.surface(d)
       figure.scene.disable_render = False
       self.__unstructured_figures.append(figure)
+      # Name the figure
+      figure.name = str(cellid)
       return True
 
+   def __do_nothing( self, picker ):
+      return
 
-   def load_grid( self, variable, pickertype="cell" ):
+   # Trait events:
+   @on_trait_change('scene.activated')
+   def set_mouse_click( self ):
+      # Temporary bug fix (MayaVi needs a dummy pick to be able to remove cells callbacks from picker.. )
+      #self.figure.on_mouse_pick( self.__do_nothing, type='world' 
+      self.figure = self.scene.mlab.gcf()
+      # Cell picker
+      func = self.__picker_callback
+      typeid = 'world'
+      click = 'Left'
+      picker = self.figure.on_mouse_pick( func, type='world' )
+      self.__picker = [func, typeid, click]
+      #picker.tolerance = 0
+      # Show legend bar
+      manager = self.figure.children[0].children[0]
+      manager.scalar_lut_manager.show_scalar_bar = True
+      manager.scalar_lut_manager.show_legend = True
+
+
+   def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
           :param pickertype      Type of mouse click for plotting velocity space, 'cell' by default. The other option is 'world'
@@ -166,8 +258,11 @@ class MayaviPlots:
       variable_array_sorted = []
       for i in sorted_index_for_cellid_dict:
          variable_array_sorted.append(variable_array[i[1]])
+      # Store the mins and maxs:
+      self.__mins = mins
+      self.__maxs = maxs
       # Draw the grid:
-      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable, pickertype=pickertype )
+      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
 
 
