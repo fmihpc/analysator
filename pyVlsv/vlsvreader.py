@@ -2,6 +2,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
+from reduction import datareducers
 from collections import Iterable
 
 class VlsvFile(object):
@@ -485,6 +486,19 @@ class VlsvFile(object):
       :returns numpy array with the data
 
       '''
+      # Check first if the name is in datareducers
+      if name in datareducers:
+         reducer = datareducers[name]
+         # Read the necessary variables:
+         tmp_vars = []
+         for i in np.atleast_1d(reducer.variables):
+            tmp_vars.append( self.read( i, tag, mesh, read_single_cellid ) )
+         # Return the output of the datareducer
+         if len(tmp_vars) > 1:
+            return reducer.operation( tmp_vars )
+         else:
+            return reducer.operation( tmp_vars[0] )
+
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
             self.__read_fileindex_for_cellid()
