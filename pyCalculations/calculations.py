@@ -5,4 +5,5 @@ from variable import VariableInfo
 from virtualspacecraft import virtual_spacecraft
 from cellids import cellids
 from pitchangle import pitch_angles
+from backstream import get_rho_nonbackstream
 import fit
