@@ -30,4 +30,4 @@ def get_rho_nonbackstream( vlsvReader, cellid ):
    vxmin = vlsvReader.read_parameter("vxmin")
    vxmax = vlsvReader.read_parameter("vxmax")
    DV3 = (vxmax-vxmin)/((float)(vxblocks)*4)
-   return rho_nonbackstream
+   return rho_nonbackstream*DV3

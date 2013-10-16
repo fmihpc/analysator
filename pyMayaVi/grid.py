@@ -176,8 +176,11 @@ class MayaviPlots(HasTraits):
       iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
 
       # Configure traits
-      self.__thread = threading.Thread(target=self.configure_traits, args=())
-      self.__thread.start()
+      self.configure_traits()
+
+      # Note: This is not working properly -- it seemingly works out at first but it eventually causes segmentation faults in some places
+      #self.__thread = threading.Thread(target=self.configure_traits, args=())
+      #self.__thread.start()
       
 
    def __generate_velocity_grid( self, cellid ):
@@ -220,6 +223,112 @@ class MayaviPlots(HasTraits):
       figure.name = str(cellid)
       return True
 
+   def generate_diff_grid( self, cellid1, cellid2 ):
+      ''' Generates a diff grid of given cell ids (shows avgs diff)
+          Note: If the cell id does not have a certain velocity cell, it is assumed that the avgs value of that cell is 0
+         :param cellid1          The first cell id
+         :param cellid2          The second cell id
+         Example:
+         grid.generate_diff_grid( 29219, 2910 )
+      '''
+      # Create nodes
+      # Get velocity blocks and avgs (of cellid 1)
+      blocksAndAvgs1 = self.__vlsvReader.read_blocks(cellid1)
+      if len(blocksAndAvgs1) == 0:
+         print "CELL " + str(cellid1) + " HAS NO VELOCITY BLOCK"
+         return False
+      blocks1 = blocksAndAvgs1[0]
+      avgs1 = blocksAndAvgs1[1]
+
+      # Get velocity blocks and avgs (of cellid 2)
+      blocksAndAvgs2 = self.__vlsvReader.read_blocks(cellid2)
+      if len(blocksAndAvgs2) == 0:
+         print "CELL " + str(cellid2) + " HAS NO VELOCITY BLOCK"
+         return False
+      blocks2 = blocksAndAvgs2[0]
+      avgs2 = blocksAndAvgs2[1]
+      print len(avgs2)
+      print len(blocks2)
+
+      # Compare blocks and create a new avgs array values:
+      avgs_same = []
+      avgs_cellid1 = []
+      avgs_cellid2 = []
+      blocks_same = []
+      blocks_cellid1 = []
+      blocks_cellid2 = []
+      print np.shape(avgs1[0])
+      for i in xrange(len(blocks1)):
+         b = blocks1[i]
+         # Get index of block
+         i2 = np.where(blocks2 == b)[0]
+         if len(i2) != 0:
+            # Fetch the block:
+            #print avgs1[64*i:64*(i+1)]
+            #print avgs2[64*i2[0]:64*(i2[0]+1)]
+            avgs_same.append(avgs1[i:(i+1)] - avgs2[i2[0]:(i2[0]+1)])
+            blocks_same.append(b)
+         else:
+            avgs_cellid1.append(avgs1[i:(i+1)])
+            blocks_cellid1.append(b)
+      for i in xrange(len(blocks2)):
+         b = blocks2[i]
+         if (b in blocks1) == False:
+            avgs_cellid2.append(avgs2[i:(i+1)])
+            blocks_cellid2.append(b)
+      # Make a list for the avgs etc
+      avgs = np.zeros(64*(len(avgs_same)+len(avgs_cellid1)+len(avgs_cellid2)))
+      #avgs = np.reshape(avgs, (len(avgs_same)+len(avgs_cellid1)+len(avgs_cellid2), 64))
+      print np.shape(avgs_same)
+      blocks = np.zeros(len(blocks_same)+len(blocks_cellid1)+len(blocks_cellid2))
+
+      index = 0
+      avgs[64*index:64*(index + len(blocks_same))] = np.ravel(np.array(avgs_same))
+      blocks[index:index + len(blocks_same)] = np.array(blocks_same)
+
+      index = index + len(blocks_same)
+      avgs[64*index:64*(index + len(blocks_cellid1))] = np.ravel(np.array(avgs_cellid1))
+      blocks[index:index + len(blocks_cellid1)] = np.array(blocks_cellid1)
+
+      index = index + len(blocks_cellid1)
+      avgs[64*index:64*(index + len(blocks_cellid2))] = np.ravel(np.array(avgs_cellid2))
+      blocks[index:index + len(blocks_cellid2)] = np.array(blocks_cellid2)
+
+      blocks = blocks.astype(int)
+
+      # Get nodes:
+      nodesAndKeys = self.__vlsvReader.construct_velocity_cell_nodes(blocks)
+
+
+      # Create an unstructured grid:
+      points = nodesAndKeys[0]
+      tets = nodesAndKeys[1]
+
+      # Create a new scene
+      self.__engine.new_scene()
+      mayavi.mlab.set_engine(self.__engine)#CONTINUE
+      # Create a new figure
+      figure = mayavi.mlab.gcf(engine=self.__engine)
+      figure.scene.disable_render = True
+      tet_type=tvtk.Voxel().cell_type#VTK_VOXEL
+
+      ug=tvtk.UnstructuredGrid(points=points)
+      #Thissetsupthecells.
+      ug.set_cells(tet_type,tets)
+      #Attributedata.
+      values=np.ravel(avgs)
+      ug.cell_data.scalars=values
+      ug.cell_data.scalars.name='avgs'
+      d = mayavi.mlab.pipeline.add_dataset(ug)
+      iso = mayavi.mlab.pipeline.surface(d)
+      figure.scene.disable_render = False
+      self.__unstructured_figures.append(figure)
+      # Name the figure
+      figure.name = str(cellid1) + " " + str(cellid2)
+      mayavi.mlab.show()
+      return True
+
+
    def __do_nothing( self, picker ):
       return
 
@@ -241,9 +350,10 @@ class MayaviPlots(HasTraits):
       manager.scalar_lut_manager.show_scalar_bar = True
       manager.scalar_lut_manager.show_legend = True
 
-   @on_trait_change('scene.closed')
-   def kill_thread( self ):
-      self.__thread.join()
+    # Not working properly, commenting this out
+#   @on_trait_change('scene.closed')
+#   def kill_thread( self ):
+#      self.__thread.join()
 
 
    def load_grid( self, variable ):
