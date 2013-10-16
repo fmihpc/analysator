@@ -17,11 +17,17 @@ def get_rho_nonbackstream( vlsvReader, cellid ):
    V_sw = np.array([-500000,0,0])
    v = vlsvReader.get_velocity_cell_coordinates(vcellids) - V_sw
    # Get sum of radiuses:
-   radiuses = v_norms = np.sum(np.abs(v)**2,axis=-1)
+   radiuses = np.sum(np.abs(v)**2,axis=-1)
    # Go through velocity cells and calculate the data:
    radius2 = 468621**2
    rho_nonbackstream = 0
    for i in xrange(len(radiuses)):
       if radiuses[i] <= radius2:
          rho_nonbackstream = rho_nonbackstream + avgs[i]
+
+   # Get the volume of a velocity cell:
+   vxblocks = vlsvReader.read_parameter("vxblocks_ini")
+   vxmin = vlsvReader.read_parameter("vxmin")
+   vxmax = vlsvReader.read_parameter("vxmax")
+   DV3 = (vxmax-vxmin)/((float)(vxblocks)*4)
    return rho_nonbackstream
