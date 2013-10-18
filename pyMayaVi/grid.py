@@ -57,7 +57,6 @@ class Plot(HasTraits):
 
    def __init__(self, vlsvReader, **traits):
       HasTraits.__init__(self, **traits)
-      print "Constructing mayavi plot"
       self.__vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
@@ -139,7 +138,7 @@ class Plot(HasTraits):
             self.__last_pick = coordinates
 
    
-   def __generate_grid( self, mins, maxs, cells, datas, names, pickertype="cell" ):
+   def __generate_grid( self, mins, maxs, cells, datas, names  ):
       ''' Generates a grid from given data
           :param mins           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
           :param maxs           An array of maximum coordinates for the grid for ex. [-100, 0, 0]
@@ -175,7 +174,7 @@ class Plot(HasTraits):
       
       # Visualize the data
       d = self.scene.mlab.pipeline.add_dataset(sg)
-      iso = self.scene.mlab.pipeline.surface(d)#CONTINUE
+      iso = self.scene.mlab.pipeline.surface(d)
 
       # Configure traits
       self.configure_traits()
@@ -211,12 +210,13 @@ class Plot(HasTraits):
       tet_type=tvtk.Voxel().cell_type#VTK_VOXEL
 
       ug=tvtk.UnstructuredGrid(points=points)
-      #Thissetsupthecells.
+      # Set up the cells
       ug.set_cells(tet_type,tets)
-      #Attributedata.
+      # Input data
       values=np.ravel(avgs)
       ug.cell_data.scalars=values
       ug.cell_data.scalars.name='avgs'
+      # Visualize
       d = mayavi.mlab.pipeline.add_dataset(ug)
       iso = mayavi.mlab.pipeline.surface(d)
       figure.scene.disable_render = False
@@ -361,7 +361,6 @@ class Plot(HasTraits):
    def load_grid( self, variable ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
-          :param pickertype      Type of mouse click for plotting velocity space, 'cell' by default. The other option is 'world'
       '''
       # Get the cell params:
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
@@ -381,7 +380,9 @@ class Plot(HasTraits):
       self.__mins = mins
       self.__maxs = maxs
       # Draw the grid:
-      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
+      thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
+      thread.start()
+#      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
 
 
