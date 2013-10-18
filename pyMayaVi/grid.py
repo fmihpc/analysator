@@ -24,7 +24,7 @@ def SigHandler(SIG, FRM):
     return
 signal.signal(signal.SIGINT, SigHandler)
 
-class MayaviPlots(HasTraits):
+class Plot(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
    picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
@@ -147,6 +147,8 @@ class MayaviPlots(HasTraits):
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
+      # Initialize the construction:
+      self.__init__( self.__vlsvReader )
       # Create nodes
       x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
       
