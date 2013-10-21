@@ -24,7 +24,7 @@ def SigHandler(SIG, FRM):
     return
 signal.signal(signal.SIGINT, SigHandler)
 
-class Plot(HasTraits):
+class Grid(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
    picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
