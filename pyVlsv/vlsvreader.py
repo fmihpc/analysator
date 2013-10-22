@@ -101,6 +101,9 @@ class VlsvFile(object):
       for child in self.__xml_root:
          if child.tag == "VARIABLE":
             print "   ", child.attrib["name"]
+      print "Datareducers:"
+      for name in datareducers:
+         print "   ",name, " based on ", datareducers[name].variables
       print "Other:"
       for child in self.__xml_root:
          if child.tag != "PARAMETERS" and child.tag != "VARIABLE":
@@ -464,10 +467,15 @@ class VlsvFile(object):
       for child in self.__xml_root:
          if child.tag == "MESH":
             print "   ", child.attrib["name"]
+      print "Datareducers:"
+      for name in datareducers:
+         print "   ",name, " based on ", datareducers[name].variables
       print "Other:"
       for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
+
+
 
    def get_cellid_locations(self):
       ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
@@ -572,12 +580,13 @@ class VlsvFile(object):
       '''
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", read_single_cellid=-1)
 
-   def read_variables_for_cellids(self, name, cellids, index=3):
+   def read_variables_for_cellids(self, name, cellids, index=-1):
       ''' Read variables from the open vlsv file. 
       
       Arguments:
       :param name Name of the variable
       :param cellids List of cellids
+      :param index Which component to read in a multicomponent variable. Default of -1 reads all.
       :returns numpy array with the data
       Note: Format of the numpy array:
       [variableForCellid1, variableForCellid2, variableForCellid3, ..]
@@ -593,9 +602,10 @@ class VlsvFile(object):
       #Pick the variables with the cell ids in the list:
       returnvariablelist = []
       for cellid in cellids:
-         if index == 3:
+         if index == -1:
             returnvariablelist.append(np.array(variablelist[self.__fileindex_for_cellid[cellid]]))
          else:
+            #TODO: No errorcheck to see if index is inside bounds
             returnvariablelist.append(np.array(variablelist[self.__fileindex_for_cellid[cellid]][index]))
       # Return the variables:
       return np.array(returnvariablelist)
