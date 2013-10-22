@@ -575,7 +575,7 @@ class VlsvFile(object):
       if self.__fptr.closed:
          fptr.close()
 
-   def read_variable(self, name, operator="pass",cellid=-1):
+   def read_variable(self, name, operator="pass",cellids=[]):
       ''' Read variables from the open vlsv file. 
       Arguments:
       :param name Name of the variable
@@ -706,20 +706,6 @@ class VlsvFile(object):
                                   blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__dvy,
                                   blockCoordinatesZ.astype(float) + (cellIndicesZ.astype(float) + 0.5) * self.__dvz])
 
-#      # Get block id:
-#      block = (int)(vcellid) / 64
-#      # Get block coordinates:
-#      blockIndices = np.array( [(int)(block)%(int)(self.__vxblocks), (int)((int)(block)/(int)(self.__vxblocks))%(int)(self.__vyblocks), (int)(block)/(int)(self.__vxblocks*self.__vyblocks)] )
-#      blockCoordinates = np.array([self.__vxmin + 4 * self.__dvx * blockIndices[0],
-#                                   self.__vymin + 4 * self.__dvy * blockIndices[1],
-#                                   self.__vzmin + 4 * self.__dvz * blockIndices[2]])
-#      #vcellid = 64 * velocity_block_id + kv*4*4 + jv*4 + iv
-#      # Get cell coordinates:
-#      cellIndices = np.array([(int)((int)(vcellid)%64)%4, (int)(((int)((int)(vcellid)%64)/4))%4, (int)((int)(vcellid)%64)/(int)(4*4)])
-#      cellCoordinates = np.array([(cellIndices[0] + 0.5) * self.__dvx, (cellIndices[1] + 0.5) * self.__dvy, (cellIndices[2] + 0.5) * self.__dvz])
-#      # Get the coordinates:
-#      vcellCoordinates = blockCoordinates + cellCoordinates
-      # Return cell coordinates:
       return cellCoordinates.transpose()
 
    def get_velocity_block_coordinates( self, blocks ):
@@ -906,98 +892,6 @@ class VlsvFile(object):
          # Uses old format
          return self.__read_parameter_old_format(name=name)
 
-
-#getVelocityBlockCoordinates( cellStruct, blockId, blockCoordinates )
-#void getVelocityBlockCoordinates(const CellStructure & cellStruct, const uint64_t block, array<Real, 3> & coordinates ) {
-#   //First get indices:
-#   array<uint64_t, 3> blockIndices;
-#   blockIndices[0] = block % cellStruct.vcell_bounds[0];
-#   blockIndices[1] = (block / cellStruct.vcell_bounds[0]) % cellStruct.vcell_bounds[1];
-#   blockIndices[2] = block / (cellStruct.vcell_bounds[0] * cellStruct.vcell_bounds[1]);
-#   //Store the coordinates:
-#   for( int i = 0; i < 3; ++i ) {
-#      coordinates[i] = cellStruct.min_vcoordinates[i] + cellStruct.vblock_length[i] * blockIndices[i];
-#   }
-#   return;
-#}
-#if( vlsvReader.readParameter( "vxblocks_ini", vcell_bounds[0] ) == false ) cerr << "FAILED TO READ PARAMETER AT " << __FILE__ << " " << __LINE__ << endl;
-#//y-direction
-#if( vlsvReader.readParameter( "vyblocks_ini", vcell_bounds[1] ) == false ) cerr << "FAILED TO READ PARAMETER AT " << __FILE__ << " " << __LINE__ << endl;
-#//z-direction
-#if( vlsvReader.readParameter( "vzblocks_ini", vcell_bounds[2] ) == false ) cerr << "FAILED TO READ PARAMETER AT " << __FILE__ << " " << __LINE__ << endl;
-#for child in self.__xml_root:
-#   if tag != "":
-#      if child.tag != tag:
-#         continue
-#   if name != "":
-#      if child.attrib["name"] != name:
-#         continue
-#   if mesh != "":
-#      if child.attrib["mesh"] != mesh:
-#         continue
-#   if child.tag == tag and child.attrib["name"] == name:
-#      vector_size = ast.literal_eval(child.attrib["vectorsize"])
-#      array_size = ast.literal_eval(child.attrib["arraysize"])
-#      element_size = ast.literal_eval(child.attrib["datasize"])
-#      datatype = child.attrib["datatype"]            
-#      offset = ast.literal_eval(child.text)
-#      if read_single_cellid >= 0:
-#         offset=offset+self.__fileindex_for_cellid[read_single_cellid]*element_size*vector_size
-#         array_size=1
-#
-#      fptr = open(self.__file_name, "rb")
-#      fptr.seek(offset)
-#
-#      if datatype == "float" and element_size == 4:
-#         data = np.fromfile(fptr, dtype = np.float32, count=vector_size*array_size)
-#      if datatype == "float" and element_size == 8:
-#         data = np.fromfile(fptr, dtype=np.float64, count=vector_size*array_size)
-#      if datatype == "int" and element_size == 4:
-#         data = np.fromfile(fptr, dtype=np.int32, count=vector_size*array_size)
-#      if datatype == "int" and element_size == 8:
-#         data = np.fromfile(fptr, dtype=np.int64, count=vector_size*array_size)
-#      if datatype == "uint" and element_size == 4:
-#         data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*array_size)
-#      if datatype == "uint" and element_size == 8:
-#         data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*array_size)
-#      fptr.close() 
-#
-#      if vector_size > 1:
-#         data=data.reshape(array_size, vector_size)
-#      
-#      if array_size == 1:
-#         return data[0]
-#      else:
-#         return data
-
-      
-#const velocity_block_indices_t indices = {{
-#   (unsigned int) np.floor((vx - SpatialCell::vx_min) / SpatialCell::block_dvx),
-#   (unsigned int) np.floor((vy - SpatialCell::vy_min) / SpatialCell::block_dvy),
-#   (unsigned int) np.floor((vz - SpatialCell::vz_min) / SpatialCell::block_dvz)
-#}};
-#indices[0] = cell % block_vx_length;
-#indices[1] = (cell / block_vx_length) % block_vy_length;
-#indices[2] = cell / (block_vx_length * block_vy_length);
-#static unsigned int get_velocity_block(
-#   const Real vx,
-#   const Real vy,
-#   const Real vz
-#) {
-#   if (vx < SpatialCell::vx_min || vx >= SpatialCell::vx_max
-#       || vy < SpatialCell::vy_min || vy >= SpatialCell::vy_max
-#       || vz < SpatialCell::vz_min || vz >= SpatialCell::vz_max) {
-#      return error_velocity_block;
-#   }
-#
-#   const velocity_block_indices_t indices = {{
-#      (unsigned int) np.floor((vx - SpatialCell::vx_min) / SpatialCell::block_dvx),
-#      (unsigned int) np.floor((vy - SpatialCell::vy_min) / SpatialCell::block_dvy),
-#      (unsigned int) np.floor((vz - SpatialCell::vz_min) / SpatialCell::block_dvz)
-#   }};
-#
-#   return SpatialCell::get_velocity_block(indices);
-#}
 
    def read_velocity_cells(self, cellid):
       ''' Read velocity cells from a spatial cell
