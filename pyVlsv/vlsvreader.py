@@ -506,7 +506,7 @@ class VlsvFile(object):
          # Read the necessary variables:
          tmp_vars = []
          for i in np.atleast_1d(reducer.variables):
-            tmp_vars.append( self.read( i, tag, mesh, read_single_cellid ) )
+            tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
          # Return the output of the datareducer
          if len(tmp_vars) > 1:
             return datareduction_operators[operator](reducer.operation( tmp_vars ))
