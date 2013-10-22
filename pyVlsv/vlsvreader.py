@@ -2,7 +2,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
-from reduction import datareducers
+from reduction import datareducers,datareduction_operators
 from collections import Iterable
 
 class VlsvFile(object):
@@ -104,6 +104,10 @@ class VlsvFile(object):
       print "Datareducers:"
       for name in datareducers:
          print "   ",name, " based on ", datareducers[name].variables
+      print "Datareduction operators:"
+      for name in datareduction_operators:
+         print "   ",name
+
       print "Other:"
       for child in self.__xml_root:
          if child.tag != "PARAMETERS" and child.tag != "VARIABLE":
@@ -484,12 +488,14 @@ class VlsvFile(object):
          self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
-   def read(self, name="", tag="", mesh="", read_single_cellid=-1):
+   def read(self, name="", tag="", mesh="", operator="pass", read_single_cellid=-1):
       ''' Read data from the open vlsv file. 
       
       Arguments:
       :param name Name of the data array
       :param tag  Tag of the data array.
+      :param mesh Mesh for the data array
+      :param operator Datareduction operator. "pass" does no operation on data.
       :param read_single_cellid  If -1 then all data is read. If nonzero then only the vector for the specified cell id is read
       :returns numpy array with the data
 
@@ -503,9 +509,9 @@ class VlsvFile(object):
             tmp_vars.append( self.read( i, tag, mesh, read_single_cellid ) )
          # Return the output of the datareducer
          if len(tmp_vars) > 1:
-            return reducer.operation( tmp_vars )
+            return datareduction_operators[operator](reducer.operation( tmp_vars ))
          else:
-            return reducer.operation( tmp_vars[0] )
+            return datareduction_operators[operator](reducer.operation( tmp_vars[0] ))
 
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
@@ -562,30 +568,33 @@ class VlsvFile(object):
                data=data.reshape(array_size, vector_size)
             
             if array_size == 1:
-               return data[0]
+               return datareduction_operators[operator](data[0])
             else:
-               return data
+               return datareduction_operators[operator](data)
 
       if self.__fptr.closed:
          fptr.close()
 
-
-   def read_variables(self, name):
+   def read_variable(self, name, operator="pass",cellid=-1):
       ''' Read variables from the open vlsv file. 
-      
       Arguments:
       :param name Name of the variable
+      :param operator Datareduction operator. "pass" does no operation on data      
+      :param cellid, a value of -1 reads all data
       :returns numpy array with the data
 
       '''
-      return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", read_single_cellid=-1)
+      return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellid)
 
-   def read_variables_for_cellids(self, name, cellids, index=-1):
+      
+
+   def read_variable_for_cellids(self, name, cellids, operator="pass", index=-1):
       ''' Read variables from the open vlsv file. 
       
       Arguments:
       :param name Name of the variable
       :param cellids List of cellids
+      :param operator Datareduction operator. "pass" does no operation on data      
       :param index Which component to read in a multicomponent variable. Default of -1 reads all.
       :returns numpy array with the data
       Note: Format of the numpy array:
@@ -595,7 +604,7 @@ class VlsvFile(object):
       if len( self.__fileindex_for_cellid ) == 0:
          self.__read_fileindex_for_cellid()
       # Read the variable:
-      variablelist = self.read_variables(name)
+      variablelist = self.read_variables(name,operator)
       #make a list, if variablelist is a scalar
       if(not isinstance(variablelist, Iterable)):
          variablelist=[ variablelist ]
@@ -885,16 +894,6 @@ class VlsvFile(object):
 
 
 
-   def read_variable(self, name, cellid):
-      ''' Read a variable of a given cell from the open vlsv file. 
-      
-      Arguments:
-      :param name Name of the variable
-      :param cellid Cell's cell id
-      :returns numpy array with the data
-
-      '''
-      return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", read_single_cellid=cellid)
 
    def read_parameter(self, name):
       ''' Read a parameter from the vlsv file

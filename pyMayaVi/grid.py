@@ -128,7 +128,7 @@ class Plot(HasTraits):
                   plotCut = True
                else:
                   # Read the variables:
-                  variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
+                  variables.append(self.__vlsvReader.read_variable_for_cellids( name=args[i], cellids=cellids ))
             if plotCut == True:
                from plots import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
@@ -358,9 +358,10 @@ class Plot(HasTraits):
 #      self.__thread.join()
 
 
-   def load_grid( self, variable ):
+   def load_grid( self, variable,operator="pass" ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
+          :param operator        Datareduction operator
           :param pickertype      Type of mouse click for plotting velocity space, 'cell' by default. The other option is 'world'
       '''
       # Get the cell params:
@@ -369,7 +370,7 @@ class Plot(HasTraits):
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variables( name=variable )
+      variable_array = self.__vlsvReader.read_variable( name=variable,operator=operator )
       # Sort the dictionary by cell id
       import operator
       sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
