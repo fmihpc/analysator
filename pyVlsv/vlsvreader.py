@@ -580,11 +580,19 @@ class VlsvFile(object):
       Arguments:
       :param name Name of the variable
       :param operator Datareduction operator. "pass" does no operation on data      
-      :param cellid, a value of -1 reads all data
+      :param cellids, a value of -1 reads all data
       :returns numpy array with the data
 
       '''
-      return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellid)
+      if len(cellids) == 0:
+         return []
+      elif isinstance(cellids, (int, float)):
+         return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
+      else:
+         variable = []
+         for i in cellids:
+            variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
+         variable = np.array(variable, copy=False)
 
       
 
