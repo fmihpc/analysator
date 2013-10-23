@@ -586,13 +586,11 @@ class VlsvFile(object):
       '''
       if isinstance(cellids, (int, float)):
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
-      elif isinstance(cellids, (list, tuple)):
+      else:
          variable = []
          for i in cellids:
             variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
          return np.array(variable, copy=False)
-      else:
-         return []
 
       
 
