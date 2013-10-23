@@ -575,7 +575,7 @@ class VlsvFile(object):
       if self.__fptr.closed:
          fptr.close()
 
-   def read_variable(self, name, operator="pass",cellids=[]):
+   def read_variable(self, name, operator="pass",cellids=-1):
       ''' Read variables from the open vlsv file. 
       Arguments:
       :param name Name of the variable
@@ -584,15 +584,15 @@ class VlsvFile(object):
       :returns numpy array with the data
 
       '''
-      if len(cellids) == 0:
-         return []
-      elif isinstance(cellids, (int, float)):
+      if isinstance(cellids, (int, float)):
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
-      else:
+      elif isinstance(cellids, (list, tuple)):
          variable = []
          for i in cellids:
             variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
-         variable = np.array(variable, copy=False)
+         return np.array(variable, copy=False)
+      else:
+         return []
 
       
 
