@@ -587,6 +587,7 @@ class VlsvFile(object):
       if isinstance(cellids, (int, float)):
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
       else:
+         # NOTE: Should the file read be optimized by opening the file here until all cellids have been read? It can be optimized by the user manually, as well
          variable = []
          for i in cellids:
             variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
@@ -610,7 +611,7 @@ class VlsvFile(object):
       if len( self.__fileindex_for_cellid ) == 0:
          self.__read_fileindex_for_cellid()
       # Read the variable:
-      variablelist = self.read_variables(name,operator)
+      variablelist = self.read_variable(name,operator)
       #make a list, if variablelist is a scalar
       if(not isinstance(variablelist, Iterable)):
          variablelist=[ variablelist ]
