@@ -24,7 +24,7 @@ def SigHandler(SIG, FRM):
     return
 signal.signal(signal.SIGINT, SigHandler)
 
-class Grid(HasTraits):
+class MayaviGrid(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
    picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
@@ -55,7 +55,7 @@ class Grid(HasTraits):
             )
 
 
-   def __init__(self, vlsvReader, **traits):
+   def __init__(self, vlsvReader, variable, **traits):
       HasTraits.__init__(self, **traits)
       self.__vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
@@ -67,6 +67,33 @@ class Grid(HasTraits):
       self.__structured_figures = []
       self.__unstructured_figures = []
       self.__thread = []
+      self.__load_grid( variable=variable )
+
+   def __load_grid( self, variable ):
+      ''' Creates a grid and inputs scalar variables from a vlsv file
+          :param variable        Name of the variable to plot
+      '''
+      # Get the cell params:
+      mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
+      cells = np.array([self.__vlsvReader.read_parameter("xcells_ini"), self.__vlsvReader.read_parameter("ycells_ini"), self.__vlsvReader.read_parameter("zcells_ini")])
+      maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
+      # Get the variables:
+      index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
+      variable_array = self.__vlsvReader.read_variables( name=variable )
+      # Sort the dictionary by cell id
+      import operator
+      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
+      # Add the variable values:
+      variable_array_sorted = []
+      for i in sorted_index_for_cellid_dict:
+         variable_array_sorted.append(variable_array[i[1]])
+      # Store the mins and maxs:
+      self.__mins = mins
+      self.__maxs = maxs
+      # Draw the grid:
+      thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
+      thread.start()
+#      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -127,7 +154,10 @@ class Grid(HasTraits):
                   plotCut = True
                else:
                   # Read the variables:
-                  variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
+                  if isinstance(args[i], list):
+                     #TODO
+                  else:
+                     variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
             if plotCut == True:
                from plots import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
@@ -146,8 +176,6 @@ class Grid(HasTraits):
           :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
           :param names          Name for the scalar data
       '''
-      # Initialize the construction:
-      self.__init__( self.__vlsvReader )
       # Create nodes
       x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
       
@@ -358,31 +386,6 @@ class Grid(HasTraits):
 #      self.__thread.join()
 
 
-   def load_grid( self, variable ):
-      ''' Creates a grid and inputs scalar variables from a vlsv file
-          :param variable        Name of the variable to plot
-      '''
-      # Get the cell params:
-      mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
-      cells = np.array([self.__vlsvReader.read_parameter("xcells_ini"), self.__vlsvReader.read_parameter("ycells_ini"), self.__vlsvReader.read_parameter("zcells_ini")])
-      maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
-      # Get the variables:
-      index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variables( name=variable )
-      # Sort the dictionary by cell id
-      import operator
-      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
-      # Add the variable values:
-      variable_array_sorted = []
-      for i in sorted_index_for_cellid_dict:
-         variable_array_sorted.append(variable_array[i[1]])
-      # Store the mins and maxs:
-      self.__mins = mins
-      self.__maxs = maxs
-      # Draw the grid:
-      thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
-      thread.start()
-#      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
 
 
