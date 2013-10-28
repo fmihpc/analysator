@@ -79,7 +79,7 @@ class MayaviGrid(HasTraits):
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variables( name=variable )
+      variable_array = self.__vlsvReader.read_variable( name=variable )
       # Sort the dictionary by cell id
       import operator
       sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
@@ -153,11 +153,14 @@ class MayaviGrid(HasTraits):
                if args[i] == "plot":
                   plotCut = True
                else:
-                  # Read the variables:
-                  if isinstance(args[i], list):
-                     #TODO
+                  if args[i].find(",") != -1:
+                     _operator = args[i].split(',')[0]
+                     _variable = args[i].split(',')[1]
+                     print cellids
+                     variables.append(self.__vlsvReader.read_variable( name=_variable, cellids=cellids, operator=_operator ))
                   else:
-                     variables.append(self.__vlsvReader.read_variables_for_cellids( name=args[i], cellids=cellids ))
+                     variables.append(self.__vlsvReader.read_variable_for_cellids( name=args[i], cellids=cellids ))
+                  print variables
             if plotCut == True:
                from plots import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
