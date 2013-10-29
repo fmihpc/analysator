@@ -31,8 +31,8 @@ def v( variables ):
        variables[0] = rho_v and variables[1] = rho
    '''
    rho_v = variables[0]
-   rho = variables[1]
-   return rho_v / rho
+   rho = np.reshape(variables[1],(len(variables[1]),1))
+   return np.divide(rho_v,rho)
 
 
 #datareducers with more complex, case dependent structure. 
