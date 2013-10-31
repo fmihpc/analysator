@@ -4,6 +4,11 @@ import numpy as np
 class VariableInfo:
    ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
        Variable info is in: data, name, units.
+       NOTE:
+       LIST VARIABLES IN VARIBLE INFO:
+       data              Data of the variable (array list)
+       name              Name of the variable
+       units             Units of the variable
    '''
    def __init__(self, data_array, name="", units=""):
       self.data = np.asarray(data_array)
@@ -34,18 +39,30 @@ class VariableInfo:
 
 
 def get_data( variable ):
+   ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
+       :param variable           The variable as a VariableInfo instance or a list
+       returns data of the variable
+   '''
    if isinstance(variable, VariableInfo):
       return variable.data
    else:
       return variable
 
 def get_name( variable ):
+   ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
+       :param variable           The variable as a VariableInfo instance or a list
+       returns the name of the variable or \"\" if not a VariableInfo instance
+   '''
    if isinstance(variable, VariableInfo):
       return variable.name
    else:
       return ""
 
 def get_units( variable ):
+   ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
+       :param variable           The variable as a VariableInfo instance or a list
+       returns the units of the variable or \"\" if not a VariableInfo instance
+   '''
    if isinstance(variable, VariableInfo):
       return variable.units
    else:

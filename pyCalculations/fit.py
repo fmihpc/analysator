@@ -1,4 +1,5 @@
-# Here there are functions that have something to do with fitting data
+'''In this file there are functions that have something to do with fitting data
+'''
 
 def subtract_1d_polynomial_fit( x, y ):
    ''' Fits 1d polynomial into the data, subtracts it from the given data and returns the subtracted data.
