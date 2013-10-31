@@ -508,10 +508,8 @@ class VlsvFile(object):
          for i in np.atleast_1d(reducer.variables):
             tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
          # Return the output of the datareducer
-         if len(tmp_vars) > 1:
-            return datareduction_operators[operator](reducer.operation( tmp_vars ))
-         else:
-            return datareduction_operators[operator](reducer.operation( tmp_vars[0] ))
+         #TODO, if arraysize is 1 then return scalar like for variables
+         return datareduction_operators[operator](reducer.operation( tmp_vars ))
 
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
