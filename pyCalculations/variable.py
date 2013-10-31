@@ -11,7 +11,7 @@ class VariableInfo:
        units             Units of the variable
    '''
    def __init__(self, data_array, name="", units=""):
-      self.data = np.asarray(data_array)
+      self.data = np.ma.asarray(data_array)
       self.name = name
       self.units = units
 
