@@ -27,7 +27,7 @@ signal.signal(signal.SIGINT, SigHandler)
 class MayaviGrid(HasTraits):
    '''Class for constructing plots with MayaVi
    '''
-   picker = Enum('None', 'Velocity_space', "Pitch_angle", "Cut_through")
+   picker = Enum('None', 'Velocity_space', "Velocity_space_nearest_cellid", "Pitch_angle", "Cut_through")
 
    args = ""
 
@@ -120,6 +120,22 @@ class MayaviGrid(HasTraits):
          return
 
       if (self.picker == "Velocity_space"):
+         self.__generate_velocity_grid(cellid)
+      elif (self.picker == "Velocity_space_nearest_cellid"):
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+         # Generate velocity grid
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Pitch_angle"):
          # Plot pitch angle distribution:

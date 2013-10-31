@@ -657,32 +657,20 @@ class VlsvFile(object):
       :param cellid            The cell's ID
       :returns a numpy array with the coordinates
       '''
-      # Get xmax, xmin and xcells_ini
-      xmax = self.read_parameter(name="xmax")
-      xmin = self.read_parameter(name="xmin")
-      xcells = (int)(self.read_parameter(name="xcells_ini"))
-      # Do the same for y
-      ymax = self.read_parameter(name="ymax")
-      ymin = self.read_parameter(name="ymin")
-      ycells = (int)(self.read_parameter(name="ycells_ini"))
-      # And for z
-      zmax = self.read_parameter(name="zmax")
-      zmin = self.read_parameter(name="zmin")
-      zcells = (int)(self.read_parameter(name="zcells_ini"))
       # Get cell lengths:
-      cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
+      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
       # Get cell indices:
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
-      cellindices[0] = (int)(cellid)%(int)(xcells)
-      cellindices[1] = ((int)(cellid)/(int)(xcells))%(int)(ycells)
-      cellindices[2] = (int)(cellid)/(int)(xcells*ycells)
+      cellindices[0] = (int)(cellid)%(int)(self.__xcells)
+      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cellcoordinates = np.zeros(3)
-      cellcoordinates[0] = xmin + (cellindices[0] + 0.5) * cell_lengths[0]
-      cellcoordinates[1] = ymin + (cellindices[1] + 0.5) * cell_lengths[1]
-      cellcoordinates[2] = zmin + (cellindices[2] + 0.5) * cell_lengths[2]
+      cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
+      cellcoordinates[1] = self.__ymin + (cellindices[1] + 0.5) * cell_lengths[1]
+      cellcoordinates[2] = self.__zmin + (cellindices[2] + 0.5) * cell_lengths[2]
       # Return the coordinates:
       return np.array(cellcoordinates)
 
@@ -878,9 +866,6 @@ class VlsvFile(object):
       nodes = np.array([nodeCoordinatesX, nodeCoordinatesY, nodeCoordinatesZ], copy=False)
       # Take a transpose
       nodes = np.transpose(nodes)
-
-      print len(nodes[0])
-      print len(cellKeys[0])
 
       return [nodes, cellKeys]
 
