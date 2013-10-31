@@ -175,7 +175,6 @@ class MayaviGrid(HasTraits):
                      variables.append(self.__vlsvReader.read_variable( name=_variable, cellids=cellids, operator=_operator ))
                   else:
                      variables.append(self.__vlsvReader.read_variable( name=args[i], cellids=cellids ))
-                  print variables
             if plotCut == True:
                from plots import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
