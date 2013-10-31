@@ -591,38 +591,25 @@ class VlsvFile(object):
             variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
          return np.array(variable, copy=False)
 
-      
-
-   def read_variable_for_cellids(self, name, cellids, operator="pass", index=-1):
-      ''' Read variables from the open vlsv file. 
-      
+   def read_variable_info(self, name, operator="pass",cellids=-1):
+      ''' Read variables from the open vlsv file and input the data into VariableInfo
       Arguments:
       :param name Name of the variable
-      :param cellids List of cellids
-      :param operator Datareduction operator. "pass" does no operation on data      
-      :param index Which component to read in a multicomponent variable. Default of -1 reads all.
+      :param operator Datareduction operator. "pass" does no operation on data
+      :param cellids, a value of -1 reads all data
       :returns numpy array with the data
-      Note: Format of the numpy array:
-      [variableForCellid1, variableForCellid2, variableForCellid3, ..]
-      NOTE: THIS IS MAINLY USED FOR OPTIMIZATION PURPOSES
       '''
-      if len( self.__fileindex_for_cellid ) == 0:
-         self.__read_fileindex_for_cellid()
-      # Read the variable:
-      variablelist = self.read_variable(name,operator)
-      #make a list, if variablelist is a scalar
-      if(not isinstance(variablelist, Iterable)):
-         variablelist=[ variablelist ]
-      #Pick the variables with the cell ids in the list:
-      returnvariablelist = []
-      for cellid in cellids:
-         if index == -1:
-            returnvariablelist.append(np.array(variablelist[self.__fileindex_for_cellid[cellid]]))
-         else:
-            #TODO: No errorcheck to see if index is inside bounds
-            returnvariablelist.append(np.array(variablelist[self.__fileindex_for_cellid[cellid]][index]))
-      # Return the variables:
-      return np.array(returnvariablelist)
+      data = self.read_variable(name=name, operator=operator, cellids=cellids)
+      from variable import VariableInfo
+      if name in datareducers:
+         units = datareducers[name].units
+      else:
+         units = ""
+      if operator != "pass":
+         return VariableInfo(data_array=data, name=name + "_" + operator, units=units)
+      else:
+         return VariableInfo(data_array=data, name=name, units=units)
+
 
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
