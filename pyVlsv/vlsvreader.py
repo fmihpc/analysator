@@ -508,8 +508,10 @@ class VlsvFile(object):
          for i in np.atleast_1d(reducer.variables):
             tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
          # Return the output of the datareducer
-         #TODO, if arraysize is 1 then return scalar like for variables
-         return datareduction_operators[operator](reducer.operation( tmp_vars ))
+         if len(tmp_vars) > 1:
+            return datareduction_operators[operator](reducer.operation( tmp_vars ))
+         else:
+            return datareduction_operators[operator](reducer.operation( tmp_vars[0] ))
 
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
@@ -941,14 +943,28 @@ class VlsvFile(object):
 
    def optimize_open_file(self):
       '''Opens the vlsv file for reading
-         NOTE: THIS SHOULD ONLY BE USED FOR OPTIMIZATION PURPOSES. FILES ARE OPENED AND CLOSED AUTOMATICALLY UPON READING BUT IN THE CASE OF HEAVY READING OPERATIONS OPEN_FILE WILL OPTIMIZE THE PROCESS
+         Files are opened and closed automatically upon reading and in the case of reading multiple times it will help to keep the file open with this command
+         Example usage:
+         variables = []
+         vlsvReader.optimize_open_file()
+         for i in xrange(1000):
+            variables.append(vlsvReader.read_variable("rho", cellids=i))
+         vlsvReader.optimize_close_file()
+         NOTE: This should only be used for optimization purposes.
       '''
       self.__fptr = open(self.__file_name,"rb")
 
 
    def optimize_close_file(self):
       '''Closes the vlsv file
-         NOTE: THIS SHOULD ONLY BE USED FOR OPTIMIZATION PURPOSES. FILES ARE OPENED AND CLOSED AUTOMATICALLY UPON READING BUT IN THE CASE OF HEAVY READING OPERATIONS OPEN_FILE WILL OPTIMIZE THE PROCESS
+         Files are opened and closed automatically upon reading and in the case of reading multiple times it will help to keep the file open with this command
+         Example usage:
+         variables = []
+         vlsvReader.optimize_open_file()
+         for i in xrange(1000):
+            variables.append(vlsvReader.read_variable("rho", cellids=i))
+         vlsvReader.optimize_close_file()
+         NOTE: This should only be used for optimization purposes.
       '''
       if self.__fptr.closed:
          return
@@ -958,13 +974,35 @@ class VlsvFile(object):
 
    def optimize_clear_fileindex_for_cellid_blocks(self):
       ''' Clears a private variable containing number of blocks and offsets for particular cell ids
-          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VELOCITY CELLS IS NO LONGER NEEDED
+          NOTE: This should only be used for optimization purposes.
+          Example usage:
+          vlsvReaders = []
+          # Open a list of vlsv files
+          for i in xrange(1000):
+             vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+          # Go through vlsv readers and print info:
+          for vlsvReader in vlsvReaders:
+             # Print something from the file on the screen
+             print vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
+             # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
+             vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
       '''
       self.__fileindex_for_cellid_blocks = {}
 
    def optimize_clear_fileindex_for_cellid(self):
       ''' Clears a private variable containing cell ids and their locations
-          USED FOR OPTIMIZATION PURPOSES ONLY WHEN READING VARIABLES IS NO LONGER NEEDED
+          NOTE: This should only be used for optimization purposes.
+          Example usage:
+          vlsvReaders = []
+          # Open a list of vlsv files
+          for i in xrange(1000):
+             vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+          # Go through vlsv readers and print info:
+          for vlsvReader in vlsvReaders:
+             # Print something from the file on the screen
+             print vlsvReader.read_variable("B", cellids=2) # Stores info into a private variable
+             # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
+             vlsvReader.optimize_clear_fileindex_for_cellid()
       '''
       self.__fileindex_for_cellid = {}
 
