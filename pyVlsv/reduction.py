@@ -11,6 +11,9 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyCalculations")
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector
 
+
+
+
 def x_component( variable ):
    if np.ndim(variable) == 1:
       return variable[0]
@@ -29,6 +32,10 @@ def z_component( variable ):
 def magnitude( variable ):
    return np.sum(np.asarray(variable)**2,axis=-1)**(0.5)
 
+
+
+
+
 #do nothing
 def pass_op( variable ):
    return variable
@@ -39,8 +46,12 @@ def v( variables ):
        variables[0] = rho_v and variables[1] = rho
    '''
    rho_v = variables[0]
-   rho = np.reshape(variables[1],(len(variables[1]),1))
-   return np.divide(rho_v,rho)
+   rho = variables[1]
+   if np.ndim(rho) == 0:
+      return np.divide(rho_v,rho)
+   else:
+      rho = np.reshape(rho,(len(rho),1))
+      return np.divide(rho_v,rho)
 
 def PTensor( variables ):
    ''' Data reducer function to reconstruct the pressure tensor from
@@ -192,12 +203,12 @@ datareducers["Rmirror"]           = DataReducerVariable(["TPerpOverPar", "betaPe
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
-datareduction_operators = {}
-datareduction_operators["pass"] = pass_op
-datareduction_operators["magnitude"] = magnitude
-datareduction_operators["x"] = x_component
-datareduction_operators["y"] = y_component
-datareduction_operators["z"] = z_component
+data_operators = {}
+data_operators["pass"] = pass_op
+data_operators["magnitude"] = magnitude
+data_operators["x"] = x_component
+data_operators["y"] = y_component
+data_operators["z"] = z_component
 
 
 

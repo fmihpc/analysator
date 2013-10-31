@@ -2,7 +2,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
-from reduction import datareducers,datareduction_operators
+from reduction import datareducers,data_operators
 from collections import Iterable
 
 class VlsvFile(object):
@@ -105,7 +105,7 @@ class VlsvFile(object):
       for name in datareducers:
          print "   ",name, " based on ", datareducers[name].variables
       print "Datareduction operators:"
-      for name in datareduction_operators:
+      for name in data_operators:
          print "   ",name
 
       print "Other:"
@@ -508,10 +508,8 @@ class VlsvFile(object):
          for i in np.atleast_1d(reducer.variables):
             tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
          # Return the output of the datareducer
-         if len(tmp_vars) > 1:
-            return datareduction_operators[operator](reducer.operation( tmp_vars ))
-         else:
-            return datareduction_operators[operator](reducer.operation( tmp_vars[0] ))
+         return data_operators[operator](reducer.operation( tmp_vars ))
+
 
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
@@ -568,9 +566,9 @@ class VlsvFile(object):
                data=data.reshape(array_size, vector_size)
             
             if array_size == 1:
-               return datareduction_operators[operator](data[0])
+               return data_operators[operator](data[0])
             else:
-               return datareduction_operators[operator](data)
+               return data_operators[operator](data)
 
       if self.__fptr.closed:
          fptr.close()
