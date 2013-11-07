@@ -72,7 +72,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
       if (len(np.atleast_1d(x)) == 0) or (len(np.atleast_1d(y)) == 0):
          continue
       ax = axes[i]
-      ax.plot(get_data(x), get_data(y))
+      ax.plot(get_data(x), get_data(y), lw=2)
 
       if get_units(x) != "":
          ax.set_xlabel(get_name(x) + " [" + get_units(x) + "]")
