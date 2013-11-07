@@ -131,6 +131,20 @@ def TParallel( variables ):
    else:
       return TTensorRotated[:,2,2]
 
+def TxRotated( variables ):
+   TTensorRotated = variables[0]
+   if( np.ndim(TTensorRotated)==2 ):
+      return TTensorRotated[0,0]
+   else:
+      return TTensorRotated[:,0,0]
+
+def TyRotated( variables ):
+   TTensorRotated = variables[0]
+   if( np.ndim(TTensorRotated)==2 ):
+      return TTensorRotated[1,1]
+   else:
+      return TTensorRotated[:,1,1]
+
 def PPerpendicular( variables ):
    PTensorRotated = variables[0]
    if( np.ndim(PTensorRotated)==2 ):
@@ -148,16 +162,16 @@ def PParallel( variables ):
 def TPerpOverPar( variables ):
    TTensorRotated = variables[0]
    if( np.ndim(TTensorRotated)==2 ):
-      return 0.5*(TTensorRotated[0,0] + TTensorRotated[1,1]) / TTensorRotated[2,2]
+      return 0.5*np.divide(TTensorRotated[0,0] + TTensorRotated[1,1], TTensorRotated[2,2])
    else:
-      return 0.5*(TTensorRotated[:,0,0] + TTensorRotated[:,1,1]) / TTensorRotated[:,2,2]
+      return 0.5*np.divide(TTensorRotated[:,0,0] + TTensorRotated[:,1,1], TTensorRotated[:,2,2])
 
 def PPerpOverPar( variables ):
    PTensorRotated = variables[0]
    if( np.ndim(PTensorRotated)==2 ):
-      return 0.5*(PTensorRotated[0,0] + PTensorRotated[1,1]) / PTensorRotated[2,2]
+      return 0.5*np.divide(PTensorRotated[0,0] + PTensorRotated[1,1], PTensorRotated[2,2])
    else:
-      return 0.5*(PTensorRotated[:,0,0] + PTensorRotated[:,1,1]) / PTensorRotated[:,2,2]
+      return 0.5*np.divide(PTensorRotated[:,0,0] + PTensorRotated[:,1,1], PTensorRotated[:,2,2])
 
 def beta( variables ):
    Pressure = variables[0]
@@ -173,6 +187,11 @@ def betaPerpendicular( variables ):
    Pressure = variables[0]
    B_magnitude = magnitude(variables[1])
    return 2.0 * 1.25663706144e-6 * Pressure / (B_magnitude*B_magnitude)
+
+def betaPerpOverPar( variables ):
+   betaPerp = variables[0]
+   betaPar = variables[1]
+   return np.divide(betaPerp, betaPar)
 
 def rMirror( variables ):
    TPerpOverPar = variables[0]
@@ -190,14 +209,17 @@ datareducers["TTensorRotated"] =    DataReducerVariable(["TTensor", "B"], TTenso
 datareducers["Temperature"] =       DataReducerVariable(["Pressure", "rho"], Temperature, "K")
 datareducers["TParallel"] =         DataReducerVariable(["TTensorRotated"], TParallel, "K")
 datareducers["TPerpendicular"] =    DataReducerVariable(["TTensorRotated"], TPerpendicular, "K")
+datareducers["TxRotated"] =         DataReducerVariable(["TTensorRotated"], TxRotated, "K")
+datareducers["TyRotated"] =         DataReducerVariable(["TTensorRotated"], TyRotated, "K")
 datareducers["TPerpOverPar"] =      DataReducerVariable(["TTensorRotated"], TPerpOverPar, "K")
 datareducers["PParallel"] =         DataReducerVariable(["PTensorRotated"], PParallel, "Pa")
 datareducers["PPerpendicular"] =    DataReducerVariable(["PTensorRotated"], PPerpendicular, "Pa")
 datareducers["PPerpOverPar"] =      DataReducerVariable(["PTensorRotated"], PPerpOverPar, "K")
-datareducers["beta"] =              DataReducerVariable(["Pressure", "B"], beta ,"ND")
-datareducers["betaParallel"] =      DataReducerVariable(["PParallel", "B"], beta ,"ND")
-datareducers["betaPerpendicular"] = DataReducerVariable(["PPerpendicular", "B"], beta ,"ND")
-datareducers["Rmirror"]           = DataReducerVariable(["TPerpOverPar", "betaPerpendicular"], rMirror, "ND")
+datareducers["beta"] =              DataReducerVariable(["Pressure", "B"], beta ,"")
+datareducers["betaParallel"] =      DataReducerVariable(["PParallel", "B"], beta ,"")
+datareducers["betaPerpendicular"] = DataReducerVariable(["PPerpendicular", "B"], beta ,"")
+datareducers["betaPerpOverPar"] =   DataReducerVariable(["betaPerpendicular", "betaParallel"], betaPerpOverPar, "")
+datareducers["Rmirror"] =           DataReducerVariable(["TPerpOverPar", "betaPerpendicular"], rMirror, "")
 
 
 #list of operators. The user can apply these to any variable,
