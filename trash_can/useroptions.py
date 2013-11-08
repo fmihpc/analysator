@@ -1,12 +1,13 @@
 # USER OPTIONS:
 #################################
 #Set the path to python
-pythonLibDirectoryPath = "/home/hannukse/meteo/lustre/tmp/hannuksela/Code/trunk/tools/pythonLibrary/"
+#pythonLibDirectoryPath = "/home/hannukse/meteo/lustre/tmp/hannuksela/Code/trunk/tools/pythonLibrary/"
+pythonLibDirectoryPath = '/home/htest/pythonTools/trunk/trash_can/'
 #Set paths to subfolders:
-pyVisitPath = "pyVisit/"
-pyVlsvPath = "pyVlsv/"
-pyMiscPath = "miscellaneous/"
+pyVisitPath = ""
+pyVlsvPath = ""
+pyMiscPath = ""
 
 #Set the path to visit
-pathToVisit = "/usr/local/visit/bin"
+pathToVisit = "/home/htest/visit/bin"
 #################################

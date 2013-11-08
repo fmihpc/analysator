@@ -59,11 +59,12 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    
    
    # Launch visit
-   # LaunchNowin(vdir=visitBinDirectory)
+   visitBinDirectory = '/home/htest/visit/bin'
+   vis.LaunchNowin(vdir=visitBinDirectory)
    dx = speedX * frameInSeconds # Note: This is in meters per frame!
    dy = speedY * frameInSeconds # Note: This is in meters per frame!
    #Set up window and annotations
-   OpenDatabase(databaseName, 0)
+   vis.OpenDatabase(databaseName, 0)
    #Load settings
    visSettings.load_visit_settings()
 
@@ -83,7 +84,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    vis.PseudocolorAtts.pointType = vis.PseudocolorAtts.Point  # Box, Axis, Icosahedron, Point, Sphere
    vis.PseudocolorAtts.skewFactor = 1
    vis.PseudocolorAtts.opacity = 1
-   vis.PseudocolorAtts.colorTableName = vis.colorTableName
+   vis.PseudocolorAtts.colorTableName = color_table
    vis.PseudocolorAtts.invertColorTable = 0
    vis.PseudocolorAtts.smoothingLevel = 0
    vis.PseudocolorAtts.pointSizeVarEnabled = 0
@@ -92,7 +93,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    vis.PseudocolorAtts.lineStyle = vis.PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
    vis.PseudocolorAtts.lineWidth = 0
    vis.PseudocolorAtts.opacityType = vis.PseudocolorAtts.Explicit  # Explicit, ColorTable
-   vis.SetPlotOptions(PseudocolorAtts)
+   vis.SetPlotOptions(vis.PseudocolorAtts)
    vis.SetActivePlots(0)
    vis.AddOperator("Slice", 1)
    vis.AddOperator("Threshold", 1)
@@ -104,7 +105,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    vis.ThresholdAtts.upperBounds = (1)
    vis.ThresholdAtts.defaultVarName = variableName
    vis.ThresholdAtts.defaultVarIsScalar = 1
-   vis.SetOperatorOptions(ThresholdAtts, 1)
+   vis.SetOperatorOptions(vis.ThresholdAtts, 1)
    vis.ThresholdAtts = vis.ThresholdAttributes()
    vis.ThresholdAtts.outputMeshType = 0
    vis.ThresholdAtts.listedVarNames = ("Boundary_type")
@@ -113,7 +114,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    vis.ThresholdAtts.upperBounds = (1)
    vis.ThresholdAtts.defaultVarName = variableName
    vis.ThresholdAtts.defaultVarIsScalar = 1
-   vis.SetOperatorOptions(ThresholdAtts, 1)
+   vis.SetOperatorOptions(vis.ThresholdAtts, 1)
    vis.SetActivePlots(0)
    vis.SliceAtts = vis.SliceAttributes()
    vis.SliceAtts.originType = vis.SliceAtts.Intercept  # Point, Intercept, Percent, Zone, Node
@@ -133,7 +134,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
    vis.SliceAtts.meshName = "SpatialGrid"
    vis.SliceAtts.theta = 0
    vis.SliceAtts.phi = 90
-   vis.SetOperatorOptions(SliceAtts, 1)
+   vis.SetOperatorOptions(vis.SliceAtts, 1)
    vis.DrawPlots()
    
    if endFrame == -1:
