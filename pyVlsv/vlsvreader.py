@@ -19,7 +19,7 @@ class VlsvFile(object):
       self.__uses_new_vlsv_format = False
       for child in self.__xml_root:
          if child.tag == "PARAMETER":
-           if child.attrib["name"] == "version":
+           if "name" in child.attrib and child.attrib["name"] == "version":
              self.__uses_new_vlsv_format = True
       #self.__read_fileindex_for_cellid()
       # Read parameters (Note: Reading the spatial cell locations and storing them will anyway take the most time and memory):
@@ -205,9 +205,8 @@ class VlsvFile(object):
       if( (cellid in self.__fileindex_for_cellid_blocks) == False ):
          # Cell id has no blocks
          return []
-
-      num_of_blocks = self.__fileindex_for_cellid_blocks[1]
-      offset = self.__fileindex_for_cellid_blocks[0]
+      offset = self.__fileindex_for_cellid_blocks[cellid][0]
+      num_of_blocks = self.__fileindex_for_cellid_blocks[cellid][1]
 
       if self.__fptr.closed:
          fptr = open(self.__file_name,"rb")
@@ -217,7 +216,7 @@ class VlsvFile(object):
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
-         if child.attrib["name"] == "avgs":
+         if ("name" in child.attrib) and (child.attrib["name"] == "avgs"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -236,7 +235,7 @@ class VlsvFile(object):
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
 
          # Read in block coordinates:
-         if child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
+         if "mesh" in child.attrib and child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -245,10 +244,14 @@ class VlsvFile(object):
             offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
 
             fptr.seek(offset_block_ids)
-            if datatype == "float" and element_size == 4:
-               data_block_ids = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
-            if datatype == "float" and element_size == 8:
-               data_block_ids = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad block id data!"
+               print "Data type: " + datatype + ", element size: " + str(element_size)
+               return
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
@@ -368,7 +371,7 @@ class VlsvFile(object):
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
-         if child.attrib["name"] == "avgs":
+         if "name" in child.attrib and child.attrib["name"] == "avgs":
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -384,7 +387,7 @@ class VlsvFile(object):
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
-         if child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
+         if "mesh" in child.attrib and child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -393,10 +396,13 @@ class VlsvFile(object):
             offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
 
             fptr.seek(offset_block_ids)
-            if datatype == "float" and element_size == 4:
-               data_block_ids = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
-            if datatype == "float" and element_size == 8:
-               data_block_ids = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad data type in blocks!"
+               return
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
@@ -420,6 +426,7 @@ class VlsvFile(object):
       for i in xrange(array_size):
          velocity_block_id = data_block_ids[i]
          avgIndex = 0
+         avgs = data_avgs[i]
 
          for j in velocity_cell_ids + 64*velocity_block_id:
             velocity_cells[(int)(j)] = avgs[avgIndex]
@@ -461,21 +468,21 @@ class VlsvFile(object):
          return self.__list_old_format()
       print "tag = PARAMETER"
       for child in self.__xml_root:
-         if child.tag == "PARAMETER":
+         if child.tag == "PARAMETER" and "name" in child.attrib:
             print "   ", child.attrib["name"]
       print "tag = VARIABLE"
       for child in self.__xml_root:
-         if child.tag == "VARIABLE":
+         if child.tag == "VARIABLE" and "name" in child.attrib:
             print "   ", child.attrib["name"]
       print "tag = MESH"
       for child in self.__xml_root:
-         if child.tag == "MESH":
+         if child.tag == "MESH" and "name" in child.attrib:
             print "   ", child.attrib["name"]
       print "Datareducers:"
       for name in datareducers:
          print "   ",name, " based on ", datareducers[name].variables
       print "Other:"
-      for child in self.__xml_root:
+      for child in self.__xml_root and "mesh" in child.attrib:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
@@ -529,12 +536,12 @@ class VlsvFile(object):
             if child.tag != tag:
                continue
          if name != "":
-            if child.attrib["name"] != name:
+            if "name" in child.attrib and child.attrib["name"] != name:
                continue
          if mesh != "":
-            if child.attrib["mesh"] != mesh:
+            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
                continue
-         if child.tag == tag and child.attrib["name"] == name:
+         if child.tag == tag:
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])

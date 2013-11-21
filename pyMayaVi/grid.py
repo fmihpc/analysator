@@ -61,7 +61,13 @@ class MayaviGrid(HasTraits):
             )
 
 
-   def __init__(self, vlsvReader, variable, **traits):
+   def __init__(self, vlsvReader, variable, operator="pass", threaded=True, **traits):
+      ''' Initializes the class and loads the mayavi grid
+          :param vlsvReader        Some vlsv file with a file open
+          :param variable          Name of the variable
+          :param operator          Operator for the variable
+          :param threaded          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
+      '''
       HasTraits.__init__(self, **traits)
       self.__vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
@@ -73,11 +79,13 @@ class MayaviGrid(HasTraits):
       self.__structured_figures = []
       self.__unstructured_figures = []
       self.__thread = []
-      self.__load_grid( variable=variable )
+      self.__load_grid( variable=variable, operator=operator, threaded=threaded )
 
-   def __load_grid( self, variable ):
+   def __load_grid( self, variable, operator="pass", threaded=True ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable        Name of the variable to plot
+          :param operator        Operator for the variable
+          :param threaded        Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
       '''
       # Get the cell params:
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
@@ -97,9 +105,11 @@ class MayaviGrid(HasTraits):
       self.__mins = mins
       self.__maxs = maxs
       # Draw the grid:
-      thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
-      thread.start()
-#      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
+      if threaded == True:
+         thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
+         thread.start()
+      else:
+         self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
@@ -200,7 +210,7 @@ class MayaviGrid(HasTraits):
                   else:
                      variables.append(self.__vlsvReader.read_variable_info( name=args[i], cellids=cellids ))
             if plotCut == True:
-               from plots import plot_multiple_variables
+               from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
             # Read in the necessary variables:
