@@ -97,9 +97,9 @@ class MayaviGrid(HasTraits):
       self.__mins = mins
       self.__maxs = maxs
       # Draw the grid:
-      thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
-      thread.start()
-#      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
+      #thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
+      #thread.start()
+      self.__generate_grid( mins=mins, maxs=maxs, cells=cells, datas=variable_array_sorted, names=variable )
 
    def __picker_callback( self, picker ):
       """ This gets called when clicking on a cell
