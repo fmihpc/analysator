@@ -2,14 +2,25 @@
 
 def fourier( dt, y, kaiserwindowparameter=0 ):
    ''' Function for returning fourier series and frequencies of some given arrays t and y
-       NOTE: t must have a constant time stepping
-       :param dt           Time
-       :param y            Some variable data
-       :returns the frequencies, new time variables and frequencies
-       return format: [FFT, frequencies, t, y]
 
-       Example usage:
-       fourier_data = fourier( t=np.arange(0,500,0.5), y=rho_data, kaiserwindowparameter=14 )
+
+       :param dt:           Time
+       :param y:            Some variable data
+       :returns: the frequencies, new time variables and frequencies
+
+       .. note::
+
+          return format: [FFT, frequencies, t, y]
+
+       .. note::
+
+          t must have a constant time stepping
+
+       .. code-block:: python
+
+          Example usage:
+          fourier_data = fourier( t=np.arange(0,500,0.5), y=rho_data, kaiserwindowparameter=14 )
+
    '''
    # Get the data
    from variable import get_data

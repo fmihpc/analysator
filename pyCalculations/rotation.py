@@ -4,9 +4,10 @@ import numpy as np
 def rotateTensorToVector( Tensor, vector ):
    '''
       Rotates a tensor with a rotation matrix that would align vector with the z-axis (E.g. moves Tensor to a coordinate system where z axis points in the same direction as vector
-      :param Tensor          Tensor to be rotated
-      :param vector          Vector for creating the rotation matrix
-      :returns rotated tensor
+
+      :param Tensor:          Tensor to be rotated
+      :param vector:          Vector for creating the rotation matrix
+      :returns: rotated tensor
    '''
    vector_u = np.cross(vector, np.array([0,0,1]))
    vector_u = vector_u / np.linalg.norm(vector_u)
@@ -23,7 +24,10 @@ def rotateVectorToVector( vector1, vector2 ):
        :param vector1        Vector to be rotated
        :param vector2        Vector for creating the rotation matrix
        :returns rotated vector1 vector
-       Note: vector1 and vector2 must be 3d vectors
+
+       .. note::
+
+          vector1 and vector2 must be 3d vectors
    '''
    vector_u = np.cross(vector2, np.array([0,0,1]))
    vector_u = vector_u / np.linalg.norm(vector_u)

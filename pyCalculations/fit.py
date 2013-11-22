@@ -3,10 +3,14 @@
 
 def subtract_1d_polynomial_fit( x, y ):
    ''' Fits 1d polynomial into the data, subtracts it from the given data and returns the subtracted data.
-       :param x           The x-axis
-       :param y           Data to manipulate in either variable or raw form
-       :returns data from which a 1d polynomial fit has been subtracted
-       NOTE: This may be useful for fourier transforms
+
+       :param x:           The x-axis
+       :param y:           Data to manipulate in either variable or raw form
+       :returns: data from which a 1d polynomial fit has been subtracted
+
+       .. note::
+
+          This may be useful for fourier transforms
    '''
    # Fit a polynomial into the data
    from variable import get_data, get_name, get_units

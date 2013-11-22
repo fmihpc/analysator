@@ -2,10 +2,14 @@
 
 def cellids( vlsvReader, cellids, variable, units="" ):
    ''' Reads the given variable's values for given cell ids
-       :param vlsvReader           Some VlsvFile with a file open
-       :param cellids              Some cell ids
-       :param variable             Some variable name
-       :returns the variable values for given cell ids
+
+       :param vlsvReader:           Some VlsvFile with a file open
+       :type vlsvReader:            :class:`vlsvreader.VlsvFile`
+       :param cellids:              Some cell ids
+       :param variable:             Some variable name
+       :returns: the variable values for given cell ids
+
+       .. seealso:: modules :py:mod::'vlsvreader'
    '''
    import numpy as np
    from variable import get_data

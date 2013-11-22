@@ -9,6 +9,10 @@ class VlsvFile(object):
    ''' Class for reading VLSV files
    ''' 
    def __init__(self, file_name):
+      ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
+
+          :param file_name:     Name of the vlsv file
+      '''
       self.__file_name = file_name
       self.__fptr = open(self.__file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
@@ -121,8 +125,8 @@ class VlsvFile(object):
       ''' Read raw block data from the open file.
       
       Arguments:
-      :param cellid Cell ID of the cell whose velocity blocks are read
-      :returns numpy array with block ids and their data
+      :param cellid: Cell ID of the cell whose velocity blocks are read
+      :returns: A numpy array with block ids and their data
       '''
       if( len(self.__fileindex_for_cellid_blocks) == 0 ):
          self.__set_cell_offset_and_blocks()
@@ -196,8 +200,8 @@ class VlsvFile(object):
       ''' Read raw block data from the open file.
       
       Arguments:
-      :param cellid Cell ID of the cell whose velocity blocks are read
-      :returns numpy array with block ids and their data
+      :param cellid: Cell ID of the cell whose velocity blocks are read
+      :returns: A numpy array with block ids and their data
       '''
       if( len(self.__fileindex_for_cellid_blocks) == 0 ):
          self.__set_cell_offset_and_blocks()
@@ -486,6 +490,31 @@ class VlsvFile(object):
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
+   def check_variable( self, name ):
+      ''' Checks if a given variable is in the vlsv reader or a part of the data reducer variables
+
+          :param name:             Name of the variable
+          :returns:                True if the variable is in the vlsv file, false if not
+
+          .. note:: This should be used for checking if a variable exists in case a function behaves differently for ex. if B vector is in the vlsv and if not
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvreader.VlsvFile("test.vlsv")
+             if vlsvReader.check_variable( "B" ):
+                # Variable can be plotted
+                plot_B()
+             else:
+                # Variaable not in the vlsv file
+                plot_B_vol()
+      '''
+      for child in self.__xml_root:
+         if child.tag == "VARIABLE" and "name" in child.attrib:
+            if child.attrib["name"] == name:
+               return True
+      return False
+
 
 
    def get_cellid_locations(self):
@@ -498,14 +527,14 @@ class VlsvFile(object):
    def read(self, name="", tag="", mesh="", operator="pass", read_single_cellid=-1):
       ''' Read data from the open vlsv file. 
       
-      Arguments:
-      :param name Name of the data array
-      :param tag  Tag of the data array.
-      :param mesh Mesh for the data array
-      :param operator Datareduction operator. "pass" does no operation on data.
-      :param read_single_cellid  If -1 then all data is read. If nonzero then only the vector for the specified cell id is read
-      :returns numpy array with the data
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :param operator: Datareduction operator. "pass" does no operation on data.
+      :param read_single_cellid:  If -1 then all data is read. If nonzero then only the vector for the specified cell id is read
+      :returns: numpy array with the data
 
+      .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
       # Check first if the name is in datareducers
       if name in datareducers:
@@ -583,13 +612,14 @@ class VlsvFile(object):
    def read_variable(self, name, operator="pass",cellids=-1):
       ''' Read variables from the open vlsv file. 
       Arguments:
-      :param name Name of the variable
-      :param operator Datareduction operator. "pass" does no operation on data      
-      :param cellids, a value of -1 reads all data
-      :returns numpy array with the data
+      :param name: Name of the variable
+      :param operator: Datareduction operator. "pass" does no operation on data      
+      :param cellids: a value of -1 reads all data
+      :returns: numpy array with the data
 
+      .. seealso:: :func:`read` :func:`read_variable_info`
       '''
-      if isinstance(cellids, (int, float)):
+      if len(np.shape(cellids)) == 0:
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
       else:
          # NOTE: Should the file read be optimized by opening the file here until all cellids have been read? It can be optimized by the user manually, as well
@@ -600,11 +630,13 @@ class VlsvFile(object):
 
    def read_variable_info(self, name, operator="pass",cellids=-1):
       ''' Read variables from the open vlsv file and input the data into VariableInfo
-      Arguments:
-      :param name Name of the variable
-      :param operator Datareduction operator. "pass" does no operation on data
-      :param cellids, a value of -1 reads all data
-      :returns numpy array with the data
+
+      :param name: Name of the variable
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :param cellids: a value of -1 reads all data
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read_variable`
       '''
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
@@ -621,10 +653,10 @@ class VlsvFile(object):
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
 
-      Arguments:
-      :param coordinates        The cell's coordinates
-      :returns the cell id
-      NOTE: Returns 0 if the cellid is out of bounds!
+      :param coordinates:        The cell's coordinates
+      :returns: the cell id
+
+      .. note:: Returns 0 if the cellid is out of bounds!
       '''
       # Check that the coordinates are not out of bounds:
       if (self.__xmax < coordinates[0]) or (self.__xmin > coordinates[0]):
@@ -645,9 +677,10 @@ class VlsvFile(object):
    def get_cell_coordinates(self, cellid):
       ''' Returns a given cell's coordinates as a numpy array
 
-      Arguments:
-      :param cellid            The cell's ID
-      :returns a numpy array with the coordinates
+      :param cellid:            The cell's ID
+      :returns: a numpy array with the coordinates
+
+      .. seealso:: :func:`get_cellid`
       '''
       # Get cell lengths:
       cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
@@ -670,8 +703,10 @@ class VlsvFile(object):
       ''' Returns a given velocity cell's coordinates as a numpy array
 
       Arguments:
-      :param vcellid       The velocity cell's ID
-      :return a numpy array with the coordinates
+      :param vcellids:       The velocity cell's ID
+      :returns: a numpy array with the coordinates
+
+      .. seealso:: :func:`get_cell_coordinates` :func:`get_velocity_block_coordinates`
       '''
       vcellids = np.atleast_1d(vcellids)
       # Get block ids:
@@ -698,8 +733,10 @@ class VlsvFile(object):
    def get_velocity_block_coordinates( self, blocks ):
       ''' Returns the block coordinates of the given blocks in a numpy array
 
-          :param blocks         list of block ids
-          :returns a numpy array containing the block coordinates e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
+          :param blocks:         list of block ids
+          :returns: a numpy array containing the block coordinates e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
+
+          .. seealso:: :func:`get_velocity_cell_coordinates`
       '''
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__vxblocks))
       blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__vxblocks), (int)(self.__vyblocks))
@@ -715,8 +752,10 @@ class VlsvFile(object):
    def get_velocity_blocks( self, blockcoordinates ):
       ''' Returns the block ids of the given block coordinates in a numpy array form
 
-          :param blockCoordinates         list of block coordinates e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
-          :returns a numpy array containing the block ids e.g. np.array([4,2,56,44,2, ..])
+          :param blockcoordinates:         list of block coordinates e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
+          :returns: a numpy array containing the block ids e.g. np.array([4,2,56,44,2, ..])
+
+          .. seealso:: :func:`get_velocity_block_coordinates`
       '''
       mins = np.array([self.__vxmin, self.__vymin, self.__vzmin]).astype(float)
       dvs = np.array([4*self.__dvx, 4*self.__dvy, 4*self.__dvz]).astype(float)
@@ -727,16 +766,16 @@ class VlsvFile(object):
    def construct_velocity_cells( self, blocks ):
       ''' Returns velocity cells in given blocks
 
-          :param blocks         list of block ids
-          :returns a numpy array containing the velocity cell ids e.g. np.array([4,2,56,44,522, ..])
+          :param blocks:         list of block ids
+          :returns: a numpy array containing the velocity cell ids e.g. np.array([4,2,56,44,522, ..])
       '''
       return np.ravel(np.outer(np.array(blocks), np.ones(64)) + np.arange(64))
 
    def construct_velocity_cell_coordinates( self, blocks ):
       ''' Returns velocity cell coordinates in given blocks
 
-          :param blocks         list of block ids
-          :returns a numpy array containing the velocity cell ids e.g. np.array([4,2,56,44,522, ..])
+          :param blocks:         list of block ids
+          :returns: a numpy array containing the velocity cell ids e.g. np.array([4,2,56,44,522, ..])
       '''
       # Construct velocity cell coordinates from velocity cells and return them
       return self.get_velocity_cell_coordinates( self.construct_velocity_cells(blocks) )
@@ -745,10 +784,13 @@ class VlsvFile(object):
    def construct_velocity_cell_nodes( self, blocks ):
       ''' Returns velocity cell nodes in given blocks
 
-          :param blocks         list of block ids
-          :param avgs           list of avgs values
-          :returns a numpy array containing velocity cell nodes and the keys for velocity cells
-          NOTE: THIS IS USED FOR CONSTRUCTING VELOCITY SPACES WITH VISUALIZATION PROGRAMS LIKE MAYAVI
+          :param blocks:         list of block ids
+          :param avgs:           list of avgs values
+          :returns: a numpy array containing velocity cell nodes and the keys for velocity cells
+
+          .. note:: This is used for constructing velocity space inside the mayavi module
+
+          .. seealso:: :mod:`grid`
       '''
       blocks = np.array(blocks)
       # Get block coordinates:
@@ -868,7 +910,10 @@ class VlsvFile(object):
    def read_parameter(self, name):
       ''' Read a parameter from the vlsv file
 
-      :param name   Name of the parameter
+      :param name:   Name of the parameter
+      :returns: The parameter value
+
+      .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
       if self.__uses_new_vlsv_format == True:
          return self.read(name=name, tag="PARAMETER")
@@ -880,9 +925,10 @@ class VlsvFile(object):
    def read_velocity_cells(self, cellid):
       ''' Read velocity cells from a spatial cell
       
-      Arguments:
-      :param cellid Cell ID of the cell whose velocity cells are read
-      :returns numpy array with blocks in the cell. Empty if cell has no stored blocks.
+      :param cellid: Cell ID of the cell whose velocity cells are read
+      :returns: numpy array with blocks in the cell. Empty if cell has no stored blocks.
+
+      .. seealso:: :func:`read_blocks`
       '''
       #these two arrays are in the same order: 
       #list of cells for which dist function is saved
@@ -916,9 +962,10 @@ class VlsvFile(object):
    def read_blocks(self, cellid):
       ''' Read raw block data from the open file and return the data along with block ids
       
-      Arguments:
-      :param cell_id Cell ID of the cell whose velocity blocks are read
-      :returns numpy array with block ids and data eg [array([2, 5, 6, 234, 21]), array([1.0e-8, 2.1e-8, 2.1e-8, 0, 4.0e-8])]
+      :param cellid: Cell ID of the cell whose velocity blocks are read
+      :returns: A numpy array with block ids and data eg [array([2, 5, 6, 234, 21]), array([1.0e-8, 2.1e-8, 2.1e-8, 0, 4.0e-8])]
+
+      .. seealso:: :func:`read_velocity_cells`
       '''
       if( len(self.__fileindex_for_cellid_blocks) == 0 ):
          # Set the locations
@@ -936,13 +983,17 @@ class VlsvFile(object):
    def optimize_open_file(self):
       '''Opens the vlsv file for reading
          Files are opened and closed automatically upon reading and in the case of reading multiple times it will help to keep the file open with this command
-         Example usage:
-         variables = []
-         vlsvReader.optimize_open_file()
-         for i in xrange(1000):
-            variables.append(vlsvReader.read_variable("rho", cellids=i))
-         vlsvReader.optimize_close_file()
-         NOTE: This should only be used for optimization purposes.
+
+         .. code-block: python
+
+            #Example usage:
+            variables = []
+            vlsvReader.optimize_open_file()
+            for i in xrange(1000):
+               variables.append(vlsvReader.read_variable("rho", cellids=i))
+            vlsvReader.optimize_close_file()
+
+         .. note:: This should only be used for optimization purposes.
       '''
       self.__fptr = open(self.__file_name,"rb")
 
@@ -950,13 +1001,17 @@ class VlsvFile(object):
    def optimize_close_file(self):
       '''Closes the vlsv file
          Files are opened and closed automatically upon reading and in the case of reading multiple times it will help to keep the file open with this command
-         Example usage:
-         variables = []
-         vlsvReader.optimize_open_file()
-         for i in xrange(1000):
-            variables.append(vlsvReader.read_variable("rho", cellids=i))
-         vlsvReader.optimize_close_file()
-         NOTE: This should only be used for optimization purposes.
+
+         .. code-block: python
+
+            # Example usage:
+            variables = []
+            vlsvReader.optimize_open_file()
+            for i in xrange(1000):
+               variables.append(vlsvReader.read_variable("rho", cellids=i))
+            vlsvReader.optimize_close_file()
+
+         .. note:: This should only be used for optimization purposes.
       '''
       if self.__fptr.closed:
          return
@@ -966,35 +1021,43 @@ class VlsvFile(object):
 
    def optimize_clear_fileindex_for_cellid_blocks(self):
       ''' Clears a private variable containing number of blocks and offsets for particular cell ids
-          NOTE: This should only be used for optimization purposes.
-          Example usage:
-          vlsvReaders = []
-          # Open a list of vlsv files
-          for i in xrange(1000):
-             vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
-          # Go through vlsv readers and print info:
-          for vlsvReader in vlsvReaders:
-             # Print something from the file on the screen
-             print vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
-             # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
-             vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
+
+         .. code-block: python
+
+             # Example usage:
+             vlsvReaders = []
+             # Open a list of vlsv files
+             for i in xrange(1000):
+                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+             # Go through vlsv readers and print info:
+             for vlsvReader in vlsvReaders:
+                # Print something from the file on the screen
+                print vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
+                # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
+                vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
+
+         .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid_blocks = {}
 
    def optimize_clear_fileindex_for_cellid(self):
       ''' Clears a private variable containing cell ids and their locations
-          NOTE: This should only be used for optimization purposes.
-          Example usage:
-          vlsvReaders = []
-          # Open a list of vlsv files
-          for i in xrange(1000):
-             vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
-          # Go through vlsv readers and print info:
-          for vlsvReader in vlsvReaders:
-             # Print something from the file on the screen
-             print vlsvReader.read_variable("B", cellids=2) # Stores info into a private variable
-             # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
-             vlsvReader.optimize_clear_fileindex_for_cellid()
+
+         .. code-block: python
+
+             # Example usage:
+             vlsvReaders = []
+             # Open a list of vlsv files
+             for i in xrange(1000):
+                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+             # Go through vlsv readers and print info:
+             for vlsvReader in vlsvReaders:
+                # Print something from the file on the screen
+                print vlsvReader.read_variable("B", cellids=2) # Stores info into a private variable
+                # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
+                vlsvReader.optimize_clear_fileindex_for_cellid()
+
+         .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid = {}
 

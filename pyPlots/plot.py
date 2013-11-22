@@ -4,30 +4,38 @@ import pylab as pl
 
 def plot_variables( x, y, figure=[] ):
    ''' Plots x and y variables from the input with pylab
-       :param x        Some variable to be plotted in the x-axis
-       :param y        Some variable to be plotted in the y-axis
-       :param figure   If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
-       :returns a pylab figure with the plot
-       Example usage:
-       plot_variables( distances, rho )
-       This would plot rho as a function of distance
+
+       :param x:        Some variable to be plotted in the x-axis
+       :param y:        Some variable to be plotted in the y-axis
+       :param figure:   If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
+       :returns: a pylab figure with the plot
+
+       .. code-block:: python
+
+          # Example usage:
+          plot_variables( distances, rho )
+          # This would plot rho as a function of distance
    '''   
    return plot_multiple_variables( [x], [y], figure )
 
 
 def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
    ''' Plots multiple variables from the input with pylab
-       :param variables_x_list        Some list of variables to be plotted in the x-axis
-       :param variables_y_list        Some list of variables to be plotted in the y-axis
-       :param figure                  If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
-       :returns a pylab figure with the plot
-       Example usage:
-       plot_multiple_variables( [distances, xcoordinates], [rho, B_x] )
-       This would plot rho_values as a function of distance and B_x_values as a function of xcoordinates
-       Note:
-       multiplot expects variables to be saved in the VariableInfo class
-       Notee:
-       If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
+
+       :param variables_x_list:        Some list of variables to be plotted in the x-axis
+       :param variables_y_list:        Some list of variables to be plotted in the y-axis
+       :param figure:                  If one wants to plot into an existing figure then the matplotlib figure should be passed as an argument (OPTIONAL)
+       :returns: a pylab figure with the plot
+
+       .. code-block:: python
+
+          #Example usage:
+          plot_multiple_variables( [distances, xcoordinates], [rho, B_x] )
+          # This would plot rho_values as a function of distance and B_x_values as a function of xcoordinates
+
+       .. note:: Multiplot expects variables to be saved in the VariableInfo class
+
+       .. note:: If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
    '''
 
    if (len(variables_x_list) == 0) or (len(variables_y_list) == 0):

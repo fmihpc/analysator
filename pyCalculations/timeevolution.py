@@ -4,16 +4,21 @@ import numpy as np
 
 def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
-       :param vlsvReader_list         List containing VlsvFiles with a file open
-       :param variables               Name of the variables
-       :param cellids                 List of cell ids
-       :param units                   List of units for the variables (OPTIONAL)
-       :returns an array containing the data for the time evolution for every cell id
-       Example of the return list with 3 variable names and 2 cell ids:
-       [cellid1variable1, cellid1variable2, cellid1variable3, cellid2variable1, cellid2variable2, cellid3variable3]
 
-       Example of usage:
-       time_data = cell_time_evolution( vlsvReader_list=[VlsvFile("bulk.000.vlsv"), VlsvFile("bulk.001.vlsv"), VlsvFile("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+       :param vlsvReader_list:         List containing VlsvFiles with a file open
+       :type vlsvReader_list:          :class:`vlsvreader.VlsvFile`
+       :param variables:               Name of the variables
+       :param cellids:                 List of cell ids
+       :param units:                   List of units for the variables (OPTIONAL)
+       :returns: an array containing the data for the time evolution for every cell id
+
+       .. code-block:: python
+
+          # Example of the return list with 3 variable names and 2 cell ids:
+          [cellid1variable1, cellid1variable2, cellid1variable3, cellid2variable1, cellid2variable2, cellid3variable3]
+   
+          # Example of usage:
+          time_data = cell_time_evolution( vlsvReader_list=[VlsvFile("bulk.000.vlsv"), VlsvFile("bulk.001.vlsv"), VlsvFile("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
    '''
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)
