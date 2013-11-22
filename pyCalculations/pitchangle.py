@@ -3,17 +3,22 @@ import pylab as pl
 
 def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
    ''' Calculates the pitch angle distribution for a given cell
-       :param vlsvReader        Some VlsvFile class with a file open
-       :param cellid            The cell id whose pitch angle the user wants NOTE: The cell id must have a velocity distribution!
-       :param cosine            True if returning the pitch angles as a cosine plot
-       :param plasmaframe       True if the user wants to get the pitch angle distribution in the plasma frame
-       :returns pitch angles and avgs [pitch_angles, avgs]
-       Example usage:
-       vlsvReader = VlsvFile("fullf.0001.vlsv")
-       result = pitch_angles( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
-       # Plot the data
-       import pylab as pl
-       pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
+
+       :param vlsvReader:        Some VlsvFile class with a file open
+       :type vlsvReader:         :class:`vlsvreader.VlsvFile`
+       :param cellid:            The cell id whose pitch angle the user wants NOTE: The cell id must have a velocity distribution!
+       :param cosine:            True if returning the pitch angles as a cosine plot
+       :param plasmaframe:       True if the user wants to get the pitch angle distribution in the plasma frame
+       :returns: pitch angles and avgs [pitch_angles, avgs]
+
+       .. code-block:: python
+
+          # Example usage:
+          vlsvReader = VlsvFile("fullf.0001.vlsv")
+          result = pitch_angles( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
+          # Plot the data
+          import pylab as pl
+          pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
    '''
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid)

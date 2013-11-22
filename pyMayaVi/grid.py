@@ -17,6 +17,10 @@ import mayavi.mlab
 import numpy as np
 import signal
 import threading
+from mayavi.sources.vtk_data_source import VTKDataSource
+from mayavi.modules.outline import Outline
+from mayavi.modules.surface import Surface
+from mayavi.modules.vectors import Vectors
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
@@ -63,10 +67,12 @@ class MayaviGrid(HasTraits):
 
    def __init__(self, vlsvReader, variable, operator="pass", threaded=True, **traits):
       ''' Initializes the class and loads the mayavi grid
-          :param vlsvReader        Some vlsv file with a file open
-          :param variable          Name of the variable
-          :param operator          Operator for the variable
-          :param threaded          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
+
+          :param vlsvReader:        Some vlsv reader with a file open
+          :type vlsvReader:         :class:`vlsvreader.VlsvFile`
+          :param variable:          Name of the variable
+          :param operator:          Operator for the variable
+          :param threaded:          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
       '''
       HasTraits.__init__(self, **traits)
       self.__vlsvReader = vlsvReader
@@ -83,9 +89,9 @@ class MayaviGrid(HasTraits):
 
    def __load_grid( self, variable, operator="pass", threaded=True ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
-          :param variable        Name of the variable to plot
-          :param operator        Operator for the variable
-          :param threaded        Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
+          :param variable:        Name of the variable to plot
+          :param operator:        Operator for the variable
+          :param threaded:        Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
       '''
       # Get the cell params:
       mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
@@ -221,11 +227,11 @@ class MayaviGrid(HasTraits):
    
    def __generate_grid( self, mins, maxs, cells, datas, names  ):
       ''' Generates a grid from given data
-          :param mins           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
-          :param maxs           An array of maximum coordinates for the grid for ex. [-100, 0, 0]
-          :param cells          An array of number of cells in x, y, z direction
-          :param datas          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
-          :param names          Name for the scalar data
+          :param mins:           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
+          :param maxs:           An array of maximum coordinates for the grid for ex. [-100, 0, 0]
+          :param cells:          An array of number of cells in x, y, z direction
+          :param datas:          Scalar data for the grid e.g. array([ cell1Rho, cell2Rho, cell3Rho, cell4Rho, .., cellNRho ])
+          :param names:          Name for the scalar data
       '''
       # Create nodes
       x, y, z = mgrid[mins[0]:maxs[0]:(cells[0]+1)*complex(0,1), mins[1]:maxs[1]:(cells[1]+1)*complex(0,1), mins[2]:maxs[2]:(cells[2]+1)*complex(0,1)]
@@ -265,7 +271,8 @@ class MayaviGrid(HasTraits):
 
    def __generate_velocity_grid( self, cellid, iso_surface=False ):
       '''Generates a velocity grid from a given spatial cell id
-         :param cellid           The spatial cell's ID
+         :param cellid:           The spatial cell's ID
+         :param iso_surface:      If true, plots the iso surface
       '''
       # Create nodes
       # Get velocity blocks and avgs:
@@ -295,6 +302,31 @@ class MayaviGrid(HasTraits):
       values=np.ravel(avgs)
       ug.cell_data.scalars=values
       ug.cell_data.scalars.name='avgs'
+
+      # Plot B if possible:
+      def plot_B( name ):
+         ''' Helper function for plotting B vector (name can change from B_vol to B)
+             :param name:         Name of the B vector ( "B_vol" or "B" )
+         '''
+         # Read B vector and plot it:
+         B = self.__vlsvReader.read_variable(name=name,cellids=cellid)
+         points2 = np.array([[0,0,0]])
+         ug2 = tvtk.UnstructuredGrid(points=points2)
+         ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
+         ug2.point_data.vectors.name = 'B_vector'
+         #src2 = VTKDataSource(data = ug2)
+         d2 = mayavi.mlab.pipeline.add_dataset(ug2)
+         #mayavi.mlab.add_module(Vectors())
+         vec = mayavi.mlab.pipeline.vectors(d2)
+         vec.glyph.mask_input_points = True
+         vec.glyph.glyph.scale_factor = 100000
+
+      if self.__vlsvReader.check_variable( "B" ) == True:
+         plot_B( "B" )
+      elif self.__vlsvReader.check_variable( "B_vol" ) == True:
+         plot_B( "B_vol" )
+
+
       # Visualize
       d = mayavi.mlab.pipeline.add_dataset(ug)
       if iso_surface == False:
@@ -310,11 +342,17 @@ class MayaviGrid(HasTraits):
 
    def generate_diff_grid( self, cellid1, cellid2 ):
       ''' Generates a diff grid of given cell ids (shows avgs diff)
-          Note: If the cell id does not have a certain velocity cell, it is assumed that the avgs value of that cell is 0
-         :param cellid1          The first cell id
-         :param cellid2          The second cell id
-         Example:
-         grid.generate_diff_grid( 29219, 2910 )
+
+          :param cellid1:          The first cell id
+          :param cellid2:          The second cell id
+
+          .. code-block:: python
+
+             # Example:
+             grid.generate_diff_grid( 29219, 2910 )
+
+          .. note:: If the cell id does not have a certain velocity cell, it is assumed that the avgs value of that cell is 0
+
       '''
       # Create nodes
       # Get velocity blocks and avgs (of cellid 1)
