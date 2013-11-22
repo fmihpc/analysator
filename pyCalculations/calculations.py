@@ -5,4 +5,5 @@ from variable import VariableInfo
 from timeevolution import cell_time_evolution
 from cellids import cellids
 from pitchangle import pitch_angles
+from bn import B_n_bowshock
 import fit
