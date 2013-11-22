@@ -37,11 +37,14 @@ class MayaviGrid(HasTraits):
                  'Velocity_space_iso_surface',
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
-                 "Cut_through")
+                 "Cut_through",
+                 "Save_pick")
 
    args = ""
 
    cut_through = []
+
+   pick_points = []
 
    scene = Instance(MlabSceneModel, ())
 
@@ -223,6 +226,9 @@ class MayaviGrid(HasTraits):
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
+      elif self.picker == "Save_pick":
+         # Store the pick info:
+         self.pick_points.append( coordinates )
 
    
    def __generate_grid( self, mins, maxs, cells, datas, names  ):

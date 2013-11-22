@@ -8,7 +8,7 @@ def rotation_matrix_2d( angle ):
        :param angle: Rotation angle
        :returns: The rotation matrix
    '''
-   return np.array([[np.cos(angle), -1*np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+   return np.array([[np.cos(angle), -1*np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
 
 
 def B_n_bowshock( vlsvReader, points ):
@@ -40,7 +40,7 @@ def B_n_bowshock( vlsvReader, points ):
       point2 = np.array(points[i+1], copy=False)
       # Calculate the normal and position of the middle of the line:
       position = point1 + 0.5*(point2 - point1)
-      n_unit = ((point2 - point1) * rotation_matrix_2d( 0.5*np.pi )) / np.linalg.norm(point2 - point1)
+      n_unit = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
       # Get the value of B:
       B_position = position + n_unit * 20000
       # Read B:
