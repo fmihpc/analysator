@@ -13,7 +13,23 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 
 # Import modules
-import calculations
-import vlsvreader
-import grid
-import plot
+try:
+    import settings
+except ImportError:
+    sys.stderr.write("Error: Can't find the file 'settings.py'...")
+try:
+   import calculations
+except ImportError:
+   print "Note: Did not import calculations module"
+try:
+   import vlsvreader
+except ImportError:
+   print "Note: Did not import vlsvreader module"
+try:
+   import grid
+except ImportError:
+   print "Note: Did not import grid module"
+try:
+   import plot
+except ImportError:
+   print "Note: Did not import plot module"
