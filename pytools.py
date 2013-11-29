@@ -13,7 +13,6 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 
 # Import modules
-import settings
 try:
    import calculations
 except ImportError:
