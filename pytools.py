@@ -13,10 +13,7 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 
 # Import modules
-try:
-    import settings
-except ImportError:
-    sys.stderr.write("Error: Can't find the file 'settings.py'...")
+import settings
 try:
    import calculations
 except ImportError:
