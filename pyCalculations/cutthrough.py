@@ -1,6 +1,70 @@
 # Cut-throughs from vlsv files
 
 import numpy as np
+import sys
+
+def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 ):
+   ''' Calculates coordinates to be used in the cut_through. The coordinates are calculated so that every cell gets picked in the coordinates.
+       :param vlsvReader:       Some open VlsvFile
+       :type vlsvReader:        :class:`vlsvreader.VlsvFile`
+       :param point1:           The starting point of a cut-through line
+       :param point2:           The ending point of a cut-through line
+       :returns: Coordinates of for the cell cut-through as well as cell ids and distances
+   '''
+   point1 = np.array(point1, copy=False)
+   point2 = np.array(point2, copy=False)
+
+   epsilon = 0.0001
+
+   distances = []
+
+   cellids = []
+
+   coordinates = []
+
+   iterator = point1
+   unit_vector = (point2 - point1) / np.linalg.norm(point2 - point1)
+   while True:
+      # Get the cell id
+      cellid = vlsvReader.get_cellid(iterator)
+      # Get the max and min boundaries:
+      min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
+      max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
+      # Check which boundary we hit first when we move in the unit_vector direction:
+      we_hit_this_bound_first = -1
+      minimum_boundary_distance = sys.float_info.max
+
+      coefficients_min = (min_bounds - iterator) / unit_vector
+      coefficients_max = (max_bounds - iterator) / unit_vector
+      # Remove negative coefficients:
+      for i in xrange(3):
+         if coefficients_min[i] < 0:
+            coefficients_min[i] = sys.float_info.max
+         if coefficients_max[i] < 0:
+            coefficients_max[i] = sys.float_info.max
+
+      # Find the minimum coefficient for calculating the minimum distance from a boundary
+      coefficient = min([min(coefficients_min), min(coefficients_max)])
+
+      # Append the coordinate:
+      coordinates.append( iterator + 0.5 * coefficient * unit_vector )
+
+      # Append the distance:
+      distances.append( np.linalg.norm( coordinates[len(coordinates)-1] - point1 ) )
+
+      # Append the cell id:
+      cellids.append( vlsvReader.get_cellid( coordinates[len(coordinates)-1] ) )
+
+      # Move the iterator to the next cell. Note: Epsilon is here to ensure there are no bugs with float rounding
+      iterator = iterator + (coefficient + epsilon) * unit_vector
+
+      # Check to make sure the iterator is not moving past point2:
+      if min((point2 - iterator) / unit_vector) < 0:
+         break
+   # Return the coordinates, cellids and distances for processing
+   from output import output_1d
+   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+
 
 def cut_through( vlsvReader, point1, point2 ):
    ''' Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2
@@ -9,7 +73,7 @@ def cut_through( vlsvReader, point1, point2 ):
        :type vlsvReader:        :class:`vlsvreader.VlsvFile`
        :param point1:           The starting point of a cut-through line
        :param point2:           The ending point of a cut-through line
-       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances]
+       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]
 
        .. code-block:: python
 
@@ -37,67 +101,18 @@ def cut_through( vlsvReader, point1, point2 ):
    zmax = vlsvReader.read_parameter(name="zmax")
    zmin = vlsvReader.read_parameter(name="zmin")
    zcells = vlsvReader.read_parameter(name="zcells_ini")
+
+   # Make sure point1 and point2 are inside bounds
+   if vlsvReader.get_cellid(point1) == 0:
+      print "ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!"
+   if vlsvReader.get_cellid(point2) == 0:
+      print "ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!"
+
    #Calculate cell lengths:
    cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
 
-   # Get coordinates between the points:
-   coordinateList = []
-   unitVec = (point2 - point1)/np.linalg.norm(point2 - point1)
-   # Get a vector of cell length's length in the direction of (point2-point1)
-   oneVec = unitVec * np.min(cell_lengths)
-   # Get the number of points:
-   numberOfPoints = (int)(np.linalg.norm(point2 - point1) / np.linalg.norm(oneVec)) + 1
-   # Some routine checks:
-   if numberOfPoints <= 2:
-      print "ERROR, TOO SMALL A DISTANCE BETWEEN POINT1 AND POINT2"
-      return
-   # Input coordinates:
-   for i in xrange((int)(np.linalg.norm(point2 - point1) / np.linalg.norm(oneVec)) + 1):
-      coordinateList.append( point1 + oneVec*i )
-   cellids = []
-   coordinates = []
-   distances = []
-   curDists = []
-   appDist = False
-   for coordinate in coordinateList:
-      ## Get the cell indices
-      #cellindices = np.array([(int)((coordinate[0] - xmin)/(float)(cell_lengths[0])), (int)((coordinate[1] - ymin)/(float)(cell_lengths[1])), (int)((coordinate[2] - zmin)/(float)(cell_lengths[2]))])
-      # Get the cell id:
-      #cellid = cellindices[0] + cellindices[1] * xcells + cellindices[2] * xcells * ycells + 1
-      cellid = vlsvReader.get_cellid(coordinate)
-      # If the cellid is invalid then don't append:
-      if cellid == 0:
-         print "ERROR, BAD CELLID -- CHECK THE INPUT COORDINATES (ARE THEY OUT OF BOUNDS?)"
-         return []
-      curDists.append(np.linalg.norm(coordinate - point1))
-      # If the cell id is already in the list, don't append:
-      if len(cellids) > 0:
-         if cellid == cellids[len(cellids)-1]:
-            continue
-      # Append everything:
-      cellids.append(cellid)
-      coordinates.append(coordinate)
-      if appDist == True:
-         distances.append(np.median(curDists))
-         curDists = []
-      else:
-         appDist = True
-   if len(curDists) != 0:
-      distances.append(np.median(curDists))
-   else:
-      distances.append(distances[len(distances)-1])
-   # Return the cut through:
-   # Note: Make the output into dictionary
-   from output import output_1d
-   #return [np.array(cellids[0:len(cellids)-2]), np.array(distances[0:len(distances)-2])]
-   return output_1d( [np.array(cellids[0:len(cellids)-2]), np.array(distances[0:len(distances)-2])], ["CellID", "distances"], ["", "m"])
-
-
-
-
-
-
-
+   # Get list of coordinates for the cells:
+   return get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 )
 
 
 

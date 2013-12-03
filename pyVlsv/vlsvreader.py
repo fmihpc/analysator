@@ -124,7 +124,6 @@ class VlsvFile(object):
    def __read_blocks_old_format(self, cellid):
       ''' Read raw block data from the open file.
       
-      Arguments:
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
@@ -199,7 +198,6 @@ class VlsvFile(object):
    def __read_blocks_new_format(self, cellid):
       ''' Read raw block data from the open file.
       
-      Arguments:
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
