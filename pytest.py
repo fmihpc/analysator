@@ -23,13 +23,13 @@ def vlsv_test( filename, datafilename ):
 
    data.append( str( vlsvReader.get_cellid_locations() ) )
 
-   cellid = 15
+   cellid = 135291
    coordinates = vlsvReader.get_cell_coordinates( cellid )
 
    data.append( str(vlsvReader.get_cellid( coordinates )) )
 
-   if data[len(data)-1] != 15:
-      print "ERROR, BAD CELLID/COORDINATES IN VLSV TEST"
+   if data[len(data)-1] != cellid:
+      print "ERROR, BAD CELLID/COORDINATES IN VLSV TEST " + str(data[len(data)-1])
       data.append( "ERROR, BAD CELLID/COORDINATES IN VLSV TEST" )
 
    data.append( str(coordinates) )

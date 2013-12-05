@@ -609,12 +609,12 @@ class VlsvFile(object):
       if self.__fptr.closed:
          fptr.close()
 
-   def read_variable(self, name, operator="pass",cellids=-1):
+   def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:
       :param name: Name of the variable
-      :param operator: Datareduction operator. "pass" does no operation on data      
       :param cellids: a value of -1 reads all data
+      :param operator: Datareduction operator. "pass" does no operation on data      
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -628,12 +628,12 @@ class VlsvFile(object):
             variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
          return np.array(variable, copy=False)
 
-   def read_variable_info(self, name, operator="pass",cellids=-1):
+   def read_variable_info(self, name, cellids=-1, operator="pass"):
       ''' Read variables from the open vlsv file and input the data into VariableInfo
 
       :param name: Name of the variable
-      :param operator: Datareduction operator. "pass" does no operation on data
       :param cellids: a value of -1 reads all data
+      :param operator: Datareduction operator. "pass" does no operation on data
       :returns: numpy array with the data
 
       .. seealso:: :func:`read_variable`
