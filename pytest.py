@@ -28,7 +28,7 @@ def vlsv_test( filename, datafilename ):
 
    data.append( str(vlsvReader.get_cellid( coordinates )) )
 
-   if data[len(data)-1] != cellid:
+   if int(data[len(data)-1]) != cellid:
       print "ERROR, BAD CELLID/COORDINATES IN VLSV TEST " + str(data[len(data)-1])
       data.append( "ERROR, BAD CELLID/COORDINATES IN VLSV TEST" )
 
@@ -52,12 +52,6 @@ def vlsv_test( filename, datafilename ):
    pitch_angles = pt.calculations.pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False )
    data.append( str( pitch_angles[0].data ) )
    data.append( str( pitch_angles[1].data ) )
-
-   vector = [4,2,1]
-   angle = 1/4*pi
-
-   data.append( str( pt.calculations.rotation_matrix(vector, angle) ) )
-
    
 
    # Open a file for writing:
