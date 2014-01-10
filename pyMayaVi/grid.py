@@ -126,11 +126,12 @@ class MayaviGrid(HasTraits):
 
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
+      epsilon = 60 # The pick sometimes takes coordinates outside the boundaries so epsilon is made to fix the problem
       for i in xrange(3):
-         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + epsilon > self.__mins[i]):
             # Correct the numberical inaccuracy
             coordinates[i] = self.__mins[i] + 1
-         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - epsilon < self.__maxs[i]):
             # Correct the values
             coordinates[i] = self.__maxs[i] - 1
       print "COORDINATES:" + str(coordinates)
