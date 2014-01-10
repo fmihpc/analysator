@@ -679,6 +679,8 @@ class VlsvFile(object):
       :returns: a numpy array with the coordinates
 
       .. seealso:: :func:`get_cellid`
+
+      .. note:: The cell ids go from 1 .. max not from 0
       '''
       # Get cell lengths:
       cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
