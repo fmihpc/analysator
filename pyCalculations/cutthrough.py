@@ -27,6 +27,9 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
    while True:
       # Get the cell id
       cellid = vlsvReader.get_cellid(iterator)
+      if cellid == 0:
+         print "ERROR, invalid cell id!"
+         return
       # Get the max and min boundaries:
       min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
       max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
