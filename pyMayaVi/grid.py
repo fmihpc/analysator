@@ -99,10 +99,10 @@ class MayaviGrid(HasTraits):
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variable( name=variable )
+      variable_array = self.__vlsvReader.read_variable( name=variable, operator=operator )
       # Sort the dictionary by cell id
-      import operator
-      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
+      import operator as oper
+      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=oper.itemgetter(0))
       # Add the variable values:
       variable_array_sorted = []
       for i in sorted_index_for_cellid_dict:
@@ -126,12 +126,11 @@ class MayaviGrid(HasTraits):
 
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
-      epsilon = 60 # The pick sometimes takes coordinates outside the boundaries so epsilon is made to fix the problem
       for i in xrange(3):
-         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + epsilon > self.__mins[i]):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
             # Correct the numberical inaccuracy
             coordinates[i] = self.__mins[i] + 1
-         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - epsilon < self.__maxs[i]):
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
             # Correct the values
             coordinates[i] = self.__maxs[i] - 1
       print "COORDINATES:" + str(coordinates)
@@ -220,6 +219,8 @@ class MayaviGrid(HasTraits):
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
+            # Close the optimized file read:
+            self.__vlsvReader.optimize_close_file()
             # Read in the necessary variables:
             self.__last_pick = []
          else:
