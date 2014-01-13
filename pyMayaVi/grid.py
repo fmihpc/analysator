@@ -99,10 +99,10 @@ class MayaviGrid(HasTraits):
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variable( name=variable )
+      variable_array = self.__vlsvReader.read_variable( name=variable, operator=operator )
       # Sort the dictionary by cell id
-      import operator
-      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=operator.itemgetter(0))
+      import operator as oper
+      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=oper.itemgetter(0))
       # Add the variable values:
       variable_array_sorted = []
       for i in sorted_index_for_cellid_dict:
@@ -219,6 +219,8 @@ class MayaviGrid(HasTraits):
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
+            # Close the optimized file read:
+            self.__vlsvReader.optimize_close_file()
             # Read in the necessary variables:
             self.__last_pick = []
          else:
