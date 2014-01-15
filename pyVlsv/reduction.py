@@ -33,8 +33,50 @@ def magnitude( variable ):
    return np.sum(np.asarray(variable)**2,axis=-1)**(0.5)
 
 
+def condition_matrix_array( condition, matrices ):
+   ''' Repeats condition n times and forms an array of it
+       :param: condition    Some matrix of conditions
+       :param: matrices     An array of matrices on which to apply the condition
+       :returns: An array of arrays which only have the conditioned elements from each matrix
 
+       .. code-block:: python
+          Example: Pick the diagonal components
+          diagonal_condition = np.array([
+                      [True,  False, False],
+                      [False, True,  False],
+                      [False, False, True]
+                              ])
+          matrices = np.array([
+                      [[3,  1, 2],
+                       [0,  3, 0],
+                       [5,  1, 3]],
+                      [[5,  1, 2],
+                       [0,  5, 2],
+                       [1,  0, 5]]
+                     ])
+          print condition_matrix_array( diagonal_condition, matrices )
+          # Output:
+          # array([[3,3,3], [5,5,5]])
 
+   '''
+   # Make sure the matrices is in the correct shape
+   if np.ndim(matrices) == np.ndim(condition):
+      matrices = np.reshape(matrices, tuple(np.concatenate(([1],[x for x in matrices.shape]))) )
+   # Repeat the condition array n times
+   condition_array = condition*np.reshape(np.ones(np.product(matrices.shape)), matrices.shape)
+   # Get the number of true hits in the condition:
+   num_of_true = 0
+   for i in np.ravel(condition):
+      if i == True:
+         num_of_true = num_of_true + 1
+   # Extract the elements that fill the condition:
+   extracted = np.extract( condition_array, matrices )
+   # Reshape the matrices:
+   extracted = np.reshape(extracted, (len(matrices), num_of_true))
+   if len(extracted) == 1:
+      extracted = extracted[0]
+   # Return the extracted elements
+   return extracted
 
 #do nothing
 def pass_op( variable ):
@@ -86,7 +128,7 @@ def PTensorRotated( variables ):
 def Pressure( variables ):
    PTensorDiagonal = variables[0]
    if(np.ndim(PTensorDiagonal)==1 ):
-      PTensorDiagonal = PTensorDiagonal.reshape(1,3)
+      return np.sum(PTensorDiagonal)
    return PTensorDiagonal[:,0]+PTensorDiagonal[:,1]+PTensorDiagonal[:,2]
 
 def TTensor( variables ):
@@ -210,6 +252,29 @@ def v_beam( variables ):
    vBeam = vBackstream - vNonBackstream
    return vBeam
 
+def v_thermal( variables ):
+   temperatureBackstream = variables[0]
+   k = 1.38065e-23
+   ion_mass = 1.672622e-27
+   vThermal = np.sqrt(k*temperatureBackstream/ion_mass)
+   return vThermal
+
+def v_thermal_vector( variables ):
+   TTensorRotatedBackstream = variables[0]
+   # Take diagonal components of each:
+   condition = [
+               [True,  False, False],
+               [False, True,  False],
+               [False, False, True]
+               ]
+   diagonal_elements = condition_matrix_array( condition, TTensorRotatedBackstream )
+   # We have the diagonal elements of the Temperature tensor now
+   # Do the math..
+   k = 1.38065e-23
+   ion_mass = 1.672622e-27
+   v_thermal_vector = np.sqrt( diagonal_elements*k/ion_mass )
+   return v_thermal_vector
+
 #datareducers with more complex, case dependent structure. 
 datareducers = {}
 datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
@@ -217,13 +282,13 @@ datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal",
 datareducers["PTensorBackstream"] =      DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")
 datareducers["Pressure"] =               DataReducerVariable(["PTensorDiagonal"], Pressure, "Pa")
-datareducers["PressureBackstream"] =     DataReducerVariable(["PTensorBackstreamDiagonal"], Pressure, "Pa")
+datareducers["PBackstream"] =     DataReducerVariable(["PTensorBackstreamDiagonal"], Pressure, "Pa")
 datareducers["TTensor"] =                DataReducerVariable(["PTensor", "rho"], TTensor, "K")
 datareducers["TTensorRotated"] =         DataReducerVariable(["TTensor", "B"], TTensorRotated, "K")
 datareducers["TTensorBackstream"] =      DataReducerVariable(["PTensorBackstream", "RhoBackstream"], TTensor, "K")
 datareducers["TTensorRotatedBackstream"]=DataReducerVariable(["TTensorBackstream", "B"], TTensorRotated, "K")
 datareducers["Temperature"] =            DataReducerVariable(["Pressure", "rho"], Temperature, "K")
-datareducers["TemperatureBackstream"] =  DataReducerVariable(["PressureBackstream", "RhoBackstream"], Temperature, "K")
+datareducers["TBackstream"] =  DataReducerVariable(["PBackstream", "RhoBackstream"], Temperature, "K")
 datareducers["TParallel"] =              DataReducerVariable(["TTensorRotated"], TParallel, "K")
 datareducers["TPerpendicular"] =         DataReducerVariable(["TTensorRotated"], TPerpendicular, "K")
 datareducers["TxRotated"] =              DataReducerVariable(["TTensorRotated"], TxRotated, "K")
@@ -240,6 +305,10 @@ datareducers["Rmirror"] =                DataReducerVariable(["TPerpOverPar", "b
 
 datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
 datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
+datareducers["vThermal"] =               DataReducerVariable(["TBackstream"], v_thermal, "m/s")
+datareducers["vThermalVector"] =         DataReducerVariable(["TTensorRotatedBackstream"], v_thermal_vector, "m/s")
+
+
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
