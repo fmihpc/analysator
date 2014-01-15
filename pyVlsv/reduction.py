@@ -10,7 +10,7 @@ filemanagement.sys.path.insert(0, fullPath)
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyCalculations")
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector
-
+import sys
 
 
 
@@ -45,8 +45,9 @@ def v( variables ):
    ''' Data reducer function for getting velocity from rho and rho_v
        variables[0] = rho_v and variables[1] = rho
    '''
+   epsilon = sys.float_info.epsilon
    rho_v = variables[0]
-   rho = variables[1]
+   rho = variables[1] + epsilon
    if np.ndim(rho) == 0:
       return np.divide(rho_v,rho)
    else:
@@ -198,29 +199,47 @@ def rMirror( variables ):
    betaPerpendicular = variables[1]
    return betaPerpendicular * (TPerpOverPar - 1)
 
+def v_beam( variables ):
+   rhoVBackstream = variables[0]
+   rhoBackstream = variables[1]
+   rhoVNonBackstream = variables[2]
+   rhoNonBackstream = variables[3]
+   # get velocity of both populations:
+   vBackstream = v( [rhoVBackstream, rhoBackstream] )
+   vNonBackstream = v( [rhoVNonBackstream, rhoNonBackstream] )
+   vBeam = vBackstream - vNonBackstream
+   return vBeam
+
 #datareducers with more complex, case dependent structure. 
 datareducers = {}
-datareducers["v"] =                 DataReducerVariable(["rho_v", "rho"], v, "m/s")
-datareducers["PTensor"] =           DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
-datareducers["PTensorRotated"] =    DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")
-datareducers["Pressure"] =          DataReducerVariable(["PTensorDiagonal"], Pressure, "Pa")
-datareducers["TTensor"] =           DataReducerVariable(["PTensor", "rho"], TTensor, "K")
-datareducers["TTensorRotated"] =    DataReducerVariable(["TTensor", "B"], TTensorRotated, "K")
-datareducers["Temperature"] =       DataReducerVariable(["Pressure", "rho"], Temperature, "K")
-datareducers["TParallel"] =         DataReducerVariable(["TTensorRotated"], TParallel, "K")
-datareducers["TPerpendicular"] =    DataReducerVariable(["TTensorRotated"], TPerpendicular, "K")
-datareducers["TxRotated"] =         DataReducerVariable(["TTensorRotated"], TxRotated, "K")
-datareducers["TyRotated"] =         DataReducerVariable(["TTensorRotated"], TyRotated, "K")
-datareducers["TPerpOverPar"] =      DataReducerVariable(["TTensorRotated"], TPerpOverPar, "K")
-datareducers["PParallel"] =         DataReducerVariable(["PTensorRotated"], PParallel, "Pa")
-datareducers["PPerpendicular"] =    DataReducerVariable(["PTensorRotated"], PPerpendicular, "Pa")
-datareducers["PPerpOverPar"] =      DataReducerVariable(["PTensorRotated"], PPerpOverPar, "K")
-datareducers["beta"] =              DataReducerVariable(["Pressure", "B"], beta ,"")
-datareducers["betaParallel"] =      DataReducerVariable(["PParallel", "B"], beta ,"")
-datareducers["betaPerpendicular"] = DataReducerVariable(["PPerpendicular", "B"], beta ,"")
-datareducers["betaPerpOverPar"] =   DataReducerVariable(["betaPerpendicular", "betaParallel"], betaPerpOverPar, "")
-datareducers["Rmirror"] =           DataReducerVariable(["TPerpOverPar", "betaPerpendicular"], rMirror, "")
+datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
+datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
+datareducers["PTensorBackstream"] =      DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa")
+datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")
+datareducers["Pressure"] =               DataReducerVariable(["PTensorDiagonal"], Pressure, "Pa")
+datareducers["PressureBackstream"] =     DataReducerVariable(["PTensorBackstreamDiagonal"], Pressure, "Pa")
+datareducers["TTensor"] =                DataReducerVariable(["PTensor", "rho"], TTensor, "K")
+datareducers["TTensorRotated"] =         DataReducerVariable(["TTensor", "B"], TTensorRotated, "K")
+datareducers["TTensorBackstream"] =      DataReducerVariable(["PTensorBackstream", "RhoBackstream"], TTensor, "K")
+datareducers["TTensorRotatedBackstream"]=DataReducerVariable(["TTensorBackstream", "B"], TTensorRotated, "K")
+datareducers["Temperature"] =            DataReducerVariable(["Pressure", "rho"], Temperature, "K")
+datareducers["TemperatureBackstream"] =  DataReducerVariable(["PressureBackstream", "RhoBackstream"], Temperature, "K")
+datareducers["TParallel"] =              DataReducerVariable(["TTensorRotated"], TParallel, "K")
+datareducers["TPerpendicular"] =         DataReducerVariable(["TTensorRotated"], TPerpendicular, "K")
+datareducers["TxRotated"] =              DataReducerVariable(["TTensorRotated"], TxRotated, "K")
+datareducers["TyRotated"] =              DataReducerVariable(["TTensorRotated"], TyRotated, "K")
+datareducers["TPerpOverPar"] =           DataReducerVariable(["TTensorRotated"], TPerpOverPar, "K")
+datareducers["PParallel"] =              DataReducerVariable(["PTensorRotated"], PParallel, "Pa")
+datareducers["PPerpendicular"] =         DataReducerVariable(["PTensorRotated"], PPerpendicular, "Pa")
+datareducers["PPerpOverPar"] =           DataReducerVariable(["PTensorRotated"], PPerpOverPar, "K")
+datareducers["beta"] =                   DataReducerVariable(["Pressure", "B"], beta ,"")
+datareducers["betaParallel"] =           DataReducerVariable(["PParallel", "B"], beta ,"")
+datareducers["betaPerpendicular"] =      DataReducerVariable(["PPerpendicular", "B"], beta ,"")
+datareducers["betaPerpOverPar"] =        DataReducerVariable(["betaPerpendicular", "betaParallel"], betaPerpOverPar, "")
+datareducers["Rmirror"] =                DataReducerVariable(["TPerpOverPar", "betaPerpendicular"], rMirror, "")
 
+datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
+datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
