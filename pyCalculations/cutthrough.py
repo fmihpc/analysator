@@ -22,8 +22,10 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
 
    coordinates = []
 
+   epsilon = sys.float_info.epsilon
+
    iterator = point1
-   unit_vector = (point2 - point1) / np.linalg.norm(point2 - point1)
+   unit_vector = (point2 - point1 + epsilon) / np.linalg.norm(point2 - point1 + epsilon)
    while True:
       # Get the cell id
       cellid = vlsvReader.get_cellid(iterator)
