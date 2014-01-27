@@ -14,7 +14,6 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
    point1 = np.array(point1, copy=False)
    point2 = np.array(point2, copy=False)
 
-   epsilon = 0.0001
 
    distances = []
 
@@ -22,34 +21,34 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
 
    coordinates = []
 
-   epsilon = sys.float_info.epsilon
+   epsilon = sys.float_info.epsilon*2
 
    iterator = point1
-   unit_vector = (point2 - point1 + epsilon) / np.linalg.norm(point2 - point1 + epsilon)
+   unit_vector = (point2 - point1) / np.linalg.norm(point2 - point1 + epsilon)
    while True:
       # Get the cell id
       cellid = vlsvReader.get_cellid(iterator)
+      print cellid
       # Get the max and min boundaries:
       min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
       max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
       # Check which boundary we hit first when we move in the unit_vector direction:
-      we_hit_this_bound_first = -1
-      minimum_boundary_distance = sys.float_info.max
 
-      coefficients_min = (min_bounds - iterator) / unit_vector
-      coefficients_max = (max_bounds - iterator) / unit_vector
+      coefficients_min = np.divide((min_bounds - iterator), unit_vector)
+      coefficients_max = np.divide((max_bounds - iterator) , unit_vector)
       # Remove negative coefficients:
       for i in xrange(3):
-         if coefficients_min[i] < 0:
+         if coefficients_min[i] <= 0:
             coefficients_min[i] = sys.float_info.max
-         if coefficients_max[i] < 0:
+         if coefficients_max[i] <= 0:
             coefficients_max[i] = sys.float_info.max
 
-      # Find the minimum coefficient for calculating the minimum distance from a boundary
-      coefficient = min([min(coefficients_min), min(coefficients_max)])
 
+
+      # Find the minimum coefficient for calculating the minimum distance from a boundary
+      coefficient = min([min(coefficients_min), min(coefficients_max)]) * 1.01
       # Append the coordinate:
-      coordinates.append( iterator + 0.5 * coefficient * unit_vector )
+      coordinates.append( iterator + coefficient * unit_vector )
 
       # Append the distance:
       distances.append( np.linalg.norm( coordinates[len(coordinates)-1] - point1 ) )
@@ -58,13 +57,19 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       cellids.append( vlsvReader.get_cellid( coordinates[len(coordinates)-1] ) )
 
       # Move the iterator to the next cell. Note: Epsilon is here to ensure there are no bugs with float rounding
-      iterator = iterator + (coefficient + epsilon) * unit_vector
-
+      print coefficient
+      print unit_vector
+      print iterator
+      print point2
+      iterator = iterator + coefficient * unit_vector
+      print iterator
+      print (point2 - iterator)* unit_vector
       # Check to make sure the iterator is not moving past point2:
-      if min((point2 - iterator) / unit_vector) < 0:
+      if min((point2 - iterator)* unit_vector) < 0:
          break
    # Return the coordinates, cellids and distances for processing
    from output import output_1d
+   print cellids
    return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
 
 
