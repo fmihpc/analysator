@@ -57,19 +57,12 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       cellids.append( vlsvReader.get_cellid( coordinates[len(coordinates)-1] ) )
 
       # Move the iterator to the next cell. Note: Epsilon is here to ensure there are no bugs with float rounding
-      print coefficient
-      print unit_vector
-      print iterator
-      print point2
       iterator = iterator + coefficient * unit_vector
-      print iterator
-      print (point2 - iterator)* unit_vector
       # Check to make sure the iterator is not moving past point2:
       if min((point2 - iterator)* unit_vector) < 0:
          break
    # Return the coordinates, cellids and distances for processing
    from output import output_1d
-   print cellids
    return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
 
 
