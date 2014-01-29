@@ -71,11 +71,19 @@ class VlsvFile(object):
          fptr = open(self.__file_name,"rb")
       else:
          fptr = self.__fptr
-      fptr.seek(8)
-      (offset,) = struct.unpack("Q", fptr.read(8))
+      # Eight first bytes indicate whether the system is big_endianness or something else
+      endianness_offset = 8
+      fptr.seek(endianness_offset)
+      # Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.
+      uint64_byte_amount = 8
+      (offset,) = struct.unpack("Q", fptr.read(uint64_byte_amount))
+      # Move to the xml offset
       fptr.seek(offset)
+      # Read the xml data
       xml_data = fptr.read(max_xml_size)
+      # Read the xml as string
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
+      # Input the xml data into xml_root
       self.__xml_root = ET.fromstring(xml_string)
       if self.__fptr.closed:
          fptr.close()
