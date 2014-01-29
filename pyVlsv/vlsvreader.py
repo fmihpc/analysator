@@ -4,6 +4,7 @@ import ast
 import numpy as np
 from reduction import datareducers,data_operators
 from collections import Iterable
+from vlsvwriter import VlsvWriter
 
 class VlsvFile(object):
    ''' Class for reading VLSV files

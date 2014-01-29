@@ -20,7 +20,6 @@ class VlsvWriter(object):
 
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
-      self.__fileindex_for_cellid_blocks={}
 
       self.__offset = 0
       # Write endianness
@@ -76,18 +75,44 @@ class VlsvWriter(object):
       data = vlsvReader.read_parameter("vzmax")
       self.write(data=data, name='vzmax', tag="PARAMETER", mesh='SpatialGrid')
 
+      data = vlsvReader.read_parameter("t")
+      self.write(data=data, name='t', tag="PARAMETER", mesh='SpatialGrid')
+      data = vlsvReader.read_parameter("dt")
+      self.write(data=data, name='dt', tag="PARAMETER", mesh='SpatialGrid')
+      data = vlsvReader.read_parameter("tstep")
+      self.write(data=data, name='tstep', tag="PARAMETER", mesh='SpatialGrid')
+      data = vlsvReader.read_parameter("fileIndex")
+      self.write(data=data, name='fileIndex', tag="PARAMETER", mesh='SpatialGrid')
+
+
       # Write mesh bounding box:
-      self.write(data=vlsvReader.read(name="", tag="MESH_BBOX", mesh="SpatialGrid"), name="MESH_BBOX", tag="", mesh="SpatialGrid")
+      self.write(data=vlsvReader.read(name="", tag="MESH_BBOX", mesh="SpatialGrid"), name="", tag="MESH_BBOX", mesh="SpatialGrid")
 
       # Write nodes:
-      self.write(data=vlsvReader.read(
+      self.write(data=vlsvReader.read(name="", tag="MESH_NODE_CRDS_X", mesh="SpatialGrid"), name="", tag="MESH_NODE_CRDS_X", mesh="SpatialGrid")
 
-   def write(self, data, name, tag, mesh):
+      # Write cell ids:
+      self.write(data=vlsvReader.read(name="CellID", tag="VARIABLE", mesh="SpatialGrid"), name="CellID", tag="VARIABLE", mesh="SpatialGrid")
+
+      # Some attributes for the MESH array that are mandatory to define:
+      extra_attribs = {}
+      extra_attribs['type'] = "multi_ucd"
+      extra_attribs['xperiodic'] = 'yes'
+      extra_attribs['yperiodic'] = 'yes'
+      extra_attribs['zperiodic'] = 'yes'
+      # Write zone global ids:
+      self.write(data=vlsvReader.read(name="SpatialGrid", tag="MESH", mesh=""), name="SpatialGrid", tag="MESH", mesh="", extra_attribs=extra_attribs)
+
+      # Write domain sizes
+      self.write(data=vlsvReader.read( name='', tag='MESH_DOMAIN_SIZES', mesh="SpatialGrid" ), name='', tag='MESH_DOMAIN_SIZES', mesh="SpatialGrid" )
+
+   def write(self, data, name, tag, mesh, extra_attribs=''):
       ''' Writes an array into the vlsv file
 
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh
 
       :returns: True if the data was written successfully
 
@@ -106,6 +131,9 @@ class VlsvWriter(object):
       child.attrib["name"] = name
       child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(array))
+      if extra_attribs != '':
+         for i in extra_attribs.iteritems():
+            child.attrib[i[0]] = i[1]
       if len(np.shape(array)) == 2:
          child.attrib["vectorsize"] = np.shape(array)[1]
          datatype = str(type(array[0][0]))
@@ -144,5 +172,27 @@ class VlsvWriter(object):
       if self.__fptr.closed:
          fptr.close()
 
+   def __write_xml_footer( self ):
+      # Write the xml footer:
+      current_offset = fptr.tell()
+      max_xml_size = 1000000
+      if self.__fptr.closed:
+         fptr = open(self.__file_name,"wb")
+      else:
+         fptr = self.__fptr
+      self.__xml_root.write( fptr )
+      # Write the offset (first 8 bytes = endianness):
+      offset_endianness = 8
+      fptr.seek( offset_endianness )
+      # Write the offset:
+      np.array(current_offset, ndtype=np.uint64).tofile(fptr)
+      # Go back to the previous offset:
+      fptr.seek(current_offset)
+      if self.__fptr.closed:
+         fptr.close()
+
    def close():
+      self.__write_xml_footer()
       self.__fptr.close()
+
+
