@@ -212,9 +212,13 @@ class MayaviGrid(HasTraits):
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
                      _operator = args[i].split(',')[1]
-                     variables.append(self.__vlsvReader.read_variable_info( name=_variable, cellids=cellids, operator=_operator ))
+                     variable_info = self.__vlsvReader.read_variable_info( name=_variable, cellids=cellids, operator=_operator )
+                     variables.append(variable_info)
+                     self.cut_through.append(variable_info)
                   else:
-                     variables.append(self.__vlsvReader.read_variable_info( name=args[i], cellids=cellids ))
+                     variable_info = self.__vlsvReader.read_variable_info( name=args[i], cellids=cellids )
+                     variables.append(variable_info)
+                     self.cut_through.append(variable_info)
             if plotCut == True:
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
