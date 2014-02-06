@@ -78,7 +78,7 @@ def get_2d_array( fileNames, variables, BBOX ):
    variables = np.atleast_1d(variables)
 
    # Get the cell ids inside the boundary box:
-   vlsvReader = VlsvFile(fileNames[0])
+   vlsvReader = VlsvReader(fileNames[0])
    # Get xmax, xmin and xcells_ini
    xmax = vlsvReader.read_parameter(name="xmax")
    xmin = vlsvReader.read_parameter(name="xmin")
@@ -147,7 +147,7 @@ def get_2d_array( fileNames, variables, BBOX ):
    # Read variables:
    for f in fileNames:
       # Open file
-      vlsvReader = VlsvFile(f)
+      vlsvReader = VlsvReader(f)
       # Read variables:
       for i in variables:
          # Read in the variable

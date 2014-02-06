@@ -1,7 +1,7 @@
 import pylab as pl
 import numpy as np
 from plotfunctions import *
-from vlsvreader import *
+from vlsvfile import *
 from vlsvplots import *
 from scipy.interpolate import interp1d
 
@@ -65,7 +65,7 @@ def plot_variables( x, y, showplots=False, fitfunction="nullfit", cubicspline=Tr
 #   cellids = cutThrough[0]
 #   coordinates = cutThrough[1]
 #   distances = cutThrough[2]
-#   vlsvReader = VlsvFile("bulk.0000519.vlsv")
+#   vlsvReader = VlsvReader("bulk.0000519.vlsv")
 #   for i in variables:
 #      variables[i] = vlsvReader.read_variables_for_cellids("rho", cellids)
 #      plot_variables( x = distances, y = variables["rho"], showplots = False, fitfunction="nullfit" )
@@ -76,7 +76,7 @@ def take_cut_through_variables( fileName, variableNames, point1, point2 ):
    cellids = cutThrough[0]
    coordinates = cutThrough[1]
    distances = cutThrough[2]
-   vlsvReader = VlsvFile(fileName)
+   vlsvReader = VlsvReader(fileName)
    for i in variableNames:
       variables[i] = vlsvReader.read_variables_for_cellids(i, cellids)
    variables["cellids"] = cellids

@@ -3,11 +3,11 @@ pytools
 
 .. automodule:: pytools
 
-vlsvreader
-==========
+vlsvfile
+========
 
-.. automodule:: vlsvreader
-   :members:
+.. automodule:: vlsvfile
+   :members: VlsvReader, VlsvWriter
    :show-inheritance:
 
 grid

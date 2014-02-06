@@ -5,8 +5,8 @@ import sys
 
 def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 ):
    ''' Calculates coordinates to be used in the cut_through. The coordinates are calculated so that every cell gets picked in the coordinates.
-       :param vlsvReader:       Some open VlsvFile
-       :type vlsvReader:        :class:`vlsvreader.VlsvFile`
+       :param vlsvReader:       Some open VlsvReader
+       :type vlsvReader:        :class:`vlsvfile.VlsvReader`
        :param point1:           The starting point of a cut-through line
        :param point2:           The ending point of a cut-through line
        :returns: Coordinates of for the cell cut-through as well as cell ids and distances
@@ -28,6 +28,9 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
    while True:
       # Get the cell id
       cellid = vlsvReader.get_cellid(iterator)
+      if cellid == 0:
+         print "ERROR, invalid cell id!"
+         return
       # Get the max and min boundaries:
       min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
       max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
@@ -68,8 +71,8 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
 def cut_through( vlsvReader, point1, point2 ):
    ''' Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2
 
-       :param vlsvReader:       Some open VlsvFile
-       :type vlsvReader:        :class:`vlsvreader.VlsvFile`
+       :param vlsvReader:       Some open VlsvReader
+       :type vlsvReader:        :class:`vlsvfile.VlsvReader`
        :param point1:           The starting point of a cut-through line
        :param point2:           The ending point of a cut-through line
        :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]
@@ -77,7 +80,7 @@ def cut_through( vlsvReader, point1, point2 ):
        .. code-block:: python
 
           Example:
-          vlsvReader = VlsvFile(\"testfile.vlsv\")
+          vlsvReader = VlsvReader(\"testfile.vlsv\")
           cut_through = cut_through(vlsvReader, [0,0,0], [2,5e6,0])
           cellids = cut_through[0]
           distances = cut_through[1]

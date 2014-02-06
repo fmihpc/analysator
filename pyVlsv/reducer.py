@@ -1,5 +1,5 @@
 class DataReducerVariable:
-   ''' A class for creating custom variables that are being read by the VlsvFile class. This is useful for reading in variables that are not written in the vlsv file directly
+   ''' A class for creating custom variables that are being read by the VlsvReader class. This is useful for reading in variables that are not written in the vlsv file directly
    '''
    variables = []
    operation = []

@@ -2,10 +2,12 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
+import os
 from reduction import datareducers,data_operators
 from collections import Iterable
+from vlsvwriter import VlsvWriter
 
-class VlsvFile(object):
+class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
    def __init__(self, file_name):
@@ -13,6 +15,9 @@ class VlsvFile(object):
 
           :param file_name:     Name of the vlsv file
       '''
+      # Make sure the path is set in file name: 
+      file_name = os.path.abspath(file_name)
+
       self.__file_name = file_name
       self.__fptr = open(self.__file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
@@ -71,11 +76,19 @@ class VlsvFile(object):
          fptr = open(self.__file_name,"rb")
       else:
          fptr = self.__fptr
-      fptr.seek(8)
-      (offset,) = struct.unpack("Q", fptr.read(8))
+      # Eight first bytes indicate whether the system is big_endianness or something else
+      endianness_offset = 8
+      fptr.seek(endianness_offset)
+      # Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.
+      uint64_byte_amount = 8
+      (offset,) = struct.unpack("Q", fptr.read(uint64_byte_amount))
+      # Move to the xml offset
       fptr.seek(offset)
+      # Read the xml data
       xml_data = fptr.read(max_xml_size)
+      # Read the xml as string
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
+      # Input the xml data into xml_root
       self.__xml_root = ET.fromstring(xml_string)
       if self.__fptr.closed:
          fptr.close()
@@ -499,7 +512,7 @@ class VlsvFile(object):
           .. code-block:: python
 
              # Example usage:
-             vlsvReader = pt.vlsvreader.VlsvFile("test.vlsv")
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
              if vlsvReader.check_variable( "B" ):
                 # Variable can be plotted
                 plot_B()
@@ -679,6 +692,8 @@ class VlsvFile(object):
       :returns: a numpy array with the coordinates
 
       .. seealso:: :func:`get_cellid`
+
+      .. note:: The cell ids go from 1 .. max not from 0
       '''
       # Get cell lengths:
       cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
@@ -1026,7 +1041,7 @@ class VlsvFile(object):
              vlsvReaders = []
              # Open a list of vlsv files
              for i in xrange(1000):
-                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+                vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen
@@ -1047,7 +1062,7 @@ class VlsvFile(object):
              vlsvReaders = []
              # Open a list of vlsv files
              for i in xrange(1000):
-                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+                vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen

@@ -4,8 +4,8 @@ import pylab as pl
 def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
    ''' Calculates the pitch angle distribution for a given cell
 
-       :param vlsvReader:        Some VlsvFile class with a file open
-       :type vlsvReader:         :class:`vlsvreader.VlsvFile`
+       :param vlsvReader:        Some VlsvReader class with a file open
+       :type vlsvReader:         :class:`vlsvfile.VlsvReader`
        :param cellid:            The cell id whose pitch angle the user wants NOTE: The cell id must have a velocity distribution!
        :param cosine:            True if returning the pitch angles as a cosine plot
        :param plasmaframe:       True if the user wants to get the pitch angle distribution in the plasma frame
@@ -14,7 +14,7 @@ def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
        .. code-block:: python
 
           # Example usage:
-          vlsvReader = VlsvFile("fullf.0001.vlsv")
+          vlsvReader = VlsvReader("fullf.0001.vlsv")
           result = pitch_angles( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
           # Plot the data
           import pylab as pl

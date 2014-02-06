@@ -7,7 +7,7 @@ from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import \
                     MlabSceneModel
 from mayavi.core.ui.mayavi_scene import MayaviScene
-import vlsvreader
+import vlsvfile
 from numpy import mgrid, empty, sin, pi, ravel
 import pylab as pl
 from tvtk.api import tvtk
@@ -69,7 +69,7 @@ class MayaviGrid(HasTraits):
       ''' Initializes the class and loads the mayavi grid
 
           :param vlsvReader:        Some vlsv reader with a file open
-          :type vlsvReader:         :class:`vlsvreader.VlsvFile`
+          :type vlsvReader:         :class:`vlsvfile.VlsvReader`
           :param variable:          Name of the variable
           :param operator:          Operator for the variable
           :param threaded:          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)

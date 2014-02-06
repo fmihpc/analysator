@@ -1,4 +1,4 @@
-from vlsvreader import *
+from vlsvfile import *
 
 def get_variables(variable, fileNames, cellids):
    #Create a dictionary for holding cell ids
@@ -7,7 +7,7 @@ def get_variables(variable, fileNames, cellids):
       cellidvariables[i] = []
    #Read variables
    for f in fileNames:
-      vlsvReader = VlsvFile(f)
+      vlsvReader = VlsvReader(f)
       variables = vlsvReader.read_variables_for_cellids(name=variable, cellids=cellids)
       for i in xrange(len(cellids)):
          cellidvariables[cellids[i]].append(variables[i])

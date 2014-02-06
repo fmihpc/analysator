@@ -6,8 +6,8 @@
 def cut2d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax ):
    ''' Retrieves cell ids from the given 2d cut
 
-       :param vlsvReader:         Some VlsvFile with a file open
-       :type vlsvReader:          :class:`vlsvreader.VlsvFile`
+       :param vlsvReader:         Some VlsvReader with a file open
+       :type vlsvReader:          :class:`vlsvfile.VlsvReader`
        :param xmin:               The minimum x coordinate of the 2d cut
        :param xmax:               The maximum x coordinate of the 2d cut
        :param ymin:               The minimum y coordinate of the 2d cut
