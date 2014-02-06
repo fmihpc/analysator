@@ -2,6 +2,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
+import os
 from reduction import datareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
@@ -14,6 +15,9 @@ class VlsvReader(object):
 
           :param file_name:     Name of the vlsv file
       '''
+      # Make sure the path is set in file name: 
+      file_name = os.path.abspath(file_name)
+
       self.__file_name = file_name
       self.__fptr = open(self.__file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
