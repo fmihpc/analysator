@@ -497,7 +497,7 @@ class VlsvReader(object):
       for name in datareducers:
          print "   ",name, " based on ", datareducers[name].variables
       print "Other:"
-      for child in self.__xml_root and "mesh" in child.attrib:
+      for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
