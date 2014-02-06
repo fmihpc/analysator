@@ -8,7 +8,7 @@ def vlsv_test( filename, datafilename ):
        :param datafilename:       Name of the data file to write
    '''
    # Open a file for reading:
-   vlsvReader = pt.vlsvreader.VlsvFile(filename)
+   vlsvReader = pt.vlsvfile.VlsvReader(filename)
 
    vlsvReader.list()
 

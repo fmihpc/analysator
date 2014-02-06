@@ -5,8 +5,8 @@ import numpy as np
 def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
 
-       :param vlsvReader_list:         List containing VlsvFiles with a file open
-       :type vlsvReader_list:          :class:`vlsvreader.VlsvFile`
+       :param vlsvReader_list:         List containing VlsvReaders with a file open
+       :type vlsvReader_list:          :class:`vlsvfile.VlsvReader`
        :param variables:               Name of the variables
        :param cellids:                 List of cell ids
        :param units:                   List of units for the variables (OPTIONAL)
@@ -18,7 +18,7 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
           [cellid1variable1, cellid1variable2, cellid1variable3, cellid2variable1, cellid2variable2, cellid3variable3]
    
           # Example of usage:
-          time_data = cell_time_evolution( vlsvReader_list=[VlsvFile("bulk.000.vlsv"), VlsvFile("bulk.001.vlsv"), VlsvFile("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+          time_data = cell_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
    '''
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)

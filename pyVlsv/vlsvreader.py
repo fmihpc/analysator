@@ -6,7 +6,7 @@ from reduction import datareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 
-class VlsvFile(object):
+class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
    def __init__(self, file_name):
@@ -508,7 +508,7 @@ class VlsvFile(object):
           .. code-block:: python
 
              # Example usage:
-             vlsvReader = pt.vlsvreader.VlsvFile("test.vlsv")
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
              if vlsvReader.check_variable( "B" ):
                 # Variable can be plotted
                 plot_B()
@@ -1037,7 +1037,7 @@ class VlsvFile(object):
              vlsvReaders = []
              # Open a list of vlsv files
              for i in xrange(1000):
-                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+                vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen
@@ -1058,7 +1058,7 @@ class VlsvFile(object):
              vlsvReaders = []
              # Open a list of vlsv files
              for i in xrange(1000):
-                vlsvReaders.append( VlsvFile("test" + str(i) + ".vlsv") )
+                vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen

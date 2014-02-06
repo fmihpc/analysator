@@ -3,7 +3,7 @@ import numpy as np
 
 def get_rho_nonbackstream( vlsvReader, cellid, radius ):
    ''' Calculates the non backstream population's (solar wind's) contributions on rho
-       :param vlsvReader          Some VlsvFile with a file open
+       :param vlsvReader          Some VlsvReader with a file open
        :param cellid              The cellid whose rho to calculate
        Returns the value of rho
    '''

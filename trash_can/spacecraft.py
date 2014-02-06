@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import pylab as pl
 from useroptions import *
-from vlsvreader import *
+from vlsvfile import *
 from makepoint import *
 
 def make_moving_spacecraft_plot_scalars( filename, variables_to_plot, x_variable, starting_coordinates, time_limit ):
@@ -126,7 +126,7 @@ class SpaceCraft(object):
       # Note: Expecting a sorted numpy array of strings
       self.__filenames = np.atleast_1d(filenames)
       # Create a list of vlsv file objects for the files
-      self.__vlsvfile = VlsvFile(self.__filenames[self.__time_index])
+      self.__vlsvfile = VlsvReader(self.__filenames[self.__time_index])
       # Get xmax, xmin and xcells_ini
       self.__xmax = self.__vlsvfile.read_parameter(name="xmax")
       self.__xmin = self.__vlsvfile.read_parameter(name="xmin")
@@ -291,7 +291,7 @@ class SpaceCraft(object):
             # Check if the time index is still within bounds:
             if self.__time_index + 1 < len(np.atleast_1d(self.__filenames)):
                self.__time_index = self.__time_index + 1
-               self.__vlsvfile = VlsvFile(self.__filenames[self.__time_index])
+               self.__vlsvfile = VlsvReader(self.__filenames[self.__time_index])
             else:
                print "Hit the global time limit!"
                return False

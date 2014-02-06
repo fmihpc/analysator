@@ -18,9 +18,9 @@ try:
 except ImportError:
    print "Note: Did not import calculations module"
 try:
-   import vlsvreader
+   import vlsvfile
 except ImportError:
-   print "Note: Did not import vlsvreader module"
+   print "Note: Did not import vlsvfile module"
 try:
    import grid
 except ImportError:

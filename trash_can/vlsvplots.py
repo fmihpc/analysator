@@ -1,4 +1,4 @@
-from vlsvreader import *
+from vlsvfile import *
 import pylab as pl
 import numpy as np
 import scipy as sc
@@ -11,7 +11,7 @@ class nullfit:
 
 #def draw_by_cellid_array(vlsvReader, variables1, variables2, cellids, coordinates=[], distances=[], fitFunction=nullfit):
 #   '''Returns variables for the given cell ids as well as fitted function if specified
-#      :param vlsvReader    some VlsvFile with a file open
+#      :param vlsvReader    some VlsvReader with a file open
 #      :param variables1    some dictionary of variables to be plotted as the x-axis
 #      :param variables2    some dictionary of variables to be plotted as the y-axis
 #      :param cellids       some list of cellids
@@ -97,7 +97,7 @@ class nullfit:
 
 def draw_plots_by_cellid(vlsvReader, variables1, variables2, cellids, coordinates=[], distances=[], fitFunction=nullfit):
    '''Draws a plot of given variables for the given cell ids
-      :param vlsvReader    some VlsvFile with a file open
+      :param vlsvReader    some VlsvReader with a file open
       :param variables1    some dictionary of variables to be plotted as the x-axis
       :param variables2    some dictionary of variables to be plotted as the y-axis
       :param cellids       some list of cellids
@@ -222,7 +222,7 @@ def take_cut_through_array( fileName, point1, point2 ):
    point1 = np.array(point1)
    point2 = np.array(point2)
    # Open the file
-   vlsvReader = VlsvFile(fileName)
+   vlsvReader = VlsvReader(fileName)
    # Get parameters from the file to determine a good length between points (step length):
    # Get xmax, xmin and xcells_ini
    xmax = vlsvReader.read_parameter(name="xmax")
@@ -328,7 +328,7 @@ def take_cut_through( fileName, variables1, variables2, point1, point2, fitFunct
    coordinateList = cutThrough[1]
    distances = cutThrough[2]
    # Plot the variables:
-   draw_plots_by_cellid(vlsvReader=VlsvFile(fileName), variables1=variables1, variables2=variables2, cellids=cellids, coordinates=coordinateList, distances=distances, fitFunction=fitFunction)
+   draw_plots_by_cellid(vlsvReader=VlsvReader(fileName), variables1=variables1, variables2=variables2, cellids=cellids, coordinates=coordinateList, distances=distances, fitFunction=fitFunction)
 
 def time_evolution_array( fileNames, dt, cellid, variables, forceConstantAmplitude=False, fitFunction=nullfit, kaiserwindowparameter=0 ):
    ''' Plots the time evolution of some cell and fits a fourier series in the plot
@@ -364,7 +364,7 @@ t2 & y2                   |                    frequencies
       # Get time
       t.append(dt*index)
       # Open file for reading
-      vlsvReader = VlsvFile(f)
+      vlsvReader = VlsvReader(f)
       # Get the variable(s)
       for i in variables.iteritems():
          readVariable = vlsvReader.read_variable(cellid=cellid, name=i[0])
@@ -436,7 +436,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
       # Get time
       t.append(dt*index)
       # Open file for reading
-      vlsvReader = VlsvFile(f)
+      vlsvReader = VlsvReader(f)
       # Get the variable(s)
       for i in variables.iteritems():
          readVariable = vlsvReader.read_variable(cellid=cellid, name=i[0])

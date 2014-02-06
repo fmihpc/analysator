@@ -6,7 +6,7 @@ import loadvisitsettings as visSettings
 import subprocess
 import numpy as np
 from sets import Set
-from vlsvreader import *
+from vlsvfile import *
 from useroptions import *
 
 
@@ -52,7 +52,7 @@ def make_movie_auto( variableName, boundaryBox, vlsvFileName, inputDirectory, in
 
    # Get the min and max values:
    # Get all cell ids within the boundary box:
-   vlsvReader = VlsvFile(vlsvFileName)
+   vlsvReader = VlsvReader(vlsvFileName)
    # Get global boundaries:
    # Get xmax, xmin and xcells_ini
    xmax = vlsvReader.read_parameter(name="xmax")
