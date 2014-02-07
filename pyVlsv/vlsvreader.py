@@ -6,6 +6,7 @@ import os
 from reduction import datareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
+from variable import get_data
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -548,6 +549,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
 
+      # Make the read function understand variable info data
+      read_single_cellid = get_data(read_single_cellid)
 
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
