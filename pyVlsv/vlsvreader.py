@@ -547,15 +547,6 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
-      # Check first if the name is in datareducers
-      if name in datareducers:
-         reducer = datareducers[name]
-         # Read the necessary variables:
-         tmp_vars = []
-         for i in np.atleast_1d(reducer.variables):
-            tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
-         # Return the output of the datareducer
-         return data_operators[operator](reducer.operation( tmp_vars ))
 
 
       if (len( self.__fileindex_for_cellid ) == 0):
@@ -616,6 +607,16 @@ class VlsvReader(object):
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
+
+      # Check if the name is in datareducers
+      if name in datareducers:
+         reducer = datareducers[name]
+         # Read the necessary variables:
+         tmp_vars = []
+         for i in np.atleast_1d(reducer.variables):
+            tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+         # Return the output of the datareducer
+         return data_operators[operator](reducer.operation( tmp_vars ))
 
       if self.__fptr.closed:
          fptr.close()
