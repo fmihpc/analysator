@@ -549,9 +549,6 @@ class VlsvReader(object):
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
 
-      # Make the read function understand variable info data
-      read_single_cellid = get_data(read_single_cellid)
-
       if (len( self.__fileindex_for_cellid ) == 0):
          if read_single_cellid >= 0:
             self.__read_fileindex_for_cellid()
@@ -634,6 +631,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+      cellids = get_data(cellids)
       if len(np.shape(cellids)) == 0:
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
       else:
