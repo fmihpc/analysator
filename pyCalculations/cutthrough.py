@@ -15,11 +15,11 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
    point2 = np.array(point2, copy=False)
 
 
-   distances = []
+   distances = [0]
 
-   cellids = []
+   cellids = [vlsvReader.get_cellid(point1)]
 
-   coordinates = []
+   coordinates = [point1]
 
    epsilon = sys.float_info.epsilon*2
 
@@ -49,14 +49,23 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
 
       # Find the minimum coefficient for calculating the minimum distance from a boundary
       coefficient = min([min(coefficients_min), min(coefficients_max)]) * 1.01
+
+      # Get the cell id in the new coordinates
+      newcoordinate = iterator + coefficient * unit_vector
+      newcellid = vlsvReader.get_cellid( newcoordinate )
+      # Check if valid cell id:
+      if newcellid == 0:
+         break
+      # Append the cell id:
+      cellids.append( newcellid )
+
+
       # Append the coordinate:
-      coordinates.append( iterator + coefficient * unit_vector )
+      coordinates.append( newcoordinate )
 
       # Append the distance:
-      distances.append( np.linalg.norm( coordinates[len(coordinates)-1] - point1 ) )
+      distances.append( np.linalg.norm( newcoordinate - point1 ) )
 
-      # Append the cell id:
-      cellids.append( vlsvReader.get_cellid( coordinates[len(coordinates)-1] ) )
 
       # Move the iterator to the next cell. Note: Epsilon is here to ensure there are no bugs with float rounding
       iterator = iterator + coefficient * unit_vector
