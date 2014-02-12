@@ -1,3 +1,8 @@
+import mayavi.mlab
+import mayavi
+from tvtk.api import tvtk
+import numpy as np
+
 def generate_velocity_grid( engine, vlsvReader, cellid, iso_surface=False ):
    '''Generates a velocity grid from a given spatial cell id
       :param cellid:           The spatial cell's ID
@@ -10,11 +15,11 @@ def generate_velocity_grid( engine, vlsvReader, cellid, iso_surface=False ):
       print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
       return False
    # Create a new scene
-   engine.new_scene()
-   mayavi.mlab.set_engine(engine)#CONTINUE
+   #engine.new_scene()
+   #mayavi.mlab.set_engine(engine)
    # Create a new figure
-   figure = mayavi.mlab.gcf(engine=engine)
-   figure.scene.disable_render = True
+   #figure = mayavi.mlab.clf()
+   #figure.scene.disable_render = True
    blocks = blocksAndAvgs[0]
    avgs = blocksAndAvgs[1]
    # Get nodes:
@@ -31,4 +36,9 @@ def generate_velocity_grid( engine, vlsvReader, cellid, iso_surface=False ):
    values=np.ravel(avgs)
    ug.cell_data.scalars=values
    ug.cell_data.scalars.name='avgs'
+   #figure.scene.disable_render = False
+   d = mayavi.mlab.pipeline.add_dataset(ug)
+   ptdata = mayavi.mlab.pipeline.cell_to_point_data(d)
+   iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=[1e-15,1e-14,1e-12], opacity=0.3)
+   mayavi.mlab.show()
 
