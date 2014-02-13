@@ -14,7 +14,7 @@ grid
 ====
 
 .. automodule:: grid
-   :members:
+   :members: MayaviGrid, generate_velocity_grid
    :show-inheritance:
 
 calculations
