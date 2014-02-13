@@ -3,7 +3,7 @@ import mayavi
 from tvtk.api import tvtk
 import numpy as np
 
-def generate_velocity_grid( engine, vlsvReader, cellid, iso_surface=False ):
+def generate_velocity_grid( vlsvReader, cellid, iso_surface=False ):
    '''Generates a velocity grid from a given spatial cell id
       :param cellid:           The spatial cell's ID
       :param iso_surface:      If true, plots the iso surface
