@@ -29,8 +29,6 @@ def SigHandler(SIG, FRM):
 signal.signal(signal.SIGINT, SigHandler)
 
 class MayaviGrid(HasTraits):
-   '''Class for constructing plots with MayaVi
-   '''
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
 
    .. code-block:: python
