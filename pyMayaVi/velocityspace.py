@@ -1,7 +1,26 @@
-import mayavi.mlab
-import mayavi
+from traits.api import HasTraits, Instance, Property, Button, Enum
+from mayavi.core.ui.engine_view import EngineView
+from traits.api import HasTraits, Range, Instance, \
+                    on_trait_change
+from traitsui.api import View, Item, HGroup, Group
+from tvtk.pyface.scene_editor import SceneEditor
+from mayavi.tools.mlab_scene_model import \
+                    MlabSceneModel
+from mayavi.core.ui.mayavi_scene import MayaviScene
+import vlsvfile
+from numpy import mgrid, empty, sin, pi, ravel
+import pylab as pl
 from tvtk.api import tvtk
+import traits.api
+import mayavi.api
+import mayavi.mlab
 import numpy as np
+import signal
+import threading
+from mayavi.sources.vtk_data_source import VTKDataSource
+from mayavi.modules.outline import Outline
+from mayavi.modules.surface import Surface
+from mayavi.modules.vectors import Vectors
 
 def generate_velocity_grid( vlsvReader, cellid, iso_surface=False ):
    '''Generates a velocity grid from a given spatial cell id
@@ -183,5 +202,5 @@ class VelocitySpace(HasTraits):
 
       # Configure traits
       self.configure_traits()
-
+      return
 
