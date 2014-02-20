@@ -109,78 +109,6 @@ class VelocitySpace(HasTraits):
          self.__generate_grid( cellid, iso_surface )
 
 
-   def __generate_velocity_grid( self, cellid, iso_surface=False ):
-      '''Generates a velocity grid from a given spatial cell id
-         :param cellid:           The spatial cell's ID
-         :param iso_surface:      If true, plots the iso surface
-      '''
-      # Create nodes
-      # Get velocity blocks and avgs:
-      blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)
-      if len(blocksAndAvgs) == 0:
-         print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
-         return False
-      # Create a new scene
-      self.__engine.new_scene()
-      mayavi.mlab.set_engine(self.__engine)#CONTINUE
-      # Create a new figure
-      figure = mayavi.mlab.gcf(engine=self.__engine)
-      figure.scene.disable_render = True
-      blocks = blocksAndAvgs[0]
-      avgs = blocksAndAvgs[1]
-      # Get nodes:
-      nodesAndKeys = self.__vlsvReader.construct_velocity_cell_nodes(blocks)
-      # Create an unstructured grid:
-      points = nodesAndKeys[0]
-      tets = nodesAndKeys[1]
-      tet_type=tvtk.Voxel().cell_type#VTK_VOXEL
-
-      ug=tvtk.UnstructuredGrid(points=points)
-      # Set up the cells
-      ug.set_cells(tet_type,tets)
-      # Input data
-      values=np.ravel(avgs)
-      ug.cell_data.scalars=values
-      ug.cell_data.scalars.name='avgs'
-
-      # Plot B if possible:
-      def plot_B( name ):
-         ''' Helper function for plotting B vector (name can change from B_vol to B)
-             :param name:         Name of the B vector ( "B_vol" or "B" )
-         '''
-         # Read B vector and plot it:
-         B = self.__vlsvReader.read_variable(name=name,cellids=cellid)
-         points2 = np.array([[0,0,0]])
-         ug2 = tvtk.UnstructuredGrid(points=points2)
-         ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
-         ug2.point_data.vectors.name = 'B_vector'
-         #src2 = VTKDataSource(data = ug2)
-         d2 = mayavi.mlab.pipeline.add_dataset(ug2)
-         #mayavi.mlab.add_module(Vectors())
-         vec = mayavi.mlab.pipeline.vectors(d2)
-         vec.glyph.mask_input_points = True
-         vec.glyph.glyph.scale_factor = 100000
-
-      if self.__vlsvReader.check_variable( "B" ) == True:
-         plot_B( "B" )
-      elif self.__vlsvReader.check_variable( "B_vol" ) == True:
-         plot_B( "B_vol" )
-
-
-      # Visualize
-      d = mayavi.mlab.pipeline.add_dataset(ug)
-      if iso_surface == False:
-         iso = mayavi.mlab.pipeline.surface(d)
-      else:
-         ptdata = mayavi.mlab.pipeline.cell_to_point_data(d)
-         iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=[1e-15,1e-14,1e-12], opacity=0.3)
-      figure.scene.disable_render = False
-      self.__unstructured_figures.append(figure)
-      # Name the figure
-      figure.name = str(cellid)
-      return True
-
-
    def __generate_grid( self, cellid, iso_surface=False ):
       '''Generates a velocity grid from a given spatial cell id
          :param cellid:           The spatial cell's ID
@@ -256,7 +184,4 @@ class VelocitySpace(HasTraits):
       # Configure traits
       self.configure_traits()
 
-      # Note: This is not working properly -- it seemingly works out at first but it eventually causes segmentation faults in some places
-      #self.__thread = threading.Thread(target=self.configure_traits, args=())
-      #self.__thread.start()
 
