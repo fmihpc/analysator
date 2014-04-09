@@ -602,11 +602,8 @@ class VlsvReader(object):
 
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
-            
-            if array_size == 1:
-               return data_operators[operator](data[0])
-            else:
-               return data_operators[operator](data)
+
+            return data_operators[operator](data)
 
       # Check if the name is in datareducers
       if name in datareducers:
@@ -632,13 +629,15 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
-      if len(np.shape(cellids)) == 0:
+      if cellids == -1:
          return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
+      elif len(np.shape(cellids)) == 0:
+         return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)[0]
       else:
          # NOTE: Should the file read be optimized by opening the file here until all cellids have been read? It can be optimized by the user manually, as well
          variable = []
          for i in cellids:
-            variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
+            variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i)[0] )
          return np.array(variable, copy=False)
 
    def read_variable_info(self, name, cellids=-1, operator="pass"):
@@ -931,10 +930,10 @@ class VlsvReader(object):
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
       if self.__uses_new_vlsv_format == True:
-         return self.read(name=name, tag="PARAMETER")
+         return np.atleast_1d(self.read(name=name, tag="PARAMETER"))[0]
       else:
          # Uses old format
-         return self.__read_parameter_old_format(name=name)
+         return np.atleast_1d(self.__read_parameter_old_format(name=name))[0]
 
 
    def read_velocity_cells(self, cellid):
