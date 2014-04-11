@@ -29,3 +29,7 @@ try:
    import plot
 except ImportError:
    print "Note: Did not import plot module"
+try:
+   import miscellaneous
+except ImportError:
+   print "Note: Did not import miscellaneous module"
