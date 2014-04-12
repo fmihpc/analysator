@@ -21,6 +21,8 @@ from mayavi.sources.vtk_data_source import VTKDataSource
 from mayavi.modules.outline import Outline
 from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
+from rankine import oblique_shock, plot_rankine
+from variable import get_data, get_name, get_units
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
@@ -230,6 +232,7 @@ class MayaviGrid(HasTraits):
                self.__last_pick = []
                return
             plotCut = False
+            plotRankine = False
             # Optimize file read:
             self.__vlsvReader.optimize_open_file()
             variables = []
@@ -238,6 +241,8 @@ class MayaviGrid(HasTraits):
                # Check if the user has given the plot argument
                if args[i] == "plot":
                   plotCut = True
+               elif args[i] == "rankine":
+                  plotRankine = True
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
@@ -250,6 +255,28 @@ class MayaviGrid(HasTraits):
                      variables.append(variable_info)
                      self.cut_through.append(variable_info)
             if plotCut == True:
+               if plotRankine == True:
+                  # Plot Rankine-Hugoniot jump conditions:
+                  normal_vector = (coordinates - self.__last_pick) / np.linalg.norm(coordinates - self.__last_pick)
+                  # Read V, B, T and rho
+                  V = self.__vlsvReader.read_variable( "v", cellids=cellids[0] )
+                  B = self.__vlsvReader.read_variable( "B", cellids=cellids[0] )
+                  T = self.__vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
+                  rho = self.__vlsvReader.read_variable( "rho", cellids=cellids[0] )
+                  # Get parallel and perpendicular components:
+                  Vx = np.dot(V, normal_vector)
+                  Vy = np.linalg.norm(V - Vx * normal_vector)
+                  Bx = np.dot(B, normal_vector)
+                  By = np.linalg.norm(B - Bx * normal_vector)
+                  # Calculate jump conditions
+                  conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
+                  rankine_variables = []
+                  for i in xrange(len(get_data(distances))):
+                     if i < len(get_data(distances))*0.5:
+                        rankine_variables.append(rho)
+                     else:
+                        rankine_variables.append(conditions[5])
+                  variables.append(rankine_variables)
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
