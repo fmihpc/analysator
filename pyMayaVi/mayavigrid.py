@@ -242,7 +242,10 @@ class MayaviGrid(HasTraits):
                if args[i] == "plot":
                   plotCut = True
                elif args[i] == "rankine":
-                  plotRankine = True
+                  fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
+                  pl.show()
+                  self.__last_pick = []
+                  return
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
