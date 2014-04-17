@@ -7,6 +7,7 @@ import pylab as pl
 import sys
 from scipy import optimize
 from cutthrough import cut_through
+from variable import VariableInfo
 
 def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
    ''' Calculates the rankine hugoniot jump conditions on the other side of the shock for given parameters
@@ -61,16 +62,19 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
       return
 
    X = solutions[0]
-   print "X " + str(X)
    rho2 = rho1 * X
    Vx2 = Vx1 / X
    Vy2 = Vy1 * (V1**2 - vA1**2) / (V1**2 - X * vA1**2)
    
-   V2 = Vx2**2 + Vy2**2;
+   V2 = np.sqrt( Vx2**2 + Vy2**2 );
    
    Bx2 = Bx1
    By2 = By1 * (V1**2 - vA1**2) * X / (V1**2 - X * vA1**2)
    P2 = P1 * (X + (Gamma - 1) * X * V1**2 * (1 - V2**2 / V1**2) / (2.0 * vs1**2));
+   print "PRINT"
+   print vs1
+   print P2
+   print P1
    T2 = P2 / (rho2 * kb)
    return [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X ]
 
@@ -85,10 +89,10 @@ def plot_rankine( vlsvReader, point1, point2 ):
    :returns: pylab figure
    '''
    # Read cut-through
-   cut_through = cut_through( vlsvReader=vlsvReader, point1=point1, point2=point2 )
+   cutthrough = cut_through( vlsvReader=vlsvReader, point1=point1, point2=point2 )
    # Get cell ids and distances separately
-   cellids = self.cut_through[0].data
-   distances = self.cut_through[1]
+   cellids = cutthrough[0].data
+   distances = cutthrough[1]
    # Read data from the file:
    V_data = vlsvReader.read_variable( "v", cellids=cellids )
    B_data = vlsvReader.read_variable( "B", cellids=cellids )
@@ -99,22 +103,25 @@ def plot_rankine( vlsvReader, point1, point2 ):
    point2 = np.array(point2)
    normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
 
-   # Get parallel and perpendicular components:
-   Vx_data = np.dot(V_data, normal_vector) 
-   Vy_data = np.linalg.norm(V_data - Vx_data * normal_vector) 
+   # Get parallel and perpendicular components from the first vector (on one side of the shock):
+   Vx_data = np.dot(V_data, normal_vector)
+   Vy_data = np.sqrt(np.sum(np.abs(V_data - np.outer(Vx_data, normal_vector))**2,axis=-1))
    Bx_data = np.dot(B_data, normal_vector) 
-   By_data = np.linalg.norm(B_data - Bx_data * normal_vector) 
+   By_data = np.sqrt(np.sum(np.abs(B_data - np.outer(Bx_data, normal_vector) )**2,axis=-1))
+   print By_data[0]
+
 
    # Read V, B, T and rho for point1
-   V = self.__vlsvReader.read_variable( "v", cellids=cellids[0] )
-   B = self.__vlsvReader.read_variable( "B", cellids=cellids[0] )
-   T = self.__vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
-   rho = self.__vlsvReader.read_variable( "rho", cellids=cellids[0] )
+   V = vlsvReader.read_variable( "v", cellids=cellids[0] )
+   B = vlsvReader.read_variable( "B", cellids=cellids[0] )
+   T = vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
+   rho = vlsvReader.read_variable( "rho", cellids=cellids[0] )
    # Get parallel and perpendicular components:
    Vx = np.dot(V, normal_vector)
    Vy = np.linalg.norm(V - Vx * normal_vector)
    Bx = np.dot(B, normal_vector)
    By = np.linalg.norm(B - Bx * normal_vector)
+   print By
 
    # Calculate rankine hugoniot jump conditions:
    rankine_conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
@@ -145,18 +152,19 @@ def plot_rankine( vlsvReader, point1, point2 ):
    # Plot the variables:
    from plot import plot_multiple_variables
    variables = []
-   variables.append(rho_data)
-   variables.append(np.array(rho_rankine))
-   variables.append(Vx_data)
-   variables.append(np.array(Vx_rankine))
-   variables.append(Vy_data)
-   variables.append(np.array(Vy_rankine))
-   variables.append(Bx_data)
-   variables.append(np.array(Bx_rankine))
-   variables.append(By_data)
-   variables.append(np.array(By_rankine))
-   variables.append(T_data)
-   variables.append(np.array(T_rankine))
+   #VariableInfo(self, data_array, name="", units="")
+   variables.append( VariableInfo(rho_data, "rho", "m^-3" ) )
+   variables.append(VariableInfo(rho_rankine, "rho", "m^-3") )
+   variables.append(VariableInfo(Vx_data, "Vx", "m/s"))
+   variables.append(VariableInfo(Vx_rankine, "Vx", "m/s"))
+   variables.append(VariableInfo(Vy_data, "Vy", "m/s"))
+   variables.append(VariableInfo(Vy_rankine, "Vy", "m/s"))
+   variables.append(VariableInfo(Bx_data, "Bx", "T"))
+   variables.append(VariableInfo(Bx_rankine, "Bx", "T"))
+   variables.append(VariableInfo(By_data,"By", "T"))
+   variables.append(VariableInfo(By_rankine, "By", "T"))
+   variables.append(VariableInfo(T_data, "T", "K"))
+   variables.append(VariableInfo(T_rankine, "T", "K"))
 
    numberOfVariables = len(variables)
 
