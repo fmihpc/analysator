@@ -9,6 +9,15 @@ from scipy import optimize
 from cutthrough import cut_through
 from variable import VariableInfo
 
+def rotation_matrix_2d( angle ):
+   ''' Creates a rotation matrix that can be used to rotate a 2d vector by an angle in the counter-clockwise direction
+
+       :param angle: Rotation angle
+       :returns: The rotation matrix
+   '''
+   return np.array([[np.cos(angle), -1*np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+
+
 def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
    ''' Calculates the rankine hugoniot jump conditions on the other side of the shock for given parameters
 
@@ -83,11 +92,38 @@ def plot_rankine( vlsvReader, point1, point2 ):
    ''' A function that plots the theoretical rankine-hugoniot jump condition variables for two given points along with the actual values from a given vlsv file
 
    :param vlsvReader: Some open vlsv reader file
-   :param point1: The first point of interest (on one side of the shock)
-   :param point2: The second point of interest (on the other side of the shock)
+   :param point1: The first point of interest along the bow-shock
+   :param point2: The second point of interest along the bow-shock
 
    :returns: pylab figure
    '''
+   # Get spatial grid sizes:
+   xcells = (int)(vlsvReader.read_parameter("xcells_ini"))
+   ycells = (int)(vlsvReader.read_parameter("ycells_ini"))
+   zcells = (int)(vlsvReader.read_parameter("zcells_ini"))
+
+   xmin = vlsvReader.read_parameter("xmin")
+   ymin = vlsvReader.read_parameter("ymin")
+   zmin = vlsvReader.read_parameter("zmin")
+   xmax = vlsvReader.read_parameter("xmax")
+   ymax = vlsvReader.read_parameter("ymax")
+   zmax = vlsvReader.read_parameter("zmax")
+
+   dx = (xmax - xmin) / (float)(xcells)
+   dy = (ymax - ymin) / (float)(ycells)
+   dz = (zmax - zmin) / (float)(zcells)
+
+   # Get normal vector from point2 and point1
+   point1 = np.array(point1)
+   point2 = np.array(point2)
+   normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
+   normal_vector = np.dot(rotation_matrix_2d( -0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
+   normal_vector = normal_vector * np.array([1,1,0])
+   point1_shifted = point1 + 0.5*(point2-point1) - normal_vector * (8*dx)
+   point2_shifted = point1 + 0.5*(point2-point1) + normal_vector * (8*dx)
+   point1 = np.array(point1_shifted)
+   point2 = np.array(point2_shifted)
+
    # Read cut-through
    cutthrough = cut_through( vlsvReader=vlsvReader, point1=point1, point2=point2 )
    # Get cell ids and distances separately
@@ -98,17 +134,12 @@ def plot_rankine( vlsvReader, point1, point2 ):
    B_data = vlsvReader.read_variable( "B", cellids=cellids )
    T_data = vlsvReader.read_variable( "Temperature", cellids=cellids )
    rho_data = vlsvReader.read_variable( "rho", cellids=cellids )
-   # Get normal vector from point2 and point1
-   point1 = np.array(point1)
-   point2 = np.array(point2)
-   normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
 
    # Get parallel and perpendicular components from the first vector (on one side of the shock):
    Vx_data = np.dot(V_data, normal_vector)
    Vy_data = np.sqrt(np.sum(np.abs(V_data - np.outer(Vx_data, normal_vector))**2,axis=-1))
    Bx_data = np.dot(B_data, normal_vector) 
    By_data = np.sqrt(np.sum(np.abs(B_data - np.outer(Bx_data, normal_vector) )**2,axis=-1))
-   print By_data[0]
 
 
    # Read V, B, T and rho for point1
