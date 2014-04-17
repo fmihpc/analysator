@@ -75,6 +75,8 @@ class MayaviGrid(HasTraits):
 
    cut_through = []
 
+   plot = []
+
    scene = Instance(MlabSceneModel, ())
 
    engine_view = Instance(EngineView)
@@ -243,8 +245,9 @@ class MayaviGrid(HasTraits):
                   plotCut = True
                elif args[i] == "rankine":
                   fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
-                  pl.show()
+                  #pl.show()
                   self.__last_pick = []
+                  self.plot = fig
                   return
                else:
                   if args[i].find(",") != -1:

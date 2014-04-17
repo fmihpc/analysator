@@ -8,6 +8,7 @@ import sys
 from scipy import optimize
 from cutthrough import cut_through
 from variable import VariableInfo
+from plot import plot_variables
 
 def rotation_matrix_2d( angle ):
    ''' Creates a rotation matrix that can be used to rotate a 2d vector by an angle in the counter-clockwise direction
@@ -152,7 +153,6 @@ def plot_rankine( vlsvReader, point1, point2 ):
    Vy = np.linalg.norm(V - Vx * normal_vector)
    Bx = np.dot(B, normal_vector)
    By = np.linalg.norm(B - Bx * normal_vector)
-   print By
 
    # Calculate rankine hugoniot jump conditions:
    rankine_conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
@@ -199,7 +199,9 @@ def plot_rankine( vlsvReader, point1, point2 ):
 
    numberOfVariables = len(variables)
 
-   fig = plot_multiple_variables( [distances for i in xrange(numberOfVariables)], variables, figure=[] )
+   fig = plot_variables( distances, variables, figure=[] )
+   pl.show()
+
    return fig
 
 

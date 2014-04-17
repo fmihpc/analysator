@@ -2,6 +2,21 @@
 
 import pylab as pl
 
+def set_yticks( figure, yticks ):
+   ''' Sets figure ticks for subplots of given figure
+
+       :param figure: Some figure whose subplots to set
+       :param yticks: Number of ticks to set
+
+       :returns: Edited figure
+   '''
+   # Get sub axes
+   axes = figure.get_axes()
+   # Iterate thorugh sub axes
+   for i in axes:
+   
+
+
 def plot_variables( x, y, figure=[] ):
    ''' Plots x and y variables from the input with pylab
 
@@ -16,10 +31,27 @@ def plot_variables( x, y, figure=[] ):
           plot_variables( distances, rho )
           # This would plot rho as a function of distance
    '''   
-   return plot_multiple_variables( [x], [y], figure )
+   # Get dimensions of x and y
+   import numpy as np
+   x_dim = len(np.shape(x))
+   y_dim = len(np.shape(y))
+   if x_dim != y_dim:
+      if x_dim == y_dim - 1:
+         from variable import get_data, get_name, get_units
+         new_x = [get_data(x) for i in xrange(len(y)-1)]
+         new_x.append(x)
+         return plot_multiple_variables( new_x, y, figure, clean_xticks=True )
+      else:
+         print "ERROR; BAD X AND Y DIMENSIONS " + str(x_dim) + " " + str(y_dim)
+         return []
+   else:
+      if x_dim == 0 and y_dim == 0:
+         return plot_multiple_variables( [x], [y], figure )
+      else:
+         return plot_multiple_variables( x, y, figure )
 
 
-def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
+def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clean_xticks=False ):
    ''' Plots multiple variables from the input with pylab
 
        :param variables_x_list:        Some list of variables to be plotted in the x-axis
@@ -37,10 +69,12 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
 
        .. note:: If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
    '''
+   yticks = {}
+   for i in xrange(18):
+      tick = i+1
+      yticks[tick] = 7 - (int)(i)/(int)(3)
 
-   if (len(variables_x_list) == 0) or (len(variables_y_list) == 0):
-      print "BAD VARIABLE LENGTH ( X OR Y OF LENGTH 0 )"
-      return []
+
    import numpy as np
    variables_x_list = np.ma.asarray(variables_x_list)
    variables_y_list = np.ma.asarray(variables_y_list)
@@ -55,7 +89,10 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
             variables_x_list = [variables_x_list]
 
    if len(variables_x_list) != len(variables_y_list):
-      print "BAD VARIABLE LENGTH"
+      print "BAD VARIABLE LENGTH: " + str(len(variables_x_list)) + " " + str(len(variables_y_list))
+      return []
+   if len(variables_y_list) > 18:
+      print "TOO MANY VARIABLES: " + str(len(variables_y_list))
       return []
       
    length_of_list = len(variables_x_list)
@@ -100,6 +137,9 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[] ):
       # Set format
       ax.ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
 
+   if clean_xticks == True:
+      for i in xrange(len(np.atleast_1d(axes))-1):
+         axes[i].set_xticks([])
    return fig
 
 
