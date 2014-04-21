@@ -1,6 +1,8 @@
 # This class has a function for plotting multiple variables as subplots in one plot figure
 
 import pylab as pl
+import numpy as np
+from matplotlib.ticker import MaxNLocator
 
 def set_yticks( figure, yticks ):
    ''' Sets figure ticks for subplots of given figure
@@ -10,12 +12,17 @@ def set_yticks( figure, yticks ):
 
        :returns: Edited figure
    '''
+   from math import ceil
+   new_figure = figure
+   if yticks <= 1:
+      print "BAD YTICKS SET AT SET_YTICKS!"
+      return []
    # Get sub axes
-   axes = figure.get_axes()
+   axes = new_figure.get_axes()
    # Iterate thorugh sub axes
-   for i in axes:
-   
-
+   for ax in axes:
+      ax.yaxis.set_major_locator(MaxNLocator(yticks))
+   return new_figure
 
 def plot_variables( x, y, figure=[] ):
    ''' Plots x and y variables from the input with pylab
@@ -72,7 +79,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
    yticks = {}
    for i in xrange(18):
       tick = i+1
-      yticks[tick] = 7 - (int)(i)/(int)(3)
+      yticks[tick] = 7 - (int)(i)/(int)(4)
 
 
    import numpy as np
@@ -140,6 +147,9 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
    if clean_xticks == True:
       for i in xrange(len(np.atleast_1d(axes))-1):
          axes[i].set_xticks([])
+
+   # Set yticks:
+   fig = set_yticks( fig, yticks[len(axes)] )
    return fig
 
 
