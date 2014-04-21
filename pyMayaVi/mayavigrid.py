@@ -21,8 +21,10 @@ from mayavi.sources.vtk_data_source import VTKDataSource
 from mayavi.modules.outline import Outline
 from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
-from rankine import oblique_shock, plot_rankine
+from rankine import oblique_shock, plot_rankine, rotation_matrix_2d
 from variable import get_data, get_name, get_units
+from mayavi.modules.labels import Labels
+
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
@@ -73,6 +75,8 @@ class MayaviGrid(HasTraits):
 
    args = ""
 
+   labels = []
+
    cut_through = []
 
    plot = []
@@ -82,6 +86,8 @@ class MayaviGrid(HasTraits):
    engine_view = Instance(EngineView)
 
    current_selection = Property
+
+   dataset = []
 
    # Define the view:
    view = View(
@@ -97,7 +103,6 @@ class MayaviGrid(HasTraits):
                 ),
                 resizable=True,
             )
-
 
    def __init__(self, vlsvReader, variable, operator="pass", threaded=True, **traits):
       ''' Initializes the class and loads the mayavi grid
@@ -115,11 +120,57 @@ class MayaviGrid(HasTraits):
       self.__picker = []
       self.__mins = []
       self.__maxs = []
+      self.__cells = []
       self.__last_pick = []
       self.__structured_figures = []
       self.__unstructured_figures = []
       self.__thread = []
       self.__load_grid( variable=variable, operator=operator, threaded=threaded )
+
+   def __add_label( self, cellid ):
+      # Add dataset:
+      indices = self.__vlsvReader.get_cell_indices( cellid )
+      self.labels = self.scene.mlab.pipeline.labels( self.dataset )
+      self.labels.number_of_labels = 1
+      self.labels.mask.filter.random_mode = False
+      self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
+
+
+   def __add_normal_labels( self, point1, point2 ):
+      # Get spatial grid sizes:
+      xcells = (int)(self.__vlsvReader.read_parameter("xcells_ini"))
+      ycells = (int)(self.__vlsvReader.read_parameter("ycells_ini"))
+      zcells = (int)(self.__vlsvReader.read_parameter("zcells_ini"))
+   
+      xmin = self.__vlsvReader.read_parameter("xmin")
+      ymin = self.__vlsvReader.read_parameter("ymin")
+      zmin = self.__vlsvReader.read_parameter("zmin")
+      xmax = self.__vlsvReader.read_parameter("xmax")
+      ymax = self.__vlsvReader.read_parameter("ymax")
+      zmax = self.__vlsvReader.read_parameter("zmax")
+   
+      dx = (xmax - xmin) / (float)(xcells)
+      dy = (ymax - ymin) / (float)(ycells)
+      dz = (zmax - zmin) / (float)(zcells)
+   
+      # Get normal vector from point2 and point1
+      point1 = np.array(point1)
+      point2 = np.array(point2)
+      normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
+      normal_vector = np.dot(rotation_matrix_2d( -0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
+      normal_vector = normal_vector * np.array([1,1,0])
+      point1_shifted = point1 + 0.5*(point2-point1) - normal_vector * (8*dx)
+      point2_shifted = point1 + 0.5*(point2-point1) + normal_vector * (8*dx)
+      point1 = np.array(point1_shifted)
+      point2 = np.array(point2_shifted)
+
+      cellid1 = self.__vlsvReader.get_cellid( point1 )
+      cellid2 = self.__vlsvReader.get_cellid( point2 )
+
+      # Input label:
+      self.__add_label( cellid1 )
+      self.__add_label( cellid2 )
+
 
    def __load_grid( self, variable, operator="pass", threaded=True ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
@@ -144,6 +195,7 @@ class MayaviGrid(HasTraits):
       # Store the mins and maxs:
       self.__mins = mins
       self.__maxs = maxs
+      self.__cells = cells
       # Draw the grid:
       if threaded == True:
          thread = threading.Thread(target=self.__generate_grid, args=( mins, maxs, cells, variable_array_sorted, variable ))
@@ -174,6 +226,7 @@ class MayaviGrid(HasTraits):
       if cellid == 0:
          print "Invalid cell id"
          return
+
 
       if (self.picker == "Velocity_space"):
          self.__generate_velocity_grid(cellid)
@@ -244,6 +297,8 @@ class MayaviGrid(HasTraits):
                if args[i] == "plot":
                   plotCut = True
                elif args[i] == "rankine":
+                  # set labels:
+                  self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
                   fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
                   #pl.show()
                   self.__last_pick = []
@@ -330,6 +385,12 @@ class MayaviGrid(HasTraits):
       d = self.scene.mlab.pipeline.add_dataset(sg)
       iso = self.scene.mlab.pipeline.surface(d)
 
+      # Add labels:
+#      from mayavi.modules.labels import Labels
+#      testlabels = self.scene.mlab.pipeline.labels(d)
+
+      self.dataset = d
+
       # Configure traits
       self.configure_traits()
 
@@ -343,6 +404,9 @@ class MayaviGrid(HasTraits):
          :param cellid:           The spatial cell's ID
          :param iso_surface:      If true, plots the iso surface
       '''
+      # Set label to give out the location of the cell:
+      self.__add_label( cellid )
+
       # Create nodes
       # Get velocity blocks and avgs:
       blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)

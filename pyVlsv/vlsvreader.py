@@ -714,6 +714,28 @@ class VlsvReader(object):
       # Return the coordinates:
       return np.array(cellcoordinates)
 
+   def get_cell_indices(self, cellid):
+      ''' Returns a given cell's coordinates as a numpy array
+
+      :param cellid:            The cell's ID
+      :returns: a numpy array with the coordinates
+
+      .. seealso:: :func:`get_cellid`
+
+      .. note:: The cell ids go from 1 .. max not from 0
+      '''
+      # Get cell lengths:
+      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
+      # Get cell indices:
+      cellid = (int)(cellid - 1)
+      cellindices = np.zeros(3)
+      cellindices[0] = (int)(cellid)%(int)(self.__xcells)
+      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      # Return the coordinates:
+      return np.array(cellindices)
+
+
    def get_velocity_cell_coordinates(self, vcellids):
       ''' Returns a given velocity cell's coordinates as a numpy array
 

@@ -1,7 +1,4 @@
 # Rankine-Hugoniot conditions to determine the right state from the left state of an MHD oblique shock
-
-
-
 import numpy as np
 import pylab as pl
 import sys
@@ -9,6 +6,8 @@ from scipy import optimize
 from cutthrough import cut_through
 from variable import VariableInfo
 from plot import plot_variables
+
+
 
 def rotation_matrix_2d( angle ):
    ''' Creates a rotation matrix that can be used to rotate a 2d vector by an angle in the counter-clockwise direction
