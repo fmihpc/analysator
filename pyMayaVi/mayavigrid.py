@@ -130,12 +130,19 @@ class MayaviGrid(HasTraits):
    def __add_label( self, cellid ):
       # Add dataset:
       from mayavi.modules.labels import Labels
+      import mayavi.core.module_manager as MM
       indices = self.__vlsvReader.get_cell_indices( cellid )
       self.labels = Labels()
       self.labels.number_of_labels = 1
       self.labels.mask.filter.random_mode = False
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
-      module_manager = self.scene.mayavi_scene.children[0].children[0]
+      module_manager = self.scene.mayavi_scene
+      # Find the module manager:
+      while( True ):
+         module_manager = module_manager.children[0]
+         if type(module_manager) == type(MM.ModuleManager()):
+            break
+      # Add the label / marker:
       self.__engine.add_filter( self.labels, module_manager )
       #module_manager = engine.scenes[0].children[0].children[0]
       #engine.add_filter(labels1, module_manager)
@@ -218,11 +225,14 @@ class MayaviGrid(HasTraits):
 
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
+      # For numerical inaccuracy
+      epsilon = 80
+      # Check for numerical inaccuracy
       for i in xrange(3):
-         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + epsilon > self.__mins[i]):
             # Correct the numberical inaccuracy
             coordinates[i] = self.__mins[i] + 1
-         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - epsilon < self.__maxs[i]):
             # Correct the values
             coordinates[i] = self.__maxs[i] - 1
       print "COORDINATES:" + str(coordinates)
