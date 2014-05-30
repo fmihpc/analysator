@@ -229,6 +229,9 @@ class MayaviGrid(HasTraits):
 
 
       if (self.picker == "Velocity_space"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+         # Generate velocity space
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Velocity_space_nearest_cellid"):
          # Find the nearest cell id with distribution:
@@ -244,9 +247,13 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Generate velocity grid
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Velocity_space_iso_surface"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          self.__generate_velocity_grid(cellid, True)
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
@@ -262,9 +269,13 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Generate velocity grid
          self.__generate_velocity_grid(cellid, True)
       elif (self.picker == "Pitch_angle"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Plot pitch angle distribution:
          from pitchangle import pitch_angles
          result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
@@ -316,6 +327,9 @@ class MayaviGrid(HasTraits):
                      variables.append(variable_info)
                      self.cut_through.append(variable_info)
             if plotCut == True:
+               # Set label to give out the location of the cell:
+               self.__add_label( cellids[0] )
+               self.__add_label( cellids[len(cellids)-1] )
                if plotRankine == True:
                   # Plot Rankine-Hugoniot jump conditions:
                   normal_vector = (coordinates - self.__last_pick) / np.linalg.norm(coordinates - self.__last_pick)
@@ -404,9 +418,6 @@ class MayaviGrid(HasTraits):
          :param cellid:           The spatial cell's ID
          :param iso_surface:      If true, plots the iso surface
       '''
-      # Set label to give out the location of the cell:
-      self.__add_label( cellid )
-
       # Create nodes
       # Get velocity blocks and avgs:
       blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)
