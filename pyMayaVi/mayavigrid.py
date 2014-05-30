@@ -129,11 +129,17 @@ class MayaviGrid(HasTraits):
 
    def __add_label( self, cellid ):
       # Add dataset:
+      from mayavi.modules.labels import Labels
       indices = self.__vlsvReader.get_cell_indices( cellid )
-      self.labels = self.scene.mlab.pipeline.labels( self.dataset )
+      self.labels = Labels()
       self.labels.number_of_labels = 1
       self.labels.mask.filter.random_mode = False
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
+      module_manager = self.scene.mayavi_scene.children[0].children[0]
+      self.__engine.add_filter( self.labels, module_manager )
+      #module_manager = engine.scenes[0].children[0].children[0]
+      #engine.add_filter(labels1, module_manager)
+      #self.labels = self.scene.mlab.pipeline.labels( self.dataset )
 
 
    def __add_normal_labels( self, point1, point2 ):
