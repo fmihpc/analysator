@@ -5,11 +5,13 @@ class DataReducerVariable:
    operation = []
    name = []
    units = []
-   def __init__(self, variables, operation,  units):
+   useVspace = False
+   def __init__(self, variables, operation, units, useVspace=False):
       ''' Constructor for the class
           :param variables          List of variables for doing calculations with
           :param operation          The operator that operates on the variables
           :param units              Units of the variable
+          :param useVspace          Flag to determine whether the reducer will use velocity space data
           Example:
           def plus( array ):
              return array[0]+array[1]
@@ -18,5 +20,5 @@ class DataReducerVariable:
       self.variables = variables
       self.operation = operation
       self.units = units
-
+      self.useVspace = useVspace
 
