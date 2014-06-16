@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = /usr/bin/sphinx-build
 PAPER         =
-BUILDDIR      = ../git_documentation/ohannuks.github.io/sphinx_build
+BUILDDIR      = .
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)

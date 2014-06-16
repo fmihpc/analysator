@@ -55,6 +55,8 @@ class MayaviGrid(HasTraits):
    
    **Pitch_angle** Plots the pitch angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
    
+   **Gyrophase_angle** Plots the gyrophase angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
+   
    **Cut_through** Is used to plot or save the cut-through between two clicking points. This option requires you to use the args section at top-left. To use the args section to plot variables you must write for example: **plot rho B,x E,y** Upon clicking at two points a new window would open with a cut-through plot of rho, x-component of B and y-component of E Alternatively, you can save the cut-through to a variable in the MayaviGrid class by typing instead: **rho B,x E,y** and then going to the terminal and typing
    
    .. code-block:: python
@@ -69,6 +71,7 @@ class MayaviGrid(HasTraits):
                  'Velocity_space_iso_surface',
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
+                 "Gyrophase_angle",
                  "Cut_through")
 
    args = ""
@@ -296,6 +299,13 @@ class MayaviGrid(HasTraits):
          # plot:
          pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
          pl.show()
+      elif (self.picker == "Gyrophase_angle"):
+         # Plot gyrophase angle distribution:
+         from gyrophaseangle import gyrophase_angles_from_file
+         result = gyrophase_angles_from_file( vlsvReader=self.__vlsvReader, cellid=cellid)
+         # plot:
+         pl.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
+         pl.show()
       elif (self.picker == "Cut_through"):
          if len(self.__last_pick) == 3:
             from cutthrough import cut_through
@@ -462,27 +472,24 @@ class MayaviGrid(HasTraits):
       ug.cell_data.scalars.name='avgs'
 
       # Plot B if possible:
-      def plot_B( name ):
-         ''' Helper function for plotting B vector (name can change from B_vol to B)
-             :param name:         Name of the B vector ( "B_vol" or "B" )
-         '''
-         # Read B vector and plot it:
-         B = self.__vlsvReader.read_variable(name=name,cellids=cellid)
-         points2 = np.array([[0,0,0]])
-         ug2 = tvtk.UnstructuredGrid(points=points2)
-         ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
-         ug2.point_data.vectors.name = 'B_vector'
-         #src2 = VTKDataSource(data = ug2)
-         d2 = mayavi.mlab.pipeline.add_dataset(ug2)
-         #mayavi.mlab.add_module(Vectors())
-         vec = mayavi.mlab.pipeline.vectors(d2)
-         vec.glyph.mask_input_points = True
-         vec.glyph.glyph.scale_factor = 100000
-
+      # Read B vector and plot it:
       if self.__vlsvReader.check_variable( "B" ) == True:
-         plot_B( "B" )
+         B = self.__vlsvReader.read_variable(name="B",cellids=cellid)
       elif self.__vlsvReader.check_variable( "B_vol" ) == True:
-         plot_B( "B_vol" )
+         B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
+      else:
+         B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
+      
+      points2 = np.array([[0,0,0]])
+      ug2 = tvtk.UnstructuredGrid(points=points2)
+      ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
+      ug2.point_data.vectors.name = 'B_vector'
+      #src2 = VTKDataSource(data = ug2)
+      d2 = mayavi.mlab.pipeline.add_dataset(ug2)
+      #mayavi.mlab.add_module(Vectors())
+      vec = mayavi.mlab.pipeline.vectors(d2)
+      vec.glyph.mask_input_points = True
+      vec.glyph.glyph.scale_factor = 100000
 
 
       # Visualize
