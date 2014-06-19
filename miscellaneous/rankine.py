@@ -71,6 +71,7 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
       return
 
    X = solutions[0]
+   print X
    rho2 = rho1 * X
    Vx2 = Vx1 / X
    Vy2 = Vy1 * (V1**2 - vA1**2) / (V1**2 - X * vA1**2)
@@ -81,14 +82,6 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
    By2 = By1 * (V1**2 - vA1**2) * X / (V1**2 - X * vA1**2)
    P2 = P1 * (X + (Gamma - 1) * X * V1**2 * (1 - V2**2 / V1**2) / (2.0 * vs1**2));
    T2 = P2 / (rho2 * kb)
-   # Evaluate if the jump is perpendicular:
-   print "Perp:"
-   print V2/V1-rho1/rho2
-   B1 = np.sqrt(Bx1**2+By1**2)
-   B2 = np.sqrt(Bx2**2+By2**2)
-   print B2/B1-rho2/rho1
-   print B1
-   print B2
    return [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X ]
 
 
