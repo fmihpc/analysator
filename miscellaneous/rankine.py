@@ -114,10 +114,10 @@ def plot_rankine( vlsvReader, point1, point2 ):
    point1 = np.array(point1)
    point2 = np.array(point2)
    normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
-   normal_vector = np.dot(rotation_matrix_2d( -0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
+   normal_vector = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
    normal_vector = normal_vector * np.array([1,1,0])
-   point1_shifted = point1 + 0.5*(point2-point1) - normal_vector * (8*dx)
-   point2_shifted = point1 + 0.5*(point2-point1) + normal_vector * (8*dx)
+   point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (7*dx)
+   point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (7*dx)
    point1 = np.array(point1_shifted)
    point2 = np.array(point2_shifted)
 
@@ -149,13 +149,10 @@ def plot_rankine( vlsvReader, point1, point2 ):
    Vy = np.linalg.norm(V - Vx * normal_vector)
    Bx = np.dot(B, normal_vector)
    By = np.linalg.norm(B - Bx * normal_vector)
+   print Vy*Bx-Vx*By
 
    # Calculate rankine hugoniot jump conditions:
    rankine_conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
-
-   print "RHOS: "
-   print rho_data[len(rho_data)/2+5]
-   print rankine_conditions[5]
 
    # Input variables
    Vx_rankine = []
@@ -203,19 +200,6 @@ def plot_rankine( vlsvReader, point1, point2 ):
    pl.show()
 
    return fig
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
