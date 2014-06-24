@@ -132,6 +132,28 @@ def plot_rankine( vlsvReader, point1, point2 ):
    T_data = vlsvReader.read_variable( "Temperature", cellids=cellids )
    rho_data = vlsvReader.read_variable( "rho", cellids=cellids )
 
+   # Transform to de hoffmann teller frame:
+   ##############################################
+   # V_1 x B_1 = 0:
+   V_1 = V_data[0]
+   B_1 = V_data[0]
+   V_transformed = np.array([0,0,0])
+   a = np.array([[0, B_1[2], -1*B_1[1]], [-1*B_1[2], 0, B_1[0]], [B_1[1], -1*B_1[0], 0]])
+   b = np.array([0,0,0])
+   print "SOLUTION:"
+   print a
+   print b
+   solution = np.linalg.solve(a, b)
+   print solution
+   V_transformed = solution - V_1
+
+   # Transform the V_data into de hoffmann teller frame:
+   V_data = V_data + V_transformed
+
+   # CHeck frame:
+   print "HOFFMANN: " + str(np.cross(V_data[0], B_data[0]))
+   ##############################################
+
    # Get parallel and perpendicular components from the first vector (on one side of the shock):
    Vx_data = np.dot(V_data, normal_vector)
    Vy_data = np.sqrt(np.sum(np.abs(V_data - np.outer(Vx_data, normal_vector))**2,axis=-1))
@@ -140,16 +162,19 @@ def plot_rankine( vlsvReader, point1, point2 ):
 
 
    # Read V, B, T and rho for point1
-   V = vlsvReader.read_variable( "v", cellids=cellids[0] )
-   B = vlsvReader.read_variable( "B", cellids=cellids[0] )
-   T = vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
-   rho = vlsvReader.read_variable( "rho", cellids=cellids[0] )
+#   V = vlsvReader.read_variable( "v", cellids=cellids[0] )
+#   B = vlsvReader.read_variable( "B", cellids=cellids[0] )
+#   T = vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
+#   rho = vlsvReader.read_variable( "rho", cellids=cellids[0] )
+   V = V_data[0]
+   B = B_data[0]
+   T = T_data[0]
+   rho = rho_data[0]
    # Get parallel and perpendicular components:
    Vx = np.dot(V, normal_vector)
    Vy = np.linalg.norm(V - Vx * normal_vector)
    Bx = np.dot(B, normal_vector)
    By = np.linalg.norm(B - Bx * normal_vector)
-   print Vy*Bx-Vx*By
 
    # Calculate rankine hugoniot jump conditions:
    rankine_conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
