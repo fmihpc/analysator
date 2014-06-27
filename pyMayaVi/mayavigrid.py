@@ -159,8 +159,8 @@ class MayaviGrid(HasTraits):
       normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
       normal_vector = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
       normal_vector = normal_vector * np.array([1,1,0])
-      point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (7*dx)
-      point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (7*dx)
+      point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (4*dx)
+      point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (4*dx)
       point1 = np.array(point1_shifted)
       point2 = np.array(point2_shifted)
 
@@ -170,6 +170,8 @@ class MayaviGrid(HasTraits):
       # Input label:
       self.__add_label( cellid1 )
       self.__add_label( cellid2 )
+
+      return [cellid1, cellid2]
 
 
    def __load_grid( self, variable, operator="pass", threaded=True ):
@@ -298,7 +300,9 @@ class MayaviGrid(HasTraits):
                   plotCut = True
                elif args[i] == "rankine":
                   # set labels:
-                  self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
+                  cellids = self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
+                  self.__generate_velocity_grid(cellids[0], True)
+                  self.__generate_velocity_grid(cellids[1], True)
                   fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
                   #pl.show()
                   self.__last_pick = []

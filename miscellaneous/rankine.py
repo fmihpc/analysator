@@ -116,8 +116,8 @@ def plot_rankine( vlsvReader, point1, point2 ):
    normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
    normal_vector = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
    normal_vector = normal_vector * np.array([1,1,0])
-   point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (7*dx)
-   point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (7*dx)
+   point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (4*dx)
+   point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (4*dx)
    point1 = np.array(point1_shifted)
    point2 = np.array(point2_shifted)
 
@@ -136,22 +136,16 @@ def plot_rankine( vlsvReader, point1, point2 ):
    ##############################################
    # V_1 x B_1 = 0:
    V_1 = V_data[0]
-   B_1 = V_data[0]
-   V_transformed = np.array([0,0,0])
-   a = np.array([[0, B_1[2], -1*B_1[1]], [-1*B_1[2], 0, B_1[0]], [B_1[1], -1*B_1[0], 0]])
-   b = np.array([0,0,0])
-   print "SOLUTION:"
-   print a
-   print b
-   solution = np.linalg.solve(a, b)
-   print solution
-   V_transformed = solution - V_1
+   B_1 = B_data[0]
+   n = normal_vector
+   V_HT = np.cross(n, np.cross(V_1, B_1) ) / np.dot(n, B_1)
 
-   # Transform the V_data into de hoffmann teller frame:
-   V_data = V_data + V_transformed
+   # Check whether V_HT is relativistic or not:
+   if np.linalg.norm( V_HT ) > 0.05*3.0e8:
+      print "WARNING: When transforming to de Hoffmann teller frame encountered speeds over 0.05 speed of light: " + str(np.linalg.norm( V_HT ))
 
-   # CHeck frame:
-   print "HOFFMANN: " + str(np.cross(V_data[0], B_data[0]))
+   # Transform to another frame:
+   V_data = V_data - V_HT
    ##############################################
 
    # Get parallel and perpendicular components from the first vector (on one side of the shock):
@@ -212,8 +206,137 @@ def plot_rankine( vlsvReader, point1, point2 ):
    variables.append(VariableInfo(Vx_rankine, "Vx", "m/s"))
    variables.append(VariableInfo(Vy_data, "Vy", "m/s"))
    variables.append(VariableInfo(Vy_rankine, "Vy", "m/s"))
-   variables.append(VariableInfo(Bx_data, "Bx", "T"))
-   variables.append(VariableInfo(Bx_rankine, "Bx", "T"))
+#   variables.append(VariableInfo(Bx_data, "Bx", "T"))
+#   variables.append(VariableInfo(Bx_rankine, "Bx", "T"))
+   variables.append(VariableInfo(By_data,"By", "T"))
+   variables.append(VariableInfo(By_rankine, "By", "T"))
+   variables.append(VariableInfo(T_data, "T", "K"))
+   variables.append(VariableInfo(T_rankine, "T", "K"))
+
+   numberOfVariables = len(variables)
+
+   fig = plot_variables( distances, variables, figure=[] )
+   pl.show()
+
+   return fig
+
+def plot_rankine_nonshifted( vlsvReader, point1, point2 ):
+   ''' A function that plots the theoretical rankine-hugoniot jump condition variables for two given points along with the actual values from a given vlsv file
+
+   :param vlsvReader: Some open vlsv reader file
+   :param point1: The first point of interest along the bow-shock
+   :param point2: The second point of interest along the bow-shock
+
+   :returns: pylab figure
+   '''
+   # Get spatial grid sizes:
+   xcells = (int)(vlsvReader.read_parameter("xcells_ini"))
+   ycells = (int)(vlsvReader.read_parameter("ycells_ini"))
+   zcells = (int)(vlsvReader.read_parameter("zcells_ini"))
+
+   xmin = vlsvReader.read_parameter("xmin")
+   ymin = vlsvReader.read_parameter("ymin")
+   zmin = vlsvReader.read_parameter("zmin")
+   xmax = vlsvReader.read_parameter("xmax")
+   ymax = vlsvReader.read_parameter("ymax")
+   zmax = vlsvReader.read_parameter("zmax")
+
+   dx = (xmax - xmin) / (float)(xcells)
+   dy = (ymax - ymin) / (float)(ycells)
+   dz = (zmax - zmin) / (float)(zcells)
+
+   # Get normal vector from point2 and point1
+   normal_vector = (point1-point2) / np.linalg.norm(point2 - point1)
+   normal_vector = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
+   normal_vector = normal_vector * np.array([1,1,0])
+
+   # Read cut-through
+   cutthrough = cut_through( vlsvReader=vlsvReader, point1=point1, point2=point2 )
+   # Get cell ids and distances separately
+   cellids = cutthrough[0].data
+   distances = cutthrough[1]
+   # Read data from the file:
+   V_data = vlsvReader.read_variable( "v", cellids=cellids )
+   B_data = vlsvReader.read_variable( "B", cellids=cellids )
+   T_data = vlsvReader.read_variable( "Temperature", cellids=cellids )
+   rho_data = vlsvReader.read_variable( "rho", cellids=cellids )
+
+   # Transform to de hoffmann teller frame:
+   ##############################################
+   # V_1 x B_1 = 0:
+   V_1 = V_data[0]
+   B_1 = B_data[0]
+   n = normal_vector
+   V_HT = np.cross(n, np.cross(V_1, B_1) ) / np.dot(n, B_1)
+
+   # Check whether V_HT is relativistic or not:
+   if np.linalg.norm( V_HT ) > 0.05*3.0e8:
+      print "WARNING: When transforming to de Hoffmann teller frame encountered speeds over 0.05 speed of light: " + str(np.linalg.norm( V_HT ))
+
+   # Transform to another frame:
+   V_data = V_data - V_HT
+   ##############################################
+
+   # Get parallel and perpendicular components from the first vector (on one side of the shock):
+   Vx_data = np.dot(V_data, normal_vector)
+   Vy_data = np.sqrt(np.sum(np.abs(V_data - np.outer(Vx_data, normal_vector))**2,axis=-1))
+   Bx_data = np.dot(B_data, normal_vector) 
+   By_data = np.sqrt(np.sum(np.abs(B_data - np.outer(Bx_data, normal_vector) )**2,axis=-1))
+
+
+   # Read V, B, T and rho for point1
+#   V = vlsvReader.read_variable( "v", cellids=cellids[0] )
+#   B = vlsvReader.read_variable( "B", cellids=cellids[0] )
+#   T = vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
+#   rho = vlsvReader.read_variable( "rho", cellids=cellids[0] )
+   V = V_data[0]
+   B = B_data[0]
+   T = T_data[0]
+   rho = rho_data[0]
+   # Get parallel and perpendicular components:
+   Vx = np.dot(V, normal_vector)
+   Vy = np.linalg.norm(V - Vx * normal_vector)
+   Bx = np.dot(B, normal_vector)
+   By = np.linalg.norm(B - Bx * normal_vector)
+
+   # Calculate rankine hugoniot jump conditions:
+   rankine_conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
+
+   # Input variables
+   Vx_rankine = []
+   Vy_rankine = []
+   Bx_rankine = []
+   By_rankine = []
+   T_rankine = []
+   rho_rankine = []
+   for i in xrange( len(cellids) ):
+      if i < 0.5*len(cellids):
+         Vx_rankine.append(Vx)
+         Vy_rankine.append(Vy)
+         Bx_rankine.append(Bx)
+         By_rankine.append(By)
+         T_rankine.append(T)
+         rho_rankine.append(rho)
+      else:
+         Vx_rankine.append(rankine_conditions[0])
+         Vy_rankine.append(rankine_conditions[1])
+         Bx_rankine.append(rankine_conditions[2])
+         By_rankine.append(rankine_conditions[3])
+         T_rankine.append(rankine_conditions[4])
+         rho_rankine.append(rankine_conditions[5])
+
+   # Plot the variables:
+   from plot import plot_multiple_variables
+   variables = []
+   #VariableInfo(self, data_array, name="", units="")
+   variables.append( VariableInfo(rho_data, "rho", "m^-3" ) )
+   variables.append(VariableInfo(rho_rankine, "rho", "m^-3") )
+   variables.append(VariableInfo(Vx_data, "Vx", "m/s"))
+   variables.append(VariableInfo(Vx_rankine, "Vx", "m/s"))
+   variables.append(VariableInfo(Vy_data, "Vy", "m/s"))
+   variables.append(VariableInfo(Vy_rankine, "Vy", "m/s"))
+#   variables.append(VariableInfo(Bx_data, "Bx", "T"))
+#   variables.append(VariableInfo(Bx_rankine, "Bx", "T"))
    variables.append(VariableInfo(By_data,"By", "T"))
    variables.append(VariableInfo(By_rankine, "By", "T"))
    variables.append(VariableInfo(T_data, "T", "K"))
