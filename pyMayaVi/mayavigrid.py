@@ -21,7 +21,7 @@ from mayavi.sources.vtk_data_source import VTKDataSource
 from mayavi.modules.outline import Outline
 from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
-from rankine import oblique_shock, plot_rankine, rotation_matrix_2d
+from rankine import oblique_shock, plot_rankine, rotation_matrix_2d, evaluate_rankine
 from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 
@@ -303,11 +303,18 @@ class MayaviGrid(HasTraits):
                   cellids = self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
                   self.__generate_velocity_grid(cellids[0], True)
                   self.__generate_velocity_grid(cellids[1], True)
+                  print "EVALUATION OF RANKINE: " + str(evaluate_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates ))
                   fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
                   #pl.show()
                   self.__last_pick = []
                   self.plot = fig
                   return
+#               elif args[i] == "test_mass":
+#                  rho1 = self.__vlsvReader.read_variable( 'rho', cellids=cellid )
+#                  V1 = self.__vlsvReader.read_variable( "v", cellids=cellid )
+#                  rho2 = self.__vlsvReader.read_variable( 'rho', cellids=cellid )
+#                  V2 = self.__vlsvReader.read_variable( "v", cellids=cellid )
+#                  print rho1*V1[0]/(rho2*V2[0])
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
