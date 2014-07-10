@@ -426,7 +426,7 @@ class MayaviGrid(HasTraits):
          return False
       # Create a new scene
       self.__engine.new_scene()
-      mayavi.mlab.set_engine(self.__engine)#CONTINUE
+      mayavi.mlab.set_engine(self.__engine)
       # Create a new figure
       figure = mayavi.mlab.gcf(engine=self.__engine)
       figure.scene.disable_render = True
