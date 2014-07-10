@@ -215,11 +215,11 @@ def evaluate_rankine( vlsvReader, point1, point2 ):
          break;
 
    # Input data: (u = upstream)
-   V_u = np.average(V_data[0:upstream])
-   B_u = np.average(B_data[0:upstream])
-   T_u = np.average(T_data[0:upstream])
-   rho_u = np.average(rho_data[0:upstream])
-   P_u = np.average(P_data[0:upstream])
+   V_u = np.mean(V_data[0:upstream], axis=0)
+   B_u = np.mean(B_data[0:upstream], axis=0)
+   T_u = np.mean(T_data[0:upstream])
+   rho_u = np.mean(rho_data[0:upstream])
+   P_u = np.mean(P_data[0:upstream])
    # Get parallel and perpendicular components:
    Vx_u = np.dot(V_u, normal_vector)
    Vy_u = np.linalg.norm(V_u - Vx_u * normal_vector)
@@ -227,11 +227,11 @@ def evaluate_rankine( vlsvReader, point1, point2 ):
    By_u = np.linalg.norm(B_u - Bx_u * normal_vector)
 
    # Input data: (d = downstream)
-   V_d = np.average(V_data[downstream:len(V_data)-1])
-   B_d = np.average(B_data[downstream:len(V_data)-1])
-   T_d = np.average(T_data[downstream:len(V_data)-1])
-   rho_d = np.average(rho_data[downstream:len(V_data)-1])
-   P_d = np.average(P_data[downstream:len(V_data)-1])
+   V_d = np.mean(V_data[downstream:len(V_data)-1], axis=0)
+   B_d = np.mean(B_data[downstream:len(V_data)-1], axis=0)
+   T_d = np.mean(T_data[downstream:len(V_data)-1])
+   rho_d = np.mean(rho_data[downstream:len(V_data)-1])
+   P_d = np.mean(P_data[downstream:len(V_data)-1])
    # Get parallel and perpendicular components:
    Vx_d = np.dot(V_d, normal_vector)
    Vy_d = np.linalg.norm(V_d - Vx_d * normal_vector)
@@ -250,8 +250,27 @@ def evaluate_rankine( vlsvReader, point1, point2 ):
    T_rankine_d = rankine_conditions[4]
    rho_rankine_d = rankine_conditions[5]
 
+   # Get the differences:
+   # Data
+   Vx = Vx_d - Vx_u
+   Vy = Vy_d - Vy_u
+   Bx = Bx_d - Bx_u
+   By = By_d - By_u
+   T = T_d - T_u
+   rho = rho_d - rho_u
+
+   # Rankine
+   Vx_rankine = Vx_rankine_d - Vx_u
+   Vy_rankine = Vy_rankine_d - Vy_u
+   Bx_rankine = Bx_rankine_d - Bx_u
+   By_rankine = By_rankine_d - By_u
+   T_rankine = T_rankine_d - T_u
+   rho_rankine = rho_rankine_d - rho_u
+
+
+
    # Return the comparisons:
-   return [Vx_rankine_d/Vx_d, Vy_rankine_d/Vy_d, Bx_rankine_d/Bx_d, By_rankine_d/By_d, T_rankine_d/T_d, rho_rankine_d/rho_d]
+   return [Vx_rankine/Vx, Vy_rankine/Vy, Bx_rankine/Bx, By_rankine/By, T_rankine/T, rho_rankine/rho]
 
 def plot_rankine( vlsvReader, point1, point2 ):
    ''' A function that plots the theoretical rankine-hugoniot jump condition variables for two given points along with the actual values from a given vlsv file

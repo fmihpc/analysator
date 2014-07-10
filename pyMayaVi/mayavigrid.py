@@ -303,7 +303,7 @@ class MayaviGrid(HasTraits):
                   cellids = self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
                   self.__generate_velocity_grid(cellids[0], True)
                   self.__generate_velocity_grid(cellids[1], True)
-                  print "EVALUATION OF RANKINE: " + str(evaluate_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates ))
+                  print "EVALUATION OF RANKINE: [Vx, Vy, Bx, By, T, rho] " + str(evaluate_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates ))
                   fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
                   #pl.show()
                   self.__last_pick = []
