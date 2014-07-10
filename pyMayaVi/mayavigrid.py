@@ -128,21 +128,25 @@ class MayaviGrid(HasTraits):
       self.__thread = []
       self.__load_grid( variable=variable, operator=operator, threaded=threaded )
 
-   def __add_label( self, cellid ):
-      # Add dataset:
-      from mayavi.modules.labels import Labels
+   def __module_manager( self ):
       import mayavi.core.module_manager as MM
-      indices = self.__vlsvReader.get_cell_indices( cellid )
-      self.labels = Labels()
-      self.labels.number_of_labels = 1
-      self.labels.mask.filter.random_mode = False
-      self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
       module_manager = self.scene.mayavi_scene
       # Find the module manager:
       while( True ):
          module_manager = module_manager.children[0]
          if type(module_manager) == type(MM.ModuleManager()):
             break
+      return module_manager
+
+   def __add_label( self, cellid ):
+      # Add dataset:
+      from mayavi.modules.labels import Labels
+      indices = self.__vlsvReader.get_cell_indices( cellid )
+      self.labels = Labels()
+      self.labels.number_of_labels = 1
+      self.labels.mask.filter.random_mode = False
+      self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
+      module_manager = self.__module_manager()
       # Add the label / marker:
       self.__engine.add_filter( self.labels, module_manager )
       #module_manager = engine.scenes[0].children[0].children[0]
@@ -503,6 +507,20 @@ class MayaviGrid(HasTraits):
       self.__unstructured_figures.append(figure)
       # Name the figure
       figure.name = str(cellid)
+
+      from mayavi.modules.axes import Axes 
+      axes = Axes()
+      axes.name = 'Axes'
+      axes.axes.fly_mode = 'none'
+      axes.axes.number_of_labels = 8
+      axes.axes.font_factor = 0.5
+      #module_manager = self.__module_manager()
+      # Add the label / marker:
+      self.__engine.add_filter( axes )
+      from mayavi.modules.outline import Outline
+      outline = Outline()
+      outline.name = 'Outline'
+      self.__engine.add_filter( outline )
       return True
 
    def generate_diff_grid( self, cellid1, cellid2 ):
