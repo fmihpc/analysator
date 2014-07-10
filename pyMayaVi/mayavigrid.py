@@ -33,8 +33,6 @@ def SigHandler(SIG, FRM):
 signal.signal(signal.SIGINT, SigHandler)
 
 class MayaviGrid(HasTraits):
-   '''Class for constructing plots with MayaVi
-   '''
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
 
    .. code-block:: python
@@ -57,6 +55,8 @@ class MayaviGrid(HasTraits):
    
    **Pitch_angle** Plots the pitch angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
    
+   **Gyrophase_angle** Plots the gyrophase angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
+   
    **Cut_through** Is used to plot or save the cut-through between two clicking points. This option requires you to use the args section at top-left. To use the args section to plot variables you must write for example: **plot rho B,x E,y** Upon clicking at two points a new window would open with a cut-through plot of rho, x-component of B and y-component of E Alternatively, you can save the cut-through to a variable in the MayaviGrid class by typing instead: **rho B,x E,y** and then going to the terminal and typing
    
    .. code-block:: python
@@ -71,6 +71,7 @@ class MayaviGrid(HasTraits):
                  'Velocity_space_iso_surface',
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
+                 "Gyrophase_angle",
                  "Cut_through")
 
    args = ""
@@ -127,13 +128,30 @@ class MayaviGrid(HasTraits):
       self.__thread = []
       self.__load_grid( variable=variable, operator=operator, threaded=threaded )
 
+   def __module_manager( self ):
+      import mayavi.core.module_manager as MM
+      module_manager = self.scene.mayavi_scene
+      # Find the module manager:
+      while( True ):
+         module_manager = module_manager.children[0]
+         if type(module_manager) == type(MM.ModuleManager()):
+            break
+      return module_manager
+
    def __add_label( self, cellid ):
       # Add dataset:
+      from mayavi.modules.labels import Labels
       indices = self.__vlsvReader.get_cell_indices( cellid )
-      self.labels = self.scene.mlab.pipeline.labels( self.dataset )
+      self.labels = Labels()
       self.labels.number_of_labels = 1
       self.labels.mask.filter.random_mode = False
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
+      module_manager = self.__module_manager()
+      # Add the label / marker:
+      self.__engine.add_filter( self.labels, module_manager )
+      #module_manager = engine.scenes[0].children[0].children[0]
+      #engine.add_filter(labels1, module_manager)
+      #self.labels = self.scene.mlab.pipeline.labels( self.dataset )
 
 
    def __add_normal_labels( self, point1, point2 ):
@@ -214,11 +232,14 @@ class MayaviGrid(HasTraits):
 
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
+      # For numerical inaccuracy
+      epsilon = 80
+      # Check for numerical inaccuracy
       for i in xrange(3):
-         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + 15 > self.__mins[i]):
+         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + epsilon > self.__mins[i]):
             # Correct the numberical inaccuracy
             coordinates[i] = self.__mins[i] + 1
-         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - 15 < self.__maxs[i]):
+         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - epsilon < self.__maxs[i]):
             # Correct the values
             coordinates[i] = self.__maxs[i] - 1
       print "COORDINATES:" + str(coordinates)
@@ -231,6 +252,9 @@ class MayaviGrid(HasTraits):
 
 
       if (self.picker == "Velocity_space"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+         # Generate velocity space
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Velocity_space_nearest_cellid"):
          # Find the nearest cell id with distribution:
@@ -246,9 +270,13 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Generate velocity grid
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Velocity_space_iso_surface"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          self.__generate_velocity_grid(cellid, True)
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
@@ -264,14 +292,25 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Generate velocity grid
          self.__generate_velocity_grid(cellid, True)
       elif (self.picker == "Pitch_angle"):
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
          # Plot pitch angle distribution:
          from pitchangle import pitch_angles
          result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
          # plot:
          pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
+         pl.show()
+      elif (self.picker == "Gyrophase_angle"):
+         # Plot gyrophase angle distribution:
+         from gyrophaseangle import gyrophase_angles_from_file
+         result = gyrophase_angles_from_file( vlsvReader=self.__vlsvReader, cellid=cellid)
+         # plot:
+         pl.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
          pl.show()
       elif (self.picker == "Cut_through"):
          if len(self.__last_pick) == 3:
@@ -327,6 +366,9 @@ class MayaviGrid(HasTraits):
                      variables.append(variable_info)
                      self.cut_through.append(variable_info)
             if plotCut == True:
+               # Set label to give out the location of the cell:
+               self.__add_label( cellids[0] )
+               self.__add_label( cellids[len(cellids)-1] )
                if plotRankine == True:
                   # Plot Rankine-Hugoniot jump conditions:
                   normal_vector = (coordinates - self.__last_pick) / np.linalg.norm(coordinates - self.__last_pick)
@@ -415,9 +457,6 @@ class MayaviGrid(HasTraits):
          :param cellid:           The spatial cell's ID
          :param iso_surface:      If true, plots the iso surface
       '''
-      # Set label to give out the location of the cell:
-      self.__add_label( cellid )
-
       # Create nodes
       # Get velocity blocks and avgs:
       blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)
@@ -448,27 +487,24 @@ class MayaviGrid(HasTraits):
       ug.cell_data.scalars.name='avgs'
 
       # Plot B if possible:
-      def plot_B( name ):
-         ''' Helper function for plotting B vector (name can change from B_vol to B)
-             :param name:         Name of the B vector ( "B_vol" or "B" )
-         '''
-         # Read B vector and plot it:
-         B = self.__vlsvReader.read_variable(name=name,cellids=cellid)
-         points2 = np.array([[0,0,0]])
-         ug2 = tvtk.UnstructuredGrid(points=points2)
-         ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
-         ug2.point_data.vectors.name = 'B_vector'
-         #src2 = VTKDataSource(data = ug2)
-         d2 = mayavi.mlab.pipeline.add_dataset(ug2)
-         #mayavi.mlab.add_module(Vectors())
-         vec = mayavi.mlab.pipeline.vectors(d2)
-         vec.glyph.mask_input_points = True
-         vec.glyph.glyph.scale_factor = 100000
-
+      # Read B vector and plot it:
       if self.__vlsvReader.check_variable( "B" ) == True:
-         plot_B( "B" )
+         B = self.__vlsvReader.read_variable(name="B",cellids=cellid)
       elif self.__vlsvReader.check_variable( "B_vol" ) == True:
-         plot_B( "B_vol" )
+         B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
+      else:
+         B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
+      
+      points2 = np.array([[0,0,0]])
+      ug2 = tvtk.UnstructuredGrid(points=points2)
+      ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
+      ug2.point_data.vectors.name = 'B_vector'
+      #src2 = VTKDataSource(data = ug2)
+      d2 = mayavi.mlab.pipeline.add_dataset(ug2)
+      #mayavi.mlab.add_module(Vectors())
+      vec = mayavi.mlab.pipeline.vectors(d2)
+      vec.glyph.mask_input_points = True
+      vec.glyph.glyph.scale_factor = 100000
 
 
       # Visualize
@@ -482,6 +518,20 @@ class MayaviGrid(HasTraits):
       self.__unstructured_figures.append(figure)
       # Name the figure
       figure.name = str(cellid)
+
+      from mayavi.modules.axes import Axes 
+      axes = Axes()
+      axes.name = 'Axes'
+      axes.axes.fly_mode = 'none'
+      axes.axes.number_of_labels = 8
+      axes.axes.font_factor = 0.5
+      #module_manager = self.__module_manager()
+      # Add the label / marker:
+      self.__engine.add_filter( axes )
+      from mayavi.modules.outline import Outline
+      outline = Outline()
+      outline.name = 'Outline'
+      self.__engine.add_filter( outline )
       return True
 
    def generate_diff_grid( self, cellid1, cellid2 ):

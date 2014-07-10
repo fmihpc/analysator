@@ -576,7 +576,7 @@ class VlsvReader(object):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
-            datatype = child.attrib["datatype"]            
+            datatype = child.attrib["datatype"]
             offset = ast.literal_eval(child.text)
             if read_single_cellid >= 0:
                offset=offset+self.__fileindex_for_cellid[read_single_cellid]*element_size*vector_size
@@ -612,11 +612,30 @@ class VlsvReader(object):
       if name in datareducers:
          reducer = datareducers[name]
          # Read the necessary variables:
-         tmp_vars = []
-         for i in np.atleast_1d(reducer.variables):
-            tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+       
          # Return the output of the datareducer
-         return data_operators[operator](reducer.operation( tmp_vars ))
+         if reducer.useVspace:
+            cellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, read_single_cellid=read_single_cellid)
+            output = np.zeros(len(cellids))
+            index = 0
+            for cellid in cellids:
+               velocity_cell_data = self.read_velocity_cells(cellid)
+               # Get cells:
+               vcellids = velocity_cell_data.keys()
+               # Get coordinates:
+               velocity_coordinates = self.get_velocity_cell_coordinates(vcellids)
+               tmp_vars = []
+               for i in np.atleast_1d(reducer.variables):
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellid ) )
+               output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
+               index+=1
+               print index,"/",len(cellids)
+            return data_operators[operator](output)
+         else:
+            tmp_vars = []
+            for i in np.atleast_1d(reducer.variables):
+               tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+            return data_operators[operator](reducer.operation( tmp_vars ))
 
       if self.__fptr.closed:
          fptr.close()
@@ -626,7 +645,7 @@ class VlsvReader(object):
       Arguments:
       :param name: Name of the variable
       :param cellids: a value of -1 reads all data
-      :param operator: Datareduction operator. "pass" does no operation on data      
+      :param operator: Datareduction operator. "pass" does no operation on data
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`

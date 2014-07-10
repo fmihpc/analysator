@@ -30,13 +30,16 @@ def rotateVectorToVector( vector1, vector2 ):
           vector1 and vector2 must be 3d vectors
    '''
    vector_u = np.cross(vector2, np.array([0,0,1]))
-   vector_u = vector_u / np.linalg.norm(vector_u)
-   angle = np.arccos( vector2.dot(np.array([0,0,1])) / np.linalg.norm(vector2) )
-   # A unit vector version of the given vector
-   R = rotation_matrix( vector_u, angle )
-   # Rotate vector
-   vector_rotated = R.dot(vector1)
-   return vector_rotated
+   if np.linalg.norm(vector_u) == 0.0:
+      return vector1
+   else:
+      vector_u = vector_u / np.linalg.norm(vector_u)
+      angle = np.arccos( vector2.dot(np.array([0,0,1])) / np.linalg.norm(vector2) )
+      # A unit vector version of the given vector
+      R = rotation_matrix( vector_u, angle )
+      # Rotate vector
+      vector_rotated = R.dot(vector1.transpose()).transpose()
+      return vector_rotated
 
 def rotation_matrix(vector, angle):
    ''' Creates a rotation matrix that rotates into a given vector by a given angle

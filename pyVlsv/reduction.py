@@ -1,6 +1,7 @@
 ''' A file for doing data reduction on variables
 '''
 import numpy as np
+import pylab as pl
 import filemanagement
 # Input paths:
 fullPath = filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__))
@@ -10,6 +11,7 @@ filemanagement.sys.path.insert(0, fullPath)
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyCalculations")
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector
+from gyrophaseangle import gyrophase_angles
 import sys
 
 
@@ -275,7 +277,32 @@ def v_thermal_vector( variables ):
    v_thermal_vector = np.sqrt( diagonal_elements*k/ion_mass )
    return v_thermal_vector
 
-#datareducers with more complex, case dependent structure. 
+def Bz_linedipole_avg( variables ):
+   x = variables[0]
+   y = variables[1]
+   z = variables[2]
+   dx = variables[3]
+   dy = variables[4]
+   dz = variables[5]
+   return -126.2e6*((dx+x)/(dx*(z**2+(dx+x)**2)) - x/(dx*(z**2+x**2)))
+
+def Bz_linedipole_diff( variables ):
+   Bb = variables[0]
+   Bzldp = variables[1]
+   print Bzldp.shape
+   return np.divide(np.abs(Bb[:,2] - Bzldp), magnitude(Bb))
+
+def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
+   bulk_velocity = variables[0]
+   B = variables[1]
+   B_unit = B / np.linalg.norm(B)
+   
+   gyrophase_data = gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
+   histo = pl.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
+   return np.std(histo[0])/np.mean(histo[0])
+
+
+#datareducers with more complex, case dependent structure.
 datareducers = {}
 datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
 datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
@@ -307,7 +334,11 @@ datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", 
 datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
 datareducers["vThermal"] =               DataReducerVariable(["TBackstream"], v_thermal, "m/s")
 datareducers["vThermalVector"] =         DataReducerVariable(["TTensorRotatedBackstream"], v_thermal_vector, "m/s")
+datareducers["Bz_linedipole_avg"] =      DataReducerVariable(["X", "Y", "Z", "DX", "DY", "DZ"], Bz_linedipole_avg, "T")
+datareducers["Bz_linedipole_diff"] =     DataReducerVariable(["B", "Bz_linedipole_avg"], Bz_linedipole_diff, "")
 
+#reducers with useVspace
+datareducers["gyrophase_relstddev"] =       DataReducerVariable(["v", "B"], gyrophase_relstddev, "", useVspace=True)
 
 
 #list of operators. The user can apply these to any variable,
