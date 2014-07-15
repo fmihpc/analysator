@@ -131,7 +131,7 @@ def Pressure( variables ):
    PTensorDiagonal = variables[0]
    if(np.ndim(PTensorDiagonal)==1 ):
       return np.sum(PTensorDiagonal)
-   return PTensorDiagonal[:,0]+PTensorDiagonal[:,1]+PTensorDiagonal[:,2]
+   return (PTensorDiagonal[:,0]+PTensorDiagonal[:,1]+PTensorDiagonal[:,2])
 
 def TTensor( variables ):
    PTensor = variables[0]

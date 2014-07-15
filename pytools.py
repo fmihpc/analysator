@@ -13,23 +13,13 @@ filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
 
 # Import modules
-try:
-   import calculations
-except ImportError:
-   print "Note: Did not import calculations module"
-try:
-   import vlsvfile
-except ImportError:
-   print "Note: Did not import vlsvfile module"
+import calculations
+import vlsvfile
+import plot
+import miscellaneous
 try:
    import grid
 except ImportError:
    print "Note: Did not import grid module"
-try:
-   import plot
-except ImportError:
-   print "Note: Did not import plot module"
-try:
-   import miscellaneous
-except ImportError:
-   print "Note: Did not import miscellaneous module"
+
+

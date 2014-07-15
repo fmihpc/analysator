@@ -21,7 +21,7 @@ from mayavi.sources.vtk_data_source import VTKDataSource
 from mayavi.modules.outline import Outline
 from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
-from rankine import oblique_shock, plot_rankine, rotation_matrix_2d, evaluate_rankine
+from rankine import oblique_shock, plot_rankine, rotation_matrix_2d, evaluate_rankine, compare_rankine
 from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 
@@ -146,6 +146,7 @@ class MayaviGrid(HasTraits):
       self.labels.number_of_labels = 1
       self.labels.mask.filter.random_mode = False
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
+      self.labels.property.font_size = 4
       module_manager = self.__module_manager()
       # Add the label / marker:
       self.__engine.add_filter( self.labels, module_manager )
@@ -354,6 +355,66 @@ class MayaviGrid(HasTraits):
 #                  rho2 = self.__vlsvReader.read_variable( 'rho', cellids=cellid )
 #                  V2 = self.__vlsvReader.read_variable( "v", cellids=cellid )
 #                  print rho1*V1[0]/(rho2*V2[0])
+               elif args[i] == "saveall":
+                   iterator = 0
+                   iterator2 = 0
+                   for i in xrange(len(self.__engine.scenes)):
+                      if i == 0:
+                         continue
+                      else:
+                         scene1 = self.__engine.scenes[i]
+                         scene1.scene.save(u'/home/hannukse/' + str(iterator) + "_" + str(iterator2) + '.png')
+                         iterator = iterator + iterator2
+                         iterator2 = (iterator2 + 1)%2
+               elif args[i] == "allrankine":
+                  iterator = 0; iterator2 = 0
+                  points = np.array([[-8.37206730e+07,2.39999264e+08,4.24666000e+05],
+                                     [-6.49276888e+07,2.34773557e+08,4.24666000e+05],
+                                     [-4.61696054e+07,2.28007074e+08,4.24666000e+05],
+                                     [-2.75448586e+07,2.20453142e+08,4.24666000e+05],
+                                     [-7.96339374e+06,2.10237848e+08,4.24666000e+05],
+                                     [8.32036315e+06,2.00045504e+08,4.24666000e+05],
+                                     [5.88351491e+07,1.56920980e+08,4.24666000e+05],
+                                     [7.09676741e+07,1.42190170e+08,4.24666000e+05],
+                                     [8.10867647e+07,1.27275123e+08,4.24666000e+05],
+                                     [9.06094273e+07,1.11682409e+08,4.24666000e+05],
+                                     [96354326.89621623,99784418.82534805,424666.,],
+                                     [1.02448134e+08,8.52845576e+07,4.24666000e+05],
+                                     [1.07640119e+08,6.93513171e+07,4.24666000e+05],
+                                     [1.11306107e+08,5.70297602e+07,4.24666000e+05],
+                                     [1.14199814e+08,4.06723579e+07,4.24666000e+05],
+                                     [1.15313625e+08,3.37850955e+07,4.24666000e+05],
+                                     [1.15744775e+08,1.74123332e+07,4.24666000e+05],
+                                     [1.14222969e+08,8.03219939e+05,4.24666000e+05],
+                                     [1.10814877e+08,-1.54158616e+07,4.24666000e+05],
+                                     [1.06462237e+08,-3.11373224e+07,4.24666000e+05]])
+ 
+                  import time
+                 
+                  # Loop over points:
+                  for i in xrange(len(points) - 1):
+                     print "i: " + str(i)
+                     point1 = points[i]
+                     point2 = points[i+1]
+                     # set labels:
+                     cellids = self.__add_normal_labels( point1, point2 )
+                     print "[Vx_rankine/Vx, Vy_rankine/Vy, By_rankine/By, rho_rankine/rho, P_rankine/P]"
+                     print evaluate_rankine(self.__vlsvReader, point1, point2)
+                     print "Compare rankine: " + str( compare_rankine(self.__vlsvReader, point1, point2) )
+                     fig = plot_rankine( self.__vlsvReader, point1, point2, savename='/home/hannukse/figure' + str(i) + '.png' )
+                     self.__last_pick = []
+                     self.plot = fig
+                     iterator = iterator + iterator2
+                     iterator2 = (iterator2 + 1)%2
+#                  for i in xrange(len(points) - 1):
+#                     point1 = points[i]
+#                     point2 = points[i+1]
+#
+#                     # set labels:
+#                     cellids = self.__add_normal_labels( point1, point2 )
+#                     self.__generate_velocity_grid(cellids[0], True, name=str(i))
+#                     self.__generate_velocity_grid(cellids[1], True, name=str(i))
+#                     self.__last_pick = []
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
@@ -402,7 +463,7 @@ class MayaviGrid(HasTraits):
             self.__last_pick = coordinates
 
    
-   def __generate_grid( self, mins, maxs, cells, datas, names  ):
+   def __generate_grid( self, mins, maxs, cells, datas, names ):
       ''' Generates a grid from given data
           :param mins:           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
           :param maxs:           An array of maximum coordinates for the grid for ex. [-100, 0, 0]
@@ -452,7 +513,7 @@ class MayaviGrid(HasTraits):
       #self.__thread.start()
       
 
-   def __generate_velocity_grid( self, cellid, iso_surface=False ):
+   def __generate_velocity_grid( self, cellid, iso_surface=False, name="", save="no" ):
       '''Generates a velocity grid from a given spatial cell id
          :param cellid:           The spatial cell's ID
          :param iso_surface:      If true, plots the iso surface
@@ -494,7 +555,7 @@ class MayaviGrid(HasTraits):
          B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
       else:
          B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
-      
+
       points2 = np.array([[0,0,0]])
       ug2 = tvtk.UnstructuredGrid(points=points2)
       ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
@@ -517,7 +578,10 @@ class MayaviGrid(HasTraits):
       figure.scene.disable_render = False
       self.__unstructured_figures.append(figure)
       # Name the figure
-      figure.name = str(cellid)
+      if name == "":
+         figure.name = str(cellid)
+      else:
+         figure.name = name
 
       from mayavi.modules.axes import Axes 
       axes = Axes()
