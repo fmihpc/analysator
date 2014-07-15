@@ -76,6 +76,8 @@ class MayaviGrid(HasTraits):
 
    args = ""
 
+   variable_plotted = ""
+
    labels = []
 
    cut_through = []
@@ -127,6 +129,7 @@ class MayaviGrid(HasTraits):
       self.__unstructured_figures = []
       self.__thread = []
       self.__load_grid( variable=variable, operator=operator, threaded=threaded )
+      self.variable_plotted = variable
 
    def __module_manager( self ):
       import mayavi.core.module_manager as MM
@@ -558,14 +561,15 @@ class MayaviGrid(HasTraits):
 
       points2 = np.array([[0,0,0]])
       ug2 = tvtk.UnstructuredGrid(points=points2)
-      ug2.point_data.vectors = [(B * 8000000000000) / np.linalg.norm( B )]
+      ug2.point_data.vectors = [B / np.linalg.norm( B )]
       ug2.point_data.vectors.name = 'B_vector'
       #src2 = VTKDataSource(data = ug2)
       d2 = mayavi.mlab.pipeline.add_dataset(ug2)
       #mayavi.mlab.add_module(Vectors())
       vec = mayavi.mlab.pipeline.vectors(d2)
       vec.glyph.mask_input_points = True
-      vec.glyph.glyph.scale_factor = 100000
+      vec.glyph.glyph.scale_factor = 1e6
+      vec.glyph.glyph_source.glyph_source.center = [0, 0, 0]
 
 
       # Visualize

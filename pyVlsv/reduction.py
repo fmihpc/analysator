@@ -191,18 +191,22 @@ def TyRotated( variables ):
       return TTensorRotated[:,1,1]
 
 def PPerpendicular( variables ):
-   PTensorRotated = variables[0]
+   PTensor = variables[0]
+   PParallel = variables[1]
    if( np.ndim(PTensorRotated)==2 ):
-      return 0.5*(PTensorRotated[0,0] + PTensorRotated[1,1])
+      return 0.5*(PTensor.trace() - PParallel)
    else:
-      return 0.5*(PTensorRotated[:,0,0] + PTensorRotated[:,1,1])
+      return 0.5*(PTensor.transpose().trace() - PParallel)
 
 def PParallel( variables ):
-   PTensorRotated = variables[0]
-   if( np.ndim(PTensorRotated)==2 ):
-      return PTensorRotated[2,2]
+   PTensor = variables[0]
+   B = variables[1]
+   if( np.ndim(PTensor)==2 ):
+      B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2)))
+      return B_normalized.dot(PTensor.dot(B_normalized))
    else:
-      return PTensorRotated[:,2,2]
+      B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2, axis=1))[:,None])
+      return [B_normalized[i].dot(PTensor[i].dot(B_normalized[i])) for i in np.arange(len(PTensor))]
 
 def TPerpOverPar( variables ):
    TTensorRotated = variables[0]
@@ -301,6 +305,24 @@ def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
    histo = pl.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
    return np.std(histo[0])/np.mean(histo[0])
 
+def Dng( variables ):
+   PTensor = variables[0]
+   PParallel = variables[1]
+   PPerpendicular = variables[2]
+   B = variables[3]
+   # following Aunai et al 2103 syntax
+   if( np.ndim(PTensor)==2 ):
+      B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2)))
+      idMatrix = np.diag(np.ones(3))
+      G = PPerpendicular*idMatrix + (PParallel - PPerpendicular) * np.outer(B_normalized, B_normalized)
+      N = PTensor - G
+      return 2.0 * np.linalg.norm(N, 'fro') / PTensor.trace()
+   else:
+      B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2, axis=1))[:,None])
+      idMatrix = np.diag(np.ones(3))
+      G = [PPerpendicular[i]*idMatrix + (PParallel[i] - PPerpendicular[i]) * np.outer(B_normalized[i], B_normalized[i]) for i in np.arange(len(PParallel))]
+      N = PTensor - G
+      return [np.divide(2.0*np.linalg.norm(N[i], 'fro'), PTensor[i].trace()) for i in np.arange(len(PParallel))]
 
 #datareducers with more complex, case dependent structure.
 datareducers = {}
@@ -321,14 +343,15 @@ datareducers["TPerpendicular"] =         DataReducerVariable(["TTensorRotated"],
 datareducers["TxRotated"] =              DataReducerVariable(["TTensorRotated"], TxRotated, "K")
 datareducers["TyRotated"] =              DataReducerVariable(["TTensorRotated"], TyRotated, "K")
 datareducers["TPerpOverPar"] =           DataReducerVariable(["TTensorRotated"], TPerpOverPar, "K")
-datareducers["PParallel"] =              DataReducerVariable(["PTensorRotated"], PParallel, "Pa")
-datareducers["PPerpendicular"] =         DataReducerVariable(["PTensorRotated"], PPerpendicular, "Pa")
+datareducers["PParallel"] =              DataReducerVariable(["PTensor", "B"], PParallel, "Pa")
+datareducers["PPerpendicular"] =         DataReducerVariable(["PTensor", "PParallel"], PPerpendicular, "Pa")
 datareducers["PPerpOverPar"] =           DataReducerVariable(["PTensorRotated"], PPerpOverPar, "K")
 datareducers["beta"] =                   DataReducerVariable(["Pressure", "B"], beta ,"")
 datareducers["betaParallel"] =           DataReducerVariable(["PParallel", "B"], beta ,"")
 datareducers["betaPerpendicular"] =      DataReducerVariable(["PPerpendicular", "B"], beta ,"")
 datareducers["betaPerpOverPar"] =        DataReducerVariable(["betaPerpendicular", "betaParallel"], betaPerpOverPar, "")
 datareducers["Rmirror"] =                DataReducerVariable(["TPerpOverPar", "betaPerpendicular"], rMirror, "")
+datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParallel", "PPerpendicular", "B"], Dng, "")
 
 datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
 datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
