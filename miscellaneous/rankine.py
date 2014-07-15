@@ -747,12 +747,30 @@ def compare_rankine( vlsvReader, point1, point2 ):
    I2 = P2/((Gamma-2)*rho2)
 
    # Calculate the R-H jump conditions:
+#   RH = []
+#   RH.append((rho1*np.dot(V1, N)) / (rho2*np.dot(V2, N))) 
+#   RH.append((rho1*V1*(np.dot(V1, N)) + (P1+np.dot(B1,B1)/(8.*np.pi))*N - (np.dot(B1, N))*B1/(4.*np.pi)) / (rho2*V2*(np.dot(V2, N)) + (P2+np.dot(B2,B2)/(8.*np.pi))*N - (np.dot(B2, N))*B2/(4.*np.pi))) 
+#   RH.append((np.dot(V1, N)*( (rho1*I1 + rho1*np.dot(V1, V1)/2. + np.dot(B1,B1)/(8.*np.pi)) + (P1+np.dot(B1, B1)/(8.*np.pi)) ) - np.dot(B1,N)*np.dot(B1,V1)/(4.*np.pi)) / (np.dot(V2, N)*( (rho2*I2 + rho2*np.dot(V2, V2)/2. + np.dot(B2,B2)/(8.*np.pi)) + (P2+np.dot(B2, B2)/(8.*np.pi)) ) - np.dot(B2,N)*np.dot(B2,V2)/(4.*np.pi))) 
+#   RH.append((np.dot(B1, N)) / (np.dot(B2, N))) 
+#   RH.append((np.cross(N, np.cross(V1, B1) )) / (np.cross(N, np.cross(V2, B2) ))) 
+
+   Vn1 = np.dot(V1, N)
+   Bn1 = np.dot(B1, N)
+   Vt1 = V1 - np.dot(V1, N)*N
+   Bt1 = B1 - np.dot(B1, N)*N
+   Vn2 = np.dot(V2, N)
+   Bn2 = np.dot(B2, N)
+   Vt2 = V2 - np.dot(V2, N)*N
+   Bt2 = B2 - np.dot(B2, N)*N
+
+
    RH = []
-   RH.append((rho1*np.dot(V1, N)) / (rho2*np.dot(V2, N))) 
-   RH.append((rho1*V1*(np.dot(V1, N)) + (P1+np.dot(B1,B1)/(8.*np.pi))*N - (np.dot(B1, N))*B1/(4.*np.pi)) / (rho2*V2*(np.dot(V2, N)) + (P2+np.dot(B2,B2)/(8.*np.pi))*N - (np.dot(B2, N))*B2/(4.*np.pi))) 
-   RH.append((np.dot(V1, N)*( (rho1*I1 + rho1*np.dot(V1, V1)/2. + np.dot(B1,B1)/(8.*np.pi)) + (P1+np.dot(B1, B1)/(8.*np.pi)) ) - np.dot(B1,N)*np.dot(B1,V1)/(4.*np.pi)) / (np.dot(V2, N)*( (rho2*I2 + rho2*np.dot(V2, V2)/2. + np.dot(B2,B2)/(8.*np.pi)) + (P2+np.dot(B2, B2)/(8.*np.pi)) ) - np.dot(B2,N)*np.dot(B2,V2)/(4.*np.pi))) 
-   RH.append((np.dot(B1, N)) / (np.dot(B2, N))) 
-   RH.append((np.cross(N, np.cross(V1, B1) )) / (np.cross(N, np.cross(V2, B2) ))) 
+   RH.append((rho1*Vn1) / (rho2*Vn2)) 
+   RH.append((Bn1) / (Bn2)) 
+   RH.append((rho1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (rho2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0))) 
+   RH.append((rho1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (rho2*Vn2*Vt2 - Bt2*Bn2/(mu0))) 
+   RH.append((((Gamma/(Gamma-1))*P1/rho1 + np.dot(V1, V1)/2.)*rho1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/rho2 + np.dot(V2, V2)/2.)*rho2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0))) 
+   RH.append((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) 
 
    return RH
 
