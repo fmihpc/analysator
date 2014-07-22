@@ -258,6 +258,17 @@ def v_beam( variables ):
    vBeam = vBackstream - vNonBackstream
    return vBeam
 
+def v_beam_ratio( variables ):
+   rhoVBackstream = variables[0]
+   rhoBackstream = variables[1]
+   rhoVNonBackstream = variables[2]
+   rhoNonBackstream = variables[3]
+   # get velocity of both populations:
+   vBackstream = magnitude(v( [rhoVBackstream, rhoBackstream] ))
+   vNonBackstream = magnitude(v( [rhoVNonBackstream, rhoNonBackstream] ))
+   vBeamRatio = vBackstream / vNonBackstream
+   return vBeamRatio
+
 def v_thermal( variables ):
    temperatureBackstream = variables[0]
    k = 1.38065e-23
@@ -354,6 +365,7 @@ datareducers["Rmirror"] =                DataReducerVariable(["TPerpOverPar", "b
 datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParallel", "PPerpendicular", "B"], Dng, "")
 
 datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
+datareducers["vBeamRatio"] =             DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam_ratio, "")
 datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
 datareducers["vThermal"] =               DataReducerVariable(["TBackstream"], v_thermal, "m/s")
 datareducers["vThermalVector"] =         DataReducerVariable(["TTensorRotatedBackstream"], v_thermal_vector, "m/s")
