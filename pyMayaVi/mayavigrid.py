@@ -181,8 +181,8 @@ class MayaviGrid(HasTraits):
       normal_vector = (point2-point1) / np.linalg.norm(point2 - point1)
       normal_vector = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
       normal_vector = normal_vector * np.array([1,1,0])
-      point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (4*dx)
-      point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (4*dx)
+      point1_shifted = point1 + 0.5*(point2-point1) + normal_vector * (8*dx)
+      point2_shifted = point1 + 0.5*(point2-point1) - normal_vector * (8*dx)
       point1 = np.array(point1_shifted)
       point2 = np.array(point2_shifted)
 
@@ -371,26 +371,7 @@ class MayaviGrid(HasTraits):
                          iterator2 = (iterator2 + 1)%2
                elif args[i] == "allrankine":
                   iterator = 0; iterator2 = 0
-                  points = np.array([[-8.37206730e+07,2.39999264e+08,4.24666000e+05],
-                                     [-6.49276888e+07,2.34773557e+08,4.24666000e+05],
-                                     [-4.61696054e+07,2.28007074e+08,4.24666000e+05],
-                                     [-2.75448586e+07,2.20453142e+08,4.24666000e+05],
-                                     [-7.96339374e+06,2.10237848e+08,4.24666000e+05],
-                                     [8.32036315e+06,2.00045504e+08,4.24666000e+05],
-                                     [5.88351491e+07,1.56920980e+08,4.24666000e+05],
-                                     [7.09676741e+07,1.42190170e+08,4.24666000e+05],
-                                     [8.10867647e+07,1.27275123e+08,4.24666000e+05],
-                                     [9.06094273e+07,1.11682409e+08,4.24666000e+05],
-                                     [96354326.89621623,99784418.82534805,424666.,],
-                                     [1.02448134e+08,8.52845576e+07,4.24666000e+05],
-                                     [1.07640119e+08,6.93513171e+07,4.24666000e+05],
-                                     [1.11306107e+08,5.70297602e+07,4.24666000e+05],
-                                     [1.14199814e+08,4.06723579e+07,4.24666000e+05],
-                                     [1.15313625e+08,3.37850955e+07,4.24666000e+05],
-                                     [1.15744775e+08,1.74123332e+07,4.24666000e+05],
-                                     [1.14222969e+08,8.03219939e+05,4.24666000e+05],
-                                     [1.10814877e+08,-1.54158616e+07,4.24666000e+05],
-                                     [1.06462237e+08,-3.11373224e+07,4.24666000e+05]])
+                  points = [[-9.71397372e+07, 2.43380167e+08, 4.24666000e+05], [-7.51333138e+07, 2.37535402e+08, 4.24666000e+05], [-6.06099599e+07, 2.33240386e+08, 4.24666000e+05], [-4.87875957e+07, 2.29078205e+08, 4.24666000e+05], [-3.68752775e+07, 2.23992285e+08, 4.24666000e+05], [-2.31932155e+07, 2.17793292e+08, 4.24666000e+05], [-1.60200956e+07, 2.14516682e+08, 4.24666000e+05], [-8.71414013e+06, 2.10443058e+08, 4.24666000e+05], [4.56238772e+06, 2.02209171e+08, 4.24666000e+05], [1.59007226e+07, 1.94506066e+08, 4.24666000e+05], [2.63061743e+07, 1.86580212e+08, 4.24666000e+05], [3.46748142e+07, 1.79849877e+08, 4.24666000e+05], [4.40325937e+07, 1.71327999e+08, 4.24666000e+05], [5.22241195e+07, 1.63269309e+08, 4.24666000e+05], [6.43250109e+07, 1.49760688e+08, 4.24666000e+05], [7.11439027e+07, 1.41303491e+08, 4.24666000e+05], [8.07474299e+07, 1.27616957e+08, 4.24666000e+05], [8.34883459e+07, 1.23305532e+08, 4.24666000e+05], [8.90231607e+07, 1.14538385e+08, 4.24666000e+05], [9.39189513e+07, 1.05390220e+08, 4.24666000e+05], [97416954.18338233, 97685757.65338714, 424666.], [1.03513056e+08, 8.33623959e+07, 4.24666000e+05], [1.08756886e+08, 6.64824588e+07, 4.24666000e+05], [1.12591789e+08, 5.01089099e+07, 4.24666000e+05], [1.14952125e+08, 3.62135606e+07, 4.24666000e+05], [1.15707056e+08, 2.70723825e+07, 4.24666000e+05], [1.15707056e+08, 1.45858405e+07, 4.24666000e+05], [1.14497562e+08, 4.49784480e+06, 4.24666000e+05], [1.12239358e+08, -6.66034171e+06, 4.24666000e+05], [1.09570269e+08, -1.79468519e+07, 4.24666000e+05], [1.07692405e+08, -2.71967498e+07, 4.24666000e+05], [1.04194402e+08, -4.13215970e+07, 4.24666000e+05], [98677514.42325053, -52030929.17832761, 424666.], [91371558.96971476, -69432386.71311283, 424666.], [82937439.75694695, -84515709.8075659, 424666.], [6.79830392e+07, -1.03855720e+08, 4.24666000e+05], [4.28720889e+07, -1.29345453e+08, 4.24666000e+05], [2.30868584e+07, -1.45243716e+08, 4.24666000e+05], [-5.20699453e+06, -1.60712331e+08, 4.24666000e+05]]
  
                   import time
                  
@@ -404,20 +385,20 @@ class MayaviGrid(HasTraits):
                      print "[Vx_rankine/Vx, Vy_rankine/Vy, By_rankine/By, rho_rankine/rho, P_rankine/P]"
                      print evaluate_rankine(self.__vlsvReader, point1, point2)
                      print "Compare rankine: " + str( compare_rankine(self.__vlsvReader, point1, point2) )
-                     fig = plot_rankine( self.__vlsvReader, point1, point2, savename='/home/hannukse/figure' + str(i) + '.png' )
+                     fig = plot_rankine( self.__vlsvReader, point1, point2, savename='/home/hannukse/perppar' + str(i) + '.png' )
                      self.__last_pick = []
-                     self.plot = fig
+#                     self.plot = fig
                      iterator = iterator + iterator2
                      iterator2 = (iterator2 + 1)%2
-#                  for i in xrange(len(points) - 1):
-#                     point1 = points[i]
-#                     point2 = points[i+1]
-#
-#                     # set labels:
-#                     cellids = self.__add_normal_labels( point1, point2 )
-#                     self.__generate_velocity_grid(cellids[0], True, name=str(i))
-#                     self.__generate_velocity_grid(cellids[1], True, name=str(i))
-#                     self.__last_pick = []
+                  for i in xrange(len(points) - 1):
+                     j = i
+                     point1 = points[j]
+                     point2 = points[j+1]
+                     # set labels:
+                     cellids = self.__add_normal_labels( point1, point2 )
+                     self.__generate_velocity_grid(cellids[0], True, name=str(i))
+                     self.__generate_velocity_grid(cellids[1], True, name=str(i))
+                     self.__last_pick = []
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
