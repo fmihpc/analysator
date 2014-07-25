@@ -58,7 +58,7 @@ def plot_variables( x, y, figure=[] ):
          return plot_multiple_variables( x, y, figure )
 
 
-def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clean_xticks=False ):
+def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clean_xticks=False, linestyle='-' ):
    ''' Plots multiple variables from the input with pylab
 
        :param variables_x_list:        Some list of variables to be plotted in the x-axis
@@ -124,7 +124,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
       if (len(np.atleast_1d(x)) == 0) or (len(np.atleast_1d(y)) == 0):
          continue
       ax = axes[i]
-      ax.plot(get_data(x), get_data(y), lw=2, color='black')
+      ax.plot(get_data(x), get_data(y), linestyle, lw=2, color='black')
 
       if get_units(x) != "":
          ax.set_xlabel(get_name(x) + " (" + get_units(x) + ")")
