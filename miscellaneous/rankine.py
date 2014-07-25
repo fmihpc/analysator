@@ -39,10 +39,12 @@ def rankine( vlsvReader, point1, point2 ):
    n = (point2-point1) / np.linalg.norm(point2 - point1)
    n = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
    n = n * np.array([1,1,0])
-   point1_shifted = point1 + 0.5*(point2-point1) + n * (4*dx)
-   point2_shifted = point1 + 0.5*(point2-point1) - n * (4*dx)
+   point1_shifted = point1 + 0.5*(point2-point1) + n * (8*dx)
+   point2_shifted = point1 + 0.5*(point2-point1) - n * (8*dx)
    point1 = np.array(point1_shifted)
    point2 = np.array(point2_shifted)
+
+   mp = 1.67e-27
 
    # Read cut-through
    cutthrough = cut_through( vlsvReader=vlsvReader, point1=point1, point2=point2 )
@@ -52,27 +54,8 @@ def rankine( vlsvReader, point1, point2 ):
    # Read data from the file:
    V_data = vlsvReader.read_variable( "v", cellids=cellids )
    B_data = vlsvReader.read_variable( "B", cellids=cellids )
-   rho_data = vlsvReader.read_variable( "rho", cellids=cellids )
+   rho_data = vlsvReader.read_variable( "rho", cellids=cellids )*mp
    P_data = vlsvReader.read_variable( "Pressure", cellids=cellids )
-
-   # Transform to de hoffmann teller frame:
-   ##############################################
-   # V_1 x B_1 = 0:
-   V_1 = V_data[0]
-   B_1 = B_data[0]
-   V_HT = np.cross(n, np.cross(V_1, B_1) ) / np.dot(n, B_1)
-
-   # Check whether V_HT is relativistic or not:
-   if np.linalg.norm( V_HT ) > 0.05*3.0e8:
-      print "WARNING: When transforming to de Hoffmann teller frame encountered speeds over 0.05 speed of light: " + str(np.linalg.norm( V_HT ))
-
-   # Transform to another frame:
-   V_data = V_data - V_HT
-   V_1 = V_data[0]
-   B_1 = B_data[0]
-   # Check the de-hoffmann teller frame:
-   print "HOFFMAN_CHECK: " + str(np.cross(B_1, V_1))
-   ##############################################
 
    # Get the upstream and downstream area:
    upstream = 0
@@ -90,6 +73,38 @@ def rankine( vlsvReader, point1, point2 ):
    # Input data: (d = downstream)
    V_d = np.mean(V_data[downstream:len(V_data)-1], axis=0)
    B_d = np.mean(B_data[downstream:len(V_data)-1], axis=0)
+
+   # Transform to de hoffmann teller frame:
+   ##############################################
+   # V_1 x B_1 = 0:
+   V_1 = V_u
+   B_1 = B_u
+   V_HT = np.cross(n, np.cross(V_1, B_1) ) / np.dot(n, B_1)
+
+   # Check whether V_HT is relativistic or not:
+   if np.linalg.norm( V_HT ) > 0.05*3.0e8:
+      print "WARNING: When transforming to de Hoffmann teller frame encountered speeds over 0.05 speed of light: " + str(np.linalg.norm( V_HT ))
+
+   # Transform to another frame:
+   V_data = V_data - V_HT
+   ##############################################
+
+   # Input data: (u = upstream)
+   V_u = np.mean(V_data[0:upstream], axis=0)
+   B_u = np.mean(B_data[0:upstream], axis=0)
+
+   # Input data: (d = downstream)
+   V_d = np.mean(V_data[downstream:len(V_data)-1], axis=0)
+   B_d = np.mean(B_data[downstream:len(V_data)-1], axis=0)
+
+   # Check the de-hoffmann teller frame:
+   ##############################################
+   V_1 = V_u
+   B_1 = B_u
+   # Check the de-hoffmann teller frame:
+   print "HOFFMAN_CHECK: " + str(np.cross(B_1, V_1))
+   ##############################################
+
 
    # Get the tangent:
    t = B_u - np.dot(B_u,n) * n
@@ -128,20 +143,34 @@ def rankine( vlsvReader, point1, point2 ):
    P_d = np.mean(P_data[downstream:len(V_data)-1])
 
    # Calculate rankine hugoniot jump conditions:
-   rankine_conditions_dict = oblique_solver( Vx_u, Vy_u, Bx_u, By_u, P_u, rho_u )
+   rankine_conditions = oblique_solver( Vx_u, Vy_u, Bx_u, By_u, P_u, rho_u )
 
-   rankine_conditions = []
+   print "CONDITIONS: " + str(rankine_conditions)
 
-   for i in rankine_conditions_dict.iteritems():
-      rankine_conditions.append(i[1])
+#
+#   rankine_conditions = []
+#
+#   print rankine_conditions_dict
+#
+#   for i in rankine_conditions_dict.iteritems():
+#      rankine_conditions.append(i[1])
+#
+   Vx_rankine_d = rankine_conditions[0]
+   Vy_rankine_d = rankine_conditions[1]
+   Bx_rankine_d = rankine_conditions[2]
+   By_rankine_d = rankine_conditions[3]
+   P_rankine_d = rankine_conditions[4]
+   rho_rankine_d = rankine_conditions[5]
+   print "Rho: " + str(rho_u) + " " + str(rho_data[0])
 
-   Vx_rankine_d = rankine_conditions[5]
-   Vy_rankine_d = rankine_conditions[4]
-   Bx_rankine_d = rankine_conditions[1]
-   By_rankine_d = rankine_conditions[0]
-   rho_rankine_d = rankine_conditions[3]
-   P_rankine_d = rankine_conditions[2]
-
+#   rankine_conditions = oblique_shock( Vx_u, Vy_u, Bx_u, By_u, P_u, rho_u )
+#
+#   Vx_rankine_d = rankine_conditions[0]
+#   Vy_rankine_d = rankine_conditions[1]
+#   Bx_rankine_d = rankine_conditions[2]
+#   By_rankine_d = rankine_conditions[3]
+#   rho_rankine_d = rankine_conditions[4]
+#   P_rankine_d = rankine_conditions[5]
 
 #   # Input Rankine (d = downstream):
 #   Vx_rankine_d = rankine_conditions[0]
@@ -192,9 +221,10 @@ def oblique_solver( Vx1, Vy1, Bx1, By1, P1, rho1 ):
        :param T1: Temperature on one side of the shock
        :param rho1: Density on one side of the shock
 
-       :returns: Components on the other side plus pressure P2 and compression ratio X in format [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X]
+       :returns: Components on the other side plus pressure P2 and compression ratio X in format [Vx2, Vy2, Bx2, By2, P2, rho2, X]
    '''
    import sympy as sp
+
 
    # Constants
    y = 5./3.
@@ -203,50 +233,64 @@ def oblique_solver( Vx1, Vy1, Bx1, By1, P1, rho1 ):
    kb = 1.3806505e-23;
    # Calculate other variables
    theta = np.arccos(Bx1/np.sqrt(Bx1**2 + By1**2));
-   vA1 = np.sqrt( (Bx1**2+By1**2) / (mp * rho1 * mu0) )
+   vA1 = np.sqrt( (Bx1**2 + By1**2) / (rho1 * mu0) )
+#   vA1 = np.sqrt( Bx1**2 / (rho1 * mu0) )
    V1 = np.sqrt( Vx1**2 + Vy1**2 )
-   vs1 = np.sqrt( y * P1 / (mp*rho1) )
-
-
-   # Print out temperature: T = P/nk
-   print "Temperature:" + str(P1/(rho1*kb))
+   vs1 = np.sqrt( y * P1 / rho1 )
 
    # Declare the rest of the variables
    Vx2, Vy2, Bx2, By2, T2, P2, rho2, X = sp.symbols('Vx2, Vy2, Bx2, By2, T2, P2, rho2, X')
    V2 = sp.sqrt(Vx2*Vx2+Vy2*Vy2)
+
 
    # Solve X:
    x = sp.solve( (V1**2-X*vA1**2)**2*(X*vs1**2+1/2.*V1**2*np.cos(theta)**2*(X*(y-1)-(y+1))) + 1/2.*vA1**2*V1**2*np.sin(theta)**2*X*((y+X*(2-y))*V1**2-X*vA1**2*((y-1)-X*(y-1))) , X)
    print "x: " + str(x)
    # Pick X:
    for i in x:
-      if i.as_real_imag()[0] > 0:
+      if i.as_real_imag()[0] > 0 and np.abs((float)(i.as_real_imag()[1])) < 1e-16:
          X = i.as_real_imag()[0]
 
+   print "X: " + str(X)
+
    # Write down the equations
-   equation = []
-   equation.append( Vx2/Vx1 - 1/X )
-   equation.append( rho1/rho2 - 1/X )
-   equation.append( Vy2/Vy1 - (V1**2-vA1**2) / (V1**2-X*vA1**2) )
-   equation.append( Bx2/Bx1 - 1 )
-   equation.append( By2/By1 - (V1**2-vA1**2)*X/(V1**2-X*vA1**2) )
-   equation.append( P2/P1 - (X+((y-1)*X*V1**2/(2*vs1**2))*(1-V2**2/(V1**2))) )
+#   equation = []
+#   equation.append( Vx2/Vx1 - 1/X )
+#   equation.append( rho1/rho2 - 1/X )
+#   equation.append( Vy2/Vy1 - (V1**2-vA1**2) / (V1**2-X*vA1**2) )
+#   equation.append( Bx2/Bx1 - 1 )
+#   equation.append( By2/By1 - (V1**2-vA1**2)*X/(V1**2-X*vA1**2) )
+#   equation.append( P2/P1 - (X+((y-1)*X*V1**2/(2*vs1**2))*(1-V2**2/(V1**2))) )
 
-   print "alfven:"
-   print vA1
-   print vs1
-   print (X+((y-1)*X*V1**2/(2*vs1**2))*(1-V2**2/(V1**2)))
+   # Solve variables:
+   Vx2 = (float)(Vx1/X)
+   rho2 = (float)(rho1*X)
+   Vy2 = (float)(Vy1*(V1**2-vA1**2)/(V1**2-X*vA1**2))
+   Bx2 = (float)(Bx1)
+   By2 = (float)(By1*(V1**2-vA1**2)*X/(V1**2-X*vA1**2))
+   V2 = (float)(np.sqrt( Vx2**2 + Vy2**2 ))
+   P2 = (float)(P1*(X+(y-1)*X*V1**2/(2*vs1**2)*(1-V2**2/(V1**2))))
 
-   return sp.solve(equation, Vx2, Vy2, Bx2, By2, P2, rho2 , dict=False, set=False)
+   results = []
+   results.append( Vx2 )
+   results.append( Vy2 )
+   results.append( Bx2 )
+   results.append( By2 )
+   results.append( P2 )
+   results.append( rho2 )
+   results.append( X )
 
-def oblique_shock( Vx1, Vy1, Bx1, By1, T1, P1, rho1 ):
+   return results
+   #return sp.solve(equation, Vx2, Vy2, Bx2, By2, P2, rho2 , dict=False, set=False)
+
+def oblique_shock( Vx1, Vy1, Bx1, By1, P1, rho1 ):
    ''' Calculates the rankine hugoniot jump conditions on the other side of the shock for given parameters
 
        :param Vx1: Velocity component parallel to the shock normal vector on one side of the shock
        :param Vy1: Velocity component perpendicular to the shock normal vector on one side of the shock
        :param Bx1: Magnetic field component parallel to the shock normal vector on one side of the shock
        :param By1: Magnetic field component perpendicular to the shock normal vector on one side of the shock
-       :param T1: Temperature on one side of the shock
+       :param P1: Pressure
        :param rho1: Density on one side of the shock
 
        :returns: Components on the other side plus pressure P2 and compression ratio X in format [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X]
@@ -262,9 +306,10 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, P1, rho1 ):
    
    # Calculate other variables
    theta = np.arccos(Bx1/np.sqrt(Bx1**2 + By1**2));
-   vA1 = np.sqrt( (Bx1**2+By1**2) / (mp * rho1 * mu0) )
+   vA1 = np.sqrt( (Bx1**2+By1**2) / (rho1 * mu0) )
    V1 = np.sqrt( Vx1**2 + Vy1**2 )
-   vs1 = np.sqrt( Gamma * kb * T1 / mp )
+   #vs1 = np.sqrt( Gamma * kb * T1 / mp )
+   vs1 = np.sqrt( Gamma * P1 / rho1 )
    
    # Function for solving X, the compression ratio
    def solver(x):
@@ -302,6 +347,7 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, P1, rho1 ):
    By2 = By1 * (V1**2 - vA1**2) * X / (V1**2 - X * vA1**2)
    P2 = P1 * (X + (Gamma - 1) * X * V1**2 * (1 - V2**2 / V1**2) / (2.0 * vs1**2));
    T2 = P2 / (rho2 * kb)
+   print "Alfven: " + str(vA1) + " " + str(vs1)
    return [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X ]
 
 
@@ -413,6 +459,8 @@ def plot_rankine( vlsvReader, point1, point2, savename="" ):
          downstream = i+2
          break;
 
+   print "RHO: " + str(rho_rankine_u) + " " + str(rho_u) + " " + str(upstream)
+
    # Input variables
    Vx_rankine = []
    Vy_rankine = []
@@ -475,8 +523,13 @@ def plot_rankine( vlsvReader, point1, point2, savename="" ):
       ax.axvline(distances.data[len(distances.data)-1], color='black', ls='dotted')
       ax.axvline(distances.data[downstream], color='black', ls='dotted')
       ax.set_xlim([distances.data[0]-2e5,distances.data[len(distances.data)-1]+2e5])
-   axes[len(axes)-1].set_xlabel(get_name(distances) + " (" + get_units(distances) + ")")
-   axes[len(axes)-1].set_visible(True)
+      ax.ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
+      yticks = 5
+      from matplotlib.ticker import MaxNLocator
+      ax.yaxis.set_major_locator(MaxNLocator(yticks))
+   ax = axes[len(axes)-1]
+   ax.set_visible(True)
+   ax.set_xlabel(get_name(distances) + " (" + get_units(distances) + ")")
 
    
 
@@ -696,8 +749,8 @@ def compare_rankine( vlsvReader, point1, point2 ):
    N = (point2-point1) / np.linalg.norm(point2 - point1)
    N = np.dot(rotation_matrix_2d( 0.5*np.pi ), (point2 - point1)) / np.linalg.norm(point2 - point1)
    N = N * np.array([1,1,0])
-   point1_shifted = point1 + 0.5*(point2-point1) + N * (4*dx)
-   point2_shifted = point1 + 0.5*(point2-point1) - N * (4*dx)
+   point1_shifted = point1 + 0.5*(point2-point1) + N * (8*dx)
+   point2_shifted = point1 + 0.5*(point2-point1) - N * (8*dx)
    point1 = np.array(point1_shifted)
    point2 = np.array(point2_shifted)
 
@@ -711,6 +764,36 @@ def compare_rankine( vlsvReader, point1, point2 ):
    B = vlsvReader.read_variable( "B", cellids=cellids )
    rho = vlsvReader.read_variable( "rho", cellids=cellids )
    P = vlsvReader.read_variable( "Pressure", cellids=cellids )
+
+   # Read Nabla cross E:
+   ##################################################################
+   print "WARNING, ASSUMING 2D SIMULATION IN X-Y PLANE"
+   E = vlsvReader.read_variable( "E", cellids=cellids )
+   E_next_x = []
+   E_next_y = []
+   for cellid in cellids:
+      cell_coordinates = vlsvReader.get_cell_coordinates(cellid)
+      # Get the next cell in the x direction
+      cellid_next_x = vlsvReader.get_cellid( cell_coordinates + np.array([1,0,0])*dx )
+      # y direction:
+      cellid_next_y = vlsvReader.get_cellid( cell_coordinates + np.array([0,1,0])*dy )
+      E_next_x.append( vlsvReader.read_variable("E", cellids=cellid_next_x) )
+      E_next_y.append( vlsvReader.read_variable("E", cellids=cellid_next_y) )
+   E_next_x = np.array( E_next_x )
+   E_next_y = np.array( E_next_y )
+
+   NablaxE = []
+   dEx = (E_next_x - E)/dx
+   dEy = (E_next_y - E)/dy
+   for i in xrange(len(E)):
+      a = np.array([ 
+                   dEy[i][2],
+                   -1*dEx[i][2],
+                   dEx[i][1] - dEy[i][0]
+                   ])
+      NablaxE.append( a )
+   NablaxE = np.array(NablaxE)
+   ##################################################################
 
    # Get the upstream and downstream area:
    upstream = 0
@@ -726,13 +809,18 @@ def compare_rankine( vlsvReader, point1, point2 ):
    B1 = np.mean(B[0:upstream], axis=0)
    rho1 = np.mean(rho[0:upstream])
    P1 = np.mean(P[0:upstream])
+   NablaxE1 = np.mean(NablaxE[0:upstream], axis=0)
+   E1 = np.mean(E[0:upstream], axis=0)
+
+
 
    # Input data: (d = downstream)
    V2 = np.mean(V[downstream:len(V)-1], axis=0)
    B2 = np.mean(B[downstream:len(V)-1], axis=0)
    rho2 = np.mean(rho[downstream:len(V)-1])
    P2 = np.mean(P[downstream:len(V)-1])
-
+   NablaxE2 = np.mean(NablaxE[downstream:len(V)-1], axis=0)
+   E2 = np.mean(E[downstream:len(V)-1], axis=0)
 
    # Constants
    mp = 1.67e-27;
@@ -743,8 +831,8 @@ def compare_rankine( vlsvReader, point1, point2 ):
    Gamma = 5./3.;
 
 
-   I1 = P1/((Gamma-1)*rho1)
-   I2 = P2/((Gamma-2)*rho2)
+#   I1 = P1/((Gamma-1)*rho1)
+#   I2 = P2/((Gamma-2)*rho2)
 
    # Calculate the R-H jump conditions:
 #   RH = []
@@ -763,16 +851,109 @@ def compare_rankine( vlsvReader, point1, point2 ):
    Vt2 = V2 - np.dot(V2, N)*N
    Bt2 = B2 - np.dot(B2, N)*N
 
+   density1 = rho1*mp
+   density2 = rho2*mp
 
-   RH = []
-   RH.append((rho1*Vn1) / (rho2*Vn2)) 
-   RH.append((Bn1) / (Bn2)) 
-   RH.append((rho1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (rho2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0))) 
-   RH.append((rho1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (rho2*Vn2*Vt2 - Bt2*Bn2/(mu0))) 
-   RH.append((((Gamma/(Gamma-1))*P1/rho1 + np.dot(V1, V1)/2.)*rho1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/rho2 + np.dot(V2, V2)/2.)*rho2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0))) 
-   RH.append((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) 
+   print "Angle: " + str(np.arccos(np.dot(B1, -1*N)/(np.linalg.norm(B1)*np.linalg.norm(N)))/(2*np.pi)*360)
 
-   return RH
+#   RH = []
+#   RH.append((density1*Vn1) / (density2*Vn2)) 
+#   RH.append((Bn1) / (Bn2)) 
+#   RH.append((density1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (density2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0))) 
+#   RH.append((density1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (density2*Vn2*Vt2 - Bt2*Bn2/(mu0))) 
+#   RH.append((((Gamma/(Gamma-1))*P1/density1 + np.dot(V1, V1)/2.)*density1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/density2 + np.dot(V2, V2)/2.)*density2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0))) 
+#   RH.append((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) 
+#   RH.append( (((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) + (NablaxE2 - NablaxE1)) / ((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) )
+#   RH.append( E1 + np.cross(V1, B1) )
+#   RH.append( E2 + np.cross(V2, B2) )
+#
+#   return RH
+
+   print " Mass conservation: " + str((density1*Vn1) / (density2*Vn2) ) + " Normal magnetic field conservation: " + str((Bn1) / (Bn2) ) + " Normal momentum conservation: " + str((density1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (density2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0)) ) + " Tangential momentum conservation: " + str((density1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (density2*Vn2*Vt2 - Bt2*Bn2/(mu0)) ) + " Energy conservation: " + str((((Gamma/(Gamma-1))*P1/density1 + np.dot(V1, V1)/2.)*density1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/density2 + np.dot(V2, V2)/2.)*density2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0)) ) + " Tangential component of electric field conservation: " + str((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N) ) +  " dB/dt equals zero: " + str((((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) + (NablaxE2 - NablaxE1)) / ((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) )
+
+   return []
+
+
+def rankine_equations( rho1, P1, V1, B1, N ):
+   ''' Returns the rankine equations in sympy format
+   '''
+   mu0 = 4.0 * np.pi * 1e-7;
+   y = 5./3.
+
+   import sympy as sp
+   V1 = sp.Matrix([V1[i] for i in xrange(3)])
+   B1 = sp.Matrix([B1[i] for i in xrange(3)])
+   N = sp.Matrix([N[i] for i in xrange(3)])
+
+   Vn1 = V1.dot(N)
+   Vt1 = V1 - Vn1*N
+   Bn1 = B1.dot(N)
+   Bt1 = B1 - Bn1*N
+
+   Vx2, Vy2, Vz2, Bx2, By2, Bz2, P2, rho2 = sp.symbols('Vx2, Vy2, Vz2, Bx2, By2, Bz2 P2, rho2')
+
+   V2 = sp.Matrix([Vx2, Vy2, Vz2])
+   B2 = sp.Matrix([Bx2, By2, Bz2])
+   Vn2 = V2.dot(N)
+   Vt2 = V2 - (Vn2*N)
+   Bn2 = B2.dot(N)
+   Bt2 = B2 - Bn2*N
+
+   mass_conservation = rho1*Vn1 - rho2*Vn2
+   maxwell = Bn1 - Bn2
+   momentum_conservation_N = rho1*Vn1**2 + P1 + Bt1.dot(Bt1) / (2*mu0) - (rho2*Vn2**2 + P2 + Bt2.dot(Bt2) / (2*mu0))
+   momentum_conservation_t = rho1*Vn1*Vt1 - Bt1*Bn1/mu0 - (rho2*Vn2*Vt2 - Bt2*Bn2/mu0)
+   energy_conservation = (y/(y-1) * P1/rho1 + V1.dot(V1)/2.)*rho1*Vn1 + Vn1*Bt1.dot(Bt1)/mu0 - Bn1*(Bt1.dot(Vt1))/mu0 - ((y/(y-1) * P2/rho2 + V2.dot(V2)/2.)*rho2*Vn2 + Vn2*Bt2.dot(Bt2)/mu0 - Bn2*(Bt2.dot(Vt2))/mu0)
+   maxwell_approximate = V1.cross(B1) - (V1.cross(B1)).dot(N)*N - (V2.cross(B2) - (V2.cross(B2)).dot(N)*N)
+
+   equations = []
+   equations.append( mass_conservation )
+   equations.append( maxwell )
+   equations.append( momentum_conservation_N )
+   equations.append( momentum_conservation_t[0] )
+   equations.append( momentum_conservation_t[1] )
+   equations.append( momentum_conservation_t[2] )
+   equations.append( energy_conservation )
+   equations.append( maxwell_approximate[0] )
+   equations.append( maxwell_approximate[1] )
+   equations.append( maxwell_approximate[2] )
+   return equations
+
+#   return sp.nsolve(equations, [Vx2, Vy2, Vz2, Bx2, By2, Bz2, P2, rho2], [1,-2,-3,-4,5,-6,7,-8])
+
+
+
+#def test_rankine_scipy( rho1, P1, V1, B1, N ):
+#   mu0 = 4.0 * np.pi * 1e-7;
+#   y = 5./3.
+#
+#   import sympy as sp
+#   V1 = sp.Matrix([V1[i] for i in xrange(3)])
+#   B1 = sp.Matrix([B1[i] for i in xrange(3)])
+#   N = sp.Matrix([N[i] for i in xrange(3)])
+#
+#   Vn1 = V1.dot(N)
+#   Vt1 = V1 - Vn1*N
+#   Bn1 = B1.dot(N)
+#   Bt1 = B1 - Bn1*N
+#   def equations(p):
+#      Vx2, Vy2, Vz2, Bx2, By2, Bz2, P2, rho2 = p
+#      V2 = sp.Matrix([Vx2, Vy2, Vz2])
+#      B2 = sp.Matrix([Bx2, By2, Bz2])
+#      Vn2 = V2.dot(N)
+#      Vt2 = V2 - Vn2*N
+#      Bn2 = B2.dot(N)
+#      Bt2 = B2 - Bn2*N
+#      return [rho1*Vn1 - rho2*Vn2, Bn1 - Bn2, rho1*Vn1**2 + P1 + Bt1.dot(Bt1) / (2*mu0) - (rho2*Vn2**2 + P2 + Bt2.dot(Bt2) / (2*mu0)), rho1*Vn1*Vt1 - Bt1*Bn1/mu0 - (rho2*Vn2*Vt2 - Bt2*Bn2/mu0),  (y/(y-1) * P1/rho1 + V1.dot(V1)/2.)*rho1*Vn1 + Vn1*Bt1.dot(Bt1)/mu0 - Bn1*(Bt1.dot(Vt1))/mu0 - ((y/(y-1) * P2/rho2 + V2.dot(V2)/2.)*rho2*Vn2 + Vn2*Bt2.dot(Bt2)/mu0 - Bn2*(Bt2.dot(Vt2))/mu0), V1.cross(B1) - (V1.cross(B1)).dot(N)*N - (V2.cross(B2) - (V2.cross(B2)).dot(N)*N)]
+#   from scipy.optimize import fsolve
+#   Vx2, Vy2, Vz2, Bx2, By2, Bz2, P2, rho2 = fsolve(equations, [1,1,1,1,1,1,1,1])
+#   print equations([Vx2, Vy2, Vz2, Bx2, By2, Bz2, P2, rho2])
+
+
+
+
+
+
 
 
 
