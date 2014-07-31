@@ -7,6 +7,7 @@ from cutthrough import cut_through
 from variable import VariableInfo
 from plot import plot_variables
 from rankine_solver import solve_rankine_SOE
+from vlsvreader import VlsvReader
 
 def rankine( vlsvReader, point1, point2 ):
    ''' A function for comparing the values predicted by Rankine-Hugoniot and the values from the data
@@ -822,6 +823,8 @@ def compare_rankine( vlsvReader, point1, point2 ):
    NablaxE2 = np.mean(NablaxE[downstream:len(V)-1], axis=0)
    E2 = np.mean(E[downstream:len(V)-1], axis=0)
 
+   NablaxE_integral = np.sum(NablaxE*np.outer(distances.data,[1,1,1]), axis=0)
+
    # Constants
    mp = 1.67e-27;
    mu0 = 4.0 * np.pi * 1e-7;
@@ -869,7 +872,16 @@ def compare_rankine( vlsvReader, point1, point2 ):
 #
 #   return RH
 
-   print " Mass conservation: " + str((density1*Vn1) / (density2*Vn2) ) + " Normal magnetic field conservation: " + str((Bn1) / (Bn2) ) + " Normal momentum conservation: " + str((density1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (density2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0)) ) + " Tangential momentum conservation: " + str((density1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (density2*Vn2*Vt2 - Bt2*Bn2/(mu0)) ) + " Energy conservation: " + str((((Gamma/(Gamma-1))*P1/density1 + np.dot(V1, V1)/2.)*density1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/density2 + np.dot(V2, V2)/2.)*density2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0)) ) + " Tangential component of electric field conservation: " + str((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N) ) +  " dB/dt equals zero: " + str((((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) + (NablaxE2 - NablaxE1)) / ((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) )
+   #print " Mass conservation: " + str((density1*Vn1) / (density2*Vn2) ) + " Normal magnetic field conservation: " + str((Bn1) / (Bn2) ) + " Normal momentum conservation: " + str((density1*Vn1**2 + P1 + np.dot(B1,B1)/(2*mu0)) / (density2*Vn2**2 + P2 + np.dot(B2,B2)/(2*mu0)) ) + " Tangential momentum conservation: " + str((density1*Vn1*Vt1 - Bt1*Bn1/(mu0)) / (density2*Vn2*Vt2 - Bt2*Bn2/(mu0)) ) + " Energy conservation: " + str((((Gamma/(Gamma-1))*P1/density1 + np.dot(V1, V1)/2.)*density1*Vn1 + Vn1*np.dot(Bt1,Bt1)/(mu0) - Bn1*np.dot(Bt1, Vt1)/(mu0)) / (((Gamma/(Gamma-1))*P2/density2 + np.dot(V2, V2)/2.)*density2*Vn2 + Vn2*np.dot(Bt2,Bt2)/(mu0) - Bn2*np.dot(Bt2, Vt2)/(mu0)) ) + " Tangential component of electric field conservation: " + str((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N) ) +  " dB/dt equals zero: " + str((((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) + (NablaxE2 - NablaxE1)) / ((np.cross(V1, B1) - np.dot( np.cross(V1, B1), N)*N) / (np.cross(V2, B2) - np.dot( np.cross(V2, B2), N)*N)) ) 
+
+   # Evaluate dBdt:
+   vlsvReader_one = VlsvReader('/home/hannukse/voima/stornext/field/vlasiator/2D/AAS/vlsv_files/bulk.0001100.vlsv')
+   vlsvReader_two = VlsvReader('/home/hannukse/voima/stornext/field/vlasiator/2D/AAS/vlsv_files/bulk.0001101.vlsv')
+   B_t_one = vlsvReader_one.read_variable('B', cellids=cellids)
+   B_t_two = vlsvReader_two.read_variable('B', cellids=cellids)
+   dBdt = B_t_two - B_t_one
+
+   print "dBdt: " + str(( NablaxE_integral - np.sum(dBdt*np.outer(distances.data,[1,1,1]), axis=0) ) / NablaxE_integral)
 
    return []
 
