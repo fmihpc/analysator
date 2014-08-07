@@ -103,7 +103,7 @@ def rankine( vlsvReader, point1, point2 ):
    V_1 = V_u
    B_1 = B_u
    # Check the de-hoffmann teller frame:
-   print "HOFFMAN_CHECK: " + str(np.cross(B_1, V_1))
+   #print "HOFFMAN_CHECK: " + str(np.cross(B_1, V_1))
    ##############################################
 
 
@@ -146,7 +146,7 @@ def rankine( vlsvReader, point1, point2 ):
    # Calculate rankine hugoniot jump conditions:
    rankine_conditions = oblique_solver( Vx_u, Vy_u, Bx_u, By_u, P_u, rho_u )
 
-   print "CONDITIONS: " + str(rankine_conditions)
+   #print "CONDITIONS: " + str(rankine_conditions)
 
 #
 #   rankine_conditions = []
@@ -162,7 +162,7 @@ def rankine( vlsvReader, point1, point2 ):
    By_rankine_d = rankine_conditions[3]
    P_rankine_d = rankine_conditions[4]
    rho_rankine_d = rankine_conditions[5]
-   print "Rho: " + str(rho_u) + " " + str(rho_data[0])
+   #print "Rho: " + str(rho_u) + " " + str(rho_data[0])
 
 #   rankine_conditions = oblique_shock( Vx_u, Vy_u, Bx_u, By_u, P_u, rho_u )
 #
@@ -198,6 +198,7 @@ def rankine( vlsvReader, point1, point2 ):
    rho_rankine = rho_rankine_d - rho_u
    P_rankine = P_rankine_d - P_u
 
+   print {"Vx_rankine_u": Vx_u,"Vy_rankine_u": Vy_u,"Bx_rankine_u": Bx_u,"By_rankine_u": By_u, "rho_rankine_u": rho_u, "P_rankine_u": P_u, "Vx_rankine_d": Vx_rankine_d, "Vy_rankine_d": Vy_rankine_d, "Bx_rankine_d": Bx_rankine_d, "By_rankine_d": By_rankine_d, "rho_rankine_d": rho_rankine_d, "P_rankine_d": P_rankine_d, "Vx_u": Vx_u, "Vy_u": Vy_u, "Bx_u": Bx_u, "By_u": By_u, "rho_u": rho_u, "P_u": P_u,"Vx_d": Vx_d, "Vy_d": Vy_d, "Bx_d": Bx_d, "By_d": By_d, "rho_d": rho_d, "P_d": P_d}
 
    # Return all the data:
    return {"Vx_rankine_u": Vx_u,"Vy_rankine_u": Vy_u,"Bx_rankine_u": Bx_u,"By_rankine_u": By_u, "rho_rankine_u": rho_u, "P_rankine_u": P_u, "Vx_rankine_d": Vx_rankine_d, "Vy_rankine_d": Vy_rankine_d, "Bx_rankine_d": Bx_rankine_d, "By_rankine_d": By_rankine_d, "rho_rankine_d": rho_rankine_d, "P_rankine_d": P_rankine_d, "Vx_u": Vx_u, "Vy_u": Vy_u, "Bx_u": Bx_u, "By_u": By_u, "rho_u": rho_u, "P_u": P_u,"Vx_d": Vx_d, "Vy_d": Vy_d, "Bx_d": Bx_d, "By_d": By_d, "rho_d": rho_d, "P_d": P_d,"Vx_data": Vx_data, "Vy_data": Vy_data, "Bx_data": Bx_data, "By_data": By_data, "rho_data": rho_data, "P_data": P_data, "cutthrough": cutthrough}

@@ -382,10 +382,12 @@ class MayaviGrid(HasTraits):
                      point2 = points[i+1]
                      # set labels:
                      cellids = self.__add_normal_labels( point1, point2 )
-                     print "[Vx_rankine/Vx, Vy_rankine/Vy, By_rankine/By, rho_rankine/rho, P_rankine/P]"
+                     #print "[Vx_rankine/Vx, Vy_rankine/Vy, By_rankine/By, rho_rankine/rho, P_rankine/P]"
                      #print evaluate_rankine(self.__vlsvReader, point1, point2)
-                     print "Compare rankine: " + str( compare_rankine(self.__vlsvReader, point1, point2) )
+                     #print "Compare rankine: " + str( compare_rankine(self.__vlsvReader, point1, point2) )
                      #fig = plot_rankine( self.__vlsvReader, point1, point2, savename='/home/hannukse/perppar' + str(i) + '.png' )
+                     from rankine import rankine
+                     data = rankine( self.__vlsvReader, point1, point2 )
                      self.__last_pick = []
 #                     self.plot = fig
                      iterator = iterator + iterator2
