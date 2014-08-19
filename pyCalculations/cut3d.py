@@ -4,7 +4,7 @@
 
 import numpy as np
 
-def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="pass" ):
+def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="pass", trim_array=False ):
    ''' Retrieves variables for the given 3d cut
 
        :param vlsvReader:         Some VlsvReader with a file open
@@ -17,6 +17,7 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
        :param zmax:               The maximum z coordinate of the 2d cut
        :param variable:           Some variable to read from the vlsv file
        :param operator:           The variable operator
+       :param trim_array:         If true, shapes the array into an array with minimum amount of dimensions, e.g. if the cut is zmax-zmin=0 then this will return a 2d array
 
        .. code-block:: python
 
@@ -81,5 +82,16 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
    # Close optimization
    vlsvReader.optimize_close_file()
 
+   # Check for trimming:
+   if trim_array == True:
+      shape = np.shape(array)
+      new_shape = []
+      # Loop through shape:
+      for i in xrange(len(shape)):
+         # If the array has no dimensions in some directions, dont add it to the new_shape (e.g. if the cut3d has only one layer of cells in z-direction):
+         if shape[i] > 1:
+            new_shape.append( shape[i] )
+      # Reshape:
+      array = np.reshape(array, new_shape)
    return array
 
