@@ -18,9 +18,17 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
        :param variable:           Some variable to read from the vlsv file
        :param operator:           The variable operator
 
-       .. note::
+       .. code-block:: python
 
-          One of the pairs must be zero. For example xmin=0 and xmin=0 or ymin=0 and ymax=0 or zmin=0 and zmax=0
+          Example:
+          import pytools as pt
+          f = pt.vlsvfile.VlsvReader('example.vlsv')
+          three_cut = pt.calculations.cut3d( vlsvReader=f, xmin=1e6, xmax=4e6, ymin=1e6, xmax=4e6, zmin=0, zmax=0, variable="rho" )
+          import numpy as np
+          # Now three_cut is a three-dimensional array (x,y,z), but we can transform it into a 2-d array (x,y) with:
+          dimensions = np.shape( three_cut )
+          two_cut = np.reshape( three_cut, dimensions[0:2] )
+
    '''
    # Get min and max coordinates
    min_coordinates = [xmin, ymin, zmin]
