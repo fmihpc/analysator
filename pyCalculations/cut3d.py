@@ -69,15 +69,15 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
    # Optimize file read:
    vlsvReader.optimize_open_file()
    # Loop through the array
-   for i in xrange(array_dimensions[0]):
+   for k in xrange(array_dimensions[2]):
       for j in xrange(array_dimensions[1]):
-         for k in xrange(array_dimensions[2]):
+         for i in xrange(array_dimensions[0]):
             coordinates = np.array([
                                    min_coordinates[0] + i*cell_lengths[0],
                                    min_coordinates[1] + j*cell_lengths[1],
                                    min_coordinates[2] + k*cell_lengths[2]
                                    ])
-            array[i][j][k] = vlsvReader.read_variable(variable, cellids=vlsvReader.get_cellid(coordinates), operator=operator)
+            array[k][i][j] = vlsvReader.read_variable(variable, cellids=vlsvReader.get_cellid(coordinates), operator=operator)
 
    # Close optimization
    vlsvReader.optimize_close_file()
