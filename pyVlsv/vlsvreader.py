@@ -640,7 +640,7 @@ class VlsvReader(object):
       if self.__fptr.closed:
          fptr.close()
 
-   def read_interpolated_variable(self, name, coordinates, periodic=["True", "True", "True"], operator="pass"):
+   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read variables from the open vlsv file. 
       Arguments:
       :param name: Name of the variable
@@ -681,26 +681,37 @@ class VlsvReader(object):
 #         print upper_cell_coordinates
 #         print scaled_coordinates
 
-         #now identify 8 cells, startign from the lower one
-         ngbrvalues=np.zeros((2,2,2))
+
+         test_val=self.read_variable(name,lower_cell_id,operator)
+         if isinstance(test_val, Iterable):
+            value_length=len(test_val)
+         else:
+            value_length=1
+         
+      #now identify 8 cells, startign from the lower one
+         ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
             for y in [0,1]:
                for z  in [0,1]:
-                  ngbrvalues[x,y,z] = self.read_variable(name, \
-                                                         self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic), \
-                                                         operator)
+                  ngbrvalues[x,y,z,:] = self.read_variable(name, \
+                                                           self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic), \
+                                                           operator)
 
 #         print ngbrvalues
-         c2d=np.zeros((2,2))
+         c2d=np.zeros((2,2,value_length))
          for y in  [0,1]:
             for z in  [0,1]:
-               c2d[y,z]=ngbrvalues[0,y,z]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z]*scaled_coordinates[0]
+               c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
 
-         c1d=np.zeros(2)
+         c1d=np.zeros((2,value_length))
          for z in [0,1]:
-            c1d[z]=c2d[0,z]*(1 - scaled_coordinates[1]) + c2d[1,z] * scaled_coordinates[1]
-               
-         return c1d[0] * (1 - scaled_coordinates[2]) + c1d[1] * scaled_coordinates[2]
+            c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
+            
+         final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+         if len(final_value)==1:
+            return final_value[0]
+         else:
+            return final_value
 
       else:
          #multiple coordinates
