@@ -640,6 +640,84 @@ class VlsvReader(object):
       if self.__fptr.closed:
          fptr.close()
 
+   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+      ''' Read variables from the open vlsv file. 
+      Arguments:
+      :param name: Name of the variable
+      :param coords: Coordinates from which to read data 
+      :param periodic: Periodicity of the system. Default is periodic in all dimension
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read` :func:`read_variable_info`
+      '''
+      coordinates = get_data(coordinates)
+      
+      if len(np.shape(coordinates)) == 1:
+         #get closest id
+         closest_cell_id=self.get_cellid(coordinates)
+         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
+         if closest_cell_id == 0:
+            return None
+
+         #now identify the lower one of the 8 neighbor cells
+         offset = [0 if coordinates[0] > closest_cell_coordinates[0] else -1,\
+                   0 if coordinates[1] > closest_cell_coordinates[1] else -1,\
+                   0 if coordinates[2] > closest_cell_coordinates[2] else -1]
+         lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+         lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
+         offset = [1,1,1]
+         upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+         upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
+         
+         scaled_coordinates=np.zeros(3)
+         for i in range(3):
+            if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
+               scaled_coordinates[i]=(coordinates[i] - lower_cell_coordinates[i])/(upper_cell_coordinates[i] - lower_cell_coordinates[i])
+            else:
+               scaled_coordinates[i] = 0.0 #Special case for periodic systems with one cell in a dimension
+
+#         print lower_cell_coordinates
+#         print upper_cell_coordinates
+#         print scaled_coordinates
+
+
+         test_val=self.read_variable(name,lower_cell_id,operator)
+         if isinstance(test_val, Iterable):
+            value_length=len(test_val)
+         else:
+            value_length=1
+         
+      #now identify 8 cells, startign from the lower one
+         ngbrvalues=np.zeros((2,2,2,value_length))
+         for x in [0,1]:
+            for y in [0,1]:
+               for z  in [0,1]:
+                  ngbrvalues[x,y,z,:] = self.read_variable(name, \
+                                                           self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic), \
+                                                           operator)
+
+#         print ngbrvalues
+         c2d=np.zeros((2,2,value_length))
+         for y in  [0,1]:
+            for z in  [0,1]:
+               c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
+
+         c1d=np.zeros((2,value_length))
+         for z in [0,1]:
+            c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
+            
+         final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+         if len(final_value)==1:
+            return final_value[0]
+         else:
+            return final_value
+
+      else:
+         #multiple coordinates
+         pass
+
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:
@@ -734,7 +812,7 @@ class VlsvReader(object):
       return np.array(cellcoordinates)
 
    def get_cell_indices(self, cellid):
-      ''' Returns a given cell's coordinates as a numpy array
+      ''' Returns a given cell's indices as a numpy array
 
       :param cellid:            The cell's ID
       :returns: a numpy array with the coordinates
@@ -743,8 +821,6 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-      # Get cell lengths:
-      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
       # Get cell indices:
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
@@ -753,6 +829,37 @@ class VlsvReader(object):
       cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
       # Return the coordinates:
       return np.array(cellindices)
+
+   def get_cell_neighbor(self, cellid, offset, periodic):
+      ''' Returns a given cells neighbor at offset (in indices)
+
+      :param cellid:            The cell's ID
+      :param offset:            The offset to the neighbor in indices
+      :param periodic:          For each dimension, is the system periodic
+      :returns: the cellid of the neighbor
+
+      .. note:: Returns 0 if the offset is out of bounds!
+
+      '''
+      indices = self.get_cell_indices(cellid)
+      ngbr_indices = np.zeros(3)
+      sys_size = [self.__xcells, self.__ycells, self.__zcells]
+      for i in range(3):
+         ngbr_indices[i] = indices[i] + offset[i]
+         if periodic[i]:
+            for j in range(abs(offset[i])):
+               #loop over offset abs as offset may be larger than the system size
+               if ngbr_indices[i] < 0:
+                  ngbr_indices[i] = ngbr_indices[i] + sys_size[i]
+               elif ngbr_indices[i] >= sys_size[i]:
+                  ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
+   
+         elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
+            #out of bounds
+            return 0
+
+      return  ngbr_indices[0] + ngbr_indices[1] * self.__xcells + ngbr_indices[2] * self.__xcells * self.__ycells + 1
+
 
 
    def get_velocity_cell_coordinates(self, vcellids):
