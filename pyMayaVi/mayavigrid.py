@@ -92,6 +92,8 @@ class MayaviGrid(HasTraits):
    dataset = []
 
    values = []
+   
+   picker_functions = {}
 
    # Define the view:
    view = View(
@@ -367,6 +369,9 @@ class MayaviGrid(HasTraits):
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
+      elif self.picker in self.picker_functions:
+         # Call the corresponding pickerfunction
+         self.picker_functions[self.picker](coordinates, self.args)
 
    
    def __generate_grid( self, mins, maxs, cells, datas, names  ):

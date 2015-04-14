@@ -25,6 +25,21 @@ from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 from mayavigrid import MayaviGrid
 
+def call_particle_pusher( coordinates, args ):
+   ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
+   '''
+   import subprocess
+   parse_args = []
+   
+   parse_args.append("echo")
+   
+   for word in args:
+     parse_args.append(word)
+   
+   for coordinate in coordinates:
+     parse_args.append(str(coordinate))
+   
+   subprocess.call(parse_args)
 
 class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
@@ -70,4 +85,19 @@ class Particlepusherinterface(MayaviGrid):
                  "Gyrophase_angle",
                  "Cut_through",
                  "Particle_pusher")
+
+   picker_functions = {"Particle_pusher": call_particle_pusher} # Picker functions (here we define what happens when the picker has the "Particle_pusher" option on and it clicks on something (In this case calls the __call_particle_pusher functions
+
+
+
+
+
+
+
+
+
+
+
+
+
 
