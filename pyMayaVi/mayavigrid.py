@@ -371,7 +371,7 @@ class MayaviGrid(HasTraits):
             self.__last_pick = coordinates
       elif self.picker in self.picker_functions:
          # Call the corresponding pickerfunction
-         self.picker_functions[self.picker](coordinates, self.args)
+         self.picker_functions[self.picker](self, self.__vlsvReader, coordinates, self.args)
 
    
    def __generate_grid( self, mins, maxs, cells, datas, names  ):

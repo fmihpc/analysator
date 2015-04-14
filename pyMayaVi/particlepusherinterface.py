@@ -25,21 +25,53 @@ from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 from mayavigrid import MayaviGrid
 
-def call_particle_pusher( coordinates, args ):
+def kill_subprocess( pipe, wait ):
+  import time
+  time.sleep(wait)
+  pipe.terminate()
+
+def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args ):
    ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
    '''
-   import subprocess
-   parse_args = []
    
-   parse_args.append("echo")
-   
-   for word in args:
-     parse_args.append(word)
-   
+   new_coordinates = []
    for coordinate in coordinates:
-     parse_args.append(str(coordinate))
+     new_coordinates.append( coordinate )
    
-   subprocess.call(parse_args)
+   # Read in the velocity coordinates:
+   vlsvReader.read_variable
+   for i in xrange(3):
+     new_coordinates.append(0)
+   
+   particlepusherinterface.particle_coordinates.append(new_coordinates)
+   
+   if int(args) == len(particlepusherinterface.particle_coordinates):
+     import subprocess
+     parse_args = []
+     
+     parse_args.append("/home/otto/vlasiator/particle_post_pusher")
+     parse_args.append("--run_config")
+     parse_args.append("/home/otto/vlasiator/particles/particles.cfg")
+     
+     #for coordinate in coordinates:
+     #  parse_args.append(str(coordinate))
+
+     pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+     for coordinates in particlepusherinterface.particle_coordinates:
+        str_coords = ""
+        for coordinate in coordinates:
+          str_coords = str_coords + str(coordinate)
+          str_coords = str_coords + " "
+        str_coords = str_coords+"\n"
+        pipe.stdin.write(str_coords)
+        print str_coords
+
+     pipe.stdin.write(str_coords)
+     pipe.stdin.close()
+     import thread
+     thread.start_new_thread( kill_subprocess, (pipe, 50*len(particlepusherinterface.particle_coordinates)) )
+     particlepusherinterface.particle_coordinates = []
 
 class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
@@ -88,8 +120,9 @@ class Particlepusherinterface(MayaviGrid):
 
    picker_functions = {"Particle_pusher": call_particle_pusher} # Picker functions (here we define what happens when the picker has the "Particle_pusher" option on and it clicks on something (In this case calls the __call_particle_pusher functions
 
+   particle_coordinates = []
 
-
+   pipe = []
 
 
 
