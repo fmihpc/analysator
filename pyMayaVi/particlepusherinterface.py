@@ -1,5 +1,32 @@
+from traits.api import HasTraits, Instance, Property, Button, Enum
+from mayavi.core.ui.engine_view import EngineView
+from traits.api import HasTraits, Range, Instance, \
+                    on_trait_change
+from traitsui.api import View, Item, HGroup, Group
+from tvtk.pyface.scene_editor import SceneEditor
+from mayavi.tools.mlab_scene_model import \
+                    MlabSceneModel
+from mayavi.core.ui.mayavi_scene import MayaviScene
+import vlsvfile
+from numpy import mgrid, empty, sin, pi, ravel
+import pylab as pl
+from tvtk.api import tvtk
+import traits.api
+import mayavi.api
+import mayavi.mlab
+import numpy as np
+import signal
+import threading
+from mayavi.sources.vtk_data_source import VTKDataSource
+from mayavi.modules.outline import Outline
+from mayavi.modules.surface import Surface
+from mayavi.modules.vectors import Vectors
+from variable import get_data, get_name, get_units
+from mayavi.modules.labels import Labels
+from mayavigrid import MayaviGrid
 
-class particlepusherinterface(MayaviGrid):
+
+class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
 
    .. code-block:: python
@@ -34,5 +61,13 @@ class particlepusherinterface(MayaviGrid):
       print cut_through_data
 
    '''
-
+   picker = Enum('None',
+                 'Velocity_space',
+                 "Velocity_space_nearest_cellid",
+                 'Velocity_space_iso_surface',
+                 'Velocity_space_nearest_cellid_iso_surface',
+                 "Pitch_angle",
+                 "Gyrophase_angle",
+                 "Cut_through",
+                 "Particle_pusher")
 
