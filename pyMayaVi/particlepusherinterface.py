@@ -39,9 +39,9 @@ def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args
      new_coordinates.append( coordinate )
    
    # Read in the velocity coordinates:
-   vlsvReader.read_variable
+   bulk_V = vlsvReader.read_variable(name="v", cellids=vlsvReader.get_cellid(new_coordinates))
    for i in xrange(3):
-     new_coordinates.append(0)
+     new_coordinates.append( bulk_V[i] )
    
    particlepusherinterface.particle_coordinates.append(new_coordinates)
    
