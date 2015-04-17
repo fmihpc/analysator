@@ -155,7 +155,7 @@ class MayaviGrid(HasTraits):
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
       module_manager = self.__module_manager()
       # Add the label / marker:
-      self.__engine.add_filter( self.labels, module_manager )
+      self.__engine.add_filter( self.labels, module_manager ) # He
       #module_manager = engine.scenes[0].children[0].children[0]
       #engine.add_filter(labels1, module_manager)
       #self.labels = self.scene.mlab.pipeline.labels( self.dataset )
@@ -357,12 +357,18 @@ class MayaviGrid(HasTraits):
                      variables.append(variable_info)
                      self.cut_through.append(variable_info)
             if plotCut == True:
+               firstCellid = cellids[0]
+               secondCellid = cellids[len(cellids)-1]
                # Set label to give out the location of the cell:
-               self.__add_label( cellids[0] )
-               self.__add_label( cellids[len(cellids)-1] )
+               self.__add_label( firstCellid )
+               self.__add_label( secondCellid )
+               # Add also streamline
+               firstCoordinate = self.__vlsvReader.get_cell_coordinates( firstCellid )
+               secondCoordinate = self.__vlsvReader.get_cell_coordinates( secondCellid )
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
+               self.draw_streamline( firstCoordinate, secondCoordinate )
             # Close the optimized file read:
             self.__vlsvReader.optimize_close_file()
             # Read in the necessary variables:
@@ -373,7 +379,26 @@ class MayaviGrid(HasTraits):
          # Call the corresponding pickerfunction
          self.picker_functions[self.picker](self, self.__vlsvReader, coordinates, self.args)
 
-   
+   def draw_streamline( self, x0, x1 ):
+      ''' Draws a line from x0 to x1 coordinates
+
+      '''
+      self.scene.mlab.plot3d([x0[0], x1[0]], 
+                             [x0[1], x1[1]], 
+                             [x0[2], x1[2]],
+                             tube_radius=3.0e5)
+      return
+
+   def draw_streamline_long( self, list_of_coordinates ):
+      ''' Draws a set of lines as given by list of coordinates
+
+      '''
+      self.scene.mlab.plot3d(list_of_coordinates[0], 
+                             list_of_coordinates[1], 
+                             list_of_coordinates[2] + np.ones(len(list_of_coordinates[2]))*4e5,
+                             tube_radius=1.0e5)
+      return
+
    def __generate_grid( self, mins, maxs, cells, datas, names  ):
       ''' Generates a grid from given data
           :param mins:           An array of minimum coordinates for the grid for ex. [-100, 0, 0]

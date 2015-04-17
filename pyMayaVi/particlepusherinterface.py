@@ -25,15 +25,62 @@ from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 from mayavigrid import MayaviGrid
 
-def kill_subprocess( pipe, wait ):
-  import time
-  time.sleep(wait)
-  pipe.terminate()
+def draw_streamlines( particlepusherinterface, coordinates_map ):
+   ''' Draws streamlines into the particlepusherinterface
+   '''
+   # Loop through particles and their coordinates:
+   for i in coordinates_map.iteritems():
+      particle_number = i[0]
+      coordinates_list = np.array(i[1])
+      particlepusherinterface.draw_streamline_long( np.transpose(coordinates_list) )
+   return
+
+def update_coordinates( coordinates_map, output_parsed ):
+   ''' Updated coordinates in the read_subprocess
+
+   '''
+   particle_number = int(output_parsed[0])
+   coordinates = np.array([float(output_parsed[2]), float(output_parsed[3]), 0])
+   if particle_number in coordinates_map:
+      coordinates_map[particle_number].append(coordinates)
+   else:
+      coordinates_map[particle_number] = [coordinates]
+   return coordinates_map
+
+def read_subprocess( particlepusherinterface, pipe ):
+   ''' Read in input from the particles pusher and processes it by drawing streamlines
+
+       :param particlepusherinterface: The Particlepusherinterface class where we launched the particle pusher and which has a MayaVi grid open
+       :param pipe: Popen process (subprocess) with stdout open
+   '''
+   # Read the output and draw streamlines:
+   coordinates_map = {} # We want to keep track of coordinates for each particle in the form: {0: [coordinate1, coordinate2, ...], 2: [coordinate1, coordinate2, ..], ..}
+   import re
+   iterator = 1
+   while True:
+      output = pipe.stdout.readline()
+      if output == "":
+        break;
+      output_parsed = re.split('\t| |\n', output)
+      # Update coordinates:
+      coordinates_map = update_coordinates( coordinates_map, output_parsed )
+      print "Iteration " + str(iterator) + " done!"
+      iterator = iterator + 1
+   # Draw the streamlines:
+   draw_streamlines(particlepusherinterface, coordinates_map)
+   # Kill the proces
+   pipe.terminate()
 
 def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args ):
    ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
+
+       :param particlepusherinterface: Particle pusher class
+       :param vlsvReader: a vlsvReader file with a file open
+       :param coordinates: Some coordinates on a mayavi grid
+       :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
    
+   # Input new coordinates ( This is vx, vy, vz )
    new_coordinates = []
    for coordinate in coordinates:
      new_coordinates.append( coordinate )
@@ -43,34 +90,42 @@ def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args
    for i in xrange(3):
      new_coordinates.append( bulk_V[i] )
    
+   # Input the new coordinates into the particle pusher
    particlepusherinterface.particle_coordinates.append(new_coordinates)
    
-   if int(args) == len(particlepusherinterface.particle_coordinates):
+   # Check if this is the amount of particles we want to input 
+   user_defined_input = int(args)
+   current_number_of_particles = len(particlepusherinterface.particle_coordinates)
+   if user_defined_input <= current_number_of_particles:
+     
+     # Call the particle pusher
      import subprocess
      parse_args = []
      
+     #Executable location
      parse_args.append("/home/otto/vlasiator/particle_post_pusher")
+     # Options
      parse_args.append("--run_config")
+     # CFG location
      parse_args.append("/home/otto/vlasiator/particles/particles.cfg")
-     
-     #for coordinate in coordinates:
-     #  parse_args.append(str(coordinate))
 
-     pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+     # Open a pipe for the process (get input, output and error output to the pipe)
+     pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
+     # Iterate through particles and write into the stdin (this is required by the particle pusher)
      for coordinates in particlepusherinterface.particle_coordinates:
-        str_coords = ""
+        coordinates_to_output = ""
         for coordinate in coordinates:
-          str_coords = str_coords + str(coordinate)
-          str_coords = str_coords + " "
-        str_coords = str_coords+"\n"
-        pipe.stdin.write(str_coords)
-        print str_coords
-
-     pipe.stdin.write(str_coords)
+          coordinates_to_output = coordinates_to_output + str(coordinate) #Append
+          coordinates_to_output = coordinates_to_output + " "
+        coordinates_to_output = coordinates_to_output+"\n"
+        pipe.stdin.write(coordinates_to_output) # Write the coordinates to the std
+     # Close the stdin
      pipe.stdin.close()
+     # Read the output in a separate thread and kill the process at the end:
      import thread
-     thread.start_new_thread( kill_subprocess, (pipe, 50*len(particlepusherinterface.particle_coordinates)) )
+     #thread.start_new_thread( read_subprocess, (particlepusherinterface, pipe) )
+     read_subprocess(particlepusherinterface, pipe)
      particlepusherinterface.particle_coordinates = []
 
 class Particlepusherinterface(MayaviGrid):
