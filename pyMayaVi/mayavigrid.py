@@ -385,7 +385,7 @@ class MayaviGrid(HasTraits):
       '''
       self.scene.mlab.plot3d([x0[0], x1[0]], 
                              [x0[1], x1[1]], 
-                             [x0[2], x1[2]],
+                             [x0[2]+4.0e5, x1[2]+4.0e5],
                              tube_radius=3.0e5)
       return
 

@@ -171,9 +171,9 @@ class Particlepusherinterface(MayaviGrid):
                  "Pitch_angle",
                  "Gyrophase_angle",
                  "Cut_through",
-                 "Particle_pusher")
+                 "Particle_pusher_bulk_v")
 
-   picker_functions = {"Particle_pusher": call_particle_pusher} # Picker functions (here we define what happens when the picker has the "Particle_pusher" option on and it clicks on something (In this case calls the __call_particle_pusher functions
+   picker_functions = {"Particle_pusher_bulk_v": call_particle_pusher} # Picker functions (here we define what happens when the picker has the "Particle_pusher_bulk_v" option on and it clicks on something (In this case calls the __call_particle_pusher functions
 
    particle_coordinates = []
 
