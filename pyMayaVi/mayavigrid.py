@@ -359,16 +359,13 @@ class MayaviGrid(HasTraits):
             if plotCut == True:
                firstCellid = cellids[0]
                secondCellid = cellids[len(cellids)-1]
-               # Set label to give out the location of the cell:
-               self.__add_label( firstCellid )
-               self.__add_label( secondCellid )
                # Add also streamline
                firstCoordinate = self.__vlsvReader.get_cell_coordinates( firstCellid )
                secondCoordinate = self.__vlsvReader.get_cell_coordinates( secondCellid )
+               self.draw_streamline( firstCoordinate, secondCoordinate )
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
-               self.draw_streamline( firstCoordinate, secondCoordinate )
             # Close the optimized file read:
             self.__vlsvReader.optimize_close_file()
             # Read in the necessary variables:
