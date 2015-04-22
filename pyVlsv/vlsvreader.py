@@ -371,7 +371,6 @@ class VlsvReader(object):
 
    def __read_velocity_cells_new_format( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index  ):
       # Read in the coordinates:
-      #block_ids = self.read(name="",tag="BLOCKCOORDINATES")
       # Navigate to the correct position:
       offset = 0
       for i in xrange(0, cells_with_blocks_index[0]):
@@ -1088,8 +1087,25 @@ class VlsvReader(object):
    def read_velocity_cells(self, cellid):
       ''' Read velocity cells from a spatial cell
       
-      :param cellid: Cell ID of the cell whose velocity cells are read
-      :returns: numpy array with blocks in the cell. Empty if cell has no stored blocks.
+      :param cellid: Cell ID of the cell whose velocity cells the function will read
+      :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
+
+      #Example:
+
+      velocity_cell_map = vlsvReader.read_velocity_cells(1111)
+      velocity_cell_ids = velocity_cell_map.keys()
+      velocity_cell_values = velocity_cell_map.values()
+
+      random_index = 4 # Just some index
+      random_velocity_cell_id = velocity_cell_ids[random_index]
+
+      print "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + ": " + str(velocity_cell_map[random_velocity_cell_id])
+
+      # Getting the corresponding coordinates might be more useful than having the velocity cell id so:
+      velocity_cell_coordinates = vlsvReader.get_velocity_cell_coordinates(velocity_cell_ids) # Get velocity cell coordinates corresponding to each velocity cell id
+
+      random_velocity_cell_coordinates = velocity_cell_ids[random_index]
+      print "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + "and coordinates " + str(random_velocity_cell_coordinates) + ": " + str(velocity_cell_map[random_velocity_cell_id])
 
       .. seealso:: :func:`read_blocks`
       '''
