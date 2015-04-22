@@ -1,10 +1,10 @@
 # Installation:
- # Install dependencies:
- sudo apt-get install mayavi2 python-matplotlib python-numpy python-scipy ipython
- # Set pythonpath environment variable:
- echo "export PYTHONPATH=$PYTHONPATH:/home/otto/pythontools" >> $HOME/.bashrc
+# Install dependencies:
+sudo apt-get install mayavi2 python-matplotlib python-numpy python-scipy ipython
+# Set pythonpath environment variable:
+echo "export PYTHONPATH=$PYTHONPATH:/home/otto/pythontools" >> $HOME/.bashrc
 
-# Using:
+# Using Analysator:
 ipython
 import pytools as pt
 
