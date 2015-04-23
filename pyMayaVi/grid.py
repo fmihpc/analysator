@@ -1,5 +1,5 @@
 from mayavigrid import MayaviGrid
-from velocityspace import generate_velocity_grid
+from velocityspace import generate_velocity_grid, generate_custom_velocity_grid
 from particlepusherinterface import Particlepusherinterface
 
 
