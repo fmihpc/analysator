@@ -65,6 +65,23 @@ def generate_custom_velocity_grid( vlsvReader, blocks_and_values, iso_surface=Fa
    else:
       ptdata = mayavi.mlab.pipeline.cell_to_point_data(d)
       iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=[1e-15,1e-14,1e-12], opacity=0.3)
+
+   engine = mayavi.mlab.get_engine()
+
+   from mayavi.modules.axes import Axes 
+   axes = Axes()
+   axes.name = 'Axes'
+   axes.axes.fly_mode = 'none'
+   axes.axes.number_of_labels = 8
+   axes.axes.font_factor = 0.5
+   #module_manager = self.__module_manager()
+   # Add the label / marker:
+   engine.add_filter( axes )
+   from mayavi.modules.outline import Outline
+   outline = Outline()
+   outline.name = 'Outline'
+   engine.add_filter( outline )
+
    mayavi.mlab.show()
 
 def generate_velocity_grid( vlsvReader, cellid, iso_surface=False ):

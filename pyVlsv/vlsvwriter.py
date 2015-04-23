@@ -65,9 +65,60 @@ class VlsvWriter(object):
             # Write the data:
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
-      #
 
+   def copy_variables( self, vlsvReader ):
+      ''' Copies all variables from vlsv reader to the file
 
+      '''
+      # Get the xml sheet:
+      xml_root = vlsvReader._VlsvReader__xml_root
+
+      # Get list of tags to write:
+      tags = {}
+      tags['VARIABLE'] = ''
+
+      # Copy the xml root and write variables
+      for child in xml_root:
+         if child.tag in tags:
+            if 'name' in child.attrib:
+                name = child.attrib['name']
+            else:
+                name = ''
+            if 'mesh' in child.attrib:
+                mesh = child.attrib['mesh']
+            else:
+                mesh = ''
+            tag = child.tag
+            # Copy extra attributes:
+            extra_attribs = {}
+            for i in child.attrib.iteritems():
+               if i[0] != 'name' and i[0] != 'mesh':
+                  extra_attribs[i[0]] = i[1]
+            data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
+            # Write the data:
+            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      return
+
+   def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
+      ''' Writes given velocity space into vlsv file
+
+          :param vlsvReader:        Some open vlsv reader file with velocity space in the given cell id
+          :param cellid:            Given cellid
+          :param blocks_and_values: Blocks and values in list format e.g. [[block1,block2,..], [block1_values, block2_values,..]] where block1_values are velocity block values (list length 64)
+      '''
+
+      # Get cells_with_blocks, blocks_per_cell etc
+      cells_with_blocks = np.array([cellid])
+      number_of_blocks  = len(blocks_and_values)
+      blocks_per_cell    = np.array([number_of_blocks])
+
+      # Write them out
+      self.write( data=cells_with_blocks, name='', mesh="SpatialGrid", tag="CELLSWITHBLOCKS" )
+      self.write( data=blocks_per_cell, name='', mesh="SpatialGrid", tag="BLOCKSPERCELL" )
+
+      # Write blockids and values
+      self.write( data=blocks_and_values[0], name='', mesh="SpatialGrid", tag="BLOCKIDS" )
+      self.write( data=blocks_and_values[1], name='avgs', mesh="SpatialGrid", tag="BLOCKVARIABLE" )
 
    def write(self, data, name, tag, mesh, extra_attribs={}):
       ''' Writes an array into the vlsv file

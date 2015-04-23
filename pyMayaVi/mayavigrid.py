@@ -490,7 +490,7 @@ class MayaviGrid(HasTraits):
          B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
       else:
          B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
-      
+
       points2 = np.array([[0,0,0]])
       ug2 = tvtk.UnstructuredGrid(points=points2)
       ug2.point_data.vectors = [B / np.linalg.norm( B )]
