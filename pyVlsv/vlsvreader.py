@@ -269,7 +269,7 @@ class VlsvReader(object):
                print "Data type: " + datatype + ", element size: " + str(element_size)
                return
 
-            data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
+            data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
 
       if self.__fptr.closed:
          fptr.close()
@@ -1092,7 +1092,9 @@ class VlsvReader(object):
 
       #Example:
 
-      velocity_cell_map = vlsvReader.read_velocity_cells(1111)
+      example_cellid = 1111
+
+      velocity_cell_map = vlsvReader.read_velocity_cells(example_cellid)
       velocity_cell_ids = velocity_cell_map.keys()
       velocity_cell_values = velocity_cell_map.values()
 
