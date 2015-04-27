@@ -71,15 +71,82 @@ def read_subprocess( particlepusherinterface, pipe ):
    # Kill the proces
    pipe.terminate()
 
-def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args ):
-   ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
+def call_particle_pusher( particlepusherinterface, coordinates_list ):
+   ''' Launches the particle pusher
+
+   '''
+   # Call the particle pusher
+   import subprocess
+   parse_args = []
+
+   #Executable location
+   parse_args.append("/home/otto/vlasiator/particle_post_pusher")
+   # Options
+   parse_args.append("--run_config")
+   # CFG location
+   parse_args.append("/home/otto/vlasiator/particles/particles.cfg")
+
+   # Open a pipe for the process (get input, output and error output to the pipe)
+   pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+
+   # Iterate through particles and write into the stdin (this is required by the particle pusher)
+   for coordinates in coordinates_list:
+      coordinates_to_output = ""
+      for coordinate in coordinates:
+        coordinates_to_output = coordinates_to_output + str(coordinate) #Append
+        coordinates_to_output = coordinates_to_output + " "
+      coordinates_to_output = coordinates_to_output+"\n"
+      pipe.stdin.write(coordinates_to_output) # Write the coordinates to the std
+   # Close the stdin
+   pipe.stdin.close()
+   # Read the output in a separate thread and kill the process at the end:
+   import thread
+   #thread.start_new_thread( read_subprocess, (particlepusherinterface, pipe) )
+   read_subprocess(particlepusherinterface, pipe)
+   particlepusherinterface.particle_coordinates = []
+
+
+
+
+def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader, coordinates, args ):
+   ''' Calls the particle pusher with the given coordinates and inputs particles in random places within the velocity distribution function in given coordinates
 
        :param particlepusherinterface: Particle pusher class
        :param vlsvReader: a vlsvReader file with a file open
        :param coordinates: Some coordinates on a mayavi grid
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
+
+   # Note: vlsvReader must be VlasiatorReader type
+   vlasiatorReader = vlsvReader
+   coordinates = vlasiatorReader.get_nearest_coordinates_with_distribution( coordinates )
+   # Get the cellid:
+   cellid = vlasiatorReader.get_cellid( coordinates )
+
    
+   # Read in the velocity space
+   velocity_cell_map = vlasiatorReader.read_velocity_cells( cellid )
+   velocity_cell_coordinates = vlasiatorReader.get_velocity_cell_coordinates(velocity_cell_map.keys())
+   number_of_particles = int(args)
+   step = int(float(len(velocity_cell_coordinates))/float(number_of_particles))
+   # Input particles:
+   new_coordinates = []
+   for i in range(number_of_particles):
+      index = i*step
+      velocity_coordinate = velocity_cell_coordinates[index]
+      new_coordinates.append([coordinates[0], coordinates[1], coordinates[2], velocity_coordinate[0], velocity_coordinate[1], velocity_coordinate[2]])
+
+   call_particle_pusher( particlepusherinterface, new_coordinates )
+
+def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinates, args ):
+   ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
+
+       :param particlepusherinterface: Particle pusher class
+       :param vlsvReader: a VlasiatorReader file with a file open
+       :param coordinates: Some coordinates on a mayavi grid
+       :param args: Arguments (these are used to parse how many particles we want to launch currently)
+   '''
+
    # Input new coordinates ( This is vx, vy, vz )
    new_coordinates = []
    for coordinate in coordinates:
@@ -96,37 +163,9 @@ def call_particle_pusher( particlepusherinterface, vlsvReader, coordinates, args
    # Check if this is the amount of particles we want to input 
    user_defined_input = int(args)
    current_number_of_particles = len(particlepusherinterface.particle_coordinates)
+
    if user_defined_input <= current_number_of_particles:
-     
-     # Call the particle pusher
-     import subprocess
-     parse_args = []
-     
-     #Executable location
-     parse_args.append("/home/otto/vlasiator/particle_post_pusher")
-     # Options
-     parse_args.append("--run_config")
-     # CFG location
-     parse_args.append("/home/otto/vlasiator/particles/particles.cfg")
-
-     # Open a pipe for the process (get input, output and error output to the pipe)
-     pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-
-     # Iterate through particles and write into the stdin (this is required by the particle pusher)
-     for coordinates in particlepusherinterface.particle_coordinates:
-        coordinates_to_output = ""
-        for coordinate in coordinates:
-          coordinates_to_output = coordinates_to_output + str(coordinate) #Append
-          coordinates_to_output = coordinates_to_output + " "
-        coordinates_to_output = coordinates_to_output+"\n"
-        pipe.stdin.write(coordinates_to_output) # Write the coordinates to the std
-     # Close the stdin
-     pipe.stdin.close()
-     # Read the output in a separate thread and kill the process at the end:
-     import thread
-     #thread.start_new_thread( read_subprocess, (particlepusherinterface, pipe) )
-     read_subprocess(particlepusherinterface, pipe)
-     particlepusherinterface.particle_coordinates = []
+     call_particle_pusher( particlepusherinterface, particlepusherinterface.particle_coordinates )
 
 class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
@@ -171,9 +210,11 @@ class Particlepusherinterface(MayaviGrid):
                  "Pitch_angle",
                  "Gyrophase_angle",
                  "Cut_through",
-                 "Particle_pusher_bulk_v")
+                 "Particle_pusher_bulk_v",
+                 "Particle_pusher_velocity_sampling")
 
-   picker_functions = {"Particle_pusher_bulk_v": call_particle_pusher} # Picker functions (here we define what happens when the picker has the "Particle_pusher_bulk_v" option on and it clicks on something (In this case calls the __call_particle_pusher functions
+   picker_functions = {"Particle_pusher_bulk_v": call_particle_pusher_bulk_v,
+                       "Particle_pusher_velocity_sampling": call_particle_pusher_velocity_sampling} # Picker functions (here we define what happens when the picker has the "Particle_pusher_bulk_v" option on and it clicks on something (In this case calls the __call_particle_pusher_bulk_v functions
 
    particle_coordinates = []
 
