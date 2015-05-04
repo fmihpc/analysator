@@ -1,0 +1,58 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+%opening
+\title{Plotting with Analysator's MayaVi interface}
+\author{Otto Hannuksela}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Plotting the grid}
+
+\begin{verbatim}
+import pytools as pt
+f = pt.vlsvfile.VlsvReader('bulk.0000872.vlsv')
+grid = pt.grid.MayaviGrid(f, 'rho')
+\end{verbatim}
+
+\section{How to navigate}
+
+In order to navigate, use the mouse scroll to zoom, mouse3 to move the image and mouse 1 to tilt the 
+grid.
+
+\section{Picker options}
+
+Analysator has implemented many picker options. These include:
+
+\begin{enumerate}
+ \item None
+ \item Velocity_space
+ \item Velocity_space_nearest_cellid
+ \item Velocity_space_iso_surface
+ \item Velocity_space_nearest_cellid_iso_surface
+ \item Pitch_angle
+ \item Gyrophase_angle
+ \item Cut_through (See \ref{ssec:cutthrough})
+\end{enumerate}
+
+
+\subsection{Velocity_space and Velocity_space_nearest_cellid}
+
+Draws the velocity space for the cell we click on. If there exists no velocity space data in the vlsv 
+file for the given cellid, then using \emph{Velocity_space_nearest_cellid} is adviced, as it picks the 
+nearest cellid with velocity distribution data and draws it.
+
+Example is shown in Figure \ref{fig:vel_space}
+
+\begin{figure}
+ 
+\end{figure}
+
+
+\end{document}
