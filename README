@@ -8,59 +8,7 @@ echo "export PYTHONPATH=$PYTHONPATH:/home/otto/pythontools" >> $HOME/.bashrc
 ipython
 import pytools as pt
 
-#Examples:
-pt.calculations.pitch_angles?
-pt.vlsvfile.VlsvReader?
-
-
-#Navigating and finding documentation:
-
-#Type pt.
-#Press tab
-
-#Output:
-#  In [10]: pt.
-#  pt.calculations    pt.fullPath        pt.miscellaneous   pt.vlsvfile
-#  pt.filemanagement  pt.grid            pt.plot  
-
-#Type pt.grid.
-#Press tab
-
-#Output:
-#  In [10]: pt.grid.
-#  pt.grid.generate_velocity_grid  pt.grid.MayaviGrid
-
-#Type pt.grid.MayaviGrid?
-#Press Enter
-
-#Usage info output:
-#  **Pitch_angle** Plots the pitch angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
-#  
-#  **Gyrophase_angle** Plots the gyrophase angle distribution at the clicking position Note: If the vlsv file does not have the velocity space at the position where you are clicking, this will not work
-#  
-#  **Cut_through** Is used to plot or save the cut-through between two clicking points. This option requires you to use the args section at top-left. To use the args section to plot variables you must write for example: **plot rho B,x E,y** Upon clicking at two points a new window would open with a cut-through plot of rho, x-component of B and y-component of E Alternatively, you can save the cut-through to a variable in the MayaviGrid class by typing instead: **rho B,x E,y** and then going to the terminal and typing
-#  
-#  .. code-block:: python
-#  
-#     cut_through_data = grid.cut_through
-#     print cut_through_data
-#  Constructor information:
-#   Definition:pt.grid.MayaviGrid(self, vlsvReader, variable, operator='pass', threaded=True, **traits)
-#   Docstring:
-#      Initializes the class and loads the mayavi grid
-#      
-#      :param vlsvReader:        Some vlsv reader with a file open
-#      :type vlsvReader:         :class:`vlsvfile.VlsvReader`
-#      :param variable:          Name of the variable
-#      :param operator:          Operator for the variable
-#      :param threaded:          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
-
-#Example usage:
-#vlsvReader = pt.vlsvfile.VlsvReader('example.vlsv')
-#variable = 'rho'
-#grid = pt.grid.MayaviGrid(vlsvReader, variable)
-
-#Note: to find more info on vlsvReader, use:
-#pt.vlsvfile.VlsvReader?
-#press Enter
+# Navigating functions:
+pt.calculations.pitch_angles? #press [Enter]
+pt.vlsvfile.VlsvReader? #press [Enter]
 
