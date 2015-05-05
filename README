@@ -1,14 +1,28 @@
 # Installation:
+#################################################
+#################################################
+
 # Install dependencies:
 sudo apt-get install mayavi2 python-matplotlib python-numpy python-scipy ipython
 # Set pythonpath environment variable:
 echo "export PYTHONPATH=$PYTHONPATH:/home/otto/pythontools" >> $HOME/.bashrc
 
 # Using Analysator:
-ipython
-import pytools as pt
+#################################################
+#################################################
+ipython # Start ipython
+
+import pytools as pt # Import Analysator
 
 # Navigating functions:
 pt.calculations.pitch_angles? #press [Enter]
 pt.vlsvfile.VlsvReader? #press [Enter]
+
+
+
+# For more information visit the link:
+#################################################
+#################################################
+https://github.com/fmihpc/analysator/wiki
+
 
