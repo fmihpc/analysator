@@ -1,3 +1,7 @@
+''' Helper module for reading and locating files. Nothing interesting here..
+
+'''
+
 import os, sys
 
 def sorted_filenames(name="*.vlsv"):
