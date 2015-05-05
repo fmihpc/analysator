@@ -1,16 +1,14 @@
 import filemanagement
-# Input paths:
-fullPath = filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__))
 # Input current folder's path
-filemanagement.sys.path.insert(0, fullPath)
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
 # Input folder paths
-filemanagement.sys.path.insert(0, fullPath + "/" + "miscellaneous")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyCalculations")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyCellDataReduction")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyMayaVi")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyPlots")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyVisit")
-filemanagement.sys.path.insert(0, fullPath + "/" + "pyVlsv")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "miscellaneous")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCalculations")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyMayaVi")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyPlots")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
+filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
 
 # Import modules
 try:
