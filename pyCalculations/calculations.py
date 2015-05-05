@@ -1,3 +1,18 @@
+''' This is a module that includes most, if not all, calculations within the analysator. Please type "." and press tab to see which functions this module includes.
+
+Example:
+import pytools as pt
+
+pt.calculations.
+#press tab
+
+#Output: list of functions
+
+pt.calculations.fourier?
+#Press Enter
+
+'''
+
 # List of functions and classes that should be imported into the interface
 from cutthrough import cut_through
 from fourier import fourier
