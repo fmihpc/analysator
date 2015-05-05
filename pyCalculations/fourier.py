@@ -1,10 +1,10 @@
 # Function for taking 1d and 2d fourier transforms here.
 
-def fourier( dt, y, kaiserwindowparameter=0 ):
+def fourier( t, y, kaiserwindowparameter=0 ):
    ''' Function for returning fourier series and frequencies of some given arrays t and y
 
 
-       :param dt:           Time
+       :param t:           Time
        :param y:            Some variable data
        :returns: the frequencies, new time variables and frequencies
 
@@ -26,11 +26,11 @@ def fourier( dt, y, kaiserwindowparameter=0 ):
    from variable import get_data
    #t_data = get_data(t)
    y_data = get_data(y)
-   # First check the t array whether it has a constant dt
-   #dt = get_data(t)[1] - get_data(t)[0]
+   # First check the t array whether it has a constant t
+   #t = get_data(t)[1] - get_data(t)[0]
 
    #for i in xrange(len(get_data(t))-1):
-   #   if dt != get_data(t)[i+1] - get_data(t)[i]:
+   #   if t != get_data(t)[i+1] - get_data(t)[i]:
    #      print "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
    # Use kaiser window on y
    import numpy as np
@@ -38,10 +38,10 @@ def fourier( dt, y, kaiserwindowparameter=0 ):
    # Do FFT on the data
    fourier=np.fft.fft(y_tmp) * (1/(float)(len(y_tmp)))
    # Get frequencies of the fourier
-   freq=np.fft.fftfreq(len(fourier), d=dt)
+   freq=np.fft.fftfreq(len(fourier), d=t)
    # Declare t2 (Note: This is the same as t but we want the steps to be thicker so the data looks smoother
-   dt2=dt*0.01
-   t2=np.arange(len(y_tmp)*100)*dt2
+   t2=t*0.01
+   t2=np.arange(len(y_tmp)*100)*t2
    # Declare y2
    y2=np.array([np.sum(fourier*np.exp(complex(0,1)*2*np.pi*freq*T)) for T in t2])
    from output import output_1d
