@@ -65,9 +65,7 @@ class MayaviGrid(HasTraits):
 
    '''
    picker = Enum('None',
-                 'Velocity_space',
                  "Velocity_space_nearest_cellid",
-                 'Velocity_space_iso_surface',
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
                  "Gyrophase_angle",
