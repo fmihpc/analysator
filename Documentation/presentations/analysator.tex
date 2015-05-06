@@ -115,6 +115,12 @@ showstringspaces=false            %
  \end{python}
 \end{frame}
 
+\begin{frame}
+ \frametitle{Important notes}
+ Documentation can be found at \url{https://github.com/fmihpc/analysator/wiki}
+\end{frame}
+
+
 \section{Concepts}
 
 \begin{frame}
@@ -288,11 +294,29 @@ format: [cell ids, distances, coordinates]
 \end{frame}
 
 
-
-
-\section{Examples}
+\section{Hands-on}
 
 \begin{frame}[fragile]
+ 
+ \frametitle{Hands-on}
+ \begin{center}
+  \textbf{Hands-on}
+ \end{center}
+ 
+ Summary of the basics:
+ \begin{enumerate}
+  \item Remember to \emph{import analysator}
+  \item Nearly every script starts by opening a \emph{vlsv} file
+  \item \keys{tab} to navigate
+  \item ? + \keys{Enter} to get documentation
+ \end{enumerate}
+ 
+ Note: if you have virtualbox you have to set up a shared folder:
+ \begin{verbatim}
+  sudo mount -t vboxsf -o rw,uid=1000,gid=1000 \
+  vlsv_data $HOME/share
+ \end{verbatim}
+ 
  \scalebox{0.1} {
   \begin{tikzpicture}[mindmap, grow cyclic, every node/.style=concept, concept color=orange!40, 
      level 1/.append style={level distance=6cm,sibling angle=80},
@@ -314,25 +338,167 @@ format: [cell ids, distances, coordinates]
    \end{pgfonlayer}
   \end{tikzpicture}
  }
- 
- 
- \frametitle{Examples}
- \begin{center}
-  \textbf{Hands-on}
- \end{center}
- 
- \tiny{Note: if you have virtualbox you have to set up a shared folder:}
- \begin{verbatim}
-  sudo mount -t vboxsf -o rw,uid=1000,gid=1000 \
-  vlsv_data $HOME/share
- \end{verbatim}
+\end{frame}
 
+\section{Plotting}
+
+\begin{frame}
+ \frametitle{Plotting}
+ \begin{center}
+ \scalebox{0.8} {
+  \begin{tikzpicture}[mindmap, grow cyclic, every node/.style=concept, concept color=orange!40, 
+     level 1/.append style={level distance=6cm,sibling angle=80},
+     level 2/.append style={level distance=3cm,sibling angle=35},] 
+
+
+   \node{\textbf{Analysator}}
+     child{ node[concept](grid){\textbf{grid}} child{node{\textbf{Draws the grid}}} child{node{\textbf{Uses calculations module}}} child{node{\textbf{MayaVi}}} };
+  \end{tikzpicture}
+ }
+ \end{center}
 \end{frame}
 
 \begin{frame}
+ \frametitle{Plotting}
+ The most important concepts
+ \begin{enumerate}
+  \item How to plot
+  \item How to use MayaVi
+  \item How to use the Analysator's \emph{pointnclick} interface
+ \end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Plotting}
+ \begin{center}
+  \scalebox{0.5}{\vbox{ \begin{enumerate}
+   \item How to plot
+  \end{enumerate} } }
+ \end{center}
+ Plotting can be done simply by feeding a vlsv file to the grid class as follows:
+ \begin{python}[basicstyle=\tiny]
+  # Import Analysator
+  import pytools as pt
+  
+  # Open a vlsv file
+  vlsvReader = pt.vlsvfile.VlsvReader('test.vlsv')
+  
+  # Plot rho
+  grid = pt.grid.MayaviGrid(vlsvReader, variable='rho')
+ \end{python}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Plotting}
+ \begin{center}
+  \scalebox{0.5}{\vbox{ \begin{enumerate}
+   \item How to plot
+   \item How to use MayaVi
+  \end{enumerate} } }
+ \end{center}
+ \begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{../images/none.png}
+  \caption{\tiny{Example plot with Mayavi, highlighting options and pointnclick tool.}}
+  \label{fig:mayavi_example}
+ \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Plotting}
+ \begin{center}
+  \scalebox{0.5}{\vbox{ \begin{enumerate}
+   \item How to plot
+   \item How to use MayaVi
+ \end{enumerate} } }
+ 
+ \begin{figure}
+  \centering
+  \includegraphics[height=0.2\textheight]{../images/none.png}
+  \caption{\tiny{Example plot with Mayavi, highlighting options and pointnclick tool.}}
+  \label{fig:mayavi_example2}
+ \end{figure}
+ 
+ \begin{enumerate}
+  \item \keys{Scroll} to zoom
+  \item \keys{Mouse 3} to move the image
+  \item \keys{Mouse 1} + \keys{Hold} to pan the image
+  \item \keys{Mouse 1} to click
+ \end{enumerate}
+
+ \end{center}
  
 \end{frame}
 
+\begin{frame}[fragile]
+ \frametitle{Plotting}
+ \begin{center}
+  \scalebox{0.5}{\vbox{ \begin{enumerate}
+   \item How to plot
+   \item How to use MayaVi
+   \item How to use the Analysator's \emph{pointnclick} interface
+  \end{enumerate} } }
+ \end{center}
+ \emph{Pointnclick} options:
+ \begin{enumerate}
+  \item None
+  \item Velocity\_space\_nearest\_cellid
+  \item Velocity\_space\_nearest\_cellid\_iso\_surface
+  \item Pitch\_angle
+  \item Gyrophase\_angle (Made by \emph{Yann}, yay)
+  \item Cut\_through
+ \end{enumerate}
+
+ Click \keys{Mouse 1} somewhere on the \emph{grid}
+\end{frame}
+
+\begin{frame}[fragile]
+ \frametitle{Plotting}
+ \begin{center}
+  \scalebox{0.5}{\vbox{ \begin{enumerate}
+   \item How to plot
+   \item How to use MayaVi
+   \item How to use the Analysator's \emph{pointnclick} interface
+  \end{enumerate} } }
+ \end{center}
+ 
+ \tiny{Sorry about the horribly small text..}
+ 
+ \begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{../images/velocity_space_nearest_cellid_iso_surface.png}
+  \label{fig:mayavi_example3}
+ \end{figure}
+\end{frame}
+
+\section{Hands-on}
+
+\begin{frame}[fragile]
+ \frametitle{Hands-on}
+ 
+ To get started:
+ 
+ \begin{python}[basicstyle=\tiny]
+  grid = pt.grid.MayaviGrid(vlsvReader, 'rho')
+ \end{python}
+ 
+ Summary:
+ 
+ \begin{enumerate}
+  \item \keys{Mouse scroll} to zoom
+  \item \keys{Mouse 3} to move the image
+  \item \keys{Mouse 1} + \keys{Hold} to pan
+  \item \keys{Mouse 1} to use the Analysator \emph{pointnclick}
+ \end{enumerate}
+
+ 
+ \tiny{Note on \emph{pointnclick} \textbf{cut-through option}:
+ 
+ Press \keys{Mouse 1} in two places, and there is a \emph{field} where you have to type:}
+ \begin{verbatim}
+  plot rho
+ \end{verbatim}
+\end{frame}
 
 
 \begin{frame}[fragile]
