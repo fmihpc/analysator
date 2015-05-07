@@ -641,7 +641,7 @@ class VlsvReader(object):
          fptr.close()
 
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
-      ''' Read variables from the open vlsv file. 
+      ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
       :param coords: Coordinates from which to read data 
