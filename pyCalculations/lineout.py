@@ -4,18 +4,29 @@ import numpy as np
 import sys
 
 def lineout( vlsvReader, point1, point2, variable, operator="pass",interpolation_order=1, points=100 ):
-   ''' Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2
+   ''' Returns a line cut-through from a given VLSV file for distance, coordinates and variable values. The main difference between this and cut_through is that this function interpolates a given variable.
 
-       :param vlsvReader:       Some open VlsvReader
-       :type vlsvReader:        :class:`vlsvfile.VlsvReader`
-       :param point1:           The starting point of a cut-through line
-       :param point2:           The ending point of a cut-through line
-       :returns: an 2D array containing distances and values in the following format: [ [distances...] [values] ]
+       :param vlsvReader:            Some open VlsvReader
+       :type vlsvReader:             :class:`vlsvfile.VlsvReader`
+       :param point1:                The starting point of a cut-through line
+       :param point2:                The ending point of a cut-through line
+       :param variable:              Variable to return
+       :param operator:              The operator for the variable, for example "x" for x-component or "magnitude" for magnitude
+       :param interpolation_order:   Order of interpolation (0 or 1), defaults to 1
+       :param points:                Number of points to return
+
+       :returns: A tuple with output: (distance, coordinates, variable_values)
 
        .. code-block:: python
 
-          Example:
-          vlsvReader = VlsvReader(\"testfile.vlsv\")
+          # Example:
+          import pytools as pt # import analysator
+
+          vlsvReader = pt.vlsvfile.VlsvReader(\"testfile.vlsv\") # Open a vlsv file
+          lineout_rho = pt.calculations.lineout( vlsvReader=vlsvReader, point1=[1.0e5, 1.0e6, 0], point2=[2.0e5, 2.0e6, 0], variable="rho", interpolation_order=1, points=100 )
+          distance = lineout_rho[0]
+          coordinates = lineout_rho[1]
+          values = lineout_rho[2]
 
    '''
    # Transform point1 and point2 into numpy array:

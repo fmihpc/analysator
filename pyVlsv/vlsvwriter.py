@@ -65,9 +65,60 @@ class VlsvWriter(object):
             # Write the data:
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
-      #
 
+   def copy_variables( self, vlsvReader ):
+      ''' Copies all variables from vlsv reader to the file
 
+      '''
+      # Get the xml sheet:
+      xml_root = vlsvReader._VlsvReader__xml_root
+
+      # Get list of tags to write:
+      tags = {}
+      tags['VARIABLE'] = ''
+
+      # Copy the xml root and write variables
+      for child in xml_root:
+         if child.tag in tags:
+            if 'name' in child.attrib:
+                name = child.attrib['name']
+            else:
+                name = ''
+            if 'mesh' in child.attrib:
+                mesh = child.attrib['mesh']
+            else:
+                mesh = ''
+            tag = child.tag
+            # Copy extra attributes:
+            extra_attribs = {}
+            for i in child.attrib.iteritems():
+               if i[0] != 'name' and i[0] != 'mesh':
+                  extra_attribs[i[0]] = i[1]
+            data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
+            # Write the data:
+            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      return
+
+   def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
+      ''' Writes given velocity space into vlsv file
+
+          :param vlsvReader:        Some open vlsv reader file with velocity space in the given cell id
+          :param cellid:            Given cellid
+          :param blocks_and_values: Blocks and values in list format e.g. [[block1,block2,..], [block1_values, block2_values,..]] where block1_values are velocity block values (list length 64)
+      '''
+
+      # Get cells_with_blocks, blocks_per_cell etc
+      cells_with_blocks = np.array([cellid])
+      number_of_blocks  = len(blocks_and_values)
+      blocks_per_cell    = np.array([number_of_blocks])
+
+      # Write them out
+      self.write( data=cells_with_blocks, name='', mesh="SpatialGrid", tag="CELLSWITHBLOCKS" )
+      self.write( data=blocks_per_cell, name='', mesh="SpatialGrid", tag="BLOCKSPERCELL" )
+
+      # Write blockids and values
+      self.write( data=blocks_and_values[0], name='', mesh="SpatialGrid", tag="BLOCKIDS" )
+      self.write( data=blocks_and_values[1], name='avgs', mesh="SpatialGrid", tag="BLOCKVARIABLE" )
 
    def write(self, data, name, tag, mesh, extra_attribs={}):
       ''' Writes an array into the vlsv file
@@ -159,65 +210,3 @@ class VlsvWriter(object):
       self.__write_xml_footer()
       self.__fptr.close()
 
-
-#   def __initialize( self, vlsvReader ):
-#      ''' Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid
-#      '''
-#      # Get the xml sheet:
-#      xml_root = vlsvReader._VlsvReader__xml_root
-#      # Copy the parameters:
-#      for child in xml_root:
-#         if (child.tag == "PARAMETER" or child.tag == "PARAMETERS") and ("name" in child.attrib):
-#            name = child.attrib['name']
-#            data = vlsvReader.read_parameter(name)
-#            if 'mesh' in child.attrib:
-#               self.write(data=data, name=name, tag="PARAMETER", mesh=child.attrib['mesh'])
-#            else:
-#               self.write(data=data, name=name, tag="PARAMETER", mesh='SpatialGrid')
-#
-#      wrote_bbox=False
-#      for child in xml_root:
-#         if child.tag == "MESH_BBOX":
-#            # Write mesh bounding box:
-#            self.write(data=vlsvReader.read(name="", tag="MESH_BBOX", mesh=child.attrib['mesh']), name="", tag="MESH_BBOX", mesh=child.attrib['mesh'])
-#            wrote_bbox=True
-#      if wrote_bbox == False:
-#         xcells = vlsvReader._VlsvReader__xcells
-#         ycells = vlsvReader._VlsvReader__ycells
-#         zcells = vlsvReader._VlsvReader__zcells
-#         notBlockBasedMesh = 1 # 1 because we are not interested in block based mesh
-#         self.write(data=np.array([xcells,ycells,zcells, notBlockBasedMesh, notBlockBasedMesh, notBlockBasedMesh]), name="", tag="MESH_BBOX", mesh="SpatialGrid")
-#
-#      wrote_nodes=False
-#      for child in xml_root:
-#         if child.tag == "MESH_NODE_CRDS_X":
-#            # Write nodes:
-#            self.write(data=vlsvReader.read(name="", tag="MESH_NODE_CRDS_X", mesh=child.attrib['mesh']), name="", tag="MESH_NODE_CRDS_X", mesh="SpatialGrid")
-#            wrote_nodes=True
-#
-#
-#      # Write cell ids:
-#      self.write(data=vlsvReader.read_variable(name="CellID"), name="CellID", tag="VARIABLE", mesh="SpatialGrid")
-#
-#      # Some attributes for the MESH array that are mandatory to define:
-#      newformat=False
-#      for child in xml_root:
-#         if child.tag == "MESH" and 'type' in child.attrib:
-#            newformat=True
-#            extra_attribs = {}
-#            for i in child.attrib.iteritems():
-#               extra_attribs[i[0]] = i[1]
-#
-#      if newformat == False:
-#         extra_attribs = {}
-#         extra_attribs['type'] = "multi_ucd"
-#         extra_attribs['xperiodic'] = 'yes'
-#         extra_attribs['yperiodic'] = 'yes'
-#         extra_attribs['zperiodic'] = 'yes'
-#
-#      # Write zone global ids:
-#      self.write(data=vlsvReader.read(name="SpatialGrid", tag="MESH", mesh=""), name="SpatialGrid", tag="MESH", mesh="", extra_attribs=extra_attribs)
-#
-#      # Write domain sizes
-#      self.write(data=vlsvReader.read( name='', tag='MESH_DOMAIN_SIZES', mesh="SpatialGrid" ), name='', tag='MESH_DOMAIN_SIZES', mesh="SpatialGrid" )
-#

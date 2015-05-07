@@ -14,11 +14,24 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
 
        .. code-block:: python
 
-          # Example of the return list with 3 variable names and 2 cell ids:
-          [cellid1variable1, cellid1variable2, cellid1variable3, cellid2variable1, cellid2variable2, cellid3variable3]
-   
+          import pytools as pt; import pylab as pl
           # Example of usage:
-          time_data = cell_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+          time_data = pt.calculations.cell_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+
+          # Check output
+          print time_data
+
+          # Now plot the results:
+          time = time_data[0]
+          rho = time_data[3]
+          pt.plot.plot_variables(time, rho)
+          pl.show()
+
+          # Do post processing:
+          rho_data = rho.data
+          non_existing_example_function(rho_data)
+   
+
    '''
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)

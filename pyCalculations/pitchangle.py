@@ -23,7 +23,10 @@ def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid)
    # Read bulk velocity:
-   bulk_velocity = np.array(vlsvReader.read_variable("rho_v", cellid) / vlsvReader.read_variable("rho", cellid), copy=False)
+   if vlsvReader.read_variable("rho", cellid) != 0.0:
+      bulk_velocity = np.array(vlsvReader.read_variable("rho_v", cellid) / vlsvReader.read_variable("rho", cellid), copy=False)
+   else:
+      bulk_velocity = 0.0
    # Calculate the pitch angles for the data:
    B = vlsvReader.read_variable("B", cellid)
    B_unit = B / np.linalg.norm(B)
@@ -47,7 +50,10 @@ def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
       units = "degree"
    # Return the pitch angles and avgs values:
    from output import output_1d
-   return output_1d([pitch_angles, avgs], ["Pitch_angle", "avgs"], [units, ""])
+   if vlsvReader.read_variable("rho", cellid) != 0.0:
+      return output_1d([pitch_angles, avgs], ["Pitch_angle", "avgs"], [units, ""])
+   else:
+      return output_1d([[0], [1e-9]], ["Pitch_angle", "avgs"], [units, ""])
    #pl.hist(pitch_angles, weights=avgs, bins=bins, log=log)
 
 

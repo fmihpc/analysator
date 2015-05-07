@@ -1,0 +1,73 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{url}
+
+%opening
+\title{Analysator installation tutorial}
+\author{Otto Hannuksela}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Getting Analysator} 
+
+Analysator is located in github under \textbf{fmihpc}.
+
+\url{https://github.com/fmihpc/analysator}
+
+To clone Analysator use:
+
+\begin{verbatim}
+cd ~
+git clone git@github.com:fmihpc/analysator.git analysator
+\end{verbatim}
+
+
+\section{Installing dependencies}
+
+\subsection{Ubuntu 14.04}
+
+Install dependencies:
+
+\begin{verbatim}
+sudo apt-get install -y python-matplotlib python-numpy python-scipy ipython mayavi2
+\end{verbatim}
+
+\section{Testing installation}
+
+The installation can be tested by going to the analysator folder and typing:
+
+\begin{verbatim}
+cd ~/analysator
+ipython
+import pytools as pt
+\end{verbatim}
+
+The full input/output should look like this (if the installation fails, the import command should 
+show an error message):
+\begin{verbatim}
+otto@vlasiator-Latitude-E6420:~/analysator$ cd ~/analysator
+otto@vlasiator-Latitude-E6420:~/analysator$ ipython
+Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
+Type "copyright", "credits" or "license" for more information.
+
+IPython 1.2.1 -- An enhanced Interactive Python.
+?         -> Introduction and overview of IPython's features.
+%quickref -> Quick reference.
+help      -> Python's own help system.
+object?   -> Details about 'object', use 'object??' for extra details.
+
+In [1]: import pytools as pt
+
+In [2]: 
+
+\end{verbatim}
+
+
+\end{document}

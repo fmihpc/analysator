@@ -21,7 +21,6 @@ from mayavi.sources.vtk_data_source import VTKDataSource
 from mayavi.modules.outline import Outline
 from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
-from rankine import oblique_shock, plot_rankine, rotation_matrix_2d
 from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
 
@@ -92,6 +91,10 @@ class MayaviGrid(HasTraits):
 
    dataset = []
 
+   values = []
+   
+   picker_functions = {}
+
    # Define the view:
    view = View(
                 HGroup(
@@ -129,6 +132,7 @@ class MayaviGrid(HasTraits):
       self.__unstructured_figures = []
       self.__thread = []
       self.__load_grid( variable=variable, operator=operator, threaded=threaded )
+      self.values = []
       self.variable_plotted = variable
 
    def __module_manager( self ):
@@ -151,7 +155,7 @@ class MayaviGrid(HasTraits):
       self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
       module_manager = self.__module_manager()
       # Add the label / marker:
-      self.__engine.add_filter( self.labels, module_manager )
+      self.__engine.add_filter( self.labels, module_manager ) # He
       #module_manager = engine.scenes[0].children[0].children[0]
       #engine.add_filter(labels1, module_manager)
       #self.labels = self.scene.mlab.pipeline.labels( self.dataset )
@@ -205,7 +209,10 @@ class MayaviGrid(HasTraits):
       maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
       # Get the variables:
       index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
-      variable_array = self.__vlsvReader.read_variable( name=variable, operator=operator )
+      if isinstance(variable, str):
+         variable_array = self.__vlsvReader.read_variable( name=variable, operator=operator )
+      else:
+         variable_array = variable
       # Sort the dictionary by cell id
       import operator as oper
       sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=oper.itemgetter(0))
@@ -329,23 +336,15 @@ class MayaviGrid(HasTraits):
                self.__last_pick = []
                return
             plotCut = False
-            plotRankine = False
             # Optimize file read:
             self.__vlsvReader.optimize_open_file()
             variables = []
             # Save variables
+            plotCut = False
             for i in xrange(len(args)):
                # Check if the user has given the plot argument
                if args[i] == "plot":
                   plotCut = True
-               elif args[i] == "rankine":
-                  # set labels:
-                  self.__add_normal_labels( point1=self.__last_pick, point2=coordinates )
-                  fig = plot_rankine( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
-                  #pl.show()
-                  self.__last_pick = []
-                  self.plot = fig
-                  return
                else:
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
@@ -358,31 +357,12 @@ class MayaviGrid(HasTraits):
                      variables.append(variable_info)
                      self.cut_through.append(variable_info)
             if plotCut == True:
-               # Set label to give out the location of the cell:
-               self.__add_label( cellids[0] )
-               self.__add_label( cellids[len(cellids)-1] )
-               if plotRankine == True:
-                  # Plot Rankine-Hugoniot jump conditions:
-                  normal_vector = (coordinates - self.__last_pick) / np.linalg.norm(coordinates - self.__last_pick)
-                  # Read V, B, T and rho
-                  V = self.__vlsvReader.read_variable( "v", cellids=cellids[0] )
-                  B = self.__vlsvReader.read_variable( "B", cellids=cellids[0] )
-                  T = self.__vlsvReader.read_variable( "Temperature", cellids=cellids[0] )
-                  rho = self.__vlsvReader.read_variable( "rho", cellids=cellids[0] )
-                  # Get parallel and perpendicular components:
-                  Vx = np.dot(V, normal_vector)
-                  Vy = np.linalg.norm(V - Vx * normal_vector)
-                  Bx = np.dot(B, normal_vector)
-                  By = np.linalg.norm(B - Bx * normal_vector)
-                  # Calculate jump conditions
-                  conditions = oblique_shock( Vx, Vy, Bx, By, T, rho )
-                  rankine_variables = []
-                  for i in xrange(len(get_data(distances))):
-                     if i < len(get_data(distances))*0.5:
-                        rankine_variables.append(rho)
-                     else:
-                        rankine_variables.append(conditions[5])
-                  variables.append(rankine_variables)
+               firstCellid = cellids[0]
+               secondCellid = cellids[len(cellids)-1]
+               # Add also streamline
+               firstCoordinate = self.__vlsvReader.get_cell_coordinates( firstCellid )
+               secondCoordinate = self.__vlsvReader.get_cell_coordinates( secondCellid )
+               self.draw_streamline( firstCoordinate, secondCoordinate )
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
                pl.show()
@@ -392,8 +372,30 @@ class MayaviGrid(HasTraits):
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
+      elif self.picker in self.picker_functions:
+         # Call the corresponding pickerfunction
+         self.picker_functions[self.picker](self, self.__vlsvReader, coordinates, self.args)
 
-   
+   def draw_streamline( self, x0, x1 ):
+      ''' Draws a line from x0 to x1 coordinates
+
+      '''
+      self.scene.mlab.plot3d([x0[0], x1[0]], 
+                             [x0[1], x1[1]], 
+                             [x0[2]+4.0e5, x1[2]+4.0e5],
+                             tube_radius=3.0e5)
+      return
+
+   def draw_streamline_long( self, list_of_coordinates ):
+      ''' Draws a set of lines as given by list of coordinates
+
+      '''
+      self.scene.mlab.plot3d(list_of_coordinates[0], 
+                             list_of_coordinates[1], 
+                             list_of_coordinates[2] + np.ones(len(list_of_coordinates[2]))*4e5,
+                             tube_radius=1.0e5)
+      return
+
    def __generate_grid( self, mins, maxs, cells, datas, names  ):
       ''' Generates a grid from given data
           :param mins:           An array of minimum coordinates for the grid for ex. [-100, 0, 0]
@@ -423,6 +425,8 @@ class MayaviGrid(HasTraits):
       # Create the dataset.
       sg = tvtk.StructuredGrid(dimensions=x.shape, points=pts)
       sg.cell_data.scalars = ravel(scalars.copy())
+      if isinstance(names, str) == False:
+         names = "custom"
       sg.cell_data.scalars.name = names
       
       
@@ -435,7 +439,7 @@ class MayaviGrid(HasTraits):
 #      testlabels = self.scene.mlab.pipeline.labels(d)
 
       self.dataset = d
-
+      print scalars[0]
       # Configure traits
       self.configure_traits()
 
@@ -486,7 +490,7 @@ class MayaviGrid(HasTraits):
          B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
       else:
          B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
-      
+
       points2 = np.array([[0,0,0]])
       ug2 = tvtk.UnstructuredGrid(points=points2)
       ug2.point_data.vectors = [B / np.linalg.norm( B )]
