@@ -65,9 +65,7 @@ class MayaviGrid(HasTraits):
 
    '''
    picker = Enum('None',
-                 'Velocity_space',
                  "Velocity_space_nearest_cellid",
-                 'Velocity_space_iso_surface',
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
                  "Gyrophase_angle",
@@ -305,6 +303,20 @@ class MayaviGrid(HasTraits):
          # Generate velocity grid
          self.__generate_velocity_grid(cellid, True)
       elif (self.picker == "Pitch_angle"):
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -314,6 +326,22 @@ class MayaviGrid(HasTraits):
          pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
          pl.show()
       elif (self.picker == "Gyrophase_angle"):
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+
          # Plot gyrophase angle distribution:
          from gyrophaseangle import gyrophase_angles_from_file
          result = gyrophase_angles_from_file( vlsvReader=self.__vlsvReader, cellid=cellid)

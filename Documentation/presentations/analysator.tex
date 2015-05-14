@@ -70,13 +70,19 @@ showstringspaces=false            %
 \section{Introduction}
 \begin{frame}
  \frametitle{Analysator}
+ \begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{../images/analysator.jpg}
+  \label{fig:mayavi_example}
+ \end{figure}
 \end{frame}
 
 \begin{frame}
  \frametitle{What is Analysator}
  \begin{enumerate}
   \item An analysis tool developed for vlasiator
-  \item Originally developed as a pointn'click tool to get a velocity distributions
+  \item Originally developed as an array reader for vlsv files
+  \item Another aim: \emph{pointn'click tool} to get a velocity distributions
   \item Functions optimized with Scipy and Numpy libraries (close to C performance)
  \end{enumerate}
 \end{frame}
@@ -90,13 +96,13 @@ showstringspaces=false            %
    \item time-evolution of cells
    \item cut-throughs
    \item pitch angle distributions
-   \item Can be combined with \emph{every} python module and function
+   \item Accessing velocity distributions
    \item ..
   \end{enumerate}
-  \item Plotting using \emph{matplotlib}
   \item Plotting Vlasiator \emph{grids} using MayaVi library
   \item An interface to Urs' superb \emph{particle pusher}
   \item Full easy-to-use \emph{documentation} for every function
+  \item Can be combined with \emph{every} python module and function
  \end{enumerate}
 \end{frame}
 
@@ -153,7 +159,7 @@ showstringspaces=false            %
 \begin{frame}[fragile]
  \frametitle{Navigation}
  
- Navigating through the code is the most important thing
+ \emph{Navigating} through the code important
  
  \begin{python}[basicstyle=\tiny]
   # Import analysator
