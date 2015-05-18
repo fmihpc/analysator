@@ -349,13 +349,12 @@ class MayaviGrid(HasTraits):
          pl.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
          pl.show()
       elif (self.picker == "Cut_through"):
+         # Get the cut-through points
+         point1 = self.__last_pick
+         point2 = coordinates
          if len(self.__last_pick) == 3:
-            from cutthrough import cut_through
-            # Get a cut-through
-            self.cut_through = cut_through( self.__vlsvReader, point1=self.__last_pick, point2=coordinates )
-            # Get cell ids and distances separately
-            cellids = self.cut_through[0].data
-            distances = self.cut_through[1]
+            from lineout import lineout
+            from variable import VariableInfo
             # Get any arguments from the user:
             args = self.args.split()
             if len(args) == 0:
@@ -367,6 +366,7 @@ class MayaviGrid(HasTraits):
             # Optimize file read:
             self.__vlsvReader.optimize_open_file()
             variables = []
+            distances = []
             # Save variables
             plotCut = False
             for i in xrange(len(args)):
@@ -374,25 +374,26 @@ class MayaviGrid(HasTraits):
                if args[i] == "plot":
                   plotCut = True
                else:
+                  # Get the name of the variable and its operator as given by the user
                   if args[i].find(",") != -1:
                      _variable = args[i].split(',')[0]
                      _operator = args[i].split(',')[1]
-                     variable_info = self.__vlsvReader.read_variable_info( name=_variable, cellids=cellids, operator=_operator )
-                     variables.append(variable_info)
-                     self.cut_through.append(variable_info)
                   else:
-                     variable_info = self.__vlsvReader.read_variable_info( name=args[i], cellids=cellids )
-                     variables.append(variable_info)
-                     self.cut_through.append(variable_info)
+                     _variable = args[i]
+                     _operator = "pass"
+                  # Get the lineout
+                  line = lineout( self.__vlsvReader, point1, point2, _variable, operator=_operator, interpolation_order=1, points=1000 )
+                  distance = line[0]
+                  coordinates = line[1]
+                  values = line[2]
+                  variables.append( VariableInfo(values, name=_variable + " "  " " + _operator, units="" ) )
+                  distances.append( VariableInfo(distance, name="distance", units="m" ) )
+                  self.cut_through.append( values )
             if plotCut == True:
-               firstCellid = cellids[0]
-               secondCellid = cellids[len(cellids)-1]
                # Add also streamline
-               firstCoordinate = self.__vlsvReader.get_cell_coordinates( firstCellid )
-               secondCoordinate = self.__vlsvReader.get_cell_coordinates( secondCellid )
-               self.draw_streamline( firstCoordinate, secondCoordinate )
+               self.draw_streamline( point1, point2 )
                from plot import plot_multiple_variables
-               fig = plot_multiple_variables( [distances for i in xrange(len(args)-1)], variables, figure=[] )
+               fig = plot_multiple_variables( distances, variables, figure=[] )
                pl.show()
             # Close the optimized file read:
             self.__vlsvReader.optimize_close_file()
