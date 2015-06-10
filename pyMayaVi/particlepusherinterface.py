@@ -116,10 +116,13 @@ def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader,
        :param coordinates: Some coordinates on a mayavi grid
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
-
+   print "COORDS:"
+   print coordinates
    # Note: vlsvReader must be VlasiatorReader type
    vlasiatorReader = vlsvReader
    coordinates = vlasiatorReader.get_nearest_coordinates_with_distribution( coordinates )
+   print "NEAREST COORDS:"
+   print coordinates
    # Get the cellid:
    cellid = vlasiatorReader.get_cellid( coordinates )
 
