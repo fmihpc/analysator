@@ -10,14 +10,15 @@ from collections import Iterable
 class VlsvWriter(object):
    ''' Class for reading VLSV files
    '''
+   file_name = ""
    def __init__(self, vlsvReader, file_name ):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
           :param file_name:     Name of the vlsv file where to input data
       '''
-      self.__file_name = os.path.abspath(file_name)
-      self.__fptr = open(self.__file_name,"wb")
+      self.file_name = os.path.abspath(file_name)
+      self.__fptr = open(self.file_name,"wb")
 
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
@@ -187,7 +188,7 @@ class VlsvWriter(object):
       # Write the xml footer:
       max_xml_size = 1000000
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"wb")
+         fptr = open(self.file_name,"wb")
       else:
          fptr = self.__fptr
       current_offset = fptr.tell()

@@ -118,7 +118,7 @@ class MayaviGrid(HasTraits):
           :param threaded:          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
       '''
       HasTraits.__init__(self, **traits)
-      self.__vlsvReader = vlsvReader
+      self.vlsvReader = vlsvReader
       self.engine_view = EngineView(engine=self.scene.engine)
       self.__engine = self.scene.engine
       self.__picker = []
@@ -146,7 +146,7 @@ class MayaviGrid(HasTraits):
    def __add_label( self, cellid ):
       # Add dataset:
       from mayavi.modules.labels import Labels
-      indices = self.__vlsvReader.get_cell_indices( cellid )
+      indices = self.vlsvReader.get_cell_indices( cellid )
       self.labels = Labels()
       self.labels.number_of_labels = 1
       self.labels.mask.filter.random_mode = False
@@ -161,16 +161,16 @@ class MayaviGrid(HasTraits):
 
    def __add_normal_labels( self, point1, point2 ):
       # Get spatial grid sizes:
-      xcells = (int)(self.__vlsvReader.read_parameter("xcells_ini"))
-      ycells = (int)(self.__vlsvReader.read_parameter("ycells_ini"))
-      zcells = (int)(self.__vlsvReader.read_parameter("zcells_ini"))
+      xcells = (int)(self.vlsvReader.read_parameter("xcells_ini"))
+      ycells = (int)(self.vlsvReader.read_parameter("ycells_ini"))
+      zcells = (int)(self.vlsvReader.read_parameter("zcells_ini"))
    
-      xmin = self.__vlsvReader.read_parameter("xmin")
-      ymin = self.__vlsvReader.read_parameter("ymin")
-      zmin = self.__vlsvReader.read_parameter("zmin")
-      xmax = self.__vlsvReader.read_parameter("xmax")
-      ymax = self.__vlsvReader.read_parameter("ymax")
-      zmax = self.__vlsvReader.read_parameter("zmax")
+      xmin = self.vlsvReader.read_parameter("xmin")
+      ymin = self.vlsvReader.read_parameter("ymin")
+      zmin = self.vlsvReader.read_parameter("zmin")
+      xmax = self.vlsvReader.read_parameter("xmax")
+      ymax = self.vlsvReader.read_parameter("ymax")
+      zmax = self.vlsvReader.read_parameter("zmax")
    
       dx = (xmax - xmin) / (float)(xcells)
       dy = (ymax - ymin) / (float)(ycells)
@@ -187,8 +187,8 @@ class MayaviGrid(HasTraits):
       point1 = np.array(point1_shifted)
       point2 = np.array(point2_shifted)
 
-      cellid1 = self.__vlsvReader.get_cellid( point1 )
-      cellid2 = self.__vlsvReader.get_cellid( point2 )
+      cellid1 = self.vlsvReader.get_cellid( point1 )
+      cellid2 = self.vlsvReader.get_cellid( point2 )
 
       # Input label:
       self.__add_label( cellid1 )
@@ -202,13 +202,13 @@ class MayaviGrid(HasTraits):
           :param threaded:        Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
       '''
       # Get the cell params:
-      mins = np.array([self.__vlsvReader.read_parameter("xmin"), self.__vlsvReader.read_parameter("ymin"), self.__vlsvReader.read_parameter("zmin")])
-      cells = np.array([self.__vlsvReader.read_parameter("xcells_ini"), self.__vlsvReader.read_parameter("ycells_ini"), self.__vlsvReader.read_parameter("zcells_ini")])
-      maxs = np.array([self.__vlsvReader.read_parameter("xmax"), self.__vlsvReader.read_parameter("ymax"), self.__vlsvReader.read_parameter("zmax")])
+      mins = np.array([self.vlsvReader.read_parameter("xmin"), self.vlsvReader.read_parameter("ymin"), self.vlsvReader.read_parameter("zmin")])
+      cells = np.array([self.vlsvReader.read_parameter("xcells_ini"), self.vlsvReader.read_parameter("ycells_ini"), self.vlsvReader.read_parameter("zcells_ini")])
+      maxs = np.array([self.vlsvReader.read_parameter("xmax"), self.vlsvReader.read_parameter("ymax"), self.vlsvReader.read_parameter("zmax")])
       # Get the variables:
-      index_for_cellid_dict = self.__vlsvReader.get_cellid_locations()
+      index_for_cellid_dict = self.vlsvReader.get_cellid_locations()
       if isinstance(variable, str):
-         variable_array = self.__vlsvReader.read_variable( name=variable, operator=operator )
+         variable_array = self.vlsvReader.read_variable( name=variable, operator=operator )
       else:
          variable_array = variable
       # Sort the dictionary by cell id
@@ -243,13 +243,14 @@ class MayaviGrid(HasTraits):
          if self.__cells[i] == 1:
             coordinates[i] = (self.__mins[i] + self.__maxs[i])/2.0
       print "COORDINATES:" + str(coordinates)
-      cellid = self.__vlsvReader.get_cellid(coordinates)
+      cellid = self.vlsvReader.get_cellid(coordinates)
       print "CELL ID: " + str(cellid)
       # Check for an invalid cell id
       if cellid == 0:
          print "Invalid cell id"
          return
 
+      args = self.args.split() # Split args field in the mayavi into a list
 
       if (self.picker == "Velocity_space"):
          # Set label to give out the location of the cell:
@@ -259,11 +260,11 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
-         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -281,11 +282,11 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
-         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -299,11 +300,11 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Pitch_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
-         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -315,18 +316,18 @@ class MayaviGrid(HasTraits):
          self.__add_label( cellid )
          # Plot pitch angle distribution:
          from pitchangle import pitch_angles
-         result = pitch_angles( vlsvReader=self.__vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
+         result = pitch_angles( vlsvReader=self.vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
          # plot:
          pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
          pl.show()
       elif (self.picker == "Gyrophase_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.__vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.__vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
-         pick_cell_coordinates = self.__vlsvReader.get_cell_coordinates(cellid)
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -338,7 +339,7 @@ class MayaviGrid(HasTraits):
 
          # Plot gyrophase angle distribution:
          from gyrophaseangle import gyrophase_angles_from_file
-         result = gyrophase_angles_from_file( vlsvReader=self.__vlsvReader, cellid=cellid)
+         result = gyrophase_angles_from_file( vlsvReader=self.vlsvReader, cellid=cellid)
          # plot:
          pl.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
          pl.show()
@@ -349,8 +350,6 @@ class MayaviGrid(HasTraits):
          if len(self.__last_pick) == 3:
             from lineout import lineout
             from variable import VariableInfo
-            # Get any arguments from the user:
-            args = self.args.split()
             if len(args) == 0:
                #Do nothing
                print "Bad args"
@@ -358,7 +357,7 @@ class MayaviGrid(HasTraits):
                return
             plotCut = False
             # Optimize file read:
-            self.__vlsvReader.optimize_open_file()
+            self.vlsvReader.optimize_open_file()
             variables = []
             distances = []
             # Save variables
@@ -376,7 +375,7 @@ class MayaviGrid(HasTraits):
                      _variable = args[i]
                      _operator = "pass"
                   # Get the lineout
-                  line = lineout( self.__vlsvReader, point1, point2, _variable, operator=_operator, interpolation_order=1, points=1000 )
+                  line = lineout( self.vlsvReader, point1, point2, _variable, operator=_operator, interpolation_order=1, points=1000 )
                   distance = line[0]
                   coordinates = line[1]
                   values = line[2]
@@ -390,14 +389,14 @@ class MayaviGrid(HasTraits):
                fig = plot_multiple_variables( distances, variables, figure=[] )
                pl.show()
             # Close the optimized file read:
-            self.__vlsvReader.optimize_close_file()
+            self.vlsvReader.optimize_close_file()
             # Read in the necessary variables:
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
       elif self.picker in self.picker_functions:
          # Call the corresponding pickerfunction
-         self.picker_functions[self.picker](self, self.__vlsvReader, coordinates, self.args)
+         self.picker_functions[self.picker](self, self.vlsvReader, coordinates, args)
 
    def draw_streamline( self, x0, x1 ):
       ''' Draws a line from x0 to x1 coordinates
@@ -478,7 +477,7 @@ class MayaviGrid(HasTraits):
       '''
       # Create nodes
       # Get velocity blocks and avgs:
-      blocksAndAvgs = self.__vlsvReader.read_blocks(cellid)
+      blocksAndAvgs = self.vlsvReader.read_blocks(cellid)
       if len(blocksAndAvgs) == 0:
          print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
          return False
@@ -491,7 +490,7 @@ class MayaviGrid(HasTraits):
       blocks = blocksAndAvgs[0]
       avgs = blocksAndAvgs[1]
       # Get nodes:
-      nodesAndKeys = self.__vlsvReader.construct_velocity_cell_nodes(blocks)
+      nodesAndKeys = self.vlsvReader.construct_velocity_cell_nodes(blocks)
       # Create an unstructured grid:
       points = nodesAndKeys[0]
       tets = nodesAndKeys[1]
@@ -507,12 +506,12 @@ class MayaviGrid(HasTraits):
 
       # Plot B if possible:
       # Read B vector and plot it:
-      if self.__vlsvReader.check_variable( "B" ) == True:
-         B = self.__vlsvReader.read_variable(name="B",cellids=cellid)
-      elif self.__vlsvReader.check_variable( "B_vol" ) == True:
-         B = self.__vlsvReader.read_variable(name="B_vol",cellids=cellid)
+      if self.vlsvReader.check_variable( "B" ) == True:
+         B = self.vlsvReader.read_variable(name="B",cellids=cellid)
+      elif self.vlsvReader.check_variable( "B_vol" ) == True:
+         B = self.vlsvReader.read_variable(name="B_vol",cellids=cellid)
       else:
-         B = self.__vlsvReader.read_variable(name="background_B",cellids=cellid) + self.__vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
+         B = self.vlsvReader.read_variable(name="background_B",cellids=cellid) + self.vlsvReader.read_variable(name="perturbed_B",cellids=cellid)
 
       points2 = np.array([[0,0,0]])
       ug2 = tvtk.UnstructuredGrid(points=points2)
@@ -537,7 +536,7 @@ class MayaviGrid(HasTraits):
       figure.scene.disable_render = False
       self.__unstructured_figures.append(figure)
       # Name the figure
-      figure.name = str(cellid)+", "+self.variable_plotted+" = "+str(self.__vlsvReader.read_variable(self.variable_plotted, cellids=cellid))
+      figure.name = str(cellid)+", "+self.variable_plotted+" = "+str(self.vlsvReader.read_variable(self.variable_plotted, cellids=cellid))
 
       from mayavi.modules.axes import Axes 
       axes = Axes()
@@ -570,7 +569,7 @@ class MayaviGrid(HasTraits):
       '''
       # Create nodes
       # Get velocity blocks and avgs (of cellid 1)
-      blocksAndAvgs1 = self.__vlsvReader.read_blocks(cellid1)
+      blocksAndAvgs1 = self.vlsvReader.read_blocks(cellid1)
       if len(blocksAndAvgs1) == 0:
          print "CELL " + str(cellid1) + " HAS NO VELOCITY BLOCK"
          return False
@@ -578,7 +577,7 @@ class MayaviGrid(HasTraits):
       avgs1 = blocksAndAvgs1[1]
 
       # Get velocity blocks and avgs (of cellid 2)
-      blocksAndAvgs2 = self.__vlsvReader.read_blocks(cellid2)
+      blocksAndAvgs2 = self.vlsvReader.read_blocks(cellid2)
       if len(blocksAndAvgs2) == 0:
          print "CELL " + str(cellid2) + " HAS NO VELOCITY BLOCK"
          return False
@@ -634,7 +633,7 @@ class MayaviGrid(HasTraits):
       blocks = blocks.astype(int)
 
       # Get nodes:
-      nodesAndKeys = self.__vlsvReader.construct_velocity_cell_nodes(blocks)
+      nodesAndKeys = self.vlsvReader.construct_velocity_cell_nodes(blocks)
 
 
       # Create an unstructured grid:

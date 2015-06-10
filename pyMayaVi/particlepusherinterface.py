@@ -71,7 +71,17 @@ def read_subprocess( particlepusherinterface, pipe ):
    # Kill the proces
    pipe.terminate()
 
-def call_particle_pusher( particlepusherinterface, coordinates_list ):
+def get_file_name( name ):
+   lower=-2; upper=-2;
+   for i in xrange(len(name)):
+      if name[i].isdigit():
+         if upper < i-1:
+            lower = i;
+         upper = i
+   return name[0:lower] + "%0" + str(upper+1-lower) + "i" + name[upper+1:]
+
+
+def call_particle_pusher( particlepusherinterface, coordinates_list, args ):
    ''' Launches the particle pusher
 
    '''
@@ -79,12 +89,17 @@ def call_particle_pusher( particlepusherinterface, coordinates_list ):
    import subprocess
    parse_args = []
 
-   #Executable location
-   parse_args.append("/home/otto/vlasiator/particle_post_pusher")
-   # Options
-   parse_args.append("--run_config")
-   # CFG location
-   parse_args.append("/home/otto/vlasiator/particles/particles.cfg")
+
+   # Executable location
+   parse_args.append(str(particlepusherinterface.particlepushercommand))
+   # Options for the particle pusher:
+   for i in range(1,len(args)):
+      parse_args.append(args[i])
+   # File location:
+   parse_args.append("--particles.input_filename_pattern")
+   print particlepusherinterface.vlsvReader.file_name
+   parse_args.append(get_file_name(particlepusherinterface.vlsvReader.file_name))
+   print parse_args
 
    # Open a pipe for the process (get input, output and error output to the pipe)
    pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -116,6 +131,9 @@ def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader,
        :param coordinates: Some coordinates on a mayavi grid
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
+   if len(args) <= 1:
+      print "Bad args field, should be <number of velocity samples> <particle pusher options>"
+      return
    print "COORDS:"
    print coordinates
    # Note: vlsvReader must be VlasiatorReader type
@@ -130,7 +148,7 @@ def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader,
    # Read in the velocity space
    velocity_cell_map = vlasiatorReader.read_velocity_cells( cellid )
    velocity_cell_coordinates = vlasiatorReader.get_velocity_cell_coordinates(velocity_cell_map.keys())
-   number_of_particles = int(args)
+   number_of_particles = int(args[0])
    step = int(float(len(velocity_cell_coordinates))/float(number_of_particles))
    # Input particles:
    new_coordinates = []
@@ -139,7 +157,7 @@ def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader,
       velocity_coordinate = velocity_cell_coordinates[index]
       new_coordinates.append([coordinates[0], coordinates[1], coordinates[2], velocity_coordinate[0], velocity_coordinate[1], velocity_coordinate[2]])
 
-   call_particle_pusher( particlepusherinterface, new_coordinates )
+   call_particle_pusher( particlepusherinterface, new_coordinates, args )
 
 def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinates, args ):
    ''' Calls the particle pusher with the given coordinates. See also the picker in the class MayaviGrid
@@ -149,6 +167,9 @@ def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinate
        :param coordinates: Some coordinates on a mayavi grid
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
+   if len(args) <= 1:
+      print "Bad args field, should be <number of velocity samples> <particle pusher options>"
+      return
 
    # Input new coordinates ( This is vx, vy, vz )
    new_coordinates = []
@@ -164,11 +185,11 @@ def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinate
    particlepusherinterface.particle_coordinates.append(new_coordinates)
    
    # Check if this is the amount of particles we want to input 
-   user_defined_input = int(args)
+   user_defined_input = int(args[0])
    current_number_of_particles = len(particlepusherinterface.particle_coordinates)
 
    if user_defined_input <= current_number_of_particles:
-     call_particle_pusher( particlepusherinterface, particlepusherinterface.particle_coordinates )
+     call_particle_pusher( particlepusherinterface, particlepusherinterface.particle_coordinates, args )
 
 class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
@@ -223,9 +244,20 @@ class Particlepusherinterface(MayaviGrid):
 
    pipe = []
 
+   particlepushercommand = []
 
+   def __init__(self, vlsvReader, variable, pushcommand, operator="pass", threaded=True, **traits):
+      ''' Initializes the class and loads the mayavi grid
 
-
+          :param vlsvReader:        Some vlsv reader with a file open
+          :type vlsvReader:         :class:`vlsvfile.VlsvReader`
+          :param variable:          Name of the variable
+          :param pushcommand:       Command for calling the particle pusher
+          :param operator:          Operator for the variable
+          :param threaded:          Boolean value for using threads or not using threads to draw the grid (threads enable interactive mode)
+      '''
+      self.particlepushercommand=pushcommand
+      super(Particlepusherinterface, self).__init__(vlsvReader, variable, operator, threaded, **traits)
 
 
 

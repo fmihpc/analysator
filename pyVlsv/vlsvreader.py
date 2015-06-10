@@ -11,6 +11,7 @@ from variable import get_data
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
+   file_name=""
    def __init__(self, file_name):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
@@ -19,8 +20,8 @@ class VlsvReader(object):
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)
 
-      self.__file_name = file_name
-      self.__fptr = open(self.__file_name,"rb")
+      self.file_name = file_name
+      self.__fptr = open(self.file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__fileindex_for_cellid_blocks={}
@@ -74,7 +75,7 @@ class VlsvReader(object):
       max_xml_size = 1000000
       #(endianness,) = struct.unpack("c", fptr.read(1))
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
       # Eight first bytes indicate whether the system is big_endianness or something else
@@ -150,7 +151,7 @@ class VlsvReader(object):
       num_of_blocks = self.__fileindex_for_cellid_blocks[cellid][1]
 
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
@@ -225,7 +226,7 @@ class VlsvReader(object):
       num_of_blocks = self.__fileindex_for_cellid_blocks[cellid][1]
 
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
@@ -293,7 +294,7 @@ class VlsvReader(object):
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
 
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
@@ -379,7 +380,7 @@ class VlsvReader(object):
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
 
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
@@ -558,7 +559,7 @@ class VlsvReader(object):
          print "Bad arguments at read"
 
       if self.__fptr.closed:
-         fptr = open(self.__file_name,"rb")
+         fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
@@ -1179,7 +1180,7 @@ class VlsvReader(object):
 
          .. note:: This should only be used for optimization purposes.
       '''
-      self.__fptr = open(self.__file_name,"rb")
+      self.__fptr = open(self.file_name,"rb")
 
 
    def optimize_close_file(self):
