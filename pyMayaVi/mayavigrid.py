@@ -238,16 +238,10 @@ class MayaviGrid(HasTraits):
 
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
-      # For numerical inaccuracy
-      epsilon = 80
-      # Check for numerical inaccuracy
+      # Check for 2d
       for i in xrange(3):
-         if (coordinates[i] < self.__mins[i]) and (coordinates[i] + epsilon > self.__mins[i]):
-            # Correct the numberical inaccuracy
-            coordinates[i] = self.__mins[i] + 1
-         if (coordinates[i] > self.__maxs[i]) and (coordinates[i] - epsilon < self.__maxs[i]):
-            # Correct the values
-            coordinates[i] = self.__maxs[i] - 1
+         if self.__cells[i] == 1:
+            coordinates[i] = (self.__mins[i] + self.__maxs[i])/2.0
       print "COORDINATES:" + str(coordinates)
       cellid = self.__vlsvReader.get_cellid(coordinates)
       print "CELL ID: " + str(cellid)
