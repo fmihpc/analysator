@@ -32,12 +32,12 @@ def get_dv(vlsvReader):
    dvz = (vzmax - vzmin) / (float)(vzcells)
    return [dvx,dvy,dvz]
 
-def themis_observation_from_file( vlsvReader, cellid, spin_axis=np.array([0,1,0])):
+def themis_observation_from_file( vlsvReader, cellid, detector_axis=np.array([0,1,0])):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
    :type vlsvReader:         :class:`vlsvfile.VlsvReader`
    :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
-   :param spin_axis: spacecraft spin axis direction
+   :param detector_axis:     detector axis direction (note: this is not spacecraft spin axis!)
    :returns: detector bins angles, energies and counts [bin_thetas,energies,min,max,counts]
    
    .. code-block:: python
@@ -65,7 +65,7 @@ def themis_observation_from_file( vlsvReader, cellid, spin_axis=np.array([0,1,0]
    vcellids = velocity_cell_data.keys()
    # Get a list of velocity coordinates:
    velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids)
-   angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,spin_axis,dvx)
+   angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,detector_axis,dvx)
 
    # Calc min and max
    val_min = np.min(detector_values)
@@ -79,12 +79,12 @@ def themis_observation_from_file( vlsvReader, cellid, spin_axis=np.array([0,1,0]
 
 
 
-def themis_observation(velocity_cell_data, velocity_coordinates, spin_axis=np.array([0,0,1]), dv=30e3):
+def themis_observation(velocity_cell_data, velocity_coordinates, detector_axis=np.array([0,0,1]), dv=30e3):
    ''' Calculates artificial THEMIS EMS observation from the given velocity space data
    
    :param velocity_cell_data: velocity cell information as obtained from vlsvReader
    :param velocity_coordinates: coordinates associated with the cells
-   :param spin_axis: spacecraft spin axis direction
+   :param detector_axis: detector axis direction
    :param dv: velocity space resolution (in km/s)
    :returns: detector bins angles, energies and counts [bin_thetas,energies,counts]
    
@@ -109,8 +109,8 @@ def themis_observation(velocity_cell_data, velocity_coordinates, spin_axis=np.ar
    # Get velocity absolute values:
    v_abs = np.sum(np.abs(velocity_coordinates)**2,axis=-1)**(1./2)
    # Transform into detector's frame
-   print("Detector direction is [" + str(spin_axis[0]) + ", " + str(spin_axis[1]) + " , " + str(spin_axis[2])+ "]")
-   v_rotated = rotateVectorToVector(velocity_coordinates, spin_axis)
+   print("Detector direction is [" + str(detector_axis[0]) + ", " + str(detector_axis[1]) + " , " + str(detector_axis[2])+ "]")
+   v_rotated = rotateVectorToVector(velocity_coordinates, detector_axis)
    v_rotated = np.asarray(v_rotated)
    #v_rotated = velocity_coordinates
 

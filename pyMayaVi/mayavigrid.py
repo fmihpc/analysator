@@ -397,11 +397,11 @@ class MayaviGrid(HasTraits):
          else:
             self.__last_pick = coordinates
       elif (self.picker == "Artificial_observation"):
-         # Parse args: Spacecraft spin axis
+         # Parse args: Spacecraft detector axis
          if len(args) == 0:
-            spinaxis = np.array([0,1,0])
+            detectoraxis = np.array([0,1,0])
          else:
-            spinaxis = np.array([float(args[0]),float(args[1]),float(args[2])])
+            detectoraxis = np.array([float(args[0]),float(args[1]),float(args[2])])
 
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
@@ -422,7 +422,7 @@ class MayaviGrid(HasTraits):
          self.__add_label( cellid )
          # Plot pitch angle distribution:
          from themis_observation import  themis_observation_from_file
-         angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid, spin_axis=spinaxis)
+         angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid, detector_axis=detectoraxis)
          # plot:
          themis_colors=[(0,0,0),(1,0,1),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,1,1)]
          themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
