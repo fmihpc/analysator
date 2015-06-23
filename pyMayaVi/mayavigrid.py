@@ -10,6 +10,7 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvfile
 from numpy import mgrid, empty, sin, pi, ravel
 import pylab as pl
+import matplotlib
 from tvtk.api import tvtk
 import traits.api
 import mayavi.api
@@ -69,7 +70,8 @@ class MayaviGrid(HasTraits):
                  'Velocity_space_nearest_cellid_iso_surface',
                  "Pitch_angle",
                  "Gyrophase_angle",
-                 "Cut_through")
+                 "Cut_through",
+                 "Artificial_observation")
 
    args = ""
 
@@ -394,6 +396,42 @@ class MayaviGrid(HasTraits):
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
+      elif (self.picker == "Artificial_observation"):
+         # Parse args: Spacecraft detector axis
+         if len(args) == 0:
+            detectoraxis = np.array([0,1,0])
+         else:
+            detectoraxis = np.array([float(args[0]),float(args[1]),float(args[2])])
+
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+
+         print("Getting data from nearest velocity space cell with cellid " + str(cellid))
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+         # Plot pitch angle distribution:
+         from themis_observation import  themis_observation_from_file
+         angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid, detector_axis=detectoraxis)
+         # plot:
+         themis_colors=[(0,0,0),(1,0,1),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,1,1)]
+         themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
+         grid_r, grid_theta = np.meshgrid(energies,angles)
+         fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
+         ax.set_title("Detector view at cell " + str(cellid))
+         cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
+         fig.colorbar(cax)
+         pl.show()
       elif self.picker in self.picker_functions:
          # Call the corresponding pickerfunction
          self.picker_functions[self.picker](self, self.vlsvReader, coordinates, args)
