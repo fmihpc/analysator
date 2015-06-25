@@ -146,19 +146,29 @@ class MayaviGrid(HasTraits):
       return module_manager
 
    def __add_label( self, cellid ):
-      # Add dataset:
-      from mayavi.modules.labels import Labels
-      indices = self.vlsvReader.get_cell_indices( cellid )
-      self.labels = Labels()
-      self.labels.number_of_labels = 1
-      self.labels.mask.filter.random_mode = False
-      self.labels.mask.filter.offset = int( indices[0] + (self.__cells[0]+1) * indices[1] + (self.__cells[0]+1) * (self.__cells[1]+1) * (indices[2] + 1) )
-      module_manager = self.__module_manager()
-      # Add the label / marker:
-      self.__engine.add_filter( self.labels, module_manager ) # He
-      #module_manager = engine.scenes[0].children[0].children[0]
-      #engine.add_filter(labels1, module_manager)
-      #self.labels = self.scene.mlab.pipeline.labels( self.dataset )
+      # Get spatial grid sizes:
+      xcells = (int)(self.vlsvReader.read_parameter("xcells_ini"))
+      ycells = (int)(self.vlsvReader.read_parameter("ycells_ini"))
+      zcells = (int)(self.vlsvReader.read_parameter("zcells_ini"))
+
+      xmin = self.vlsvReader.read_parameter("xmin")
+      ymin = self.vlsvReader.read_parameter("ymin")
+      zmin = self.vlsvReader.read_parameter("zmin")
+      xmax = self.vlsvReader.read_parameter("xmax")
+      ymax = self.vlsvReader.read_parameter("ymax")
+      zmax = self.vlsvReader.read_parameter("zmax")
+
+      dx = (xmax - xmin) / (float)(xcells)
+      dy = (ymax - ymin) / (float)(ycells)
+      dz = (zmax - zmin) / (float)(zcells)
+
+      # Add a point in the place:
+      cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+      x = [cell_coordinates[0]]
+      y = [cell_coordinates[1]]
+      z = [cell_coordinates[2]]
+      s = [(dx+dy+dx)/3.0]
+      points = self.scene.mlab.points3d(x,y,z,s, scale_factor=3)
 
 
    def __add_normal_labels( self, point1, point2 ):
