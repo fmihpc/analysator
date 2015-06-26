@@ -10,7 +10,6 @@ from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvfile
 from numpy import mgrid, empty, sin, pi, ravel
 import pylab as pl
-import matplotlib
 from tvtk.api import tvtk
 import traits.api
 import mayavi.api
@@ -24,7 +23,6 @@ from mayavi.modules.surface import Surface
 from mayavi.modules.vectors import Vectors
 from variable import get_data, get_name, get_units
 from mayavi.modules.labels import Labels
-
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
@@ -71,7 +69,9 @@ class MayaviGrid(HasTraits):
                  "Pitch_angle",
                  "Gyrophase_angle",
                  "Cut_through",
-                 "Artificial_observation")
+                 "Themis_detector",
+                 "Themis_contour",
+                 "Themis_helistyle")
 
    args = ""
 
@@ -406,7 +406,7 @@ class MayaviGrid(HasTraits):
             self.__last_pick = []
          else:
             self.__last_pick = coordinates
-      elif (self.picker == "Artificial_observation"):
+      elif (self.picker == "Themis_detector"):
          # Parse args: Spacecraft detector axis
          if len(args) == 0:
             detectoraxis = np.array([0,1,0])
@@ -431,17 +431,104 @@ class MayaviGrid(HasTraits):
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
-         from themis_observation import  themis_observation_from_file
-         angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid, detector_axis=detectoraxis)
-         # plot:
-         themis_colors=[(0,0,0),(1,0,1),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0),(1,1,1)]
-         themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
-         grid_r, grid_theta = np.meshgrid(energies,angles)
-         fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
-         ax.set_title("Detector view at cell " + str(cellid))
-         cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
-         fig.colorbar(cax)
-         pl.show()
+         from themis_observation import  themis_plot_detector
+         themis_plot_detector(self.vlsvReader,cellid,detectoraxis)
+      elif (self.picker == "Themis_contour"):
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+
+         # Parse args: Plotting plane
+         plane = [np.array([1.,0,0]),np.array([0,1.,0])]
+         labels = ["Vx", "Vy"]
+         for i in range(len(args)):
+            if args[i] == "x":
+              plane[i] = np.array([1.,0,0])
+              labels[i] = "Vx"
+            if args[i] == "y":
+              plane[i] = np.array([0,1.,0])
+              labels[i] = "Vy"
+            if args[i] == "z":
+              plane[i] = np.array([0,0,1.])
+              labels[i] = "Vz"
+            if args[i] == "B":
+              B =  self.vlsvReader.read_variable("B",cellid)
+              plane[i] = B
+              labels[i] = "V||B"
+            if args[i] == "v":
+              v =  self.vlsvReader.read_variable("v",cellid)
+              plane[i] = v
+              labels[i] = "V_perp, direction of V_bulk"
+            if args[i] == "Bxv":
+              v =  self.vlsvReader.read_variable("v",cellid)
+              B =  self.vlsvReader.read_variable("B",cellid)
+              plane[i] = np.cross(B,v)
+              labels[i] = "V_perp, direction of B x V"
+
+         print("Getting data from nearest velocity space cell with cellid " + str(cellid))
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+         from themis_observation import  themis_plot_phasespace_contour
+         themis_plot_phasespace_contour(self.vlsvReader, cellid, plane[0], plane[1],xlabel=labels[0],ylabel=labels[1])
+      elif (self.picker == "Themis_helistyle"):
+
+         # Find the nearest cell id with distribution:
+         # Read cell ids with velocity distribution in:
+         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         # Read in the coordinates of the cells:
+         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+         # Read in the cell's coordinates:
+         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+         # Find the nearest:
+         from operator import itemgetter
+         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+         # Get the cell id:
+         cellid = cell_candidates[i]
+
+         # Parse args: Plotting plane
+         plane = [np.array([1.,0,0]),np.array([0,1.,0])]
+         labels = ["Vx", "Vy"]
+         for i in range(len(args)):
+            if args[i] == "x":
+              plane[i] = np.array([1.,0,0])
+              labels[i] = "Vx"
+            if args[i] == "y":
+              plane[i] = np.array([0,1.,0])
+              labels[i] = "Vy"
+            if args[i] == "z":
+              plane[i] = np.array([0,0,1.])
+              labels[i] = "Vz"
+            if args[i] == "B":
+              B =  self.vlsvReader.read_variable("B",cellid)
+              plane[i] = B
+              labels[i] = "V||B"
+            if args[i] == "v":
+              v =  self.vlsvReader.read_variable("v",cellid)
+              plane[i] = v
+              labels[i] = "V_perp, direction of V_bulk"
+            if args[i] == "Bxv":
+              v =  self.vlsvReader.read_variable("v",cellid)
+              B =  self.vlsvReader.read_variable("B",cellid)
+              plane[i] = np.cross(B,v)
+              labels[i] = "V_perp, direction of B x V"
+
+         print("Getting data from nearest velocity space cell with cellid " + str(cellid))
+         # Set label to give out the location of the cell:
+         self.__add_label( cellid )
+         from themis_observation import  themis_plot_phasespace_helistyle
+         themis_plot_phasespace_helistyle(self.vlsvReader, cellid, plane[0], plane[1],xlabel=labels[0],ylabel=labels[1])
+
       elif self.picker in self.picker_functions:
          # Call the corresponding pickerfunction
          self.picker_functions[self.picker](self, self.vlsvReader, coordinates, args)
