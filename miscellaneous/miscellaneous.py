@@ -13,3 +13,4 @@
 
 from rankine import oblique_shock, plot_rankine
 from filenames import get_sorted_file_names
+from vtkwriter import write_vtk_file
