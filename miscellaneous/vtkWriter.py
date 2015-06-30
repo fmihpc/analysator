@@ -4,9 +4,8 @@ import vtk
  
 filename = "test.vtk"
 
-
-#LONGLINE
- 
+# Create a line object
+#######################################
 # Create five points. 
 origin = [0.0, 0.0, 0.0]
 p0 = [1.0, 0.0, 0.0]
@@ -39,34 +38,19 @@ linesPolyData.SetPoints(points)
 
 # Add the lines to the dataset
 linesPolyData.SetLines(lines)
+#######################################
 
-#SPHERE!
 
-sphereSource = vtk.vtkSphereSource()
-sphereSource.Update()
-
-#NORMALLINE
-source = vtk.vtkLineSource()
-source.SetPoint1(1,-1,0)
-source.SetPoint2(2,-3,0)
-
-#WRITE 
-
-# Write the stl file to disk
-#stlWriter = vtk.vtkSTLWriter()
-#stlWriter.SetFileName(filename)
-#stlWriter.SetInputConnection(sphereSource.GetOutputPort())
-#stlWriter.SetInputConnection(source.GetOutputPort())
-#stlWriter.SetInputConnection(linesPolyData)
-#stlWriter.SetInput(0, linesPolyData)
-#stlWriter.Write()
+# Write the Line object
+#######################################
 polyDataWriter = vtk.vtkPolyDataWriter()
 polyDataWriter.SetFileName(filename)
 polyDataWriter.SetInput(linesPolyData)
 polyDataWriter.Write()
- 
-# Read and display for verification
-#reader = vtk.vtkSTLReader()
+#######################################
+
+# Read and visualize the written line
+#######################################
 reader = vtk.vtkPolyDataReader()
 reader.SetFileName(filename)
  
@@ -79,9 +63,6 @@ else:
 actor = vtk.vtkActor()
 actor.SetMapper(mapper)
 
-# Color actor:
-#actor.GetProperty().SetColor(1,0,1)
- 
 # Create a rendering window and renderer
 ren = vtk.vtkRenderer()
 renWin = vtk.vtkRenderWindow()
@@ -98,3 +79,4 @@ ren.AddActor(actor)
 iren.Initialize()
 renWin.Render()
 iren.Start()
+#######################################
