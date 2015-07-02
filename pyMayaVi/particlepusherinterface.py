@@ -191,6 +191,17 @@ def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinate
    if user_defined_input <= current_number_of_particles:
      call_particle_pusher( particlepusherinterface, particlepusherinterface.particle_coordinates, args )
 
+def draw_B_stream( particlepusherinterface, vlsvReader, coordinates, args ):
+   ''' Draw B streamlines into the particlepusherinteraface
+   '''
+   # Draw the streamlines for vlsvreader:
+   from fieldtracer import static_field_tracer
+   stream=static_field_tracer( vlsvReader, x0=coordinates, max_iterations=10, dx=10000, direction='+' )
+   print stream
+   print np.transpose(stream)
+   particlepusherinterface.draw_streamline_long( np.transpose(stream) )
+
+
 class Particlepusherinterface(MayaviGrid):
    ''' This class is used to plot the data in a vlsv file as a mayavi grid The following will bring up a new window and plot the grid in the vlsv file:
 
@@ -235,10 +246,12 @@ class Particlepusherinterface(MayaviGrid):
                  "Gyrophase_angle",
                  "Cut_through",
                  "Particle_pusher_bulk_v",
-                 "Particle_pusher_velocity_sampling")
+                 "Particle_pusher_velocity_sampling",
+                 "Particle_pusher_B_stream")
 
    picker_functions = {"Particle_pusher_bulk_v": call_particle_pusher_bulk_v,
-                       "Particle_pusher_velocity_sampling": call_particle_pusher_velocity_sampling} # Picker functions (here we define what happens when the picker has the "Particle_pusher_bulk_v" option on and it clicks on something (In this case calls the __call_particle_pusher_bulk_v functions
+                       "Particle_pusher_velocity_sampling": call_particle_pusher_velocity_sampling, # Picker functions (here we define what happens when the picker has the "Particle_pusher_bulk_v" option on and it clicks on something (In this case calls the __call_particle_pusher_bulk_v functions
+                       "Particle_pusher_B_stream": draw_B_stream}
 
    particle_coordinates = []
 
