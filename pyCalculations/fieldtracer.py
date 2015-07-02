@@ -4,7 +4,7 @@ from scipy import interpolate
 
 
 
-def field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
+def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    ''' Field tracer in a static frame
 
        :param vlsvReader:         An open vlsv file
@@ -90,9 +90,11 @@ def field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
       points.append( previous_point + multiplier*B_unit * dx )
    #######################################################
 
-   from vtkwriter import write_vtk_file
+   return points
 
-   write_vtk_file( "test.vtk", points )
+#   from vtkwriter import write_vtk_file
+#
+#   write_vtk_file( "test.vtk", points )
 
 
 

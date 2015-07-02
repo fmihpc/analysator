@@ -29,4 +29,6 @@ from themis_observation import themis_plot_phasespace_helistyle
 from cut3d import cut3d
 from lineout import lineout
 import fit
-from fieldtracer import field_tracer
+from fieldtracer import static_field_tracer
+
+
