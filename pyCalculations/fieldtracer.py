@@ -2,6 +2,24 @@ import numpy as np
 import scipy as sp
 from scipy import interpolate
 
+def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
+   ''' Field tracer in a dynamic time frame
+
+      :param vlsvReader_list:              List of vlsv readers
+      :param x0:                           The starting point for the streamlines
+      
+   '''
+   dt = vlsvReader_list[1].read_parameter('t') - vlsvReader_list[0].read_parameter('t')
+   # Loop through vlsvreaders:
+   v = vlsvReader_list[0].read_interpolated_variable('v', x0)
+   iterations = 0
+   for vlsvReader in vlsvReader_list:
+      stream_plus = static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' )
+      stream_minus = static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='-' )
+      stream = stream_minus[::-1] + stream_plus # Minus reversed
+      pt.miscellaneous.write_vtk_file("test" + str(iterations) + ".vtk", stream)
+      x0 = x0 + v*dt
+      iterations = iterations + 1
 
 
 def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
