@@ -101,8 +101,10 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
     print("Plotting...")
     cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
     ax.grid(True)
-    fig.colorbar(cax)
-    pl.show()
+    cb = fig.colorbar(cax)
+    cb.set_label("Count rate")
+    #pl.show()
+    return ax
 
 def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy"):
     ''' Plots a contour view of phasespace, as seen by a themis detector, at the given cellID
@@ -145,9 +147,9 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     cax = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
     ax.grid(True)
     fig.colorbar(cax)
-    pl.show()
+    #pl.show()
 
-def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy"):
+def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy", vmin_min=1e-16):
     ''' Plots a view of phasespace, as seen by a themis detector, at the given cellID, in the style that heli likes.
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
@@ -158,9 +160,9 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
 
     matrix = simulation_to_observation_frame(plane_x,plane_y)
 
-    angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix, countrates=False)
+    angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix, countrates=False, noise=False)
     if vmin == 0:
-        vmin = 1e-15
+        vmin = vmin_min
     if vmax < vmin:
         vmax = vmin*10
 
@@ -185,13 +187,27 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.set_title("Phasespace at cell " + str(cellID))
     ax.set_xlabel(xlabel+" (km/s)")
     ax.set_ylabel(ylabel+" (km/s)")
+    vi *= 10.**-3 # Go from s^3 m^-6 to s^3 km^-3 cm^-3
+    vmin *= 10.**-3
+    vmax *= 5*10.**-3
     cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=pl.get_cmap("Blues"), shading='flat')
     cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=pl.get_cmap("Blues"))
     #cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap("binary"))
     ax.grid(True)
-    fig.colorbar(cax)
-    pl.show()
-def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.]):
+
+    # Draw a circle at themis max extents
+    angles = np.linspace(0,2*np.pi,180)
+    x = 2188*np.cos(angles)
+    y = 2188*np.sin(angles)
+    ax.plot(x,y)
+
+    cb = fig.colorbar(cax)
+    cb.set_label("Phasespace density (s^3 km^-3 cm^3)")
+    #pl.show()
+
+    return ax
+
+def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True, noise=False, binOffset=[0.,0.]):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
    :type vlsvReader:         :class:`vlsvfile.VlsvReader`
@@ -227,7 +243,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
    vcellids = velocity_cell_data.keys()
    # Get a list of velocity coordinates:
    velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids)
-   angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,matrix,dvx,countrates=countrates, interpolate=interpolate,binOffset=binOffset)
+   angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,matrix,dvx,countrates=countrates, interpolate=interpolate, noise=noise, binOffset=binOffset)
 
    # Calc min and max
    val_min = np.min(detector_values)
@@ -236,7 +252,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
 
 
 
-def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3, countrates=True, interpolate=True, binOffset=[0.,0.]):
+def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3, countrates=True, interpolate=True, binOffset=[0.,0.], noise=False):
    ''' Calculates artificial THEMIS EMS observation from the given velocity space data
 
    :param velocity_cell_data: velocity cell information as obtained from vlsvReader
@@ -291,7 +307,7 @@ def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3
            continue
 
        target_val = avgs[i]
-       if countrates:
+       if countrates or noise:
            # Calculate actual countrate from phasespace density
            # (=rho*g/E*v*dt)
            #deltaOmega = dv*dv/v_abs[i]                                                      # solid angle covered by the phase space cell (approx)
@@ -302,6 +318,14 @@ def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3
            velcell_volume = dv*dv*dv
 
            target_val = avgs[i] * velcell_volume * effectiveArea * v_abs[i] * detector_timestep
+
+       if noise:
+           # Draw a poisson-distributed random number based on the countrate + some background
+           target_val = np.random.poisson(target_val) + np.random.random() * 2
+           if not countrates:
+               # convert back to phasespace density
+               target_val /= velcell_volume * effectiveArea * v_abs[i] * detector_timestep
+
 
        if interpolate:
            # Linearly interpolate
