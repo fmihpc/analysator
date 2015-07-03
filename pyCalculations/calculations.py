@@ -30,5 +30,5 @@ from cut3d import cut3d
 from lineout import lineout
 import fit
 from fieldtracer import static_field_tracer
-
+from fieldtracer import dynamic_field_tracer
 
