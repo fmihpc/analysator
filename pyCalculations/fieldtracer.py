@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+import pytools as pt
 from scipy import interpolate
 
 def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
@@ -20,7 +21,6 @@ def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
       pt.miscellaneous.write_vtk_file("test" + str(iterations) + ".vtk", stream)
       x0 = x0 + v*dt
       iterations = iterations + 1
-
 
 def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    ''' Field tracer in a static frame
@@ -50,7 +50,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    mins = np.array([xmin, ymin, zmin])
    dcell = (maxs - mins)/(sizes.astype('float'))
 
-   # Neglect the indices where there is only 1 cell per direction
+   # Pick only two coordinate directions to operate in
    if xsize <= 1:
       indices = [2,1]
    if ysize <= 1:
@@ -79,19 +79,11 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    if( len(x) != sizes[0] ):
       print "SIZE WRONG: " + str(len(x)) + " " + str(sizes[0])
 
-
    # Create grid interpolation
    interpolator_face_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]] - 0.5*dcell[indices[0]], coordinates[indices[1]], face_B[indices[0]], kx=2, ky=2, s=0)
    interpolator_face_B_1 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]] - 0.5*dcell[indices[1]], face_B[indices[1]], kx=2, ky=2, s=0)
-   #interpolator_face_B_2= interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]] - 0.5*dcell[indices[1]], face_B[indices[2]], kx=2, ky=2, s=0)
    interpolators = [interpolator_face_B_0, interpolator_face_B_1]#, interpolator_face_B_2]
 
-   # Print the point data for face_B0 and face_B1
-   #print interpolators[0]([x0[indices[0]]], [x0[indices[1]]])
-   #print interpolators[1]([x0[indices[0]]], [x0[indices[1]]])
-   #print interpolators[2]([x[indices[1]]], [x[indices[0]]])
-
-   #TODO: Cython
    #######################################################
    if direction == '-':
       multiplier = -1
@@ -109,10 +101,4 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    #######################################################
 
    return points
-
-#   from vtkwriter import write_vtk_file
-#
-#   write_vtk_file( "test.vtk", points )
-
-
 
