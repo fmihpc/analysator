@@ -27,39 +27,78 @@ class VlsvReader(object):
       self.__fileindex_for_cellid_blocks={}
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
-      # Read parameters (Note: Reading the spatial cell locations and storing them will anyway take the most time and memory):
-      self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
-      self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
-      self.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
+      # Read parameters (Note: Reading the spatial cell locations and
+      # storing them will anyway take the most time and memory):
 
-      self.__xcells = (int)(self.read_parameter("xcells_ini"))
-      self.__ycells = (int)(self.read_parameter("ycells_ini"))
-      self.__zcells = (int)(self.read_parameter("zcells_ini"))
-
-      self.__xmin = self.read_parameter("xmin")
-      self.__ymin = self.read_parameter("ymin")
-      self.__zmin = self.read_parameter("zmin")
-      self.__xmax = self.read_parameter("xmax")
-      self.__ymax = self.read_parameter("ymax")
-      self.__zmax = self.read_parameter("zmax")
-
-      self.__vxmin = self.read_parameter("vxmin")
-      self.__vymin = self.read_parameter("vymin")
-      self.__vzmin = self.read_parameter("vzmin")
-      self.__vxmax = self.read_parameter("vxmax")
-      self.__vymax = self.read_parameter("vymax")
-      self.__vzmax = self.read_parameter("vzmax")
+      meshName="SpatialGrid"
+      bbox = self.read(tag="MESH_BBOX", mesh=meshName)
+      if bbox is None:
+         #read in older vlsv files where the mesh is defined with parameters
+         self.__xcells = (int)(self.read_parameter("xcells_ini"))
+         self.__ycells = (int)(self.read_parameter("ycells_ini"))
+         self.__zcells = (int)(self.read_parameter("zcells_ini"))
+         self.__xmin = self.read_parameter("xmin")
+         self.__ymin = self.read_parameter("ymin")
+         self.__zmin = self.read_parameter("zmin")
+         self.__xmax = self.read_parameter("xmax")
+         self.__ymax = self.read_parameter("ymax")
+         self.__zmax = self.read_parameter("zmax")
+      else:
+         #new style vlsv file with 
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+         self.__xcells = bbox[0]
+         self.__ycells = bbox[1]
+         self.__zcells = bbox[2]
+         self.__xmin = nodeCoordinatesX[0]
+         self.__ymin = nodeCoordinatesY[0]
+         self.__zmin = nodeCoordinatesZ[0]
+         self.__xmax = nodeCoordinatesX[-1]
+         self.__ymax = nodeCoordinatesY[-1]
+         self.__zmax = nodeCoordinatesZ[-1]
 
       self.__dx = (self.__xmax - self.__xmin) / (float)(self.__xcells)
       self.__dy = (self.__ymax - self.__ymin) / (float)(self.__ycells)
       self.__dz = (self.__zmax - self.__zmin) / (float)(self.__zcells)
 
+
+
+      #TODO, support multiple species (automatically loop through them, store them separately?)
+      meshName="avgs"
+      bbox = self.read(tag="MESH_BBOX", mesh=meshName)
+      if bbox is None:
+         #read in older vlsv files where the mesh is defined with parameters
+         self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
+         self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
+         self.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
+         self.__vxmin = self.read_parameter("vxmin")
+         self.__vymin = self.read_parameter("vymin")
+         self.__vzmin = self.read_parameter("vzmin")
+         self.__vxmax = self.read_parameter("vxmax")
+         self.__vymax = self.read_parameter("vymax")
+         self.__vzmax = self.read_parameter("vzmax")
+         velocity_cells_per_direction = 4
+      else:
+         #new style vlsv file with bounding box
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+         self.__vxblocks = bbox[0]
+         self.__vyblocks = bbox[1]
+         self.__vzblocks = bbox[2]
+         velocity_cells_per_direction = bbox[3]
+         self.__vxmin = nodeCoordinatesX[0]
+         self.__vymin = nodeCoordinatesY[0]
+         self.__vzmin = nodeCoordinatesZ[0]
+         self.__vxmax = nodeCoordinatesX[-1]
+         self.__vymax = nodeCoordinatesY[-1]
+         self.__vzmax = nodeCoordinatesZ[-1]
+         
       # Velocity cell lengths
-      velocity_cells_per_direction = 4
       self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
       self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
       self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
-
       self.__fptr.close()
 
 
@@ -125,7 +164,7 @@ class VlsvReader(object):
       for child in self.__xml_root:
          # Read in avgs
          if ("name" in child.attrib) and (child.attrib["name"] == "avgs"):
-            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            vector_size = ast.literal_eval(child.attrib["vectorsize"]) 
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
