@@ -387,7 +387,7 @@ class VlsvReader(object):
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
-         if "name" in child.attrib and child.attrib["name"] == "avgs":
+         if ("name" in child.attrib) and (child.attrib["name"] == "avgs") and (child.tag == "BLOCKVARIABLE"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
