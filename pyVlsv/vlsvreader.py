@@ -68,17 +68,40 @@ class VlsvReader(object):
       meshName="avgs"
       bbox = self.read(tag="MESH_BBOX", mesh=meshName)
       if bbox is None:
-         #read in older vlsv files where the mesh is defined with parameters
-         self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
-         self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
-         self.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
-         self.__vxmin = self.read_parameter("vxmin")
-         self.__vymin = self.read_parameter("vymin")
-         self.__vzmin = self.read_parameter("vzmin")
-         self.__vxmax = self.read_parameter("vxmax")
-         self.__vymax = self.read_parameter("vymax")
-         self.__vzmax = self.read_parameter("vzmax")
-         velocity_cells_per_direction = 4
+         if self.read_parameter("vxblocks_ini") is not None:
+            #read in older vlsv files where the mesh is defined with
+            #parameters (only one possible)
+            self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
+            self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
+            self.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
+            self.__vxmin = self.read_parameter("vxmin")
+            self.__vymin = self.read_parameter("vymin")
+            self.__vzmin = self.read_parameter("vzmin")
+            self.__vxmax = self.read_parameter("vxmax")
+            self.__vymax = self.read_parameter("vymax")
+            self.__vzmax = self.read_parameter("vzmax")
+            velocity_cells_per_direction = 4
+            # Velocity cell lengths
+            self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
+            self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
+            self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
+
+         else:
+            #no velocity space in this file, e.g., file n ot written by Vlasiator 
+            self.__vxblocks = 0
+            self.__vyblocks = 0
+            self.__vzblocks = 0
+            self.__vxmin = 0
+            self.__vymin = 0
+            self.__vzmin = 0
+            self.__vxmax = 0
+            self.__vymax = 0
+            self.__vzmax = 0
+            # Velocity cell lengths
+            self.__dvx = 1
+            self.__dvy = 1
+            self.__dvz = 1
+
       else:
          #new style vlsv file with bounding box
          nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
@@ -94,11 +117,11 @@ class VlsvReader(object):
          self.__vxmax = nodeCoordinatesX[-1]
          self.__vymax = nodeCoordinatesY[-1]
          self.__vzmax = nodeCoordinatesZ[-1]
-         
-      # Velocity cell lengths
-      self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
-      self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
-      self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
+         # Velocity cell lengths
+         self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
+         self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
+         self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
+
       self.__fptr.close()
 
 
