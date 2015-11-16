@@ -15,9 +15,8 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
           import pytools as pt
           import numpy as np
           f=pt.vlsvfile.VlsvReader(file_name="state00040000.vlsv")
-          xmin = f._VlsvReader__xmin
-          xmax = f._VlsvReader__xmax
-          x = np.linspace(xmin,xmax,100) # points along x-axis
+          mesh_coords = f.get_spatial_mesh_extent()
+          x = np.linspace(mesh_coords[0],mesh_coords[3],100) # points along x-axis
           y = np.zeros(len(x))
           z = np.zeros(len(x))
           points=(np.array([x,y,z])).transpose()

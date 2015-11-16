@@ -984,9 +984,49 @@ class VlsvReader(object):
 
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
 
-      # Check for the old library
       return self.__read_velocity_cells(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index)
+      
+   def get_spatial_mesh_size(self):
+      ''' Read spatial mesh size
+      
+      :returns: Size of mesh in number of blocks, array with three elements
+      '''
+      return np.array([self.__xcells, self.__ycells, self.__zcells])
 
+   def get_spatial_block_size(self):
+      ''' Read spatial mesh block size
+      
+      :returns: Size of block in number of cells, array with three elements
+      '''
+      return np.array([1, 1, 1])
+
+   def get_spatial_mesh_extent(self):
+      ''' Read spatial mesh extent
+      
+      :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
+      '''
+      return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
+
+   def get_velocity_mesh_size(self):
+      ''' Read velocity mesh size
+      
+      :returns: Size of mesh in number of blocks, array with three elements
+      '''
+      return np.array([self.__vxblocks, self.__vyblocks, self.__vzblocks])
+
+   def get_velocity_block_size(self):
+      ''' Read velocity mesh block size
+      
+      :returns: Size of block in number of cells, array with three elements
+      '''
+      return np.array([4, 4, 4])
+
+   def get_velocity_mesh_extent(self):
+      ''' Read velocity mesh extent
+      
+      :returns: Maximum and minimum coordinates of the mesh, [vxmin, vymin, vzmin, vxmax, vymax, vzmax]
+      '''
+      return np.array([self.__vxmin, self.__vymin, self.__vzmin, self.__vxmax, self.__vymax, self.__vzmax])
 
    def read_blocks(self, cellid):
       ''' Read raw block data from the open file and return the data along with block ids
