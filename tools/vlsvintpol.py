@@ -6,6 +6,7 @@ import argparse
 
 
 def extract_file(filename):
+    out = []
     try:
         cellids=[]
         values=[]
@@ -28,20 +29,17 @@ def extract_file(filename):
         for i,var in enumerate(variables):
             values.append(f.read_variable(variables[i],operator=operators[i],cellids=cellids))
         
-        f.optimize_close_file()
-        
         for i,id in enumerate(cellids):
-            
-            out = str(t) + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
+            out_line = str(t) + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
             for j,varval in enumerate(values):
-                out = out +  " " + str(varval[i])
-            return [filename, out]
+                out_line = out_line +  " " + str(varval[i])
+            out.append([filename, out_line])
     except:
-        f.optimize_close_file()
-        return [filename, "#Could not read " + filename]
+        out.append([filename, "#Could not read " + filename])
         pass
-
-
+    
+    f.optimize_close_file()
+    return out
 
 
 parser = argparse.ArgumentParser()
@@ -98,4 +96,5 @@ if __name__ == '__main__':
 
 
 for i in sorted(return_array):
-    print i[1]
+    for j in i:
+        print j[1]
