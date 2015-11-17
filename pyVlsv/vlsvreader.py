@@ -37,6 +37,9 @@ class VlsvReader(object):
          self.__xcells = (int)(self.read_parameter("xcells_ini"))
          self.__ycells = (int)(self.read_parameter("ycells_ini"))
          self.__zcells = (int)(self.read_parameter("zcells_ini"))
+         self.__xblock_size = 1
+         self.__yblock_size = 1
+         self.__zblock_size = 1
          self.__xmin = self.read_parameter("xmin")
          self.__ymin = self.read_parameter("ymin")
          self.__zmin = self.read_parameter("zmin")
@@ -51,6 +54,9 @@ class VlsvReader(object):
          self.__xcells = bbox[0]
          self.__ycells = bbox[1]
          self.__zcells = bbox[2]
+         self.__xblock_size = bbox[3]
+         self.__yblock_size = bbox[4]
+         self.__zblock_size = bbox[5]
          self.__xmin = nodeCoordinatesX[0]
          self.__ymin = nodeCoordinatesY[0]
          self.__zmin = nodeCoordinatesZ[0]
@@ -74,23 +80,28 @@ class VlsvReader(object):
             self.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
             self.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
             self.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
+            self.__vxblock_size = 4
+            self.__vyblock_size = 4
+            self.__vzblock_size = 4
             self.__vxmin = self.read_parameter("vxmin")
             self.__vymin = self.read_parameter("vymin")
             self.__vzmin = self.read_parameter("vzmin")
             self.__vxmax = self.read_parameter("vxmax")
             self.__vymax = self.read_parameter("vymax")
             self.__vzmax = self.read_parameter("vzmax")
-            velocity_cells_per_direction = 4
             # Velocity cell lengths
-            self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
-            self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
-            self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
+            self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(self.__vxblock_size)
+            self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(self.__vyblock_size)
+            self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(self.__vzblock_size)
 
          else:
             #no velocity space in this file, e.g., file n ot written by Vlasiator 
             self.__vxblocks = 0
             self.__vyblocks = 0
             self.__vzblocks = 0
+            self.__vxblock_size = 4
+            self.__vyblock_size = 4
+            self.__vzblock_size = 4
             self.__vxmin = 0
             self.__vymin = 0
             self.__vzmin = 0
@@ -110,7 +121,9 @@ class VlsvReader(object):
          self.__vxblocks = bbox[0]
          self.__vyblocks = bbox[1]
          self.__vzblocks = bbox[2]
-         velocity_cells_per_direction = bbox[3]
+         self.__vxblock_size = bbox[3]
+         self.__vyblock_size = bbox[4]
+         self.__vzblock_size = bbox[5]
          self.__vxmin = nodeCoordinatesX[0]
          self.__vymin = nodeCoordinatesY[0]
          self.__vzmin = nodeCoordinatesZ[0]
@@ -118,9 +131,9 @@ class VlsvReader(object):
          self.__vymax = nodeCoordinatesY[-1]
          self.__vzmax = nodeCoordinatesZ[-1]
          # Velocity cell lengths
-         self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(velocity_cells_per_direction)
-         self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(velocity_cells_per_direction)
-         self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(velocity_cells_per_direction)
+         self.__dvx = ((self.__vxmax - self.__vxmin) / (float)(self.__vxblocks)) / (float)(self.__vxblock_size)
+         self.__dvy = ((self.__vymax - self.__vymin) / (float)(self.__vyblocks)) / (float)(self.__vyblock_size)
+         self.__dvz = ((self.__vzmax - self.__vzmin) / (float)(self.__vzblocks)) / (float)(self.__vzblock_size)
 
       self.__fptr.close()
 
@@ -998,7 +1011,7 @@ class VlsvReader(object):
       
       :returns: Size of block in number of cells, array with three elements
       '''
-      return np.array([1, 1, 1])
+      return np.array([self.__xblock_size, self.__yblock_size, self.__zblock_size])
 
    def get_spatial_mesh_extent(self):
       ''' Read spatial mesh extent
@@ -1019,7 +1032,7 @@ class VlsvReader(object):
       
       :returns: Size of block in number of cells, array with three elements
       '''
-      return np.array([4, 4, 4])
+      return np.array([self.__vxblock_size, self.__vyblock_size, self.__vzblock_size])
 
    def get_velocity_mesh_extent(self):
       ''' Read velocity mesh extent
