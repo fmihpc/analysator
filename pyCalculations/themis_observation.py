@@ -24,16 +24,18 @@ themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",t
 
 def get_dv(vlsvReader):
    # Get velocity grid sizes:
-   vxcells = (int)(vlsvReader.read_parameter("vxblocks_ini"))*4
-   vycells = (int)(vlsvReader.read_parameter("vyblocks_ini"))*4
-   vzcells = (int)(vlsvReader.read_parameter("vzblocks_ini"))*4
-
-   vxmin = vlsvReader.read_parameter("vxmin")
-   vymin = vlsvReader.read_parameter("vymin")
-   vzmin = vlsvReader.read_parameter("vzmin")
-   vxmax = vlsvReader.read_parameter("vxmax")
-   vymax = vlsvReader.read_parameter("vymax")
-   vzmax = vlsvReader.read_parameter("vzmax")
+   vel_mesh_size = get_velocity_mesh_size()
+   vxcells = vel_mesh_size[0]*4
+   vycells = vel_mesh_size[1]*4
+   vzcells = vel_mesh_size[2]*4
+   
+   vel_mesh_limits = get_velocity_mesh_extent()
+   vxmin = vel_mesh_limits[0]
+   vymin = vel_mesh_limits[1]
+   vzmin = vel_mesh_limits[2]
+   vxmax = vel_mesh_limits[3]
+   vymax = vel_mesh_limits[4]
+   vzmax = vel_mesh_limits[5]
 
    dvx = (vxmax - vxmin) / (float)(vxcells)
    dvy = (vymax - vymin) / (float)(vycells)

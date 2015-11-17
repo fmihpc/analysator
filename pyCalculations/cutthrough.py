@@ -101,17 +101,19 @@ def cut_through( vlsvReader, point1, point2 ):
    point2 = np.array(point2)
    # Get parameters from the file to determine a good length between points (step length):
    # Get xmax, xmin and xcells_ini
-   xmax = vlsvReader.read_parameter(name="xmax")
-   xmin = vlsvReader.read_parameter(name="xmin")
-   xcells = vlsvReader.read_parameter(name="xcells_ini")
+   mesh_limits = f.get_spatial_mesh_extent()
+   mesh_size = f.get_spatial_mesh_size()
+   xmax = mesh_limits[3]
+   xmin = mesh_limits[0]
+   xcells = mesh_size[0]
    # Do the same for y
-   ymax = vlsvReader.read_parameter(name="ymax")
-   ymin = vlsvReader.read_parameter(name="ymin")
-   ycells = vlsvReader.read_parameter(name="ycells_ini")
+   ymax = mesh_limits[4]
+   ymin = mesh_limits[1]
+   ycells = mesh_size[1]
    # And for z
-   zmax = vlsvReader.read_parameter(name="zmax")
-   zmin = vlsvReader.read_parameter(name="zmin")
-   zcells = vlsvReader.read_parameter(name="zcells_ini")
+   zmax = mesh_limits[5]
+   zmin = mesh_limits[2]
+   zcells = mesh_size[2]
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
