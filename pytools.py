@@ -30,4 +30,5 @@ except ImportError:
 try:
    import miscellaneous
 except ImportError:
-   print "Note: Did not import miscellaneous module"
+   print "Note: Did not import miscellaneous"
+
