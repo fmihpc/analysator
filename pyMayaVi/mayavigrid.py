@@ -254,9 +254,9 @@ class MayaviGrid(HasTraits):
       for i in xrange(3):
          if self.__cells[i] == 1:
             coordinates[i] = (self.__mins[i] + self.__maxs[i])/2.0
-      print "COORDINATES:" + str(coordinates)
+      print "CLICKED COORDINATES:" + str(coordinates)
       cellid = self.vlsvReader.get_cellid(coordinates)
-      print "CELL ID: " + str(cellid)
+      print "CLICKED CELL ID: " + str(cellid)
       # Check for an invalid cell id
       if cellid == 0:
          print "Invalid cell id"
@@ -283,6 +283,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         print "PLOTTED CELL ID:" + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Generate velocity grid
@@ -305,6 +306,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         print "PLOTTED CELL ID:" + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Generate velocity grid
@@ -323,7 +325,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-
+         print "PLOTTED CELL ID:" + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -346,6 +348,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
+         print "PLOTTED CELL ID:" + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
 
@@ -426,8 +429,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-
-         print("Getting data from nearest velocity space cell with cellid " + str(cellid))
+         print "PLOTTED CELL ID:" + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -447,7 +449,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-
+         print "PLOTTED CELL ID:" + str(cellid)
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
@@ -495,7 +497,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-
+         print "PLOTTED CELL ID:" + str(cellid)
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
