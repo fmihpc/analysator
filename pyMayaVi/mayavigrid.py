@@ -272,7 +272,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -295,7 +295,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
