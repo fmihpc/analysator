@@ -14,6 +14,8 @@ pt.calculations.fourier?
 '''
 
 # List of functions and classes that should be imported into the interface
+from intpol_file import vlsv_intpol_file
+from intpol_points import vlsv_intpol_points
 from cutthrough import cut_through
 from fourier import fourier
 from variable import VariableInfo

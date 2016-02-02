@@ -256,7 +256,7 @@ class MayaviGrid(HasTraits):
             coordinates[i] = (self.__mins[i] + self.__maxs[i])/2.0
       print "CLICKED COORDINATES:" + str(coordinates)
       cellid = self.vlsvReader.get_cellid(coordinates)
-      print "CLICKED CELL ID: " + str(cellid)
+      print "CLICKED CELL ID: " + str(int(cellid))
       # Check for an invalid cell id
       if cellid == 0:
          print "Invalid cell id"
@@ -272,7 +272,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -283,7 +283,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Generate velocity grid
@@ -295,7 +295,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -306,7 +306,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Generate velocity grid
@@ -314,7 +314,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Pitch_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -325,7 +325,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -337,7 +337,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Gyrophase_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -348,7 +348,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
 
@@ -418,7 +418,7 @@ class MayaviGrid(HasTraits):
 
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -429,7 +429,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -438,7 +438,7 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Themis_contour"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -449,7 +449,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
@@ -486,7 +486,7 @@ class MayaviGrid(HasTraits):
 
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read("SpatialGrid","CELLSWITHBLOCKS")
+         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -497,7 +497,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID:" + str(cellid)
+         print "PLOTTED CELL ID: " + str(cellid)
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
