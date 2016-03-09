@@ -405,7 +405,19 @@ class VlsvReader(object):
                return True
       return False
 
-
+   def get_all_variables( self ):
+      ''' Returns all variables in the vlsv reader and the data reducer
+          :returns:                List of variable is in the vlsv file
+          .. code-block:: python
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             vars = vlsvReader.get_variables()
+      '''
+      varlist = [];
+      for child in self.__xml_root:
+         if child.tag == "VARIABLE" and "name" in child.attrib:
+            varlist.append(child.attrib["name"])
+      return varlist
 
    def get_cellid_locations(self):
       ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns

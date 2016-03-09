@@ -6,7 +6,7 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
        :param vlsvReader:            Some open VlsvReader
        :type vlsvReader:             :class:`vlsvfile.VlsvReader`
        :param points:                Coordinate points
-       :param variable:              Variables
+       :param varlist:               Variable list, if empty all variables are got
        :param operator:              The operator for the variable, for example "x" for x-component or "magnitude" for magnitude
        :param interpolation_order:   Order of interpolation (0 or 1), defaults to 1
        :returns: A tuple with output: (coordinates,variable_values,header_string)
@@ -32,6 +32,9 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
    '''
    N_points = len(points)
    N_vars = len(varlist)
+   if N_vars <= 0:
+      varlist = vlsvReader.get_all_variables()
+      N_vars = len(varlist)
    if N_vars <= 0:
       print "ERROR: len(varlist) = 0"
       return
