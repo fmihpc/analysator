@@ -11,3 +11,5 @@
 '''
 
 from plot_variables import plot_variables, plot_multiple_variables
+from plot2d import vlsv_plot2d
+
