@@ -1,18 +1,24 @@
 # 2D plotting
 
-def vlsv_plot2d(vlsvReader,varName="rho",unit=1,xFigSize=10,yFigSize=10):
- ''' 2-dimensional pseudocolor plot
- :param vlsvReader: VLSV reader interface
- :param varName:    Variable name if VLSV reader
- :param unit:       Length unit of axes
- :param xFigSize:   Figure size in horizontal direction
- :param yFigSize:   Figure size in vertical direction
+def vlsv_plot2d(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbins=10,distrMinMax=[0,10],lengthUnit=1,xFigSize=15,yFigSize=14,xFigSizeDistr=0.015,yFigSizeDistr=0.015):
+ ''' 2-dimensional pseudocolor plot (with velocity space histogram subplots)
+ :param vlsvReader:    VLSV reader interface
+ :param varName:       Variable name if VLSV reader
+ :param withDistr:     Plot distribution sub plots on top of pseudocolor (0/1)
+ :param Nstride:       Check every Nstride\'th spatial cell for a distribution
+ :param Nbins:         Number of distribution histogram bins
+ :param lengthUnit:    Length unit of axes
+ :param xFigSize:      Figure size in horizontal direction
+ :param yFigSize:      Figure size in vertical direction
+ :param xFigSizeDistr: Distribution plot size in horizontal direction
+ :param yFigSizeDistr: Distribution plot size in vertical direction
  :returns: nothing
  .. code-block:: python
  # Example usage:
    import pytools as pt
    fvlsv = pt.vlsvfile.VlsvReader("/path/to/run/bulk.0003000.vlsv")
-   pt.plot.vlsv_plot2d(fvlsv,varName="rho",unit=6371e3)
+   pt.plot.vlsv_plot2d(fvlsv,varName="rho",lengthUnit=6371e3)
+   pt.plot.vlsv_plot2d(fvlsv,varName="rho",lengthUnit=6371e3,withDistr=1,Nstride=97,xFigSize=15,yFigSize=14)
   '''
  import numpy as np
  import matplotlib.pyplot as plt
@@ -33,13 +39,14 @@ def vlsv_plot2d(vlsvReader,varName="rho",unit=1,xFigSize=10,yFigSize=10):
  dx = xsize/nx
  dy = ysize/ny
  dz = zsize/nz
+ 
  # check if the file has xy or xz plane
  if(ny > nz and nz == 1):
   plane = "xy"
-  meshX,meshY = np.meshgrid(np.linspace(xmin/unit,xmax/unit,nx),np.linspace(ymin/unit,ymax/unit,ny))
+  meshX,meshY = np.meshgrid(np.linspace(xmin/lengthUnit,xmax/lengthUnit,nx),np.linspace(ymin/lengthUnit,ymax/lengthUnit,ny))
  elif(ny < nz and ny == 1):
   plane = "xz"
-  meshX,meshY = np.meshgrid(np.linspace(xmin/unit,xmax/unit,nx),np.linspace(zmin/unit,zmax/unit,nz))
+  meshX,meshY = np.meshgrid(np.linspace(xmin/lengthUnit,xmax/lengthUnit,nx),np.linspace(zmin/lengthUnit,zmax/lengthUnit,nz))
  else:
   print "Error: cannot determine simulation plane"
   return
@@ -66,13 +73,61 @@ def vlsv_plot2d(vlsvReader,varName="rho",unit=1,xFigSize=10,yFigSize=10):
  plt.figure(figsize=(xFigSize,yFigSize))
  plt.pcolormesh(meshX,meshY,var)
  plt.axis('equal')
- plt.xlabel("x [" + str(unit/1e3) + " km]")
- plt.xlim([xmin/unit,xmax/unit])
+ plt.xlabel("x [" + str(lengthUnit/1e3) + " km]")
+ plt.xlim([xmin/lengthUnit,xmax/lengthUnit])
  if(plane == "xz"):
-  plt.ylim([zmin/unit,zmax/unit])
-  plt.ylabel("z [" + str(unit/1e3) + " km]")
+  plt.ylim([zmin/lengthUnit,zmax/lengthUnit])
+  plt.ylabel("z [" + str(lengthUnit/1e3) + " km]")
  if(plane == "xy"):
-  plt.ylim([ymin/unit,ymax/unit])
-  plt.xlabel("y [" + str(unit/1e3) + " km]")
+  plt.ylim([ymin/lengthUnit,ymax/lengthUnit])
+  plt.xlabel("y [" + str(lengthUnit/1e3) + " km]")
+ plt.title(varName)
+ if withDistr == 0:
+  plt.colorbar()
+  plt.show()
+  return
+ # distribution plotting
+ # coordinates and size of current axis
+ xfig0 = plt.gca().get_position().get_points()[0,0]
+ yfig0 = plt.gca().get_position().get_points()[0,1]
+ xfig1 = plt.gca().get_position().get_points()[1,0]
+ yfig1 = plt.gca().get_position().get_points()[1,1]
+ xfigsize = xfig1-xfig0
+ yfigsize = yfig1-yfig0
+ if vlsvReader.check_variable("fSaved") == False:
+  print "Error: Variable fSaved not found"
+  return
+ cids_with_vel = ()
+ n=0
+ Cloop = xrange(0,len(cellids),Nstride)
+ for i in Cloop:
+  cid = cellids[i]
+  n=n+1
+  # check if velocity space exists in this cell
+  if vlsvReader.read_variable("fSaved",cid) == 1.0:
+   x,y,z = vlsvReader.get_cell_coordinates(cid)
+   cids_with_vel = np.append(cids_with_vel,cid)
+   velcells = vlsvReader.read_velocity_cells(cid)
+   jj = velcells.keys()
+   # default subplots: histogram of kinetic energy
+   mp = 1.6726219e-27
+   qe = 1.60217662e-19
+   V = vlsvReader.get_velocity_cell_coordinates(jj)
+   Vtot2 = (np.sum(np.square(V),1))
+   Ekin = 0.5*mp*Vtot2/qe/1e3 # keV
+   f = zip(*velcells.items())
+   # check that velocity space has cells
+   if(len(f) > 0):
+    f = np.asarray(zip(*velcells.items())[1])
+   else:
+    continue
+   xsub = xfig0 + xfigsize*(x-xmin)/xsize
+   ysub = yfig0 + yfigsize*(z-zmin)/zsize
+   print "Subplot " +  str(n) + "/" + str(len(Cloop)) + ": fig crds = " + str(xsub) + ", " + str(ysub)
+   ax = plt.axes([xsub,ysub,xFigSizeDistr,yFigSizeDistr])
+   ax.hist(Ekin,bins=Nbins,weights=f,normed=1,log=1,color='r',edgecolor='none',range=distrMinMax)
+   ax.xaxis.set_major_locator(plt.NullLocator())
+   ax.yaxis.set_major_locator(plt.NullLocator())
+   plt.xlim(distrMinMax)
  plt.show()
 
