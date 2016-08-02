@@ -145,7 +145,6 @@ class VlsvReader(object):
    def __read_xml_footer(self):
       ''' Reads in the XML footer of the VLSV file and store all the content
       ''' 
-      max_xml_size = 1000000
       #(endianness,) = struct.unpack("c", fptr.read(1))
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -160,7 +159,9 @@ class VlsvReader(object):
       # Move to the xml offset
       fptr.seek(offset)
       # Read the xml data
-      xml_data = fptr.read(max_xml_size)
+      xml_data = ""
+      for chunk in iter(lambda: fptr.read(4096), ''):
+          xml_data += chunk
       # Read the xml as string
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
       # Input the xml data into xml_root
