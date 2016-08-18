@@ -5,13 +5,51 @@ import sys
 import argparse
 
 
+def extract_file(filename):
+    out = []
+    try:
+        cellids=[]
+        values=[]
+        f=pt.vlsvfile.VlsvReader(filename)
+        f.optimize_open_file()
+        try:
+            t=f.read_parameter("time")
+        except:
+            try:
+                t=f.read_parameter("t")
+            except:
+                print "Unknown time format in file " + filename
+        
+        for coord in coords:
+            if(args.re):
+                cellids.append(f.get_cellid(coord * 6371000))
+            else:
+                cellids.append(f.get_cellid(coord))
+
+        for i,var in enumerate(variables):
+            values.append(f.read_variable(variables[i],operator=operators[i],cellids=cellids))
+        
+        for i,id in enumerate(cellids):
+            out_line = str(t) + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
+            for j,varval in enumerate(values):
+                out_line = out_line +  " " + str(varval[i])
+            out.append([filename, out_line])
+    except:
+        out.append([filename, "#Could not read " + filename])
+        pass
+    
+    f.optimize_close_file()
+    return out
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-var', nargs='*', help="a list of variable.operator's to output, e.g., v.magnitude rho B.x " )
 parser.add_argument('-i', nargs='*', help="a list of vlsv files")
 parser.add_argument('-c', help="A file with coordinates (can also be give from stdin)")
 parser.add_argument('-re', action='store_true', help="Coordinates in RE, in meters by default")
+parser.add_argument('-n', help="Number of processes to use, default 1")
 args = parser.parse_args()
- 
+
 
 if args.var is None:
     #defaults
@@ -44,37 +82,19 @@ if(args.re):
 else:
     print("#t X Y Z CELLID " + " ".join(varnames))
 
-for filename in args.i:
-    try:
-        cellids=[]
-        values=[]
-        f=pt.vlsvfile.VlsvReader(filename)
-        f.optimize_open_file()
-        try:
-            t=f.read_parameter("time")
-        except:
-            try:
-                t=f.read_parameter("t")
-            except:
-                print "Unknown time format in file"
-        for coord in coords:
-            if(args.re):
-                cellids.append(f.get_cellid(coord * 6371000))
-            else:
-                cellids.append(f.get_cellid(coord))
+if args.n is None:
+    numproc = 1
+else:
+    numproc = int(args.n)
 
-        for i,var in enumerate(variables):
-            values.append(f.read_variable(variables[i],operator=operators[i],cellids=cellids))
-            
 
-        for i,id in enumerate(cellids):
-            out = str(t) + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
-            for j,varval in enumerate(values):
-                out = out +  " " + str(varval[i])
-            print out
-        f.optimize_close_file()    
-    except:
-        print "#Could not read " + filename
-        f.optimize_close_file()    
-        pass
+## Parallel processing
+from multiprocessing import Pool
+if __name__ == '__main__':
+   pool = Pool(numproc)
+   return_array = pool.map(extract_file, args.i)
 
+
+for i in sorted(return_array):
+    for j in i:
+        print j[1]
