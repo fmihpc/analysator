@@ -21,7 +21,7 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
           z = np.zeros(len(x))
           points=(np.array([x,y,z])).transpose()
           varlist = ["cellB","n_H+sw_ave"]
-          [crd,params,hstr]=pt.calculations.vlsv_intpol_points(f,points,varlist)
+          [crd,cellids,params,hstr]=pt.calculations.vlsv_intpol_points(f,points,varlist)
           x=crd[:,0]
           y=crd[:,1]
           z=crd[:,2]
@@ -41,7 +41,7 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
    if N_points < 0:
       print "ERROR: len(points) = 0"
       return
-   header = "x y z " # header string
+   header = "x y z cellid " # header string
    for i in range(N_vars): # loop variable list
       var = varlist[i]
       if vlsvReader.check_variable(var) == False:
@@ -53,13 +53,15 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
          return
       values=np.zeros((N_points,dim))
       crds=np.zeros((N_points,3)) # coordinates
+      cellids=np.zeros((N_points,1)) # cell ids
       for j in range(N_points):
-         if vlsvReader.get_cellid(points[j]) == 0: # coordinates of a point out of domain
+         cellids[j] = vlsvReader.get_cellid(points[j])
+         if cellids[j] == 0: # coordinates of a point out of domain
             values[j]=np.ones(dim)*np.nan
          elif interpolation_order==1:
             values[j]=vlsvReader.read_interpolated_variable(var,points[j],operator)
          elif interpolation_order==0:
-            values[j]=vlsvReader.read_variable(var,vlsvReader.get_cellid(points[j]),operator)
+            values[j]=vlsvReader.read_variable(var,cellids[j],operator)
          crds[j]=points[j]
       if i==0:
          res=values
@@ -70,7 +72,7 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
       else:
          for d in range(dim):
             header = header + var + "(" + str(d) + ") "
-   return (crds,res,header)
+   return (crds,cellids,res,header)
 
 
 
