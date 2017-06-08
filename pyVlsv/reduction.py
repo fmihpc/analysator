@@ -98,6 +98,24 @@ def v( variables ):
       rho = np.reshape(rho,(len(rho),1))
       return np.divide(rho_v,rho)
 
+def vms( variables ):
+   ''' Data reducer function for getting magnetosonic velocity
+   '''
+   epsilon = sys.float_info.epsilon
+   mp = 1.672622e-27
+   mu_0 = 1.25663706144e-6
+   P = variables[0]
+   rho_m = (variables[1] + epsilon)*mp
+   B = variables[2]
+   if np.ndim(B) == 1:
+      Btot = np.sqrt( np.sum( np.square(B) ) )
+   else:
+      Btot = np.sqrt( np.sum(np.square(B),axis=1) )
+   vs = np.sqrt( np.divide( P*5.0/3.0, rho_m ) )
+   vA = np.divide( Btot,np.sqrt( mu_0*rho_m ) )
+   vms = np.sqrt( np.square(vs) + np.square(vA) )
+   return vms
+
 def PTensor( variables ):
    ''' Data reducer function to reconstruct the pressure tensor from
        the vlsv diagonal and off-diagonal components.
@@ -338,6 +356,7 @@ def Dng( variables ):
 #datareducers with more complex, case dependent structure.
 datareducers = {}
 datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
+datareducers["vms"] =                    DataReducerVariable(["Pressure", "rho", "B"], vms, "m/s")
 datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorBackstream"] =      DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")
