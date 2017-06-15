@@ -12,13 +12,11 @@ def extract_file(filename):
         values=[]
         f=pt.vlsvfile.VlsvReader(filename)
         f.optimize_open_file()
-        try:
+        time=0
+        t=f.read_parameter("t")
+        if t == None:
             t=f.read_parameter("time")
-        except:
-            try:
-                t=f.read_parameter("t")
-            except:
-                print "Unknown time format in file " + filename
+        time=str(t)
         
         for coord in coords:
             if(args.re):
@@ -30,7 +28,7 @@ def extract_file(filename):
             values.append(f.read_variable(variables[i],operator=operators[i],cellids=cellids))
         
         for i,id in enumerate(cellids):
-            out_line = str(t) + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
+            out_line = time + " " +  ' '.join(map(str, coords[i])) + " " + str(id)
             for j,varval in enumerate(values):
                 out_line = out_line +  " " + str(varval[i])
             out.append([filename, out_line])
