@@ -128,6 +128,7 @@ class MayaviGrid(HasTraits):
       self.__maxs = []
       self.__cells = []
       self.__last_pick = []
+      self.__grid_figure = mayavi.mlab.gcf(engine=self.__engine)
       self.__structured_figures = []
       self.__unstructured_figures = []
       self.__thread = []
@@ -168,7 +169,7 @@ class MayaviGrid(HasTraits):
       y = [cell_coordinates[1]]
       z = [cell_coordinates[2]]
       s = [(dx+dy+dx)/3.0]
-      points = self.scene.mlab.points3d(x,y,z,s, scale_factor=3)
+      points = self.scene.mlab.points3d(x,y,z,s, scale_factor=3, figure=self.__grid_figure, reset_zoom=False )
 
 
    def __add_normal_labels( self, point1, point2 ):
@@ -622,6 +623,8 @@ class MayaviGrid(HasTraits):
       print scalars[0]
       # Configure traits
       self.configure_traits()
+      
+      self.__grid_figure = mayavi.mlab.gcf(engine=self.__engine)
 
       # Note: This is not working properly -- it seemingly works out at first but it eventually causes segmentation faults in some places
       #self.__thread = threading.Thread(target=self.configure_traits, args=())
