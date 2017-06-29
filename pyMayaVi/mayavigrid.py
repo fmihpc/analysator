@@ -110,7 +110,7 @@ class MayaviGrid(HasTraits):
                 resizable=True,
             )
 
-   def __init__(self, vlsvReader, variable, operator="pass", threaded=True, **traits):
+   def __init__(self, vlsvReader, variable, operator="pass", threaded=False, **traits):
       ''' Initializes the class and loads the mayavi grid
 
           :param vlsvReader:        Some vlsv reader with a file open
@@ -208,7 +208,7 @@ class MayaviGrid(HasTraits):
       self.__add_label( cellid2 )
 
 
-   def __load_grid( self, variable, operator="pass", threaded=True ):
+   def __load_grid( self, variable, operator="pass", threaded=False ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable:        Name of the variable to plot
           :param operator:        Operator for the variable
