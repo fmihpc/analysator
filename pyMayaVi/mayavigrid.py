@@ -277,6 +277,9 @@ class MayaviGrid(HasTraits):
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
          pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -296,6 +299,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -315,6 +321,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -338,6 +347,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -419,6 +431,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -439,6 +454,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -487,6 +505,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
