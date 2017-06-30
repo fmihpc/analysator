@@ -385,7 +385,6 @@ datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParal
 
 datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
 datareducers["vBeamRatio"] =             DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam_ratio, "")
-datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
 datareducers["vThermal"] =               DataReducerVariable(["TBackstream"], v_thermal, "m/s")
 datareducers["vThermalVector"] =         DataReducerVariable(["TTensorRotatedBackstream"], v_thermal_vector, "m/s")
 datareducers["Bz_linedipole_avg"] =      DataReducerVariable(["X", "Y", "Z", "DX", "DY", "DZ"], Bz_linedipole_avg, "T")
