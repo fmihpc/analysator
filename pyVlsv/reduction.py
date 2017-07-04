@@ -224,7 +224,7 @@ def PParallel( variables ):
       return B_normalized.dot(PTensor.dot(B_normalized))
    else:
       B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2, axis=1))[:,None])
-      return [B_normalized[i].dot(PTensor[i].dot(B_normalized[i])) for i in np.arange(len(PTensor))]
+      return np.asarray([B_normalized[i].dot(PTensor[i].dot(B_normalized[i])) for i in np.arange(len(PTensor))])
 
 def TPerpOverPar( variables ):
    TTensorRotated = variables[0]
