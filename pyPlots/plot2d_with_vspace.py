@@ -1,6 +1,6 @@
 # 2D plotting
 
-def vlsv_plot2d(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbins=10,distrMinMax=[0,10],lengthUnit=1,xFigSize=15,yFigSize=14,xFigSizeDistr=0.015,yFigSizeDistr=0.015):
+def vlsv_plot2d_with_vspace(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbins=10,distrMinMax=[0,10],lengthUnit=1,xFigSize=15,yFigSize=14,xFigSizeDistr=0.015,yFigSizeDistr=0.015):
  ''' 2-dimensional pseudocolor plot (with velocity space histogram subplots)
  :param vlsvReader:    VLSV reader interface
  :param varName:       Variable name if VLSV reader
@@ -17,8 +17,8 @@ def vlsv_plot2d(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbins=10,distrMi
  # Example usage:
    import pytools as pt
    fvlsv = pt.vlsvfile.VlsvReader("/path/to/run/bulk.0003000.vlsv")
-   pt.plot.vlsv_plot2d(fvlsv,varName="rho",lengthUnit=6371e3)
-   pt.plot.vlsv_plot2d(fvlsv,varName="rho",lengthUnit=6371e3,withDistr=1,Nstride=97,xFigSize=15,yFigSize=14)
+   pt.plot.vlsv_plot2d_with_vspace(fvlsv,varName="rho",lengthUnit=6371e3)
+   pt.plot.vlsv_plot2d_with_vspace(fvlsv,varName="rho",lengthUnit=6371e3,withDistr=1,Nstride=97,xFigSize=15,yFigSize=14)
   '''
  import numpy as np
  import matplotlib.pyplot as plt
