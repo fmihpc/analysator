@@ -1,0 +1,29 @@
+#!/bin/bash
+#PBS -N plot2d_rho_with_vspace_reduction
+#PBS -l nodes=1
+#PBS -l walltime=24:00:00
+#PBS -W umask=007
+module load Python
+export PYTHONPATH=/lustre/tmp/vlasiator/analysator
+export HOME_OLD=$HOME
+export HOME=$PBS_O_WORKDIR
+cd $HOME
+
+tstart=3500
+tend=4300
+Ncores=15
+pyscript="plot2d_rho_with_vspace_reduction.job $Ncores "
+files=$(ls /lustre/tmp/vlasiator/2D/BCH/bulk/bulk.000??[12346789]0.vlsv)
+
+exec="aprun -n 1 -d $Ncores"
+
+for f in $files
+do
+ t=$(basename $f |cut -d'.' -f 2)
+ if [ "$t" -ge "$tstart" ]; then
+ if [ "$t" -le "$tend"   ]; then
+  $exec python $pyscript $f
+ fi
+ fi
+done
+wait
