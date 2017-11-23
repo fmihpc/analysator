@@ -341,9 +341,9 @@ class VlsvReader(object):
          return
       #these two arrays are in the same order: 
       #list of cells for which dist function is saved
-      cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS")
+      cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name="proton") # WARNING not avgs-proof
       #number of blocks in each cell for which data is stored
-      blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL")
+      blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name="proton") # WARNING not avgs-proof
 
       # Navigate to the correct position:
       from copy import copy
@@ -1000,9 +1000,9 @@ class VlsvReader(object):
       '''
       #these two arrays are in the same order: 
       #list of cells for which dist function is saved
-      cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS")
+      cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name="proton") # WARNING not avgs-proof
       #number of blocks in each cell for which data is stored
-      blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL")
+      blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name="proton") # WARNING not avgs-proof
       (cells_with_blocks_index,) = np.where(cells_with_blocks == cellid)
 
       if len(cells_with_blocks_index) == 0:
