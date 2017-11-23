@@ -116,6 +116,31 @@ def vms( variables ):
    vms = np.sqrt( np.square(vs) + np.square(vA) )
    return vms
 
+def vs( variables ):
+   ''' Data reducer function for getting the sound speed
+   '''
+   epsilon = sys.float_info.epsilon
+   mp = 1.672622e-27
+   P = variables[0]
+   rho_m = (variables[1] + epsilon)*mp
+   vs = np.sqrt( np.divide( P*5.0/3.0, rho_m ) )
+   return vs
+
+def va( variables ):
+   ''' Data reducer function for getting the Alfven velocity
+   '''
+   epsilon = sys.float_info.epsilon
+   mp = 1.672622e-27
+   mu_0 = 1.25663706144e-6
+   rho_m = (variables[0] + epsilon)*mp
+   B = variables[1]
+   if np.ndim(B) == 1:
+      Btot = np.sqrt( np.sum( np.square(B) ) )
+   else:
+      Btot = np.sqrt( np.sum(np.square(B),axis=1) )
+   vA = np.divide( Btot,np.sqrt( mu_0*rho_m ) )
+   return vA
+
 def PTensor( variables ):
    ''' Data reducer function to reconstruct the pressure tensor from
        the vlsv diagonal and off-diagonal components.
@@ -224,7 +249,7 @@ def PParallel( variables ):
       return B_normalized.dot(PTensor.dot(B_normalized))
    else:
       B_normalized = np.divide(B, np.sqrt(np.sum(B[:]**2, axis=1))[:,None])
-      return [B_normalized[i].dot(PTensor[i].dot(B_normalized[i])) for i in np.arange(len(PTensor))]
+      return np.asarray([B_normalized[i].dot(PTensor[i].dot(B_normalized[i])) for i in np.arange(len(PTensor))])
 
 def TPerpOverPar( variables ):
    TTensorRotated = variables[0]
@@ -357,6 +382,8 @@ def Dng( variables ):
 datareducers = {}
 datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
 datareducers["vms"] =                    DataReducerVariable(["Pressure", "rho", "B"], vms, "m/s")
+datareducers["vs"] =                     DataReducerVariable(["Pressure", "rho"], vs, "m/s")
+datareducers["va"] =                     DataReducerVariable(["rho", "B"], va, "m/s")
 datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorBackstream"] =      DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")
@@ -385,7 +412,6 @@ datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParal
 
 datareducers["vBeam"] =                  DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam, "m/s")
 datareducers["vBeamRatio"] =             DataReducerVariable(["RhoVBackstream", "RhoBackstream", "RhoVNonBackstream", "RhoNonBackstream"], v_beam_ratio, "")
-datareducers["rhoBeam"] =                DataReducerVariable(["RhoBackstream"], pass_op, "m/s")
 datareducers["vThermal"] =               DataReducerVariable(["TBackstream"], v_thermal, "m/s")
 datareducers["vThermalVector"] =         DataReducerVariable(["TTensorRotatedBackstream"], v_thermal_vector, "m/s")
 datareducers["Bz_linedipole_avg"] =      DataReducerVariable(["X", "Y", "Z", "DX", "DY", "DZ"], Bz_linedipole_avg, "T")

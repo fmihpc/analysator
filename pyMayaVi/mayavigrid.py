@@ -110,7 +110,7 @@ class MayaviGrid(HasTraits):
                 resizable=True,
             )
 
-   def __init__(self, vlsvReader, variable, operator="pass", threaded=True, **traits):
+   def __init__(self, vlsvReader, variable, operator="pass", threaded=False, **traits):
       ''' Initializes the class and loads the mayavi grid
 
           :param vlsvReader:        Some vlsv reader with a file open
@@ -128,6 +128,7 @@ class MayaviGrid(HasTraits):
       self.__maxs = []
       self.__cells = []
       self.__last_pick = []
+      self.__grid_figure = mayavi.mlab.gcf(engine=self.__engine)
       self.__structured_figures = []
       self.__unstructured_figures = []
       self.__thread = []
@@ -168,7 +169,7 @@ class MayaviGrid(HasTraits):
       y = [cell_coordinates[1]]
       z = [cell_coordinates[2]]
       s = [(dx+dy+dx)/3.0]
-      points = self.scene.mlab.points3d(x,y,z,s, scale_factor=3)
+      points = self.scene.mlab.points3d(x,y,z,s, scale_factor=3, figure=self.__grid_figure, reset_zoom=False )
 
 
    def __add_normal_labels( self, point1, point2 ):
@@ -207,7 +208,7 @@ class MayaviGrid(HasTraits):
       self.__add_label( cellid2 )
 
 
-   def __load_grid( self, variable, operator="pass", threaded=True ):
+   def __load_grid( self, variable, operator="pass", threaded=False ):
       ''' Creates a grid and inputs scalar variables from a vlsv file
           :param variable:        Name of the variable to plot
           :param operator:        Operator for the variable
@@ -277,6 +278,9 @@ class MayaviGrid(HasTraits):
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
          pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Find the nearest:
          from operator import itemgetter
          norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
@@ -296,6 +300,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -315,6 +322,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -338,6 +348,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -419,6 +432,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -439,6 +455,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -487,6 +506,9 @@ class MayaviGrid(HasTraits):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+         if len(cell_candidates) == 0:
+            print "No velocity distribution data found in this file!"
+            return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
          # Read in the cell's coordinates:
@@ -601,6 +623,8 @@ class MayaviGrid(HasTraits):
       print scalars[0]
       # Configure traits
       self.configure_traits()
+      
+      self.__grid_figure = mayavi.mlab.gcf(engine=self.__engine)
 
       # Note: This is not working properly -- it seemingly works out at first but it eventually causes segmentation faults in some places
       #self.__thread = threading.Thread(target=self.configure_traits, args=())
