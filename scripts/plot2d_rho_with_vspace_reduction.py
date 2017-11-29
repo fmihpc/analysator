@@ -139,8 +139,10 @@ def plot2D(vlsvReader,vlsvVar,plane,nx,ny,nz,locsSorted,xmin,ymin,zmin,xmax,ymax
  # draw Earth with dayside and nightside
  w1 = Wedge((0,0),1.0,90,270,fc='k')
  w2 = Wedge((0,0),1.0,270,90,fc='w')
+ c1 = plt.Circle((0,0),1.0,color='k',fill=False,lw=2.0)
  plt.gcf().gca().add_artist(w1)
  plt.gcf().gca().add_artist(w2)
+ plt.gcf().gca().add_artist(c1)
  plt.title(vlsvVar + ': t = ' + round2str(tSim) + ' s')
  plt.axis('scaled')
  plt.xlabel('x [Re]')
