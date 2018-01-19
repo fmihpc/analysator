@@ -1,4 +1,6 @@
 import filemanagement
+import socket, re
+
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
 # Input folder paths
@@ -15,18 +17,27 @@ try:
    import calculations
 except ImportError:
    print "Note: Did not import calculations module"
+
 try:
    import vlsvfile
 except ImportError:
    print "Note: Did not import vlsvfile module"
-try:
-   import grid
-except ImportError:
-   print "Note: Did not import grid module"
+
+# For some reason, the try-catch fails on taito compute nodes.
+# This is a workaround.
+hostname=socket.gethostname()
+pattern = re.compile("c\d\d\d") # Matches hostnames of c followed by 3 digits, as in taito compute nodes
+if not pattern.match(hostname):
+   try:
+      import grid
+   except ImportError:
+      print "Note: Did not import grid module"
+
 try:
    import plot
 except ImportError:
    print "Note: Did not import plot module"
+
 try:
    import miscellaneous
 except ImportError:

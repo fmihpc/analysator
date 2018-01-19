@@ -101,8 +101,8 @@ def cut_through( vlsvReader, point1, point2 ):
    point2 = np.array(point2)
    # Get parameters from the file to determine a good length between points (step length):
    # Get xmax, xmin and xcells_ini
-   mesh_limits = f.get_spatial_mesh_extent()
-   mesh_size = f.get_spatial_mesh_size()
+   mesh_limits = vlsvReader.get_spatial_mesh_extent()
+   mesh_size = vlsvReader.get_spatial_mesh_size()
    xmax = mesh_limits[3]
    xmin = mesh_limits[0]
    xcells = mesh_size[0]
