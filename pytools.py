@@ -36,7 +36,7 @@ if os.getenv('PTINTERACTIVE') != None:
       print "Note: Unable to switch to TkAgg backend"
 else:
    try:
-   plt.switch_backend('Agg')
+      plt.switch_backend('Agg')
    except:
       print "Note: Unable to switch to Agg backend"
 
