@@ -50,5 +50,6 @@ fi;
 #echo from $start to $end 
 
 module load mayavi2
+export PTNONINTERACTIVE=1
 python generate_panel.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.
