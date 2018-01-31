@@ -23,15 +23,22 @@ try:
 except ImportError:
    print "Note: Did not import vlsvfile module"
 
-# For some reason, the try-catch fails on taito compute nodes.
-# This is a workaround.
-hostname=socket.gethostname()
-pattern = re.compile("c\d\d\d") # Matches hostnames of c followed by 3 digits, as in taito compute nodes
-if not pattern.match(hostname):
+import os
+import matplotlib.pyplot as plt
+if os.getenv('PTINTERACTIVE') != None:
    try:
       import grid
    except ImportError:
       print "Note: Did not import grid module"
+   try:
+      plt.switch_backend('TkAgg')
+   except:
+      print "Note: Unable to switch to TkAgg backend"
+else:
+   try:
+   plt.switch_backend('Agg')
+   except:
+      print "Note: Unable to switch to Agg backend"
 
 try:
    import plot
