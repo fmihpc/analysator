@@ -25,7 +25,13 @@ except ImportError:
 
 import os
 import matplotlib.pyplot as plt
-if os.getenv('PTINTERACTIVE') != None:
+
+if os.getenv('PTNONINTERACTIVE') != None:
+   try:
+      plt.switch_backend('Agg')
+   except:
+      print "Note: Unable to switch to Agg backend"
+else:
    try:
       import grid
    except ImportError:
@@ -34,11 +40,6 @@ if os.getenv('PTINTERACTIVE') != None:
       plt.switch_backend('TkAgg')
    except:
       print "Note: Unable to switch to TkAgg backend"
-else:
-   try:
-      plt.switch_backend('Agg')
-   except:
-      print "Note: Unable to switch to Agg backend"
 
 try:
    import plot
