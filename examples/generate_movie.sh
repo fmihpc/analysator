@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -t 00:30:00
+#SBATCH -t 00:01:00
 #SBATCH -J array_movie
 #SBATCH -p serial
 #SBATCH -n 1
@@ -13,38 +13,43 @@
 
 frameStart=0  # set to initial frame
 frameEnd=2708 # set to the final frame
-jobNumber=200  # equal to the higher value in the array argument to sbatch
+
+# How many jobs? SLURM_ARRAY_TASK_COUNT does not work on all systems
+# so calculate job count (or set it manually to match the array
+# argument given to sbatch).
+jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
+
+# find job array index
+index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 frameEndC=$(( $frameEnd + 1 )) # Need to iterate to 1 past final frame
-jobsC=$(( $jobNumber + 1 )) # Actually this many jobs
 totalFrames=$(( $frameEndC - $frameStart )) # Total frames to calculate
-increment=$(( $totalFrames / $jobNumber )) # amount of frames per job (rounded down)
+increment=$(( $totalFrames / $jobcount )) # amount of frames per job (rounded down)
 
 # Calculate remainder
-remainder=$(( $totalFrames - $jobsC * $increment ))
+remainder=$(( $totalFrames - $jobcount * $increment ))
 
-start=$(( $frameStart + $SLURM_ARRAY_TASK_ID * $increment ))
+start=$(( $frameStart + $index * $increment ))
 end=$(( $start + $increment ))
 
 # Remainder frames are divvied out evenly among tasks
-if [ $SLURM_ARRAY_TASK_ID -lt $remainder ];
+if [ $index -lt $remainder ];
 then 
-    start=$(( $start + $SLURM_ARRAY_TASK_ID ))
-    end=$(( $end + $SLURM_ARRAY_TASK_ID + 1 ))
+    start=$(( $start + $index ))
+    end=$(( $end + $index + 1 ))
 else
     start=$(( $start + $remainder ))
     end=$(( $end + $remainder ))
 fi;
 
-
 # Ensure final job gets correct last frame
-if [ $SLURM_ARRAY_TASK_ID -eq $jobNumber ];
+if [ $SLURM_ARRAY_TASK_ID -eq $SLURM_ARRAY_TASK_MAX ];
 then 
     echo Verifying final frame: $end $frameEndC
     end=$frameEndC
 fi;
 
-#echo Calculating a total of $totalFrames frames divided amongst $jobsC jobs.
+#echo Calculating a total of $totalFrames frames divided amongst $jobcount jobs.
 #echo Using a remainder of $remainder.
 #echo Current job id is $SLURM_ARRAY_TASK_ID and calculated frames are
 #echo from $start to $end 
