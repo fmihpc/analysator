@@ -98,6 +98,8 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
     if vmax <= vmin:
         vmax = vmin * 10.
 
+    values = abs(values);
+
     grid_r, grid_theta = np.meshgrid(energies,angles)
     fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
     ax.set_title("Detector view at cell " + str(cellID))
