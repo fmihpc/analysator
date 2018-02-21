@@ -12,13 +12,11 @@ def extract_file(filename):
         values=[]
         f=pt.vlsvfile.VlsvReader(filename)
         f.optimize_open_file()
-        try:
-            t=f.read_parameter("time")
-        except:
-            try:
-                t=f.read_parameter("t")
-            except:
-                print "Unknown time format in file " + filename
+        t=f.read_parameter("time")
+        if t == None:
+	    t=f.read_parameter("t")
+            if t == None:	    
+		print "Unknown time format in file " + filename
         
         for coord in coords:
             if(args.re):

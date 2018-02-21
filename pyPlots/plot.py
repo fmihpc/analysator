@@ -11,5 +11,7 @@
 '''
 
 from plot_variables import plot_variables, plot_multiple_variables
-from plot2d import vlsv_plot2d
+from plot2d_with_vspace import vlsv_plot2d_with_vspace
 
+import colormaps
+from plot_panel import plot_colormap

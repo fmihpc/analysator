@@ -222,7 +222,7 @@ class VlsvReader(object):
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
 
          # Read in block coordinates:
-         if "mesh" in child.attrib and child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
+         if ("name" in child.attrib) and (child.attrib["name"] == "avgs" or child.attrib["name"] == "proton") and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -287,7 +287,7 @@ class VlsvReader(object):
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
-         if "mesh" in child.attrib and child.attrib["mesh"] == "SpatialGrid" and child.tag == "BLOCKIDS":
+         if ("name" in child.attrib) and (child.attrib["name"] == "avgs" or child.attrib["name"] == "proton") and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
@@ -945,7 +945,7 @@ class VlsvReader(object):
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__vxblocks+1)).astype(np.float32) * self.__dvx + self.__vxmin
       nodeCoordinatesY = np.remainder(nodeKeys/(int)(cellsPerDirection*self.__vxblocks+1), cellsPerDirection*self.__vyblocks+1).astype(np.float32) * self.__dvy + self.__vymin
       nodeCoordinatesZ = ( nodeKeys / (int)((cellsPerDirection*self.__vxblocks+1) * (cellsPerDirection*self.__vyblocks+1)) ).astype(np.float32) * self.__dvz + self.__vzmin
-
+      
       # Nodekeyss is no longer needed
       del nodeKeys
 

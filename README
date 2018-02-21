@@ -18,6 +18,11 @@ import pytools as pt # Import Analysator
 pt.calculations.pitch_angles? #press [Enter]
 pt.vlsvfile.VlsvReader? #press [Enter]
 
+# For non-interactive mode (also when no X is available):
+# set the environment variable PTNONINTERACTIVE to any value before launching python/ipython
+#################################################
+#################################################
+export PTNONINTERACTIVE=1
 
 
 # For more information visit the link:
