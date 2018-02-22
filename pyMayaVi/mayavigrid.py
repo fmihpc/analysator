@@ -451,6 +451,7 @@ class MayaviGrid(HasTraits):
          # Plot pitch angle distribution:
          from themis_observation import  themis_plot_detector
          themis_plot_detector(self.vlsvReader,cellid,detectoraxis)
+         pl.show()
       elif (self.picker == "Themis_contour"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
@@ -501,6 +502,7 @@ class MayaviGrid(HasTraits):
          self.__add_label( cellid )
          from themis_observation import  themis_plot_phasespace_contour
          themis_plot_phasespace_contour(self.vlsvReader, cellid, plane[0], plane[1],xlabel=labels[0],ylabel=labels[1])
+         pl.show()
       elif (self.picker == "Themis_helistyle"):
 
          # Find the nearest cell id with distribution:
@@ -552,6 +554,7 @@ class MayaviGrid(HasTraits):
          self.__add_label( cellid )
          from themis_observation import  themis_plot_phasespace_helistyle
          themis_plot_phasespace_helistyle(self.vlsvReader, cellid, plane[0], plane[1],xlabel=labels[0],ylabel=labels[1])
+         pl.show()
 
       elif self.picker in self.picker_functions:
          # Call the corresponding pickerfunction
