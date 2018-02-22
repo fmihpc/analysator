@@ -752,6 +752,29 @@ class VlsvReader(object):
 
 
 
+   def get_velocity_cell_ids(self, vcellcoord):
+      ''' Returns velocity cell ids of given coordinate
+
+      Arguments:
+      :param vcellcoords: One 3d coordinate
+      :returns: Velocity cell id
+
+      .. seealso:: :func:`get_velocity_cell_coordinates`
+      '''
+      vmin = np.array([self.__vxmin, self.__vymin, self.__vzmin])
+      dv = np.array([self.__dvx, self.__dvy, self.__dvz])
+      block_index = np.floor((vcellcoord - vmin) / (4 * dv))
+      cell_index = np.floor(np.remainder(vcellcoord - vmin, 4*dv) / dv)
+      vcellid = int(block_index[0])
+      vcellid += int(block_index[1] * self.__vxblocks)
+      vcellid += int(block_index[2] * self.__vxblocks * self.__vyblocks)
+      vcellid *= 64
+      vcellid += int(cell_index[0])
+      vcellid += int(cell_index[1] * 4)
+      vcellid += int(cell_index[2] * 16)
+      return vcellid
+
+
    def get_velocity_cell_coordinates(self, vcellids):
       ''' Returns a given velocity cell's coordinates as a numpy array
 
