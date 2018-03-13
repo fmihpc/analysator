@@ -15,3 +15,4 @@ from plot2d_with_vspace import vlsv_plot2d_with_vspace
 
 import colormaps
 from plot_panel import plot_colormap
+from plot_vdf import plot_vdf

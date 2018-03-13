@@ -1056,3 +1056,16 @@ magma = cmaps['magma']
 inferno = cmaps['inferno']
 plasma = cmaps['plasma']
 viridis = cmaps['viridis']
+
+# Themis colormap, as extracted from the themis tools' IDL file
+import matplotlib
+hot_desaturated_colors=[(71./255.,71./255.,219./255.),(0,0,91./255.),(0,1,1),(0,.5,0),(1,1,0),(1,96./255,0),(107./255,0,0),(224./255,76./255,76./255)]
+hot_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated",hot_desaturated_colors)
+hot_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated_r",hot_desaturated_colors[::-1])
+
+
+# Pale version of hot_desaturated
+pale_desaturated_colors=[[0.5 + j * 0.5 for j in i] for i in hot_desaturated_colors]
+pale_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated",pale_desaturated_colors)
+pale_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated_r",pale_desaturated_colors[::-1])
+
