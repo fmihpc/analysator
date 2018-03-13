@@ -271,27 +271,31 @@ class MayaviGrid(HasTraits):
          # Generate velocity space
          self.__generate_velocity_grid(cellid)
       elif (self.picker == "Velocity_space_nearest_cellid"):
-         # Find the nearest cell id with distribution:
-         # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
-         # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-         # Read in the cell's coordinates:
-         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
-         if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
-            return
-         # Find the nearest:
-         from operator import itemgetter
-         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
-         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-         # Get the cell id:
-         cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
-         # Set label to give out the location of the cell:
-         self.__add_label( cellid )
-         # Generate velocity grid
-         self.__generate_velocity_grid(cellid)
+         if len(args) < 1:
+             args=["proton"]
+         for pop in args:
+            pop = pop.encode("ascii",'replace')
+            # Find the nearest cell id with distribution:
+            # Read cell ids with velocity distribution in:
+            cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+            # Read in the coordinates of the cells:
+            cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+            # Read in the cell's coordinates:
+            pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+            if len(cell_candidates) == 0:
+               print "No velocity distribution data found in this file!"
+               return
+            # Find the nearest:
+            from operator import itemgetter
+            norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+            norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+            # Get the cell id:
+            cellid = cell_candidates[i]
+            print "PLOTTED CELL ID: " + str(cellid)
+            # Set label to give out the location of the cell:
+            self.__add_label( cellid )
+            # Generate velocity grid
+            self.__generate_velocity_grid(cellid, False, pop)
       elif (self.picker == "Velocity_space_iso_surface"):
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
@@ -299,25 +303,29 @@ class MayaviGrid(HasTraits):
       elif (self.picker == "Velocity_space_nearest_cellid_iso_surface"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
-         cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
-         if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
-            return
-         # Read in the coordinates of the cells:
-         cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-         # Read in the cell's coordinates:
-         pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
-         # Find the nearest:
-         from operator import itemgetter
-         norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
-         norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-         # Get the cell id:
-         cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
-         # Set label to give out the location of the cell:
-         self.__add_label( cellid )
-         # Generate velocity grid
-         self.__generate_velocity_grid(cellid, True)
+         if len(args) < 1:
+             args=["proton"]
+         for pop in args:
+            pop = pop.encode("ascii",'replace')
+            cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
+            if len(cell_candidates) == 0:
+               print "No velocity distribution data found in this file!"
+               return
+            # Read in the coordinates of the cells:
+            cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
+            # Read in the cell's coordinates:
+            pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
+            # Find the nearest:
+            from operator import itemgetter
+            norms = np.sum((cell_candidate_coordinates - pick_cell_coordinates)**2, axis=-1)**(1./2)
+            norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
+            # Get the cell id:
+            cellid = cell_candidates[i]
+            print "PLOTTED CELL ID: " + str(cellid)
+            # Set label to give out the location of the cell:
+            self.__add_label( cellid )
+            # Generate velocity grid
+            self.__generate_velocity_grid(cellid, True, pop)
       elif (self.picker == "Pitch_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
@@ -631,14 +639,15 @@ class MayaviGrid(HasTraits):
       #self.__thread.start()
       
 
-   def __generate_velocity_grid( self, cellid, iso_surface=False ):
+   def __generate_velocity_grid( self, cellid, iso_surface=False, pop="proton" ):
       '''Generates a velocity grid from a given spatial cell id
          :param cellid:           The spatial cell's ID
          :param iso_surface:      If true, plots the iso surface
       '''
       # Create nodes
       # Get velocity blocks and avgs:
-      blocksAndAvgs = self.vlsvReader.read_blocks(cellid)
+      print "generating velocity grid for cellid = " + str(cellid) + " and pop = " + pop
+      blocksAndAvgs = self.vlsvReader.read_blocks(cellid, pop=pop)
       if len(blocksAndAvgs) == 0:
          print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
          return False
@@ -651,7 +660,7 @@ class MayaviGrid(HasTraits):
       blocks = blocksAndAvgs[0]
       avgs = blocksAndAvgs[1]
       # Get nodes:
-      nodesAndKeys = self.vlsvReader.construct_velocity_cell_nodes(blocks)
+      nodesAndKeys = self.vlsvReader.construct_velocity_cell_nodes(blocks, pop=pop)
       # Create an unstructured grid:
       points = nodesAndKeys[0]
       tets = nodesAndKeys[1]
@@ -663,7 +672,7 @@ class MayaviGrid(HasTraits):
       # Input data
       values=np.ravel(avgs)
       ug.cell_data.scalars=values
-      ug.cell_data.scalars.name='avgs'
+      ug.cell_data.scalars.name=pop
 
       # Plot B if possible:
       # Read B vector and plot it:
