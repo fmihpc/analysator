@@ -133,9 +133,9 @@ class VlsvReader(object):
 
               else:
                  #new style vlsv file with bounding box
-                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
-                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
-                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)   
+                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)   
+                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)   
                  pop.__vxblocks = bbox[0]
                  pop.__vyblocks = bbox[1]
                  pop.__vzblocks = bbox[2]
