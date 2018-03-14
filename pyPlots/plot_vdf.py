@@ -114,60 +114,33 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             return (False,0,0,0)
 
     # Assume velocity cells are cubes
-    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size()#pop=pop)
+    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
     # Account for 4x4x4 cells per block
     vxsize = 4*vxsize
     vysize = 4*vysize
     vzsize = 4*vzsize
-
-    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent()#pop=pop)
+    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
     print("Input velocity grid cell size "+str(inputcellsize))
 
-    if slicethick==None:
-        # Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.
-        # Might still be incorrect, erring on the side of caution.
-        # norm_srt = sorted(abs(normvect))
-        # if norm_srt[1] > 0:
-        #     temp = norm_srt[0]/norm_srt[1]
-        #     aratio = (1.+temp)/np.sqrt( 1+temp**2)
-        # else:
-        #     aratio = 1.
-        # gridratio = aratio * norm_srt[2] * (1. + aratio * np.sqrt(norm_srt[0]**2 + norm_srt[1]**2) / norm_srt[2] )
-        # if gridratio>1.0:
-        #     # Account for numerical inaccuracy
-        #     slicethick=inputcellsize*gridratio*1.01
-        # else:
-        #     slicethick=inputcellsize
-
-        samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
-        sbrot = rotateVectorToVector(samplebox,normvect)
-        rotminx=np.amin(sbrot[:,0])
-        rotmaxx=np.amax(sbrot[:,0])
-        rotminy=np.amin(sbrot[:,1])
-        rotmaxy=np.amax(sbrot[:,1])
-        rotminz=np.amin(sbrot[:,2])
-        rotmaxz=np.amax(sbrot[:,2])
-        gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-        slicethick=inputcellsize*gridratio
-    else:
-        slicethick=inputcellsize*slicethick
-    print("Performing slice with a counting thickness of "+str(slicethick))
-
-
-    velcells = vlsvReader.read_velocity_cells(cid)#, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys())#, pop=pop)
+    velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
     print("Found "+str(len(V))+" v-space cells")
 
     if cbulk!=None:
         print("Transforming to plasma frame")
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
-            moments = vlsvReader.read_variable('moments',cid)
+            moments = np.array(vlsvReader.read_variable('moments',cid))
             if moments==None:
                 print("Error reading moments from assumed restart file!")
                 quit()
-            bulkv = moments[1:3]/moments[0]
+            if len(moments.shape)==2:
+                moments = moments[0]
+            if moments[0]>0.0:
+                bulkv = moments[1:4]/moments[0]
+            else:
+                bulkv=[0.,0.,0.]
         elif vlsvReader.check_variable('v'):
             # Multipop file with bulk v saved directly
             bulkv = vlsvReader.read_variable('v',cid)
@@ -209,6 +182,36 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             return (False,0,0,0)
         f = f[ii_f]
         V = V[ii_f,:][0,:,:]
+
+    if slicethick==None:
+        # Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.
+        # Might still be incorrect, erring on the side of caution.
+        # norm_srt = sorted(abs(normvect))
+        # if norm_srt[1] > 0:
+        #     temp = norm_srt[0]/norm_srt[1]
+        #     aratio = (1.+temp)/np.sqrt( 1+temp**2)
+        # else:
+        #     aratio = 1.
+        # gridratio = aratio * norm_srt[2] * (1. + aratio * np.sqrt(norm_srt[0]**2 + norm_srt[1]**2) / norm_srt[2] )
+        # if gridratio>1.0:
+        #     # Account for numerical inaccuracy
+        #     slicethick=inputcellsize*gridratio*1.01
+        # else:
+        #     slicethick=inputcellsize
+
+        samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
+        sbrot = rotateVectorToVector(samplebox,normvect)
+        rotminx=np.amin(sbrot[:,0])
+        rotmaxx=np.amax(sbrot[:,0])
+        rotminy=np.amin(sbrot[:,1])
+        rotmaxy=np.amax(sbrot[:,1])
+        rotminz=np.amin(sbrot[:,2])
+        rotmaxz=np.amax(sbrot[:,2])
+        gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
+        slicethick=inputcellsize*gridratio
+    else:
+        slicethick=inputcellsize*slicethick
+    print("Performing slice with a counting thickness of "+str(slicethick))
 
     if slicetype=="xy":
         VX = V[:,0]
@@ -407,8 +410,8 @@ def plot_vdf(filename=None,
 
     # These apparently work with multipop at least for the default mesh of protons.
     # Also works with older vlsv versions.
-    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size()#pop=pop)
-    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent()#pop=pop)
+    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
+    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
     # account for 4x4x4 cells per block
@@ -438,8 +441,10 @@ def plot_vdf(filename=None,
         print("Error: must provide either cell id's or coordinates")
         return -1
 
-    
     if coordinates!=None:
+        if len(np.array(coordinates).shape)==1:
+            coordinates = [coordinates]
+
         # Calculate cell IDs from given coordinates        
         xReq = np.asarray(coordinates).T[0]
         yReq = np.asarray(coordinates).T[1]

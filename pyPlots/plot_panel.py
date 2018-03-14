@@ -402,8 +402,8 @@ def plot_colormap(filename=None,
             rhoindex = np.where(rhomap > np.finfo(float).eps)
         else:
             print("Unable to exclude non-zero mass density region from range finder!")
-            rhomap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > np.finfo(float).eps)
+            rhomap = datamap
+            rhoindex = np.where(np.isfinite(rhomap))
 
     if vmin!=None:
         vminuse=vmin
