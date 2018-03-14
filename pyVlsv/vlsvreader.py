@@ -133,9 +133,9 @@ class VlsvReader(object):
 
               else:
                  #new style vlsv file with bounding box
-                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
-                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
-                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+                 nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)   
+                 nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)   
+                 nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)   
                  pop.__vxblocks = bbox[0]
                  pop.__vyblocks = bbox[1]
                  pop.__vzblocks = bbox[2]
@@ -154,7 +154,7 @@ class VlsvReader(object):
                  pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
               self.__meshes[popname]=pop
-              print "Foud population " + popname
+              print "Found population " + popname
 
       self.__fptr.close()
 
@@ -771,7 +771,7 @@ class VlsvReader(object):
       return  ngbr_indices[0] + ngbr_indices[1] * self.__xcells + ngbr_indices[2] * self.__xcells * self.__ycells + 1
 
 
-    def get_velocity_cell_ids(self, vcellcoord, pop="proton"):
+   def get_velocity_cell_ids(self, vcellcoord, pop="proton"):
       ''' Returns velocity cell ids of given coordinate
 
       Arguments:
@@ -782,18 +782,18 @@ class VlsvReader(object):
       '''
       vmin = np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin])
       dv = np.array([self.__meshes[pop].__dvx, self.__meshes[pop].__dvy, self.__meshes[pop].__dvz])
-      block_index = np.floor((vcellcoord - vmin) / ((int)4 * dv))
-      cell_index = np.floor(np.remainder(vcellcoord - vmin, (int)4 * dv) / dv)
+      block_index = np.floor((vcellcoord - vmin) / (4 * dv))
+      cell_index = np.floor(np.remainder(vcellcoord - vmin, 4 * dv) / dv)
       vcellid = int(block_index[0])
       vcellid += int(block_index[1] * self.__meshes[pop].__vxblocks)
       vcellid += int(block_index[2] * self.__meshes[pop].__vxblocks * self.__meshes[pop].__vyblocks)
       vcellid *= 64
       vcellid += int(cell_index[0])
-      vcellid += int(cell_index[1] * (int)4)
-      vcellid += int(cell_index[2] * (int)16)
+      vcellid += int(cell_index[1] * 4)
+      vcellid += int(cell_index[2] * 16)
       return vcellid
 
-    def get_velocity_cell_coordinates(self, vcellids, pop="proton"):
+   def get_velocity_cell_coordinates(self, vcellids, pop="proton"):
       ''' Returns a given velocity cell's coordinates as a numpy array
 
       Arguments:
