@@ -57,7 +57,10 @@ def plot_colormap(filename=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, extvals=None,
-                  expression=None, exprvals=None
+                  expression=None, exprvals=None,
+                  fluxfile=None, fluxdir=None,
+                  fluxthick=1.0, fluxlines=60,
+
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -108,6 +111,11 @@ def plot_colormap(filename=None,
     :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
                         vmin and vmax manually.
     :kword exprvals:    Array of map names to pass to the optional expression function (as np.arrays)
+
+    :kword fluxfile:    Filename to plot fluxfunction from
+    :kword fluxdir:     Directory in which fluxfunction files can be found
+    :kword fluxthick:   scale fluxfunction line thickness
+    :kword fluxlines:   How many fluxfunction contour levels to plot
                             
     :returns:           Outputs an image to a file or to the screen.
 
@@ -153,6 +161,13 @@ def plot_colormap(filename=None,
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
+
+    # Flux function files
+    if fluxdir!=None:
+        if step != None:
+            fluxfile = fluxdir+'flux.'+str(step).rjust(7,'0')+'.bin'
+        else:            
+            fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
 
     # Scientific notation for colorbar ticks?
     if usesci==None:
@@ -227,6 +242,7 @@ def plot_colormap(filename=None,
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
+    cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
     # xsize = f.read_parameter("xcells_ini")
     # ysize = f.read_parameter("ycells_ini")
@@ -385,26 +401,25 @@ def plot_colormap(filename=None,
             print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
             return -1
 
-    # If automatic range finding is required, find min and max of array
-    if vmin==None or vmax==None:
-        # Only use values where particles exist, i.e. mask out magnetosphere
-        if f.check_variable("rho"):
-            rhomap = f.read_variable("rho")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > np.finfo(float).eps)
-        elif f.check_variable("rhom"):
-            rhomap = f.read_variable("rhom")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > 1.e-25) # built-in numpy epsilon values are too small
-        elif f.check_variable("proton/rho"):
-            rhomap = f.read_variable("proton/rho")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > np.finfo(float).eps)
-        else:
-            print("Unable to exclude non-zero mass density region from range finder!")
-            rhomap = datamap
-            rhoindex = np.where(np.isfinite(rhomap))
+    # Find region outside ionosphere
+    if f.check_variable("rho"):
+        rhomap = f.read_variable("rho")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > np.finfo(float).eps)
+    elif f.check_variable("rhom"):
+        rhomap = f.read_variable("rhom")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > 1.e-25) # built-in numpy epsilon values are too small
+    elif f.check_variable("proton/rho"):
+        rhomap = f.read_variable("proton/rho")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > np.finfo(float).eps)
+    else:
+        print("Unable to exclude non-zero mass density region from range finder!")
+        rhomap = datamap
+        rhoindex = np.where(np.isfinite(rhomap))
 
+    # If automatic range finding is required, find min and max of array
     if vmin!=None:
         vminuse=vmin
     else: 
@@ -469,7 +484,6 @@ def plot_colormap(filename=None,
     else:
         plt.switch_backend('Agg')  
 
-    print(boxcoords)
     # Select image shape to match plotted area, (with some accounting for axes etc)
     boxlenx = boxcoords[1]-boxcoords[0]
     boxleny = boxcoords[3]-boxcoords[2]
@@ -576,6 +590,21 @@ def plot_colormap(filename=None,
                 # labels will be in format $x.0\times10^{y}$
                 if not label.get_text()[1] in valids:
                     label.set_visible(False)
+
+    # add flux function contours
+    if fluxfile != None:
+        # Find inflow position values
+        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+        ff_v = f.read_variable("v", cellids=cid)
+        ff_b = f.read_variable("B", cellids=cid)
+        
+        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0]) - timeval * np.linalg.norm(np.cross(ff_v,ff_b))
+        # Mask away ionosphere
+        flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
+        flux_function = np.ma.masked_where(rhomap<=0, flux_function)
+
+        flux_levels = np.linspace(np.amin(flux_function),np.amax(flux_function),fluxlines) #np.linspace(-5.,0.5,30)
+        fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # Add Vlasiator watermark
     if wmark!=None:        
