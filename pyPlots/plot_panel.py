@@ -59,8 +59,7 @@ def plot_colormap(filename=None,
                   external=None, extvals=None,
                   expression=None, exprvals=None,
                   fluxfile=None, fluxdir=None,
-                  fluxthick=1.0, fluxlines=60,
-
+                  fluxthick=1.0, fluxlines=1
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -114,8 +113,8 @@ def plot_colormap(filename=None,
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
-    :kword fluxthick:   scale fluxfunction line thickness
-    :kword fluxlines:   How many fluxfunction contour levels to plot
+    :kword fluxthick:   Scale fluxfunction line thickness
+    :kword fluxlines:   Relative density of fluxfunction contours
                             
     :returns:           Outputs an image to a file or to the screen.
 
@@ -166,9 +165,18 @@ def plot_colormap(filename=None,
     if fluxdir!=None:
         if step != None:
             fluxfile = fluxdir+'flux.'+str(step).rjust(7,'0')+'.bin'
+            if not os.path.exists(fluxfile):
+                fluxfile = fluxdir+'bulk.'+str(step).rjust(7,'0')+'.bin'
         else:            
             fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
+            if not os.path.exists(fluxfile):
+                fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
 
+    if fluxfile!=None:
+        if not os.path.exists(fluxfile):
+            print("Error locating flux function file!")
+            fluxfile=None
+                
     # Scientific notation for colorbar ticks?
     if usesci==None:
         usesci=1
@@ -593,17 +601,30 @@ def plot_colormap(filename=None,
 
     # add flux function contours
     if fluxfile != None:
+        # Read binary flux function data from prepared files
+        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
+
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
         ff_v = f.read_variable("v", cellids=cid)
         ff_b = f.read_variable("B", cellids=cid)
-        
-        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0]) - timeval * np.linalg.norm(np.cross(ff_v,ff_b))
+
+        # Account for movement
+        bdirsign = -1.0 
+        outofplane = [0,1,0] # For ecliptic runs
+        if zsize==1:
+            outofplane = [0,0,1]  # For polar runs
+        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0:
+            bdirsign = 1.0
+        flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
+
         # Mask away ionosphere
         flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
         flux_function = np.ma.masked_where(rhomap<=0, flux_function)
 
-        flux_levels = np.linspace(np.amin(flux_function),np.amax(flux_function),fluxlines) #np.linspace(-5.,0.5,30)
+        # The flux level contours must be fixed instead of scaled based on min/max values in order
+        # to properly account for flux freeze-in and advection with plasma
+        flux_levels = np.linspace(-10,10,fluxlines*60)
         fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # Add Vlasiator watermark
