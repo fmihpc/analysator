@@ -52,7 +52,7 @@ def plot_colormap(filename=None,
                   title=None, cbtitle=None, draw=None, usesci=None,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
-                  run=None,wmark=None,
+                  run=None,wmark=None, nocb=None,
                   unit=None, thick=1.0,scale=1.0,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
@@ -286,7 +286,7 @@ def plot_colormap(filename=None,
             datamap = f.read_variable("rho")
 
         elif var == 'rhoBeam':
-            cb_title = r"$\rho_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
+            cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
             datamap = f.read_variable("RhoBackstream")
 
         elif var == 'beta':
@@ -473,11 +473,13 @@ def plot_colormap(filename=None,
     # Select image shape to match plotted area, (with some accounting for axes etc)
     boxlenx = boxcoords[1]-boxcoords[0]
     boxleny = boxcoords[3]-boxcoords[2]
-    # Round the values so that image sizes won't wobble when there's e.g. a moving box and numerical inaccuracies
-    boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
-    boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
+    # Round the values so that image sizes won't wobble when there's e.g. a moving box and numerical inaccuracies.
+    # This is only done if the box size is suitable for the unit in use.
+    if ((boxlenx > 10) and (boxleny > 10)):
+        boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
+        boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = np.sqrt(boxleny/boxlenx)
-
+    ratio = boxleny/boxlenx
     # default for square figure is figsize=[4.0,3.15]
     figsize = [4.0,3.15*ratio]
     # Create 300 dpi image of suitable size
@@ -542,37 +544,38 @@ def plot_colormap(filename=None,
 
     # Colourbar title
     if len(cb_title_use)!=0:
-        cb_title_locy = 1.0 + 0.05/ratio
-        plt.text(1.0, 1.05, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
+        cb_title_locy = 1.0 + 0.05#/ratio
+        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
 
-    # Witchcraft used to place colourbar
-    divider = make_axes_locatable(ax1)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    # First draw colorbar
-    if usesci==0:        
-        cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
-    else:
-        cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
-    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-    cb.outline.set_linewidth(thick)
+    if nocb==None:
+        # Witchcraft used to place colourbar
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        # First draw colorbar
+        if usesci==0:        
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
+        else:
+            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
+        cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        cb.outline.set_linewidth(thick)
 
-    # if too many subticks:
-    if lin==None and usesci!=0 and symlog==None:
-        # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
-        # For non-square pictures, adjust tick count
-        nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
-        valids = ['1','2','3','4','5','6','7','8','9']
-        if nlabels > 10:
-            valids = ['1','2','3','4','5','6','8']
-        if nlabels > 19:
-            valids = ['1','2','5']
-        if nlabels > 28:
-            valids = ['1']
-        #for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-        for label in cb.ax.yaxis.get_ticklabels():
-            # labels will be in format $x.0\times10^{y}$
-            if not label.get_text()[1] in valids:
-                label.set_visible(False)
+        # if too many subticks:
+        if lin==None and usesci!=0 and symlog==None:
+            # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
+            # For non-square pictures, adjust tick count
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            valids = ['1','2','3','4','5','6','7','8','9']
+            if nlabels > 10:
+                valids = ['1','2','3','4','5','6','8']
+            if nlabels > 19:
+                valids = ['1','2','5']
+            if nlabels > 28:
+                valids = ['1']
+            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+            for label in cb.ax.yaxis.get_ticklabels():
+                # labels will be in format $x.0\times10^{y}$
+                if not label.get_text()[1] in valids:
+                    label.set_visible(False)
 
     # Add Vlasiator watermark
     if wmark!=None:        

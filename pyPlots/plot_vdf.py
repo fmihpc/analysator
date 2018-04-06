@@ -277,7 +277,7 @@ def plot_vdf(filename=None,
                         forward slash, the final parti will be used as a perfix for the files.
      
     :kword cellids:     list of cell IDs to plot VDF for
-    :kword coordinates: list of 3-element spatial coordinates to plot VDF for
+    :kword coordinates: list of 3-element spatial coordinates to plot VDF for (given in metres)
     :kword pop:         Population to plot, default proton
 
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -302,7 +302,7 @@ def plot_vdf(filename=None,
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
-    :kword center:      Center plot on provided velocity vector position (in m/s)
+    :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
     :kword wflux:       Plot flux instead of distribution function
     :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage)
     :kword cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
@@ -391,6 +391,21 @@ def plot_vdf(filename=None,
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
+
+    # If population isn't defined i.e. defaults to protons, check if 
+    # instead should use old version "avgs"
+    if pop=="proton":
+       if not vlsvReader.check_population(pop):
+           if vlsvReader.check_population("avgs"):
+               pop="avgs"
+               print("Auto-switched to population avgs")
+           else:
+               print("Unable to detect population "+pop+" in .vlsv file!")
+               quit()
+    else:
+        if not vlsvReader.check_population(pop):
+            print("Unable to detect population "+pop+" in .vlsv file!")
+            quit()       
 
     #read in mesh size and cells in ordinary space
     # xsize = vlsvReader.read_parameter("xcells_ini")
