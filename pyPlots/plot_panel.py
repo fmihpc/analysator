@@ -58,6 +58,7 @@ def plot_colormap(filename=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, extvals=None,
                   expression=None, exprvals=None,
+                  expr_timeavg=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1
                   ):
@@ -78,7 +79,7 @@ def plot_colormap(filename=None,
                         Per-population variables are simply given as "proton/rho" etc.
     :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
-
+           
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -91,12 +92,12 @@ def plot_colormap(filename=None,
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
-    :kword lin:         flag for using linear colour scaling instead of log
-    :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+    :kword lin:         Flag for using linear colour scaling instead of log
+    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
-    :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -104,12 +105,21 @@ def plot_colormap(filename=None,
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
    
-    :kword external:    Optional function which receives the image axes in order to do further plotting
-    :kword extvals:     Optional array of map names to pass to the external function
+    :kword external:    Optional function to use for external plotting of e.g. contours. The function
+                        receives the following arguments: ax, XmeshXY,YmeshXY, extmaps
+    :kword extvals:     Optional list of map names to pass to the external function as extmaps
+                        which is a list of numpy arrays. Each is either of size [ysize,xsize] or 
+                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
 
     :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
-                        vmin and vmax manually.
-    :kword exprvals:    Array of map names to pass to the optional expression function (as np.arrays)
+                        vmin and vmax manually. The function receives a list of numpy arrays as an
+                        argument, provifing variable maps. Each is either of size [ysize,xsize] or 
+                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+
+    :kword exprvals:    List of map names to pass to the optional expression function (as np.arrays)
+    :kword expr_timeavg: Integer, how many timesteps in each direction should be passed in exprvals
+                        (e.g. expr_timeavg=1 passes the values of three timesteps). Values are passed
+                        as a list of timesteps, with each timestep a list of numpy arrays as for exprvals.
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -396,18 +406,41 @@ def plot_colormap(filename=None,
             print("Error, expression must have some variable maps to work on.")
             return
         else:
-            # Gather the required variable maps for the expression function
-            for mapval in exprvals:
-                exprmap = f.read_variable(mapval)
-                if np.ndim(exprmap)==1:
-                    exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-                else:
-                    exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
-                exprmaps.append(np.ma.asarray(exprmap))
-        datamap = expression(exprmaps)             
-        if np.ndim(datamap)!=2:
-            print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
-            return -1
+            if expr_timeavg==None:
+                # Gather the required variable maps for the expression function
+                for mapval in exprvals:
+                    exprmap = f.read_variable(mapval)
+                    if np.ndim(exprmap)==1:
+                        exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                    else:
+                        exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
+                    exprmaps.append(np.ma.asarray(exprmap))
+                datamap = expression(exprmaps)             
+                if np.ndim(datamap)!=2:
+                    print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
+                    return -1
+            else:
+                currstep = int(filename[-12:-5])
+                tavg_step_i = -1
+                tavg_step = int(expr_timeavg)
+                for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
+                    tavg_step_i = tavg_step_i+1
+                    filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
+                    print(filenamestep)
+                    fstep=pt.vlsvfile.VlsvReader(filenamestep)
+                    step_cellids = fstep.read_variable("CellID")
+                    exprmaps.append([])
+                    for mapval in exprvals:
+                        exprmap = fstep.read_variable(mapval)
+                        if np.ndim(exprmap)==1:
+                            exprmap = exprmap[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
+                        else:
+                            exprmap = exprmap[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
+                        exprmaps[tavg_step_i].append(np.ma.asarray(exprmap))
+            datamap = expression(exprmaps)             
+            if np.ndim(datamap)!=2:
+                print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
+                return -1
 
     # Find region outside ionosphere
     if f.check_variable("rho"):
