@@ -56,9 +56,9 @@ def plot_colormap(filename=None,
                   unit=None, thick=1.0,scale=1.0,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
-                  external=None, extvals=None,
-                  expression=None, exprvals=None,
-                  expr_timeavg=None,
+                  external=None, expression=None, 
+                  #exprvals=None, #extvals=None, #expr_timeavg=None, # These were consolidated
+                  pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1
                   ):
@@ -106,20 +106,20 @@ def plot_colormap(filename=None,
     :kword thick:       line and axis thickness, default=1.0
    
     :kword external:    Optional function to use for external plotting of e.g. contours. The function
-                        receives the following arguments: ax, XmeshXY,YmeshXY, extmaps
-    :kword extvals:     Optional list of map names to pass to the external function as extmaps
-                        which is a list of numpy arrays. Each is either of size [ysize,xsize] or 
-                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+                        receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
+    :kword expression:  Optional function which calculates a custom expression to plot. The function
+                        receives the same list of numpy arrays as external, as an argument pass_maps,
+                        the contents of which are maps of variables. Each is either of size [ysize,xsize]
+                        or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+                        Remember to set vmin and vmax manually.
 
-    :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
-                        vmin and vmax manually. The function receives a list of numpy arrays as an
-                        argument, provifing variable maps. Each is either of size [ysize,xsize] or 
+    :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
+                        as a list of numpy arrays. Each is either of size [ysize,xsize] or 
                         for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
-
-    :kword exprvals:    List of map names to pass to the optional expression function (as np.arrays)
-    :kword expr_timeavg: Integer, how many timesteps in each direction should be passed in exprvals
-                        (e.g. expr_timeavg=1 passes the values of three timesteps). Values are passed
-                        as a list of timesteps, with each timestep a list of numpy arrays as for exprvals.
+    :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
+                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). 
+                        This causes pass_vars to become a list of timesteps, with each timestep containing
+                        a list of numpy arrays as for regular pass_vars.
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -311,6 +311,8 @@ def plot_colormap(filename=None,
     simext=[i/unit for i in simext]
     boxcoords=[i/unit for i in boxcoords]
 
+    pass_maps=[]
+
     ##########
     # Read data and calculate required variables
     ##########
@@ -397,64 +399,60 @@ def plot_colormap(filename=None,
         # Reshape data to an ordered 2D array that can be plotted
         if np.ndim(datamap) != 2:
             datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        
 
-    else:
-    # Optional user-defined expression overrides the var
-    # Optional external additional plotting routine
-        exprmaps=[]
-        if exprvals==None:
-            print("Error, expression must have some variable maps to work on.")
-            return
+    # If expression or external routine need variables, read them from the file.
+    if pass_vars!=None:
+        if pass_times==None:
+            # Gather the required variable maps for a single time step
+            for mapval in pass_vars:
+                pass_map = f.read_variable(mapval)
+                if np.ndim(pass_map)==1:
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                else:
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
+                pass_maps.append(np.ma.asarray(pass_map))
         else:
-            if expr_timeavg==None:
-                # Gather the required variable maps for the expression function
-                for mapval in exprvals:
-                    exprmap = f.read_variable(mapval)
-                    if np.ndim(exprmap)==1:
-                        exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+            # Or gather over a number of time steps
+            currstep = int(filename[-12:-5])
+            tavg_step_i = -1
+            tavg_step = int(pass_times)
+            for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
+                tavg_step_i = tavg_step_i+1
+                filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
+                print(filenamestep)
+                fstep=pt.vlsvfile.VlsvReader(filenamestep)
+                step_cellids = fstep.read_variable("CellID")
+                pass_maps.append([])
+                for mapval in pass_vars:
+                    pass_map = fstep.read_variable(mapval)
+                    if np.ndim(pass_map)==1:
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
                     else:
-                        exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
-                    exprmaps.append(np.ma.asarray(exprmap))
-                datamap = expression(exprmaps)             
-                if np.ndim(datamap)!=2:
-                    print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
-                    return -1
-            else:
-                currstep = int(filename[-12:-5])
-                tavg_step_i = -1
-                tavg_step = int(expr_timeavg)
-                for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
-                    tavg_step_i = tavg_step_i+1
-                    filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
-                    print(filenamestep)
-                    fstep=pt.vlsvfile.VlsvReader(filenamestep)
-                    step_cellids = fstep.read_variable("CellID")
-                    exprmaps.append([])
-                    for mapval in exprvals:
-                        exprmap = fstep.read_variable(mapval)
-                        if np.ndim(exprmap)==1:
-                            exprmap = exprmap[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
-                        else:
-                            exprmap = exprmap[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
-                        exprmaps[tavg_step_i].append(np.ma.asarray(exprmap))
-            datamap = expression(exprmaps)             
-            if np.ndim(datamap)!=2:
-                print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
-                return -1
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
+                    pass_maps[tavg_step_i].append(np.ma.asarray(pass_map))
+
+
+    # Optional user-defined expression used for color panel instead of a single pre-existing var
+    if expression!=None:
+        datamap = expression(pass_maps)
+        if np.ndim(datamap)!=2:
+            print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
+            return -1
 
     # Find region outside ionosphere
     if f.check_variable("rho"):
         rhomap = f.read_variable("rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > np.finfo(float).eps)
+        rhoindex = np.where(rhomap > 1e-10)
     elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1.e-25) # built-in numpy epsilon values are too small
+        rhoindex = np.where(rhomap > 1.e-10)
     elif f.check_variable("proton/rho"):
         rhomap = f.read_variable("proton/rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > np.finfo(float).eps)
+        rhoindex = np.where(rhomap > 1e-10)
     else:
         print("Unable to exclude non-zero mass density region from range finder!")
         rhomap = datamap
@@ -540,7 +538,8 @@ def plot_colormap(filename=None,
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
     
-    # Generates the mesh to map the data to
+    # Generates the mesh to map the data to.
+    # Note, datamap is still of shape [ysize,xsize] (?)
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
     fig1 = plt.pcolormesh(XmeshXY,YmeshXY,datamap, cmap=colormap,norm=norm)
     ax1 = plt.gca() # get current axes
@@ -577,17 +576,9 @@ def plot_colormap(filename=None,
     # ax1.yaxis.set_major_locator(plt.MaxNLocator(int(7*np.sqrt(ratio))))
 
     # Optional external additional plotting routine overlayed on color plot
+    # Uses the same pass_maps variable as expressions
     if external!=None:
-        extmaps=[]
-        if extvals!=None:
-            for mapval in extvals:
-                extmap = f.read_variable(mapval)
-                if np.ndim(extmap)==1:
-                    extmap = extmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-                else:
-                    extmap = extmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(extmap[0])])
-                extmaps.append(extmap)
-        extresult=external(ax1, XmeshXY,YmeshXY, extmaps)            
+        extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
 
     if cbtitle==None:
         if expression!=None:
