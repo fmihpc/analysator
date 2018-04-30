@@ -731,11 +731,11 @@ class VlsvReader(object):
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
       # Check that the coordinates are not out of bounds:
-      if (self.__xmax < coordinates[0]) or (self.__xmin > coordinates[0]):
+      if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
          return 0
-      if (self.__ymax < coordinates[1]) or (self.__ymin > coordinates[1]):
+      if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
          return 0
-      if (self.__zmax < coordinates[2]) or (self.__zmin > coordinates[2]):
+      if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])

@@ -23,7 +23,6 @@ matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
-
 # Register custom colourmaps
 plt.register_cmap(name='viridis', cmap=cmaps.viridis)
 plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
@@ -65,30 +64,12 @@ def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
     # Select cells which are within slice area
     indexes = [(abs(Vpara) <= 0.5*vthick) & (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
-
     # Gather histogram of values
     (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),weights=fw[indexes],normed=0)
     # Gather histogram of how many cells were summed for the histogram
     (Chist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),normed=0)
     # Correct for summing multiple cells into one histogram output cell
     nonzero = np.where(Chist != 0)
-
-    # nonzerocount = sum([len(row) for row in nonzero])
-    # print("indices "+str(nonzerocount))
-    # one = np.where(Chist ==1)
-    # one = sum( [len(row) for row in one])
-    # two = np.where(Chist ==2)
-    # two = sum( [len(row) for row in two])
-    # three = np.where(Chist ==3)
-    # three = sum( [len(row) for row in three])
-    # four = np.where(Chist ==4)
-    # four = sum( [len(row) for row in four])
-    # five = np.where(Chist ==5)
-    # five = sum( [len(row) for row in five])
-    # six = np.where(Chist ==6)
-    # six = sum( [len(row) for row in six])
-    # print("vthick "+str(vthick))
-    # print("One "+str(one)+" two "+str(two)+" three "+str(three)+" four "+str(four)+" five "+str(five)+" six "+str(six))
 
     nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
 
@@ -252,7 +233,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
 def plot_vdf(filename=None,
              vlsvobj=None,
              filedir=None, step=None,
-             cellids=None, coordinates=None, pop="proton",
+             cellids=None, pop="proton",
+             coordinates=None, coordre=None, 
              outputdir=None,
              draw=None,unit=None,title=None, cbtitle=None,
              colormap=None, box=None, cbar=None,
@@ -260,6 +242,7 @@ def plot_vdf(filename=None,
              fmin=None, fmax=None, slicethick=None, cellsize=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bperp=None,
+             coordswap=None,
              cbulk=None, center=None, wflux=None, keepfmin=None,
              legend=None, noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
@@ -278,6 +261,7 @@ def plot_vdf(filename=None,
      
     :kword cellids:     list of cell IDs to plot VDF for
     :kword coordinates: list of 3-element spatial coordinates to plot VDF for (given in metres)
+    :kword coordre: list of 3-element spatial coordinates to plot VDF for (given in Earth radii)
     :kword pop:         Population to plot, default proton
 
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -299,6 +283,8 @@ def plot_vdf(filename=None,
     :kword bpara:       Perform slice in B_para / B_perp2 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
+
+    :kword coordswap:   Swap the parallel and perpendicular coordinates
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
@@ -452,12 +438,16 @@ def plot_vdf(filename=None,
         plt.switch_backend('Agg')  
 
 
-    if (cellids==None and coordinates==None):
+    if (cellids==None and coordinates==None and coordre==None):
         print("Error: must provide either cell id's or coordinates")
         return -1
 
+    if coordre!=None:
+        # Transform to metres
+        coordinates = Re*np.asarray(coordre)
+
     if coordinates!=None:
-        if len(np.array(coordinates).shape)==1:
+        if type(coordinates) is not list:
             coordinates = [coordinates]
 
         # Calculate cell IDs from given coordinates        
@@ -495,7 +485,10 @@ def plot_vdf(filename=None,
 
 
     # Loop over all cell ids
-    if len([cellids])==1: cellids = [cellids]
+    if type(cellids) is not list:
+        cellids = [cellids]
+
+    print(cellids)
     for cellid in cellids:
         # Initialise some values
         fminuse=None
@@ -562,9 +555,10 @@ def plot_vdf(filename=None,
             else:
                 print("Error finding B vector direction!")
                 quit()
-            #print(Bvect.shape)
+
+            if Bvect.shape==(1,3):
+                Bvect = Bvect[0]
             normvect = Bvect
-            #print(normvect)
 
             if bperp!=None:
                 # slice in b_perp1/b_perp2
@@ -579,7 +573,7 @@ def plot_vdf(filename=None,
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
-        normvect = normvect/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+        normvect = normvect/np.linalg.norm(normvect)
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
@@ -623,17 +617,33 @@ def plot_vdf(filename=None,
             print('ERROR: error from velocity space reducer')
             continue
 
+        # Perform swap of coordinate axes, if requested
+        if coordswap!=None:
+            temp = edgesX
+            edgesX = edgesY
+            edgesY = temp
+            temp = pltxstr
+            pltxstr = pltystr
+            pltystr = temp
+            binsXY = binsXY.T
+
         # If no other fmin fmax values are given, take min and max of array
         if fmin!=None:
             fminuse=fmin
         else:
             nzindex = np.where(binsXY > 0)
-            fminuse=np.amin(binsXY[nzindex])
+            if np.any(nzindex):
+                fminuse=np.amin(binsXY[nzindex])
+            else:
+                fminuse = 1e-15
         if fmax!=None:
             fmaxuse=fmax
         else:
             nzindex = np.where(binsXY > 0)
-            fmaxuse=np.amax(binsXY[nzindex])
+            if np.any(nzindex):
+                fmaxuse=np.amax(binsXY[nzindex])
+            else:
+                fmaxuse = 1e-12
 
         if vlsvReader.check_variable('MinValue') == True:
             fMinFile = vlsvReader.read_variable('MinValue',cellid)
@@ -658,18 +668,22 @@ def plot_vdf(filename=None,
                         xindexrange[1] = np.amax([xindexrange[1],xi])
                         yindexrange[0] = np.amin([yindexrange[0],yi])
                         yindexrange[1] = np.amax([yindexrange[1],yi])
-                        
+
             # leave some buffer
             xindexrange[0] =  np.max([0, 4 * int(np.floor((xindexrange[0]-2.)/4.)) ])
             xindexrange[1] =  np.min([len(edgesX)-1, 4 * int(np.ceil((xindexrange[1]+2.)/4.)) ])
             yindexrange[0] =  np.max([0, 4 * int((np.floor(yindexrange[0]-2.)/4.)) ])
             yindexrange[1] =  np.min([len(edgesY)-1, 4 * int(np.ceil((yindexrange[1]+2.)/4.)) ])
 
+            # If empty VDF: plot whole v-space
+            if ((xindexrange==[vxsize,0]) and (yindexrange==[vysize,0])):
+                xindexrange = [0,vxsize]
+                yindexrange = [0,vysize]
+
             xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
             yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
-            # print("Nonzero values range X "+str(xvalsrange)+" Y "+str(yvalsrange))
 
-            # TODO make plot area square if it's almost square
+            # TODO make plot area square if it's almost square?
 
         # Define figure size        
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
