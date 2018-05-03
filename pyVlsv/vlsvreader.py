@@ -460,13 +460,12 @@ class VlsvReader(object):
                    plot_population('proton')
       '''
       blockidsexist = False
+      foundpop = False
       for child in self.__xml_root:
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):
                if popname == child.attrib["name"]:
-                  return True
-               else:
-                  return False
+                  findpop = True
             else:
                blockidsexist = True
       if blockidsexist:
@@ -474,8 +473,8 @@ class VlsvReader(object):
             if child.tag == "BLOCKVARIABLE":
                if child.attrib.has_key("name"):
                   if popname == child.attrib["name"]: # avgs
-                     return True
-      return False
+                     findpop = True
+      return findpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
