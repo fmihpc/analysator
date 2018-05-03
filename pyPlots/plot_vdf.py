@@ -115,7 +115,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             moments = np.array(vlsvReader.read_variable('moments',cid))
             if moments==None:
                 print("Error reading moments from assumed restart file!")
-                quit()
+                exit()
             if len(moments.shape)==2:
                 moments = moments[0]
             if moments[0]>0.0:
@@ -135,7 +135,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             bulkv = vlsvReader.read_variable(pop+'/V',cid)
         else:
             print("Error in finding plasma bulk velocity!")
-            quit()
+            exit()
         # shift to velocities plasma frame
         V = V - bulkv
     elif center!=None:
@@ -387,11 +387,11 @@ def plot_vdf(filename=None,
                print("Auto-switched to population avgs")
            else:
                print("Unable to detect population "+pop+" in .vlsv file!")
-               quit()
+               exit()
     else:
         if not vlsvReader.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            quit()       
+            exit()       
 
     #read in mesh size and cells in ordinary space
     # xsize = vlsvReader.read_parameter("xcells_ini")
@@ -458,7 +458,7 @@ def plot_vdf(filename=None,
             print('Number of points: ' + str(xReq.shape[0]))
         else:
             print('ERROR: bad coordinate variables given')
-            quit()
+            exit()
         cidsTemp = []
         for ii in range(xReq.shape[0]):
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
@@ -467,10 +467,10 @@ def plot_vdf(filename=None,
                 cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
             else:
                 print('ERROR: cell not found')
-                quit()
+                exit()
             if (cidNearestVspace <= 0):
                 print('ERROR: cell with vspace not found')
-                quit()
+                exit()
             xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
             print('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
@@ -527,7 +527,7 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_2$ "+velUnitStr
             else:
                 print("Error parsing slice normal vector!")
-                quit()
+                exit()
         elif xy!=None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
@@ -554,7 +554,7 @@ def plot_vdf(filename=None,
                 Bvect = BGB+PERBB
             else:
                 print("Error finding B vector direction!")
-                quit()
+                exit()
 
             if Bvect.shape==(1,3):
                 Bvect = Bvect[0]

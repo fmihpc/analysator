@@ -387,7 +387,7 @@ def plot_colormap(filename=None,
                 # If value was vector value, take magnitude
                 if np.ndim(datamap) != 1:
                     cb_title = r"$|"+var+"|$"
-                    datamap = np.sum(np.asarray(datamap)**2,axis=-1)**(0.5)
+                    datamap = np.linalg.norm(np.asarray(datamap),axis=-1)
             else:
                 cb_title = r" "+var+"$_"+op+"$"
                 datamap = f.read_variable(var,operator=op)            
@@ -444,15 +444,15 @@ def plot_colormap(filename=None,
     if f.check_variable("rho"):
         rhomap = f.read_variable("rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1e-10)
+        rhoindex = np.where(rhomap > 1e-30)
     elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1.e-10)
+        rhoindex = np.where(rhomap > 1.e-30)
     elif f.check_variable("proton/rho"):
         rhomap = f.read_variable("proton/rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1e-10)
+        rhoindex = np.where(rhomap > 1e-30)
     else:
         print("Unable to exclude non-zero mass density region from range finder!")
         rhomap = datamap
