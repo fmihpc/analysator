@@ -323,6 +323,23 @@ class VlsvReader(object):
                print "Error! Bad data type in blocks!"
                return
 
+         if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            #array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+
+            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+
+            fptr.seek(offset_block_ids)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad data type in blocks!"
+               return
+
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
       if self.__fptr.closed:
@@ -424,6 +441,40 @@ class VlsvReader(object):
             if child.attrib["name"] == name:
                return True
       return False
+
+   def check_population( self, popname ):
+      ''' Checks if a given population is in the vlsv file
+
+          :param name:             Name of the population
+          :returns:                True if the population is in the vlsv file, false if not
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             if vlsvReader.check_population( "avgs" ):
+                plot_population('avgs')
+             else:
+                if vlsvReader.check_population( "proton" ):
+                   # File is newer with proton population
+                   plot_population('proton')
+      '''
+      blockidsexist = False
+      foundpop = False
+      for child in self.__xml_root:
+         if child.tag == "BLOCKIDS":
+            if child.attrib.has_key("name"):
+               if popname == child.attrib["name"]:
+                  findpop = True
+            else:
+               blockidsexist = True
+      if blockidsexist:
+         for child in self.__xml_root:
+            if child.tag == "BLOCKVARIABLE":
+               if child.attrib.has_key("name"):
+                  if popname == child.attrib["name"]: # avgs
+                     findpop = True
+      return findpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
@@ -679,11 +730,11 @@ class VlsvReader(object):
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
       # Check that the coordinates are not out of bounds:
-      if (self.__xmax < coordinates[0]) or (self.__xmin > coordinates[0]):
+      if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
          return 0
-      if (self.__ymax < coordinates[1]) or (self.__ymin > coordinates[1]):
+      if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
          return 0
-      if (self.__zmax < coordinates[2]) or (self.__zmin > coordinates[2]):
+      if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
