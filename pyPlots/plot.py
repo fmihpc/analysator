@@ -16,3 +16,6 @@ from plot2d_with_vspace import vlsv_plot2d_with_vspace
 import colormaps
 from plot_panel import plot_colormap
 from plot_vdf import plot_vdf
+from plot_mxm import plot_colormapmxm
+from plot_vdf import vSpaceReducer
+from plot_colormap_with_VDF import plot_colormap_with_vdf

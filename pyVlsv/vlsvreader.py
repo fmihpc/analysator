@@ -460,7 +460,7 @@ class VlsvReader(object):
                    plot_population('proton')
       '''
       blockidsexist = False
-      foundpop = False
+      findpop = False
       for child in self.__xml_root:
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):

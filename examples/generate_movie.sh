@@ -11,8 +11,8 @@
 # This script can be used on taito to generate an array job, which renders multiple frames
 # in order to e.g. make a movie.
 
-frameStart=0  # set to initial frame
-frameEnd=2708 # set to the final frame
+frameStart=3500  # set to initial frame
+frameEnd=3500 # set to the final frame
 
 # How many jobs? SLURM_ARRAY_TASK_COUNT does not work on all systems
 # so calculate job count (or set it manually to match the array

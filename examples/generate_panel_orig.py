@@ -145,8 +145,8 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
 
 # -------------------------------------------------------------------------------
 
-fileLocation="/proj/vlasov/2D/BCH/bulk/"
-fluxLocation="/proj/vlasov/2D/BCH/flux/"
+fileLocation="/proj/vlasov/2D/BCQ/bulk/"
+fluxLocation="/proj/vlasov/2D/BCQ/flux/"
 outputLocation=outputdir=os.path.expandvars('$HOME/Plots/')
 
 # Frame extent for this job given as command-line arguments
@@ -159,7 +159,37 @@ for j in timetot:
     bulkname = "bulk."+str(j).rjust(7,'0')+".vlsv"
     print(bulkname)
 
-    # Plot(s) to be made
-    pt.plot.plot_colormap_with_VDF(filename=bulkname, var='temperature', boxre=[-15, -2, -6.5, 6.5],vmin=5e5, vmax=1e8,step=i/2, colormap='nipy_spectral', cellidplot=[3601851,3601801,3601751,3601701,3751901,3451901], outputdir=outputLocation+'mosaic/',fluxdir=fluxLocation,fluxlines=2)
+    # Five different plots
 
+    # Plot rho with caviton and SHFA contours
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rho",run="BCQ",colormap='viridis_r',step=j,outputdir=outputLocation+'rho/',wmark=1, external=cavitoncontours, pass_vars=['rho','B','beta'], boxre=[-20,40,-40,20])
+
+    # Plot B-magnitude with caviton and SHFA contours
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="B",run="BCQ",colormap='inferno_r',step=j,outputdir=outputLocation+'Bmag/',wmark=1, external=cavitoncontours, pass_vars=['rho','B','beta'], boxre=[-20,40,-40,20])
+
+    # Plot beam number density with magnetic field lines on top
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeam/',wmark=1, fluxdir=fluxLocation, boxre=[-20,40,-40,20])
+
+    # Plot a linear plot of magnetic field y-component
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,run="BCQ",colormap='RdBu',step=j,outputdir=outputLocation+'By/', var='B',op='y', symlog=0, boxre=[-20,40,-40,20])
+
+    # Plot a custom expression of MA using a pre-set bulk flow speed
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,run="BCQ",colormap='plasma',step=j,outputdir=outputLocation+'cMA/',lin=1,expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20, usesci=0, boxre=[-20,20,-40,0])
+
+    # Plot a custom time-averaged caviton and SHFA colourmap with non-timeaveraged contours on top for comparison. Leaves out the
+    # Colour bar.and associated title.
+    pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='OrRd',step=j,outputdir=outputLocation+'cSHFA/', lin=1,vmin=0,vmax=1, expression=expr_cav_cust, external=cavitoncontours, pass_vars=['rho','B','beta'], pass_times=10, nocb=1, cbtitle='', boxre=[-20,20,-40,0])
+
+   # Useful flags
+   # (Find more by entering pt.plot.plot_colormap? in python
+   #
+   #   nooverwrite = 1:    Set to only perform actions if the target output file does not yet exist                    
+   #   boxm=[x0,x1,y0,y1]  Zoom to this box (size given in metres)
+   #   boxre=[x0,x1,y0,y1] Zoom to this box (size given in Earth radii)
+   #   usesci=0:           Disable scientific notation for colorbar ticks
+   #   symlog=0            Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+   #                       Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
+   #                       A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
+   #   wmark=1             If set to non-zero, will plot a Vlasiator watermark in the top left corner.
+   #   draw=1              Set to nonzero to draw image on-screen instead of saving to file (requires x-windowing)
 
