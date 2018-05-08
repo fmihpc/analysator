@@ -160,6 +160,6 @@ for j in timetot:
     print(bulkname)
 
     # Plot(s) to be made
-    pt.plot.plot_colormap_with_VDF(filename=bulkname, var='temperature', boxre=[-15, -2, -6.5, 6.5],vmin=5e5, vmax=1e8,step=i/2, colormap='nipy_spectral', cellidplot=[3601851,3601801,3601751,3601701,3751901,3451901], outputdir=outputLocation+'mosaic/',fluxdir=fluxLocation,fluxlines=2)
+    pt.plot.plot_colormap_with_vdf(filename=bulkname, var='temperature', boxre=[-15, -2, -6.5, 6.5],vmin=5e5, vmax=1e8,step=i/2, colormap='nipy_spectral', cellidplot=[3601851,3601801,3601751,3601701,3751901,3451901], outputdir=outputLocation+'mosaic/',fluxdir=fluxLocation,fluxlines=2)
 
 
