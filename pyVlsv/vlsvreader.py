@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
-from reduction import datareducers,data_operators
+from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
@@ -521,6 +521,13 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
+      # Get population and variable names from data array name
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
       for child in self.__xml_root:
@@ -596,6 +603,25 @@ class VlsvReader(object):
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+            return data_operators[operator](reducer.operation( tmp_vars ))
+
+      # Check if the name is in multidatareducers
+      if 'pop/'+varname in multipopdatareducers:
+         reducer = multipopdatareducers['pop/'+varname]
+         # Read the necessary variables:
+
+         # Return the output of the datareducer
+         if reducer.useVspace:
+            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            return 
+         else:
+            tmp_vars = []
+            for i in np.atleast_1d(reducer.variables):
+               if '/' not in i:
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+               else:
+                  tvar = i.split('/')[1]
+                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if self.__fptr.closed:
