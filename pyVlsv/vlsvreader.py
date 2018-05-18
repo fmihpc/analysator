@@ -20,6 +20,8 @@ class VlsvReader(object):
       pass
 
    file_name=""
+   active_populations=[]
+
    def __init__(self, file_name):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
@@ -89,6 +91,9 @@ class VlsvReader(object):
 
               # Create a new (empty) MeshInfo-object for this population
               pop = self.MeshInfo()
+              
+              # Update list of active populations
+              if not popname in self.active_populations: self.active_populations.append(popname)
 
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
