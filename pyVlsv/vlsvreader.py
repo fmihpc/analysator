@@ -525,8 +525,6 @@ class VlsvReader(object):
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
-      else:
-         varname = name
 
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
