@@ -459,15 +459,16 @@ def plot_colormap(filename=None,
         rhoindex = np.where(np.isfinite(rhomap))
 
     # If automatic range finding is required, find min and max of array
+    # Performs range-finding on a masked array to work even if array contains invalid values
     if vmin!=None:
         vminuse=vmin
     else: 
-        vminuse=np.amin(datamap[rhoindex])        
+        vminuse=np.amin(np.ma.masked_invalid(datamap[rhoindex]))
         # print("Using deduced minimum value "+str(vminuse))
     if vmax!=None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.amax(datamap[rhoindex])
+        vmaxuse=np.amax(np.ma.masked_invalid(datamap[rhoindex]))
         # print("Using deduced maximum value "+str(vmaxuse))
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
