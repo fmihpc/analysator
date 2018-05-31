@@ -32,6 +32,8 @@ plt.register_cmap(name='inferno', cmap=cmaps.inferno)
 plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
 plt.register_cmap(name='magma', cmap=cmaps.magma)
 plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
+plt.register_cmap(name='parula', cmap=cmaps.parula)
+plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
 plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
@@ -265,7 +267,7 @@ def plot_vdf(filename=None,
     :kword pop:         Population to plot, default proton
 
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
-                        magma, nipy_spectral, RdBu, bwr
+                        magma, parula, nipy_spectral, RdBu, bwr
     :kword run:         run identifier, used for constructing output filename
     :kword title:       string to use as plot title instead of time
     :kword cbtitle:     string to use as colorbar title instead of phase space density of flux
@@ -325,10 +327,16 @@ def plot_vdf(filename=None,
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
     # watermarkimage='/homeappl/home/marbat/appl_taito/analysator/logo_color.png'
 
+    outputprefix = ''
     if outputdir==None:
         outputdir=os.path.expandvars('$HOME/Plots/')
+    outputprefixind = outputdir.rfind('/')
+    if outputprefixind >= 0:
+        outputprefix = outputdir[outputprefixind+1:]
+        outputdir = outputdir[:outputprefixind+1]
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
+
 
     # Input file or object
     if filename!=None:
@@ -496,7 +504,7 @@ def plot_vdf(filename=None,
 
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
         print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
-        savefigname = outputdir+run+"_vdf_"+pop+stepstr+"_cellid_"+str(cellid)+".png"
+        savefigname = outputdir+outputprefix+run+"_vdf_"+pop+stepstr+"_cellid_"+str(cellid)+".png"
 
         # Check slice to perform (and possibly normal vector)
         normvect=None
