@@ -31,6 +31,8 @@ plt.register_cmap(name='inferno', cmap=cmaps.inferno)
 plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
 plt.register_cmap(name='magma', cmap=cmaps.magma)
 plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
+plt.register_cmap(name='parula', cmap=cmaps.parula)
+plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
 plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
@@ -83,7 +85,7 @@ def plot_colormap(filename=None,
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
-                        magma, nipy_spectral, RdBu, bwr
+                        magma, parula, nipy_spectral, RdBu, bwr
     :kword run:         run identifier, used for constructing output filename
     :kword title:       string to use as plot title instead of time
     :kword cbtitle:     string to use as colorbar title instead of map name
@@ -154,8 +156,13 @@ def plot_colormap(filename=None,
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
+    outputprefix = ''
     if outputdir==None:
         outputdir=os.path.expandvars('$HOME/Plots/')
+    outputprefixind = outputdir.rfind('/')
+    if outputprefixind >= 0:
+        outputprefix = outputdir[outputprefixind+1:]
+        outputdir = outputdir[:outputprefixind+1]
     if not os.path.exists(outputdir):
         os.makedirs(outputdir)
 
@@ -250,7 +257,7 @@ def plot_colormap(filename=None,
             # If no expression or variable given, defaults to rho
             var='rho'
         varstr=var
-    savefigname = outputdir+run+"_map_"+varstr+opstr+stepstr+".png"
+    savefigname = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite!=None and os.path.exists(savefigname)):
@@ -440,36 +447,34 @@ def plot_colormap(filename=None,
             print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
             return -1
 
-    # Find region outside ionosphere
+    # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
+    # e.g. pressure is not, and these cells aren't excluded by this method.
     if f.check_variable("rho"):
         rhomap = f.read_variable("rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1e-30)
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1.e-30)
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     elif f.check_variable("proton/rho"):
         rhomap = f.read_variable("proton/rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhoindex = np.where(rhomap > 1e-30)
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     else:
         print("Unable to exclude non-zero mass density region from range finder!")
-        rhomap = datamap
-        rhoindex = np.where(np.isfinite(rhomap))
+        rhomap = (np.ma.masked_invalid(datamap), 0)
 
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
     if vmin!=None:
         vminuse=vmin
     else: 
-        vminuse=np.amin(np.ma.masked_invalid(datamap[rhoindex]))
-        # print("Using deduced minimum value "+str(vminuse))
+        vminuse=np.ma.amin(np.ma.masked_where(np.ma.getmask(rhomap),datamap))
     if vmax!=None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.amax(np.ma.masked_invalid(datamap[rhoindex]))
-        # print("Using deduced maximum value "+str(vmaxuse))
+        vmaxuse=np.ma.amax(np.ma.masked_where(np.ma.getmask(rhomap),datamap) )                   
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components
@@ -483,11 +488,10 @@ def plot_colormap(filename=None,
                 vminuse = absval
                 vmaxuse = -absval
 
-    # Check that lower bound is valid
+    # Check that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin==None) and (symlog==None):
-        # Assume 5 orders of magnitude is enough?
-        print("Vmin value invalid for log scale, defaulting to 1.e-5 of maximum value")
-        vminuse = vmaxuse*1.e-5
+        # Drop negative and zero values
+        vminuse = np.ma.amin(np.ma.masked_less_equal(np.ma.masked_where(np.ma.getmask(rhomap),datamap),0))
 
     # If symlog scaling is set:
     if symlog!=None:
@@ -592,7 +596,7 @@ def plot_colormap(filename=None,
     # Colourbar title
     if len(cb_title_use)!=0:
         cb_title_locy = 1.0 + 0.05#/ratio
-        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
+        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
 
     if nocb==None:
         # Witchcraft used to place colourbar
