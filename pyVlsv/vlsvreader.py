@@ -20,7 +20,6 @@ class VlsvReader(object):
       pass
 
    file_name=""
-
    def __init__(self, file_name):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
