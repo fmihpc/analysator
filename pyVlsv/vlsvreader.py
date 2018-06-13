@@ -90,6 +90,9 @@ class VlsvReader(object):
 
               # Create a new (empty) MeshInfo-object for this population
               pop = self.MeshInfo()
+              
+              # Update list of active populations
+              if not popname in self.active_populations: self.active_populations.append(popname)
 
               # Update list of active populations
               if not popname in self.active_populations: self. active_populations.append(popname)
@@ -327,6 +330,23 @@ class VlsvReader(object):
                print "Error! Bad data type in blocks!"
                return
 
+         if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            #array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+
+            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+
+            fptr.seek(offset_block_ids)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad data type in blocks!"
+               return
+
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
       if self.__fptr.closed:
@@ -428,6 +448,40 @@ class VlsvReader(object):
             if child.attrib["name"] == name:
                return True
       return False
+
+   def check_population( self, popname ):
+      ''' Checks if a given population is in the vlsv file
+
+          :param name:             Name of the population
+          :returns:                True if the population is in the vlsv file, false if not
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             if vlsvReader.check_population( "avgs" ):
+                plot_population('avgs')
+             else:
+                if vlsvReader.check_population( "proton" ):
+                   # File is newer with proton population
+                   plot_population('proton')
+      '''
+      blockidsexist = False
+      foundpop = False
+      for child in self.__xml_root:
+         if child.tag == "BLOCKIDS":
+            if child.attrib.has_key("name"):
+               if popname == child.attrib["name"]:
+                  findpop = True
+            else:
+               blockidsexist = True
+      if blockidsexist:
+         for child in self.__xml_root:
+            if child.tag == "BLOCKVARIABLE":
+               if child.attrib.has_key("name"):
+                  if popname == child.attrib["name"]: # avgs
+                     findpop = True
+      return findpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
@@ -559,7 +613,6 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      # List of valid variables updated on 31.05.18
       if self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
          for pname in self.active_populations:
@@ -571,25 +624,9 @@ class VlsvReader(object):
       if 'pop/'+varname in multipopdatareducers:
          reducer = multipopdatareducers['pop/'+varname]
          # Read the necessary variables:
-       
-         # Return the output of the datareducer
          if reducer.useVspace:
-            cellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, read_single_cellid=read_single_cellid)
-            output = np.zeros(len(cellids))
-            index = 0
-            for cellid in cellids:
-               velocity_cell_data = self.read_velocity_cells(cellid)
-               # Get cells:
-               vcellids = velocity_cell_data.keys()
-               # Get coordinates:
-               velocity_coordinates = self.get_velocity_cell_coordinates(vcellids)
-               tmp_vars = []
-               for i in np.atleast_1d(reducer.variables):
-                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellid ) )
-               output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
-               index+=1
-               print index,"/",len(cellids)
-            return data_operators[operator](output)
+            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            return 
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
@@ -597,13 +634,7 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
                else:
                   tvar = i.split('/')[1]
-                  print popname
-                  #if self.check_variable(popname+'/'+tvar):
-                     # This is a variable in the file or a datareducer
                   tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
-                  #else:
-                  #   # This is a datareducer
-                  #   tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
 
@@ -739,11 +770,11 @@ class VlsvReader(object):
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
       # Check that the coordinates are not out of bounds:
-      if (self.__xmax < coordinates[0]) or (self.__xmin > coordinates[0]):
+      if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
          return 0
-      if (self.__ymax < coordinates[1]) or (self.__ymin > coordinates[1]):
+      if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
          return 0
-      if (self.__zmax < coordinates[2]) or (self.__zmin > coordinates[2]):
+      if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])

@@ -52,12 +52,15 @@ def plot_colormap(filename=None,
                   title=None, cbtitle=None, draw=None, usesci=None,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
-                  run=None,wmark=None,
+                  run=None,wmark=None, nocb=None,
                   unit=None, thick=1.0,scale=1.0,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
-                  external=None, extvals=None,
-                  expression=None, exprvals=None
+                  external=None, expression=None, 
+                  #exprvals=None, #extvals=None, #expr_timeavg=None, # These were consolidated
+                  pass_vars=None, pass_times=None,
+                  fluxfile=None, fluxdir=None,
+                  fluxthick=1.0, fluxlines=1
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -76,7 +79,7 @@ def plot_colormap(filename=None,
                         Per-population variables are simply given as "proton/rho" etc.
     :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
-
+           
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -89,12 +92,12 @@ def plot_colormap(filename=None,
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
-    :kword lin:         flag for using linear colour scaling instead of log
-    :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+    :kword lin:         Flag for using linear colour scaling instead of log
+    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
-    :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -102,12 +105,26 @@ def plot_colormap(filename=None,
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
    
-    :kword external:    Optional function which receives the image axes in order to do further plotting
-    :kword extvals:     Optional array of map names to pass to the external function
+    :kword external:    Optional function to use for external plotting of e.g. contours. The function
+                        receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
+    :kword expression:  Optional function which calculates a custom expression to plot. The function
+                        receives the same list of numpy arrays as external, as an argument pass_maps,
+                        the contents of which are maps of variables. Each is either of size [ysize,xsize]
+                        or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+                        Remember to set vmin and vmax manually.
 
-    :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
-                        vmin and vmax manually.
-    :kword exprvals:    Array of map names to pass to the optional expression function (as np.arrays)
+    :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
+                        as a list of numpy arrays. Each is either of size [ysize,xsize] or 
+                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+    :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
+                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). 
+                        This causes pass_vars to become a list of timesteps, with each timestep containing
+                        a list of numpy arrays as for regular pass_vars.
+
+    :kword fluxfile:    Filename to plot fluxfunction from
+    :kword fluxdir:     Directory in which fluxfunction files can be found
+    :kword fluxthick:   Scale fluxfunction line thickness
+    :kword fluxlines:   Relative density of fluxfunction contours
                             
     :returns:           Outputs an image to a file or to the screen.
 
@@ -154,6 +171,22 @@ def plot_colormap(filename=None,
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
+    # Flux function files
+    if fluxdir!=None:
+        if step != None:
+            fluxfile = fluxdir+'flux.'+str(step).rjust(7,'0')+'.bin'
+            if not os.path.exists(fluxfile):
+                fluxfile = fluxdir+'bulk.'+str(step).rjust(7,'0')+'.bin'
+        else:            
+            fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
+            if not os.path.exists(fluxfile):
+                fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
+
+    if fluxfile!=None:
+        if not os.path.exists(fluxfile):
+            print("Error locating flux function file!")
+            fluxfile=None
+                
     # Scientific notation for colorbar ticks?
     if usesci==None:
         usesci=1
@@ -228,6 +261,7 @@ def plot_colormap(filename=None,
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
+    cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
     # xsize = f.read_parameter("xcells_ini")
     # ysize = f.read_parameter("ycells_ini")
@@ -278,6 +312,8 @@ def plot_colormap(filename=None,
     simext=[i/unit for i in simext]
     boxcoords=[i/unit for i in boxcoords]
 
+    pass_maps=[]
+
     ##########
     # Read data and calculate required variables
     ##########
@@ -287,7 +323,7 @@ def plot_colormap(filename=None,
             datamap = f.read_variable("rho")
 
         elif var == 'rhoBeam':
-            cb_title = r"$\rho_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
+            cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
             datamap = f.read_variable("RhoBackstream")
 
         elif var == 'beta':
@@ -352,7 +388,7 @@ def plot_colormap(filename=None,
                 # If value was vector value, take magnitude
                 if np.ndim(datamap) != 1:
                     cb_title = r"$|"+var+"|$"
-                    datamap = np.sum(np.asarray(datamap)**2,axis=-1)**(0.5)
+                    datamap = np.linalg.norm(np.asarray(datamap),axis=-1)
             else:
                 cb_title = r" "+var+"$_"+op+"$"
                 datamap = f.read_variable(var,operator=op)            
@@ -364,48 +400,66 @@ def plot_colormap(filename=None,
         # Reshape data to an ordered 2D array that can be plotted
         if np.ndim(datamap) != 2:
             datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        
 
-    else:
-    # Optional user-defined expression overrides the var
-    # Optional external additional plotting routine
-        exprmaps=[]
-        if exprvals==None:
-            print("Error, expression must have some variable maps to work on.")
-            return
-        else:
-            # Gather the required variable maps for the expression function
-            for mapval in exprvals:
-                exprmap = f.read_variable(mapval)
-                if np.ndim(exprmap)==1:
-                    exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+    # If expression or external routine need variables, read them from the file.
+    if pass_vars!=None:
+        if pass_times==None:
+            # Gather the required variable maps for a single time step
+            for mapval in pass_vars:
+                pass_map = f.read_variable(mapval)
+                if np.ndim(pass_map)==1:
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
                 else:
-                    exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(exprmap[0])])
-                exprmaps.append(np.ma.asarray(exprmap))
-        datamap = expression(exprmaps)             
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
+                pass_maps.append(np.ma.asarray(pass_map))
+        else:
+            # Or gather over a number of time steps
+            currstep = int(filename[-12:-5])
+            tavg_step_i = -1
+            tavg_step = int(pass_times)
+            for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
+                tavg_step_i = tavg_step_i+1
+                filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
+                print(filenamestep)
+                fstep=pt.vlsvfile.VlsvReader(filenamestep)
+                step_cellids = fstep.read_variable("CellID")
+                pass_maps.append([])
+                for mapval in pass_vars:
+                    pass_map = fstep.read_variable(mapval)
+                    if np.ndim(pass_map)==1:
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
+                    else:
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
+                    pass_maps[tavg_step_i].append(np.ma.asarray(pass_map))
+
+
+    # Optional user-defined expression used for color panel instead of a single pre-existing var
+    if expression!=None:
+        datamap = expression(pass_maps)
         if np.ndim(datamap)!=2:
             print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
             return -1
 
-    # If automatic range finding is required, find min and max of array
-    if vmin==None or vmax==None:
-        # Only use values where particles exist, i.e. mask out magnetosphere
-        if f.check_variable("rho"):
-            rhomap = f.read_variable("rho")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > np.finfo(float).eps)
-        elif f.check_variable("rhom"):
-            rhomap = f.read_variable("rhom")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > 1.e-25) # built-in numpy epsilon values are too small
-        elif f.check_variable("proton/rho"):
-            rhomap = f.read_variable("proton/rho")
-            rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            rhoindex = np.where(rhomap > np.finfo(float).eps)
-        else:
-            print("Unable to exclude non-zero mass density region from range finder!")
-            rhomap = datamap
-            rhoindex = np.where(np.isfinite(rhomap))
+    # Find region outside ionosphere
+    if f.check_variable("rho"):
+        rhomap = f.read_variable("rho")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > 1e-30)
+    elif f.check_variable("rhom"):
+        rhomap = f.read_variable("rhom")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > 1.e-30)
+    elif f.check_variable("proton/rho"):
+        rhomap = f.read_variable("proton/rho")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        rhoindex = np.where(rhomap > 1e-30)
+    else:
+        print("Unable to exclude non-zero mass density region from range finder!")
+        rhomap = datamap
+        rhoindex = np.where(np.isfinite(rhomap))
 
+    # If automatic range finding is required, find min and max of array
     if vmin!=None:
         vminuse=vmin
     else: 
@@ -470,21 +524,23 @@ def plot_colormap(filename=None,
     else:
         plt.switch_backend('Agg')  
 
-    print(boxcoords)
     # Select image shape to match plotted area, (with some accounting for axes etc)
     boxlenx = boxcoords[1]-boxcoords[0]
     boxleny = boxcoords[3]-boxcoords[2]
-    # Round the values so that image sizes won't wobble when there's e.g. a moving box and numerical inaccuracies
-    boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
-    boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
+    # Round the values so that image sizes won't wobble when there's e.g. a moving box and numerical inaccuracies.
+    # This is only done if the box size is suitable for the unit in use.
+    if ((boxlenx > 10) and (boxleny > 10)):
+        boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
+        boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = np.sqrt(boxleny/boxlenx)
-
+    ratio = boxleny/boxlenx
     # default for square figure is figsize=[4.0,3.15]
     figsize = [4.0,3.15*ratio]
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
     
-    # Generates the mesh to map the data to
+    # Generates the mesh to map the data to.
+    # Note, datamap is still of shape [ysize,xsize] (?)
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
     fig1 = plt.pcolormesh(XmeshXY,YmeshXY,datamap, cmap=colormap,norm=norm)
     ax1 = plt.gca() # get current axes
@@ -521,17 +577,9 @@ def plot_colormap(filename=None,
     # ax1.yaxis.set_major_locator(plt.MaxNLocator(int(7*np.sqrt(ratio))))
 
     # Optional external additional plotting routine overlayed on color plot
+    # Uses the same pass_maps variable as expressions
     if external!=None:
-        extmaps=[]
-        if extvals!=None:
-            for mapval in extvals:
-                extmap = f.read_variable(mapval)
-                if np.ndim(extmap)==1:
-                    extmap = extmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-                else:
-                    extmap = extmap[cellids.argsort()].reshape([sizes[1],sizes[0],len(extmap[0])])
-                extmaps.append(extmap)
-        extresult=external(ax1, XmeshXY,YmeshXY, extmaps)            
+        extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
 
     if cbtitle==None:
         if expression!=None:
@@ -543,37 +591,66 @@ def plot_colormap(filename=None,
 
     # Colourbar title
     if len(cb_title_use)!=0:
-        cb_title_locy = 1.0 + 0.05/ratio
-        plt.text(1.0, 1.05, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
+        cb_title_locy = 1.0 + 0.05#/ratio
+        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
 
-    # Witchcraft used to place colourbar
-    divider = make_axes_locatable(ax1)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    # First draw colorbar
-    if usesci==0:        
-        cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
-    else:
-        cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
-    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-    cb.outline.set_linewidth(thick)
+    if nocb==None:
+        # Witchcraft used to place colourbar
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+        # First draw colorbar
+        if usesci==0:        
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
+        else:
+            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
+        cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        cb.outline.set_linewidth(thick)
 
-    # if too many subticks:
-    if lin==None and usesci!=0 and symlog==None:
-        # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
-        # For non-square pictures, adjust tick count
-        nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
-        valids = ['1','2','3','4','5','6','7','8','9']
-        if nlabels > 10:
-            valids = ['1','2','3','4','5','6','8']
-        if nlabels > 19:
-            valids = ['1','2','5']
-        if nlabels > 28:
-            valids = ['1']
-        #for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-        for label in cb.ax.yaxis.get_ticklabels():
-            # labels will be in format $x.0\times10^{y}$
-            if not label.get_text()[1] in valids:
-                label.set_visible(False)
+        # if too many subticks:
+        if lin==None and usesci!=0 and symlog==None:
+            # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
+            # For non-square pictures, adjust tick count
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            valids = ['1','2','3','4','5','6','7','8','9']
+            if nlabels > 10:
+                valids = ['1','2','3','4','5','6','8']
+            if nlabels > 19:
+                valids = ['1','2','5']
+            if nlabels > 28:
+                valids = ['1']
+            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+            for label in cb.ax.yaxis.get_ticklabels():
+                # labels will be in format $x.0\times10^{y}$
+                if not label.get_text()[1] in valids:
+                    label.set_visible(False)
+
+    # add flux function contours
+    if fluxfile != None:
+        # Read binary flux function data from prepared files
+        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
+
+        # Find inflow position values
+        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+        ff_v = f.read_variable("v", cellids=cid)
+        ff_b = f.read_variable("B", cellids=cid)
+
+        # Account for movement
+        bdirsign = -1.0 
+        outofplane = [0,1,0] # For ecliptic runs
+        if zsize==1:
+            outofplane = [0,0,1]  # For polar runs
+        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0:
+            bdirsign = 1.0
+        flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
+
+        # Mask away ionosphere
+        flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
+        flux_function = np.ma.masked_where(rhomap<=0, flux_function)
+
+        # The flux level contours must be fixed instead of scaled based on min/max values in order
+        # to properly account for flux freeze-in and advection with plasma
+        flux_levels = np.linspace(-10,10,fluxlines*60)
+        fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # Add Vlasiator watermark
     if wmark!=None:        
