@@ -183,7 +183,8 @@ def plot_colormap(filename=None,
             print "Unknown time format encountered"
             plot_title = ''
         else:
-            plot_title = "t="+str(np.int(timeval))+' s'
+            #plot_title = "t="+str(np.int(timeval))+' s'
+            plot_title = "t="+'{:4.2f}'.format(timeval)+' s'
     else:
         plot_title = title
 
@@ -608,5 +609,5 @@ def plot_colormap(filename=None,
     else:
         plt.draw()
         plt.show()
-    plt.close()
-    plt.clf()
+    #plt.close()
+    #plt.clf()

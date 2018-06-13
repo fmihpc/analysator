@@ -3,7 +3,6 @@ class DataReducerVariable:
    '''
    variables = []
    operation = []
-   name = []
    units = []
    useVspace = False
    def __init__(self, variables, operation, units, useVspace=False):
@@ -15,8 +14,9 @@ class DataReducerVariable:
           Example:
           def plus( array ):
              return array[0]+array[1]
-          new_var = DataReducerVariable( ["rho", "rho"], plus, "sum_of_rhos", "1/m^3" )
+          new_var = DataReducerVariable( ["rho", "rho"], plus, "1/m^3" )
       '''
+
       self.variables = variables
       self.operation = operation
       self.units = units

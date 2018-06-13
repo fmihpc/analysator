@@ -34,6 +34,28 @@ def z_component( variable ):
 def magnitude( variable ):
    return np.sum(np.asarray(variable)**2,axis=-1)**(0.5)
 
+def sumv( variable ):
+   if np.ndim(variable) > 3:
+      print('Error: Number of dimensions is too large')
+      return
+   else:
+      res = []
+      if np.size(variable[0][0]) == 1:
+         for i in range(len(variable[0])):
+            summation = 0
+            for j in range(len(variable)):
+               summation += variable[j][i]
+            res.append(summation)
+      else: 
+         for i in range(len(variable[0])):
+            summation = np.zeros_like(variable[0][0])
+            for j in range(len(variable)):
+               summation += np.array(variable[j][i])
+            if i==0:
+               res = summation
+            else:
+               res = np.vstack((res, summation)) 
+      return np.array(res)
 
 def condition_matrix_array( condition, matrices ):
    ''' Repeats condition n times and forms an array of it
@@ -427,10 +449,50 @@ datareducers["gyrophase_relstddev"] =       DataReducerVariable(["v", "B"], gyro
 data_operators = {}
 data_operators["pass"] = pass_op
 data_operators["magnitude"] = magnitude
+data_operators["sum"] = sumv
 data_operators["x"] = x_component
 data_operators["y"] = y_component
 data_operators["z"] = z_component
 
+#multipopdatareducers with more complex, case dependent structure.
+multipopdatareducers = {}
+#multipopdatareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
+#multipopdatareducers["pop/vms"] =                    DataReducerVariable(["pop/Pressure", "pop/rho", "B"], vms, "m/s")
+#multipopdatareducers["pop/vs"] =                     DataReducerVariable(["pop/Pressure", "pop/rho"], vs, "m/s")
+#multipopdatareducers["pop/va"] =                     DataReducerVariable(["pop/rho", "B"], va, "m/s")
+multipopdatareducers["pop/PTensor"] =                DataReducerVariable(["pop/PTensorDiagonal", "pop/PTensorOffDiagonal"], PTensor, "Pa")
+multipopdatareducers["pop/PTensorBackstream"] =      DataReducerVariable(["pop/PTensorBackstreamDiagonal", "pop/PTensorBackstreamOffDiagonal"], PTensor, "Pa")
+multipopdatareducers["pop/PTensorRotated"] =         DataReducerVariable(["pop/PTensor", "B"], PTensorRotated, "Pa")
+multipopdatareducers["pop/Pressure"] =               DataReducerVariable(["pop/PTensorDiagonal"], Pressure, "Pa")
+multipopdatareducers["pop/PBackstream"] =     DataReducerVariable(["pop/PTensorBackstreamDiagonal"], Pressure, "Pa")
+multipopdatareducers["pop/TTensor"] =                DataReducerVariable(["pop/PTensor", "pop/rho"], TTensor, "K")
+multipopdatareducers["pop/TTensorRotated"] =         DataReducerVariable(["pop/TTensor", "B"], TTensorRotated, "K")
+multipopdatareducers["pop/TTensorBackstream"] =      DataReducerVariable(["pop/PTensorBackstream", "pop/RhoBackstream"], TTensor, "K")
+multipopdatareducers["pop/TTensorRotatedBackstream"]=DataReducerVariable(["pop/TTensorBackstream", "B"], TTensorRotated, "K")
+multipopdatareducers["pop/Temperature"] =            DataReducerVariable(["pop/Pressure", "pop/rho"], Temperature, "K")
+multipopdatareducers["pop/TBackstream"] =  DataReducerVariable(["pop/PBackstream", "pop/RhoBackstream"], Temperature, "K")
+multipopdatareducers["pop/TParallel"] =              DataReducerVariable(["pop/TTensorRotated"], TParallel, "K")
+multipopdatareducers["pop/TPerpendicular"] =         DataReducerVariable(["pop/TTensorRotated"], TPerpendicular, "K")
+multipopdatareducers["pop/TxRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TxRotated, "K")
+multipopdatareducers["pop/TyRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TyRotated, "K")
+multipopdatareducers["pop/TPerpOverPar"] =           DataReducerVariable(["pop/TTensorRotated"], TPerpOverPar, "K")
+multipopdatareducers["pop/PParallel"] =              DataReducerVariable(["pop/PTensor", "B"], PParallel, "Pa")
+multipopdatareducers["pop/PPerpendicular"] =         DataReducerVariable(["pop/PTensor", "pop/PParallel"], PPerpendicular, "Pa")
+multipopdatareducers["pop/PPerpOverPar"] =           DataReducerVariable(["pop/PTensorRotated"], PPerpOverPar, "K")
+multipopdatareducers["pop/beta"] =                   DataReducerVariable(["pop/Pressure", "B"], beta ,"")
+multipopdatareducers["pop/betaParallel"] =           DataReducerVariable(["pop/PParallel", "B"], beta ,"")
+multipopdatareducers["pop/betaPerpendicular"] =      DataReducerVariable(["pop/PPerpendicular", "B"], beta ,"")
+multipopdatareducers["pop/betaPerpOverPar"] =        DataReducerVariable(["pop/betaPerpendicular", "pop/betaParallel"], betaPerpOverPar, "")
+multipopdatareducers["pop/Rmirror"] =                DataReducerVariable(["pop/TPerpOverPar", "pop/betaPerpendicular"], rMirror, "")
+multipopdatareducers["pop/Dng"] =                    DataReducerVariable(["pop/PTensor", "pop/PParallel", "pop/PPerpendicular", "B"], Dng, "")
+
+#multipopdatareducers["pop/vBeam"] =                  DataReducerVariable(["pop/RhoVBackstream", "pop/RhoBackstream", "pop/RhoVNonBackstream", "pop/RhoNonBackstream"], v_beam, "m/s")
+#multipopdatareducers["pop/vBeamRatio"] =             DataReducerVariable(["pop/RhoVBackstream", "pop/RhoBackstream", "pop/RhoVNonBackstream", "pop/RhoNonBackstream"], v_beam_ratio, "")
+multipopdatareducers["pop/vThermal"] =               DataReducerVariable(["pop/TBackstream"], v_thermal, "m/s")
+multipopdatareducers["pop/vThermalVector"] =         DataReducerVariable(["pop/TTensorRotatedBackstream"], v_thermal_vector, "m/s")
+
+#reducers with useVspace
+#multipopdatareducers["gyrophase_relstddev"] =       DataReducerVariable(["v", "B"], gyrophase_relstddev, "", useVspace=True)
 
 
 
