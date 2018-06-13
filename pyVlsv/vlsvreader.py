@@ -20,7 +20,6 @@ class VlsvReader(object):
       pass
 
    file_name=""
-   active_populations=[]
 
    def __init__(self, file_name):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
@@ -82,6 +81,7 @@ class VlsvReader(object):
 
       # Iterate through the XML tree, find all populations
       # (identified by their BLOCKIDS tag)
+      self.active_populations=[]
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if child.attrib.has_key("name"):
@@ -626,6 +626,14 @@ class VlsvReader(object):
                   tvar = i.split('/')[1]
                   tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
+
+      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
+      if self.check_variable(self.active_populations[0]+'/'+name):
+         tmp_vars = []
+         for pname in self.active_populations:
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+
+         return data_operators["sum"](tmp_vars)   
 
       if self.__fptr.closed:
          fptr.close()
