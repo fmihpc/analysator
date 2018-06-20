@@ -258,7 +258,7 @@ def plot_colormap_with_vdf(filename=None,
                      symlog=None,
                      boxm=[],boxre=[],colormap=None,
                      run=None,notime=None,wmark=None,
-                     notre=None, thick=1.0,
+                     notre=None, thick=1.0, cbtitle=None,
                      vmin=None, vmax=None, lin=None,
                      external=None, extvals=None,
                      expression=None, exprvals=None,
@@ -287,7 +287,8 @@ def plot_colormap_with_vdf(filename=None,
     :kword colormap:    colour scale for plot, use e.g. jet, viridis, plasma, inferno, magma, nipy_spectral, RdBu
     :kword run:         run identifier, used for some default vmin,vmax values and for constructing output filename
     :kword notime:      flag to suppress plotting simulation time in title
-    :kword title:       string to use as title in lieu of map name
+    :kword title:       string to use as title instead of map name
+    :kword cbtitle:     string to use as colour bar title instead of map name
     :kword notre:       flag to use metres (if ==1) or kilometres as axis unit
     :kword thick:       line and axis thickness, default=1.0
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
@@ -741,13 +742,13 @@ def plot_colormap_with_vdf(filename=None,
                 extmaps.append(extmap)
         extresult=external(ax1, XmeshXY,YmeshXY, extmaps)            
 
-    if title==None:
+    if cbtitle==None:
         if expression!=None:
-            cb_title_use = expression.__name__
+            cb_title_use = expression.__name__.replace("_","\_") # replaces underscores so math mode subscript mode isn't activated
         else:
             cb_title_use = cb_title
     else:
-        cb_title_use = title
+        cb_title_use = cbtitle
 
     # Get coordinates if cellIDs were given as input
     if cellidplot!=None:
@@ -841,7 +842,7 @@ def plot_colormap_with_vdf(filename=None,
             ax2 = fig.add_axes([xax2,yax2,0.1,0.1])
             
             
-            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-2.5e6,2.5e6,-2.5e6,2.5e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1)
+            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1)
  #           ax2.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap='nipy_spectral',norm=norm)
 
 
