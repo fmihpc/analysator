@@ -33,4 +33,4 @@ from lineout import lineout
 import fit
 from fieldtracer import static_field_tracer
 from fieldtracer import dynamic_field_tracer
-
+from temperature_anisotropy import expr_Tanisotropy

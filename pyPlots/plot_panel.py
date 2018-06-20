@@ -590,8 +590,8 @@ def plot_colormap(filename=None,
 
     # Colourbar title
     if len(cb_title_use)!=0:
-        cb_title_locy = 1.0 + 0.05#/ratio
-        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
+        cb_title_locy = 1.0 + 0.08#/ratio
+        plt.text(1.0, 1.03, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
 
     if nocb==None:
         # Witchcraft used to place colourbar
