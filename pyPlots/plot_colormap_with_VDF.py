@@ -260,7 +260,7 @@ def plot_colormap_with_vdf(filename=None,
                      run=None,notime=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
                      vmin=None, vmax=None, lin=None,
-                     fmin=None, fmax=None,
+                     fmin=None, fmax=None, cbulk=None,
                      external=None, extvals=None,
                      expression=None, exprvals=None,
                      cellcoordplot=None,cellidplot=None,
@@ -297,6 +297,7 @@ def plot_colormap_with_vdf(filename=None,
                         min and max values for whole plot (non-zero rho regions only) are used.
     :kword fmin,fmax:   min and max values for colour scale and colour bar of the VDFs. If no values are given,
                         min and max values for whole plot are used.
+    :kword cbulk:       Center plot on position of bulk velocity (for this population)
     :kword lin:         flag for using linear colour scaling instead of log
     :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
@@ -845,7 +846,7 @@ def plot_colormap_with_vdf(filename=None,
             ax2 = fig.add_axes([xax2,yax2,0.1,0.1])
             
             
-            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax)
+            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax,cbulk=cbulk)
  #           ax2.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap='nipy_spectral',norm=norm)
 
 
