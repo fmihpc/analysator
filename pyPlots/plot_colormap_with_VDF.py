@@ -264,6 +264,7 @@ def plot_colormap_with_vdf(filename=None,
                      external=None, extvals=None,
                      expression=None, pass_vars=None,
                      cellcoordplot=None,cellidplot=None,
+                     vdfplotlocation=None, vdfplotsize=0.1,
                      fluxfile=None, fluxdir=None,
                      fluxthick=1.0, fluxlines=1
                      ):    
@@ -310,10 +311,12 @@ def plot_colormap_with_vdf(filename=None,
 
     :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
                         vmin and vmax manually.
-    :kword pass_vars:    Array of map names to pass to the optional expression function (as np.arrays)
+    :kword pass_vars:   Array of map names to pass to the optional expression function (as np.arrays)
 
-    :kword cellcoordplot:  Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
-    :kword cellidplot:  List of cellIDs to display as circles in the colormap plot
+    :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
+    :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
+    :kword vdfplotlocation: String specifying the location of the VDF plot with respect to its cell (t:top, b:bottom, l:left, r:right)
+    :kword vdfplotsize:     Relative size of the VDF plot axes compared to the main figure
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -762,13 +765,19 @@ def plot_colormap_with_vdf(filename=None,
             cellcoordplot = cellcoordplot + [xCid/R_E,yCid/R_E,zCid/R_E]
         print('Coordinates: '+str(cellcoordplot))
 
+
+
+
+
+
+
     # Colourbar title
     cb_title_locy = 1.0 + 0.05/ratio
     plt.text(1.0, 1.05, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes)
 
     # Witchcraft used to place colourbar
     divider = make_axes_locatable(ax1)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cax = divider.append_axes("right", size="5%", pad="2%")
     # First draw colorbar
     if usesci==0:        
         cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
@@ -832,7 +841,7 @@ def plot_colormap_with_vdf(filename=None,
 
     # Loop over all cellIDs for which VDF should be plotted
     if cellcoordplot!=None:
-        for aux in range(0,len(cellcoordplot)/3):	
+        for aux in range(0,len(cellcoordplot)/3):
             x,y,z = cellcoordplot[3*aux],cellcoordplot[3*aux+1],cellcoordplot[3*aux+2]
             print('cellcoord2plot #' + str(aux) + ': x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
             ax1.plot(x,z,marker="o",markerfacecolor="None",markeredgecolor='w')
@@ -840,10 +849,33 @@ def plot_colormap_with_vdf(filename=None,
             yratio = (z-boxcoords[2])/(boxcoords[3]-boxcoords[2])
             pos1 = ax1.get_position()
             print('ax1 position: '+str(pos1))
-            xax2 = pos1.x0 + xratio*pos1.width*0.815
-            yax2 = pos1.y0 + yratio*pos1.height - 0.12
-            print('ax2 x and y: '+str(xax2)+'  '+str(yax2))
-            ax2 = fig.add_axes([xax2,yax2,0.1,0.1])
+
+            # Magic numbers so that the x-axis alignment of VDF plots is correct (Note: those values work for equal X and Y ranges)
+            # TODO Try to figure out a way to automatically calculate them whichever the X/Y ratio
+            magixconstant = 0.05
+            magixratio = 0.815
+
+            # Location of VDF plot axes with respect to their cell
+            if vdfplotlocation==None:
+                vdfaxloc = 'b'
+            else:
+                vdfaxloc = vdfplotlocation[aux]
+            
+            if vdfaxloc=='l':
+                xax2 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize - 0.01
+                yax2 = pos1.y0 + yratio*pos1.height - vdfplotsize/2.
+            elif vdfaxloc=='r':
+                xax2 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio + 0.01
+                yax2 = pos1.y0 + yratio*pos1.height - vdfplotsize/2.
+            elif vdfaxloc=='t':
+                xax2 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize/2.
+                yax2 = pos1.y0 + yratio*pos1.height + 0.02
+            # Default: bottom
+            else:
+                xax2 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize/2.
+                yax2 = pos1.y0 + yratio*pos1.height - vdfplotsize - 0.02
+ #               print('ax2 x and y: '+str(xax2)+'  '+str(yax2))
+            ax2 = fig.add_axes([xax2,yax2,vdfplotsize,vdfplotsize])
             
             
             subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax,cbulk=cbulk)
