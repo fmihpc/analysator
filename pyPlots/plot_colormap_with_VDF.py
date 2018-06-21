@@ -262,7 +262,7 @@ def plot_colormap_with_vdf(filename=None,
                      vmin=None, vmax=None, lin=None,
                      fmin=None, fmax=None, cbulk=None,
                      external=None, extvals=None,
-                     expression=None, exprvals=None,
+                     expression=None, pass_vars=None,
                      cellcoordplot=None,cellidplot=None,
                      fluxfile=None, fluxdir=None,
                      fluxthick=1.0, fluxlines=1
@@ -310,7 +310,7 @@ def plot_colormap_with_vdf(filename=None,
 
     :kword expression:  Optional function which calculates a custom expression to plot. Remember to set
                         vmin and vmax manually.
-    :kword exprvals:    Array of map names to pass to the optional expression function (as np.arrays)
+    :kword pass_vars:    Array of map names to pass to the optional expression function (as np.arrays)
 
     :kword cellcoordplot:  Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:  List of cellIDs to display as circles in the colormap plot
@@ -591,12 +591,12 @@ def plot_colormap_with_vdf(filename=None,
     # Optional user-defined expression overrides the var
     # Optional external additional plotting routine
         exprmaps=[]
-        if exprvals==None:
+        if pass_vars==None:
             print("Error, expression must have some variable maps to work on.")
             return
         else:
             # Gather the required variable maps for the expression function
-            for mapval in exprvals:
+            for mapval in pass_vars:
                 exprmap = f.read_variable(mapval)
                 if np.ndim(exprmap)==1:
                     exprmap = exprmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
