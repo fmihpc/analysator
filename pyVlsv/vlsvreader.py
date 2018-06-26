@@ -154,7 +154,8 @@ class VlsvReader(object):
                  pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
               self.__meshes[popname]=pop
-              print "Found population " + popname
+              if os.getenv('PTNONINTERACTIVE') == None:
+                 print "Found population " + popname
 
       self.__fptr.close()
 
