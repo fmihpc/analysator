@@ -98,6 +98,8 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
     if vmax <= vmin:
         vmax = vmin * 10.
 
+    values = abs(values);
+
     grid_r, grid_theta = np.meshgrid(energies,angles)
     fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
     ax.set_title("Detector view at cell " + str(cellID))
@@ -308,15 +310,17 @@ def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3
 
        if interpolate:
            # Linearly interpolate
+           angle_int = int(angle_bins[i])
+           energy_int = int(energy_bins[i])
            angle_frac = angle_bins[i] - int(angle_bins[i])
            energy_frac = energy_bins[i] - int(energy_bins[i])
-           detector_values[angle_bins[i],energy_bins[i]] += (1.-angle_frac) * (1.-energy_frac) * target_val
-           detector_values[(angle_bins[i]+1)%detector_angle_bins,energy_bins[i]] += (angle_frac) * (1.-energy_frac)  * target_val
-           detector_values[angle_bins[i],energy_bins[i]+1] += (1.-angle_frac) * (energy_frac)  * target_val
-           detector_values[(angle_bins[i]+1)%detector_angle_bins,energy_bins[i]+1] += (angle_frac) * (energy_frac)   * target_val
+           detector_values[angle_int,energy_int] += (1.-angle_frac) * (1.-energy_frac) * target_val
+           detector_values[(angle_int+1)%detector_angle_bins,energy_int] += (angle_frac) * (1.-energy_frac)  * target_val
+           detector_values[angle_int,energy_int+1] += (1.-angle_frac) * (energy_frac)  * target_val
+           detector_values[(angle_int+1)%detector_angle_bins,energy_int+1] += (angle_frac) * (energy_frac)   * target_val
        else:
            # Weigh into nearest cell
-           detector_values[angle_bins[i],energy_bins[i]] += target_val
+           detector_values[int(angle_bins[i]),int(energy_bins[i])] += target_val
 
    return_angles = np.linspace(0.,2*np.pi,detector_angle_bins+1)
    return_energies = np.logspace(np.log10(detector_min_speed/1e3),np.log10(detector_max_speed/1e3),detector_energy_bins)

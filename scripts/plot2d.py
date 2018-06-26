@@ -188,8 +188,10 @@ def plotAndSave2D(vlsvReader,vlsvVar,nx,ny,nz,locsSorted,xmin,ymin,zmin,xmax,yma
  # draw Earth with dayside and nightside
  w1 = Wedge((0,0),1.0,90,270,fc='k')
  w2 = Wedge((0,0),1.0,270,90,fc='w')
+ c1 = plt.Circle((0,0),1.0,color='k',fill=False,lw=2.0)
  plt.gcf().gca().add_artist(w1)
  plt.gcf().gca().add_artist(w2)
+ plt.gcf().gca().add_artist(c1)
  # draw Earth (black filled circle)
  #earth = plt.Circle((0, 0), 1, color='k')                                                
  #plt.gcf().gca().add_artist(earth)

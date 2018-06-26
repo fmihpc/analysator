@@ -219,6 +219,21 @@ def TParallel( variables ):
    else:
       return TTensorRotated[:,2,2]
 
+def TPerpendicularBackstream( variables ):
+   TTensorRotatedBackstream = variables[0]
+   if( np.ndim(TTensorRotatedBackstream)==2 ):
+      return 0.5*(TTensorRotatedBackstream[0,0] + TTensorRotatedBackstream[1,1])
+   else:
+      return 0.5*(TTensorRotatedBackstream[:,0,0] + TTensorRotatedBackstream[:,1,1])
+
+def TParallelBackstream( variables ):
+   TTensorRotatedBackstream = variables[0]
+   if( np.ndim(TTensorRotatedBackstream)==2 ):
+      return TTensorRotatedBackstream[2,2]
+   else:
+      return TTensorRotatedBackstream[:,2,2]
+
+
 def TxRotated( variables ):
    TTensorRotated = variables[0]
    if( np.ndim(TTensorRotated)==2 ):
@@ -396,6 +411,8 @@ datareducers["TTensorRotatedBackstream"]=DataReducerVariable(["TTensorBackstream
 datareducers["Temperature"] =            DataReducerVariable(["Pressure", "rho"], Temperature, "K")
 datareducers["TBackstream"] =  DataReducerVariable(["PBackstream", "RhoBackstream"], Temperature, "K")
 datareducers["TParallel"] =              DataReducerVariable(["TTensorRotated"], TParallel, "K")
+datareducers["TParallelBackstream"] =    DataReducerVariable(["TTensorRotatedBackstream"], TParallelBackstream, "K")
+datareducers["TPerpendicularBackstream"]=DataReducerVariable(["TTensorRotatedBackstream"], TPerpendicularBackstream, "K")
 datareducers["TPerpendicular"] =         DataReducerVariable(["TTensorRotated"], TPerpendicular, "K")
 datareducers["TxRotated"] =              DataReducerVariable(["TTensorRotated"], TxRotated, "K")
 datareducers["TyRotated"] =              DataReducerVariable(["TTensorRotated"], TyRotated, "K")
