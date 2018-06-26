@@ -32,11 +32,11 @@ def extract_file(filename):
             for j,varval in enumerate(values):
                 out_line = out_line +  " " + str(varval[i])
             out.append([filename, out_line])
+        f.optimize_close_file()
     except:
         out.append([filename, "#Could not read " + filename])
         pass
     
-    f.optimize_close_file()
     return out
 
 
