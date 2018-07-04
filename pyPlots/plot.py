@@ -20,3 +20,5 @@ from plot_mxm import plot_colormapmxm
 from plot_vdf import vSpaceReducer
 from plot_colormap_with_VDF import plot_colormap_with_vdf
 from plot_keogram import plot_keogram
+from plot_precipitation import plot_prec_spectrum
+from plot_precipitation import plot_prec_time_spectrum

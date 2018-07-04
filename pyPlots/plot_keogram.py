@@ -621,15 +621,15 @@ def plot_keogram(filedir=None,
         print "Unknown time format encountered for start file"
         return
 
-    # Plot title with time #TODO
+    # Plot title with time
     if title==None:
         plot_title = "t="+str(np.int(tstart))+' s'
     else:
         plot_title = title
 
-    # step, used for file name
+    # stepstr, used for file name
     if start!=None:
-        stepstr = '_'+str(start).rjust(7,'0')
+        stepstr = '_t'+tr(np.int(tstart))+'s'
     else:
         stepstr = ''
 
@@ -707,7 +707,7 @@ def plot_keogram(filedir=None,
        
 
 
-    # TODO Building the datamap corresponding to the keogram    
+    # Building the datamap corresponding to the keogram    
     datamap = np.array([])
     time_keogram = np.array([])
 

@@ -359,9 +359,6 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     VY = Vrot[:,1]
     Vpara = Vrot[:,0]
 
-    print("VX = "+str(np.max(np.absolute(VX))))
-
-    
     # Calculate pitch angles
     pitchangle = 0.*VX
     pitchangle[VX==0.] = np.pi/2.
@@ -383,10 +380,6 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     normV = np.sqrt(VX**2+VY**2+Vpara**2)
     energy = 0.5*mass*normV**2/qe/1e3 # keV
 
-    print("Pitch angle = ["+str(np.min(pitchangle))+","+str(np.max(pitchangle))+"]")
-    print("Energy = ["+str(np.min(energy))+","+str(np.max(energy))+"]")
-
-
 
     # Make the precipitating particle energy flux spectrum
     # -- limitation: low energies are not resolved due to very small pitch angles and finite velocity grid
@@ -394,7 +387,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     fluxes = np.array([])
 
     deltaV = 50.e3 # m/s
-    for vel in np.arange(50.e3,np.max(np.absolute(normV)),deltaV):
+    for vel in np.arange(vxmin,vxmax,deltaV):
 
         # Energy in the middle of the bin
         energy_i = 0.5*mass*(vel+deltaV/2.)**2/qe/1e3
@@ -410,14 +403,12 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         else:
             indexes = [((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))]
 
-        print("indexes = "+str(indexes))
-        print("f[ind] = "+str(f[indexes]))
         # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
         integral = (vel+deltaV/2.)**3*np.sum(f[indexes])*solid_angle
 
         # -- Put epsilon value if nothing in the loss cone [TODO maybe improve this later]
         if integral==0.:
-            integral = 1e-10
+            integral = 1.e-10
 
         # -- normalisation to angle and energy
         flux_i = integral/solid_angle/deltaE
@@ -454,7 +445,7 @@ def plot_prec_spectrum(filename=None,
                      cellcoordplot=None,cellidplot=None
                      ):    
 
-    ''' Plots a coloured plot with VDFs in chosen points.
+    ''' Plots a precipitating ion flux energy spectrum.
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
@@ -714,509 +705,355 @@ def plot_prec_spectrum(filename=None,
 
 
 
+def plot_prec_time_spectrum(filedir=None,
+                     pop="proton",
+                     start=None, stop=None,
+                     outputdir=None,
+                     title=None,
+                     draw=None, usesci=None,
+                     symlog=None,
+                     colormap=None,
+                     run=None,notime=None,wmark=None,
+                     notre=None, thick=1.0, cbtitle=None,
+                     vmin=None, vmax=None, lin=None,
+                     fmin=None, fmax=None, cbulk=None,
+                     emin=None, emax=None,
+                     cellcoordplot=None,cellidplot=None
+                     ):    
 
-def subplot_vdf(axis=None,
-             filename=None,
-             vlsvobj=None,
-             filedir=None, step=None,
-             cellids=None, coordinates=None,
-             pop="proton",
-             draw=None,unit=None,cellsize=None,
-             colormap=None, box=None, cbar=None,
-             run=None, notitle=None, wmark=None, thick=1.0,
-             fmin=None, fmax=None, slicethick=None,
-             xy=None, xz=None, yz=None, normal=None,
-             bpara=None, bperp=None,
-             cbulk=None, center=None, wflux=None, keepfmin=None,
-             legend=None, noborder=None, scale=1.0,
-             biglabel=None, biglabloc=None,
-             noxlabels=None, noylabels=None,
-             coordswap=None
-             ):
+    ''' Plots a precipitating ion flux energy spectrum during time interval (colour plot).
 
-    ''' Plots a coloured plot with axes and a colour bar.
-
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-     
-    :kword cellids:     list of cell IDs to plot for
-    :kword coordinates: list of 3-element coordinates to plot for
-    :kword pop:         population (species), default "proton"
+    :kword filedir:     Directory where bulk files are located
+    :kword start:       Step for starting the plot
+    :kword stop:        Step for ending the plot
+    :kword outputdir:   Path to directory where output files are created (default: $HOME/Plots/)
+                        If directory does not exist, it will be created. If the string does not end in a
+                        forward slash, the final parti will be used as a perfix for the files.
 
     :kword colormap:    colour scale for plot, use e.g. jet, viridis, plasma, inferno, magma, nipy_spectral, RdBu
-    :kword run:         run identifier, used for constructing output filename
-    :kword title:       string to use as title in lieu of map name
+    :kword run:         run identifier, used for some default vmin,vmax values and for constructing output filename
+    :kword notime:      flag to suppress plotting simulation time in title
+    :kword title:       string to use as title instead of map name
+    :kword cbtitle:     string to use as colour bar title instead of map name
+    :kword notre:       flag to use metres (if ==1) or kilometres as axis unit
     :kword thick:       line and axis thickness, default=1.0
-    :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
+    :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
+    :kword fmin,fmax:   min and max values for colour scale and colour bar of the VDFs. If no values are given,
                         min and max values for whole plot are used.
-
-    :kword box:         extents of plotted velocity grid as [x0,y0,x1,y1]
-    :kword unit:        Plot v-axes using 10^unit m/s instead of km/s
-   
-    :kword xy:          Perform slice in x-y-direction
-    :kword xz:          Perform slice in x-z-direction
-    :kword yz:          Perform slice in y-z-direction
-    :kword normal:      Perform slice in plane perpendicular to given vector
-    :kword bpara:       Perform slice in B_para / B_perp2 plane
-    :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
-                        If no plane is given, default is simulation plane (for 2D simulations)
-
     :kword cbulk:       Center plot on position of bulk velocity (for this population)
-    :kword center:      Center plot on provided velocity vector position
-    :kword wflux:       Plot flux instead of distribution function
-    :kword slicethick:  Thickness of slice (default 1 cell)
-    :kword keepfmin:    Also draw buffer cells with values below fMin
-
+    :kword lin:         flag for using linear colour scaling instead of log
+    :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+                        Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
+                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
+    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
-    :kword cbar:        Plot colourbar legend (default off). 
-    :kword biglabel:    Plot large label (in top-left corner)
-    :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
-    :kword noborder:    Plot figure edge-to-edge without borders (default off)
-    :kword noxlabels:   Suppress x-axis labels and title
-    :kword noylabels:   Suppress y-axis labels and title
-    :kword notitle:     flag to suppress plot and colorbar titles
-    :kword scale:       Scale text size (default=1.0)
-
+    :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
+    :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
+                            
     :returns:           Outputs an image to a file or to the screen.
 
     .. code-block:: python
 
     # Example usage:
 
+
     '''
 
+    # Verify the location of this watermark image
+    watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
+    # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
+    # watermarkimage='/homeappl/home/marbat/appl_taito/analysator/logo_color.png'
 
-    # Input file or object
-    if filename!=None:
-        vlsvReader=pt.vlsvfile.VlsvReader(filename)
-    elif vlsvobj!=None:
-        vlsvReader=vlsvobj
-    elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
-        vlsvReader=pt.vlsvfile.VlsvReader(filename)
+    if outputdir==None:
+        outputdir=os.path.expandvars('$HOME/Plots/')
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
+
+    # Input file list
+    if ((filedir!=None) and (start!=None) and (stop!=None)):
+        filelist = []
+        for step in range(start,stop):
+            filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+            filelist.append(filename)
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        print("ERROR: needs a bulk file directory and start/stop steps")
         return
 
+    # Scientific notation for colorbar ticks?
+    if usesci==None:
+        usesci=1
+    
     if colormap==None:
-        colormap="hot_desaturated"
+        colormap="YlOrRd"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
-    fontsize=8*scale # Most text
-    fontsize2=10*scale # Time title
-    fontsize3=5*scale # Colour bar ticks
-    fontsize4=16*scale # Big label
+    fontsize=8 # Most text
+    fontsize2=10 # Time title
+    fontsize3=5 # Colour bar ticks
+
+
+    # Stop and start times
+    f=pt.vlsvfile.VlsvReader(filelist[-1])
+    tstop=None
+    tstop=f.read_parameter("time")
+    if tstop==None:
+        tstop=f.read_parameter("t")
+    if tstop==None:
+        print "Unknown time format encountered for stop file"
+        return
+
+    f=pt.vlsvfile.VlsvReader(filelist[0])
+    tstart=None
+    tstart=f.read_parameter("time")
+    if tstart==None:
+        tstart=f.read_parameter("t")
+    if tstart==None:
+        print "Unknown time format encountered for start file"
+        return
+
 
     # Plot title with time
-    timeval=vlsvReader.read_parameter("time")
-    if timeval==None:
-        timeval=vlsvReader.read_parameter("t")
-
-    # step, used for file name
-    if step!=None:
-        stepstr = '_'+str(step).rjust(7,'0')
-    else:
+    if notime==None:        
+        timeval=f.read_parameter("time")
+        if timeval == None:
+            timeval=f.read_parameter("t")
+            if timeval == None:    
+                print "Unknown time format encountered"
+                plot_title = ''
         if timeval != None:
-            stepstr = '_t'+str(np.int(timeval))
-        else:
-            stepstr = ''
+            plot_title = "t="+str(np.int(timeval))+' s'
+    else:
+        plot_title = ''       
+
+    # stepstr, used for file name
+    if start!=None:
+        stepstr = '_t'+str(np.int(tstart))+'s'
+    else:
+        stepstr = ''
 
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
 
+    # Output file name
+    savefigname = outputdir+run+"_prec_spec_time"+stepstr+"_"+str(cellidplot)+".png"
+
+
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
     if pop=="proton":
-       if not vlsvReader.check_population(pop):
-           if vlsvReader.check_population("avgs"):
+       if not f.check_population(pop):
+           if f.check_population("avgs"):
                pop="avgs"
                print("Auto-switched to population avgs")
            else:
                print("Unable to detect population "+pop+" in .vlsv file!")
                exit()
     else:
-        if not vlsvReader.check_population(pop):
+        if not f.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            exit()       
-
-    #read in mesh size and cells in ordinary space
-    # xsize = vlsvReader.read_parameter("xcells_ini")
-    # ysize = vlsvReader.read_parameter("ycells_ini")
-    # zsize = vlsvReader.read_parameter("zcells_ini")
-    [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
-    # cellids = vlsvReader.read_variable("CellID")
-    # vxsize = vlsvReader.read_parameter("vxblocks_ini")*4
-    # vysize = vlsvReader.read_parameter("vyblocks_ini")*4
-    # vzsize = vlsvReader.read_parameter("vzblocks_ini")*4
-    # vxmin = vlsvReader.read_parameter("vxmin")
-    # vxmax = vlsvReader.read_parameter("vxmax")
-    # vymin = vlsvReader.read_parameter("vymin")
-    # vymax = vlsvReader.read_parameter("vymax")
-    # vzmin = vlsvReader.read_parameter("vzmin")
-    # vzmax = vlsvReader.read_parameter("vzmax")
-
-    # These apparently work with multipop at least for the default mesh of protons.
-    # Also works with older vlsv versions.
-    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
-    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
-    inputcellsize=(vxmax-vxmin)/vxsize
-
-    # account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+            exit()  
 
     Re = 6.371e+6 # Earth radius in m
-    # unit of velocity
-    velUnit = 1e3
-    velUnitStr = '[km/s]'
-    if unit!=None:
-        velUnit = np.power(10,int(unit))
-        if unit==1:
-            velUnitStr = r'[m/s]'
+    #read in mesh size and cells in ordinary space
+    [xsize, ysize, zsize] = f.get_spatial_mesh_size()
+    [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
+    cellsize = (xmax-xmin)/xsize
+    cellids = f.read_variable("CellID")
+
+    # Check if ecliptic or polar run
+    if ysize==1:
+        simext=[xmin,xmax,zmin,zmax]
+        sizes=[xsize,zsize]
+    if zsize==1:
+        simext=[xmin,xmax,ymin,ymax]
+        sizes=[xsize,ysize]
+
+    vminuse=fmin
+    vmaxuse=fmax
+
+    # Lin or log colour scaling, defaults to log
+    if lin==None:
+        # Special SymLogNorm case
+        if symlog!=None:
+            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            maxlog=int(np.ceil(np.log10(vmaxuse)))
+            minlog=int(np.ceil(np.log10(-vminuse)))
+            logthresh=int(np.floor(np.log10(linthresh)))
+            logstep=1
+            ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
+                    +[0.0]
+                    +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
         else:
-            velUnitStr = r'[$10^{'+str(int(unit))+'}$ m/s]'
-
-
-    if (cellids==None and coordinates==None):
-        print("Error: must provide either cell id's or coordinates")
-        return -1
-
-    if coordinates!=None:
-        if type(coordinates) is not list:
-            coordinates = [coordinates]
-
-        # Calculate cell IDs from given coordinates        
-        xReq = np.asarray(coordinates).T[0]
-        yReq = np.asarray(coordinates).T[1]
-        zReq = np.asarray(coordinates).T[2]
-        if xReq.shape == yReq.shape == zReq.shape:
-            print('Number of points: ' + str(xReq.shape[0]))
-        else:
-            print('ERROR: bad coordinate variables given')
-            exit()
-        cidsTemp = []
-        for ii in range(xReq.shape[0]):
-            cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
-            cidNearestVspace = -1
-            if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
-            else:
-                print('ERROR: cell not found')
-                exit()
-            if (cidNearestVspace <= 0):
-                print('ERROR: cell with vspace not found')
-                exit()
-            xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
-            xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
-            print('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
-            print('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
-            print('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
-            print('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
-            cidsTemp.append(cidNearestVspace)
-        cellids = np.unique(cidsTemp)
-        print('Unique cells with vspace found: ' + str(len(cidsTemp)))
+            norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
+            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
     else:
-        print('Using given cell ids and assuming vspace is stored in them')
+        # Linear
+        levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
+        norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
+        ticks = np.linspace(vminuse,vmaxuse,num=7)            
 
+    # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
+    if draw!=None:
+        plt.switch_backend('TkAgg')
+    else:
+        plt.switch_backend('Agg')  
 
-    # Loop over all cell ids
-    if type(cellids) is not list:
-        cellids = [cellids]
+    # Select window to draw
+    boxcoords = [tstart,tstop,emin,emax]
 
-    print(cellids)
-    for cellid in cellids:
-        # Initialise some values
-        fminuse=None
-        fmaxuse=None
+    # Select image shape to match plotted area, at least somewhat.
+    # default for square figure is figsize=[4.0,3.15]
+    figsize = [4.0,3.15]
+    ratio = 1.
 
-        x,y,z = vlsvReader.get_cell_coordinates(cellid)
-        print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
-
-        # Check slice to perform (and possibly normal vector)
-        normvect=None
-        if xy==None and xz==None and yz==None and normal==None and bpara==None and bperp==None:
-            # Use default slice for this simulation
-            # Check if ecliptic or polar run
-            if ysize==1: # polar
-                slicetype="xz"
-                pltxstr=r"$v_x$ "+velUnitStr
-                pltystr=r"$v_z$ "+velUnitStr
-                normvect=[0,1,0] # used just for cell size normalisation
-            elif zsize==1: # ecliptic
-                slicetype="xy"
-                pltxstr=r"$v_x$ "+velUnitStr
-                pltystr=r"$v_y$ "+velUnitStr
-                normvect=[0,0,1] # used just for cell size normalisation
-            else:
-                print("Problem finding default slice direction")
-                slicetype="yz"
-                pltxstr=r"$v_y$ "+velUnitStr
-                pltystr=r"$v_z$ "+velUnitStr
-                normvect=[1,0,0] # used just for cell size normalisation
-        elif normal!=None:
-            if len(normal)==3:
-                slicetype="vecperp"
-                normvect=normal
-                pltxstr=r"$v_1$ "+velUnitStr
-                pltystr=r"$v_2$ "+velUnitStr
-            else:
-                print("Error parsing slice normal vector!")
-                exit()
-        elif xy!=None:
-            slicetype="xy"
-            pltxstr=r"$v_x$ "+velUnitStr
-            pltystr=r"$v_y$ "+velUnitStr
-            normvect=[0,0,1] # used just for cell size normalisation
-        elif xz!=None:
-            slicetype="xz"
-            pltxstr=r"$v_x$ "+velUnitStr
-            pltystr=r"$v_z$ "+velUnitStr
-            normvect=[0,1,0] # used just for cell size normalisation
-        elif yz!=None:
-            slicetype="yz"
-            pltxstr=r"$v_y$ "+velUnitStr
-            pltystr=r"$v_z$ "+velUnitStr
-            normvect=[1,0,0] # used just for cell size normalisation
-        elif bpara!=None or bperp!=None:
-            # Rotate based on B-vector
-            if vlsvReader.check_variable("B"):
-                Bvect = vlsvReader.read_variable("B", cellid)
-            elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
-                # used e.g. for restart files
-                BGB = vlsvReader.read_variable("background_B", cellid)
-                PERBB = vlsvReader.read_variable("perturbed_B", cellid)
-                Bvect = BGB+PERBB
-            else:
-                print("Error finding B vector direction!")
-                exit()
-
-            if Bvect.shape==(1,3):
-                Bvect = Bvect[0]
-            normvect = Bvect
-
-            if bperp!=None:
-                # slice in b_perp1/b_perp2
-                slicetype="vecperp"
-                pltxstr=r"$v_{\perp 1}$ "+velUnitStr
-                pltystr=r"$v_{\perp 2}$ "+velUnitStr
-            else:
-                # means bpara!=None, slice in b_parallel/b_perp2 plane
-                slicetype="vecpara"
-                pltxstr=r"$v_{\parallel}$ "+velUnitStr
-                pltystr=r"$v_{\perp}$ "+velUnitStr
-
-        # Extend velocity space and each cell to account for slice directions oblique to axes
-        normvect = np.array(normvect)
-        normvect = normvect/np.linalg.norm(normvect)
-
-        # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
-        # Might still be incorrect, erring on the side of caution.
-        # norm_srt = sorted(abs(normvect))
-        # if cellsize==None:
-        #     if norm_srt[1] > 0:
-        #         temp = norm_srt[0]/norm_srt[1]
-        #         aratio = (1.+temp)/np.sqrt( 1+temp**2)
-        #     else:
-        #         aratio = 1.
-        #     gridratio = aratio * norm_srt[2] * (1. + aratio * np.sqrt(norm_srt[0]**2 + norm_srt[1]**2) / norm_srt[2] )
-        #     if gridratio>1.0:
-        #         gridratio = gridratio*1.01 # account for numerical inaccuracies
-        # else:
-        #     gridratio = 1.
-
-        if cellsize==None:
-            samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
-            sbrot = rotateVectorToVector(samplebox,normvect)
-            rotminx=np.amin(sbrot[:,0])
-            rotmaxx=np.amax(sbrot[:,0])
-            rotminy=np.amin(sbrot[:,1])
-            rotmaxy=np.amax(sbrot[:,1])
-            rotminz=np.amin(sbrot[:,2])
-            rotmaxz=np.amax(sbrot[:,2])
-            gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-        else:
-            gridratio = cellsize
-
-        # num must be vxsize+1 or vysize+1 in order to do both edges for each cell
-        VXBins = np.linspace(vxmin*gridratio,vxmax*gridratio,num=vxsize+1)
-        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)            
-        
-        # Read velocity data into histogram
-        (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
-                                                       slicethick=slicethick, wflux=wflux, cbulk=cbulk, 
-                                                       center=center,keepfmin=keepfmin)
-
-        # Check that data is ok and not empty
-        if checkOk == False:
-            print('ERROR: error from velocity space reducer')
-            continue
-
-        # Perform swap of coordinate axes, if requested
-        if coordswap!=None:
-            temp = edgesX
-            edgesX = edgesY
-            edgesY = temp
-            temp = pltxstr
-            pltxstr = pltystr
-            pltystr = temp
-            binsXY = binsXY.T
-
-        # If no other fmin fmax values are given, take min and max of array
-        if fmin!=None:
-            fminuse=fmin
-        else:
-            nzindex = np.where(binsXY > 0)
-            if np.any(nzindex):
-                fminuse=np.amin(binsXY[nzindex])
-            else:
-                fminuse = 1e-15
-        if fmax!=None:
-            fmaxuse=fmax
-        else:
-            nzindex = np.where(binsXY > 0)
-            if np.any(nzindex):
-                fmaxuse=np.amax(binsXY[nzindex])
-            else:
-                fmaxuse = 1e-12
-
-        if vlsvReader.check_variable('MinValue') == True:
-            fMinFile = vlsvReader.read_variable('MinValue',cellid)
-            print("Active f range is "+str(fminuse)+" to "+str(fmaxuse)+" with a vlsv file fMin value of "+str(fMinFile))
-        else:
-            print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
-
-        norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
-        ticks = LogLocator(base=10,subs=range(10)) # where to show labels
-
-        if box!=None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
-            xvalsrange=[box[0],box[1]]
-            yvalsrange=[box[2],box[3]]
-        else:
-            # Find extent of nonzero data
-            xindexrange = [vxsize,0]
-            yindexrange = [vysize,0]
-            for xi in range(len(edgesX)-1):
-                for yi in range(len(edgesY)-1):
-                    if binsXY[xi,yi] > 0:
-                        xindexrange[0] = np.amin([xindexrange[0],xi])
-                        xindexrange[1] = np.amax([xindexrange[1],xi])
-                        yindexrange[0] = np.amin([yindexrange[0],yi])
-                        yindexrange[1] = np.amax([yindexrange[1],yi])
-
-            # leave some buffer
-            xindexrange[0] =  np.max([0, 4 * int(np.floor((xindexrange[0]-2.)/4.)) ])
-            xindexrange[1] =  np.min([len(edgesX)-1, 4 * int(np.ceil((xindexrange[1]+2.)/4.)) ])
-            yindexrange[0] =  np.max([0, 4 * int((np.floor(yindexrange[0]-2.)/4.)) ])
-            yindexrange[1] =  np.min([len(edgesY)-1, 4 * int(np.ceil((yindexrange[1]+2.)/4.)) ])
-
-            # If empty VDF: plot whole v-space
-            if ((xindexrange==[vxsize,0]) and (yindexrange==[vysize,0])):
-                xindexrange = [0,vxsize]
-                yindexrange = [0,vysize]
-
-            xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
-            yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
-
-            # TODO make plot area square if it's almost square?
-
+    # Create 300 dpi image of suitable size
+    fig = plt.figure(figsize=figsize,dpi=300)
     
-        # Plot the slice         
-        [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
-        axis.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
+    # Get coordinates if cellIDs were given as input
+    if cellidplot==None:
+        print("ERROR: No cell ID given as input")
+        return
+    else:
+        for cellid in cellidplot:
+            xCid,yCid,zCid = f.get_cell_coordinates(cellid)
 
-        plt.xlim([val/velUnit for val in yvalsrange])
-        plt.ylim([val/velUnit for val in xvalsrange])
-        axis.set_aspect('equal')
+            # Check whether northern or southern hemisphere
+            # -- equatorial plane considered northern
+            if zCid < 0.:
+                hemisphere='south'
+            else:
+                hemisphere='north'
 
-        # Grid
-        plt.grid(color='grey',linestyle='-')
- #       plt.minorticks_on()
+            # Calculation of loss cone angle value
+            alph0 = loss_cone_angle(cellcoord=[xCid,yCid,zCid],deg=False)
 
-        for axiss in ['top','bottom','left','right']:
-            axis.spines[axiss].set_linewidth(0.5)
+            print("alph0 = "+str(alph0))
 
-        axis.xaxis.set_tick_params(width=0.5,length=4)
-        axis.yaxis.set_tick_params(width=0.5,length=4)
- #       axis.xaxis.set_tick_params(which='minor',width=0.5*0.8,length=2)
- #       axis.yaxis.set_tick_params(which='minor',width=0.5*0.8,length=2)
+            # Building the datamap corresponding to the keogram    
+            datamap = np.array([])
+            time_keogram = np.array([])
 
-        if notitle==None:
-            # Title and plot limits
-            axis.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+            for step in range(start,stop):
+                filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+                f=pt.vlsvfile.VlsvReader(filename)
 
-        if noxlabels==None:
-            plt.xlabel(pltxstr,fontsize=5,weight='black')
-            plt.xticks(fontsize=5,fontweight='black')
-            axis.xaxis.offsetText.set_fontsize(5)
-        if noylabels==None:
-            plt.ylabel(pltystr,fontsize=5,weight='black')
-            plt.yticks(fontsize=5,fontweight='black')
-            axis.yaxis.offsetText.set_fontsize(5)
+                # Reduction of the precipitating particle data
+                (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid,losscone=alph0,pop=pop,emin=emin,emax=emax,hemisphere=hemisphere)
 
-        if biglabel!=None:
-            if biglabloc==None:
-                biglabloc = 0 # default top-left corner
-                
-            if biglabloc==0:
-                BLcoords=[0.02,0.98]
-                BLha = "left"
-                BLva = "top"
-            elif biglabloc==1:
-                BLcoords=[0.98,0.98]
-                BLha = "right"
-                BLva = "top"
-            elif biglabloc==2:
-                BLcoords=[0.98,0.02]
-                BLha = "right"
-                BLva = "bottom"
-            elif biglabloc==3:
-                BLcoords=[0.02,0.02]
-                BLha = "left"
-                BLva = "bottom"
+                datamap = np.append(datamap,flux)
+                time_keogram = np.append(time_keogram,f.read_parameter("time"))
 
-            plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=axis.transAxes, ha=BLha, va=BLva)
-                
-        if cbar!=None:
-            # Colourbar title
-            cb_title_locy = 1.0 + 0.03/ratio
-            if notitle==None:
-                # in noborder mode, leave out colourbar descriptor
-                plt.text(1.0, cb_title_locy, r"$f(v)$", fontsize=fontsize,weight='black', transform=axis.transAxes)
+                if not wentFine:
+                    print("There was a problem making the histogram")
 
-            # Witchcraft used to place colourbar
-            divider = make_axes_locatable(axis)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            # First draw colorbar
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-            cb.outline.set_linewidth(thick)
+            # Determine sizes of the keogram array
+            sizes=[time_keogram.size,energy.size]
 
-            # # if too many subticks:
-            # # For non-square pictures, adjust tick count
-            # nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
-            # if nlabels > 10:
-            #     valids = ['1','2','3','4','5','6','8']
-            # if nlabels > 19:
-            #     valids = ['1','2','5']
-            # if nlabels > 28:
-            #     valids = ['1']
-            # # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-            # if nlabels > 10:
-            #     for label in cb.ax.yaxis.get_ticklabels():
-            #         # labels will be in format $x.0\times10^{y}$
-            #         if not label.get_text()[1] in valids:
-            #             label.set_visible(False)
 
-        if noxlabels!=None:
-            for label in axis.xaxis.get_ticklabels():
+            # Reshape data to an ordered 2D array that can be plotted
+            if np.ndim(datamap) != 2:
+                datamap = datamap.reshape([sizes[0],sizes[1]])
+
+            datamap = np.transpose(datamap)
+
+    print("Now making the plot")
+
+# TODO ------------------
+    # Generates the mesh to map the data to.
+    # Note, datamap is still of shape [ysize,xsize] (?)
+    [XmeshXY,YmeshXY] = scipy.meshgrid(time_keogram,energy)
+
+    fig1 = plt.pcolormesh(XmeshXY,YmeshXY,datamap, cmap=colormap,norm=norm)
+    ax1 = plt.gca() # get current axes
+
+    # Save the keogram to file in case further processing is needed
+    datamap.dump(outputdir+'datamap')
+    np.save(outputdir+'time_keogram',time_keogram)
+    np.save(outputdir+'energy_scale',energy)
+# -----------------------
+
+    ax1.set_yscale("log")
+
+    # Title and plot limits
+#    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+    plt.xlim([time_keogram[0],time_keogram[-1]])
+    plt.ylim([emin,emax])
+
+    plt.xlabel('Time [s]',fontsize=fontsize,weight='black')
+    plt.ylabel('E [keV]',fontsize=fontsize,weight='black')
+
+    plt.xticks(fontsize=fontsize,fontweight='black')
+    plt.yticks(fontsize=fontsize,fontweight='black')
+
+    for axis in ['top','bottom','left','right']:
+        ax1.spines[axis].set_linewidth(thick)
+    ax1.xaxis.set_tick_params(width=thick,length=3)
+    ax1.yaxis.set_tick_params(width=thick,length=3)
+
+
+    # Limit ticks, slightly according to ratio
+#    ax1.xaxis.set_major_locator(plt.MaxNLocator(int(7/np.sqrt(ratio))))
+#    ax1.yaxis.set_major_locator(plt.MaxNLocator(int(7*np.sqrt(ratio))))
+
+    # Colourbar title
+    cbtitle = 'Flux\n [ion/cm$^2$/s/sr/eV]'
+    plt.text(1.0, 1.04, cbtitle, fontsize=fontsize3+1,weight='black', transform=ax1.transAxes)
+
+    # Witchcraft used to place colourbar
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    # First draw colorbar
+    if usesci==0:        
+        cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
+    else:
+        cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
+    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+    cb.outline.set_linewidth(thick)
+
+    # if too many subticks:
+    if lin==None and usesci!=0 and symlog==None:
+        # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
+        # For non-square pictures, adjust tick count
+        nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+        valids = ['1','2','3','4','5','6','7','8','9']
+        if nlabels > 10:
+            valids = ['1','2','3','4','5','6','8']
+        if nlabels > 19:
+            valids = ['1','2','5']
+        if nlabels > 28:
+            valids = ['1']
+        # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+        for label in cb.ax.yaxis.get_ticklabels():
+            # labels will be in format $x.0\times10^{y}$
+            if not label.get_text()[1] in valids:
                 label.set_visible(False)
-        if noylabels!=None:
-            for label in axis.yaxis.get_ticklabels():
-                label.set_visible(False) 
 
-        
+    # Grid
+#    plt.grid(color='grey',linestyle='-')
+
+    # set axis exponent offset font sizes
+    ax1.yaxis.offsetText.set_fontsize(fontsize)
+    ax1.xaxis.offsetText.set_fontsize(fontsize)
+          
+    # Add Vlasiator watermark
+    if wmark!=None:        
+        wm = plt.imread(get_sample_data(watermarkimage))
+        newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
+        newax.imshow(wm)
+        newax.axis('off')
+
+    # adjust layout
+    plt.tight_layout(pad=1.5)
+
+
+    # Save output or draw on-screen
+    if draw==None:
+        print(savefigname+"\n")
+        plt.savefig(savefigname,dpi=300)
+    else:
+        plt.draw()
+        plt.show()
+    plt.close()
+    plt.clf()
