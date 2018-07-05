@@ -12,6 +12,7 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 import plot_run_defaults
+from multiprocessing import Pool
 
 from rotation import rotateVectorToVector
 
@@ -34,6 +35,11 @@ plt.register_cmap(name='magma', cmap=cmaps.magma)
 plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
+
+global filedir_global
+global cellid_global
+global emin_global, emax_global
+global alph0_global, pop_global, hemisphere_global
 
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
@@ -167,7 +173,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
-    print("Found "+str(len(V))+" v-space cells")
+#    print("Found "+str(len(V))+" v-space cells")
 
     if cbulk!=None:
         print("Transforming to plasma frame")
@@ -219,7 +225,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         if vlsvReader.check_variable('MinValue') == True:
             fMin = vlsvReader.read_variable('MinValue',cid)
         ii_f = np.where(f >= fMin)
-        print("Dropping velocity cells under fMin value "+str(fMin))
+#        print("Dropping velocity cells under fMin value "+str(fMin))
         if len(ii_f) < 1:
             return (False,0,0,0)
         f = f[ii_f]
@@ -307,11 +313,10 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     vzsize = 4*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
-    print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
-    print("Found "+str(len(V))+" v-space cells")
+#    print("Found "+str(len(V))+" v-space cells")
 
     f = zip(*velcells.items())
     # check that velocity space has cells
@@ -705,6 +710,28 @@ def plot_prec_spectrum(filename=None,
 
 
 
+def make_keogram_column(step=None):
+    filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+
+#    print(filename+" is being processed")
+    f=pt.vlsvfile.VlsvReader(filename)
+
+    # Reduction of the precipitating particle data
+    (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid_global,losscone=alph0_global,pop=pop_global,
+                                                    emin=emin_global,emax=emax_global,hemisphere=hemisphere_global)
+
+#    datamap = np.append(datamap,flux)
+#    time_keogram = np.append(time_keogram,f.read_parameter("time"))
+    out = [f.read_parameter("time"),flux,energy]
+
+    if not wentFine:
+        print("There was a problem making the spectrum, filename: "+filename)
+
+    return (out)
+
+
+
+
 def plot_prec_time_spectrum(filedir=None,
                      pop="proton",
                      start=None, stop=None,
@@ -718,7 +745,8 @@ def plot_prec_time_spectrum(filedir=None,
                      vmin=None, vmax=None, lin=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
-                     cellcoordplot=None,cellidplot=None
+                     cellcoordplot=None,cellidplot=None,
+                     numproc=8
                      ):    
 
     ''' Plots a precipitating ion flux energy spectrum during time interval (colour plot).
@@ -759,6 +787,15 @@ def plot_prec_time_spectrum(filedir=None,
 
 
     '''
+
+    global filedir_global
+    global cellid_global
+    global emin_global, emax_global
+    global alph0_global, pop_global, hemisphere_global
+
+    filedir_global=filedir
+    emin_global=emin
+    emax_global=emax
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
@@ -853,7 +890,8 @@ def plot_prec_time_spectrum(filedir=None,
     else:
         if not f.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            exit()  
+            exit() 
+    pop_global = pop 
 
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
@@ -917,6 +955,7 @@ def plot_prec_time_spectrum(filedir=None,
         return
     else:
         for cellid in cellidplot:
+            cellid_global = cellid
             xCid,yCid,zCid = f.get_cell_coordinates(cellid)
 
             # Check whether northern or southern hemisphere
@@ -925,9 +964,11 @@ def plot_prec_time_spectrum(filedir=None,
                 hemisphere='south'
             else:
                 hemisphere='north'
+            hemisphere_global = hemisphere
 
             # Calculation of loss cone angle value
             alph0 = loss_cone_angle(cellcoord=[xCid,yCid,zCid],deg=False)
+            alph0_global = alph0
 
             print("alph0 = "+str(alph0))
 
@@ -935,18 +976,20 @@ def plot_prec_time_spectrum(filedir=None,
             datamap = np.array([])
             time_keogram = np.array([])
 
-            for step in range(start,stop):
-                filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
-                f=pt.vlsvfile.VlsvReader(filename)
+            print("Name: "+__name__)
 
-                # Reduction of the precipitating particle data
-                (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid,losscone=alph0,pop=pop,emin=emin,emax=emax,hemisphere=hemisphere)
+            # Parallel construction of the spectrum keogram
+            if __name__ == 'plot_precipitation':
+                pool = Pool(numproc)
+                return_array = pool.map(make_keogram_column, range(start,stop))
+            else:
+                print("didn't enter the loop")
 
-                datamap = np.append(datamap,flux)
-                time_keogram = np.append(time_keogram,f.read_parameter("time"))
+            energy = return_array[0][2]
 
-                if not wentFine:
-                    print("There was a problem making the histogram")
+            for j in return_array:
+                time_keogram = np.append(time_keogram,j[0])
+                datamap = np.append(datamap,j[1])
 
             # Determine sizes of the keogram array
             sizes=[time_keogram.size,energy.size]
@@ -960,7 +1003,7 @@ def plot_prec_time_spectrum(filedir=None,
 
     print("Now making the plot")
 
-# TODO ------------------
+
     # Generates the mesh to map the data to.
     # Note, datamap is still of shape [ysize,xsize] (?)
     [XmeshXY,YmeshXY] = scipy.meshgrid(time_keogram,energy)
@@ -972,7 +1015,7 @@ def plot_prec_time_spectrum(filedir=None,
     datamap.dump(outputdir+'datamap')
     np.save(outputdir+'time_keogram',time_keogram)
     np.save(outputdir+'energy_scale',energy)
-# -----------------------
+
 
     ax1.set_yscale("log")
 
