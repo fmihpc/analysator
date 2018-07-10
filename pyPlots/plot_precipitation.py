@@ -145,8 +145,8 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 
     for angle in np.arange(180,0,-.2):
 	phi=angle/180.*np.pi
-	x = (innerbound*np.cos(phi) + xoffset)/dx
-	y = (innerbound*np.sin(phi) + yoffset)/dx
+	x = int(round((innerbound*np.cos(phi) + xoffset)/dx))
+	y = int(round((innerbound*np.sin(phi) + yoffset)/dx))
 
 	f = flux_function[x,y]
 
