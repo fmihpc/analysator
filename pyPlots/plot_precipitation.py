@@ -36,10 +36,14 @@ plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.ma
 # plt.register_cmap(name='cork',cmap=cork_map)
 # plt.register_cmap(name='davos_r',cmap=davos_r_map)
 
-global filedir_global
+global filedir_global, fluxfile
 global cellid_global
 global emin_global, emax_global
 global alph0_global, pop_global, hemisphere_global
+
+global xsize,ysize,zsize, xcells_ini
+global xmin, ymin, zmin, xmax, ymax, zmax
+
 
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
@@ -47,8 +51,9 @@ def fmt(x, pos):
     b = int(b)
     return r'${}\times10^{{{}}}$'.format(a, b)
 
-def loss_cone_angle(cellcoord=None,cellcoordre=None,deg=False):
-    ''' Calculates the value of the loss cone angle at a given location
+
+def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False):
+    ''' Calculates the value of the loss cone angle at a given location, in the dipole approximation
         :kword cellcoord:    The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in m]
         :kword cellcoordre:  The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in Re]
         :kword deg:          True if user wants the angle in degrees
@@ -92,210 +97,83 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,deg=False):
 
 
 
-# find nearest spatial cell with vspace to cid
-def getNearestCellWithVspace(vlsvReader,cid):
-    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
-    cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
-    norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
-    norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-    return cell_candidates[i]
+def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=None,deg=False):
+    ''' Calculates the value of the loss cone angle at a given location, without assuming dipolar field
+        :kword cellcoord:    The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in m]
+        :kword cellcoordre:  The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in Re]
+        :kword B0:           The magnetic field magnitude in the cell
+        :kword fluxfilename: Name of the file containing the flux function
+        :kword deg:          True if user wants the angle in degrees
 
-# create a 2-dimensional histogram
-def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
-    # Flux weighting?
-    if wflux!=None:
-        fw = f*np.sqrt( np.sum(np.square([VX,VY,Vpara]),1) ) # use particle flux as weighting in the histogram
+        :returns:            The value of the loss cone angle
+
+        .. code-blocks:: python
+    '''
+
+    # Earth radius [m]
+    Re = 6.371e6
+
+    # Magnetic strength at Earth surface equator [T]
+    B0 = 3.12e-5
+
+    # Parameters for processing the flux function
+    xoffset = -xmin
+    yoffset = -zmin
+    dx = (xmax-xmin)/xcells_ini
+
+    # Convert coordinates to m if needed
+    if cellcoord!=None:
+        X = cellcoord[0]
+        Y = cellcoord[1]
+        Z = cellcoord[2]
+
     else:
-        fw = f # use particle phase-space density as weighting in the histogram
-
-    # Select cells which are within slice area
-    indexes = [(abs(Vpara) <= 0.5*vthick) & (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
-
-
-    # Gather histogram of values
-    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),weights=fw[indexes],normed=0)
-    # Gather histogram of how many cells were summed for the histogram
-    (Chist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),normed=0)
-    # Correct for summing multiple cells into one histogram output cell
-    nonzero = np.where(Chist != 0)
-
-    # nonzerocount = sum([len(row) for row in nonzero])
-    # print("indices "+str(nonzerocount))
-    # one = np.where(Chist ==1)
-    # one = sum( [len(row) for row in one])
-    # two = np.where(Chist ==2)
-    # two = sum( [len(row) for row in two])
-    # three = np.where(Chist ==3)
-    # three = sum( [len(row) for row in three])
-    # four = np.where(Chist ==4)
-    # four = sum( [len(row) for row in four])
-    # five = np.where(Chist ==5)
-    # five = sum( [len(row) for row in five])
-    # six = np.where(Chist ==6)
-    # six = sum( [len(row) for row in six])
-    # print("vthick "+str(vthick))
-    # print("One "+str(one)+" two "+str(two)+" three "+str(three)+" four "+str(four)+" five "+str(five)+" six "+str(six))
-
-    nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
+        X = cellcoordre[0]*Re
+        Y = cellcoordre[1]*Re
+        Z = cellcoordre[2]*Re
 
 
-    # Please note that the histogram does not follow the Cartesian convention where x values are on the abscissa
-    # and y values on the ordinate axis. Rather, x is histogrammed along the first dimension of the array (vertical),
-    # and y along the second dimension of the array (horizontal). This ensures compatibility with histogramdd.
-    nVhist = nVhist.transpose()
+    # Read flux function from file
+    flux_function = np.fromfile(fluxfilename,dtype='double').reshape(zsize,xsize).T
 
-    # Flux weighting
-    if wflux!=None:
-        dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
-        nVhist = np.divide(nVhist,(dV*4*np.pi)) # normalization
+    # Read the flux value in the cell
+    flux_cell = flux_function[int(round((X+xoffset)/dx)),int(round((Z+yoffset)/dx))]
+    print("flux value in cell: "+str(flux_cell))
 
-    return (nVhist,VXEdges,VYEdges)
-  
+    # Search for the same value at the inner boundary
+    innerbound = 5.*Re
 
-# analyze velocity space in a spatial cell (velocity space reducer)
-def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, wflux=None, cbulk=None, center=None, keepfmin=None):
-    # check if velocity space exists in this cell
-    if vlsvReader.check_variable('fSaved'): #restart files will not have this value
-        if vlsvReader.read_variable('fSaved',cid) != 1.0:
-            return (False,0,0,0)
+    for angle in np.arange(180,0,-.2):
+	phi=angle/180.*np.pi
+	x = (innerbound*np.cos(phi) + xoffset)/dx
+	y = (innerbound*np.sin(phi) + yoffset)/dx
 
-    # Assume velocity cells are cubes
-    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
-    # Account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
-    [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
-    inputcellsize=(vxmax-vxmin)/vxsize
-    print("Input velocity grid cell size "+str(inputcellsize))
+	f = flux_function[x,y]
 
-    velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
-#    print("Found "+str(len(V))+" v-space cells")
+        if(f < flux_cell):
+	    latmag_bound = phi
+	    break
 
-    if cbulk!=None:
-        print("Transforming to plasma frame")
-        if vlsvReader.check_variable('moments'):
-            # This should be a restart file
-            moments = np.array(vlsvReader.read_variable('moments',cid))
-            if moments==None:
-                print("Error reading moments from assumed restart file!")
-                exit()
-            if len(moments.shape)==2:
-                moments = moments[0]
-            if moments[0]>0.0:
-                bulkv = moments[1:4]/moments[0]
-            else:
-                bulkv=[0.,0.,0.]
-        elif vlsvReader.check_variable('v'):
-            # Multipop file with bulk v saved directly
-            bulkv = vlsvReader.read_variable('v',cid)
-        elif ( vlsvReader.check_variable('rho') and vlsvReader.check_variable('rho_v')):
-            # Older regular bulk file
-            rhov = vlsvReader.read_variable('rho_v',cid)
-            rho = vlsvReader.read_variable('rho',cid)
-            bulkv = rhov/rho
-        elif vlsvReader.check_variable(pop+'/V'):
-            # Multipop file without V saved, use per-population bulk velocity
-            bulkv = vlsvReader.read_variable(pop+'/V',cid)
-        else:
-            print("Error in finding plasma bulk velocity!")
-            exit()
-        # shift to velocities plasma frame
-        V = V - bulkv
-    elif center!=None:
-        if len(center)==3:
-            print("Transforming to frame travelling at speed "+str(center))
-            V - V - center
-        else:
-            print("Error in shape of center vector! Give in form (vx,vy,vz).")
+    print("latmag_bound = "+str(latmag_bound*180./np.pi))
 
-    f = zip(*velcells.items())
-    # check that velocity space has cells
-    if(len(f) > 0):
-        f = np.asarray(zip(*velcells.items())[1])
-    else:
-        return (False,0,0,0)
+    # Calculate B value at 1 Re from boundary point (using dipolar approximation)
+    L = innerbound/Re/np.cos(latmag_bound)**2
+    Latmag_inv = np.arccos(np.sqrt(1./L))
+    Bm = B0 * np.sqrt(1.+3*np.sin(Latmag_inv)**2)
+    print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
+    print("Bm = "+str(Bm)+"   "+str(np.sqrt(1.+3*np.sin(Latmag_inv)**2)))
+    print("B_cell = "+str(B_cell))
 
-    if keepfmin==None:
-        # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer cells as well.
-        fMin = 1e-16 # default
-        if vlsvReader.check_variable('MinValue') == True:
-            fMin = vlsvReader.read_variable('MinValue',cid)
-        ii_f = np.where(f >= fMin)
-#        print("Dropping velocity cells under fMin value "+str(fMin))
-        if len(ii_f) < 1:
-            return (False,0,0,0)
-        f = f[ii_f]
-        V = V[ii_f,:][0,:,:]
+    # Calculate the loss-cone angle from ratio of B
+    alph0 = np.arcsin(np.sqrt(B_cell/Bm))
 
-    if slicethick==None:
-        # Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.
-        # Might still be incorrect, erring on the side of caution.
-        # norm_srt = sorted(abs(normvect))
-        # if norm_srt[1] > 0:
-        #     temp = norm_srt[0]/norm_srt[1]
-        #     aratio = (1.+temp)/np.sqrt( 1+temp**2)
-        # else:
-        #     aratio = 1.
-        # gridratio = aratio * norm_srt[2] * (1. + aratio * np.sqrt(norm_srt[0]**2 + norm_srt[1]**2) / norm_srt[2] )
-        # if gridratio>1.0:
-        #     # Account for numerical inaccuracy
-        #     slicethick=inputcellsize*gridratio*1.01
-        # else:
-        #     slicethick=inputcellsize
+    # Conversion to degrees if needed
+    if deg:
+        alph0 = alph0*180./np.pi
 
-        samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
-        sbrot = rotateVectorToVector(samplebox,normvect)
-        rotminx=np.amin(sbrot[:,0])
-        rotmaxx=np.amax(sbrot[:,0])
-        rotminy=np.amin(sbrot[:,1])
-        rotmaxy=np.amax(sbrot[:,1])
-        rotminz=np.amin(sbrot[:,2])
-        rotmaxz=np.amax(sbrot[:,2])
-        gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-        slicethick=inputcellsize*gridratio
-    else:
-        slicethick=inputcellsize*slicethick
-    print("Performing slice with a counting thickness of "+str(slicethick))
+    print("alph0 in function = "+str(alph0))
 
-    if slicetype=="xy":
-        VX = V[:,0]
-        VY = V[:,1]
-        Vpara = V[:,2]
-    elif slicetype=="yz":
-        VX = V[:,1]
-        VY = V[:,2]
-        Vpara = V[:,0]
-    elif slicetype=="xz":
-        VX = V[:,0]
-        VY = V[:,2]
-        Vpara = V[:,1]
-    elif slicetype=="vecperp":
-        # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
-        VX = Vrot[:,0]
-        VY = Vrot[:,1]
-        Vpara = Vrot[:,2]
-    elif slicetype=="vecpara":
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
-        VX = Vrot[:,2]
-        VY = Vrot[:,1]
-        Vpara = Vrot[:,0]
-    else:
-        print("Error finding rotation of v-space!")
-        return (False,0,0,0)
-
-    # TODO: better rotation so perpendicular component can be defined?
-
-    # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
-    (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Vpara,VXBins,VYBins, slicethick, wflux=wflux)
-    return (True,binsXY,edgesX,edgesY)
-
+    return (alph0,Latmag_inv)
 
 
 def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=None,emax=None,hemisphere=None):
@@ -447,7 +325,8 @@ def plot_prec_spectrum(filename=None,
                      vmin=None, vmax=None, lin=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
-                     cellcoordplot=None,cellidplot=None
+                     cellcoordplot=None,cellidplot=None,
+                     dipolapprox=False, fluxfile=None
                      ):    
 
     ''' Plots a precipitating ion flux energy spectrum.
@@ -480,6 +359,8 @@ def plot_prec_spectrum(filename=None,
 
     :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
+    :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle
+    :kword fluxfile:        Name of the file containing the flux function values
                             
     :returns:           Outputs an image to a file or to the screen.
 
@@ -489,6 +370,9 @@ def plot_prec_spectrum(filename=None,
 
 
     '''
+
+    global xsize,ysize,zsize, xcells_ini
+    global xmin, ymin, zmin, xmax, ymax, zmax
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
@@ -568,12 +452,13 @@ def plot_prec_spectrum(filename=None,
         run='plot'
 
     # Output file name
-    savefigname = outputdir+run+"_prec_spec"+stepstr+"_"+str(cellidplot)+".png"
+    savefigname = outputdir+run+"_prec_spec"+stepstr+"_"+str(cellidplot[0])+".png"
 
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
+    xcells_ini = f.read_parameter("xcells_ini")
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
 
@@ -631,6 +516,10 @@ def plot_prec_spectrum(filename=None,
         for cellid in cellidplot:
             xCid,yCid,zCid = f.get_cell_coordinates(cellid)
 
+            # Read the value of B in the cell
+            B_cell = f.read_variable("B", cellid)
+            B_cell = np.sqrt(B_cell[0]**2+B_cell[1]**2+B_cell[2]**2)
+
             # Check whether northern or southern hemisphere
             # -- equatorial plane considered northern
             if zCid < 0.:
@@ -639,9 +528,15 @@ def plot_prec_spectrum(filename=None,
                 hemisphere='north'
 
             # Calculation of loss cone angle value
-            alph0 = loss_cone_angle(cellcoord=[xCid,yCid,zCid],deg=False)
+            if dipolapprox:
+                alph0 = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+            elif fluxfile==None:
+                print("Flux function file not provided!")
+                return
+            else:
+                [alph0,latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
 
-            print("alph0 = "+str(alph0))
+            print("alph0 = "+str(alph0)+",   lat_m = "+latmag_inv*180./np.pi)
 
 
             # Reduction of the precipitating particle data
@@ -650,7 +545,7 @@ def plot_prec_spectrum(filename=None,
     # Plots the histogram
     if wentFine:
         fig1=plt.loglog(energy,flux,'o-')
-        print("flux = "+str(flux)+"\n energy = "+str(energy))
+#        print("flux = "+str(flux)+"\n energy = "+str(energy))
     else:
         print("There was a problem making the histogram")
         return
@@ -661,17 +556,12 @@ def plot_prec_spectrum(filename=None,
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
     plt.xlim([emin,emax])
     plt.ylim([fmin,fmax])
-#    ax1.set_aspect('equal')
 
     for axis in ['top','bottom','left','right']:
         ax1.spines[axis].set_linewidth(thick)
     ax1.xaxis.set_tick_params(width=thick,length=3)
     ax1.yaxis.set_tick_params(width=thick,length=3)
 
-
-    # Limit ticks, slightly according to ratio
-#    ax1.xaxis.set_major_locator(plt.MaxNLocator(int(7/np.sqrt(ratio))))
-#    ax1.yaxis.set_major_locator(plt.MaxNLocator(int(7*np.sqrt(ratio))))
 
     plt.xlabel('E [keV]',fontsize=fontsize,weight='black')
     plt.ylabel('Flux [protons/cm2/s/sr/eV]',fontsize=fontsize,weight='black')
@@ -711,13 +601,23 @@ def plot_prec_spectrum(filename=None,
 
 
 def make_keogram_column(step=None):
-    filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+    global alph0_global
 
-#    print(filename+" is being processed")
+    filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+    fluxfile = filedir_global+'../flux/bulk.'+str(step).rjust(7,'0')+'.bin'
+
+    print(filename+" is being processed")
     f=pt.vlsvfile.VlsvReader(filename)
 
+    # Read the value of B in the cell
+    B_cell = f.read_variable("B", cellid_global)
+    B_cell = np.sqrt(B_cell[0]**2+B_cell[1]**2+B_cell[2]**2)
+
+    [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
+    print("step "+str(step)+", latm = "+str(latmag_inv))
+
     # Reduction of the precipitating particle data
-    (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid_global,losscone=alph0_global,pop=pop_global,
+    (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid_global,losscone=alph0,pop=pop_global,
                                                     emin=emin_global,emax=emax_global,hemisphere=hemisphere_global)
 
 #    datamap = np.append(datamap,flux)
@@ -746,6 +646,7 @@ def plot_prec_time_spectrum(filedir=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
+                     dipolapprox=False,fluxfile=None,
                      numproc=8
                      ):    
 
@@ -778,7 +679,11 @@ def plot_prec_time_spectrum(filedir=None,
 
     :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
-                            
+    :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle (default: False)
+    :kword fluxfile:        Name of the file containing the flux function values
+
+    :kword numproc:     Number of processes for parallelisation (default: 8)
+
     :returns:           Outputs an image to a file or to the screen.
 
     .. code-block:: python
@@ -788,10 +693,13 @@ def plot_prec_time_spectrum(filedir=None,
 
     '''
 
-    global filedir_global
-    global cellid_global
+    global filedir_global, fluxfile_global
+    global cellid_global, xCid, yCid, zCid
     global emin_global, emax_global
     global alph0_global, pop_global, hemisphere_global
+
+    global xsize,ysize,zsize, xcells_ini
+    global xmin, ymin, zmin, xmax, ymax, zmax
 
     filedir_global=filedir
     emin_global=emin
@@ -897,6 +805,7 @@ def plot_prec_time_spectrum(filedir=None,
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
+    xcells_ini = f.read_parameter("xcells_ini")
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
 
@@ -966,17 +875,26 @@ def plot_prec_time_spectrum(filedir=None,
                 hemisphere='north'
             hemisphere_global = hemisphere
 
+            # Read the value of B in the cell
+            B_cell = f.read_variable("B", cellid)
+            B_cell = np.sqrt(B_cell[0]**2+B_cell[1]**2+B_cell[2]**2)
+
             # Calculation of loss cone angle value
-            alph0 = loss_cone_angle(cellcoord=[xCid,yCid,zCid],deg=False)
+            if dipolapprox:
+                alph0 = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+            elif fluxfile==None:
+                print("Flux function file not provided!")
+                return
+            else:
+                fluxfile_global = fluxfile
+                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile_global,deg=False)
             alph0_global = alph0
 
-            print("alph0 = "+str(alph0))
+            print("alph0 = "+str(alph0)+",   lat_m = "+str(latmag_inv*180./np.pi))
 
             # Building the datamap corresponding to the keogram    
             datamap = np.array([])
             time_keogram = np.array([])
-
-            print("Name: "+__name__)
 
             # Parallel construction of the spectrum keogram
             if __name__ == 'plot_precipitation':
@@ -1012,9 +930,9 @@ def plot_prec_time_spectrum(filedir=None,
     ax1 = plt.gca() # get current axes
 
     # Save the keogram to file in case further processing is needed
-    datamap.dump(outputdir+'datamap')
-    np.save(outputdir+'time_keogram',time_keogram)
-    np.save(outputdir+'energy_scale',energy)
+    datamap.dump(outputdir+'datamap_'+str(cellidplot[0]))
+    np.save(outputdir+'time_keogram_'+str(cellidplot[0]),time_keogram)
+    np.save(outputdir+'energy_scale_'+str(cellidplot[0]),energy)
 
 
     ax1.set_yscale("log")
