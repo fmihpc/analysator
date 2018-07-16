@@ -1,5 +1,7 @@
 import numpy as np
 import math
+import pytools as pt
+from multiprocessing import Pool
 
 def expr_Tanisotropy(pass_maps):
     # pass_maps is a list of numpy arrays
@@ -96,3 +98,64 @@ def expr_Tanisotropy(pass_maps):
 
 
     return Tanisotropy
+
+
+
+
+def extract_Taniso_step(step=None):
+
+    filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+    print(filename+" is being processed")
+    f=pt.vlsvfile.VlsvReader(filename)
+
+    pass_maps=[]
+        
+    for mapval in pass_vars:
+        pass_map = f.read_variable(mapval,cellids=cellid_global)
+        if np.ndim(pass_map)==1:
+            pass_map = pass_map.reshape([1,1])
+        else:
+            pass_map = pass_map.reshape([1,1,len(pass_map[0])])
+        pass_maps.append(np.ma.asarray(pass_map))
+
+    Tani = expr_Tanisotropy(pass_maps)
+    Taniso = Tani.data[0][0]
+
+    return (Taniso)
+
+
+
+def extract_Tanisotropy(filedir=None,
+                        start=None,
+                        stop=None,
+                        cellid=None,
+                        outputdir=None,
+                        numproc=8
+                        ):
+
+    global filedir_global, cellid_global
+    global pass_vars
+
+    filedir_global = filedir
+    cellid_global = cellid
+
+    pass_vars=['rho','B','PTensorDiagonal','PTensorOffDiagonal']
+
+
+
+
+    # Parallel extraction of the temperature anisotropy
+    if __name__ == 'temperature_anisotropy':
+        pool = Pool(numproc)
+        Taniso = pool.map(extract_Taniso_step, range(start,stop+1))
+    else:
+        print("didn't enter the loop")
+
+    
+    print('Taniso = '+str(Taniso))
+
+    outputname = outputdir+'Tanisotropy_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+
+    print('Saving array in '+outputname)
+
+    np.save(outputname,Taniso)
