@@ -324,7 +324,7 @@ def plot_prec_spectrum(filename=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
-                     dipolapprox=False, fluxfile=None
+                     dipolapprox=True, fluxfile=None
                      ):    
 
     ''' Plots a precipitating ion flux energy spectrum.
@@ -644,7 +644,7 @@ def plot_prec_time_spectrum(filedir=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
-                     dipolapprox=False,fluxfile=None,
+                     dipolapprox=True,fluxfile=None,
                      numproc=8
                      ):    
 
@@ -887,8 +887,6 @@ def plot_prec_time_spectrum(filedir=None,
                 fluxfile_global = fluxfile
                 [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile_global,deg=False)
             alph0_global = alph0
-
-            print("alph0 = "+str(alph0)+",   lat_m = "+str(latmag_inv*180./np.pi))
 
             # Building the datamap corresponding to the keogram    
             datamap = np.array([])
