@@ -270,7 +270,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     fluxes = np.array([])
 
     deltaV = 50.e3 # m/s
-    for vel in np.arange(vxmin,vxmax,deltaV):
+    for vel in np.arange(0.,max(abs(vxmin),abs(vxmax)),deltaV):
 
         # Energy in the middle of the bin
         energy_i = 0.5*mass*(vel+deltaV/2.)**2/qe/1e3
@@ -282,12 +282,12 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         # -- Collect precipitating particles within energy range
         #    -- If cell in southern hemisphere, then losscone = pi - losscone
         if hemisphere=='south':
-            indexes = [((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))]
+            ind_lc = [((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))]
         else:
-            indexes = [((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))]
+            ind_lc = [((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))]
 
         # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
-        integral = (vel+deltaV/2.)**3*np.sum(f[indexes])*solid_angle
+        integral = (vel+deltaV/2.)**3*np.sum(f[ind_lc])*solid_angle
 
         # -- Put epsilon value if nothing in the loss cone [TODO maybe improve this later]
         if integral==0.:
@@ -305,8 +305,6 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         # Append to the output arrays
         energy_bins = np.append(energy_bins,energy_i)
         fluxes = np.append(fluxes,flux_i)
-        
-  #  (fluxes,energy_bins) = np.histogram(a=energy[indexes],bins=np.logspace(np.log10(emin),np.log10(emax),50),weights=f[indexes])
 
 
     return (True,energy_bins,fluxes)
