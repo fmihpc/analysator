@@ -97,7 +97,7 @@ def expr_Tanisotropy(pass_maps):
         return
 
 
-    return Tanisotropy
+    return (Tanisotropy,Tperp,Tpara)
 
 
 
@@ -118,10 +118,14 @@ def extract_Taniso_step(step=None):
             pass_map = pass_map.reshape([1,1,len(pass_map[0])])
         pass_maps.append(np.ma.asarray(pass_map))
 
-    Tani = expr_Tanisotropy(pass_maps)
+    [Tani,Tperp,Tpara] = expr_Tanisotropy(pass_maps)
     Taniso = Tani.data[0][0]
+    Tperp = Tperp.data[0][0]
+    Tpara = Tpara.data[0][0]
 
-    return (Taniso)
+    out = [Taniso,Tperp,Tpara]
+
+    return (out)
 
 
 
@@ -141,24 +145,35 @@ def extract_Tanisotropy(filedir=None,
 
     pass_vars=['rho','B','PTensorDiagonal','PTensorOffDiagonal']
 
-
+    Taniso = np.array([])
+    Tperp = np.array([])
+    Tpara = np.array([])
 
 
     # Parallel extraction of the temperature anisotropy
     if __name__ == 'temperature_anisotropy':
         pool = Pool(numproc)
-        Taniso = pool.map(extract_Taniso_step, range(start,stop+1))
+        return_array = pool.map(extract_Taniso_step, range(start,stop+1))
     else:
         print("didn't enter the loop")
+
+    for j in return_array:
+        Taniso = np.append(Taniso,j[0])
+        Tperp = np.append(Tperp,j[1])
+        Tpara = np.append(Tpara,j[2])
 
     
     print('Taniso = '+str(Taniso))
 
-    outputname = outputdir+'Tanisotropy_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+    outputnameTaniso = outputdir+'Tanisotropy_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+    outputnameTperp = outputdir+'Tperp_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+    outputnameTpara = outputdir+'Tpara_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
 
-    print('Saving array in '+outputname)
+    print('Saving arrays in '+outputnameTaniso)
 
-    np.save(outputname,Taniso)
+    np.save(outputnameTaniso,Taniso)
+    np.save(outputnameTperp,Tperp)
+    np.save(outputnameTpara,Tpara)
 
 
 
