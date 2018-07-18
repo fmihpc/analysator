@@ -159,3 +159,49 @@ def extract_Tanisotropy(filedir=None,
     print('Saving array in '+outputname)
 
     np.save(outputname,Taniso)
+
+
+
+
+def extract_variable_step(step=None):
+
+    filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+    print(filename+" is being processed")
+    f=pt.vlsvfile.VlsvReader(filename)
+
+    data_step = f.read_variable(var_global,cellids=cellid_global)
+
+    return (data_step)
+
+
+
+def extract_variable(filedir=None,
+                    var=None,
+                    start=None,
+                    stop=None,
+                    cellid=None,
+                    outputdir=None,
+                    numproc=8
+                    ):
+
+    global filedir_global, cellid_global, var_global
+
+    filedir_global = filedir
+    cellid_global = cellid
+    var_global = var
+
+
+
+    # Parallel extraction of the temperature anisotropy
+    if __name__ == 'temperature_anisotropy':
+        pool = Pool(numproc)
+        data = pool.map(extract_variable_step, range(start,stop+1))
+    else:
+        print("didn't enter the loop")
+
+
+    outputname = outputdir+str(var)+'_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+
+    print('Saving array in '+outputname)
+
+    np.save(outputname,data)
