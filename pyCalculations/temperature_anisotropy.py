@@ -184,14 +184,14 @@ def extract_variable_step(step=None):
     print(filename+" is being processed")
     f=pt.vlsvfile.VlsvReader(filename)
 
-    data_step = f.read_variable(var_global,cellids=cellid_global)
+    data_step = f.read_variable(var_global,cellids=cellid_global,operator=op_global)
 
     return (data_step)
 
 
 
 def extract_variable(filedir=None,
-                    var=None,
+                    var=None,op=None,
                     start=None,
                     stop=None,
                     cellid=None,
@@ -199,11 +199,17 @@ def extract_variable(filedir=None,
                     numproc=8
                     ):
 
-    global filedir_global, cellid_global, var_global
+    global filedir_global, cellid_global, var_global, op_global
 
     filedir_global = filedir
     cellid_global = cellid
     var_global = var
+    op_global = op
+
+    if op!=None:
+        varstr = str(var)+str(op)
+    else:
+        varstr = str(var)
 
 
 
@@ -215,7 +221,7 @@ def extract_variable(filedir=None,
         print("didn't enter the loop")
 
 
-    outputname = outputdir+str(var)+'_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
+    outputname = outputdir+varstr+'_'+str(cellid[0])+'_'+str(start)+'_'+str(stop)
 
     print('Saving array in '+outputname)
 
