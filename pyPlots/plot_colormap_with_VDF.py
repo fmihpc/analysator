@@ -255,7 +255,7 @@ def plot_colormap_with_vdf(filename=None,
                      outputdir=None,
                      var=None, op=None, title=None,
                      draw=None, usesci=None,
-                     symlog=None,
+                     symlog=None,varnorm=None,
                      boxm=[],boxre=[],colormap=None,
                      run=None,notime=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
@@ -303,6 +303,7 @@ def plot_colormap_with_vdf(filename=None,
     :kword symlog:      use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
+    :kword varnorm:     Normalisation factor for the colormap variable
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
    
@@ -628,6 +629,8 @@ def plot_colormap_with_vdf(filename=None,
         print("Unable to exclude non-zero mass density region from range finder!")
         rhomap = datamap
         rhoindex = np.where(np.isfinite(rhomap))
+
+    datamap = datamap/varnorm
 
     # If automatic range finding is required, find min and max of array
     if vmin!=None:
