@@ -89,7 +89,7 @@ class VlsvParticles(object):
               datatype = child.attrib["datatype"]
 
               offset = ast.literal_eval(child.text)
-              print("offset "+str(offset))
+              #print("offset "+str(offset))
               fptr.seek(offset)
 
               if datatype == "float" and element_size == 4:

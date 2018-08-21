@@ -3,7 +3,7 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-import os
+import os, sys
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -59,10 +59,11 @@ def plot_colormap(filename=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
-                  #exprvals=None, #extvals=None, #expr_timeavg=None, # These were consolidated
+                  #exprvals=None, #extvals=None, #expr_timeavg=None, # These were consolidated into pass_vars
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
-                  fluxthick=1.0, fluxlines=1
+                  fluxthick=1.0, fluxlines=1,
+                  fsaved=0
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -127,7 +128,8 @@ def plot_colormap(filename=None,
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
-                            
+    :kword fsaved:      Plot where fsaved=1 (VDFs exist)
+
     :returns:           Outputs an image to a file or to the screen.
 
     .. code-block:: python
@@ -256,7 +258,7 @@ def plot_colormap(filename=None,
         if var==None:
             # If no expression or variable given, defaults to rho
             var='rho'
-        varstr=var
+        varstr=var.replace("/","_")
     savefigname = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
 
     # Check if target file already exists and overwriting is disabled
@@ -316,7 +318,7 @@ def plot_colormap(filename=None,
         
     # Scale data extent and plot box
     simext=[i/unit for i in simext]
-    boxcoords=[i/unit for i in boxcoords]
+    boxcoords=[i/unit for i in boxcoords]    
 
     pass_maps=[]
 
@@ -408,6 +410,24 @@ def plot_colormap(filename=None,
             datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
         
 
+    # Generates the mesh to map the data to.
+    [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
+
+    # Generate mask for only visible section (with small buffer)
+    maskboundarybuffer = 2.*cellsize/unit
+    maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
+    maskgrid = np.ma.masked_where(XmeshXY>(boxcoords[1]+maskboundarybuffer), maskgrid)
+    maskgrid = np.ma.masked_where(YmeshXY<(boxcoords[2]-maskboundarybuffer), maskgrid)
+    maskgrid = np.ma.masked_where(YmeshXY>(boxcoords[3]+maskboundarybuffer), maskgrid)
+    if np.ma.is_masked(maskgrid):
+        XmeshPass = XmeshXY[~np.all(maskgrid.mask, axis=1),:]
+        XmeshPass = XmeshPass[:,~np.all(maskgrid.mask, axis=0)]
+        YmeshPass = YmeshXY[~np.all(maskgrid.mask, axis=1),:]
+        YmeshPass = YmeshPass[:,~np.all(maskgrid.mask, axis=0)]
+    else:
+        XmeshPass = XmeshXY
+        YmeshPass = YmeshXY
+
     # If expression or external routine need variables, read them from the file.
     if pass_vars!=None:
         if pass_times==None:
@@ -416,9 +436,18 @@ def plot_colormap(filename=None,
                 pass_map = f.read_variable(mapval)
                 if np.ndim(pass_map)==1:
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                    # Strip away columns and rows which are outside the plot region
+                    if np.ma.is_masked(maskgrid):
+                        pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:]
+                        pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0)]
                 else:
+                    # Assumes 3 components
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
-                pass_maps.append(np.ma.asarray(pass_map))
+                    # Strip away columns and rows which are outside the plot region
+                    if np.ma.is_masked(maskgrid):
+                        pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:,:]
+                        pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0),:]
+                pass_maps.append(pass_map)
         else:
             # Or gather over a number of time steps
             currstep = int(filename[-12:-5])
@@ -435,10 +464,18 @@ def plot_colormap(filename=None,
                     pass_map = fstep.read_variable(mapval)
                     if np.ndim(pass_map)==1:
                         pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
+                        # Strip away columns and rows which are outside the plot region
+                        if np.ma.is_masked(maskgrid):
+                            pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:]
+                            pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0)]
                     else:
+                        # Assumes 3 components
                         pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
-                    pass_maps[tavg_step_i].append(np.ma.asarray(pass_map))
-
+                        # Strip away columns and rows which are outside the plot region
+                        if np.ma.is_masked(maskgrid):
+                            pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:,:]
+                            pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0),:]
+                    pass_maps[tavg_step_i].append(pass_map)
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression!=None:
@@ -464,6 +501,15 @@ def plot_colormap(filename=None,
     else:
         print("Unable to exclude non-zero mass density region from range finder!")
         rhomap = (np.ma.masked_invalid(datamap), 0)
+        
+    if np.ma.is_masked(maskgrid):
+        # Strip away columns and rows which are outside the plot region
+        rhomap = rhomap[~np.all(maskgrid.mask, axis=1),:]
+        rhomap = rhomap[:,~np.all(maskgrid.mask, axis=0)]
+        # Also for the datamap, unless it was already provided by an expression
+        if expression==None:
+            datamap = datamap[~np.all(maskgrid.mask, axis=1),:]
+            datamap = datamap[:,~np.all(maskgrid.mask, axis=0)]
 
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -543,10 +589,7 @@ def plot_colormap(filename=None,
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
     
-    # Generates the mesh to map the data to.
-    # Note, datamap is still of shape [ysize,xsize] (?)
-    [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
-    fig1 = plt.pcolormesh(XmeshXY,YmeshXY,datamap, cmap=colormap,norm=norm)
+    fig1 = plt.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
     ax1 = plt.gca() # get current axes
 
     # Title and plot limits
@@ -580,10 +623,55 @@ def plot_colormap(filename=None,
     # ax1.xaxis.set_major_locator(plt.MaxNLocator(int(7/np.sqrt(ratio))))
     # ax1.yaxis.set_major_locator(plt.MaxNLocator(int(7*np.sqrt(ratio))))
 
+    # add flux function contours
+    if fluxfile != None:
+        # Read binary flux function data from prepared files
+        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
+
+        # Find inflow position values
+        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+        ff_v = f.read_variable("v", cellids=cid)
+        #ff_v = [-600000,0,0]
+        ff_b = f.read_variable("B", cellids=cid)
+
+        # Account for movement
+        bdirsign = -1.0 
+        outofplane = [0,1,0] # For ecliptic runs
+        if zsize==1:
+            outofplane = [0,0,1]  # For polar runs
+        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0:
+            bdirsign = 1.0
+        flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
+
+        # Truncate data to plot region
+        if np.ma.is_masked(maskgrid):
+            flux_function = flux_function[~np.all(maskgrid.mask, axis=1),:]
+            flux_function = flux_function[:,~np.all(maskgrid.mask, axis=0)]
+
+        # Mask away ionosphere
+        flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
+        flux_function = np.ma.masked_where(rhomap<=0, flux_function)
+
+        # The flux level contours must be fixed instead of scaled based on min/max values in order
+        # to properly account for flux freeze-in and advection with plasma
+        flux_levels = np.linspace(-10,10,fluxlines*60)
+        fluxcont = ax1.contour(XmeshPass,YmeshPass,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+
+    # add fSaved identifiers
+    if fsaved != None:
+        fSmap = f.read_variable("fSaved")
+        fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        if np.ma.is_masked(maskgrid):
+            fSmap = fSmap[~np.all(maskgrid.mask, axis=1),:]
+            fSmap = fSmap[:,~np.all(maskgrid.mask, axis=0)]
+
+        fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors='k',linestyles='solid',linewidths=0.5,zorder=2)
+
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
     if external!=None:
-        extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
+        #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
+        extresult=external(ax1, XmeshPass,YmeshPass, pass_maps)
 
     if cbtitle==None:
         if expression!=None:
@@ -627,34 +715,6 @@ def plot_colormap(filename=None,
                 # labels will be in format $x.0\times10^{y}$
                 if not label.get_text()[1] in valids:
                     label.set_visible(False)
-
-    # add flux function contours
-    if fluxfile != None:
-        # Read binary flux function data from prepared files
-        flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
-
-        # Find inflow position values
-        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_v = f.read_variable("v", cellids=cid)
-        ff_b = f.read_variable("B", cellids=cid)
-
-        # Account for movement
-        bdirsign = -1.0 
-        outofplane = [0,1,0] # For ecliptic runs
-        if zsize==1:
-            outofplane = [0,0,1]  # For polar runs
-        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0:
-            bdirsign = 1.0
-        flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
-
-        # Mask away ionosphere
-        flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
-        flux_function = np.ma.masked_where(rhomap<=0, flux_function)
-
-        # The flux level contours must be fixed instead of scaled based on min/max values in order
-        # to properly account for flux freeze-in and advection with plasma
-        flux_levels = np.linspace(-10,10,fluxlines*60)
-        fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # Add Vlasiator watermark
     if wmark!=None:        

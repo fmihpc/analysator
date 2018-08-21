@@ -3,7 +3,7 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-import os
+import os, sys
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -49,6 +49,9 @@ def fmt(x, pos):
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
+    if len(cell_candidates)==0:
+        print("Error: No velocity distributions found!")
+        sys.exit()
     cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
     cell_coordinates = vlsvReader.get_cell_coordinates(cid)
     norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
@@ -117,7 +120,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             moments = np.array(vlsvReader.read_variable('moments',cid))
             if moments==None:
                 print("Error reading moments from assumed restart file!")
-                exit()
+                sys.exit()
             if len(moments.shape)==2:
                 moments = moments[0]
             if moments[0]>0.0:
@@ -137,7 +140,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             bulkv = vlsvReader.read_variable(pop+'/V',cid)
         else:
             print("Error in finding plasma bulk velocity!")
-            exit()
+            sys.exit()
         # shift to velocities plasma frame
         V = V - bulkv
     elif center!=None:
@@ -395,11 +398,11 @@ def plot_vdf(filename=None,
                print("Auto-switched to population avgs")
            else:
                print("Unable to detect population "+pop+" in .vlsv file!")
-               exit()
+               sys.exit()
     else:
         if not vlsvReader.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            exit()       
+            sys.exit()       
 
     #read in mesh size and cells in ordinary space
     # xsize = vlsvReader.read_parameter("xcells_ini")
@@ -466,7 +469,7 @@ def plot_vdf(filename=None,
             print('Number of points: ' + str(xReq.shape[0]))
         else:
             print('ERROR: bad coordinate variables given')
-            exit()
+            sys.exit()
         cidsTemp = []
         for ii in range(xReq.shape[0]):
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
@@ -475,10 +478,10 @@ def plot_vdf(filename=None,
                 cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
             else:
                 print('ERROR: cell not found')
-                exit()
+                sys.exit()
             if (cidNearestVspace <= 0):
                 print('ERROR: cell with vspace not found')
-                exit()
+                sys.exit()
             xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
             print('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
@@ -535,7 +538,7 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_2$ "+velUnitStr
             else:
                 print("Error parsing slice normal vector!")
-                exit()
+                sys.exit()
         elif xy!=None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
@@ -562,7 +565,7 @@ def plot_vdf(filename=None,
                 Bvect = BGB+PERBB
             else:
                 print("Error finding B vector direction!")
-                exit()
+                sys.exit()
 
             if Bvect.shape==(1,3):
                 Bvect = Bvect[0]

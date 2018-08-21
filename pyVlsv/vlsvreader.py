@@ -154,7 +154,7 @@ class VlsvReader(object):
                  pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
               self.__meshes[popname]=pop
-              print "Found population " + popname
+              #print "Found population " + popname
 
       self.__fptr.close()
 
@@ -465,7 +465,7 @@ class VlsvReader(object):
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):
                if popname == child.attrib["name"]:
-                  findpop = True
+                  foundpop = True
             else:
                blockidsexist = True
       if blockidsexist:
@@ -473,8 +473,8 @@ class VlsvReader(object):
             if child.tag == "BLOCKVARIABLE":
                if child.attrib.has_key("name"):
                   if popname == child.attrib["name"]: # avgs
-                     findpop = True
-      return findpop
+                     foundpop = True
+      return foundpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
