@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
-from reduction import datareducers,data_operators
+from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
@@ -80,6 +80,7 @@ class VlsvReader(object):
 
       # Iterate through the XML tree, find all populations
       # (identified by their BLOCKIDS tag)
+      self.active_populations=[]
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if child.attrib.has_key("name"):
@@ -89,6 +90,12 @@ class VlsvReader(object):
 
               # Create a new (empty) MeshInfo-object for this population
               pop = self.MeshInfo()
+              
+              # Update list of active populations
+              if not popname in self.active_populations: self.active_populations.append(popname)
+
+              # Update list of active populations
+              if not popname in self.active_populations: self. active_populations.append(popname)
 
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
@@ -522,6 +529,13 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
+      # Get population and variable names from data array name 
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
       for child in self.__xml_root:
@@ -598,6 +612,32 @@ class VlsvReader(object):
             for i in np.atleast_1d(reducer.variables):
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
+
+      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
+      if self.check_variable(self.active_populations[0]+'/'+name): 
+         tmp_vars = []
+         for pname in self.active_populations:
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+
+         return data_operators["sum"](tmp_vars)   
+
+      # Check if the name is in multidatareducers
+      if 'pop/'+varname in multipopdatareducers:
+         reducer = multipopdatareducers['pop/'+varname]
+         # Read the necessary variables:
+         if reducer.useVspace:
+            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            return 
+         else:
+            tmp_vars = []
+            for i in np.atleast_1d(reducer.variables):
+               if '/' not in i:
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+               else:
+                  tvar = i.split('/')[1]
+                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
+            return data_operators[operator](reducer.operation( tmp_vars ))
+
 
       if self.__fptr.closed:
          fptr.close()
