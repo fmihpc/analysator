@@ -223,7 +223,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VY = V[:,2]
         Vpara = V[:,1]
     elif slicetype=="vecperp":
-        # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
+        # Find velocity components in given frame (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         Vrot = rotateVectorToVector(V,N)
         VX = Vrot[:,0]
@@ -252,10 +252,10 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
 def plot_colormap_with_vdf(filename=None,
                      vlsvobj=None,
                      filedir=None, step=None,
-                     outputdir=None,
+                     outputdir=None,popvdf="proton",
                      var=None, op=None, title=None,
                      draw=None, usesci=None,
-                     symlog=None,varnorm=None,
+                     symlog=None,varnorm=1.,
                      boxm=[],boxre=[],colormap=None,
                      run=None,notime=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
@@ -279,6 +279,7 @@ def plot_colormap_with_vdf(filename=None,
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
      
+    :kword popvdf:      population (species) for VDF plots, default "proton"
     :kword var:         variable to plot, e.g. rho, rhoBeam, beta, temperature, MA, Mms, va, vms,
                         E, B, V or others. Accepts any variable known by analysator/pytools.
     :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
@@ -881,7 +882,7 @@ def plot_colormap_with_vdf(filename=None,
             ax2 = fig.add_axes([xax2,yax2,vdfplotsize,vdfplotsize])
             
             
-            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax,cbulk=cbulk)
+            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],pop=popvdf,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax,cbulk=cbulk)
  #           ax2.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap='nipy_spectral',norm=norm)
 
 
