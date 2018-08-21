@@ -16,6 +16,7 @@ import matplotlib.colors as colors
 import pytools as pt
 import numpy as np
 import operator as oper
+import re
 from matplotlib.patches import Wedge
 
 # font size
@@ -259,6 +260,7 @@ def doPlot(vlsvFile):
  if colorMapLog == 1:
   outFileName = outFileName + 'log_'
  outFileName = outFileName  + vlsvVar + outFileExtension
+ outFileName = re.sub('/','_',outFileName)
  plotAndSave2D(vlsvReader,vlsvVar,nx,ny,nz,locsSorted,xmin,ymin,zmin,xmax,ymax,zmax,vlsvFileTime,fluxFile,outFileName)
 
 # find VLSV files
