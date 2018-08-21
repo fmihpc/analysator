@@ -128,7 +128,7 @@ def plot_colormap(filename=None,
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
-    :kword fsaved:      Plot where fsaved=1 (VDFs exist)
+    :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -631,9 +631,20 @@ def plot_colormap(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_v = f.read_variable("v", cellids=cid)
-        #ff_v = [-600000,0,0]
         ff_b = f.read_variable("B", cellids=cid)
+        # Multipop-safe bulkV fetch
+        if f.check_variable("proton/V"):
+            ff_v = f.read_variable("proton/V", cellids=cid)            
+        elif f.check_variable("rho_v"):
+            ff_v = f.read_variable("v", cellids=cid)
+        elif f.check_variable("moments"):
+            # Not sure if this works with multipop restarts, but should
+            ff_v = f.read_variable("moments", cellids=cid)
+            ff_v = ff_v[1:3]/ff_v[0]
+        else:
+            ff_v = [-600000,0,0]
+            #ff_v = [-750000,0,0]
+
 
         # Account for movement
         bdirsign = -1.0 
@@ -660,13 +671,18 @@ def plot_colormap(filename=None,
 
     # add fSaved identifiers
     if fsaved != None:
+        if type(fsaved) is str:
+            fScolour = fsaved
+        else:
+            fScolour = 'black'
         fSmap = f.read_variable("fSaved")
         fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
         if np.ma.is_masked(maskgrid):
             fSmap = fSmap[~np.all(maskgrid.mask, axis=1),:]
             fSmap = fSmap[:,~np.all(maskgrid.mask, axis=0)]
 
-        fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors='k',linestyles='solid',linewidths=0.5,zorder=2)
+        fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour,
+                             linestyles='solid',linewidths=0.5,zorder=2)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
