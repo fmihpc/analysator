@@ -852,9 +852,11 @@ def plot_colormap_with_vdf(filename=None,
             if magarrows:
                 Bvect = f.read_variable("B", cellidplot[aux])
                 Bvect = Bvect / 1e-8 #np.sqrt(Bvect[0]**2 + Bvect[1]**2 + Bvect[2]**2)
-                dx,dz = Bvect[0],Bvect[2]
-                ax1.arrow(x,z,dx,dz)
+                dx,dy,dz = Bvect[0],Bvect[1],Bvect[2]
+                Byimp = abs(dy)/np.sqrt(dx**2+dy**2+dz**2)
+                ax1.arrow(x,z,dx,dz,color=str(Byimp))
                 print("arrow plotted"+str(dx)+' '+str(dz))
+                print("By relative importance: "+str(Byimp))
                 if aux==0:
                     vdfplotlocation = ''
                 if dz<0:
