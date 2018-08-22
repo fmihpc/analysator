@@ -255,7 +255,7 @@ def plot_colormap_with_vdf(filename=None,
                      outputdir=None,popvdf="proton",
                      var=None, op=None, title=None,
                      draw=None, usesci=None,
-                     symlog=None,varnorm=1.,
+                     symlog=None,varnorm=1.,magarrows=False,
                      boxm=[],boxre=[],colormap=None,
                      run=None,notime=None,wmark=None,
                      notre=None, thick=1.0, cbtitle=None,
@@ -849,6 +849,18 @@ def plot_colormap_with_vdf(filename=None,
             x,y,z = cellcoordplot[3*aux],cellcoordplot[3*aux+1],cellcoordplot[3*aux+2]
             print('cellcoord2plot #' + str(aux) + ': x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
             ax1.plot(x,z,marker="o",markerfacecolor="None",markeredgecolor='w')
+            if magarrows:
+                Bvect = f.read_variable("B", cellidplot[aux])
+                Bvect = Bvect / 1e-8 #np.sqrt(Bvect[0]**2 + Bvect[1]**2 + Bvect[2]**2)
+                dx,dz = Bvect[0],Bvect[2]
+                ax1.arrow(x,z,dx,dz)
+                print("arrow plotted"+str(dx)+' '+str(dz))
+                if aux==0:
+                    vdfplotlocation = ''
+                if dz<0:
+                    vdfplotlocation = vdfplotlocation+'t'
+                else:
+                    vdfplotlocation = vdfplotlocation+'b'
             xratio = (x-boxcoords[0])/(boxcoords[1]-boxcoords[0])
             yratio = (z-boxcoords[2])/(boxcoords[3]-boxcoords[2])
             pos1 = ax1.get_position()
