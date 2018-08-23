@@ -1350,7 +1350,9 @@ def subplot_vdf(axis=None,
         axis.set_aspect('equal')
 
         # Grid
-        plt.grid(color='grey',linestyle='-')
+        plt.grid(color='grey',linestyle='-',linewidth=0.5)
+        plt.set_xticks(np.arange(-3e6,3e6,5e5))
+        plt.set_yticks(np.arange(-3e6,3e6,5e5))
  #       plt.minorticks_on()
 
         for axiss in ['top','bottom','left','right']:
