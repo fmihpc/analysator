@@ -265,6 +265,7 @@ def plot_colormap_with_vdf(filename=None,
                      expression=None, pass_vars=None,
                      cellcoordplot=None,cellidplot=None,
                      vdfplotlocation=None, vdfplotsize=0.1,
+                     xlines=False,
                      fluxfile=None, fluxdir=None,
                      fluxthick=1.0, fluxlines=1
                      ):    
@@ -320,6 +321,7 @@ def plot_colormap_with_vdf(filename=None,
     :kword vdfplotlocation: String specifying the location of the VDF plot with respect to its cell (t:top, b:bottom, l:left, r:right)
     :kword vdfplotsize:     Relative size of the VDF plot axes compared to the main figure
 
+    :kword xlines:      Plots the location of X-lines
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
@@ -416,7 +418,7 @@ def plot_colormap_with_vdf(filename=None,
                 print "Unknown time format encountered"
                 plot_title = ''
         if timeval != None:
-            plot_title = "t="+str(np.int(timeval))+' s'
+            plot_title = "t="+"{:.1f}".format(timeval)+' s'
     else:
         plot_title = ''       
 
@@ -711,6 +713,16 @@ def plot_colormap_with_vdf(filename=None,
     fig1 = plt.pcolormesh(XmeshXY,YmeshXY,datamap, cmap=colormap,norm=norm)
     ax1 = plt.gca() # get current axes
 
+    # Optionally plots the locations of the X-lines
+    if xlines:
+        X_points, O_points = pt.calculations.find_X_O(fluxfile, filename, step)
+        X_points_x = np.array([])
+        X_points_z = np.array([])
+        for ixline in range(0,len(X_points)):
+            X_points_x = np.append(X_points_x,X_points[ixline][0]/Re)
+            X_points_z = np.append(X_points_z,X_points[ixline][2]/Re)
+        ax1.plot(X_points_x,X_points_z,marker="x",markerfacecolor="None",markeredgecolor='r',markeredgewidth=2,linewidth=0)
+
     # Title and plot limits
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
     plt.xlim([boxcoords[0],boxcoords[1]])
@@ -854,7 +866,7 @@ def plot_colormap_with_vdf(filename=None,
                 Bvect = Bvect / 1e-8 #np.sqrt(Bvect[0]**2 + Bvect[1]**2 + Bvect[2]**2)
                 dx,dy,dz = Bvect[0],Bvect[1],Bvect[2]
                 Byimp = abs(dy)/np.sqrt(dx**2+dy**2+dz**2)
-                ax1.arrow(x,z,dx,dz,color=str(Byimp))
+                ax1.arrow(x,z,dx,dz)   #,color=str(Byimp))
                 print("arrow plotted"+str(dx)+' '+str(dz))
                 print("By relative importance: "+str(Byimp))
                 if aux==0:

@@ -36,3 +36,4 @@ from fieldtracer import dynamic_field_tracer
 from temperature_anisotropy import expr_Tanisotropy
 from temperature_anisotropy import extract_Tanisotropy
 from temperature_anisotropy import extract_variable
+from reconnection import find_X_O
