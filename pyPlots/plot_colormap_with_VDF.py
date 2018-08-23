@@ -1358,8 +1358,8 @@ def subplot_vdf(axis=None,
         for axiss in ['top','bottom','left','right']:
             axis.spines[axiss].set_linewidth(0.5)
 
-        axis.xaxis.set_tick_params(width=0.5,length=4)
-        axis.yaxis.set_tick_params(width=0.5,length=4)
+        axis.xaxis.set_tick_params(width=0.5,length=0)
+        axis.yaxis.set_tick_params(width=0.5,length=0)
  #       axis.xaxis.set_tick_params(which='minor',width=0.5*0.8,length=2)
  #       axis.yaxis.set_tick_params(which='minor',width=0.5*0.8,length=2)
 
