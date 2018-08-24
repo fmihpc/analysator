@@ -252,7 +252,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
 def plot_colormap_with_vdf(filename=None,
                      vlsvobj=None,
                      filedir=None, step=None,
-                     outputdir=None,popvdf="proton",
+                     outputdir=None,pop="proton",pop2=None,
                      var=None, op=None, title=None,
                      draw=None, usesci=None,
                      symlog=None,varnorm=1.,magarrows=False,
@@ -263,8 +263,9 @@ def plot_colormap_with_vdf(filename=None,
                      fmin=None, fmax=None, cbulk=None,
                      external=None, extvals=None,
                      expression=None, pass_vars=None,
-                     cellcoordplot=None,cellidplot=None,
-                     vdfplotlocation=None, vdfplotsize=0.1,
+                     cellcoordplot=None,cellidplot=None,slicethick=1,
+                     boxvdf=[-3e6,3e6,-3e6,3e6],boxvdf2=[-3e6,3e6,-3e6,3e6],
+                     vdfplotlocation=None, vdfplotlocation2=None, vdfplotsize=0.1,
                      xlines=False,
                      fluxfile=None, fluxdir=None,
                      fluxthick=1.0, fluxlines=1
@@ -280,7 +281,7 @@ def plot_colormap_with_vdf(filename=None,
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
      
-    :kword popvdf:      population (species) for VDF plots, default "proton"
+    :kword pop:         population (species), default "proton"
     :kword var:         variable to plot, e.g. rho, rhoBeam, beta, temperature, MA, Mms, va, vms,
                         E, B, V or others. Accepts any variable known by analysator/pytools.
     :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
@@ -389,6 +390,7 @@ def plot_colormap_with_vdf(filename=None,
                 fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
 
     if fluxfile!=None:
+        print('Fluxfile: '+fluxfile)
         if not os.path.exists(fluxfile):
             print("Error locating flux function file!")
             fluxfile=None
@@ -451,7 +453,11 @@ def plot_colormap_with_vdf(filename=None,
         if var==None:
             # If no expression or variable given, defaults to rho
             var='rho'
-        varstr=var
+        elif var.find('/')>=0:
+            irmv = var.find('/')
+            varstr=var[0:irmv]+'_'+var[irmv+1:-1]
+        else:
+            varstr=var
     savefigname = outputdir+run+"_map_"+varstr+opstr+stepstr+".png"
 
     Re = 6.371e+6 # Earth radius in m
@@ -721,7 +727,7 @@ def plot_colormap_with_vdf(filename=None,
         for ixline in range(0,len(X_points)):
             X_points_x = np.append(X_points_x,X_points[ixline][0]/Re)
             X_points_z = np.append(X_points_z,X_points[ixline][2]/Re)
-        ax1.plot(X_points_x,X_points_z,marker="x",markerfacecolor="None",markeredgecolor='r',markeredgewidth=2,linewidth=0)
+        ax1.plot(X_points_x,X_points_z,marker="x",markerfacecolor="None",markeredgecolor='k',markeredgewidth=2,linewidth=0)
 
     # Title and plot limits
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
@@ -827,7 +833,10 @@ def plot_colormap_with_vdf(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_v = f.read_variable("v", cellids=cid)
+        if f.check_variable("v"):
+            ff_v = f.read_variable("v", cellids=cid)
+        else:
+            ff_v = f.read_variable("proton/V",cellids=cid)
         ff_b = f.read_variable("B", cellids=cid)
 
         # Account for movement
@@ -860,7 +869,7 @@ def plot_colormap_with_vdf(filename=None,
         for aux in range(0,len(cellcoordplot)/3):
             x,y,z = cellcoordplot[3*aux],cellcoordplot[3*aux+1],cellcoordplot[3*aux+2]
             print('cellcoord2plot #' + str(aux) + ': x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
-            ax1.plot(x,z,marker="o",markerfacecolor="None",markeredgecolor='w')
+            ax1.plot(x,z,marker="s",markerfacecolor="None",markeredgecolor='k',markeredgewidth=1.5)
             if magarrows:
                 Bvect = f.read_variable("B", cellidplot[aux])
                 Bvect = Bvect / 1e-8 #np.sqrt(Bvect[0]**2 + Bvect[1]**2 + Bvect[2]**2)
@@ -908,7 +917,34 @@ def plot_colormap_with_vdf(filename=None,
             ax2 = fig.add_axes([xax2,yax2,vdfplotsize,vdfplotsize])
             
             
-            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=[-3.e6,3.e6,-3.e6,3.e6],pop=popvdf,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,fmin=fmin,fmax=fmax,cbulk=cbulk)
+            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=boxvdf, pop=pop,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
+
+            if pop2!=None:
+
+                # Location of VDF plot axes with respect to their cell
+                if vdfplotlocation2==None:
+                    vdfaxloc = 'b'
+                else:
+                    vdfaxloc = vdfplotlocation2[aux]
+              
+                if vdfaxloc=='l':
+                    xax3 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize - 0.01
+                    yax3 = pos1.y0 + yratio*pos1.height - vdfplotsize/2.
+                elif vdfaxloc=='r':
+                    xax3 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio + 0.01
+                    yax3 = pos1.y0 + yratio*pos1.height - vdfplotsize/2.
+                elif vdfaxloc=='t':
+                    xax3 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize/2.
+                    yax3 = pos1.y0 + yratio*pos1.height + 0.02
+            # Default: bottom
+                else:
+                    xax3 = pos1.x0 + magixconstant + pos1.width*magixratio*xratio - vdfplotsize/2.
+                    yax3 = pos1.y0 + yratio*pos1.height - vdfplotsize - 0.02
+ #               print('ax2 x and y: '+str(xax2)+'  '+str(yax2))
+                ax3 = fig.add_axes([xax3,yax3,vdfplotsize,vdfplotsize])
+
+                subplot_vdf(axis=ax3,filename=filename,cellids=cellidplot[aux],box=boxvdf2,
+                         pop=pop2,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
  #           ax2.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap='nipy_spectral',norm=norm)
 
 

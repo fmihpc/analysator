@@ -71,7 +71,7 @@ def find_X_O(fluxfile, bulkfile, step):
     # find the intersection points of the 
     for path1 in contour1_paths:
        for path2 in contour2_paths:
-          if path1.intersects_path(path2):
+          if path1.intersects_path(path2)  and len(path1)>1 and len(path2)>1:
              intersection=findIntersection(path1.vertices,path2.vertices)
              intersection_points=np.asarray(intersection)
              if len(intersection_points)>0:
