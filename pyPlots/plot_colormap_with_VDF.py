@@ -235,6 +235,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = Vrot[:,2]
         VY = Vrot[:,1]
         Vpara = Vrot[:,0]
+    elif slicetype=="vecpara1":
+        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+        Vrot = rotateVectorToVector(V,N)
+        VX = Vrot[:,2]
+        VY = Vrot[:,0]
+        Vpara = Vrot[:,1]
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
@@ -266,6 +272,8 @@ def plot_colormap_with_vdf(filename=None,
                      cellcoordplot=None,cellidplot=None,slicethick=1,
                      boxvdf=[-3e6,3e6,-3e6,3e6],boxvdf2=[-3e6,3e6,-3e6,3e6],
                      vdfplotlocation=None, vdfplotlocation2=None, vdfplotsize=0.1,
+                     bpara=None,bpara1=None,bperp=None,xz=None,
+                     bpara_2=None,bpara1_2=None,bperp_2=None,xz_2=None,
                      xlines=False,
                      fluxfile=None, fluxdir=None,
                      fluxthick=1.0, fluxlines=1
@@ -917,7 +925,7 @@ def plot_colormap_with_vdf(filename=None,
             ax2 = fig.add_axes([xax2,yax2,vdfplotsize,vdfplotsize])
             
             
-            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=boxvdf, pop=pop,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
+            subplot_vdf(axis=ax2,filename=filename,cellids=cellidplot[aux],box=boxvdf, pop=pop,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=bpara,bpara1=bpara1,bperp=bperp,xz=xz,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
 
             if pop2!=None:
 
@@ -944,7 +952,7 @@ def plot_colormap_with_vdf(filename=None,
                 ax3 = fig.add_axes([xax3,yax3,vdfplotsize,vdfplotsize])
 
                 subplot_vdf(axis=ax3,filename=filename,cellids=cellidplot[aux],box=boxvdf2,
-                         pop=pop2,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=1,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
+                         pop=pop2,colormap='nipy_spectral',notitle=1,noxlabels=1,noylabels=1,bpara=bpara_2,bpara1=bpara1_2,bperp=bperp_2,xz=xz_2,slicethick=slicethick,fmin=fmin,fmax=fmax,cbulk=cbulk)
  #           ax2.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap='nipy_spectral',norm=norm)
 
 
@@ -978,7 +986,7 @@ def subplot_vdf(axis=None,
              run=None, notitle=None, wmark=None, thick=1.0,
              fmin=None, fmax=None, slicethick=None,
              xy=None, xz=None, yz=None, normal=None,
-             bpara=None, bperp=None,
+             bpara=None, bperp=None, bpara1=None,
              cbulk=None, center=None, wflux=None, keepfmin=None,
              legend=None, noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
@@ -1012,6 +1020,7 @@ def subplot_vdf(axis=None,
     :kword yz:          Perform slice in y-z-direction
     :kword normal:      Perform slice in plane perpendicular to given vector
     :kword bpara:       Perform slice in B_para / B_perp2 plane
+    :kword bpara1:      Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
 
@@ -1191,7 +1200,7 @@ def subplot_vdf(axis=None,
 
         # Check slice to perform (and possibly normal vector)
         normvect=None
-        if xy==None and xz==None and yz==None and normal==None and bpara==None and bperp==None:
+        if xy==None and xz==None and yz==None and normal==None and bpara==None and bperp==None and bpara1==None:
             # Use default slice for this simulation
             # Check if ecliptic or polar run
             if ysize==1: # polar
@@ -1234,7 +1243,7 @@ def subplot_vdf(axis=None,
             pltxstr=r"$v_y$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[1,0,0] # used just for cell size normalisation
-        elif bpara!=None or bperp!=None:
+        elif bpara!=None or bperp!=None or bpara1!=None:
             # Rotate based on B-vector
             if vlsvReader.check_variable("B"):
                 Bvect = vlsvReader.read_variable("B", cellid)
@@ -1256,9 +1265,14 @@ def subplot_vdf(axis=None,
                 slicetype="vecperp"
                 pltxstr=r"$v_{\perp 1}$ "+velUnitStr
                 pltystr=r"$v_{\perp 2}$ "+velUnitStr
-            else:
-                # means bpara!=None, slice in b_parallel/b_perp2 plane
+            elif bpara!=None:
+                # slice in b_parallel/b_perp2 plane
                 slicetype="vecpara"
+                pltxstr=r"$v_{\parallel}$ "+velUnitStr
+                pltystr=r"$v_{\perp}$ "+velUnitStr
+            else:
+                # means bpara1!=None, slice in b_parallel/b_perp1 plane
+                slicetype="vecpara1"
                 pltxstr=r"$v_{\parallel}$ "+velUnitStr
                 pltystr=r"$v_{\perp}$ "+velUnitStr
 
