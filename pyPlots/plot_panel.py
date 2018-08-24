@@ -3,6 +3,7 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
+import re
 import os
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
@@ -259,6 +260,7 @@ def plot_colormap(filename=None,
             var='rho'
         varstr=var
     savefigname = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
+    savefigname = re.sub('/','_',savefigname)
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite!=None and os.path.exists(savefigname)):
@@ -636,7 +638,7 @@ def plot_colormap(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_v = f.read_variable("v", cellids=cid)
+        ff_v = f.read_variable("V", cellids=cid)
         ff_b = f.read_variable("B", cellids=cid)
 
         # Account for movement
