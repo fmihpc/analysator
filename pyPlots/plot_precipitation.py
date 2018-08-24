@@ -534,8 +534,6 @@ def plot_prec_spectrum(filename=None,
             else:
                 [alph0,latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
 
-            print("alph0 = "+str(alph0)+",   lat_m = "+latmag_inv*180./np.pi)
-
 
             # Reduction of the precipitating particle data
             (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid,losscone=alph0,pop=pop,emin=emin,emax=emax,hemisphere=hemisphere)
