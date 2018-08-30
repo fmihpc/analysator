@@ -176,7 +176,36 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
     return (alph0,Latmag_inv)
 
 
+# -------------------------------------------------------------------------------------------
+def refine_vgrid(V=None,f=None,dv=None,n=None):
+    
+    print('Entering refine_vgrid')
+    # Initialisation of vectors
+    L = len(f)
+    f_refined = np.zeros(L*n**3)
+    V_refined = np.zeros((L*n**3,3))
+
+    for ind in range(0,L):
+        # Spreading equally phase-space density in the refined cells
+        f_refined[ind*n**3:(ind+1)*n**3] = f[ind]/n**3
+
+        # Velocity grid: triple loop in x,y,z
+        for ix in range(0,n):
+            for iy in range(0,n):
+                for iz in range(0,n):
+                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,0] = V[ind,0] + ix*dv/n
+                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,1] = V[ind,1] + iy*dv/n
+                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,2] = V[ind,2] + iz*dv/n
+
+    return (V_refined,f_refined)
+
+
+
+# -------------------------------------------------------------------------------------------
 def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=None,emax=None,hemisphere=None):
+
+    refine = 4
+    print('Loss cone angle for integration: '+str(losscone))
     
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
@@ -190,7 +219,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     vysize = 4*vysize
     vzsize = 4*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
-    inputcellsize=(vxmax-vxmin)/vxsize
+    dv=(vxmax-vxmin)/vxsize
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
@@ -203,17 +232,18 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     else:
         return (False,0,0)
 
+    (V_refined,f_refined) = refine_vgrid(V=V,f=f,dv=dv,n=refine)
 
     # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer cells as well.
     fMin = 1e-16 # default
     if vlsvReader.check_variable('MinValue') == True:
         fMin = vlsvReader.read_variable('MinValue',cid)
-    ii_f = np.where(f >= fMin)
+    ii_f = np.where(f_refined >= fMin/refine**3)  # Must remember to take into account refinement!
     print("Dropping velocity cells under fMin value "+str(fMin))
     if len(ii_f) < 1:
         return (False,0,0)
-    f = f[ii_f]
-    V = V[ii_f,:][0,:,:]
+    f_sparse = f_refined[ii_f]
+    V_sparse = V_refined[ii_f,:][0,:,:]
 
 
     # Rotate based on B-vector
@@ -237,7 +267,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
 
     # Performing the rotation
     N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-    Vrot = rotateVectorToVector(V,N)
+    Vrot = rotateVectorToVector(V_sparse+np.array([dv/2/refine,dv/2/refine,dv/2/refine]),N) # taking the centres of the cells instead of corner
     VX = Vrot[:,2]
     VY = Vrot[:,1]
     Vpara = Vrot[:,0]
@@ -287,7 +317,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
             ind_lc = [((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))]
 
         # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
-        integral = (vel+deltaV/2.)**3*np.sum(f[ind_lc])*solid_angle
+        integral = (vel+deltaV/2.)**3*np.sum(f_sparse[ind_lc])*solid_angle
 
         # -- Put epsilon value if nothing in the loss cone [TODO maybe improve this later]
         if integral==0.:
