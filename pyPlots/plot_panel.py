@@ -242,6 +242,9 @@ def plot_colormap(filename=None,
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
+        # If working within CSC filesystem, make a guess:
+        if filename[0:16]=="/proj/vlasov/2D/":
+            run = filename[16:19]
 
     # Verify validity of operator
     opstr=''

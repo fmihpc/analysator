@@ -58,6 +58,14 @@ def getNearestCellWithVspace(vlsvReader,cid):
     norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
     return cell_candidates[i]
 
+# Verify that given cell has a saved vspace
+def verifyCellWithVspace(vlsvReader,cid):
+    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS').tolist()
+    found=False
+    if cid in cell_candidates:
+        found=True
+    return found
+
 # create a 2-dimensional histogram
 def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
     # Flux weighting?
@@ -284,9 +292,9 @@ def plot_vdf(filename=None,
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
-    :kword cellids:     list of cell IDs to plot VDF for
-    :kword coordinates: list of 3-element spatial coordinates to plot VDF for (given in metres)
-    :kword coordre:     list of 3-element spatial coordinates to plot VDF for (given in Earth radii)
+    :kword cellids:     LIST of cell IDs to plot VDF for
+    :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
+    :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
     :kword pop:         Population to plot, default proton
 
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -340,6 +348,15 @@ def plot_vdf(filename=None,
     .. code-block:: python
 
     # Example usage:
+
+    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                     coordre=[[11.7,-1.6,0.]], cbulk=1, bpara=1,box=[-2e6,2e6,-2e6,2e6],draw=1)
+
+    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                     cellids=1670561, xy=1, box=[-2e6,2e6,-2e6,2e6], slicethick=5)
+
+    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                     cellids=[1670561,], xz=1, box=[-2e6,2e6,-2e6,2e6], slicethick=0)
 
 
     Note tilted slices: By default, the program samples the V-space with a slice where each cell is cube the
@@ -414,7 +431,10 @@ def plot_vdf(filename=None,
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
-
+        # If working within CSC filesystem, make a guess:
+        if filename[0:16]=="/proj/vlasov/2D/":
+            run = filename[16:19]
+        
     # Indicate projection in file name
     projstr=""
     if slicethick==0:
@@ -426,7 +446,7 @@ def plot_vdf(filename=None,
        if not vlsvReader.check_population(pop):
            if vlsvReader.check_population("avgs"):
                pop="avgs"
-               print("Auto-switched to population avgs")
+               #print("Auto-switched to population avgs")
            else:
                print("Unable to detect population "+pop+" in .vlsv file!")
                sys.exit()
@@ -489,7 +509,9 @@ def plot_vdf(filename=None,
         coordinates = (Re*np.asarray(coordre)).tolist()
 
     if coordinates!=None:
-        if type(coordinates) is not list:
+        # Check if coordinates given were actually just a single 3-element list
+        # instead of a list of 3-element lists:
+        if type(coordinates[0]) is not list:
             coordinates = [coordinates]
 
         # Calculate cell IDs from given coordinates        
@@ -521,17 +543,31 @@ def plot_vdf(filename=None,
             print('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
             print('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
             cidsTemp.append(cidNearestVspace)
-        cellids = np.unique(cidsTemp)
+        cellids = np.unique(cidsTemp).tolist()
         print('Unique cells with vspace found: ' + str(len(cidsTemp)))
-    else:
-        print('Using given cell ids and assuming vspace is stored in them')
+    #else:
+    #    print('Using given cell ids and assuming vspace is stored in them')
 
-
-    # Loop over all cell ids
+    # Ensure that we now have a list of cellids instead of just a single cellid
     if type(cellids) is not list:
+        print("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
 
-    print(cellids)
+    if coordinates==None and coordre==None:
+        # User-provided cellids
+        for cellid in cellids:
+            if not verifyCellWithVspace(vlsvReader, cellid):
+                print("Error, cellid "+str(cellid)+" does not contain a VDF!")
+                return
+
+
+    if draw!=None:
+        # Program was requested to draw to screen instead of saving to a file. Just handle the first cellid.
+        if len(cellids) > 1:
+            cellids = [cellids[0]]
+            print("User requested on-screen display, only plotting first requested cellid!")
+
+    print("\n")
     for cellid in cellids:
         # Initialise some values
         fminuse=None
@@ -873,7 +909,7 @@ def plot_vdf(filename=None,
 
         # Save output or draw on-screen
         if draw==None:
-            savefigname = outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid[0])+stepstr+"_"+slicetype+projstr+".png"
+            savefigname = outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
             # Note: generated title can cause strange PNG header problems
             # in rare cases. This problem is under investigation, but is related to the exact generated
             # title string. This try-catch attempts to simplify the time string until output succedes.
