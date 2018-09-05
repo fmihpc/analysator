@@ -473,7 +473,7 @@ class VlsvReader(object):
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):
                if popname == child.attrib["name"]:
-                  findpop = True
+                  foundpop = True
             else:
                blockidsexist = True
       if blockidsexist:
@@ -481,8 +481,8 @@ class VlsvReader(object):
             if child.tag == "BLOCKVARIABLE":
                if child.attrib.has_key("name"):
                   if popname == child.attrib["name"]: # avgs
-                     findpop = True
-      return findpop
+                     foundpop = True
+      return foundpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
