@@ -21,6 +21,8 @@ matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
+#matplotlib.rcParams['font.family'] = 'serif'
+#matplotlib.rcParams['font.serif'] = 'cmmib10' #'cm' 
 
 # Register custom colourmaps
 plt.register_cmap(name='viridis', cmap=cmaps.viridis)
@@ -63,7 +65,7 @@ def plot_colormap(filename=None,
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
-                  fsaved=0
+                  fsaved=None
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -107,7 +109,8 @@ def plot_colormap(filename=None,
     :kword noylabels:   Suppress y-axis labels and title
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
-   
+    :kword nocb:        Set to suppress drawing of colourbar
+
     :kword external:    Optional function to use for external plotting of e.g. contours. The function
                         receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
     :kword expression:  Optional function which calculates a custom expression to plot. The function
@@ -254,7 +257,7 @@ def plot_colormap(filename=None,
 
     # Output file name
     if expression!=None:
-        varstr=expression.__name__ 
+        varstr=expression.__name__.replace("/","_")
     else:        
         if var==None:
             # If no expression or variable given, defaults to rho
@@ -264,7 +267,11 @@ def plot_colormap(filename=None,
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite!=None and os.path.exists(savefigname)):
-        return
+        # Also check that file is not empty
+        if os.stat(savefigname).st_size > 0:
+            return
+        else:
+            print("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
@@ -583,7 +590,6 @@ def plot_colormap(filename=None,
     if ((boxlenx > 10) and (boxleny > 10)):
         boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
-    ratio = np.sqrt(boxleny/boxlenx)
     ratio = boxleny/boxlenx
     # default for square figure is figsize=[4.0,3.15]
     figsize = [4.0,3.15*ratio]
@@ -692,21 +698,25 @@ def plot_colormap(filename=None,
 
     if cbtitle==None:
         if expression!=None:
-            cb_title_use = expression.__name__.replace("_","\_") # replaces underscores so math mode subscript mode isn't activated
+            cb_title_use = expression.__name__ 
         else:
             cb_title_use = cb_title
     else:
         cb_title_use = cbtitle
-
-    # Colourbar title
-    if len(cb_title_use)!=0:
-        cb_title_locy = 1.0 + 0.05#/ratio
-        plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
+    # replaces underscores so math mode subscript mode isn't activated
+    cb_title_use = cb_title_use.replace("_","\_")
+        
 
     if nocb==None:
         # Witchcraft used to place colourbar
         divider = make_axes_locatable(ax1)
         cax = divider.append_axes("right", size="5%", pad=0.05)
+
+        # Colourbar title
+        if len(cb_title_use)!=0:
+            #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
+            cax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')
+
         # First draw colorbar
         if usesci==0:        
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
@@ -758,14 +768,39 @@ def plot_colormap(filename=None,
         savefig_pad=0.01
         bbox_inches='tight'
 
+        
     # Save output or draw on-screen
     if draw==None:
-        print(savefigname+"\n")
-        #plt.savefig(savefigname,dpi=300)
-        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-
+        # Note: generated title can cause strange PNG header problems
+        # in rare cases. This problem is under investigation, but is related to the exact generated
+        # title string. This try-catch attempts to simplify the time string until output succedes.
+        try:
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            savechange=0
+        except:
+            savechange=1
+            plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
+            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+            try:
+                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            except:
+                plot_title = "t="+str(np.int(timeval))+' s   '
+                ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+                try:
+                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                except:
+                    plot_title = ""
+                    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+                    try:
+                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                    except:
+                        print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+                        print("Usually removing the title should work, but this time even that failed.")
+                        savechange = -1
+        if savechange>0:
+            print("Due to rendering error, replaced image title with "+plot_title)
+        if savechange>=0:
+            print(savefigname+"\n")
     else:
         plt.draw()
         plt.show()
-    #plt.close()
-    #plt.clf()

@@ -67,16 +67,31 @@ def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
         fw = f # use particle phase-space density as weighting in the histogram
 
     # Select cells which are within slice area
-    indexes = [(abs(Vpara) <= 0.5*vthick) & (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
+    if vthick!=0:
+        indexes = [(abs(Vpara) <= 0.5*vthick) &
+                   (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+                   (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
+    else:
+        indexes = [(VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+                   (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
     # Gather histogram of values
-    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),weights=fw[indexes],normed=0)
+    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],normed=0)
     # Gather histogram of how many cells were summed for the histogram
-    (Chist,VXEdges,VYEdges) = np.histogram2d(VX[indexes],VY[indexes],bins=(vxBinEdges,vyBinEdges),normed=0)
+    (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
     # Correct for summing multiple cells into one histogram output cell
     nonzero = np.where(Chist != 0)
-
     nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
+
+    if vthick==0:
+        # slickethick=0, perform a projection. This is done by taking averages for each sampled stack of cells
+        # (in order to deal with rotated sampling issues) and then rescaling the resultant 2D VDF with the unsampled
+        # VDF in order to get the particle counts to agree. Here we gather the total particle counts for the
+        # unprojected VDF.
+        weights_total_all = fw[tuple(indexes)].sum()
+        weights_total_proj = nVhist.sum()
+        # Now rescale the projection back up in order to retain particle counts.
+        nVhist = nVhist * weights_total_all/weights_total_proj
 
     # Please note that the histogram does not follow the Cartesian convention where x values are on the abscissa
     # and y values on the ordinate axis. Rather, x is histogrammed along the first dimension of the array (vertical),
@@ -93,7 +108,7 @@ def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, wflux=None, cbulk=None, center=None, keepfmin=None):
+                  slicethick=None, wflux=None, cbulk=None, center=None, setThreshold=None):
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -114,8 +129,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Found "+str(len(V))+" v-space cells")
 
     if cbulk!=None:
+        bulkv=None
         print("Transforming to plasma frame")
-        if vlsvReader.check_variable('moments'):
+        if type(cbulk) is str:
+            if vlsvReader.check_variable(cbulk):
+                bulkv = vlsvReader.read_variable(cbulk,cid)
+                print("Found bulk frame from variable "+cbulk)
+        if np.array(bulkv).any()==None and vlsvReader.check_variable('moments'):
             # This should be a restart file
             moments = np.array(vlsvReader.read_variable('moments',cid))
             if moments==None:
@@ -125,26 +145,28 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
                 moments = moments[0]
             if moments[0]>0.0:
                 bulkv = moments[1:4]/moments[0]
-            else:
-                bulkv=[0.,0.,0.]
-        elif vlsvReader.check_variable('v'):
+        if np.array(bulkv).any()==None and vlsvReader.check_variable('v'):
             # Multipop file with bulk v saved directly
             bulkv = vlsvReader.read_variable('v',cid)
-        elif ( vlsvReader.check_variable('rho') and vlsvReader.check_variable('rho_v')):
+        if np.array(bulkv).any()==None and vlsvReader.check_variable('V'):
+            # Multipop file with bulk v saved directly
+            bulkv = vlsvReader.read_variable('V',cid)
+        if np.array(bulkv).any()==None and vlsvReader.check_variable(pop+'/V'):
+            # Multipop file without V saved, use per-population bulk velocity
+            bulkv = vlsvReader.read_variable(pop+'/V',cid)
+        if np.array(bulkv).any()==None and ( vlsvReader.check_variable('rho') and vlsvReader.check_variable('rho_v')):
             # Older regular bulk file
             rhov = vlsvReader.read_variable('rho_v',cid)
             rho = vlsvReader.read_variable('rho',cid)
             bulkv = rhov/rho
-        elif vlsvReader.check_variable(pop+'/V'):
-            # Multipop file without V saved, use per-population bulk velocity
-            bulkv = vlsvReader.read_variable(pop+'/V',cid)
-        else:
+        if np.array(bulkv).any()==None:
             print("Error in finding plasma bulk velocity!")
+            bulkv=[0.,0.,0.]
             sys.exit()
         # shift to velocities plasma frame
         V = V - bulkv
     elif center!=None:
-        if len(center)==3:
+        if len(center)==3: # assumes it's a vector
             print("Transforming to frame travelling at speed "+str(center))
             V - V - center
         else:
@@ -157,34 +179,28 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     else:
         return (False,0,0,0)
 
-    if keepfmin==None:
-        # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer cells as well.
-        fMin = 1e-16 # default
-        if vlsvReader.check_variable('MinValue') == True:
-            fMin = vlsvReader.read_variable('MinValue',cid)
-        ii_f = np.where(f >= fMin)
-        print("Dropping velocity cells under fMin value "+str(fMin))
-        if len(ii_f) < 1:
-            return (False,0,0,0)
-        f = f[ii_f]
-        V = V[ii_f,:][0,:,:]
+    if setThreshold==None:
+        # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
+        # cells as well.
+        if vlsvReader.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
+            setThreshold = vlsvReader.read_variable('MinValue',cellid)
+            print("Found a vlsv file MinValue of "+str(setThreshold))
+        elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
+            setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cellid)
+            print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+        else:
+            print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+            print("Using a default value of 1.e-16. Override with setThreshold=value.")
+            setThreshold = 1.e-16
+    ii_f = np.where(f >= setThreshold)
+    print("Dropping velocity cells under setThreshold value "+str(setThreshold))
+    if len(ii_f) < 1:
+        return (False,0,0,0)
+    f = f[ii_f]
+    V = V[ii_f,:][0,:,:]
 
     if slicethick==None:
         # Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.
-        # Might still be incorrect, erring on the side of caution.
-        # norm_srt = sorted(abs(normvect))
-        # if norm_srt[1] > 0:
-        #     temp = norm_srt[0]/norm_srt[1]
-        #     aratio = (1.+temp)/np.sqrt( 1+temp**2)
-        # else:
-        #     aratio = 1.
-        # gridratio = aratio * norm_srt[2] * (1. + aratio * np.sqrt(norm_srt[0]**2 + norm_srt[1]**2) / norm_srt[2] )
-        # if gridratio>1.0:
-        #     # Account for numerical inaccuracy
-        #     slicethick=inputcellsize*gridratio*1.01
-        # else:
-        #     slicethick=inputcellsize
-
         samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
         sbrot = rotateVectorToVector(samplebox,normvect)
         rotminx=np.amin(sbrot[:,0])
@@ -197,7 +213,10 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         slicethick=inputcellsize*gridratio
     else:
         slicethick=inputcellsize*slicethick
-    print("Performing slice with a counting thickness of "+str(slicethick))
+    if slicethick!=0:
+        print("Performing slice with a counting thickness of "+str(slicethick))
+    else:
+        print("Projecting total VDF to a single plane")
 
     if slicetype=="xy":
         VX = V[:,0]
@@ -211,14 +230,14 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = V[:,0]
         VY = V[:,2]
         Vpara = V[:,1]
-    elif slicetype=="vecperp":
+    elif slicetype=="vecperp" or slicetype=="Bperp":
         # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         Vrot = rotateVectorToVector(V,N)
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Vpara = Vrot[:,2]
-    elif slicetype=="vecpara":
+    elif slicetype=="Bpara":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         Vrot = rotateVectorToVector(V,N)
         VX = Vrot[:,2]
@@ -240,15 +259,15 @@ def plot_vdf(filename=None,
              filedir=None, step=None,
              cellids=None, pop="proton",
              coordinates=None, coordre=None, 
-             outputdir=None,
+             outputdir=None, nooverwrite=None,
              draw=None,unit=None,title=None, cbtitle=None,
-             colormap=None, box=None, cbar=None,
+             colormap=None, box=None, nocb=None,
              run=None, wmark=None, thick=1.0,
              fmin=None, fmax=None, slicethick=None, cellsize=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bperp=None,
              coordswap=None,
-             cbulk=None, center=None, wflux=None, keepfmin=None,
+             cbulk=None, center=None, wflux=None, setThreshold=None,
              legend=None, noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
@@ -263,10 +282,11 @@ def plot_vdf(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
+    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
     :kword cellids:     list of cell IDs to plot VDF for
     :kword coordinates: list of 3-element spatial coordinates to plot VDF for (given in metres)
-    :kword coordre: list of 3-element spatial coordinates to plot VDF for (given in Earth radii)
+    :kword coordre:     list of 3-element spatial coordinates to plot VDF for (given in Earth radii)
     :kword pop:         Population to plot, default proton
 
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
@@ -295,13 +315,16 @@ def plot_vdf(filename=None,
                         bulk velocity for this population)
     :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
     :kword wflux:       Plot flux instead of distribution function
-    :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage)
+    :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
+                        This can be set to zero in order to project the whole VDF to a plane.
     :kword cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
-    :kword keepfmin:    Also draw buffer cells with values below fMin
+    :kword setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
+                        Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
+                        with values below the sparsity threshold
 
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
-    :kword cbar:        Plot colourbar legend (default off). 
+    :kword nocb:        Suppress plotting of colourbar legend
     :kword biglabel:    Plot large label (in top-left corner)
     :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
@@ -310,6 +333,7 @@ def plot_vdf(filename=None,
     :kword noylabels:   Suppress y-axis labels and title
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
+    
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -321,7 +345,9 @@ def plot_vdf(filename=None,
     Note tilted slices: By default, the program samples the V-space with a slice where each cell is cube the
     dimensions of which are found by performing a rotation on a sample square and finding the maximum xyz-extent. This ensures
     adequate coverage and decreases sampling effects. This behaviour can be overridden with the slicethick and cellsize keywords.
-    
+
+    Setting a value of slicethick=0 will result in the whole VDF being flattened into a single plane. This may result in
+    some slight sampling artefacts, but is a good measure of complex populations.
 
     '''
 
@@ -372,8 +398,7 @@ def plot_vdf(filename=None,
             plot_title = ''
             print "Unknown time format encountered"
         else:
-            #plot_title = "t="+str(np.int(timeval))+' s'
-            plot_title = "t="+'{:4.2f}'.format(timeval)+' s'
+            plot_title = "t="+'{:4.2f}'.format(float(timeval))+' s'
     else:
         plot_title = title
 
@@ -389,6 +414,11 @@ def plot_vdf(filename=None,
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
+
+    # Indicate projection in file name
+    projstr=""
+    if slicethick==0:
+        projstr="_proj"
 
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
@@ -456,7 +486,7 @@ def plot_vdf(filename=None,
 
     if coordre!=None:
         # Transform to metres
-        coordinates = Re*np.asarray(coordre)
+        coordinates = (Re*np.asarray(coordre)).tolist()
 
     if coordinates!=None:
         if type(coordinates) is not list:
@@ -467,7 +497,8 @@ def plot_vdf(filename=None,
         yReq = np.asarray(coordinates).T[1]
         zReq = np.asarray(coordinates).T[2]
         if xReq.shape == yReq.shape == zReq.shape:
-            print('Number of points: ' + str(xReq.shape[0]))
+            #print('Number of points: ' + str(xReq.shape[0]))
+            pass
         else:
             print('ERROR: bad coordinate variables given')
             sys.exit()
@@ -508,7 +539,16 @@ def plot_vdf(filename=None,
 
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
         print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
-        savefigname = outputdir+outputprefix+run+"_vdf_"+pop+stepstr+"_cellid_"+str(cellid)+".png"
+
+        # Check if target file already exists and overwriting is disabled
+        if (nooverwrite!=None and os.path.exists(savefigname)):
+            # Also check that file is not empty
+            if os.stat(savefigname).st_size > 0:
+                return
+            else:
+                print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+
+
 
         # Check slice to perform (and possibly normal vector)
         normvect=None
@@ -574,12 +614,12 @@ def plot_vdf(filename=None,
 
             if bperp!=None:
                 # slice in b_perp1/b_perp2
-                slicetype="vecperp"
+                slicetype="Bperp"
                 pltxstr=r"$v_{\perp 1}$ "+velUnitStr
                 pltystr=r"$v_{\perp 2}$ "+velUnitStr
             else:
                 # means bpara!=None, slice in b_parallel/b_perp2 plane
-                slicetype="vecpara"
+                slicetype="Bpara"
                 pltxstr=r"$v_{\parallel}$ "+velUnitStr
                 pltystr=r"$v_{\perp}$ "+velUnitStr
 
@@ -622,7 +662,7 @@ def plot_vdf(filename=None,
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, wflux=wflux, cbulk=cbulk, 
-                                                       center=center,keepfmin=keepfmin)
+                                                       center=center,setThreshold=setThreshold)
 
         # Check that data is ok and not empty
         if checkOk == False:
@@ -639,7 +679,7 @@ def plot_vdf(filename=None,
             pltystr = temp
             binsXY = binsXY.T
 
-        # If no other fmin fmax values are given, take min and max of array
+        # If no other plotting fmin fmax values are given, take min and max of array
         if fmin!=None:
             fminuse=fmin
         else:
@@ -647,7 +687,8 @@ def plot_vdf(filename=None,
             if np.any(nzindex):
                 fminuse=np.amin(binsXY[nzindex])
             else:
-                fminuse = 1e-15
+                fminuse = 1e-20 # No valid values! use exterme default.
+
         if fmax!=None:
             fmaxuse=fmax
         else:
@@ -655,13 +696,9 @@ def plot_vdf(filename=None,
             if np.any(nzindex):
                 fmaxuse=np.amax(binsXY[nzindex])
             else:
-                fmaxuse = 1e-12
+                fmaxuse = 1e-10 # No valid values! use exterme default.
 
-        if vlsvReader.check_variable('MinValue') == True:
-            fMinFile = vlsvReader.read_variable('MinValue',cellid)
-            print("Active f range is "+str(fminuse)+" to "+str(fmaxuse)+" with a vlsv file fMin value of "+str(fMinFile))
-        else:
-            print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
+        print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
         ticks = LogLocator(base=10,subs=range(10)) # where to show labels
@@ -699,21 +736,8 @@ def plot_vdf(filename=None,
 
         # Define figure size        
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
-        figsize = [3.0, 3.0*ratio]
-        if noxlabels==None:
-            figsize[1] = figsize[1] + 1.00 #0.25
-        if noylabels==None:
-            figsize[0] = figsize[0] + 1.00 #0.25
-        if cbar!=None:
-            figsize[0] = figsize[0] + 0.70 #0.20
-        if title!=None and cbtitle!=None:
-            # If either title exists, make room for them:
-            if len(title)!=0 or len(cbtitle)!=0:
-                figsize[1] = figsize[1] + 0.70 #0.20
-            # If both titles have been turned off, do nothing
-        else: # Default titles are in place, make room for them.
-            figsize[1] = figsize[1] + 0.70 #0.20
-
+        # default for square figure is figsize=[4.0,3.15]
+        figsize = [4.0,3.15*ratio]
         # Create 300 dpi image of suitable size
         fig = plt.figure(figsize=figsize,dpi=300)
     
@@ -721,6 +745,14 @@ def plot_vdf(filename=None,
         [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
         fig1 = plt.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
         ax1 = plt.gca() # get current axes
+
+        # Some hacked lines to print a selection of distribution function value
+        # printout = np.ma.masked_where(abs(YmeshXY[:-1,:-1]) > 15.e3/velUnit, binsXY) 
+        # printout = np.ma.masked_where(abs(XmeshXY[:-1,:-1]) > 1000.e3/velUnit, printout) 
+        # print(printout[~printout.mask])
+        # print(XmeshXY[:-1,:-1][~printout.mask])
+        # print(YmeshXY[:-1,:-1][~printout.mask])
+
 
         plt.xlim([val/velUnit for val in yvalsrange])
         plt.ylim([val/velUnit for val in xvalsrange])
@@ -772,20 +804,21 @@ def plot_vdf(filename=None,
 
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva)
                 
-        if cbar!=None:
-            # Colourbar title
+        if nocb==None:
+            cbtitleuse=None
             if cbtitle!=None:
-                if len(cbtitle)!=0:
-                    cb_title_locy = 1.0 + 0.03/ratio
-                    plt.text(1.0, cb_title_locy, cbtitle, fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-            else:
+                if type(cbtitle) is str:
+                    cbtitleuse = cbtitle
+            if cbtitleuse==None:
                 if wflux==None:
-                    plt.text(1.05, 1.22, r"$f(v)$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-                    plt.text(1.02, 1.1, r"$[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
+                    cbtitleuse=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
+                    #plt.text(1.05, 1.22, r"$f(v)$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
+                    #plt.text(1.02, 1.1, r"$[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
                 else:
-                    plt.text(1.05, 1.22, r"flux F", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-                    plt.text(1.02, 1.1, r"$[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-    
+                    cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
+                    #plt.text(1.05, 1.22, r"flux F", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
+                    #plt.text(1.02, 1.1, r"$[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
+                   
             # Witchcraft used to place colourbar
             divider = make_axes_locatable(ax1)
             cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -793,6 +826,9 @@ def plot_vdf(filename=None,
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
             cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
             cb.outline.set_linewidth(thick)
+
+            # Colourbar title
+            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold')
 
             # # if too many subticks:
             # # For non-square pictures, adjust tick count
@@ -837,10 +873,37 @@ def plot_vdf(filename=None,
 
         # Save output or draw on-screen
         if draw==None:
-            print(savefigname+"\n")
-            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            savefigname = outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid[0])+stepstr+"_"+slicetype+projstr+".png"
+            # Note: generated title can cause strange PNG header problems
+            # in rare cases. This problem is under investigation, but is related to the exact generated
+            # title string. This try-catch attempts to simplify the time string until output succedes.
+            try:
+                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                savechange=0
+            except:
+                savechange=1
+                plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
+                ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+                try:
+                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                except:
+                    plot_title = "t="+str(np.int(timeval))+' s   '
+                    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+                    try:
+                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                    except:
+                        plot_title = ""
+                        ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
+                        try:
+                            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                        except:
+                            print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+                            print("Usually removing the title should work, but this time even that failed.")
+                            savechange = -1
+            if savechange>0:
+                print("Due to rendering error, replaced image title with "+plot_title)
+            if savechange>=0:
+                print(savefigname+"\n")
         else:
             plt.draw()
             plt.show()
-        plt.close()
-        plt.clf()
