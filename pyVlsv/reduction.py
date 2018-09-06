@@ -114,11 +114,16 @@ def v( variables ):
    epsilon = sys.float_info.epsilon
    rho_v = variables[0]
    rho = variables[1] + epsilon
-   if np.ndim(rho) == 0:
-      return np.divide(rho_v,rho)
+   multipop_V = variables[2]
+   if np.ndim(multipop_V) == 0:
+      # Old-style single population file
+      if np.ndim(rho) == 0:
+         return np.divide(rho_v,rho)
+      else:
+         rho = np.reshape(rho,(len(rho),1))
+         return np.divide(rho_v,rho)
    else:
-      rho = np.reshape(rho,(len(rho),1))
-      return np.divide(rho_v,rho)
+       return multipop_V
 
 def vms( variables ):
    ''' Data reducer function for getting magnetosonic velocity
@@ -417,7 +422,7 @@ def Dng( variables ):
 
 #datareducers with more complex, case dependent structure.
 datareducers = {}
-datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
+datareducers["v"] =                      DataReducerVariable(["rho_v", "rho", "V"], v, "m/s")
 datareducers["vms"] =                    DataReducerVariable(["Pressure", "rho", "B"], vms, "m/s")
 datareducers["vs"] =                     DataReducerVariable(["Pressure", "rho"], vs, "m/s")
 datareducers["va"] =                     DataReducerVariable(["rho", "B"], va, "m/s")
