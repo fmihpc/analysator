@@ -143,6 +143,7 @@ def VectorArrayParallelComponent(inputvector, directionvector):
     return result
 
 def VectorArrayPerpendicularComponent(inputvector, directionvector):
+    # Calculates the magnitude of the perpenducular vector component of each inputvector to each directionvector.
     # assumes inputvector and directionvector are of shape [nx,ny,3]
     dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
@@ -152,6 +153,15 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     #paravector = dirnorm * np.inner(inputvector, dirnorm)[:,:,np.newaxis]
     paravector = dirnorm * (inputvector*dirnorm).sum(-1)[:,:,np.newaxis] #dot product, alternatively numpy.einsum("ijk,ijk->ij",a,b)
     perpcomp = np.linalg.norm(inputvector - paravector, axis=-1) 
+    # Output array is of format [nx,ny]
+    return perpcomp
+
+def VectorArrayPerpendicularVector(inputvector, directionvector):
+    # Calculates the perpenducular vector component of each inputvector to each directionvector *as a vector*
+    # assumes inputvector and directionvector are of shape [nx,ny,3]
+    dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
+    paravector = dirnorm * (inputvector*dirnorm).sum(-1)[:,:,np.newaxis] #dot product, alternatively numpy.einsum("ijk,ijk->ij",a,b)
+    perpcomp = inputvector - paravector
     # Output array is of format [nx,ny]
     return perpcomp
 
@@ -439,4 +449,24 @@ def expr_EJ_parallel(pass_maps):
     Epara = VectorArrayParallelComponent(Emap, Bmap)
     EJpara = (Jpara*Epara)
     return EJpara.T
+
+slippageVA=3937129.92717945   #Effective alfven speed (in m/s) to use when calculating slippage.
+def expr_Slippage(pass_maps):
+    # Verify that time averaging wasn't used
+    if type(pass_maps[0]) is list:
+        print("exprMA_cust expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    expr_Slippage.__name__ = "Slippage [in v_A]"
+
+    E = pass_maps[0][:,:]
+    B = pass_maps[1][:,:]
+    V = pass_maps[2][:,:]
+    #return np.linalg.norm(E, axis=-1)
+
+    Vperp = VectorArrayPerpendicularVector(V,B)
+    EcrossB = np.divide(np.cross(E,B), (B*B).sum(-1)[:,:,np.newaxis])
+    metricSlippage = EcrossB-Vperp
+    alfvenicSlippage = metricSlippage/slippageVA
+    return np.linalg.norm(alfvenicSlippage, axis=-1)
 
