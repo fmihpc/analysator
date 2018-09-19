@@ -841,11 +841,14 @@ def plot_colormap_with_vdf(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        if f.check_variable("v"):
+        if f.check_variable("rho_v"):
             ff_v = f.read_variable("v", cellids=cid)
         else:
             ff_v = f.read_variable("proton/V",cellids=cid)
         ff_b = f.read_variable("B", cellids=cid)
+
+        print('ff_v: '+str(ff_v))
+        print('ff_b: '+str(ff_b))
 
         # Account for movement
         bdirsign = -1.0 
