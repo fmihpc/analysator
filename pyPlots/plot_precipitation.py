@@ -180,22 +180,27 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 def refine_vgrid(V=None,f=None,dv=None,n=None):
     
     print('Entering refine_vgrid')
-    # Initialisation of vectors
-    L = len(f)
-    f_refined = np.zeros(L*n**3)
-    V_refined = np.zeros((L*n**3,3))
 
-    for ind in range(0,L):
-        # Spreading equally phase-space density in the refined cells
-        f_refined[ind*n**3:(ind+1)*n**3] = f[ind]/n**3
+    if n<2:
+        V_refined = V
+        f_refined = f
+    else: 
+        # Initialisation of vectors
+        L = len(f)
+        f_refined = np.zeros(L*n**3)
+        V_refined = np.zeros((L*n**3,3))
 
-        # Velocity grid: triple loop in x,y,z
-        for ix in range(0,n):
-            for iy in range(0,n):
-                for iz in range(0,n):
-                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,0] = V[ind,0] + ix*dv/n
-                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,1] = V[ind,1] + iy*dv/n
-                    V_refined[ind*n**3 + ix*n**2 + iy*n + iz,2] = V[ind,2] + iz*dv/n
+        for ind in range(0,L):
+            # Spreading equally phase-space density in the refined cells
+            f_refined[ind*n**3:(ind+1)*n**3] = f[ind]
+
+            # Velocity grid: triple loop in x,y,z
+            for ix in range(0,n):
+                for iy in range(0,n):
+                    for iz in range(0,n):
+                        V_refined[ind*n**3 + ix*n**2 + iy*n + iz,0] = V[ind,0] + ix*dv/n
+                        V_refined[ind*n**3 + ix*n**2 + iy*n + iz,1] = V[ind,1] + iy*dv/n
+                        V_refined[ind*n**3 + ix*n**2 + iy*n + iz,2] = V[ind,2] + iz*dv/n
 
     return (V_refined,f_refined)
 
@@ -204,7 +209,7 @@ def refine_vgrid(V=None,f=None,dv=None,n=None):
 # -------------------------------------------------------------------------------------------
 def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=None,emax=None,hemisphere=None):
 
-    refine = 4
+    refine = 3
     print('Loss cone angle for integration: '+str(losscone))
     
     # check if velocity space exists in this cell
@@ -302,7 +307,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     deltaV = 50.e3 # m/s
     for vel in np.arange(0.,max(abs(vxmin),abs(vxmax)),deltaV):
 
-        # Energy in the middle of the bin
+        # Energy in the middle of the bin [keV]
         energy_i = 0.5*mass*(vel+deltaV/2.)**2/qe/1e3
 
         # Calculate corresponding flux
@@ -312,25 +317,33 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         # -- Collect precipitating particles within energy range
         #    -- If cell in southern hemisphere, then losscone = pi - losscone
         if hemisphere=='south':
-            ind_lc = [((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))]
+            ind_lc = ((pitchangle >= np.pi-losscone) * (normV >= vel) * (normV < vel+deltaV))
         else:
-            ind_lc = [((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))]
+            ind_lc = ((pitchangle <= losscone) * (normV >= vel) * (normV < vel+deltaV))
 
-        # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
-        integral = (vel+deltaV/2.)**3*np.sum(f_sparse[ind_lc])*solid_angle
+#        # -- Calculation of integral value (for now assuming gyrotropy and low dependence on pitch angle inside loss cone)
+#        integral = (vel+deltaV/2.)**3*np.sum(f_sparse[ind_lc])*solid_angle
+#
+#        # -- Put epsilon value if nothing in the loss cone [TODO maybe improve this later]
+#        if integral==0.:
+#            integral = 1.e-10
+#
+#        # -- normalisation to angle and energy
+#        flux_i = integral/solid_angle/deltaE
+#
+#        # -- propagation to 1 Re (geometric ratio) [TODO check]
+#        flux_i = flux_i / np.sin(losscone)**2
+#
+#        # -- conversion to part / cm2 / s / sr / eV
+#        flux_i = flux_i*1e-7
 
-        # -- Put epsilon value if nothing in the loss cone [TODO maybe improve this later]
-        if integral==0.:
-            integral = 1.e-10
+        # Precipitating intensity (what is measured by spacecraft) in proton/(cm2 s sr eV)
+        flux_i = (vel+deltaV/2.)**2/mass*np.mean(f_sparse[ind_lc])*1.e-4*qe
 
-        # -- normalisation to angle and energy
-        flux_i = integral/solid_angle/deltaE
+        if np.isnan(flux_i):
+            flux_i = 1e-10
 
-        # -- propagation to 1 Re (geometric ratio) [TODO check]
-        flux_i = flux_i / np.sin(losscone)**2
-
-        # -- conversion to part / cm2 / s / sr / eV
-        flux_i = flux_i*1e-7
+        print('flux_i = '+str(flux_i))
 
         # Append to the output arrays
         energy_bins = np.append(energy_bins,energy_i)
@@ -354,7 +367,7 @@ def plot_prec_spectrum(filename=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
-                     dipolapprox=True, fluxfile=None
+                     dipolapprox=False, fluxfile=None
                      ):    
 
     ''' Plots a precipitating ion flux energy spectrum.
@@ -387,7 +400,7 @@ def plot_prec_spectrum(filename=None,
 
     :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
-    :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle
+    :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle (default: False)
     :kword fluxfile:        Name of the file containing the flux function values
                             
     :returns:           Outputs an image to a file or to the screen.
@@ -452,9 +465,9 @@ def plot_prec_spectrum(filename=None,
         colormap="plasma_r"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
-    fontsize=8 # Most text
-    fontsize2=10 # Time title
-    fontsize3=5 # Colour bar ticks
+    fontsize=11 # Most text
+    fontsize2=13 # Time title
+    fontsize3=8 # Colour bar ticks
 
     # Plot title with time
     if notime==None:        
@@ -590,7 +603,7 @@ def plot_prec_spectrum(filename=None,
 
 
     plt.xlabel('E [keV]',fontsize=fontsize,weight='black')
-    plt.ylabel('Flux [protons/cm2/s/sr/eV]',fontsize=fontsize,weight='black')
+    plt.ylabel(r'Flux [protons cm$^{-2}$ s$^{-1}$ sr$^{-1}$ eV$^{-1}$]',fontsize=fontsize,weight='black')
 
     plt.xticks(fontsize=fontsize,fontweight='black')
     plt.yticks(fontsize=fontsize,fontweight='black')
