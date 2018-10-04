@@ -643,7 +643,7 @@ def make_keogram_column(step=None):
     global alph0_global
 
     filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
-    fluxfile = filedir_global+'../flux/bulk.'+str(step).rjust(7,'0')+'.bin'
+    fluxfile = fluxdir_global+'bulk.'+str(step).rjust(7,'0')+'.bin'
 
     print(filename+" is being processed")
     f=pt.vlsvfile.VlsvReader(filename)
@@ -685,7 +685,7 @@ def plot_prec_time_spectrum(filedir=None,
                      fmin=None, fmax=None, cbulk=None,
                      emin=None, emax=None,
                      cellcoordplot=None,cellidplot=None,
-                     dipolapprox=True,fluxfile=None,
+                     dipolapprox=True,fluxdir=None,
                      numproc=8
                      ):    
 
@@ -719,7 +719,7 @@ def plot_prec_time_spectrum(filedir=None,
     :kword cellcoordplot:   Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:      List of cellIDs to display as circles in the colormap plot
     :kword dipolapprox:     Use dipolar approximation to calculate loss cone angle (default: False)
-    :kword fluxfile:        Name of the file containing the flux function values
+    :kword fluxdir:        Name of the file containing the flux function values
 
     :kword numproc:     Number of processes for parallelisation (default: 8)
 
@@ -732,7 +732,7 @@ def plot_prec_time_spectrum(filedir=None,
 
     '''
 
-    global filedir_global, fluxfile_global
+    global filedir_global, fluxdir_global
     global cellid_global, xCid, yCid, zCid
     global emin_global, emax_global
     global alph0_global, pop_global, hemisphere_global
@@ -921,12 +921,12 @@ def plot_prec_time_spectrum(filedir=None,
             # Calculation of loss cone angle value
             if dipolapprox:
                 alph0 = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
-            elif fluxfile==None:
+            elif fluxdir==None:
                 print("Flux function file not provided!")
                 return
             else:
-                fluxfile_global = fluxfile
-                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile_global,deg=False)
+                fluxdir_global = fluxdir
+                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxdir_global+'bulk.000'+str(start)+'.bin',deg=False)
             alph0_global = alph0
 
             # Building the datamap corresponding to the keogram    
