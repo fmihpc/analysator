@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -t 00:01:00
+#SBATCH -t 00:40:00
 #SBATCH -J array_movie
 #SBATCH -p serial
 #SBATCH -n 1
@@ -11,8 +11,8 @@
 # This script can be used on taito to generate an array job, which renders multiple frames
 # in order to e.g. make a movie.
 
-frameStart=3500  # set to initial frame
-frameEnd=3500 # set to the final frame
+frameStart=2000  # set to initial frame
+frameEnd=2600 # set to the final frame
 
 # How many jobs? SLURM_ARRAY_TASK_COUNT does not work on all systems
 # so calculate job count (or set it manually to match the array
@@ -54,7 +54,11 @@ fi;
 #echo Current job id is $SLURM_ARRAY_TASK_ID and calculated frames are
 #echo from $start to $end 
 
-module load mayavi2
+
+#module load mayavi2
+module load geo-env
 export PTNONINTERACTIVE=1
 python generate_panel.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.
+
+

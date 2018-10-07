@@ -88,6 +88,64 @@ def expr_cav_cust(pass_maps):
 
     return combo3
 
+def expr_Tanisotropy(pass_maps):
+    # pass_maps is a list of numpy arrays
+    # Each array has 2 dimensions [ysize, xsize]
+    # or 3 dimensions [ysize, xsize, components]
+    # here it's assumed to contain Tpara and Tperp, and the function
+    # returns the Tpara/Tperp
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps[0]) is list:
+        print("expr_Tanisotropy expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    kb = 1.38065e-23 # Boltzmann's constant
+    
+    rho = pass_maps[0][:,:]
+    B = pass_maps[1][:,:]
+    PDiag = pass_maps[2][:,:]
+    POff = pass_maps[3][:,:]
+
+    # Normalising B
+    B0 = B[:,:,0]
+    B1 = B[:,:,1]
+    B2 = B[:,:,2]
+    normB = np.sqrt(B0**2 + B1**2 + B2**2)
+    B0n = B0/normB
+    B1n = B1/normB
+    B2n = B2/normB
+
+    # Building the temperature tensor from variables
+    TTensor00 = PDiag[:,:,0]/(rho+1.)/kb
+    TTensor01 = POff[:,:,2]/(rho+1.)/kb
+    TTensor02 = POff[:,:,1]/(rho+1.)/kb
+    TTensor10 = POff[:,:,2]/(rho+1.)/kb
+    TTensor11 = PDiag[:,:,1]/(rho+1.)/kb
+    TTensor12 = POff[:,:,0]/(rho+1.)/kb
+    TTensor20 = POff[:,:,1]/(rho+1.)/kb
+    TTensor21 = POff[:,:,0]/(rho+1.)/kb
+    TTensor22 = PDiag[:,:,2]/(rho+1.)/kb
+
+    # Calculating the parallel temperature as dot(Bn,TTensor*Bn)
+    Tpara = (B0n*(TTensor00*B0n+TTensor01*B1n+TTensor02*B2n)
+           + B1n*(TTensor10*B0n+TTensor11*B1n+TTensor12*B2n)
+           + B2n*(TTensor20*B0n+TTensor21*B1n+TTensor22*B2n))
+
+    # Calculating the perpendicular temperature as 0.5*(trace(TTensor)-T_para)
+    Tperp = 0.5*(TTensor00+TTensor11+TTensor22 - Tpara)
+
+    # Calculate temperature anisotropy as the para/perp ratio
+    Tanisotropy = Tpara/(Tperp+1.)
+
+    return Tanisotropy
+
+
+# Helper function for drawing fsaved cells
+def overplotfsaved(ax, XmeshXY,YmeshXY, pass_maps):
+    contour_mirror = ax.contour(XmeshXY,YmeshXY,pass_maps[0],[0.5],
+                               linewidths=1, colors='black')
+
 
 # Helper function for drawing on existing panel
 def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
@@ -143,6 +201,7 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=0.5, colors=color_SHFAs)           
 
 
+
 # -------------------------------------------------------------------------------
 
 fileLocation="/proj/vlasov/2D/BCH/bulk/"
@@ -160,6 +219,27 @@ for j in timetot:
     print(bulkname)
 
     # Plot(s) to be made
-    pt.plot.plot_colormap_with_vdf(filename=bulkname, var='temperature', boxre=[-15, -2, -6.5, 6.5],vmin=5e5, vmax=1e8,step=i/2, colormap='nipy_spectral', cellidplot=[3601851,3601801,3601751,3601701,3751901,3451901], outputdir=outputLocation+'mosaic/',fluxdir=fluxLocation,fluxlines=2)
+#    pt.plot.plot_colormap_with_vdf(filename=bulkname, var='temperature', boxre=[-15, -2, -6.5, 6.5],vmin=5e5, vmax=1e8,step=i/2, colormap='nipy_spectral', cellidplot=
+
+
+#    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[-20, -8, -6, 6], colormap='RdBu_r',cellidplot=[3601701,3601751,3601801,3751851,3601851,345185
+
+    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[-15, -2, -6.5, 6.5], colormap='hot_desaturated',cellidplot=[3601701,3601751,3601801,3751851,36
+
+#    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[-20, -8, -6, 6], colormap='RdBu_r',cellidplot=[3601601,3601651,3601701,3601751,3601801],step=
+
+#    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[-20, -8, -6, 6], colormap='RdBu_r',cellidplot=[3601601,3601651,3601701,3601751,3601801],step=
+
+#    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[-20, -8, -6, 6], colormap='RdBu_r',cellidplot=[3601601,3601651,3601701,3601751,3601801],step=
+
+#    pt.plot.plot_vdf(filename=fileLocation+bulkname, step=j, cellids=3601751,box=[-3e6,3e6,-3e6,3e6],bpara=1,colormap='nipy_spectral', fmin=1e-15, fmax=1e-11, cbulk=1
+#    pt.plot.plot_vdf(filename=fileLocation+bulkname, step=j, cellids=3601751,box=[-3e6,3e6,-3e6,3e6],bpara1=1,colormap='nipy_spectral', fmin=1e-15, fmax=1e-11, cbulk=
+#    pt.plot.plot_vdf(filename=fileLocation+bulkname, step=j, cellids=3601751,box=[-3e6,3e6,-3e6,3e6],bperp=1,colormap='nipy_spectral', fmin=1e-15, fmax=1e-11, cbulk=1
+
+
+
+
+# BFB stuff
+#    pt.plot.plot_colormap_with_vdf(filename=fileLocation+bulkname,boxre=[3,11,0,8], colormap='seismic',cellidplot=[2702151,2852101,2552151],vdfplotlocation='ttl',vdfp
 
 
