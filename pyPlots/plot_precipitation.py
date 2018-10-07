@@ -343,8 +343,6 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         if np.isnan(flux_i):
             flux_i = 1e-10
 
-        print('flux_i = '+str(flux_i))
-
         # Append to the output arrays
         energy_bins = np.append(energy_bins,energy_i)
         fluxes = np.append(fluxes,flux_i)
@@ -661,7 +659,11 @@ def make_keogram_column(step=None):
 
 #    datamap = np.append(datamap,flux)
 #    time_keogram = np.append(time_keogram,f.read_parameter("time"))
-    out = [f.read_parameter("time"),flux,energy]
+    time = f.read_parameter("time")
+    if time is None:      # in BCH, at some point "t" was changed to "time"
+        time = f.read_parameter("t")
+
+    out = [time,flux,energy]
 
     if not wentFine:
         print("There was a problem making the spectrum, filename: "+filename)
