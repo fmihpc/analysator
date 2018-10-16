@@ -658,9 +658,9 @@ class VlsvReader(object):
       if len(np.shape(coordinates)) == 1:
          #get closest id
          closest_cell_id=self.get_cellid(coordinates)
-         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
          if closest_cell_id == 0:
             return None
+         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
 
          #now identify the lower one of the 8 neighbor cells
          offset = [0 if coordinates[0] > closest_cell_coordinates[0] else -1,\
@@ -690,7 +690,7 @@ class VlsvReader(object):
          else:
             value_length=1
          
-      #now identify 8 cells, startign from the lower one
+         #now identify 8 cells, starting from the lower one
          ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
             for y in [0,1]:
@@ -717,8 +717,66 @@ class VlsvReader(object):
 
       else:
          #multiple coordinates
-         pass
-
+         
+         # read all cells as we're anyway going to need this
+         whole_cellids  = self.read_variable("CellID")
+         sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
+         
+         # Check one value for the length
+         if isinstance(sorted_variable[0], Iterable):
+            value_length=len(sorted_variable[0])
+         else:
+            value_length=1
+         
+         # start iteration
+         ret_array = np.zeros(len(coordinates))
+         for i,cell_coords in enumerate(coordinates):
+            closest_cell_id=self.get_cellid(cell_coords)
+            if closest_cell_id == 0:
+               ret_array[i] = None
+            closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
+            
+            #now identify the lower one of the 8 neighbor cells
+            offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
+                      0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
+                      0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
+            lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+            lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
+            offset = [1,1,1]
+            upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+            upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
+            
+            scaled_coordinates=np.zeros(3)
+            for j in range(3):
+               if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
+                  scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
+               else:
+                  scaled_coordinates[j] = 0.0 #Special case for periodic systems with one cell in a dimension
+            
+            ngbrvalues=np.zeros((2,2,2,value_length))
+            for x in [0,1]:
+               for y in [0,1]:
+                  for z  in [0,1]:
+                     id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
+                     ngbrvalues[x,y,z,:] = sorted_variable[id]
+            
+            c2d=np.zeros((2,2,value_length))
+            for y in  [0,1]:
+               for z in  [0,1]:
+                  c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
+            
+            c1d=np.zeros((2,value_length))
+            for z in [0,1]:
+               c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
+            
+            final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+            if len(final_value)==1:
+               ret_array[i] = final_value[0]
+            else:
+               ret_array[i] = final_value
+         
+         # Done.
+         return ret_array
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
