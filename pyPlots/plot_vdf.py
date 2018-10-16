@@ -150,9 +150,14 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
                 print("Error reading moments from assumed restart file!")
                 sys.exit()
             if len(moments.shape)==2:
-                moments = moments[0]
-            if moments[0]>0.0:
+                moments = moments[0]    
+            # Old version moments has 4 elements, multipop version has 5
+            if ((len(moments)==4) and (moments[0]>0.0)):
                 bulkv = moments[1:4]/moments[0]
+            elif len(moments)==5:
+                bulkv = moments[1:4]
+            else:
+                print("Error parsing moments, could not identify if version was multipop or not!")
         if np.array(bulkv).any()==None and vlsvReader.check_variable('v'):
             # Multipop file with bulk v saved directly
             bulkv = vlsvReader.read_variable('v',cid)
@@ -269,6 +274,7 @@ def plot_vdf(filename=None,
              coordinates=None, coordre=None, 
              outputdir=None, nooverwrite=None,
              draw=None,unit=None,title=None, cbtitle=None,
+             tickinterval=None,
              colormap=None, box=None, nocb=None,
              run=None, wmark=None, thick=1.0,
              fmin=None, fmax=None, slicethick=None, cellsize=None,
@@ -308,6 +314,7 @@ def plot_vdf(filename=None,
 
     :kword box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
     :kword unit:        Plot v-axes using 10^{unit} m/s (default: km/s)
+    :kword tickinterval: Interval at which to have ticks on axes
    
     :kword xy:          Perform slice in x-y-direction
     :kword xz:          Perform slice in x-z-direction
@@ -576,16 +583,6 @@ def plot_vdf(filename=None,
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
         print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite!=None and os.path.exists(savefigname)):
-            # Also check that file is not empty
-            if os.stat(savefigname).st_size > 0:
-                return
-            else:
-                print("Found existing file "+savefigname+" of size zero. Re-rendering.")
-
-
-
         # Check slice to perform (and possibly normal vector)
         normvect=None
         if xy==None and xz==None and yz==None and normal==None and bpara==None and bperp==None:
@@ -658,6 +655,16 @@ def plot_vdf(filename=None,
                 slicetype="Bpara"
                 pltxstr=r"$v_{\parallel}$ "+velUnitStr
                 pltystr=r"$v_{\perp}$ "+velUnitStr
+
+
+        savefigname=outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+        # Check if target file already exists and overwriting is disabled
+        if (nooverwrite!=None and os.path.exists(savefigname)):
+            # Also check that file is not empty
+            if os.stat(savefigname).st_size > 0:
+                return
+            else:
+                print("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -806,7 +813,8 @@ def plot_vdf(filename=None,
         ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
-        ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+        if len(plot_title)>0:
+            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         if noxlabels==None:
             plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
@@ -838,7 +846,7 @@ def plot_vdf(filename=None,
                 BLha = "left"
                 BLva = "bottom"
 
-            plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva)
+            plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='gray')
                 
         if nocb==None:
             cbtitleuse=None
@@ -882,6 +890,10 @@ def plot_vdf(filename=None,
             #         if not label.get_text()[1] in valids:
             #             label.set_visible(False)
 
+        if tickinterval!=None:
+            ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
+            ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
+
         if noxlabels!=None:
             for label in ax1.xaxis.get_ticklabels():
                 label.set_visible(False)
@@ -909,7 +921,6 @@ def plot_vdf(filename=None,
 
         # Save output or draw on-screen
         if draw==None:
-            savefigname = outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
             # Note: generated title can cause strange PNG header problems
             # in rare cases. This problem is under investigation, but is related to the exact generated
             # title string. This try-catch attempts to simplify the time string until output succedes.

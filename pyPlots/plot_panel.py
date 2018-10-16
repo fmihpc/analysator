@@ -42,6 +42,8 @@ plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_
 plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
 plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
+plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
@@ -56,8 +58,10 @@ def plot_colormap(filename=None,
                   title=None, cbtitle=None, draw=None, usesci=None,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
-                  run=None,wmark=None, nocb=None,
+                  run=None, nocb=None,
+                  wmark=None,wmarkb=None,
                   unit=None, thick=1.0,scale=1.0,
+                  tickinterval=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
@@ -93,6 +97,7 @@ def plot_colormap(filename=None,
     :kword title:       string to use as plot title instead of time
     :kword cbtitle:     string to use as colorbar title instead of map name
     :kword unit:        Plot axes using 10^{unit} m (default: Earth radius R_E)
+    :kword tickinterval: Interval at which to have ticks on axes
 
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
@@ -101,7 +106,10 @@ def plot_colormap(filename=None,
     :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
+    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+    :kword wmarkb:      If set to non-zero, will plot an all-black Vlasiator watermark in the top left corner.
+                        If set to a text string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
@@ -159,6 +167,7 @@ def plot_colormap(filename=None,
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
+    watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
     outputprefix = ''
@@ -212,7 +221,7 @@ def plot_colormap(filename=None,
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
-    fontsize3=5*scale # Colour bar ticks
+    fontsize3=8*scale # Colour bar ticks
 
     # Plot title with time
     timeval=None
@@ -402,14 +411,14 @@ def plot_colormap(filename=None,
         else:
             # Pipe all other vars directly to analysator
             if op==None:
-                cb_title = var
+                cb_title = var.replace("_","\_")
                 datamap = f.read_variable(var)
                 # If value was vector value, take magnitude
                 if np.ndim(datamap) != 1:
                     cb_title = r"$|"+var+"|$"
                     datamap = np.linalg.norm(np.asarray(datamap),axis=-1)
             else:
-                cb_title = r" "+var+"$_"+op+"$"
+                cb_title = r" "+var.replace("_","\_")+"$_"+op+"$"
                 datamap = f.read_variable(var,operator=op)            
             
         if np.ndim(datamap)!=1:
@@ -423,7 +432,6 @@ def plot_colormap(filename=None,
 
     # Generates the mesh to map the data to.
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
-
     # Generate mask for only visible section (with small buffer)
     maskboundarybuffer = 2.*cellsize/unit
     maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
@@ -594,8 +602,14 @@ def plot_colormap(filename=None,
         boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = boxleny/boxlenx
+    # Special case for edge-to-edge figures
+    if len(plot_title)==0 and nocb!=None and noborder!=None and noxlabels!=None and noylabels!=None:
+        ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
+
     # default for square figure is figsize=[4.0,3.15]
     figsize = [4.0,3.15*ratio]
+    #figsize = [8.0,8.0*ratio]
+
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
     
@@ -647,9 +661,15 @@ def plot_colormap(filename=None,
         elif f.check_variable("rho_v"):
             ff_v = f.read_variable("v", cellids=cid)
         elif f.check_variable("moments"):
-            # Not sure if this works with multipop restarts, but should
             ff_v = f.read_variable("moments", cellids=cid)
-            ff_v = ff_v[1:3]/ff_v[0]
+            # Old version moments has 4 elements, multipop version has 5
+            if len(ff_v)==4:
+                ff_v = ff_v[1:4]/ff_v[0]
+            elif len(ff_v)==5:
+                ff_v = ff_v[1:4]
+            else:
+                print("Error parsing moments, could not identify if version was multipop or not!")
+                ff_v = [-600000,0,0]
         else:
             ff_v = [-600000,0,0]
             #ff_v = [-750000,0,0]
@@ -701,13 +721,12 @@ def plot_colormap(filename=None,
 
     if cbtitle==None:
         if expression!=None:
-            cb_title_use = expression.__name__ 
+            cb_title_use = expression.__name__.replace("_","\_")
         else:
             cb_title_use = cb_title
     else:
+        # Here allow underscores for manual math mode
         cb_title_use = cbtitle
-    # replaces underscores so math mode subscript mode isn't activated
-    cb_title_use = cb_title_use.replace("_","\_")
         
 
     if nocb==None:
@@ -718,7 +737,7 @@ def plot_colormap(filename=None,
         # Colourbar title
         if len(cb_title_use)!=0:
             #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
-            cax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')
+            cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold')
 
         # First draw colorbar
         if usesci==0:        
@@ -749,9 +768,44 @@ def plot_colormap(filename=None,
     # Add Vlasiator watermark
     if wmark!=None:        
         wm = plt.imread(get_sample_data(watermarkimage))
-        newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
+        if type(wmark) is str:
+            anchor = wmark
+            print("anchor ",anchor)
+        else:
+            anchor="NE"
+        # Allowed region and anchor used in tandem for desired effect
+        if anchor=="NW" or anchor=="W" or anchor=="SW":
+            rect = [0.01, 0.01, 0.3, 0.98]
+        elif anchor=="NE" or anchor=="E" or anchor=="SE":
+            rect = [0.69, 0.01, 0.3, 0.98]
+        elif anchor=="N" or anchor=="C" or anchor=="S":
+            rect = [0.35, 0.01, 0.3, 0.98]
+        newax = fig.add_axes(rect, anchor=anchor, zorder=1)
         newax.imshow(wm)
         newax.axis('off')
+
+    if wmarkb!=None:        
+        wm = plt.imread(get_sample_data(watermarkimageblack))
+        if type(wmarkb) is str:
+            anchor = wmarkb
+            print("anchor ",anchor)
+        else:
+            anchor="NE"
+        # Allowed region and anchor used in tandem for desired effect
+        if anchor=="NW" or anchor=="W" or anchor=="SW":
+            rect = [0.01, 0.01, 0.3, 0.98]
+        elif anchor=="NE" or anchor=="E" or anchor=="SE":
+            rect = [0.69, 0.01, 0.3, 0.98]
+        elif anchor=="N" or anchor=="C" or anchor=="S":
+            rect = [0.35, 0.01, 0.3, 0.98]
+        newax = fig.add_axes(rect, anchor=anchor, zorder=1) #[0.01, 0.90, 0.3, 0.08]
+        #newax.set_anchor(anchor)
+        newax.imshow(wm)
+        newax.axis('off')
+
+    if tickinterval!=None:
+        ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
+        ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
 
     if noxlabels!=None:
         for label in ax1.xaxis.get_ticklabels():
@@ -759,6 +813,7 @@ def plot_colormap(filename=None,
     if noylabels!=None:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)       
+
 
     if noborder==None:
         # adjust layout
@@ -777,6 +832,7 @@ def plot_colormap(filename=None,
         # Note: generated title can cause strange PNG header problems
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
+        # An example is the file for AFB step 0000517, "t=258.52 s"
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
