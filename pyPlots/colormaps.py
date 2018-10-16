@@ -1130,9 +1130,15 @@ hot_desaturated_colors=[(71./255.,71./255.,219./255.),(0,0,91./255.),(0,1,1),(0,
 hot_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated",hot_desaturated_colors)
 hot_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated_r",hot_desaturated_colors[::-1])
 
-
 # Pale version of hot_desaturated
 pale_desaturated_colors=[[0.5 + j * 0.5 for j in i] for i in hot_desaturated_colors]
 pale_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated",pale_desaturated_colors)
 pale_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated_r",pale_desaturated_colors[::-1])
 
+# Warhol
+warhol_cdict = {'red':   [(0,1,1), (0.111111,0,0), (0.222222,64./255.,64./255.), (0.333333,0,0), (0.444444,79./255.,79./255.),(0.555556,70./255.,70./255.), (0.666667,1,1), (0.777778,1,1), (0.888889,81./255.,81./255.), (1,1,1)],
+         'green': [(0,1,1), (0.111111,66./255.,66./255.), (0.222222,1,1), (0.333333,0,0), (0.444444,1,1), (0.555556,16./255.,16./255.), (0.666667,1,1), (0.777778,57./255.,57./255.), (0.888889,0,0), (1,150./255.,150./255.)],
+         'blue':  [(0,1,1), (0.111111,0,0), (0.222222,81./255.,81./255.), (0.333333,55./255.,55./255.), (0.444444,1,1), (0.555556,70./255.,70./255.), (0.666667,0,0), (0.777778,0,0), (0.888889,0,0), (1,150./255.,150./255.)] }
+warhol_colormap = matplotlib.colors.LinearSegmentedColormap("warhol",warhol_cdict)
+#>0 255 255 255 255 0.111111 0 66 0 255 0.222222 64 255 81 255 0.333333 0 0 55 255 0.444444 79 255 255 255 0.555556 70 16 70 255 0.666667 255 255 0 255 0.777778 255 57 0 255 0.888889 81 0 0 255 1 255 150 150 255 <
+#matplotlib.colors.LinearSegmentedColormap(name, segmentdata, N=256, gamma=1.0)[source]
