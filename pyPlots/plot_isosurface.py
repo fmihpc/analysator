@@ -90,7 +90,7 @@ def plot_isosurface(filename=None,
     :kword surf_step:   Vertex stepping for surface generation: larger value returns coarser surface
 
     :kword color_var:   Variable to read for coloring surface
-    :kword color_op:    Operator to use for variable to color surface
+    :kword color_op:    Operator to use for variable to color surface ('x', 'y', 'z'; if None and color_var is a vector, the magnitude is taken)
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
@@ -198,7 +198,7 @@ def plot_isosurface(filename=None,
     color_opstr=''
     if color_op!=None:
         if color_op!='x' and color_op!='y' and color_op!='z':
-            print("Unknown operator "+color_op)
+            print("Unknown operator "+color_op+", defaulting to None/magnitude for a vector.")
             color_op=None            
         else:
             # For components, always use linear scale, unless symlog is set
@@ -284,18 +284,18 @@ def plot_isosurface(filename=None,
     # Scale data extent and plot box
     simext_org = simext
     simext=[i/unit for i in simext]
-    boxcoords=[i/unit for i in boxcoords]    
+    boxcoords=[i/unit for i in boxcoords]
 
     if color_op==None and color_var!=None:
         color_op='pass'
         cb_title = color_var
-        color_data = f.read_variable(color_var,cellids=1)
+        color_data = f.read_variable(color_var,cellids=[1,2])
         # If value was vector value, take magnitude
-        if np.ndim(color_data) != 1:
+        if np.size(color_data) != 2:
             cb_title = r"$|"+color_var+"|$"
-    if color_op!=None and color_var!=None:
-        cb_title = r" "+color_var+"$_"+color_op+"$"
-    if color_var==None:
+    elif color_op!=None and color_var!=None:
+        cb_title = r" $"+color_var+"_"+color_op+"$"
+    else: # color_var==None
         cb_title = ""
         nocb=1
 
@@ -312,7 +312,7 @@ def plot_isosurface(filename=None,
     if np.ndim(surf_data)!=1:
         print("Error reading surface variable "+surf_var+"! Exiting.")
         return -1
-
+    
     # Reshape data to ordered 3D arrays for plotting
     #color_data = color_data[cellids.argsort()].reshape([sizes[2],sizes[1],sizes[0]])
     surf_data = surf_data[cellids.argsort()].reshape([sizes[2],sizes[1],sizes[0]])
@@ -382,10 +382,11 @@ def plot_isosurface(filename=None,
     # Next find color variable values at vertices
     if color_var != None:
         nverts = len(verts[:,0])
-        print("Extracting color values for "+str(nverts)+" vertices.")
-        cellids = np.zeros(nverts)
+        print("Extracting color values for "+str(nverts)+" vertices and "+str(len(faces[:,0]))+" faces.")
+        all_coords = np.empty((nverts, 3))
         for i in np.arange(nverts):            
-            # # due to mesh generation, some coordinates may be outside simualation domain
+            # # due to mesh generation, some coordinates may be outside simulation domain
+            # WARNING this means it might be doing wrong things in the periodic dimension of 2.9D runs.
             coords = verts[i,:]*unit 
             coords[0] = max(coords[0],simext_org[0]+0.1*cellsize)
             coords[0] = min(coords[0],simext_org[1]-cellsize)
@@ -393,12 +394,12 @@ def plot_isosurface(filename=None,
             coords[1] = min(coords[1],simext_org[3]-cellsize)
             coords[2] = max(coords[2],simext_org[4]+0.1*cellsize)
             coords[2] = min(coords[2],simext_org[5]-cellsize)
-            cellids[i] = int(f.get_cellid(coords))
-        color_data = f.read_variable(color_var, cellids=cellids, operator=color_op)
-        # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components
+            all_coords[i] = coords
+        # Use interpolated values, WARNING periodic y (2.9 polar) hard-coded here /!\
+        color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=["False", "True", "False"])
+        # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components)
         if np.ndim(color_data)!=1:
             color_data=np.linalg.norm(color_data, axis=-1)
-
 
     if color_var==None:
         # dummy norm
@@ -482,7 +483,7 @@ def plot_isosurface(filename=None,
     if ysize < 0.2*xsize: # 2.9D polar, perform rotation
         generatedsurface = ax1.plot_trisurf(verts[:,2], verts[:,0], verts[:,1], triangles=faces,
                                             cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, 
-                                            lw=0.2, shade=False, edgecolors=None)
+                                            lw=0, shade=False, edgecolors=None, antialiased=False)
         ax1.set_xlabel("z ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_ylabel("x ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_zlabel("y ["+unitstr+"]", fontsize=fontsize3)
@@ -610,8 +611,9 @@ def plot_isosurface(filename=None,
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-                        print("Usually removing the title should work, but this time even that failed.")
+                        print "Error:", sys.exc_info()
+                        print("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
+                        print("Usually removing the title should work, but this time even that failed.")                        
                         savechange = -1
         if savechange>0:
             print("Due to rendering error, replaced image title with "+plot_title)
