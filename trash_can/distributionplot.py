@@ -1,7 +1,7 @@
 #!/usr/bin/python -i
 # 
 # This file is part of Analysator.
-# Copyright 2010-2016 Finnish Meteorological Institute
+# Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
