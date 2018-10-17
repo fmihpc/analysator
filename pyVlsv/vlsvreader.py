@@ -739,7 +739,7 @@ class VlsvReader(object):
                if value_length==1:
                   ret_array[i]=None
                else:
-                  ret_array[i,:] = None[np.newaxis]
+                  ret_array[i,:] = None
             closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
             
             #now identify the lower one of the 8 neighbor cells
