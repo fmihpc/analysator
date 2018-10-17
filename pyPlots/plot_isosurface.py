@@ -90,7 +90,7 @@ def plot_isosurface(filename=None,
     :kword surf_step:   Vertex stepping for surface generation: larger value returns coarser surface
 
     :kword color_var:   Variable to read for coloring surface
-    :kword color_op:    Operator to use for variable to color surface
+    :kword color_op:    Operator to use for variable to color surface ('x', 'y', 'z'; if None and color_var is a vector, the magnitude is taken)
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
@@ -198,7 +198,7 @@ def plot_isosurface(filename=None,
     color_opstr=''
     if color_op!=None:
         if color_op!='x' and color_op!='y' and color_op!='z':
-            print("Unknown operator "+color_op)
+            print("Unknown operator "+color_op+", defaulting to None/magnitude for a vector.")
             color_op=None            
         else:
             # For components, always use linear scale, unless symlog is set
@@ -284,18 +284,18 @@ def plot_isosurface(filename=None,
     # Scale data extent and plot box
     simext_org = simext
     simext=[i/unit for i in simext]
-    boxcoords=[i/unit for i in boxcoords]    
+    boxcoords=[i/unit for i in boxcoords]
 
     if color_op==None and color_var!=None:
         color_op='pass'
         cb_title = color_var
-        color_data = f.read_variable(color_var,cellids=1)
+        color_data = f.read_variable(color_var,cellids=[1,2])
         # If value was vector value, take magnitude
-        if np.ndim(color_data) != 1:
+        if np.size(color_data) != 2:
             cb_title = r"$|"+color_var+"|$"
-    if color_op!=None and color_var!=None:
-        cb_title = r" "+color_var+"$_"+color_op+"$"
-    if color_var==None:
+    elif color_op!=None and color_var!=None:
+        cb_title = r" $"+color_var+"_"+color_op+"$"
+    else: # color_var==None
         cb_title = ""
         nocb=1
 
@@ -400,7 +400,6 @@ def plot_isosurface(filename=None,
         # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components)
         if np.ndim(color_data)!=1:
             color_data=np.linalg.norm(color_data, axis=-1)
-
 
     if color_var==None:
         # dummy norm
@@ -612,8 +611,9 @@ def plot_isosurface(filename=None,
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-                        print("Usually removing the title should work, but this time even that failed.")
+                        print "Error:", sys.exc_info()
+                        print("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
+                        print("Usually removing the title should work, but this time even that failed.")                        
                         savechange = -1
         if savechange>0:
             print("Due to rendering error, replaced image title with "+plot_title)

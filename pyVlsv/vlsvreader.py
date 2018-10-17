@@ -729,7 +729,10 @@ class VlsvReader(object):
             value_length=1
          
          # start iteration
-         ret_array = np.zeros((len(coordinates), value_length))
+         if value_length == 1:
+            ret_array = np.zeros(len(coordinates))
+         else:
+            ret_array = np.zeros((len(coordinates), value_length))
          for i,cell_coords in enumerate(coordinates):
             closest_cell_id=self.get_cellid(cell_coords)
             if closest_cell_id == 0:
