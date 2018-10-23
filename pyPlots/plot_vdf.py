@@ -304,6 +304,7 @@ def plot_vdf(filename=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bperp=None,
              coordswap=None,
+             bvector=None,
              cbulk=None, center=None, wflux=None, setThreshold=None,
              legend=None, noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
@@ -348,6 +349,7 @@ def plot_vdf(filename=None,
                         If no plane is given, default is simulation plane (for 2D simulations)
 
     :kword coordswap:   Swap the parallel and perpendicular coordinates
+    :kword bvector:     Plot a magnetic field vector projection in-plane
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
@@ -433,7 +435,7 @@ def plot_vdf(filename=None,
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=5*scale # Colour bar ticks
-    fontsize4=16*scale # Big label
+    fontsize4=12*scale # Big label
 
     # Plot title with time
     timeval=vlsvReader.read_parameter("time")
@@ -612,17 +614,20 @@ def plot_vdf(filename=None,
             # Use default slice for this simulation
             # Check if ecliptic or polar run
             if ysize==1: # polar
+                xz=1
                 slicetype="xz"
                 pltxstr=r"$v_x$ "+velUnitStr
                 pltystr=r"$v_z$ "+velUnitStr
                 normvect=[0,1,0] # used just for cell size normalisation
             elif zsize==1: # ecliptic
+                xy=1
                 slicetype="xy"
                 pltxstr=r"$v_x$ "+velUnitStr
                 pltystr=r"$v_y$ "+velUnitStr
                 normvect=[0,0,1] # used just for cell size normalisation
             else:
                 print("Problem finding default slice direction")
+                yz=1
                 slicetype="yz"
                 pltxstr=r"$v_y$ "+velUnitStr
                 pltystr=r"$v_z$ "+velUnitStr
@@ -869,8 +874,44 @@ def plot_vdf(filename=None,
                 BLha = "left"
                 BLva = "bottom"
 
-            plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='gray')
-                
+            plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
+
+
+        if bvector!=None and bpara==None and bperp==None:
+            # Draw vector of magnetic field direction
+            if vlsvReader.check_variable("B"):
+                Bvect = vlsvReader.read_variable("B", cellid)
+            elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
+                # used e.g. for restart files
+                BGB = vlsvReader.read_variable("background_B", cellid)
+                PERBB = vlsvReader.read_variable("perturbed_B", cellid)
+                Bvect = BGB+PERBB
+            else:
+                print("Error finding B vector direction!")
+                sys.exit()
+            # Find plane projection of B-vector
+            boutofplane = normvect*(Bvect*normvect).sum()
+            boutofplanelength = np.linalg.norm(boutofplane) / np.linalg.norm(bvector)            
+            bvector = (Bvect - boutofplane)
+            bvector = bvector / np.linalg.norm(bvector)
+            # Length default is 1/5 of axis length
+            bvectormultiplier = np.amin([yvalsrange[1]-yvalsrange[0],xvalsrange[1]-xvalsrange[0]])/(velUnit*5.)
+            bvector = bvector * bvectormultiplier
+            if xy!=None:
+                ax1.arrow(0,0,bvector[0],bvector[1],width=0.02*thick,head_width=0.1*thick,
+                          head_length=0.2*thick,zorder=10,color='k')
+                ax1.plot([0,bvector[1]*boutofplanelength],[0,bvector[0]*boutofplanelength],
+                         lw=thick,zorder=10,color='k')
+            if xz!=None:
+                ax1.arrow(0,0,bvector[0],bvector[2],width=0.02*thick,head_width=0.1*thick,
+                          head_length=0.2*thick,zorder=10,color='k')
+                ax1.plot([0,bvector[2]*boutofplanelength],[0,bvector[0]*boutofplanelength],
+                         lw=thick,zorder=10,color='k')
+            if yz!=None:
+                ax1.arrow(0,0,bvector[1],bvector[2],width=0.02*thick,head_width=0.1*thick,
+                          head_length=0.2*thick,zorder=10,color='k')
+                ax1.plot([0,bvector[2]*boutofplanelength],[0,bvector[1]*boutofplanelength],
+                         lw=thick,zorder=10,color='k')
         if nocb==None:
             cbtitleuse=None
             if cbtitle!=None:

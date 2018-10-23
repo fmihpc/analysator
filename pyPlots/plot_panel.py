@@ -793,7 +793,6 @@ def plot_colormap(filename=None,
         wm = plt.imread(get_sample_data(watermarkimage))
         if type(wmark) is str:
             anchor = wmark
-            print("anchor ",anchor)
         else:
             anchor="NE"
         # Allowed region and anchor used in tandem for desired effect
@@ -811,7 +810,6 @@ def plot_colormap(filename=None,
         wm = plt.imread(get_sample_data(watermarkimageblack))
         if type(wmarkb) is str:
             anchor = wmarkb
-            print("anchor ",anchor)
         else:
             anchor="NE"
         # Allowed region and anchor used in tandem for desired effect
