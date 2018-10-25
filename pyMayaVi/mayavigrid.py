@@ -728,7 +728,6 @@ class MayaviGrid(HasTraits):
          iso = mayavi.mlab.pipeline.surface(d)
       else:
          isosurfaces=[np.exp(0.5*(np.log(maxval) + np.log(minval))), maxval/10.]
-         print isosurfaces
          ptdata = mayavi.mlab.pipeline.cell_to_point_data(d)
          iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=isosurfaces, opacity=0.3)
       figure.scene.disable_render = False
