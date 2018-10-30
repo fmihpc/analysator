@@ -24,6 +24,12 @@ pt.vlsvfile.VlsvReader? #press [Enter]
 #################################################
 export PTNONINTERACTIVE=1
 
+# For experimental interactive mode
+# which allows multiple open non-blocking plots at once
+#################################################
+#################################################
+import matplotlib
+matplotlib.pyplot.ion()
 
 # For more information visit the link:
 #################################################

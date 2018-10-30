@@ -629,9 +629,11 @@ def plot_colormap(filename=None,
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if draw!=None:
-        plt.switch_backend('TkAgg')
+        if str(matplotlib.get_backend()) is not 'TkAgg':
+            plt.switch_backend('TkAgg')
     else:
-        plt.switch_backend('Agg')  
+        if str(matplotlib.get_backend()) is not 'Agg':
+            plt.switch_backend('Agg')  
 
     # Select image shape to match plotted area, (with some accounting for axes etc)
     boxlenx = boxcoords[1]-boxcoords[0]
