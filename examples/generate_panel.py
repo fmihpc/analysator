@@ -167,6 +167,47 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=0.5, colors=color_SHFAs)           
 
 
+# Helper function for drawing on existing panel
+def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
+    # pass_maps is a list of numpy arrays, not used here.
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
+    # 'upper right'  : 1,
+    # 'upper left'   : 2,
+    # 'lower left'   : 3,
+    # 'lower right'  : 4,
+    # 'right'        : 5,
+    # 'center left'  : 6,
+    # 'center right' : 7,
+    # 'lower center' : 8,
+    # 'upper center' : 9,
+    # 'center'       : 10
+
+
+    # Generate inset axes for VDF #1
+    VDFcoord = [10.8,0,-5]
+    VDFax = inset_axes(ax, width="25%", height="25%", loc=2, bbox_transform=ax.transAxes)
+    pt.plot.plot_vdf(filename=fileLocation+bulkname,coordre=VDFcoord,box=[-2.5e6,2.5e6,-2.5e6,2.5e6], fmin=1e-14, fmax=2e-8,slicethick=0,axes=VDFax, unit=6,nocb=1,title='',noxlabels=1,noylabels=1)
+    # Add dot at VDF location
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='black',marker='o',s=20)
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='gray',marker='o',s=2)
+
+    # Generate inset axes for VDF #2
+    VDFcoord = [10.8,0,-15]
+    VDFax = inset_axes(ax, width="25%", height="25%", loc=6, bbox_transform=ax.transAxes)
+    pt.plot.plot_vdf(filename=fileLocation+bulkname,coordre=VDFcoord,box=[-2.5e6,2.5e6,-2.5e6,2.5e6], fmin=1e-14, fmax=2e-8,slicethick=0,axes=VDFax, unit=6,nocb=1,title='',noxlabels=1,noylabels=1)
+    # Add dot at VDF location
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='black',marker='o',s=20)
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='gray',marker='o',s=2)
+
+    # Generate inset axes for VDF #3
+    VDFcoord = [10.8,0,-25]
+    VDFax = inset_axes(ax, width="25%", height="25%", loc=3, bbox_transform=ax.transAxes)
+    pt.plot.plot_vdf(filename=fileLocation+bulkname,coordre=VDFcoord,box=[-2.5e6,2.5e6,-2.5e6,2.5e6], fmin=1e-14, fmax=2e-8,slicethick=0,axes=VDFax, unit=6,nocb=1,title='',noxlabels=1,noylabels=1)
+    # Add dot at VDF location
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='black',marker='o',s=20)
+    ax.scatter(VDFcoord[0], VDFcoord[2], color='gray',marker='o',s=2)
+   
 
 fileLocation="/proj/vlasov/2D/BCQ/bulk/"
 fluxLocation="/proj/vlasov/2D/BCQ/flux/"
@@ -202,6 +243,11 @@ for j in timetot:
     # Plot a custom time-averaged caviton and SHFA colourmap with non-timeaveraged contours on top for comparison. Leaves out the
     # Colour bar.and associated title.
     pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='OrRd',step=j,outputdir=outputLocation+'cSHFA/', lin=1,vmin=0,vmax=1, expression=expr_cav_cust, external=cavitoncontours, pass_vars=['rho','B','beta'], pass_times=10, nocb=1, cbtitle='', boxre=[-20,20,-40,0])
+
+    # Plot beam number density with inset VDF
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeamVDF/',wmark=1, boxre=[-10,20,-30,0], external=insetVDF)
+
+
 
    # Useful flags
    # (Find more by entering pt.plot.plot_colormap? in python
