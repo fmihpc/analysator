@@ -35,6 +35,7 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 import plot_run_defaults
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector
 
@@ -219,10 +220,10 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
         # cells as well.
         if vlsvReader.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
-            setThreshold = vlsvReader.read_variable('MinValue',cellid)
+            setThreshold = vlsvReader.read_variable('MinValue',cid)
             print("Found a vlsv file MinValue of "+str(setThreshold))
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
-            setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cellid)
+            setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
             print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
         else:
             print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
@@ -298,7 +299,7 @@ def plot_vdf(filename=None,
              outputdir=None, nooverwrite=None,
              draw=None,unit=None,title=None, cbtitle=None,
              tickinterval=None,
-             colormap=None, box=None, nocb=None,
+             colormap=None, box=None, nocb=None, internalcb=None,
              run=None, wmark=None, thick=1.0,
              fmin=None, fmax=None, slicethick=None, cellsize=None,
              xy=None, xz=None, yz=None, normal=None,
@@ -309,6 +310,7 @@ def plot_vdf(filename=None,
              legend=None, noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
+             axes=None,
              ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -365,8 +367,13 @@ def plot_vdf(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
     :kword nocb:        Suppress plotting of colourbar legend
+    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+
     :kword biglabel:    Plot large label (in top-left corner)
     :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
+
+    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -405,16 +412,16 @@ def plot_vdf(filename=None,
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
     # watermarkimage='/homeappl/home/marbat/appl_taito/analysator/logo_color.png'
 
-    outputprefix = ''
-    if outputdir==None:
-        outputdir=os.path.expandvars('$HOME/Plots/')
-    outputprefixind = outputdir.rfind('/')
-    if outputprefixind >= 0:
-        outputprefix = outputdir[outputprefixind+1:]
-        outputdir = outputdir[:outputprefixind+1]
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
-
+    if draw==None and axes==None:
+        outputprefix = ''
+        if outputdir==None:
+            outputdir=os.path.expandvars('$HOME/Plots/')
+        outputprefixind = outputdir.rfind('/')
+        if outputprefixind >= 0:
+            outputprefix = outputdir[outputprefixind+1:]
+            outputdir = outputdir[:outputprefixind+1]
+        if not os.path.exists(outputdir):
+            os.makedirs(outputdir)
 
     # Input file or object
     if filename!=None:
@@ -451,26 +458,29 @@ def plot_vdf(filename=None,
     else:
         plot_title = title
 
-    # step, used for file name
-    if step!=None:
-        stepstr = '_'+str(step).rjust(7,'0')
-    else:
-        if timeval != None:
-            stepstr = '_t'+str(np.int(timeval))
+    if draw==None and axes==None:
+        # step, used for file name
+        if step!=None:
+            stepstr = '_'+str(step).rjust(7,'0')
         else:
-            stepstr = ''
+            if timeval != None:
+                stepstr = '_t'+str(np.int(timeval))
+            else:
+                stepstr = ''
 
-    # If run name isn't given, just put "plot" in the output file name
-    if run==None:
-        run='plot'
-        # If working within CSC filesystem, make a guess:
-        if filename[0:16]=="/proj/vlasov/2D/":
-            run = filename[16:19]
+        # If run name isn't given, just put "plot" in the output file name
+        if run==None:
+            run='plot'
+            # If working within CSC filesystem, make a guess:
+            if filename!=None:
+                if type(filename) is str:
+                    if filename[0:16]=="/proj/vlasov/2D/":
+                        run = filename[16:19]
         
-    # Indicate projection in file name
-    projstr=""
-    if slicethick==0:
-        projstr="_proj"
+        # Indicate projection in file name
+        projstr=""
+        if slicethick==0:
+            projstr="_proj"
 
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
@@ -526,10 +536,11 @@ def plot_vdf(filename=None,
             velUnitStr = r'[$10^{'+str(int(unit))+'}$ m/s]'
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw!=None:
-        plt.switch_backend('TkAgg')
-    else:
-        plt.switch_backend('Agg')  
+    if axes==None: # If axes are provided, leave backend as-is.
+        if draw!=None:
+            plt.switch_backend('TkAgg')
+        else:
+            plt.switch_backend('Agg')  
 
 
     if (cellids==None and coordinates==None and coordre==None):
@@ -593,8 +604,9 @@ def plot_vdf(filename=None,
                 return
 
 
-    if draw!=None:
-        # Program was requested to draw to screen instead of saving to a file. Just handle the first cellid.
+    if draw!=None or axes!=None:
+        # Program was requested to draw to screen or existing axes instead of saving to a file. 
+        # Just handle the first cellid.
         if len(cellids) > 1:
             cellids = [cellids[0]]
             print("User requested on-screen display, only plotting first requested cellid!")
@@ -685,14 +697,15 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_{\perp}$ "+velUnitStr
 
 
-        savefigname=outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite!=None and os.path.exists(savefigname)):
-            # Also check that file is not empty
-            if os.stat(savefigname).st_size > 0:
-                return
-            else:
-                print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+        if draw==None and axes==None:
+            savefigname=outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+            # Check if target file already exists and overwriting is disabled
+            if (nooverwrite!=None and os.path.exists(savefigname)):
+                # Also check that file is not empty
+                if os.stat(savefigname).st_size > 0:
+                    return
+                else:
+                    print("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -809,13 +822,17 @@ def plot_vdf(filename=None,
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
         # default for square figure is figsize=[4.0,3.15]
         figsize = [4.0,3.15*ratio]
-        # Create 300 dpi image of suitable size
-        fig = plt.figure(figsize=figsize,dpi=300)
-    
+
         # Plot the slice         
         [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
-        fig1 = plt.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
-        ax1 = plt.gca() # get current axes
+
+        if axes==None:
+            # Create 300 dpi image of suitable size
+            fig = plt.figure(figsize=figsize,dpi=300)
+            ax1 = plt.gca() # get current axes
+        else:
+            ax1=axes
+        fig1 = ax1.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
 
         # Some hacked lines to print a selection of distribution function value
         # printout = np.ma.masked_where(abs(YmeshXY[:-1,:-1]) > 15.e3/velUnit, binsXY) 
@@ -825,13 +842,18 @@ def plot_vdf(filename=None,
         # print(YmeshXY[:-1,:-1][~printout.mask])
 
 
-        plt.xlim([val/velUnit for val in yvalsrange])
-        plt.ylim([val/velUnit for val in xvalsrange])
+        #plt.xlim([val/velUnit for val in yvalsrange])
+        #plt.ylim([val/velUnit for val in xvalsrange])
+        ax1.set_xlim([val/velUnit for val in yvalsrange])
+        ax1.set_ylim([val/velUnit for val in xvalsrange])
         ax1.set_aspect('equal')
 
         # Grid
-        plt.grid(color='grey',linestyle='-')
-        plt.minorticks_on()
+        #plt.grid(color='grey',linestyle='-')
+        #plt.minorticks_on()
+        ax1.grid(color='grey',linestyle='-')
+        ax1.tick_params(axis='x',which='minor')
+        ax1.tick_params(axis='y',which='minor')
 
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
@@ -845,12 +867,20 @@ def plot_vdf(filename=None,
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         if noxlabels==None:
-            plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
-            plt.xticks(fontsize=fontsize,fontweight='black')
+            #plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
+            #plt.xticks(fontsize=fontsize,fontweight='black')
+            ax1.set_xlabel(pltxstr,fontsize=fontsize,weight='black')
+            for item in ax1.get_xticklabels():
+                item.set_fontsize(fontsize)
+                item.set_fontweight('black')
             ax1.xaxis.offsetText.set_fontsize(fontsize)
         if noylabels==None:
-            plt.ylabel(pltystr,fontsize=fontsize,weight='black')
-            plt.yticks(fontsize=fontsize,fontweight='black')
+            #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
+            #plt.yticks(fontsize=fontsize,fontweight='black')
+            ax1.set_ylabel(pltystr,fontsize=fontsize,weight='black')
+            for item in ax1.get_yticklabels():
+                item.set_fontsize(fontsize)
+                item.set_fontweight('black')
             ax1.yaxis.offsetText.set_fontsize(fontsize)
 
         if biglabel!=None:
@@ -920,23 +950,47 @@ def plot_vdf(filename=None,
             if cbtitleuse==None:
                 if wflux==None:
                     cbtitleuse=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
-                    #plt.text(1.05, 1.22, r"$f(v)$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-                    #plt.text(1.02, 1.1, r"$[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
                 else:
                     cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
-                    #plt.text(1.05, 1.22, r"flux F", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
-                    #plt.text(1.02, 1.1, r"$[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$", fontsize=fontsize3,weight='black', transform=ax1.transAxes)
+
+            if internalcb==None:
+                # Witchcraft used to place colourbar
+                divider = make_axes_locatable(ax1)
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                horalign="left"
+                cbdir="right"
+            else:
+                # Colorbar within plot area
+                cbloc=1
+                cbdir="left"
+                horalign="right"
+                if type(internalcb) is str:
+                    if internalcb=="NW":
+                        cbloc=2
+                        cbdir="right"
+                        horalign="left"
+                    if internalcb=="SW": 
+                        cbloc=3
+                        cbdir="right"
+                        horalign="left"
+                    if internalcb=="SE": 
+                        cbloc=4
+                        cbdir="left"
+                        horalign="right"
+                #cax = plt.axes(cbloc)
+                cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
+                                 bbox_transform=ax1.transAxes, borderpad=1.0)
+                # borderpad default value is 0.5, need to increase it to make room for colorbar title
+
                    
-            # Witchcraft used to place colourbar
-            divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
             # First draw colorbar
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
             cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
             cb.outline.set_linewidth(thick)
+            cb.ax.yaxis.set_ticks_position(cbdir)
 
             # Colourbar title
-            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold')
+            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
             # # if too many subticks:
             # # For non-square pictures, adjust tick count
@@ -977,14 +1031,14 @@ def plot_vdf(filename=None,
             bbox_inches='tight'
 
         # Add Vlasiator watermark
-        if wmark!=None:        
+        if wmark!=None and axes==None:        
             wm = plt.imread(get_sample_data(watermarkimage))
             newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
             newax.imshow(wm)
             newax.axis('off')
 
         # Save output or draw on-screen
-        if draw==None:
+        if draw==None and axes==None:
             # Note: generated title can cause strange PNG header problems
             # in rare cases. This problem is under investigation, but is related to the exact generated
             # title string. This try-catch attempts to simplify the time string until output succedes.
@@ -1015,6 +1069,8 @@ def plot_vdf(filename=None,
                 print("Due to rendering error, replaced image title with "+plot_title)
             if savechange>=0:
                 print(savefigname+"\n")
-        else:
+
+        elif axes==None:
+            # Draw on-screen
             plt.draw()
             plt.show()

@@ -34,8 +34,7 @@ from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
-
-# TODO: flag for plotting the panel edge-to-edge of the figure.
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
@@ -81,7 +80,7 @@ def plot_colormap(filename=None,
                   title=None, cbtitle=None, draw=None, usesci=None,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
-                  run=None, nocb=None,
+                  run=None, nocb=None, internalcb=None,
                   wmark=None,wmarkb=None,
                   unit=None, thick=1.0,scale=1.0,
                   tickinterval=None,
@@ -141,6 +140,8 @@ def plot_colormap(filename=None,
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
     :kword nocb:        Set to suppress drawing of colourbar
+    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
 
     :kword external:    Optional function to use for external plotting of e.g. contours. The function
                         receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
@@ -156,7 +157,8 @@ def plot_colormap(filename=None,
     :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
                         functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). 
                         This causes pass_vars to become a list of timesteps, with each timestep containing
-                        a list of numpy arrays as for regular pass_vars.
+                        a list of numpy arrays as for regular pass_vars. Does not work if working from a
+                        vlsv-object.
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -206,11 +208,11 @@ def plot_colormap(filename=None,
     # Input file or object
     if filename!=None:
         f=pt.vlsvfile.VlsvReader(filename)
-    elif vlsvobj!=None:
-        f=vlsvobj
     elif ((filedir!=None) and (step!=None)):
         filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
+    elif vlsvobj!=None:
+        f=vlsvobj
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
@@ -221,7 +223,8 @@ def plot_colormap(filename=None,
             fluxfile = fluxdir+'flux.'+str(step).rjust(7,'0')+'.bin'
             if not os.path.exists(fluxfile):
                 fluxfile = fluxdir+'bulk.'+str(step).rjust(7,'0')+'.bin'
-        else:            
+        else:
+            # Parse step from filename
             fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
             if not os.path.exists(fluxfile):
                 fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
@@ -269,14 +272,18 @@ def plot_colormap(filename=None,
     if step!=None:
         stepstr = '_'+str(step).rjust(7,'0')
     else:
-        stepstr = ''
+        if filename!=None:
+            stepstr = '_'+filename[-12:-5]
+        else:
+            stepstr = ''
 
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
         run='plot'
-        # If working within CSC filesystem, make a guess:
-        if filename[0:16]=="/proj/vlasov/2D/":
-            run = filename[16:19]
+        if filename!=None:
+            # If working within CSC filesystem, make a guess:
+            if filename[0:16]=="/proj/vlasov/2D/":
+                run = filename[16:19]
 
     # Verify validity of operator
     opstr=''
@@ -492,11 +499,21 @@ def plot_colormap(filename=None,
                 pass_maps.append(pass_map)
         else:
             # Or gather over a number of time steps
-            currstep = int(filename[-12:-5])
+            if step!=None and filename!=None:
+                currstep = step
+            else:
+                if filename!=None:
+                    # parse from filename
+                    currstep = int(filename[-12:-5])
+                else:
+                    print("Error, cannot determine current step for time extent extraction!")
+                    return
+
             tavg_step_i = -1
             tavg_step = int(pass_times)
             for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
                 tavg_step_i = tavg_step_i+1
+                # Construct using known filename.
                 filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
                 print(filenamestep)
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
@@ -626,7 +643,7 @@ def plot_colormap(filename=None,
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = boxleny/boxlenx
     # Special case for edge-to-edge figures
-    if len(plot_title)==0 and nocb!=None and noborder!=None and noxlabels!=None and noylabels!=None:
+    if len(plot_title)==0 and (nocb!=None or internalcb!=None) and noborder!=None and noxlabels!=None and noylabels!=None:
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
 
     # default for square figure is figsize=[4.0,3.15]
@@ -753,23 +770,49 @@ def plot_colormap(filename=None,
         
 
     if nocb==None:
-        # Witchcraft used to place colourbar
-        divider = make_axes_locatable(ax1)
-        cax = divider.append_axes("right", size="5%", pad=0.05)
+        if internalcb==None:
+            # Witchcraft used to place colourbar
+            divider = make_axes_locatable(ax1)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            horalign="left"
+            cbdir="right"
+        else:
+            # Colorbar within plot area
+            cbloc=1
+            cbdir="left"
+            horalign="right"
+            if type(internalcb) is str:
+                if internalcb=="NW":
+                    cbloc=2
+                    cbdir="right"
+                    horalign="left"
+                if internalcb=="SW": 
+                    cbloc=3
+                    cbdir="right"
+                    horalign="left"
+                if internalcb=="SE": 
+                    cbloc=4
+                    cbdir="left"
+                    horalign="right"
+            #cax = plt.axes(cbloc)
+            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
+                             bbox_transform=ax1.transAxes, borderpad=1.0)
+            # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
         # Colourbar title
         if len(cb_title_use)!=0:
             #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
-            cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold')
+            cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # First draw colorbar
         if usesci==0:        
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
         else:
             cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
         cb.outline.set_linewidth(thick)
-
+        cb.ax.yaxis.set_ticks_position(cbdir)
+            
         # if too many subticks:
         if lin==None and usesci!=0 and symlog==None:
             # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
