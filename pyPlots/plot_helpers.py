@@ -435,47 +435,6 @@ def expr_betatron(pass_maps):
     result = (thisPperp/thisBmag)*(dBdt + (UExB*gradB).sum(-1)) 
     return result.T
 
-def expr_betatron_bulkV(pass_maps):
-    # pass_maps is a list of numpy arrays
-    # Each array has 2 dimensions [ysize, xsize]
-    # or 3 dimensions [ysize, xsize, components]
-
-    # for time averaging, it's a list of lists, where the top level
-    # is 2N+1 timesteps with the middle one the requested time step
-
-    # This custom expression returns a proxy for betatron acceleration
-    # Instead of calculating plasma motion via ExB drift, we use simple bulk flow.
-    if type(pass_maps[0]) is not list:
-        # Not a list of time steps, calculating this value does not make sense.
-        print("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
-
-    # Need pass_maps B, V, P_perp
-
-    # Multiple time steps were found. This should be 3, for a time derivative.
-    ntimes = len(pass_maps)
-    curri = (ntimes-1)/2
-    thesemaps = pass_maps[curri]
-    pastmaps = pass_maps[curri-1]
-
-    thisB = TransposeVectorArray(thesemaps[0])
-    pastB = TransposeVectorArray(pastmaps[0])
-    thisBmag = np.linalg.norm(thisB, axis=-1)
-    pastBmag = np.linalg.norm(pastB, axis=-1)
-    dBdt = (thisBmag-pastBmag)/DT
-
-    thisV = TransposeVectorArray(thesemaps[1])
-    thisPperp = thesemaps[2].T
-
-    # E x B drift = (E X B)/B^2
-    B2 = (thisBmag*thisBmag)[:,:,np.newaxis]
-    gradB = numgradscalar(thisBmag)
-    
-    # dot product is (A*B).sum(-1)
-    result = (thisPperp/thisBmag)*(dBdt + (thisV*gradB).sum(-1)) 
-    return result.T
-
-
 def expr_Fermi(pass_maps):
     # Needs B, E, P_parallel
     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
@@ -492,25 +451,6 @@ def expr_Fermi(pass_maps):
     # (A*B).sum(-1) is dot product
     result = Pparallel*(UExB*kappa).sum(-1)
     return result.T
-
-
-def expr_Fermi_bulkV(pass_maps):
-    # Needs B, V, P_parallel
-    # Instead of calculating plasma motion via ExB drift, we use simple bulk flow.
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Vmap = TransposeVectorArray(pass_maps[1]) # bulk flow
-    Pparallel = pass_maps[2].T #Pressure (scalar)
-
-    Bmag = np.linalg.norm(Bmap, axis=-1)
-    B2 = (Bmag*Bmag)[:,:,np.newaxis]
-
-    Bnorm = (Bmap/Bmag[:,:,np.newaxis])
-    Bjac = numjacobian(Bnorm)
-    kappa = numvecdottensor(Bnorm,Bjac)
-    # (A*B).sum(-1) is dot product
-    result = Pparallel*(Vmap*kappa).sum(-1)
-    return result.T
-
 
 def expr_EJ_parallel(pass_maps):
     # Needs B,E
