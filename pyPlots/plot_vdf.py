@@ -852,7 +852,7 @@ def plot_vdf(filename=None,
         # Grid
         #plt.grid(color='grey',linestyle='-')
         #plt.minorticks_on()
-        ax1.grid(color='grey',linestyle='-')
+        ax1.grid(color='grey',linestyle='-',lw=thick)
         ax1.tick_params(axis='x',which='minor')
         ax1.tick_params(axis='y',which='minor')
 

@@ -87,7 +87,7 @@ def plot_colormap(filename=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
-                  #exprvals=None, #extvals=None, #expr_timeavg=None, # These were consolidated into pass_vars
+                  valscal=1.0,
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
@@ -150,6 +150,8 @@ def plot_colormap(filename=None,
                         the contents of which are maps of variables. Each is either of size [ysize,xsize]
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                         Remember to set vmin and vmax manually.
+    :kword valscal:     Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+                        or from tesla to nanotesla
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
                         as a list of numpy arrays. Each is either of size [ysize,xsize] or 
@@ -377,11 +379,19 @@ def plot_colormap(filename=None,
     ##########
     if expression==None:
         if var == 'rho':
-            cb_title = r"$n_\mathrm{p} [\mathrm{m}^{-3}]$"
+            cb_title = r"$n_\mathrm{p}$"
+            if valscal==1:
+                cb_title = r"$n_\mathrm{p} [\mathrm{m}^{-3}]$"
+            if valscal==1.e6:
+                cb_title = r"$n_\mathrm{p} [\mathrm{cm}^{-3}]$"
             datamap = f.read_variable("rho")
 
         elif var == 'rhoBeam':
-            cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
+            cb_title = r"$n_{\mathrm{beam}}$"
+            if valscal==1:
+                cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
+            if valscal==1.e6:
+                cb_title = r"$n_{\mathrm{beam}} [\mathrm{cm}^{-3}]$"
             datamap = f.read_variable("RhoBackstream")
 
         elif var == 'beta':
@@ -389,7 +399,11 @@ def plot_colormap(filename=None,
             datamap = f.read_variable("beta")
 
         elif var == 'temperature':
-            cb_title = r"$T$ [K]"
+            cb_title = r"$T$"
+            if valscal==1:
+                cb_title = r"$T$ [K]"
+            if valscal==1.e-6:
+                cb_title = r"$T$ [MK]"
             datamap = f.read_variable("Temperature")
 
         elif var == 'MA':
@@ -406,37 +420,67 @@ def plot_colormap(filename=None,
 
         elif var == 'va':
             cb_title = r"$v_\mathrm{A}$"
+            if valscal==1:
+                cb_title = r"$v_\mathrm{A}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+            if valscal==1.e-3:
+                cb_title = r"$v_\mathrm{A}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
             datamap = f.read_variable("va")
 
         elif var == 'vms':
             cb_title = r"$v_\mathrm{ms}$"
+            if valscal==1:
+                cb_title = r"$v_\mathrm{ms}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+            if valscal==1.e-3:
+                cb_title = r"$v_\mathrm{ms}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
             datamap = f.read_variable("vms")
 
         elif var == 'B':
             if op==None:
-                cb_title = r"$|B|$ [T]"
+                cb_title = r"$|B|$"
+                if valscal==1:
+                    cb_title = r"$|B|$ [T]"
+                if valscal==1.e9:
+                    cb_title = r"$|B|$ [nT]"
                 datamap = f.read_variable("B",operator='magnitude')
             else:
-                cb_title = r"$B_"+op+"$ [T]"
+                cb_title = r"$B_"+op+"$"
+                if valscal==1:
+                    cb_title = r"$B_"+op+"$ [T]"
+                if valscal==1.e9:
+                    cb_title = r"$B_"+op+"$ [nT]"
                 datamap = f.read_variable("B",operator=op)
-                # datamap = datamap*1e+9 # could be used to ouptut nanotesla instead of tesla
 
         elif var == 'E':
             if op==None:
-                cb_title = r"$|E|$ [V/m]"
+                cb_title = r"$|E|$"
+                if valscal==1:
+                    cb_title = r"$|E|$ [V/m]"
+                if valscal==1.e3:
+                    cb_title = r"$|E|$ [mV/m]"
                 datamap = f.read_variable("E",operator='magnitude')
             else:
-                cb_title = r"$E_"+op+"$ [V/m]"
+                cb_title = r"$E_"+op+"$"
+                if valscal==1:
+                    cb_title = r"$E_"+op+"$ [V/m]"
+                if valscal==1.e3:
+                    cb_title = r"$E_"+op+"$ [mV/m]"
                 datamap = f.read_variable("E",operator=op)
 
         elif var == 'V':
             if op==None:
-                cb_title = r"$|V|\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+                cb_title = r"$|V|$"
+                if valscal==1:
+                    cb_title = r"$|V|\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+                if valscal==1.e-3:
+                    cb_title = r"$|V|\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
                 datamap = f.read_variable("V",operator='magnitude')
             else:
-                cb_title = r"$V_"+op+"\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+                cb_title = r"$V_"+op+"$"
+                if valscal==1:
+                    cb_title = r"$V_"+op+"\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
+                if valscal==1.e-3:
+                    cb_title = r"$V_"+op+"\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
                 datamap = f.read_variable("V",operator=op)
-                # datamap = datamap*1e-3 # Plot this as km/s instead of m/s
 
         else:
             # Pipe all other vars directly to analysator
@@ -543,6 +587,9 @@ def plot_colormap(filename=None,
             print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
             return -1
 
+    # Scale if requested
+    datamap = datamap * valscal
+
     # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
     # e.g. pressure is not, and these cells aren't excluded by this method.
     if f.check_variable("rho"):
@@ -644,13 +691,14 @@ def plot_colormap(filename=None,
         boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = boxleny/boxlenx
-    # Special case for edge-to-edge figures
-    if len(plot_title)==0 and (nocb!=None or internalcb!=None) and noborder!=None and noxlabels!=None and noylabels!=None:
-        ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
 
     # default for square figure is figsize=[4.0,3.15]
     figsize = [4.0,3.15*ratio]
-    #figsize = [8.0,8.0*ratio]
+
+    # Special case for edge-to-edge figures
+    if len(plot_title)==0 and (nocb!=None or internalcb!=None) and noborder!=None and noxlabels!=None and noylabels!=None:
+        ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
+        figsize = [8.0,8.0*ratio]
 
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
