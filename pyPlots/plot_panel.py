@@ -151,7 +151,8 @@ def plot_colormap(filename=None,
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                         Remember to set vmin and vmax manually.
     :kword valscal:     Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
-                        or from tesla to nanotesla
+                        or from tesla to nanotesla. Guesses correct units for colourbar for some known
+                        variables.
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
                         as a list of numpy arrays. Each is either of size [ysize,xsize] or 
@@ -380,17 +381,17 @@ def plot_colormap(filename=None,
     if expression==None:
         if var == 'rho':
             cb_title = r"$n_\mathrm{p}$"
-            if valscal==1:
+            if np.isclose(valscal,1.):
                 cb_title = r"$n_\mathrm{p} [\mathrm{m}^{-3}]$"
-            if valscal==1.e6:
+            if np.isclose(valscal,1.e-6):
                 cb_title = r"$n_\mathrm{p} [\mathrm{cm}^{-3}]$"
             datamap = f.read_variable("rho")
 
         elif var == 'rhoBeam':
             cb_title = r"$n_{\mathrm{beam}}$"
-            if valscal==1:
+            if np.isclose(valscal,1.):
                 cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
-            if valscal==1.e6:
+            if np.isclose(valscal,1.e-6):
                 cb_title = r"$n_{\mathrm{beam}} [\mathrm{cm}^{-3}]$"
             datamap = f.read_variable("RhoBackstream")
 
@@ -400,9 +401,9 @@ def plot_colormap(filename=None,
 
         elif var == 'temperature':
             cb_title = r"$T$"
-            if valscal==1:
+            if np.isclose(valscal,1.):
                 cb_title = r"$T$ [K]"
-            if valscal==1.e-6:
+            if np.isclose(valscal,1.e-6):
                 cb_title = r"$T$ [MK]"
             datamap = f.read_variable("Temperature")
 
@@ -420,67 +421,67 @@ def plot_colormap(filename=None,
 
         elif var == 'va':
             cb_title = r"$v_\mathrm{A}$"
-            if valscal==1:
+            if np.isclose(valscal,1.):
                 cb_title = r"$v_\mathrm{A}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-            if valscal==1.e-3:
+            if np.isclose(valscal,1.e-3):
                 cb_title = r"$v_\mathrm{A}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
             datamap = f.read_variable("va")
 
         elif var == 'vms':
             cb_title = r"$v_\mathrm{ms}$"
-            if valscal==1:
+            if np.isclose(valscal,1.):
                 cb_title = r"$v_\mathrm{ms}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-            if valscal==1.e-3:
+            if np.isclose(valscal,1.e-3):
                 cb_title = r"$v_\mathrm{ms}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
             datamap = f.read_variable("vms")
 
         elif var == 'B':
             if op==None:
                 cb_title = r"$|B|$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$|B|$ [T]"
-                if valscal==1.e9:
+                if np.isclose(valscal,1.e9):
                     cb_title = r"$|B|$ [nT]"
                 datamap = f.read_variable("B",operator='magnitude')
             else:
                 cb_title = r"$B_"+op+"$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$B_"+op+"$ [T]"
-                if valscal==1.e9:
+                if np.isclose(valscal,1.e9):
                     cb_title = r"$B_"+op+"$ [nT]"
                 datamap = f.read_variable("B",operator=op)
 
         elif var == 'E':
             if op==None:
                 cb_title = r"$|E|$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$|E|$ [V/m]"
-                if valscal==1.e3:
+                if np.isclose(valscal,1.e3):
                     cb_title = r"$|E|$ [mV/m]"
                 datamap = f.read_variable("E",operator='magnitude')
             else:
                 cb_title = r"$E_"+op+"$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$E_"+op+"$ [V/m]"
-                if valscal==1.e3:
+                if np.isclose(valscal,1.e3):
                     cb_title = r"$E_"+op+"$ [mV/m]"
                 datamap = f.read_variable("E",operator=op)
 
-        elif var == 'V':
+        elif var == 'V' or var == 'v':
             if op==None:
                 cb_title = r"$|V|$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$|V|\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-                if valscal==1.e-3:
+                if np.isclose(valscal,1.e-3):
                     cb_title = r"$|V|\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-                datamap = f.read_variable("V",operator='magnitude')
+                datamap = f.read_variable(var,operator='magnitude')
             else:
                 cb_title = r"$V_"+op+"$"
-                if valscal==1:
+                if np.isclose(valscal,1.):
                     cb_title = r"$V_"+op+"\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-                if valscal==1.e-3:
+                if np.isclose(valscal,1.e-3):
                     cb_title = r"$V_"+op+"\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-                datamap = f.read_variable("V",operator=op)
+                datamap = f.read_variable(var,operator=op)
 
         else:
             # Pipe all other vars directly to analysator
