@@ -104,11 +104,11 @@ def plot_colormap(filename=None,
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
-     
-    :kword var:         variable to plot, e.g. rho, rhoBeam, beta, temperature, MA, Mms, va, vms,
-                        E, B, V or others. Accepts any variable known by analysator/pytools.
-                        Per-population variables are simply given as "proton/rho" etc.
-    :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
+
+    :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
+                        E, B, v, V or others. Accepts any variable known by analysator/pytools.
+                        Per-population variables are simply given as "proton/rho" etc
+    :kword op:          Operator to apply to variable: None, magnitude, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
@@ -158,7 +158,10 @@ def plot_colormap(filename=None,
                         as a list of numpy arrays. Each is either of size [ysize,xsize] or 
                         for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
     :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
-                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). 
+                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
+                        pass_times has two values, the first is the extent before, the second after.
+                        (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
+                        for a total of four timesteps)
                         This causes pass_vars to become a list of timesteps, with each timestep containing
                         a list of numpy arrays as for regular pass_vars. Does not work if working from a
                         vlsv-object.
@@ -244,7 +247,7 @@ def plot_colormap(filename=None,
     if colormap==None:
         # Default values
         colormap="hot_desaturated"
-        if op!=None:
+        if op!=None and op!='magnitude':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -289,16 +292,19 @@ def plot_colormap(filename=None,
                 run = filename[16:19]
 
     # Verify validity of operator
-    opstr=''
-    if op!=None:
+    if op!=None and op!='magnitude':
         if op!='x' and op!='y' and op!='z':
             print("Unknown operator "+op)
-            op=None            
+            op='magnitude'           
+            opstr=''
         else:
             # For components, always use linear scale, unless symlog is set
             opstr='_'+op
             if symlog==None:
                 lin=1
+    else:
+        op='magnitude'
+        opstr=''
 
     # Output file name
     if expression!=None:
@@ -378,136 +384,110 @@ def plot_colormap(filename=None,
     ##########
     # Read data and calculate required variables
     ##########
-    if expression==None:
+    if expression==None:        
+        # Latexify variable name
+        cb_title_use = r""+var.replace("_","\_")
+        # Split variable into population form if needed
+        pop=None
+        if '/' in var:
+            pop = var.split('/',1)[0]
+            var = var.split('/',1)[1]
         if var == 'rho':
-            cb_title = r"$n_\mathrm{p}$"
-            if np.isclose(valscal,1.):
-                cb_title = r"$n_\mathrm{p} [\mathrm{m}^{-3}]$"
-            if np.isclose(valscal,1.e-6):
-                cb_title = r"$n_\mathrm{p} [\mathrm{cm}^{-3}]$"
-            datamap = f.read_variable("rho")
-
+            cb_title_use = r"$n_\mathrm{p}$"
         elif var == 'rhoBeam':
-            cb_title = r"$n_{\mathrm{beam}}$"
-            if np.isclose(valscal,1.):
-                cb_title = r"$n_{\mathrm{beam}} [\mathrm{m}^{-3}]$"
-            if np.isclose(valscal,1.e-6):
-                cb_title = r"$n_{\mathrm{beam}} [\mathrm{cm}^{-3}]$"
-            datamap = f.read_variable("RhoBackstream")
-
+            var = 'RhoBackstream'
+            cb_title_use = r"$n_{\mathrm{st}}$"
         elif var == 'beta':
-            cb_title = r"$\beta$"
-            datamap = f.read_variable("beta")
-
-        elif var == 'temperature':
-            cb_title = r"$T$"
-            if np.isclose(valscal,1.):
-                cb_title = r"$T$ [K]"
-            if np.isclose(valscal,1.e-6):
-                cb_title = r"$T$ [MK]"
-            datamap = f.read_variable("Temperature")
-
+            cb_title_use = r"$\beta$"
+        elif var.lower() == 'temperature':
+            var = "Temperature"
+            cb_title_use = r"$T$"
         elif var == 'MA':
-            cb_title = r"$\mathrm{M}_\mathrm{A}$"
-            Vmag = f.read_variable("v",operator='magnitude')
-            va = f.read_variable("va")
-            datamap = Vmag/va
-
+            cb_title_use = r"$\mathrm{M}_\mathrm{A}$"
         elif var == 'Mms':
-            cb_title = r"$\mathrm{M}_\mathrm{ms}$"
-            Vmag = f.read_variable("v",operator='magnitude')
-            vms = f.read_variable("vms")
-            datamap = Vmag/vms
-
+            cb_title_use = r"$\mathrm{M}_\mathrm{ms}$"
         elif var == 'va':
-            cb_title = r"$v_\mathrm{A}$"
-            if np.isclose(valscal,1.):
-                cb_title = r"$v_\mathrm{A}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-            if np.isclose(valscal,1.e-3):
-                cb_title = r"$v_\mathrm{A}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-            datamap = f.read_variable("va")
-
+            cb_title_use = r"$v_\mathrm{A}$"
         elif var == 'vms':
-            cb_title = r"$v_\mathrm{ms}$"
-            if np.isclose(valscal,1.):
-                cb_title = r"$v_\mathrm{ms}\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-            if np.isclose(valscal,1.e-3):
-                cb_title = r"$v_\mathrm{ms}\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-            datamap = f.read_variable("vms")
-
-        elif var == 'B':
-            if op==None:
-                cb_title = r"$|B|$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$|B|$ [T]"
-                if np.isclose(valscal,1.e9):
-                    cb_title = r"$|B|$ [nT]"
-                datamap = f.read_variable("B",operator='magnitude')
-            else:
-                cb_title = r"$B_"+op+"$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$B_"+op+"$ [T]"
-                if np.isclose(valscal,1.e9):
-                    cb_title = r"$B_"+op+"$ [nT]"
-                datamap = f.read_variable("B",operator=op)
-
-        elif var == 'E':
-            if op==None:
-                cb_title = r"$|E|$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$|E|$ [V/m]"
-                if np.isclose(valscal,1.e3):
-                    cb_title = r"$|E|$ [mV/m]"
-                datamap = f.read_variable("E",operator='magnitude')
-            else:
-                cb_title = r"$E_"+op+"$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$E_"+op+"$ [V/m]"
-                if np.isclose(valscal,1.e3):
-                    cb_title = r"$E_"+op+"$ [mV/m]"
-                datamap = f.read_variable("E",operator=op)
-
+            cb_title_use = r"$v_\mathrm{ms}$"
         elif var == 'V' or var == 'v':
-            if op==None:
-                cb_title = r"$|V|$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$|V|\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-                if np.isclose(valscal,1.e-3):
-                    cb_title = r"$|V|\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-                datamap = f.read_variable(var,operator='magnitude')
-            else:
-                cb_title = r"$V_"+op+"$"
-                if np.isclose(valscal,1.):
-                    cb_title = r"$V_"+op+"\,[\mathrm{m}\,\mathrm{s}^{-1}]$"
-                if np.isclose(valscal,1.e-3):
-                    cb_title = r"$V_"+op+"\,[\mathrm{km}\,\mathrm{s}^{-1}]$"
-                datamap = f.read_variable(var,operator=op)
+            cb_title_use = r"V"
+        # cartesian component in title
+        if op!=None and op!="magnitude":
+            cb_title_use = cb_titlevar+"$_"+op+"$"
+        # Restore population request to variable and title
+        if pop!=None:
+            cb_title_use = pop + " " + cb_title_use
+            var = pop+"/"+var
 
-        else:
-            # Pipe all other vars directly to analysator
-            if op==None:
-                cb_title = var.replace("_","\_")
-                datamap = f.read_variable(var)
-                # If value was vector value, take magnitude
-                if np.ndim(datamap) != 1:
-                    cb_title = r"$|"+var+"|$"
-                    datamap = np.linalg.norm(np.asarray(datamap),axis=-1)
-            else:
-                cb_title = r" "+var.replace("_","\_")+"$_"+op+"$"
-                datamap = f.read_variable(var,operator=op)            
-            
+        # Read data from file
+        datamap_info = f.read_variable_info(var, operator=op)
+        datamap = datamap_info.data
+
+        # Default unit
+        datamap_unit = datamap_info.unit
+        # Latexify units
+        if datamap_info.data=="kg/m3":
+            datamap_unit = "$\mathrm{kg}\,\mathrm{m}^{-3}$"
+        if datamap_info.data=="C/m3":
+            datamap_unit = "$\mathrm{C}\,\mathrm{m}^{-3}$"
+        if datamap_info.data=="1/m3":
+            datamap_unit = "$\mathrm{m}^{-3}$"
+        if datamap_info.data=="1/m2s":
+            datamap_unit = "$\mathrm{m}^{-2}\,\mathrm{s}^{-1}$"
+        if datamap_info.data=="m/s":
+            datamap_unit = "$\mathrm{m}\,\mathrm{s}^{-1}$"
+        if datamap_info.data=="V/m":
+            datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
+        if datamap_info.data=="s3/m6":
+            datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
+        # If valscal is in use, remove units to be on the safe side
+        if not np.isclose(valscal,1.):
+            datamap_unit=""
+        # Allow specialist units for known valscal and unit combinations
+        if datamap_info.data=="s" and np.isclose(valscal,1.e6):
+            datamap_unit = "$\mu$s"
+        if datamap_info.data=="s" and np.isclose(valscal,1.e3):
+            datamap_unit = "ms"
+        if datamap_info.data=="T" and np.isclose(valscal,1.e9):
+            datamap_unit = "nT"
+        if datamap_info.data=="K" and np.isclose(valscal,1.e-6):
+            datamap_unit = "MK"
+        if datamap_info.data=="Pa" and np.isclose(valscal,1.e9):
+            datamap_unit = "nPa"
+        if datamap_info.data=="1/m3" and np.isclose(valscal,1.e-6):
+            datamap_unit = "$\mathrm{cm}^{-3}$"
+        if datamap_info.data=="m/s" and np.isclose(valscal,1.e-3):
+            datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
+        if datamap_info.data=="V/m" and np.isclose(valscal,1.e3):
+            datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
+        
+        # Add unit to colorbar title
+        if datamap_unit!="":
+            cb_title_use = cb_title_use + " ["+datamap_unit+"$]"
+
+        # Verify data shape
         if np.ndim(datamap)!=1:
             print("Error reading variable "+var+"! Exiting.")
             return -1
-
         # Reshape data to an ordered 2D array that can be plotted
         if np.ndim(datamap) != 2:
             datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        
+    else:
+        # Expression set, use generated or provided colorbar title
+        if expression.__title__!=None:
+            cb_title_use = expression.__title__
+        else:
+            cb_title_use = expression.__name__.replace("_","\_")
+
+    # Allow title override
+    if cbtitle!=None:
+        # Here allow underscores for manual math mode
+        cb_title_use = cbtitle       
 
     # Generates the mesh to map the data to.
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
-    # Generate mask for only visible section (with small buffer)
+    # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
     maskboundarybuffer = 2.*cellsize/unit
     maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
     maskgrid = np.ma.masked_where(XmeshXY>(boxcoords[1]+maskboundarybuffer), maskgrid)
@@ -554,12 +534,13 @@ def plot_colormap(filename=None,
                     print("Error, cannot determine current step for time extent extraction!")
                     return
 
-            tavg_step_i = -1
-            tavg_step = int(pass_times)
-            for avgstep in np.arange(currstep-tavg_step, currstep+tavg_step+1,1):
-                tavg_step_i = tavg_step_i+1
+            if len(pass_times)==1:
+                timesteps = np.arange(currstep-abs(int(pass_times)), currstep+abs(int(pass_times))+1,1)
+            elif len(pass_times)==2:
+                timesteps = np.arange(currstep-abs(int(pass_times[0])), currstep+abs(int(pass_times[1]))+1,1)
+            for tpass_step_i, passstep in enumerate(timesteps):
                 # Construct using known filename.
-                filenamestep = filename[:-12]+str(avgstep).rjust(7,'0')+'.vlsv'
+                filenamestep = filename[:-12]+str(passstep).rjust(7,'0')+'.vlsv'
                 print(filenamestep)
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
@@ -579,16 +560,17 @@ def plot_colormap(filename=None,
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:,:]
                             pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0),:]
-                    pass_maps[tavg_step_i].append(pass_map)
+                    pass_maps[tpass_step_i].append(pass_map)
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression!=None:
+        # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
         if np.ndim(datamap)!=2:
             print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
             return -1
 
-    # Scale if requested
+    # Scale final generated datamap if requested
     datamap = datamap * valscal
 
     # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
@@ -627,7 +609,7 @@ def plot_colormap(filename=None,
     if vmax!=None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.ma.amax(np.ma.masked_where(np.ma.getmask(rhomap),datamap) )                   
+        vmaxuse=np.ma.amax(np.ma.masked_where(np.ma.getmask(rhomap),datamap))
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components
@@ -683,7 +665,7 @@ def plot_colormap(filename=None,
         if str(matplotlib.get_backend()) is not 'Agg':
             plt.switch_backend('Agg')  
 
-    # Select image shape to match plotted area, (with some accounting for axes etc)
+    # Select image shape to match plotted area
     boxlenx = boxcoords[1]-boxcoords[0]
     boxleny = boxcoords[3]-boxcoords[2]
     # Round the values so that image sizes won't wobble when there's e.g. a moving box and numerical inaccuracies.
@@ -693,7 +675,7 @@ def plot_colormap(filename=None,
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
     ratio = boxleny/boxlenx
 
-    # default for square figure is figsize=[4.0,3.15]
+    # default for square figure is figsize=[4.0,3.15] (with some accounting for axes etc)
     figsize = [4.0,3.15*ratio]
 
     # Special case for edge-to-edge figures
@@ -703,7 +685,7 @@ def plot_colormap(filename=None,
 
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=figsize,dpi=300)
-    
+    # Plot the actual mesh
     fig1 = plt.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
     ax1 = plt.gca() # get current axes
 
@@ -809,16 +791,6 @@ def plot_colormap(filename=None,
     if external!=None:
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
         extresult=external(ax1, XmeshPass,YmeshPass, pass_maps)
-
-    if cbtitle==None:
-        if expression!=None:
-            cb_title_use = expression.__name__.replace("_","\_")
-        else:
-            cb_title_use = cb_title
-    else:
-        # Here allow underscores for manual math mode
-        cb_title_use = cbtitle
-        
 
     if nocb==None:
         if internalcb==None:

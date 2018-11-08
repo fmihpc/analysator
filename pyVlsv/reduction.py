@@ -186,6 +186,22 @@ def va( variables ):
    vA = np.divide( Btot,np.sqrt( mu_0*rho_m ) )
    return vA
 
+def MA( variables ):
+   ''' Data reducer function for getting the Alfvenic Mach number
+   '''
+   bulkv = variables[0]
+   Alfvenspeed = np.ma.masked_less_equal(variables[1],0)
+   MA = np.ma.divide(bulkv, Alfvenspeed)
+   return MA
+
+def Mms( variables ):
+   ''' Data reducer function for getting the magnetosonic Mach number
+   '''
+   bulkv = variables[0]
+   magnetosonicspeed = np.ma.masked_less_equal(variables[1],0)
+   Mms = np.ma.divide(bulkv, magnetosonicspeed)
+   return Mms
+
 def PTensor( variables ):
    ''' Data reducer function to reconstruct the pressure tensor from
        the vlsv diagonal and off-diagonal components.
@@ -444,6 +460,8 @@ datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v
 datareducers["vms"] =                    DataReducerVariable(["Pressure", "rho", "B"], vms, "m/s")
 datareducers["vs"] =                     DataReducerVariable(["Pressure", "rho"], vs, "m/s")
 datareducers["va"] =                     DataReducerVariable(["rho", "B"], va, "m/s")
+datareducers["MA"] =                     DataReducerVariable(["v", "va"], MA, "")
+datareducers["Mms"] =                    DataReducerVariable(["v", "vms"], Mms, "")
 datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorBackstream"] =      DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa")
 datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], PTensorRotated, "Pa")

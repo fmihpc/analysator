@@ -839,8 +839,62 @@ class VlsvReader(object):
       '''
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
+
+      # Define some units for intrinsic values
+      unitsdict = {
+         'Rhom': 'kg/m3',
+         'Rhoq': 'C/m3',
+         'rho': '1/m3',
+         'RhoBackstream': '1/m3',
+         'RhoNonBackstream': '1/m3',
+         'rho_v': '1/m2s',
+         'RhoVBackstream': '1/m2s',
+         'RhoVNonBackstream': '1/m2s',
+         'V': 'm/s',
+         'VBackstream': 'm/s',
+         'VNonBackstream': 'm/s',
+         'B': 'T',
+         'B_vol': 'T',
+         'background_B': 'T',
+         'perturbed_B': 'T',
+         'BGB': 'T',
+         'PERB': 'T',
+         'PERB_vol': 'T',
+         'E': 'V/m',
+         'E_vol': 'V/m',
+         'EXHALL_000_100': 'V/m',
+         'EXHALL_001_101': 'V/m',
+         'EXHALL_010_110': 'V/m',
+         'EXHALL_011_111': 'V/m',
+         'EYHALL_000_010': 'V/m',
+         'EYHALL_001_011': 'V/m',
+         'EYHALL_100_110': 'V/m',
+         'EYHALL_101_111': 'V/m',
+         'EZHALL_000_001': 'V/m',
+         'EZHALL_010_011': 'V/m',
+         'EZHALL_100_101': 'V/m',
+         'EZHALL_110_111': 'V/m',
+         'pressure': 'Pa',
+         'pressure_dt2': 'Pa',
+         'pressure_r': 'Pa',
+         'pressure_v': 'Pa',
+         'PTensorDiagonal': 'Pa',
+         'PTensorOffDiagonal': 'Pa',
+         'PTensorBackstreamDiagonal': 'Pa',
+         'PTensorBackstreamOffDiagonal': 'Pa',
+         'PTensorNonBackstreamDiagonal': 'Pa',
+         'PTensorNonBackstreamOffDiagonal': 'Pa',
+         'max_v_dt': 's',
+         'max_r_dt': 's',
+         'max_fields_dt': 's',
+         'MinValue': '',
+         'EffectiveSparsityThreshold': 's3/m6',
+         'rho_loss_adjust': '1/m3',
+         }
       if name in datareducers:
          units = datareducers[name].units
+      elif name in unitsdict:
+         units = unitsdict[name]
       else:
          units = ""
       if operator != "pass":
