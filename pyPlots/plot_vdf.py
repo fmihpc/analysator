@@ -34,7 +34,6 @@ from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
-import plot_run_defaults
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector
