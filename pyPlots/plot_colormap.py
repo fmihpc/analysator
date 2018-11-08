@@ -317,12 +317,19 @@ def plot_colormap(filename=None,
     savefigname = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
 
     # Check if target file already exists and overwriting is disabled
-    if (nooverwrite!=None and os.path.exists(savefigname)):
+    if (draw==None and nooverwrite!=None and os.path.exists(savefigname)):
         # Also check that file is not empty
         if os.stat(savefigname).st_size > 0:
             return
         else:
             print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+
+    # Verify access to target directory
+    if draw==None:
+        if not os.access('/'.join(savefigname.split('/')[:-1]), os.W_OK):
+            print("No write access for "+savefigname+"! Exiting.")
+            return
+
 
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space

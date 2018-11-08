@@ -706,6 +706,10 @@ def plot_vdf(filename=None,
                     return
                 else:
                     print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+            # Verify access to target directory
+            if not os.access('/'.join(savefigname.split('/')[:-1]), os.W_OK):
+                print("No write access for "+savefigname+"! Exiting.")
+                return
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
