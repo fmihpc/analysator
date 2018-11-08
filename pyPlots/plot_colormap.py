@@ -119,7 +119,7 @@ def plot_colormap(filename=None,
     :kword title:       string to use as plot title instead of time
     :kword cbtitle:     string to use as colorbar title instead of map name
     :kword unit:        Plot axes using 10^{unit} m (default: Earth radius R_E)
-    :kword tickinterval: Interval at which to have ticks on axes
+    :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
 
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
@@ -534,10 +534,13 @@ def plot_colormap(filename=None,
                     print("Error, cannot determine current step for time extent extraction!")
                     return
 
-            if len(pass_times)==1:
+            if np.ndim(pass_times)==0:
                 timesteps = np.arange(currstep-abs(int(pass_times)), currstep+abs(int(pass_times))+1,1)
-            elif len(pass_times)==2:
+            elif np.ndim(pass_times)==1 and len(pass_times)==2:
                 timesteps = np.arange(currstep-abs(int(pass_times[0])), currstep+abs(int(pass_times[1]))+1,1)
+            else:
+                print("Invalid value given to pass_times")
+                return
             for tpass_step_i, passstep in enumerate(timesteps):
                 # Construct using known filename.
                 filenamestep = filename[:-12]+str(passstep).rjust(7,'0')+'.vlsv'
