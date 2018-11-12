@@ -40,8 +40,11 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 matplotlib.rc('text', usetex=True)
 matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
+#matplotlib.rcParams['mathtext.fontset'] = 'cm'
+#matplotlib.rcParams['mathtext.fontset'] = 'stix'
+matplotlib.rcParams['mathtext.fontset'] = 'stixsans'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
+
 # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 #matplotlib.rcParams['font.family'] = 'serif'
 #matplotlib.rcParams['font.serif'] = 'cmmib10' #'cm' 
@@ -70,7 +73,8 @@ plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
     b = int(b)
-    return r'${}\times10^{{{}}}$'.format(a, b)
+    #return r'${}\times10^{{{}}}$'.format(a, b)
+    return r'${}'.format(a)+r'{\times}'+'10^{{{}}}$'.format(b) # Multiple braces take care of negative values
 
 def plot_colormap(filename=None,
                   vlsvobj=None,
@@ -108,7 +112,7 @@ def plot_colormap(filename=None,
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                         E, B, v, V or others. Accepts any variable known by analysator/pytools.
                         Per-population variables are simply given as "proton/rho" etc
-    :kword op:          Operator to apply to variable: None, magnitude, x, y, or z. Vector variables return either
+    :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
@@ -116,7 +120,9 @@ def plot_colormap(filename=None,
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
     :kword run:         run identifier, used for constructing output filename
-    :kword title:       string to use as plot title instead of time
+    :kword title:       string to use as plot title instead of time.
+                        Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
+                        for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of map name
     :kword unit:        Plot axes using 10^{unit} m (default: Earth radius R_E)
     :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
@@ -127,7 +133,9 @@ def plot_colormap(filename=None,
     :kword lin:         Flag for using linear colour scaling instead of log
     :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
-                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
+                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
+                        result in the innermost tick marks overlapping. In this case, using a larger value for 
+                        symlog is suggested.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      If set to non-zero, will plot an all-black Vlasiator watermark in the top left corner.
@@ -230,10 +238,13 @@ def plot_colormap(filename=None,
             if not os.path.exists(fluxfile):
                 fluxfile = fluxdir+'bulk.'+str(step).rjust(7,'0')+'.bin'
         else:
-            # Parse step from filename
-            fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
-            if not os.path.exists(fluxfile):
-                fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
+            if filename!=None:
+                # Parse step from filename
+                fluxfile = fluxdir+'flux.'+filename[-12:-5]+'.bin'
+                if not os.path.exists(fluxfile):
+                    fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
+            else:
+                print("Requested flux lines via directory but working from vlsv object, cannot find step.")
 
     if fluxfile!=None:
         if not os.path.exists(fluxfile):
@@ -247,7 +258,7 @@ def plot_colormap(filename=None,
     if colormap==None:
         # Default values
         colormap="hot_desaturated"
-        if op!=None and op!='magnitude':
+        if op!=None:
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -264,13 +275,16 @@ def plot_colormap(filename=None,
         print "Unknown time format encountered"
 
     # Plot title with time
-    if title==None:        
+    if title==None or title=="msec" or title=="musec":        
         if timeval == None:    
             print "Unknown time format encountered"
             plot_title = ''
         else:
-            #plot_title = "t="+str(np.int(timeval))+' s'
-            plot_title = "t="+'{:4.2f}'.format(timeval)+' s'
+            timeformat='{:4.1f}'
+            if title=="sec": timeformat='{:4.0f}'
+            if title=="msec": timeformat='{:4.3f}'
+            if title=="musec": timeformat='{:4.6f}'
+            plot_title = "t="+timeformat.format(timeval)+' s'
     else:
         plot_title = title
 
@@ -292,10 +306,10 @@ def plot_colormap(filename=None,
                 run = filename[16:19]
 
     # Verify validity of operator
-    if op!=None and op!='magnitude':
+    if op!=None:
         if op!='x' and op!='y' and op!='z':
             print("Unknown operator "+op)
-            op='magnitude'           
+            op=None
             opstr=''
         else:
             # For components, always use linear scale, unless symlog is set
@@ -303,7 +317,7 @@ def plot_colormap(filename=None,
             if symlog==None:
                 lin=1
     else:
-        op='magnitude'
+        op=None
         opstr=''
 
     # Output file name
@@ -320,6 +334,7 @@ def plot_colormap(filename=None,
     if (draw==None and nooverwrite!=None and os.path.exists(savefigname)):
         # Also check that file is not empty
         if os.stat(savefigname).st_size > 0:
+            print("Found existing file "+savefigname+". Skipping.")
             return
         else:
             print("Found existing file "+savefigname+" of size zero. Re-rendering.")
@@ -371,9 +386,9 @@ def plot_colormap(filename=None,
 
     # Axes and units (default R_E)
     if unit!=None: # Use m or km or other
-        if unit==0:
+        if np.isclose(unit,0):
             unitstr = r'm'
-        if unit==3:
+        elif np.isclose(unit,3):
             unitstr = r'km'
         else:
             unitstr = r'$10^{'+str(int(unit))+'}$ m'
@@ -400,10 +415,12 @@ def plot_colormap(filename=None,
             pop = var.split('/',1)[0]
             var = var.split('/',1)[1]
         if var == 'rho':
-            cb_title_use = r"$n_\mathrm{p}$"
-        elif var == 'rhoBeam':
+            if pop==None or pop=="proton":
+                cb_title_use = r"$n_\mathrm{p}$"
+        elif var == 'rhoBeam' or var == 'RhoBackstream':
             var = 'RhoBackstream'
-            cb_title_use = r"$n_{\mathrm{st}}$"
+            if pop==None or pop=="proton":
+                cb_title_use = r"$n_{p,\mathrm{st}}$"
         elif var == 'beta':
             cb_title_use = r"$\beta$"
         elif var.lower() == 'temperature':
@@ -420,72 +437,81 @@ def plot_colormap(filename=None,
         elif var == 'V' or var == 'v':
             cb_title_use = r"V"
         # cartesian component in title
-        if op!=None and op!="magnitude":
-            cb_title_use = cb_titlevar+"$_"+op+"$"
+        if op!=None:
+            cb_title_use = cb_title_use+"$_"+op+"$"
         # Restore population request to variable and title
         if pop!=None:
             cb_title_use = pop + " " + cb_title_use
             var = pop+"/"+var
 
         # Read data from file
+        if op==None:
+            op="pass"
         datamap_info = f.read_variable_info(var, operator=op)
-        datamap = datamap_info.data
 
         # Default unit
-        datamap_unit = datamap_info.unit
+        datamap_unit = datamap_info.units
         # Latexify units
-        if datamap_info.data=="kg/m3":
+        if datamap_info.units=="kg/m3":
             datamap_unit = "$\mathrm{kg}\,\mathrm{m}^{-3}$"
-        if datamap_info.data=="C/m3":
+        if datamap_info.units=="C/m3":
             datamap_unit = "$\mathrm{C}\,\mathrm{m}^{-3}$"
-        if datamap_info.data=="1/m3":
+        if datamap_info.units=="1/m3":
             datamap_unit = "$\mathrm{m}^{-3}$"
-        if datamap_info.data=="1/m2s":
+        if datamap_info.units=="1/m2s":
             datamap_unit = "$\mathrm{m}^{-2}\,\mathrm{s}^{-1}$"
-        if datamap_info.data=="m/s":
+        if datamap_info.units=="m/s":
             datamap_unit = "$\mathrm{m}\,\mathrm{s}^{-1}$"
-        if datamap_info.data=="V/m":
+        if datamap_info.units=="V/m":
             datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
-        if datamap_info.data=="s3/m6":
+        if datamap_info.units=="s3/m6":
             datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
-        # If valscal is in use, remove units to be on the safe side
+        # If valscal is in use, use it instead of units
         if not np.isclose(valscal,1.):
-            datamap_unit=""
+            datamap_unit=r"${\times}$"+fmt(valscal,None)
         # Allow specialist units for known valscal and unit combinations
-        if datamap_info.data=="s" and np.isclose(valscal,1.e6):
+        if datamap_info.units=="s" and np.isclose(valscal,1.e6):
             datamap_unit = "$\mu$s"
-        if datamap_info.data=="s" and np.isclose(valscal,1.e3):
+        if datamap_info.units=="s" and np.isclose(valscal,1.e3):
             datamap_unit = "ms"
-        if datamap_info.data=="T" and np.isclose(valscal,1.e9):
+        if datamap_info.units=="T" and np.isclose(valscal,1.e9):
             datamap_unit = "nT"
-        if datamap_info.data=="K" and np.isclose(valscal,1.e-6):
+        if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
             datamap_unit = "MK"
-        if datamap_info.data=="Pa" and np.isclose(valscal,1.e9):
+        if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
             datamap_unit = "nPa"
-        if datamap_info.data=="1/m3" and np.isclose(valscal,1.e-6):
+        if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
             datamap_unit = "$\mathrm{cm}^{-3}$"
-        if datamap_info.data=="m/s" and np.isclose(valscal,1.e-3):
+        if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
             datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
-        if datamap_info.data=="V/m" and np.isclose(valscal,1.e3):
+        if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
             datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":
-            cb_title_use = cb_title_use + " ["+datamap_unit+"$]"
+            cb_title_use = cb_title_use + " ["+datamap_unit+"]"
 
+        datamap = datamap_info.data
         # Verify data shape
-        if np.ndim(datamap)!=1:
-            print("Error reading variable "+var+"! Exiting.")
+        if np.ndim(datamap)==0:
+            print("Error, read only single value from vlsv file!",datamap.shape)
             return -1
-        # Reshape data to an ordered 2D array that can be plotted
-        if np.ndim(datamap) != 2:
-            datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        if np.ndim(datamap)==2:
+            if len(datamap[0,:])!=3:
+                print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
+                return -1
+            # 2-dimensional array: take magnitude of three-element vectors
+            datamap = np.linalg.norm(datamap, axis=-1)
+        if np.ndim(datamap)!=1:
+            # Array dimensions not as expected
+            print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
+            return -1
+
+        # Now reshape data to an ordered 2D array that can be plotted
+        datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
     else:
         # Expression set, use generated or provided colorbar title
-        if expression.__title__!=None:
-            cb_title_use = expression.__title__
-        else:
-            cb_title_use = expression.__name__.replace("_","\_")
+        cb_title_use = expression.__name__.replace("_","\_")
 
     # Allow title override
     if cbtitle!=None:
@@ -683,11 +709,9 @@ def plot_colormap(filename=None,
     if ((boxlenx > 10) and (boxleny > 10)):
         boxlenx = float( 0.05 * int(boxlenx*20*1.024) ) 
         boxleny = float( 0.05 * int(boxleny*20*1.024) ) 
-    ratio = boxleny/boxlenx
-
+    ratio = np.sqrt(boxleny/boxlenx)
     # default for square figure is figsize=[4.0,3.15] (with some accounting for axes etc)
     figsize = [4.0,3.15*ratio]
-
     # Special case for edge-to-edge figures
     if len(plot_title)==0 and (nocb!=None or internalcb!=None) and noborder!=None and noxlabels!=None and noylabels!=None:
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
@@ -802,6 +826,7 @@ def plot_colormap(filename=None,
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
         extresult=external(ax1, XmeshPass,YmeshPass, pass_maps)
 
+    # Draw canvas every now and then to generate latex-math ticks etc
     if nocb==None:
         if internalcb==None:
             # Witchcraft used to place colourbar
@@ -845,7 +870,20 @@ def plot_colormap(filename=None,
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
-            
+
+        fig.canvas.draw() # draw to get tick positions
+        # Adjust placement of innermost ticks for symlog if it indeed is symmetric
+        if symlog!=None and np.isclose(vminuse+vmaxuse, 0.0):
+            cbt=cb.ax.yaxis.get_ticklabels()
+            # for tind in range(len(cbt)):
+            #     print(tind,cbt[tind].get_position(), cbt[tind].get_text())
+            (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
+            if abs(0.5-cbty)/scale < 0.05:
+                cbt[len(cbt)/2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)/2+1].get_position() # just above zero
+            if abs(0.5-cbty)/scale < 0.05:
+                cbt[len(cbt)/2+1].set_va("bottom")
+
         # if too many subticks:
         if lin==None and usesci!=0 and symlog==None:
             # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
@@ -861,8 +899,7 @@ def plot_colormap(filename=None,
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for label in cb.ax.yaxis.get_ticklabels():
                 # labels will be in format $x.0\times10^{y}$
-                if not label.get_text()[1] in valids:
-                    label.set_visible(False)
+                if not label.get_text()[1] in valids: label.set_visible(False)
 
     # Add Vlasiator watermark
     if wmark!=None:        
@@ -900,18 +937,48 @@ def plot_colormap(filename=None,
         newax.imshow(wm)
         newax.axis('off')
 
+    # Draw canvas every now and then to generate latex-math ticks etc
+    fig.canvas.draw()           
     if tickinterval!=None:
         ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
         ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
 
     if noxlabels!=None:
+        # Turn labels off
         for label in ax1.xaxis.get_ticklabels():
             label.set_visible(False)
+    else:
+        # Force text-mode instead of math-mode to fix alignment issue with minus sign
+        ax1.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+        # set alignments. If includes very long ticks, tilt them.
+        ticklabs = ax1.xaxis.get_ticklabels()
+        maxlen = np.amax([len(t.get_text()) for t in ticklabs])
+        for t in ticklabs:
+            t.set_fontweight("black")
+            # two dollar symbols, a minus sign, and up to three numbers are allowed:
+            if maxlen>6: 
+                t.set_rotation(30)
+                t.set_verticalalignment('top')
+                t.set_horizontalalignment('right')
+        
     if noylabels!=None:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)       
+    else:
+        # Force text-mode instead of math-mode to fix alignment issue with minus sign
+        ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+        # set alignments. If includes very long ticks, tilt them.
+        ticklabs = ax1.yaxis.get_ticklabels()
+        maxlen = np.amax([len(t.get_text()) for t in ticklabs])
+        for t in ticklabs:
+            t.set_fontweight("black")
+            # two dollar symbols, a minus sign, and up to three numbers are allowed:
+            if maxlen>6: 
+                t.set_rotation(30)
+                t.set_verticalalignment('top')
+                t.set_horizontalalignment('right')
 
-
+    # Draw canvas every now and then to generate latex-math ticks etc
     if noborder==None:
         # adjust layout
         plt.tight_layout()

@@ -189,7 +189,7 @@ def va( variables ):
 def MA( variables ):
    ''' Data reducer function for getting the Alfvenic Mach number
    '''
-   bulkv = variables[0]
+   bulkv = np.linalg.norm(variables[0],axis=-1)
    Alfvenspeed = np.ma.masked_less_equal(variables[1],0)
    MA = np.ma.divide(bulkv, Alfvenspeed)
    return MA
@@ -197,7 +197,7 @@ def MA( variables ):
 def Mms( variables ):
    ''' Data reducer function for getting the magnetosonic Mach number
    '''
-   bulkv = variables[0]
+   bulkv = np.linalg.norm(variables[0],axis=-1)
    magnetosonicspeed = np.ma.masked_less_equal(variables[1],0)
    Mms = np.ma.divide(bulkv, magnetosonicspeed)
    return Mms
@@ -480,6 +480,7 @@ def Dng( variables ):
 
 #datareducers with more complex, case dependent structure.
 datareducers = {}
+datareducers["V"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
 datareducers["v"] =                      DataReducerVariable(["rho_v", "rho"], v, "m/s")
 datareducers["vms"] =                    DataReducerVariable(["Pressure", "rho", "B"], vms, "m/s")
 datareducers["vs"] =                     DataReducerVariable(["Pressure", "rho"], vs, "m/s")
