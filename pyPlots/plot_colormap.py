@@ -73,8 +73,10 @@ def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
     b = int(b)
     s = np.sign(x) 
+    # this should bring all colorbar ticks to the same horizontal position, but for
+    # some reason it doesn't work.
+    signchar=r'\enspace' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    signchar='\mbox{\enspace}'
     if s<0: signchar='\mbox{--}'
     # Multiple braces take care of negative values in exponent
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(b)
@@ -101,7 +103,7 @@ def plot_colormap(filename=None,
                   boxm=[],boxre=[],colormap=None,
                   run=None, nocb=None, internalcb=None,
                   wmark=None,wmarkb=None,
-                  unit=None, thick=1.0,scale=1.0,
+                  axisunit=None, thick=1.0,scale=1.0,
                   tickinterval=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
@@ -139,7 +141,7 @@ def plot_colormap(filename=None,
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of map name
-    :kword unit:        Plot axes using 10^{unit} m (default: Earth radius R_E)
+    :kword axisunit:    Plot axes using 10^{unit} m (default: Earth radius R_E)
     :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
 
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
@@ -402,21 +404,21 @@ def plot_colormap(filename=None,
     boxcoords[3] = min(boxcoords[3],simext[3])
 
     # Axes and units (default R_E)
-    if unit!=None: # Use m or km or other
-        if np.isclose(unit,0):
-            unitstr = r'm'
-        elif np.isclose(unit,3):
-            unitstr = r'km'
+    if axisunit!=None: # Use m or km or other
+        if np.isclose(axisunit,0):
+            axisunitstr = r'm'
+        elif np.isclose(axisunit,3):
+            axisunitstr = r'km'
         else:
-            unitstr = r'$10^{'+str(int(unit))+'}$ m'
-        unit = np.power(10,int(unit))
+            axisunitstr = r'$10^{'+str(int(axisunit))+'}$ m'
+        axisunit = np.power(10,int(axisunit))
     else:
-        unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
-        unit = Re
+        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        axisunit = Re
         
     # Scale data extent and plot box
-    simext=[i/unit for i in simext]
-    boxcoords=[i/unit for i in boxcoords]    
+    simext=[i/axisunit for i in simext]
+    boxcoords=[i/axisunit for i in boxcoords]    
 
     pass_maps=[]
 
@@ -541,7 +543,7 @@ def plot_colormap(filename=None,
     # Generates the mesh to map the data to.
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
     # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
-    maskboundarybuffer = 2.*cellsize/unit
+    maskboundarybuffer = 2.*cellsize/axisunit
     maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
     maskgrid = np.ma.masked_where(XmeshXY>(boxcoords[1]+maskboundarybuffer), maskgrid)
     maskgrid = np.ma.masked_where(YmeshXY<(boxcoords[2]-maskboundarybuffer), maskgrid)
@@ -759,14 +761,14 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        plt.xlabel('X ['+unitstr+']',fontsize=fontsize,weight='black')
+        plt.xlabel('X ['+axisunitstr+']',fontsize=fontsize,weight='black')
         plt.xticks(fontsize=fontsize,fontweight='black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            plt.ylabel('Z ['+unitstr+']',fontsize=fontsize,weight='black')
+            plt.ylabel('Z ['+axisunitstr+']',fontsize=fontsize,weight='black')
         else: #Ecliptic
-            plt.ylabel('Y ['+unitstr+']',fontsize=fontsize,weight='black')
+            plt.ylabel('Y ['+axisunitstr+']',fontsize=fontsize,weight='black')
         plt.yticks(fontsize=fontsize,fontweight='black')
         ax1.yaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
 
