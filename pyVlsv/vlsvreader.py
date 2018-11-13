@@ -603,6 +603,10 @@ class VlsvReader(object):
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
             
+            # If variable vector size is 1, change operator to automatically become "pass"
+            if vector_size == 1:
+               operator="pass"
+
             if array_size == 1:
                return data_operators[operator](data[0])
             else:

@@ -55,7 +55,7 @@ def z_component( variable ):
    return variable[:,2]
 
 def magnitude( variable ):
-   return np.sum(np.asarray(variable)**2,axis=-1)**(0.5)
+   return np.linalg.norm(np.asarray(variable),axis=-1)
 
 def sumv( variable ):
    if np.ndim(variable) > 3:
@@ -63,17 +63,22 @@ def sumv( variable ):
       return
    else:
       res = []
+      # First dimension: populations
+      # Second dimension: cells
+      # Third dimension: components
       if np.size(variable[0][0]) == 1:
-         for i in range(len(variable[0])):
+         # Single-component variable
+         for i in range(len(variable[0])): # loop over cells
             summation = 0
             for j in range(len(variable)):
-               summation += variable[j][i]
+               summation += variable[j][i] # sum populations
             res.append(summation)
       else: 
-         for i in range(len(variable[0])):
+         # Vector variable
+         for i in range(len(variable[0])): # loop over cells
             summation = np.zeros_like(variable[0][0])
             for j in range(len(variable)):
-               summation += np.array(variable[j][i])
+               summation += np.array(variable[j][i]) # sum populations
             if i==0:
                res = summation
             else:
@@ -367,18 +372,18 @@ def PPerpOverPar( variables ):
 
 def beta( variables ):
    Pressure = variables[0]
-   B_magnitude = magnitude(variables[1])
-   return 2.0 * 1.25663706144e-6 * Pressure / (B_magnitude*B_magnitude)
+   Magneticfield = variables[1]
+   return 2.0 * 1.25663706144e-6 * Pressure / np.sum(np.asarray(Magneticfield)**2,axis=-1)
 
 def betaParallel( variables ):
    Pressure = variables[0]
-   B_magnitude = magnitude(variables[1])
-   return 2.0 * 1.25663706144e-6 * Pressure / (B_magnitude*B_magnitude)
+   Magneticfield = variables[1]
+   return 2.0 * 1.25663706144e-6 * Pressure / np.sum(np.asarray(Magneticfield)**2,axis=-1)
 
 def betaPerpendicular( variables ):
    Pressure = variables[0]
-   B_magnitude = magnitude(variables[1])
-   return 2.0 * 1.25663706144e-6 * Pressure / (B_magnitude*B_magnitude)
+   Magneticfield = variables[1]
+   return 2.0 * 1.25663706144e-6 * Pressure / np.sum(np.asarray(Magneticfield)**2,axis=-1)
 
 def betaPerpOverPar( variables ):
    betaPerp = variables[0]
