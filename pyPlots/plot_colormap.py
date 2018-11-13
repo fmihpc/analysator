@@ -41,8 +41,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 matplotlib.rc('text', usetex=True)
 matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
 #matplotlib.rcParams['mathtext.fontset'] = 'cm'
-#matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['mathtext.fontset'] = 'stixsans'
+matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
 # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
@@ -73,8 +72,24 @@ plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
     b = int(b)
-    #return r'${}\times10^{{{}}}$'.format(a, b)
-    return r'${}'.format(a)+r'{\times}'+'10^{{{}}}$'.format(b) # Multiple braces take care of negative values
+    s = np.sign(x) 
+    # replaces minus sign with en-dash to fix big with latex descender value return
+    signchar='\mbox{\enspace}'
+    if s<0: signchar='\mbox{--}'
+    # Multiple braces take care of negative values in exponent
+    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(b)
+
+# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
+axisdec=None
+def axisfmt(x, pos):
+    global axisdec
+    if axisdec==None: axisdec=0
+    s = np.sign(x) 
+    x=abs(x)
+    a = r'{:.'+str(int(axisdec))+r'f}'
+    a = a.format(x)
+    if s<0: a = r'\mbox{--}'+a
+    return r'$'+a+'$'
 
 def plot_colormap(filename=None,
                   vlsvobj=None,
@@ -265,6 +280,8 @@ def plot_colormap(filename=None,
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks
+    # Small internal colorbar needs increased font size
+    if internalcb!=None: fontsize3=fontsize3*2
 
     # Plot title with time
     timeval=None
@@ -407,85 +424,88 @@ def plot_colormap(filename=None,
     # Read data and calculate required variables
     ##########
     if expression==None:        
-        # Latexify variable name
-        cb_title_use = r""+var.replace("_","\_")
-        # Split variable into population form if needed
-        pop=None
-        if '/' in var:
-            pop = var.split('/',1)[0]
-            var = var.split('/',1)[1]
-        if var == 'rho':
-            if pop==None or pop=="proton":
-                cb_title_use = r"$n_\mathrm{p}$"
-        elif var == 'rhoBeam' or var == 'RhoBackstream':
-            var = 'RhoBackstream'
-            if pop==None or pop=="proton":
-                cb_title_use = r"$n_{p,\mathrm{st}}$"
-        elif var == 'beta':
-            cb_title_use = r"$\beta$"
-        elif var.lower() == 'temperature':
-            var = "Temperature"
-            cb_title_use = r"$T$"
-        elif var == 'MA':
-            cb_title_use = r"$\mathrm{M}_\mathrm{A}$"
-        elif var == 'Mms':
-            cb_title_use = r"$\mathrm{M}_\mathrm{ms}$"
-        elif var == 'va':
-            cb_title_use = r"$v_\mathrm{A}$"
-        elif var == 'vms':
-            cb_title_use = r"$v_\mathrm{ms}$"
-        elif var == 'V' or var == 'v':
-            cb_title_use = r"V"
-        # cartesian component in title
-        if op!=None:
-            cb_title_use = cb_title_use+"$_"+op+"$"
-        # Restore population request to variable and title
-        if pop!=None:
-            cb_title_use = pop + " " + cb_title_use
-            var = pop+"/"+var
+        # # Latexify variable name
+        # cb_title_use = r""+var.replace("_","\_")
+        # # Split variable into population form if needed
+        # pop=None
+        # if '/' in var:
+        #     pop = var.split('/',1)[0]
+        #     var = var.split('/',1)[1]
+        # if var == 'rho':
+        #     if pop==None or pop=="proton":
+        #         cb_title_use = r"$n_\mathrm{p}$"
+        # elif var == 'rhoBeam' or var == 'RhoBackstream':
+        #     var = 'RhoBackstream'
+        #     if pop==None or pop=="proton":
+        #         cb_title_use = r"$n_{p,\mathrm{st}}$"
+        # elif var == 'beta':
+        #     cb_title_use = r"$\beta$"
+        # elif var.lower() == 'temperature':
+        #     var = "Temperature"
+        #     cb_title_use = r"$T$"
+        # elif var == 'MA':
+        #     cb_title_use = r"$\mathrm{M}_\mathrm{A}$"
+        # elif var == 'Mms':
+        #     cb_title_use = r"$\mathrm{M}_\mathrm{ms}$"
+        # elif var == 'va':
+        #     cb_title_use = r"$v_\mathrm{A}$"
+        # elif var == 'vms':
+        #     cb_title_use = r"$v_\mathrm{ms}$"
+        # elif var == 'V' or var == 'v':
+        #     cb_title_use = r"V"
+        # # cartesian component in title
+        # if op!=None:
+        #     cb_title_use = cb_title_use+"$_"+op+"$"
+        # # Restore population request to variable and title
+        # if pop!=None:
+        #     cb_title_use = pop + " " + cb_title_use
+        #     var = pop+"/"+var
 
         # Read data from file
         if op==None:
             op="pass"
         datamap_info = f.read_variable_info(var, operator=op)
 
-        # Default unit
-        datamap_unit = datamap_info.units
-        # Latexify units
-        if datamap_info.units=="kg/m3":
-            datamap_unit = "$\mathrm{kg}\,\mathrm{m}^{-3}$"
-        if datamap_info.units=="C/m3":
-            datamap_unit = "$\mathrm{C}\,\mathrm{m}^{-3}$"
-        if datamap_info.units=="1/m3":
-            datamap_unit = "$\mathrm{m}^{-3}$"
-        if datamap_info.units=="1/m2s":
-            datamap_unit = "$\mathrm{m}^{-2}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="m/s":
-            datamap_unit = "$\mathrm{m}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="V/m":
-            datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
-        if datamap_info.units=="s3/m6":
-            datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
-        # If valscal is in use, use it instead of units
-        if not np.isclose(valscal,1.):
-            datamap_unit=r"${\times}$"+fmt(valscal,None)
-        # Allow specialist units for known valscal and unit combinations
-        if datamap_info.units=="s" and np.isclose(valscal,1.e6):
-            datamap_unit = "$\mu$s"
-        if datamap_info.units=="s" and np.isclose(valscal,1.e3):
-            datamap_unit = "ms"
-        if datamap_info.units=="T" and np.isclose(valscal,1.e9):
-            datamap_unit = "nT"
-        if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
-            datamap_unit = "MK"
-        if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
-            datamap_unit = "nPa"
-        if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
-            datamap_unit = "$\mathrm{cm}^{-3}$"
-        if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
-            datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
-            datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
+        cb_title_use = datamap_info.latex
+        datamap_unit = datamap_info.latexunits
+
+        # # Default unit
+        # datamap_unit = datamap_info.units
+        # # Latexify units
+        # if datamap_info.units=="kg/m3":
+        #     datamap_unit = "$\mathrm{kg}\,\mathrm{m}^{-3}$"
+        # if datamap_info.units=="C/m3":
+        #     datamap_unit = "$\mathrm{C}\,\mathrm{m}^{-3}$"
+        # if datamap_info.units=="1/m3":
+        #     datamap_unit = "$\mathrm{m}^{-3}$"
+        # if datamap_info.units=="1/m2s":
+        #     datamap_unit = "$\mathrm{m}^{-2}\,\mathrm{s}^{-1}$"
+        # if datamap_info.units=="m/s":
+        #     datamap_unit = "$\mathrm{m}\,\mathrm{s}^{-1}$"
+        # if datamap_info.units=="V/m":
+        #     datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
+        # if datamap_info.units=="s3/m6":
+        #     datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
+        # # If valscal is in use, use it instead of units
+        # if not np.isclose(valscal,1.):
+        #     datamap_unit=r"${\times}$"+fmt(valscal,None)
+        # # Allow specialist units for known valscal and unit combinations
+        # if datamap_info.units=="s" and np.isclose(valscal,1.e6):
+        #     datamap_unit = "$\mu$s"
+        # if datamap_info.units=="s" and np.isclose(valscal,1.e3):
+        #     datamap_unit = "ms"
+        # if datamap_info.units=="T" and np.isclose(valscal,1.e9):
+        #     datamap_unit = "nT"
+        # if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
+        #     datamap_unit = "MK"
+        # if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
+        #     datamap_unit = "nPa"
+        # if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
+        #     datamap_unit = "$\mathrm{cm}^{-3}$"
+        # if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
+        #     datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
+        # if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
+        #     datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":
@@ -878,10 +898,10 @@ def plot_colormap(filename=None,
             # for tind in range(len(cbt)):
             #     print(tind,cbt[tind].get_position(), cbt[tind].get_text())
             (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
-            if abs(0.5-cbty)/scale < 0.05:
+            if abs(0.5-cbty)/scale < 0.1:
                 cbt[len(cbt)/2-1].set_va("top")
             (cbtx,cbty) = cbt[len(cbt)/2+1].get_position() # just above zero
-            if abs(0.5-cbty)/scale < 0.05:
+            if abs(0.5-cbty)/scale < 0.1:
                 cbt[len(cbt)/2+1].set_va("bottom")
 
         # if too many subticks:
@@ -948,8 +968,9 @@ def plot_colormap(filename=None,
         for label in ax1.xaxis.get_ticklabels():
             label.set_visible(False)
     else:
-        # Force text-mode instead of math-mode to fix alignment issue with minus sign
-        ax1.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+        # Custom tick formatter
+        if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
+        ax1.xaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
         # set alignments. If includes very long ticks, tilt them.
         ticklabs = ax1.xaxis.get_ticklabels()
         maxlen = np.amax([len(t.get_text()) for t in ticklabs])
@@ -965,8 +986,9 @@ def plot_colormap(filename=None,
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)       
     else:
-        # Force text-mode instead of math-mode to fix alignment issue with minus sign
-        ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+        # Custom tick formatter
+        if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
+        ax1.yaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
         # set alignments. If includes very long ticks, tilt them.
         ticklabs = ax1.yaxis.get_ticklabels()
         maxlen = np.amax([len(t.get_text()) for t in ticklabs])

@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
@@ -840,67 +841,48 @@ class VlsvReader(object):
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
 
-      # Define some units for intrinsic values
-      unitsdict = {
-         'Rhom': 'kg/m3',
-         'Rhoq': 'C/m3',
-         'rho': '1/m3',
-         'RhoBackstream': '1/m3',
-         'RhoNonBackstream': '1/m3',
-         'rho_v': '1/m2s',
-         'RhoVBackstream': '1/m2s',
-         'RhoVNonBackstream': '1/m2s',
-         'V': 'm/s',
-         'VBackstream': 'm/s',
-         'VNonBackstream': 'm/s',
-         'B': 'T',
-         'B_vol': 'T',
-         'background_B': 'T',
-         'perturbed_B': 'T',
-         'BGB': 'T',
-         'PERB': 'T',
-         'PERB_vol': 'T',
-         'E': 'V/m',
-         'E_vol': 'V/m',
-         'EXHALL_000_100': 'V/m',
-         'EXHALL_001_101': 'V/m',
-         'EXHALL_010_110': 'V/m',
-         'EXHALL_011_111': 'V/m',
-         'EYHALL_000_010': 'V/m',
-         'EYHALL_001_011': 'V/m',
-         'EYHALL_100_110': 'V/m',
-         'EYHALL_101_111': 'V/m',
-         'EZHALL_000_001': 'V/m',
-         'EZHALL_010_011': 'V/m',
-         'EZHALL_100_101': 'V/m',
-         'EZHALL_110_111': 'V/m',
-         'pressure': 'Pa',
-         'pressure_dt2': 'Pa',
-         'pressure_r': 'Pa',
-         'pressure_v': 'Pa',
-         'PTensorDiagonal': 'Pa',
-         'PTensorOffDiagonal': 'Pa',
-         'PTensorBackstreamDiagonal': 'Pa',
-         'PTensorBackstreamOffDiagonal': 'Pa',
-         'PTensorNonBackstreamDiagonal': 'Pa',
-         'PTensorNonBackstreamOffDiagonal': 'Pa',
-         'max_v_dt': 's',
-         'max_r_dt': 's',
-         'max_fields_dt': 's',
-         'MinValue': '',
-         'EffectiveSparsityThreshold': 's3/m6',
-         'rho_loss_adjust': '1/m3',
-         }
+      # Get population and variable names from data array name 
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
       if name in datareducers:
          units = datareducers[name].units
-      elif name in unitsdict:
-         units = unitsdict[name]
+         latex = datareducers[name].latex
+         latexunits = datareducers[name].latexunits
+      elif name in vlsvvariables.unitsdict:
+         units = vlsvvariables.unitsdict[name]
+         latex = vlsvvariables.latexdict[name]
+         latexunits = vlsvvariables.latexunitsdict[name]
+      elif 'pop/'+varname in multipopdatareducers:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = multipopdatareducers['pop/'+varname].units
+         latex = (multipopdatareducers['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
+         latexunits = multipopdatareducers['pop/'+varname].latexunits
+      elif varname in vlsvvariables.unitsdict:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = vlsvvariables.unitsdict[varname]
+         latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
+         latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
+         latex = ""
+         latexunits = ""
+
       if operator != "pass":
-         return VariableInfo(data_array=data, name=name + "_" + operator, units=units)
+         if operator=="magnitude":
+            latex = r"$|$"+latex+r"$|$"
+         else:
+            latex = latex+r"{$_"+operator+r"$}"
+         return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
-         return VariableInfo(data_array=data, name=name, units=units)
+         return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
 
 
    def get_cellid(self, coordinates):
