@@ -71,26 +71,39 @@ plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    s = np.sign(x) 
     # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work.
-    signchar=r'\enspace' 
+    # some reason it doesn't work. (signchar=r'\enspace')
+    signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if s<0: signchar='\mbox{--}'
-    # Multiple braces take care of negative values in exponent
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(b)
+    if np.sign(x)<0: signchar='\mbox{--}'
+    # Multiple braces for b take care of negative values in exponent
+    # brackets around \times remove extra whitespace
+    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
 
 # axisfmt replaces minus sign with en-dash to fix big with latex descender value return
-axisdec=None
 def axisfmt(x, pos):
-    global axisdec
-    if axisdec==None: axisdec=0
-    s = np.sign(x) 
-    x=abs(x)
-    a = r'{:.'+str(int(axisdec))+r'f}'
-    a = a.format(x)
-    if s<0: a = r'\mbox{--}'+a
+    # Find out required decimal precision
+    a, b = '{:.1e}'.format(np.amax(abs(np.array(plot_colormap.boxcoords)))).split('e')
+    precision = '0'
+    if int(b)<1: precision = str(abs(-1-int(b)))
+    f = r'{:.'+precision+r'f}'
+    a = f.format(abs(x))
+    if np.sign(x)<0: a = r'\mbox{--}'+a
+    return r'$'+a+'$'
+
+# cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
+def cbfmt(x, pos):
+    # Find out required decimal precision
+    a, b = '{:.1e}'.format(np.amax(abs(np.array([plot_colormap.vminuse,plot_colormap.vmaxuse])))).split('e')
+    precision = '0'
+    if int(b)<1: precision = str(abs(-1+int(b)))
+    # For symlog, make sure the linthresh value is still resolved
+    if plot_colormap.linthresh!=None:
+        aa, bb = '{:.1e}'.format(plot_colormap.linthresh).split('e')
+        if int(bb)<1: precision = str(abs(-1+int(bb)))            
+    f = r'{:.'+precision+r'f}'
+    a = f.format(abs(x))
+    if np.sign(x)<0: a = r'\mbox{--}'+a
     return r'$'+a+'$'
 
 def plot_colormap(filename=None,
@@ -281,22 +294,22 @@ def plot_colormap(filename=None,
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
-    fontsize3=8*scale # Colour bar ticks
+    fontsize3=8*scale # Colour bar ticks and title
     # Small internal colorbar needs increased font size
     if internalcb!=None: fontsize3=fontsize3*2
 
     # Plot title with time
-    timeval=None
-    timeval=f.read_parameter("time")
-    if timeval==None:
+    if f.check_parameter("time"):
+        timeval=f.read_parameter("time")
+    elif f.check_parameter("t"):
         timeval=f.read_parameter("t")
-    if timeval==None:
+    else:
+        timeval=None
         print "Unknown time format encountered"
 
     # Plot title with time
     if title==None or title=="msec" or title=="musec":        
         if timeval == None:    
-            print "Unknown time format encountered"
             plot_title = ''
         else:
             timeformat='{:4.1f}'
@@ -371,15 +384,6 @@ def plot_colormap(filename=None,
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
-    # xsize = f.read_parameter("xcells_ini")
-    # ysize = f.read_parameter("ycells_ini")
-    # zsize = f.read_parameter("zcells_ini")
-    # xmin = f.read_parameter("xmin")
-    # xmax = f.read_parameter("xmax")
-    # ymin = f.read_parameter("ymin")
-    # ymax = f.read_parameter("ymax")
-    # zmin = f.read_parameter("zmin")
-    # zmax = f.read_parameter("zmax")
 
     # Check if ecliptic or polar run
     if ysize==1:
@@ -419,6 +423,7 @@ def plot_colormap(filename=None,
     # Scale data extent and plot box
     simext=[i/axisunit for i in simext]
     boxcoords=[i/axisunit for i in boxcoords]    
+    plot_colormap.boxcoords = boxcoords # Make boxcoords available for formatter function
 
     pass_maps=[]
 
@@ -488,26 +493,26 @@ def plot_colormap(filename=None,
         #     datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
         # if datamap_info.units=="s3/m6":
         #     datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
-        # # If valscal is in use, use it instead of units
-        # if not np.isclose(valscal,1.):
-        #     datamap_unit=r"${\times}$"+fmt(valscal,None)
-        # # Allow specialist units for known valscal and unit combinations
-        # if datamap_info.units=="s" and np.isclose(valscal,1.e6):
-        #     datamap_unit = "$\mu$s"
-        # if datamap_info.units=="s" and np.isclose(valscal,1.e3):
-        #     datamap_unit = "ms"
-        # if datamap_info.units=="T" and np.isclose(valscal,1.e9):
-        #     datamap_unit = "nT"
-        # if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
-        #     datamap_unit = "MK"
-        # if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
-        #     datamap_unit = "nPa"
-        # if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
-        #     datamap_unit = "$\mathrm{cm}^{-3}$"
-        # if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
-        #     datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
-        # if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
-        #     datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
+        # If valscal is in use, use it instead of units
+        if not np.isclose(valscal,1.):
+            datamap_unit=r"${\times}$"+fmt(valscal,None)
+        # Allow specialist units for known valscal and unit combinations
+        if datamap_info.units=="s" and np.isclose(valscal,1.e6):
+            datamap_unit = "$\mu$s"
+        if datamap_info.units=="s" and np.isclose(valscal,1.e3):
+            datamap_unit = "ms"
+        if datamap_info.units=="T" and np.isclose(valscal,1.e9):
+            datamap_unit = "nT"
+        if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
+            datamap_unit = "MK"
+        if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
+            datamap_unit = "nPa"
+        if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
+            datamap_unit = "$\mathrm{cm}^{-3}$"
+        if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
+            datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
+        if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
+            datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":
@@ -686,22 +691,27 @@ def plot_colormap(filename=None,
         # Drop negative and zero values
         vminuse = np.ma.amin(np.ma.masked_less_equal(np.ma.masked_where(np.ma.getmask(rhomap),datamap),0))
 
+    # Make vmaxuse and vminuse available for formatter functions
+    plot_colormap.vminuse = vminuse
+    plot_colormap.vmaxuse = vmaxuse
+
     # If symlog scaling is set:
+    plot_colormap.linthresh = None
     if symlog!=None:
         if symlog>0:
-            linthresh = symlog 
+            plot_colormap.linthresh = symlog 
         else:
-            linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
+            plot_colormap.linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
 
     # Lin or log colour scaling, defaults to log
     if lin==None:
         # Special SymLogNorm case
         if symlog!=None:
-            #norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, ncolors=cmapuse.N, clip=True)
-            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            #norm = SymLogNorm(linthresh=plot_colormap.linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, ncolors=cmapuse.N, clip=True)
+            norm = SymLogNorm(linthresh=plot_colormap.linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
             minlog=int(np.ceil(np.log10(-vminuse)))
-            logthresh=int(np.floor(np.log10(linthresh)))
+            logthresh=int(np.floor(np.log10(plot_colormap.linthresh)))
             logstep=1
             ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
                     +[0.0]
@@ -833,14 +843,15 @@ def plot_colormap(filename=None,
             fScolour = fsaved
         else:
             fScolour = 'black'
-        fSmap = f.read_variable("fSaved")
-        fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        if np.ma.is_masked(maskgrid):
-            fSmap = fSmap[~np.all(maskgrid.mask, axis=1),:]
-            fSmap = fSmap[:,~np.all(maskgrid.mask, axis=0)]
+        if f.check_variable("fSaved"):
+            fSmap = f.read_variable("fSaved")
+            fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+            if np.ma.is_masked(maskgrid):
+                fSmap = fSmap[~np.all(maskgrid.mask, axis=1),:]
+                fSmap = fSmap[:,~np.all(maskgrid.mask, axis=0)]
 
-        fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour,
-                             linestyles='solid',linewidths=0.5,zorder=2)
+            fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour,
+                                 linestyles='solid',linewidths=0.5,zorder=2)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
@@ -848,7 +859,6 @@ def plot_colormap(filename=None,
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
         extresult=external(ax1, XmeshPass,YmeshPass, pass_maps)
 
-    # Draw canvas every now and then to generate latex-math ticks etc
     if nocb==None:
         if internalcb==None:
             # Witchcraft used to place colourbar
@@ -876,17 +886,18 @@ def plot_colormap(filename=None,
                     horalign="right"
             #cax = plt.axes(cbloc)
             cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
-                             bbox_transform=ax1.transAxes, borderpad=1.0)
+                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1), borderpad=1.0)
             # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
         # Colourbar title
         if len(cb_title_use)!=0:
-            #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize,weight='black', transform=ax1.transAxes, horizontalalignment='center')
-            cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+            #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize3,weight='black', transform=ax1.transAxes, horizontalalignment='center')
+            cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         # First draw colorbar
         if usesci==0:        
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
+            #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(cbfmt))
         else:
             cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
@@ -897,14 +908,19 @@ def plot_colormap(filename=None,
         # Adjust placement of innermost ticks for symlog if it indeed is symmetric
         if symlog!=None and np.isclose(vminuse+vmaxuse, 0.0):
             cbt=cb.ax.yaxis.get_ticklabels()
-            # for tind in range(len(cbt)):
-            #     print(tind,cbt[tind].get_position(), cbt[tind].get_text())
             (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
             if abs(0.5-cbty)/scale < 0.1:
                 cbt[len(cbt)/2-1].set_va("top")
             (cbtx,cbty) = cbt[len(cbt)/2+1].get_position() # just above zero
             if abs(0.5-cbty)/scale < 0.1:
                 cbt[len(cbt)/2+1].set_va("bottom")
+            if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
+                (cbtx,cbty) = cbt[len(cbt)/2-2].get_position() # second below zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)/2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)/2+2].get_position() # second above zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)/2+2].set_va("bottom")
 
         # if too many subticks:
         if lin==None and usesci!=0 and symlog==None:
@@ -959,8 +975,7 @@ def plot_colormap(filename=None,
         newax.imshow(wm)
         newax.axis('off')
 
-    # Draw canvas every now and then to generate latex-math ticks etc
-    fig.canvas.draw()           
+    fig.canvas.draw() # Draw canvas to generate latex-math ticks etc
     if tickinterval!=None:
         ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
         ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
@@ -971,7 +986,7 @@ def plot_colormap(filename=None,
             label.set_visible(False)
     else:
         # Custom tick formatter
-        if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
+        #if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
         ax1.xaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
         # set alignments. If includes very long ticks, tilt them.
         ticklabs = ax1.xaxis.get_ticklabels()
@@ -989,7 +1004,7 @@ def plot_colormap(filename=None,
             label.set_visible(False)       
     else:
         # Custom tick formatter
-        if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
+        #if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
         ax1.yaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
         # set alignments. If includes very long ticks, tilt them.
         ticklabs = ax1.yaxis.get_ticklabels()
@@ -1002,7 +1017,6 @@ def plot_colormap(filename=None,
                 t.set_verticalalignment('top')
                 t.set_horizontalalignment('right')
 
-    # Draw canvas every now and then to generate latex-math ticks etc
     if noborder==None:
         # adjust layout
         plt.tight_layout()

@@ -449,8 +449,33 @@ class VlsvReader(object):
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
+   def check_parameter( self, name ):
+      ''' Checks if a given parameter is in the vlsv reader
+
+          :param name:             Name of the parameter
+          :returns:                True if the parameter is in the vlsv file, false if not
+
+          .. note:: This should be used for checking if a parameter exists, e.g. for different Vlasiator versions and time output
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             if vlsvReader.check_parameter( "time" ):
+                time = vlsvReader.read_parameter("time")
+             elif vlsvReader.check_parameter( "t" ):
+                time = vlsvReader.read_parameter("t")
+             else:
+                time = None
+      '''
+      for child in self.__xml_root:
+         if child.tag == "PARAMETER" and "name" in child.attrib:
+            if child.attrib["name"] == name:
+               return True
+      return False
+
    def check_variable( self, name ):
-      ''' Checks if a given variable is in the vlsv reader or a part of the data reducer variables
+      ''' Checks if a given variable is in the vlsv reader
 
           :param name:             Name of the variable
           :returns:                True if the variable is in the vlsv file, false if not
@@ -465,7 +490,7 @@ class VlsvReader(object):
                 # Variable can be plotted
                 plot_B()
              else:
-                # Variaable not in the vlsv file
+                # Variable not in the vlsv file
                 plot_B_vol()
       '''
       for child in self.__xml_root:
@@ -553,12 +578,20 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
+      print("request variable "+name+"/"+tag+"/"+mesh+"/"+operator) 
+
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
          varname = name
+
+      # POSSIBLE TODO:
+      # If read was to be made case-insensitive, checking through variables and datareducers can be
+      # done with an iterator as
+      # if name.lower() in (n.upper() for n in datareducers):
+      # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
 
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
@@ -603,9 +636,9 @@ class VlsvReader(object):
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
             
-            # If variable vector size is 1, change operator to automatically become "pass"
-            if vector_size == 1:
-               operator="pass"
+            # If variable vector size is 1, and requested magnitude, change it to "absolute"
+            if vector_size == 1 and operator=="magnitude":
+               operator="absolute"
 
             if array_size == 1:
                return data_operators[operator](data[0])
@@ -638,15 +671,19 @@ class VlsvReader(object):
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
+               print("append ",i,tag,mesh,read_single_cellid)
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+            print("operator ",operator)
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
       if self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
+         print("multipoping variable ",name)
          for pname in self.active_populations:
+            print("mpvar ",pname,name,tag,mesh,read_single_cellid)
             tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
-
+         print("summing",tmp_vars)
          return data_operators["sum"](tmp_vars)   
 
       # Check if the name is in multidatareducers
@@ -666,7 +703,8 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
-
+      if name!="":
+         print "Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!" 
       if self.__fptr.closed:
          fptr.close()
 
