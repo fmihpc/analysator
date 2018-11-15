@@ -84,16 +84,27 @@ def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False):
     else:
         lat_m = np.sign(Z)*np.pi/2.
     L = R/np.cos(lat_m)**2                        # L-shell
+    L_line = R/np.abs(np.cos(lat_m))              # L-shell for line dipole
 
+    Latmag_inv = np.arccos(np.sqrt(1./L))
+    Latmag_inv_line = np.arccos(1./L_line)
+    print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
+    print("Latmag_inv_line = "+str(Latmag_inv_line*180./np.pi))
 
     # Analytical formula for loss cone angle (dipole approximation)
     alph0 = np.arcsin(R**-1.5 * (4*L-3*R)**.25/(4*L-3.)**.25)
+    alph0_line = np.arcsin(R**-1.5 * (4*L_line-3*R)**.25/(4*L_line-3.)**.25)
 
     # Conversion to degrees if needed
     if deg:
         alph0 = alph0*180./np.pi
+        alph0_line = alph0_line*180./np.pi
 
-    return alph0
+    print('alph0 dipole: '+str(alph0))
+    print('alph0 line dipole: '+str(alph0_line))
+    print('Relative error on alph0: '+str(alph0/alph0_line))
+
+    return (alph0,Latmag_inv,Latmag_inv_line)
 
 
 
@@ -159,8 +170,13 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
     # Calculate B value at 1 Re from boundary point (using dipolar approximation)
     L = innerbound/Re/np.cos(latmag_bound)**2
     Latmag_inv = np.arccos(np.sqrt(1./L))
+
+    L_line = innerbound/Re/np.abs(np.cos(latmag_bound))
+    Latmag_inv_line = np.arccos(1./L_line)
+
     Bm = B0 * np.sqrt(1.+3*np.sin(Latmag_inv)**2)
     print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
+    print("Latmag_inv_line = "+str(Latmag_inv_line*180./np.pi))
     print("Bm = "+str(Bm)+"   "+str(np.sqrt(1.+3*np.sin(Latmag_inv)**2)))
     print("B_cell = "+str(B_cell))
 
@@ -173,7 +189,7 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 
     print("alph0 in function = "+str(alph0))
 
-    return (alph0,Latmag_inv)
+    return (alph0,Latmag_inv,Latmag_inv_line)
 
 
 # -------------------------------------------------------------------------------------------
@@ -209,7 +225,10 @@ def refine_vgrid(V=None,f=None,dv=None,n=None):
 # -------------------------------------------------------------------------------------------
 def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=None,emax=None,hemisphere=None):
 
-    refine = 3
+    if pop=='electron':
+        refine =3
+    else:
+        refine = 3
     print('Loss cone angle for integration: '+str(losscone))
     
     # check if velocity space exists in this cell
@@ -240,10 +259,13 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     (V_refined,f_refined) = refine_vgrid(V=V,f=f,dv=dv,n=refine)
 
     # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer cells as well.
-    fMin = 1e-16 # default
+    if pop=='electron':
+        fMin = 1e-21
+    else:
+        fMin = 1e-16 # default
     if vlsvReader.check_variable('MinValue') == True:
         fMin = vlsvReader.read_variable('MinValue',cid)
-    ii_f = np.where(f_refined >= fMin/refine**3)  # Must remember to take into account refinement!
+    ii_f = np.where(f_refined >= fMin)
     print("Dropping velocity cells under fMin value "+str(fMin))
     if len(ii_f) < 1:
         return (False,0,0)
@@ -291,6 +313,8 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
         mass = 4.0026*amu
     elif pop=='oxygen':
         mass = 15.999*amu
+    elif pop=='electron':
+        mass = 9.1e-31 # kg
     
     qe = 1.602177e-19 # C
 
@@ -304,7 +328,10 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     energy_bins = np.array([])
     fluxes = np.array([])
 
-    deltaV = 50.e3 # m/s
+    if pop=='electron':
+        deltaV = 2.5e6
+    else:
+        deltaV = 50.e3 # m/s
     for vel in np.arange(0.,max(abs(vxmin),abs(vxmax)),deltaV):
 
         # Energy in the middle of the bin [keV]
@@ -490,9 +517,6 @@ def plot_prec_spectrum(filename=None,
     if run==None:
         run='plot'
 
-    # Output file name
-    savefigname = outputdir+run+"_prec_spec"+stepstr+"_"+str(cellidplot[0])+".png"
-
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
@@ -552,8 +576,18 @@ def plot_prec_spectrum(filename=None,
         print("ERROR: No cell ID given as input")
         return
     else:
+
+        # If multiple cellids are given, build a keogram to be saved in file
+        datamap = np.array([])
+        latitudes = np.array([])
+        latitudes_line = np.array([])
+
+
         for cellid in cellidplot:
             xCid,yCid,zCid = f.get_cell_coordinates(cellid)
+
+            # Output file name
+            savefigname = outputdir+run+"_prec_spec"+stepstr+"_"+str(cellid)+".png"
 
             # Read the value of B in the cell
             B_cell = f.read_variable("B", cellid)
@@ -568,73 +602,89 @@ def plot_prec_spectrum(filename=None,
 
             # Calculation of loss cone angle value
             if dipolapprox:
-                alph0 = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+                [alph0,latmag_inv,latmag_inv_line] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
             elif fluxfile==None:
                 print("Flux function file not provided!")
                 return
             else:
-                [alph0,latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
+                [alph0,latmag_inv,latmag_inv_line] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
 
 
             # Reduction of the precipitating particle data
             (wentFine,energy,flux) = precipitation_spectrum(vlsvReader=f,cid=cellid,losscone=alph0,pop=pop,emin=emin,emax=emax,hemisphere=hemisphere)
 
-    # Plots the histogram
-    if wentFine:
-        fig1=plt.loglog(energy,flux,'o-')
-#        print("flux = "+str(flux)+"\n energy = "+str(energy))
-    else:
-        print("There was a problem making the histogram")
-        return
-
-    ax1 = plt.gca() # get current axes
-
-    # Title and plot limits
-    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
-    plt.xlim([emin,emax])
-    plt.ylim([fmin,fmax])
-
-    for axis in ['top','bottom','left','right']:
-        ax1.spines[axis].set_linewidth(thick)
-    ax1.xaxis.set_tick_params(width=thick,length=3)
-    ax1.yaxis.set_tick_params(width=thick,length=3)
-
-
-    plt.xlabel('E [keV]',fontsize=fontsize,weight='black')
-    plt.ylabel(r'Flux [protons cm$^{-2}$ s$^{-1}$ sr$^{-1}$ eV$^{-1}$]',fontsize=fontsize,weight='black')
-
-    plt.xticks(fontsize=fontsize,fontweight='black')
-    plt.yticks(fontsize=fontsize,fontweight='black')
-
-    # Grid
-    plt.grid(color='grey',linestyle='-')
-
-    # set axis exponent offset font sizes
-    ax1.yaxis.offsetText.set_fontsize(fontsize)
-    ax1.xaxis.offsetText.set_fontsize(fontsize)
+            # Plots the histogram
+            if wentFine:
+                fig1=plt.loglog(energy,flux,'o-')
+#                print("flux = "+str(flux)+"\n energy = "+str(energy))
+                datamap = np.append(datamap,flux)
+                latitudes = np.append(latitudes,latmag_inv)
+                latitudes_line = np.append(latitudes_line,latmag_inv_line)
+            else:
+                print("There was a problem making the histogram")
+                return
           
-    # Add Vlasiator watermark
-    if wmark!=None:        
-        wm = plt.imread(get_sample_data(watermarkimage))
-        newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
-        newax.imshow(wm)
-        newax.axis('off')
+            ax1 = plt.gca() # get current axes
+          
+            # Title and plot limits
+            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+            plt.xlim([emin,emax])
+            plt.ylim([fmin,fmax])
+          
+            for axis in ['top','bottom','left','right']:
+                ax1.spines[axis].set_linewidth(thick)
+            ax1.xaxis.set_tick_params(width=thick,length=3)
+            ax1.yaxis.set_tick_params(width=thick,length=3)
+          
+          
+            plt.xlabel('E [keV]',fontsize=fontsize,weight='black')
+            plt.ylabel(r'Flux ['+pop+' cm$^{-2}$ s$^{-1}$ sr$^{-1}$ eV$^{-1}$]',fontsize=fontsize,weight='black')
+          
+            plt.xticks(fontsize=fontsize,fontweight='black')
+            plt.yticks(fontsize=fontsize,fontweight='black')
+          
+            # Grid
+            plt.grid(color='grey',linestyle='-')
+          
+            # set axis exponent offset font sizes
+            ax1.yaxis.offsetText.set_fontsize(fontsize)
+            ax1.xaxis.offsetText.set_fontsize(fontsize)
+                  
+            # Add Vlasiator watermark
+            if wmark!=None:        
+                wm = plt.imread(get_sample_data(watermarkimage))
+                newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
+                newax.imshow(wm)
+                newax.axis('off')
+          
+            # adjust layout
+            plt.tight_layout()
+          
+          
+            # Save output or draw on-screen
+            if draw==None:
+                print(savefigname+"\n")
+                plt.savefig(savefigname,dpi=300)
+            else:
+                plt.draw()
+                plt.show()
+            plt.close()
+            plt.clf()
 
-    # adjust layout
-    plt.tight_layout()
 
+        # Determine sizes of the keogram array
+        sizes=[latitudes.size,energy.size]
 
-    # Save output or draw on-screen
-    if draw==None:
-        print(savefigname+"\n")
-        plt.savefig(savefigname,dpi=300)
-    else:
-        plt.draw()
-        plt.show()
-    plt.close()
-    plt.clf()
+        # Reshape data to an ordered 2D array that can be plotted
+        if np.ndim(datamap) != 2:
+            datamap = datamap.reshape([sizes[0],sizes[1]])
+        datamap = np.transpose(datamap)
 
-
+        # Save the keogram to file in case further processing is needed
+        datamap.dump(outputdir+'datamap_'+str(cellidplot[0]))
+        np.save(outputdir+'latitudes_keogram_'+str(cellidplot[0]),latitudes)
+        np.save(outputdir+'latitudes_keogram_line_'+str(cellidplot[0]),latitudes_line)
+        np.save(outputdir+'energy_scale_'+str(cellidplot[0]),energy)
 
 
 def make_keogram_column(step=None):
@@ -922,7 +972,7 @@ def plot_prec_time_spectrum(filedir=None,
 
             # Calculation of loss cone angle value
             if dipolapprox:
-                alph0 = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
             elif fluxdir==None:
                 print("Flux function file not provided!")
                 return
