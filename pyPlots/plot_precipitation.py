@@ -695,7 +695,7 @@ def plot_prec_spectrum(filename=None,
 
 
 def make_keogram_column(step=None):
-    global alph0_global
+    global alph0_global, linedipole_global
 
     filename = filedir_global+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
     fluxfile = fluxdir_global+'bulk.'+str(step).rjust(7,'0')+'.bin'
@@ -707,7 +707,7 @@ def make_keogram_column(step=None):
     B_cell = f.read_variable("B", cellid_global)
     B_cell = np.sqrt(B_cell[0]**2+B_cell[1]**2+B_cell[2]**2)
 
-    [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False,linedipole=linedipole)
+    [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False,linedipole=linedipole_global)
     print("step "+str(step)+", latm = "+str(latmag_inv))
 
     # Reduction of the precipitating particle data
@@ -798,6 +798,8 @@ def plot_prec_time_spectrum(filedir=None,
 
     global xsize,ysize,zsize, xcells_ini
     global xmin, ymin, zmin, xmax, ymax, zmax
+
+    global linedipole_global
 
     filedir_global=filedir
     emin_global=emin
@@ -908,9 +910,11 @@ def plot_prec_time_spectrum(filedir=None,
     cellids = f.read_variable("CellID")
 
     # Check if ecliptic or polar run
+    linedipole_global=False
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
         sizes=[xsize,zsize]
+        linedipole_global=True
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
@@ -979,13 +983,13 @@ def plot_prec_time_spectrum(filedir=None,
 
             # Calculation of loss cone angle value
             if dipolapprox:
-                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False,linedipole=linedipole)
+                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False,linedipole=linedipole_global)
             elif fluxdir==None:
                 print("Flux function file not provided!")
                 return
             else:
                 fluxdir_global = fluxdir
-                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxdir_global+'bulk.000'+str(start)+'.bin',deg=False,linedipole=linedipole)
+                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxdir_global+'bulk.000'+str(start)+'.bin',deg=False,linedipole=linedipole_global)
             alph0_global = alph0
 
             # Building the datamap corresponding to the keogram    
