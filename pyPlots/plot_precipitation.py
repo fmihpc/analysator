@@ -52,11 +52,12 @@ def fmt(x, pos):
     return r'${}\times10^{{{}}}$'.format(a, b)
 
 
-def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False):
+def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False,linedipole=False):
     ''' Calculates the value of the loss cone angle at a given location, in the dipole approximation
         :kword cellcoord:    The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in m]
         :kword cellcoordre:  The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in Re]
         :kword deg:          True if user wants the angle in degrees
+        :kword linedipole:   True if 2D polar run, which uses line dipole for geomagnetic field
 
         :returns:            The value of the loss cone angle
 
@@ -83,38 +84,37 @@ def loss_cone_angle_dipole(cellcoord=None,cellcoordre=None,deg=False):
         lat_m = np.arctan(Z/np.sqrt(X**2+Y**2))
     else:
         lat_m = np.sign(Z)*np.pi/2.
-    L = R/np.cos(lat_m)**2                        # L-shell
-    L_line = R/np.abs(np.cos(lat_m))              # L-shell for line dipole
 
-    Latmag_inv = np.arccos(np.sqrt(1./L))
-    Latmag_inv_line = np.arccos(1./L_line)
-    print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
-    print("Latmag_inv_line = "+str(Latmag_inv_line*180./np.pi))
+    if linedipole:
+        L = R/np.abs(np.cos(lat_m))          # L-shell for line dipole
+        Latmag_inv = np.arccos(1./L)
+        print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
+        alph0 = np.arcsin(1./R)              # Analytical formula for loss cone angle (line dipole approximation)
+    else:
+        L = R/np.cos(lat_m)**2                    # L-shell
+        Latmag_inv = np.arccos(np.sqrt(1./L))
+        print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
+        alph0 = np.arcsin(R**-1.5 * (4*L-3*R)**.25/(4*L-3.)**.25)    # Analytical formula for loss cone angle (centre dipole approximation)
 
-    # Analytical formula for loss cone angle (dipole approximation)
-    alph0 = np.arcsin(R**-1.5 * (4*L-3*R)**.25/(4*L-3.)**.25)
-    alph0_line = np.arcsin(R**-1.5 * (4*L_line-3*R)**.25/(4*L_line-3.)**.25)
 
     # Conversion to degrees if needed
     if deg:
         alph0 = alph0*180./np.pi
-        alph0_line = alph0_line*180./np.pi
 
     print('alph0 dipole: '+str(alph0))
-    print('alph0 line dipole: '+str(alph0_line))
-    print('Relative error on alph0: '+str(alph0/alph0_line))
 
-    return (alph0,Latmag_inv,Latmag_inv_line)
+    return (alph0,Latmag_inv)
 
 
 
-def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=None,deg=False):
+def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=None,deg=False,linedipole=False):
     ''' Calculates the value of the loss cone angle at a given location, without assuming dipolar field
         :kword cellcoord:    The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in m]
         :kword cellcoordre:  The coordinates (X,Y,Z) of the cell whose loss cone angle value is calculated [in Re]
         :kword B0:           The magnetic field magnitude in the cell
         :kword fluxfilename: Name of the file containing the flux function
         :kword deg:          True if user wants the angle in degrees
+        :kword linedipole:   True if 2D polar run, which uses line dipole for geomagnetic field
 
         :returns:            The value of the loss cone angle
 
@@ -126,6 +126,9 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 
     # Magnetic strength at Earth surface equator [T]
     B0 = 3.12e-5
+
+    # Line dipole strength [T] (estimated...)
+    D_line = 1.26e8
 
     # Parameters for processing the flux function
     xoffset = -xmin
@@ -165,20 +168,24 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 	    latmag_bound = phi
 	    break
 
+    if latmag_bound>3*np.pi/2:
+        latmag_bound = latmag_bound - 2.*np.pi
+    elif latmag_bound>np.pi/2:
+        latmag_bound = np.pi - latmag_bound
+
     print("latmag_bound = "+str(latmag_bound*180./np.pi))
 
     # Calculate B value at 1 Re from boundary point (using dipolar approximation)
-    L = innerbound/Re/np.cos(latmag_bound)**2
-    Latmag_inv = np.arccos(np.sqrt(1./L))
+    if linedipole:
+        L = innerbound/Re/np.abs(np.cos(latmag_bound))
+        Latmag_inv = np.arccos(1./L)
+        Bm = D_line/Re**2
+    else:
+        L = innerbound/Re/np.cos(latmag_bound)**2
+        Latmag_inv = np.arccos(np.sqrt(1./L))
+        Bm = B0 * np.sqrt(1.+3*np.sin(Latmag_inv)**2)
 
-    L_line = innerbound/Re/np.abs(np.cos(latmag_bound))
-    Latmag_inv_line = np.arccos(1./L_line)
-
-    Bm = B0 * np.sqrt(1.+3*np.sin(Latmag_inv)**2)
     print("Latmag_inv = "+str(Latmag_inv*180./np.pi))
-    print("Latmag_inv_line = "+str(Latmag_inv_line*180./np.pi))
-    print("Bm = "+str(Bm)+"   "+str(np.sqrt(1.+3*np.sin(Latmag_inv)**2)))
-    print("B_cell = "+str(B_cell))
 
     # Calculate the loss-cone angle from ratio of B
     alph0 = np.arcsin(np.sqrt(B_cell/Bm))
@@ -189,7 +196,7 @@ def loss_cone_angle(cellcoord=None,cellcoordre=None,B_cell=None,fluxfilename=Non
 
     print("alph0 in function = "+str(alph0))
 
-    return (alph0,Latmag_inv,Latmag_inv_line)
+    return (alph0,Latmag_inv)
 
 
 # -------------------------------------------------------------------------------------------
@@ -314,7 +321,7 @@ def precipitation_spectrum(vlsvReader=None,cid=None,losscone=None,pop=None,emin=
     elif pop=='oxygen':
         mass = 15.999*amu
     elif pop=='electron':
-        mass = 9.1e-31 # kg
+        mass = 9.10938e-31 # kg
     
     qe = 1.602177e-19 # C
 
@@ -518,6 +525,7 @@ def plot_prec_spectrum(filename=None,
         run='plot'
 
     Re = 6.371e+6 # Earth radius in m
+
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
@@ -525,10 +533,12 @@ def plot_prec_spectrum(filename=None,
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
 
+    linedipole = False # Will be changed to True if polar run
     # Check if ecliptic or polar run
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
         sizes=[xsize,zsize]
+        linedipole=True
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
@@ -580,7 +590,6 @@ def plot_prec_spectrum(filename=None,
         # If multiple cellids are given, build a keogram to be saved in file
         datamap = np.array([])
         latitudes = np.array([])
-        latitudes_line = np.array([])
 
 
         for cellid in cellidplot:
@@ -602,12 +611,12 @@ def plot_prec_spectrum(filename=None,
 
             # Calculation of loss cone angle value
             if dipolapprox:
-                [alph0,latmag_inv,latmag_inv_line] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False,linedipole=linedipole)
             elif fluxfile==None:
                 print("Flux function file not provided!")
                 return
             else:
-                [alph0,latmag_inv,latmag_inv_line] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
+                [alph0,latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False,linedipole=linedipole)
 
 
             # Reduction of the precipitating particle data
@@ -619,7 +628,6 @@ def plot_prec_spectrum(filename=None,
 #                print("flux = "+str(flux)+"\n energy = "+str(energy))
                 datamap = np.append(datamap,flux)
                 latitudes = np.append(latitudes,latmag_inv)
-                latitudes_line = np.append(latitudes_line,latmag_inv_line)
             else:
                 print("There was a problem making the histogram")
                 return
@@ -683,7 +691,6 @@ def plot_prec_spectrum(filename=None,
         # Save the keogram to file in case further processing is needed
         datamap.dump(outputdir+'datamap_'+str(cellidplot[0]))
         np.save(outputdir+'latitudes_keogram_'+str(cellidplot[0]),latitudes)
-        np.save(outputdir+'latitudes_keogram_line_'+str(cellidplot[0]),latitudes_line)
         np.save(outputdir+'energy_scale_'+str(cellidplot[0]),energy)
 
 
@@ -700,7 +707,7 @@ def make_keogram_column(step=None):
     B_cell = f.read_variable("B", cellid_global)
     B_cell = np.sqrt(B_cell[0]**2+B_cell[1]**2+B_cell[2]**2)
 
-    [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False)
+    [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxfile,deg=False,linedipole=linedipole)
     print("step "+str(step)+", latm = "+str(latmag_inv))
 
     # Reduction of the precipitating particle data
@@ -972,13 +979,13 @@ def plot_prec_time_spectrum(filedir=None,
 
             # Calculation of loss cone angle value
             if dipolapprox:
-                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False)
+                [alph0,latmag_inv] = loss_cone_angle_dipole(cellcoord=[xCid,yCid,zCid],deg=False,linedipole=linedipole)
             elif fluxdir==None:
                 print("Flux function file not provided!")
                 return
             else:
                 fluxdir_global = fluxdir
-                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxdir_global+'bulk.000'+str(start)+'.bin',deg=False)
+                [alph0, latmag_inv] = loss_cone_angle(cellcoord=[xCid,yCid,zCid],B_cell=B_cell,fluxfilename=fluxdir_global+'bulk.000'+str(start)+'.bin',deg=False,linedipole=linedipole)
             alph0_global = alph0
 
             # Building the datamap corresponding to the keogram    
