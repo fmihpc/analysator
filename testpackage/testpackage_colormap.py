@@ -16,19 +16,22 @@ runs.append( { 'name': 'ABC',
                  'fileLocation': '/proj/vlasov/2D/ABC/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/ABC/flux/',
                  'pops': ['avgs'],
-                 'time': 1000 } )
+                 'time': 1000,
+                 'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQ',
                  'verifydir': 'testpackage/BCQ/', 
                  'fileLocation': '/proj/vlasov/2D/BCQ/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/BCQ/flux/',
                  'pops': ['avgs'],
-                 'time': 1600 } )
+                 'time': 1600,
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFD',
                  'verifydir': 'testpackage/BFD/', 
                  'fileLocation': '/proj/vlasov/2D/BFD/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/BFD/fluxfunction/',
                  'pops': ['proton','helium'],
-                 'time': 1000 } )
+                 'time': 1000,
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 
                      
 # Custom expression function                                                               
@@ -188,7 +191,7 @@ regularcalls = [
 # Input and output methods, nooverwrite
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
-"pt.plot.plot_colormap(filedir=fileLocation, step=j, run=verifydir+REPLACEINDEX)",
+"pt.plot.plot_colormap(filedir=fileLocation, step=jrun, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
 
@@ -282,12 +285,12 @@ regularcalls = [
 
 # Externals and expressions
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['rho','B','beta'])",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20,lin=1,usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[-10,10,5,50], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)",
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[-10,10,5,50])",
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['rho'], boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['rho'], boxre=[0,30,-15,15])",
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['beta'])",
 
 # More data reducers
@@ -329,7 +332,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='beta')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaParallel')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaPerpendicular')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Rmirror',lin=1,vmin=0.5,vmax=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeam',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vThermal',lin=1)",]
@@ -368,7 +371,7 @@ multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/beta')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaParallel')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpendicular')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1)"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)"]
 
 # count how many tests to run in total
 ntests = []
@@ -379,6 +382,7 @@ for i,run in enumerate(runs):
             n = n + len(multipopcalls)
     ntests.append(n)
 nteststot = np.sum(np.array(ntests))
+
 # How many jobs? 
 jobcount=int(sys.argv[1])
 jobcurr=int(sys.argv[2])
@@ -414,6 +418,12 @@ for j in range(start,end):
     fluxLocation = runs[runid]['fluxLocation']
     pops = runs[runid]['pops']
     time = runs[runid]['time']
+
+    level_bow_shock = runs[runid]['cavitonparams'][0]
+    level_n_caviton = runs[runid]['cavitonparams'][1]
+    level_B_caviton = runs[runid]['cavitonparams'][2]
+    level_beta_SHFA = runs[runid]['cavitonparams'][3]
+    level_beta_SHFA_SW = runs[runid]['cavitonparams'][4]
 
     outputLocation=os.path.expandvars('$HOME/Plots/'+verifydir)
     
