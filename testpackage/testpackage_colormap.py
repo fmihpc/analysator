@@ -191,7 +191,7 @@ regularcalls = [
 # Input and output methods, nooverwrite
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
-"pt.plot.plot_colormap(filedir=fileLocation, step=jrun, run=verifydir+REPLACEINDEX)",
+"pt.plot.plot_colormap(filedir=fileLocation, step=REPLACEINDEX, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
 
