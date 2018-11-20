@@ -578,8 +578,6 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
-      print("request variable "+name+"/"+tag+"/"+mesh+"/"+operator) 
-
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -638,6 +636,7 @@ class VlsvReader(object):
             
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
+               print("Data variable with vector size 1: Changed magnitude operation to absolute")
                operator="absolute"
 
             if array_size == 1:
@@ -645,10 +644,22 @@ class VlsvReader(object):
             else:
                return data_operators[operator](data)
 
+      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
+      if self.check_variable(self.active_populations[0]+'/'+name): 
+         tmp_vars = []
+         for pname in self.active_populations:
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+         return data_operators["sum"](tmp_vars)   
+
       # Check if the name is in datareducers
       if name in datareducers:
          reducer = datareducers[name]
          # Read the necessary variables:
+
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
        
          # Return the output of the datareducer
          if reducer.useVspace:
@@ -671,24 +682,18 @@ class VlsvReader(object):
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
-               print("append ",i,tag,mesh,read_single_cellid)
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
-            print("operator ",operator)
             return data_operators[operator](reducer.operation( tmp_vars ))
-
-      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      if self.check_variable(self.active_populations[0]+'/'+name): 
-         tmp_vars = []
-         print("multipoping variable ",name)
-         for pname in self.active_populations:
-            print("mpvar ",pname,name,tag,mesh,read_single_cellid)
-            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
-         print("summing",tmp_vars)
-         return data_operators["sum"](tmp_vars)   
 
       # Check if the name is in multidatareducers
       if 'pop/'+varname in multipopdatareducers:
          reducer = multipopdatareducers['pop/'+varname]
+
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
+
          # Read the necessary variables:
          if reducer.useVspace:
             print "Error: useVspace flag is not implemented for multipop datareducers!" 

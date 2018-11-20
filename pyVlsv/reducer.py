@@ -30,13 +30,15 @@ class DataReducerVariable:
    latex = ""
    latexunits = ""
    useVspace = False
-   def __init__(self, variables, operation, units, latex="", latexunits="",useVspace=False):
+   vector_size=1
+   def __init__(self, variables, operation, units, vector_size, latex="", latexunits="",useVspace=False):
       ''' Constructor for the class
           :param variables          List of variables for doing calculations with
           :param operation          The operator that operates on the variables
           :param units              Units of the variable
           :param latex              Name of the variable in LaTeX markup
           :param latexunits         Units of the variable in LaTeX markup
+          :param vector_size       Length of vector for reducer to return (scalars 1, vectors 3, tensors 9)
           :param useVspace          Flag to determine whether the reducer will use velocity space data
           Example:
           def plus( array ):
@@ -47,6 +49,7 @@ class DataReducerVariable:
       self.variables = variables
       self.operation = operation
       self.units = units
+      self.vector_size = vector_size
       self.latex = latex
       self.latexunits = latexunits
       self.useVspace = useVspace

@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 import os, sys
+import re
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -109,9 +110,10 @@ def cbfmt(x, pos):
 def plot_colormap(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
-                  outputdir=None, nooverwrite=None,
+                  outputdir=None, outputfile=None,
+                  nooverwrite=None,
                   var=None, op=None,
-                  title=None, cbtitle=None, draw=None, usesci=None,
+                  title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
                   run=None, nocb=None, internalcb=None,
@@ -121,7 +123,7 @@ def plot_colormap(filename=None,
                   noborder=None, noxlabels=None, noylabels=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
-                  valscal=1.0,
+                  vscale=1.0,
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
@@ -137,6 +139,8 @@ def plot_colormap(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
+    :kword outputfile:  Singular output file name
+
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
@@ -157,7 +161,7 @@ def plot_colormap(filename=None,
     :kword axisunit:    Plot axes using 10^{unit} m (default: Earth radius R_E)
     :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
 
-    :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
+    :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
     :kword lin:         Flag for using linear colour scaling instead of log
@@ -168,8 +172,8 @@ def plot_colormap(filename=None,
                         symlog is suggested.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      If set to non-zero, will plot an all-black Vlasiator watermark in the top left corner.
-                        If set to a text string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
@@ -183,17 +187,21 @@ def plot_colormap(filename=None,
 
     :kword external:    Optional function to use for external plotting of e.g. contours. The function
                         receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
+                        If the function accepts a fifth variable, if set to true, it is expected to 
+                        return a list of required variables for constructing the pass_maps dictionary.
     :kword expression:  Optional function which calculates a custom expression to plot. The function
-                        receives the same list of numpy arrays as external, as an argument pass_maps,
+                        receives the same dictionary of numpy arrays as external, as an argument pass_maps,
                         the contents of which are maps of variables. Each is either of size [ysize,xsize]
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
-                        Remember to set vmin and vmax manually.
-    :kword valscal:     Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+                        If the function accepts a second variable, if set to true, it is expected to 
+                        return a list of required variables for pass_maps.
+
+    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
-                        as a list of numpy arrays. Each is either of size [ysize,xsize] or 
+                        as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
                         for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
     :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
                         functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
@@ -201,8 +209,9 @@ def plot_colormap(filename=None,
                         (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
                         for a total of four timesteps)
                         This causes pass_vars to become a list of timesteps, with each timestep containing
-                        a list of numpy arrays as for regular pass_vars. Does not work if working from a
-                        vlsv-object.
+                        a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
+                        added as 'dstep' which gives the timestep offset from the master frame.
+                        Does not work if working from a vlsv-object.
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -218,19 +227,20 @@ def plot_colormap(filename=None,
     plot_colormap(filename=fileLocation, var="MA", run="BCQ",
                   colormap='nipy_spectral',step=j, outputdir=outputLocation,
                   lin=1, wmark=1, vmin=2.7, vmax=10, 
-                  external=cavitoncontours, extvals=['rho','B','beta'])
+                  external=cavitoncontours, pass_vars=['rho','B','beta'])
     # Where cavitoncontours is an external function which receives the arguments
-    #  ax, XmeshXY,YmeshXY, extmaps
-    # where extmaps is an array of maps for the requested variables.
+    #  ax, XmeshXY,YmeshXY, pass_maps
+    # where pass_maps is a dictionary of maps for the requested variables.
 
     # example (simple) use of expressions:
-    def exprMA_cust(exprmaps): #where exprmaps contains va, and the function returns the M_A with a preset velocity
+    def exprMA_cust(exprmaps, requestvariables=False):
+        if requestvariables==True:
+           return ['va']
         custombulkspeed=750000. # m/s
-        va = exprmaps[0][:,:]
+        va = exprmaps['va'][:,:]
         MA = custombulkspeed/va
         return MA
-    plot_colormap(filename=fileLocation, vmin=1 vmax=40,
-                  expression=exprMA_cust, extvals=['va'],lin=1)
+    plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
 
     '''
 
@@ -240,14 +250,21 @@ def plot_colormap(filename=None,
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
     outputprefix = ''
-    if outputdir==None:
-        outputdir=os.path.expandvars('$HOME/Plots/')
-    outputprefixind = outputdir.rfind('/')
-    if outputprefixind >= 0:
-        outputprefix = outputdir[outputprefixind+1:]
-        outputdir = outputdir[:outputprefixind+1]
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
+    if outputfile==None:
+        if outputdir==None:
+            outputdir=os.path.expandvars('$HOME/Plots/')
+        outputprefixind = outputdir.rfind('/')
+        if outputprefixind >= 0:
+            outputprefix = outputdir[outputprefixind+1:]
+            outputdir = outputdir[:outputprefixind+1]
+        if not os.path.exists(outputdir):
+            os.makedirs(outputdir)
+    else:
+        outputprefixind = outputfile.rfind('/')
+        if outputprefixind >= 0:
+            outputdir = outputfile[:outputprefixind+1]
+        if not os.path.exists(outputdir):            
+            os.makedirs(outputdir)
 
     # Input file or object
     if filename!=None:
@@ -282,8 +299,8 @@ def plot_colormap(filename=None,
             fluxfile=None
                 
     # Scientific notation for colorbar ticks?
-    if usesci==None:
-        usesci=1
+    if usesci!=True:
+        usesci=False
     
     if colormap==None:
         # Default values
@@ -339,7 +356,7 @@ def plot_colormap(filename=None,
 
     # Verify validity of operator
     if op!=None:
-        if op!='x' and op!='y' and op!='z':
+        if op!='x' and op!='y' and op!='z' and op!='magnitude':
             print("Unknown operator "+op)
             op=None
             opstr=''
@@ -360,21 +377,23 @@ def plot_colormap(filename=None,
             # If no expression or variable given, defaults to rho
             var='rho'
         varstr=var.replace("/","_")
-    savefigname = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
+
+    if outputfile==None:
+        outputfile = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
 
     # Check if target file already exists and overwriting is disabled
-    if (draw==None and nooverwrite!=None and os.path.exists(savefigname)):
+    if (draw==None and nooverwrite!=None and os.path.exists(outputfile)):
         # Also check that file is not empty
-        if os.stat(savefigname).st_size > 0:
-            print("Found existing file "+savefigname+". Skipping.")
+        if os.stat(outputfile).st_size > 0:
+            print("Found existing file "+outputfile+". Skipping.")
             return
         else:
-            print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+            print("Found existing file "+outputfile+" of size zero. Re-rendering.")
 
     # Verify access to target directory
     if draw==None:
-        if not os.access('/'.join(savefigname.split('/')[:-1]), os.W_OK):
-            print("No write access for "+savefigname+"! Exiting.")
+        if not os.access('/'.join(outputfile.split('/')[:-1]), os.W_OK):
+            print("No write access for "+outputfile+"! Exiting.")
             return
 
 
@@ -425,101 +444,46 @@ def plot_colormap(filename=None,
     boxcoords=[i/axisunit for i in boxcoords]    
     plot_colormap.boxcoords = boxcoords # Make boxcoords available for formatter function
 
-    pass_maps=[]
-
     ##########
     # Read data and calculate required variables
     ##########
     if expression==None:        
-        # # Latexify variable name
-        # cb_title_use = r""+var.replace("_","\_")
-        # # Split variable into population form if needed
-        # pop=None
-        # if '/' in var:
-        #     pop = var.split('/',1)[0]
-        #     var = var.split('/',1)[1]
-        # if var == 'rho':
-        #     if pop==None or pop=="proton":
-        #         cb_title_use = r"$n_\mathrm{p}$"
-        # elif var == 'rhoBeam' or var == 'RhoBackstream':
-        #     var = 'RhoBackstream'
-        #     if pop==None or pop=="proton":
-        #         cb_title_use = r"$n_{p,\mathrm{st}}$"
-        # elif var == 'beta':
-        #     cb_title_use = r"$\beta$"
-        # elif var.lower() == 'temperature':
-        #     var = "Temperature"
-        #     cb_title_use = r"$T$"
-        # elif var == 'MA':
-        #     cb_title_use = r"$\mathrm{M}_\mathrm{A}$"
-        # elif var == 'Mms':
-        #     cb_title_use = r"$\mathrm{M}_\mathrm{ms}$"
-        # elif var == 'va':
-        #     cb_title_use = r"$v_\mathrm{A}$"
-        # elif var == 'vms':
-        #     cb_title_use = r"$v_\mathrm{ms}$"
-        # elif var == 'V' or var == 'v':
-        #     cb_title_use = r"V"
-        # # cartesian component in title
-        # if op!=None:
-        #     cb_title_use = cb_title_use+"$_"+op+"$"
-        # # Restore population request to variable and title
-        # if pop!=None:
-        #     cb_title_use = pop + " " + cb_title_use
-        #     var = pop+"/"+var
-
         # Read data from file
         if op==None:
             op="pass"
         datamap_info = f.read_variable_info(var, operator=op)
 
         cb_title_use = datamap_info.latex
+        if cb_title_use == "": cb_title_use = r""+var.replace("_","\_")
         datamap_unit = datamap_info.latexunits
 
-        # # Default unit
-        # datamap_unit = datamap_info.units
-        # # Latexify units
-        # if datamap_info.units=="kg/m3":
-        #     datamap_unit = "$\mathrm{kg}\,\mathrm{m}^{-3}$"
-        # if datamap_info.units=="C/m3":
-        #     datamap_unit = "$\mathrm{C}\,\mathrm{m}^{-3}$"
-        # if datamap_info.units=="1/m3":
-        #     datamap_unit = "$\mathrm{m}^{-3}$"
-        # if datamap_info.units=="1/m2s":
-        #     datamap_unit = "$\mathrm{m}^{-2}\,\mathrm{s}^{-1}$"
-        # if datamap_info.units=="m/s":
-        #     datamap_unit = "$\mathrm{m}\,\mathrm{s}^{-1}$"
-        # if datamap_info.units=="V/m":
-        #     datamap_unit = "$\mathrm{V}\,\mathrm{m}^{-1}$"
-        # if datamap_info.units=="s3/m6":
-        #     datamap_unit = "$\mathrm{m}^{-6}\,\mathrm{s}^{3}$"
-        # If valscal is in use, use it instead of units
-        if not np.isclose(valscal,1.):
-            datamap_unit=r"${\times}$"+fmt(valscal,None)
-        # Allow specialist units for known valscal and unit combinations
-        if datamap_info.units=="s" and np.isclose(valscal,1.e6):
+        # If vscale is in use
+        if not np.isclose(vscale,1.):
+            datamap_unit=r"${\times}$"+fmt(vscale,None)
+        # Allow specialist units for known vscale and unit combinations
+        if datamap_info.units=="s" and np.isclose(vscale,1.e6):
             datamap_unit = "$\mu$s"
-        if datamap_info.units=="s" and np.isclose(valscal,1.e3):
+        if datamap_info.units=="s" and np.isclose(vscale,1.e3):
             datamap_unit = "ms"
-        if datamap_info.units=="T" and np.isclose(valscal,1.e9):
+        if datamap_info.units=="T" and np.isclose(vscale,1.e9):
             datamap_unit = "nT"
-        if datamap_info.units=="K" and np.isclose(valscal,1.e-6):
+        if datamap_info.units=="K" and np.isclose(vscale,1.e-6):
             datamap_unit = "MK"
-        if datamap_info.units=="Pa" and np.isclose(valscal,1.e9):
+        if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
             datamap_unit = "nPa"
-        if datamap_info.units=="1/m3" and np.isclose(valscal,1.e-6):
+        if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
             datamap_unit = "$\mathrm{cm}^{-3}$"
-        if datamap_info.units=="m/s" and np.isclose(valscal,1.e-3):
+        if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
             datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="V/m" and np.isclose(valscal,1.e3):
+        if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
             datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":
             cb_title_use = cb_title_use + " ["+datamap_unit+"]"
 
-        datamap = datamap_info.data
         # Verify data shape
+        datamap = datamap_info.data
         if np.ndim(datamap)==0:
             print("Error, read only single value from vlsv file!",datamap.shape)
             return -1
@@ -554,76 +518,103 @@ def plot_colormap(filename=None,
     maskgrid = np.ma.masked_where(YmeshXY<(boxcoords[2]-maskboundarybuffer), maskgrid)
     maskgrid = np.ma.masked_where(YmeshXY>(boxcoords[3]+maskboundarybuffer), maskgrid)
     if np.ma.is_masked(maskgrid):
-        XmeshPass = XmeshXY[~np.all(maskgrid.mask, axis=1),:]
-        XmeshPass = XmeshPass[:,~np.all(maskgrid.mask, axis=0)]
-        YmeshPass = YmeshXY[~np.all(maskgrid.mask, axis=1),:]
-        YmeshPass = YmeshPass[:,~np.all(maskgrid.mask, axis=0)]
+        # Save lists for masking
+        MaskX = np.array(~np.all(maskgrid.mask, axis=1))
+        MaskY = np.array(~np.all(maskgrid.mask, axis=0))
+        XmeshPass = XmeshXY[MaskX,:]
+        XmeshPass = XmeshPass[:,MaskY]
+        YmeshPass = YmeshXY[MaskX,:]
+        YmeshPass = YmeshPass[:,MaskY]
     else:
         XmeshPass = XmeshXY
         YmeshPass = YmeshXY
 
+
+    # Attempt to call external and expression functions to see if they have required
+    # variable information (If they accept the requestvars keyword, they should
+    # return a list of variable names as strings)
+    if pass_vars is None:        
+        pass_vars=[] # Initialise list unless already provided
+    if expression!=None: # Check the expression
+        try:
+            reqvariables = expression(None,True)
+            for i in reqvariables:
+                if not (i in pass_vars): pass_vars.append(i)
+        except:
+            pass
+    if external!=None: # Check the external
+        try:
+            reqvariables = external(None,None,None,None,True)
+            for i in reqvariables:
+                if not (i in pass_vars): pass_vars.append(i)
+        except:
+            pass
     # If expression or external routine need variables, read them from the file.
-    if pass_vars!=None:
+    if pass_vars!=None:        
         if pass_times==None:
+            # Note: pass_maps is now a dictionary
+            pass_maps = {}
             # Gather the required variable maps for a single time step
             for mapval in pass_vars:
+                # a check_variable(mapval) doesn't work as it doesn't know about
+                # data reducers. Try/catch?
                 pass_map = f.read_variable(mapval)
                 if np.ndim(pass_map)==1:
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
-                    # Strip away columns and rows which are outside the plot region
                     if np.ma.is_masked(maskgrid):
-                        pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:]
-                        pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0)]
-                else:
-                    # Assumes 3 components
+                        pass_map = pass_map[MaskX,:]
+                        pass_map = pass_map[:,MaskY]
+                else: # vector variable
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
-                    # Strip away columns and rows which are outside the plot region
                     if np.ma.is_masked(maskgrid):
-                        pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:,:]
-                        pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0),:]
-                pass_maps.append(pass_map)
+                        pass_map = pass_map[MaskX,:,:]
+                        pass_map = pass_map[:,MaskY,:]
+                pass_maps[mapval] = pass_map # add to the dictionary
         else:
             # Or gather over a number of time steps
+            # Note: pass_maps is now a list of dictionaries
+            pass_maps = []
             if step!=None and filename!=None:
                 currstep = step
             else:
-                if filename!=None:
-                    # parse from filename
+                if filename!=None: # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
                     print("Error, cannot determine current step for time extent extraction!")
                     return
-
+            # define relative time step selection
             if np.ndim(pass_times)==0:
-                timesteps = np.arange(currstep-abs(int(pass_times)), currstep+abs(int(pass_times))+1,1)
+                dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
             elif np.ndim(pass_times)==1 and len(pass_times)==2:
-                timesteps = np.arange(currstep-abs(int(pass_times[0])), currstep+abs(int(pass_times[1]))+1,1)
+                dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
             else:
                 print("Invalid value given to pass_times")
                 return
-            for tpass_step_i, passstep in enumerate(timesteps):
+            # Loop over requested times
+            for ds in dsteps:
                 # Construct using known filename.
-                filenamestep = filename[:-12]+str(passstep).rjust(7,'0')+'.vlsv'
+                filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
                 print(filenamestep)
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
-                pass_maps.append([])
+                # Append new dictionary as new timestep
+                pass_maps.append({})
+                # Add relative step identifier to dictionary
+                pass_maps[-1]['dstep'] = ds
+                # Gather the required variable maps
                 for mapval in pass_vars:
-                    pass_map = fstep.read_variable(mapval)
+                    pass_map = fstep.read_variable(mapval)[step_cellids.argsort()]
                     if np.ndim(pass_map)==1:
-                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
-                        # Strip away columns and rows which are outside the plot region
+                        pass_map = pass_map.reshape([sizes[1],sizes[0]])
                         if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:]
-                            pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0)]
-                    else:
-                        # Assumes 3 components
-                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
-                        # Strip away columns and rows which are outside the plot region
+                            pass_map = pass_map[MaskX,:]
+                            pass_map = pass_map[:,MaskY]
+                    else: # vector variable
+                        pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
                         if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[~np.all(maskgrid.mask, axis=1),:,:]
-                            pass_map = pass_map[:,~np.all(maskgrid.mask, axis=0),:]
-                    pass_maps[tpass_step_i].append(pass_map)
+                            pass_map = pass_map[MaskX,:,:]
+                            pass_map = pass_map[:,MaskY,:]
+                    pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression!=None:
@@ -634,62 +625,63 @@ def plot_colormap(filename=None,
             return -1
 
     # Scale final generated datamap if requested
-    datamap = datamap * valscal
+    datamap = datamap * vscale
 
     # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
     # e.g. pressure is not, and these cells aren't excluded by this method.
     if f.check_variable("rho"):
         rhomap = f.read_variable("rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     elif f.check_variable("proton/rho"):
         rhomap = f.read_variable("proton/rho")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     else:
         print("Unable to exclude non-zero mass density region from range finder!")
-        rhomap = (np.ma.masked_invalid(datamap), 0)
-        
+        rhomap = datamap
+    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
+    XYmask = rhomap.mask
+
+    # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
         # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[~np.all(maskgrid.mask, axis=1),:]
-        rhomap = rhomap[:,~np.all(maskgrid.mask, axis=0)]
+        rhomap = rhomap[MaskX,:]
+        rhomap = rhomap[:,MaskY]
         # Also for the datamap, unless it was already provided by an expression
         if expression==None:
-            datamap = datamap[~np.all(maskgrid.mask, axis=1),:]
-            datamap = datamap[:,~np.all(maskgrid.mask, axis=0)]
+            datamap = datamap[MaskX,:]
+            datamap = datamap[:,MaskY]
 
+    # Also mask away regions where datamap is invalid
+    rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
+    # datamap is now masked
+    datamap = np.ma.array(datamap, mask=rhomap.mask)
+    
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
     if vmin!=None:
         vminuse=vmin
     else: 
-        vminuse=np.ma.amin(np.ma.masked_where(np.ma.getmask(rhomap),datamap))
+        vminuse=np.ma.amin(datamap)
     if vmax!=None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.ma.amax(np.ma.masked_where(np.ma.getmask(rhomap),datamap))
+        vmaxuse=np.ma.amax(datamap)
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components
     if vmin==None and vmax==None:
-        if (vminuse*vmaxuse < 0) and (abs(abs(vminuse)-abs(vmaxuse))/abs(vminuse) < 0.4 ) and (abs(abs(vminuse)-abs(vmaxuse))/abs(vmaxuse) < 0.4 ):
+        if np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             absval = max(abs(vminuse),abs(vmaxuse))
-            if vminuse < 0:
-                vminuse = -absval
-                vmaxuse = absval
-            else:
-                vminuse = absval
-                vmaxuse = -absval
+            vminuse = -absval
+            vmaxuse = absval
 
-    # Check that lower bound is valid for logarithmic plots
+    # Ensure that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin==None) and (symlog==None):
         # Drop negative and zero values
-        vminuse = np.ma.amin(np.ma.masked_less_equal(np.ma.masked_where(np.ma.getmask(rhomap),datamap),0))
+        vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
 
     # Make vmaxuse and vminuse available for formatter functions
     plot_colormap.vminuse = vminuse
@@ -717,6 +709,7 @@ def plot_colormap(filename=None,
                     +[0.0]
                     +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
         else:
+            # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
             ticks = LogLocator(base=10,subs=range(10)) # where to show labels
     else:
@@ -810,32 +803,22 @@ def plot_colormap(filename=None,
                 print("Error parsing moments, could not identify if version was multipop or not!")
                 ff_v = [-600000,0,0]
         else:
+            print("Error finding bulk velocity!")
             ff_v = [-600000,0,0]
-            #ff_v = [-750000,0,0]
-
 
         # Account for movement
         bdirsign = -1.0 
         outofplane = [0,1,0] # For ecliptic runs
-        if zsize==1:
-            outofplane = [0,0,1]  # For polar runs
-        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0:
-            bdirsign = 1.0
+        if zsize==1: outofplane = [0,0,1]  # For polar runs
+        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0: bdirsign = 1.0
         flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
 
-        # Truncate data to plot region
-        if np.ma.is_masked(maskgrid):
-            flux_function = flux_function[~np.all(maskgrid.mask, axis=1),:]
-            flux_function = flux_function[:,~np.all(maskgrid.mask, axis=0)]
-
-        # Mask away ionosphere
-        flux_function = np.ma.masked_where(~np.isfinite(rhomap), flux_function)
-        flux_function = np.ma.masked_where(rhomap<=0, flux_function)
-
+        # Mask region (e.g. ionosphere)
+        flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
         flux_levels = np.linspace(-10,10,fluxlines*60)
-        fluxcont = ax1.contour(XmeshPass,YmeshPass,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+        fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
     if fsaved != None:
@@ -846,11 +829,8 @@ def plot_colormap(filename=None,
         if f.check_variable("fSaved"):
             fSmap = f.read_variable("fSaved")
             fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            if np.ma.is_masked(maskgrid):
-                fSmap = fSmap[~np.all(maskgrid.mask, axis=1),:]
-                fSmap = fSmap[:,~np.all(maskgrid.mask, axis=0)]
-
-            fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour,
+            fSmap = np.ma.array(fSmap, mask=XYmask)            
+            fScont = ax1.contour(XmeshXY,YmeshXY,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
     # Optional external additional plotting routine overlayed on color plot
@@ -864,30 +844,20 @@ def plot_colormap(filename=None,
             # Witchcraft used to place colourbar
             divider = make_axes_locatable(ax1)
             cax = divider.append_axes("right", size="5%", pad=0.05)
-            horalign="left"
-            cbdir="right"
+            cbdir="right"; horalign="left"
         else:
             # Colorbar within plot area
-            cbloc=1
-            cbdir="left"
-            horalign="right"
+            cbloc=1; cbdir="left"; horalign="right"
             if type(internalcb) is str:
                 if internalcb=="NW":
-                    cbloc=2
-                    cbdir="right"
-                    horalign="left"
+                    cbloc=2; cbdir="right"; horalign="left"
                 if internalcb=="SW": 
-                    cbloc=3
-                    cbdir="right"
-                    horalign="left"
+                    cbloc=3; cbdir="right"; horalign="left"
                 if internalcb=="SE": 
-                    cbloc=4
-                    cbdir="left"
-                    horalign="right"
-            #cax = plt.axes(cbloc)
-            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
-                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1), borderpad=1.0)
+                    cbloc=4; cbdir="left";  horalign="right"
             # borderpad default value is 0.5, need to increase it to make room for colorbar title
+            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1.5,
+                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1))
 
         # Colourbar title
         if len(cb_title_use)!=0:
@@ -895,18 +865,21 @@ def plot_colormap(filename=None,
             cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         # First draw colorbar
-        if usesci==0:        
+        if usesci==True:
+            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
+        else:
             #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(cbfmt))
-        else:
-            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
-        cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        cb.ax.tick_params(labelsize=fontsize3)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
-        fig.canvas.draw() # draw to get tick positions
-        # Adjust placement of innermost ticks for symlog if it indeed is symmetric
-        if symlog!=None and np.isclose(vminuse+vmaxuse, 0.0):
+        # Perform intermediate draw if necessary to gain access to ticks
+        if (symlog!=None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (lin==None and symlog==None):
+            fig.canvas.draw() # draw to get tick positions
+
+        # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        if symlog!=None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
             (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
             if abs(0.5-cbty)/scale < 0.1:
@@ -922,11 +895,11 @@ def plot_colormap(filename=None,
                 if abs(0.5-cbty)/scale < 0.15:
                     cbt[len(cbt)/2+2].set_va("bottom")
 
-        # if too many subticks:
-        if lin==None and usesci!=0 and symlog==None:
-            # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
-            # For non-square pictures, adjust tick count
+        # if too many subticks in logarithmic colorbar:
+        if lin==None and symlog==None:
             nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            # Force less ticks for internal colorbars
+            if internalcb!=None: nlabels = nlabels * 1.5
             valids = ['1','2','3','4','5','6','7','8','9']
             if nlabels > 10:
                 valids = ['1','2','3','4','5','6','8']
@@ -936,12 +909,20 @@ def plot_colormap(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for label in cb.ax.yaxis.get_ticklabels():
+                if usesci==True:
+                    firstdigit = label.get_text()[1]
+                else:
+                    firstdigit = (label.get_text().replace('.','')).lstrip('0')[1]
                 # labels will be in format $x.0\times10^{y}$
-                if not label.get_text()[1] in valids: label.set_visible(False)
+                if not firstdigit in valids: label.set_visible(False)
 
     # Add Vlasiator watermark
-    if wmark!=None:        
-        wm = plt.imread(get_sample_data(watermarkimage))
+    if wmark!=None or wmarkb!=None:
+        if wmark!=None:
+            wm = plt.imread(get_sample_data(watermarkimage))
+        else:
+            wmark=wmarkb # for checking for placement
+            wm = plt.imread(get_sample_data(watermarkimageblack))
         if type(wmark) is str:
             anchor = wmark
         else:
@@ -957,111 +938,55 @@ def plot_colormap(filename=None,
         newax.imshow(wm)
         newax.axis('off')
 
-    if wmarkb!=None:        
-        wm = plt.imread(get_sample_data(watermarkimageblack))
-        if type(wmarkb) is str:
-            anchor = wmarkb
-        else:
-            anchor="NE"
-        # Allowed region and anchor used in tandem for desired effect
-        if anchor=="NW" or anchor=="W" or anchor=="SW":
-            rect = [0.01, 0.01, 0.3, 0.98]
-        elif anchor=="NE" or anchor=="E" or anchor=="SE":
-            rect = [0.69, 0.01, 0.3, 0.98]
-        elif anchor=="N" or anchor=="C" or anchor=="S":
-            rect = [0.35, 0.01, 0.3, 0.98]
-        newax = fig.add_axes(rect, anchor=anchor, zorder=1) #[0.01, 0.90, 0.3, 0.08]
-        #newax.set_anchor(anchor)
-        newax.imshow(wm)
-        newax.axis('off')
+    # Find maximum possible lengths of axis tick labels
+    # Only counts digits
+    ticklens = [ len(re.sub(r'\D',"",axisfmt(bc,None))) for bc in boxcoords]
+    tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
 
-    fig.canvas.draw() # Draw canvas to generate latex-math ticks etc
-    if tickinterval!=None:
-        ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
-        ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
-
-    if noxlabels!=None:
-        # Turn labels off
-        for label in ax1.xaxis.get_ticklabels():
-            label.set_visible(False)
-    else:
+    # Adjust axis tick labels
+    for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
+        if tickinterval!=None:
+            axis.set_major_locator(mtick.MultipleLocator(tickinterval))
         # Custom tick formatter
-        #if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
-        ax1.xaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
-        # set alignments. If includes very long ticks, tilt them.
-        ticklabs = ax1.xaxis.get_ticklabels()
-        maxlen = np.amax([len(t.get_text()) for t in ticklabs])
+        axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
+        ticklabs = axis.get_ticklabels()
+        # Set boldface.
         for t in ticklabs:
             t.set_fontweight("black")
-            # two dollar symbols, a minus sign, and up to three numbers are allowed:
-            if maxlen>6: 
+            # If label has >3 numbers, tilt it
+            if tickmaxlens[axisi]>3: 
                 t.set_rotation(30)
                 t.set_verticalalignment('top')
                 t.set_horizontalalignment('right')
-        
+
+    # Or turn x-axis labels off
+    if noxlabels!=None:
+        for label in ax1.xaxis.get_ticklabels():
+            label.set_visible(False) 
+    # Or turn y-axis labels off
     if noylabels!=None:
         for label in ax1.yaxis.get_ticklabels():
-            label.set_visible(False)       
-    else:
-        # Custom tick formatter
-        #if np.amax(abs(np.array(boxcoords)))<10: axisdec=1
-        ax1.yaxis.set_major_formatter(mtick.FuncFormatter(axisfmt))
-        # set alignments. If includes very long ticks, tilt them.
-        ticklabs = ax1.yaxis.get_ticklabels()
-        maxlen = np.amax([len(t.get_text()) for t in ticklabs])
-        for t in ticklabs:
-            t.set_fontweight("black")
-            # two dollar symbols, a minus sign, and up to three numbers are allowed:
-            if maxlen>6: 
-                t.set_rotation(30)
-                t.set_verticalalignment('top')
-                t.set_horizontalalignment('right')
+            label.set_visible(False)
 
+
+    # Adjust layout. Uses tight_layout() but in fact this ensures 
+    # that long titles and tick labels are still within the plot area.
     if noborder==None:
-        # adjust layout
         plt.tight_layout()
-        savefig_pad=0.1 # The default is 0.1
+        savefig_pad=0.05 # The default is 0.1
         bbox_inches=None
     else:
-        # adjust layout
         plt.tight_layout(pad=0.01)
         savefig_pad=0.01
         bbox_inches='tight'
-
         
     # Save output or draw on-screen
     if draw==None:
-        # Note: generated title can cause strange PNG header problems
-        # in rare cases. This problem is under investigation, but is related to the exact generated
-        # title string. This try-catch attempts to simplify the time string until output succedes.
-        # An example is the file for AFB step 0000517, "t=258.52 s"
         try:
-            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-            savechange=0
+            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            savechange=1
-            plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
-            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-            try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-            except:
-                plot_title = "t="+str(np.int(timeval))+' s   '
-                ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                try:
-                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                except:
-                    plot_title = ""
-                    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                    try:
-                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                    except:
-                        print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-                        print("Usually removing the title should work, but this time even that failed.")
-                        savechange = -1
-        if savechange>0:
-            print("Due to rendering error, replaced image title with "+plot_title)
-        if savechange>=0:
-            print(savefigname+"\n")
+            print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+        print(outputfile+"\n")
     else:
         plt.draw()
         plt.show()

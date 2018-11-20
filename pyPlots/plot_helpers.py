@@ -250,37 +250,49 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
-def expr_Hall_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Rhomap = pass_maps[1].T # number density
+def expr_Hall_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rho']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Rhomap = pass_maps['rho'].T # number density
     Jmap = vec_currentdensity(Bmap)
     Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
     return np.linalg.norm(Hallterm, axis=-1).T
 
-def expr_Hall_aniso(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Rhomap = pass_maps[1].T # number density
+def expr_Hall_aniso(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rho']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Rhomap = pass_maps['rho'].T # number density
     Jmap = vec_currentdensity(Bmap)
     Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
     return VectorArrayAnisotropy(Hallterm,Bmap).T
 
-def expr_J_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_J_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.linalg.norm(Jmap, axis=-1).T
 
-def expr_J_aniso(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_J_aniso(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return VectorArrayAnisotropy(Jmap,Bmap).T
 
-def expr_MagneticPressureForce_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_MagneticPressureForce_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     return np.linalg.norm(MagneticPressureForce, axis=-1).T
 
-def expr_MagneticPressureForce_aniso(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_MagneticPressureForce_aniso(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagneticPressureForceAniso = VectorArrayAnisotropy(MagneticPressureForce, Bmap)
     return MagneticPressureForceAniso.T
@@ -296,13 +308,17 @@ def expr_MagneticPressureForce_aniso(pass_maps):
 #     MagneticPressureForceIPAniso = VectorArrayAnisotropy(inplane(MagneticPressureForce), inplane(Bmap))
 #     return MagneticPressureForceIPAniso.T
 
-def expr_ThermalPressureForce_mag(pass_maps):
-    Pmap = pass_maps[0].T #Pressure (scalar)
+def expr_ThermalPressureForce_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['Pressure']
+    Pmap = pass_maps['Pressure'].T #Pressure (scalar)
     return np.linalg.norm(vec_ThermalPressureForce(Pmap), axis=-1).T
 
-def expr_ThermalPressureForce_aniso(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Pmap = pass_maps[1].T #Pressure (scalar)
+def expr_ThermalPressureForce_aniso(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','Pressure']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Pmap = pass_maps['Pressure'].T #Pressure (scalar)
     ThermalPressureForceAniso = VectorArrayAnisotropy(vec_ThermalPressureForce(Pmap), Bmap)
     return ThermalPressureForceAniso.T
 
@@ -313,44 +329,56 @@ def expr_ThermalPressureForce_aniso(pass_maps):
 #     ThermalPressureForceIPAniso = VectorArrayAnisotropy(inplane(ThermalPressureForce), inplane(Bmap))
 #     return ThermalPressureForceIPAniso.T
 
-def expr_Eforce(pass_maps):
-    Emap = TransposeVectorArray(pass_maps[0]) # Electric field
-    Rhomap = pass_maps[1].T # number density
+def expr_Eforce(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['E','rho']
+    Emap = TransposeVectorArray(pass_maps['E']) # Electric field
+    Rhomap = pass_maps['rho'].T # number density
     Efieldforce = vec_ElectricFieldForce(Emap, Rhomap)
     return np.linalg.norm(Efieldforce, axis=-1).T
 
-def expr_Btension_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_Btension_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     return np.linalg.norm(MagTensionForce, axis=-1).T
 
 # No expr_Btension_aniso as it's all in the perpendicular component
 
-def expr_Bforces_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+def expr_Bforces_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     return np.linalg.norm(MagneticPressureForce+MagTensionForce, axis=-1).T
 
-def expr_Totforces_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Pmap = pass_maps[1].T #Pressure (scalar)
+def expr_Totforces_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','Pressure']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Pmap = pass_maps['Pressure'].T #Pressure (scalar)
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     ThermalPressureForce = vec_ThermalPressureForce(Pmap)
     return np.linalg.norm(ThermalPressureForce+MagneticPressureForce+MagTensionForce, axis=-1).T
 
-def expr_Totforces_aniso(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Pmap = pass_maps[1].T #Pressure (scalar)
+def expr_Totforces_aniso(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','Pressure']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Pmap = pass_maps['Pressure'].T #Pressure (scalar)
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     ThermalPressureForce = vec_ThermalPressureForce(Pmap)
     return VectorArrayAnisotropy(ThermalPressureForce+MagneticPressureForce+MagTensionForce, Bmap).T
 
-def expr_ratio_thermal_mag(pass_maps):
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Pmap = pass_maps[1].T #Pressure (scalar)
+def expr_ratio_thermal_mag(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','Pressure']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Pmap = pass_maps['Pressure'].T #Pressure (scalar)
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     ThermalPressureForce = vec_ThermalPressureForce(Pmap)
@@ -358,20 +386,26 @@ def expr_ratio_thermal_mag(pass_maps):
     ThermalPressureForceTot = np.linalg.norm(ThermalPressureForce, axis=-1)
     return np.divide(ThermalPressureForceTot,MagForcesTot).T
 
-def expr_E_parallel(pass_maps):
+def expr_E_parallel(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E']
     # No need for transposing in this one
-    Bmap = pass_maps[0] # Magnetic field
-    Emap = pass_maps[1] # Electric field
+    Bmap = pass_maps['B'] # Magnetic field
+    Emap = pass_maps['E'] # Electric field
     return VectorArrayParallelComponent(Emap,Bmap)
 
-def expr_E_perpendicular(pass_maps):
+def expr_E_perpendicular(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E']
     # No need for transposing in this one
-    Bmap = pass_maps[0] # Magnetic field
-    Emap = pass_maps[1] # Electric field
+    Bmap = pass_maps['B'] # Magnetic field
+    Emap = pass_maps['E'] # Electric field
     return VectorArrayPerpendicularComponent(Emap,Bmap)
 
-def expr_flowcompression(pass_maps):
-    Vmap = TransposeVectorArray(pass_maps[0]) # Bulk flow
+def expr_flowcompression(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['V']
+    Vmap = TransposeVectorArray(pass_maps['V']) # Bulk flow
     return numdiv(Vmap).T
 
 # def expr_gradB_aniso(pass_maps):
@@ -395,7 +429,9 @@ def expr_flowcompression(pass_maps):
 
 
 
-def expr_betatron(pass_maps):
+def expr_betatron(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E','PPerpendicular']
     # pass_maps is a list of numpy arrays
     # Each array has 2 dimensions [ysize, xsize]
     # or 3 dimensions [ysize, xsize, components]
@@ -409,22 +445,22 @@ def expr_betatron(pass_maps):
         print("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
-    # Need pass_maps B, E, P_perp
-
     # Multiple time steps were found. This should be 3, for a time derivative.
-    ntimes = len(pass_maps)
-    curri = (ntimes-1)/2
-    thesemaps = pass_maps[curri]
-    pastmaps = pass_maps[curri-1]
+    dsteps = [x['dstep'] for x in pass_maps]
+    curri = dsteps.index(0)
+    previ = dsteps.index(-1)
 
-    thisB = TransposeVectorArray(thesemaps[0])
-    pastB = TransposeVectorArray(pastmaps[0])
+    thesemaps = pass_maps[curri]
+    pastmaps = pass_maps[previ]
+
+    thisB = TransposeVectorArray(thesemaps['B'])
+    pastB = TransposeVectorArray(pastmaps['B'])
     thisBmag = np.linalg.norm(thisB, axis=-1)
     pastBmag = np.linalg.norm(pastB, axis=-1)
     dBdt = (thisBmag-pastBmag)/DT
 
-    thisE = TransposeVectorArray(thesemaps[1])
-    thisPperp = thesemaps[2].T
+    thisE = TransposeVectorArray(thesemaps['E'])
+    thisPperp = thesemaps['PPerpendicular'].T
 
     # E x B drift = (E X B)/B^2
     B2 = (thisBmag*thisBmag)
@@ -435,11 +471,12 @@ def expr_betatron(pass_maps):
     result = (thisPperp/thisBmag)*(dBdt + (UExB*gradB).sum(-1)) 
     return result.T
 
-def expr_Fermi(pass_maps):
-    # Needs B, E, P_parallel
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Emap = TransposeVectorArray(pass_maps[1]) # Electric field
-    Pparallel = pass_maps[2].T #Pressure (scalar)
+def expr_Fermi(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E','PParallel']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Emap = TransposeVectorArray(pass_maps['E']) # Electric field
+    Pparallel = pass_maps['PParallel'].T #Pressure (scalar)
 
     Bmag = np.linalg.norm(Bmap, axis=-1)
     B2 = (Bmag*Bmag)
@@ -452,10 +489,12 @@ def expr_Fermi(pass_maps):
     result = Pparallel*(UExB*kappa).sum(-1)
     return result.T
 
-def expr_EJ_parallel(pass_maps):
+def expr_EJ_parallel(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E']
     # Needs B,E
-    Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-    Emap = TransposeVectorArray(pass_maps[1]) # Electric field
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Emap = TransposeVectorArray(pass_maps['E']) # Electric field
 
     Jmap = vec_currentdensity(Bmap)
     Jpara = VectorArrayParallelComponent(Jmap, Bmap)
@@ -463,13 +502,15 @@ def expr_EJ_parallel(pass_maps):
     EJpara = (Jpara*Epara)
     return EJpara.T
 
-def expr_Eacc_parallel(pass_maps):
+def expr_Eacc_parallel(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','E','V','rho']
     # No need for transposing in this one
     # Needs B,E,V,rho
-    Bmap = pass_maps[0] # Magnetic field
-    Emap = pass_maps[1] # Electric field
-    Vmap = pass_maps[2] # Bulk flow
-    rhomap = pass_maps[3] # density
+    Bmap = pass_maps['B'] # Magnetic field
+    Emap = pass_maps['E'] # Electric field
+    Vmap = pass_maps['V'] # Bulk flow
+    rhomap = pass_maps['rho'] # density
     protoncharge = .16021773e-18
 
     Vpara = VectorArrayParallelComponent(Vmap, Bmap)
@@ -477,3 +518,64 @@ def expr_Eacc_parallel(pass_maps):
     qnEVpara = (Vpara*Epara*rhomap*protoncharge)
     return qnEVpara
 
+
+def expr_diamagnetic(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rho','V','Pressure']
+    # pass_maps is a list of numpy arrays
+    # Each array has 2 dimensions [ysize, xsize]
+    # or 3 dimensions [ysize, xsize, components]
+
+    # for time averaging, it's a list of lists, where the top level
+    # is 2N+1 timesteps with the middle one the requested time step
+
+    # This custom expression returns a proxy for betatron acceleration
+    if type(pass_maps) is not list:
+        # Not a list of time steps, calculating this value does not make sense.
+        print("expr_diamagnetic expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        quit()
+
+    # Multiple time steps were found. This should be 3, for a time derivative.
+    dsteps = [x['dstep'] for x in pass_maps]
+    curri = dsteps.index(0)
+    previ = dsteps.index(-1)
+    thesemaps = pass_maps[curri]
+    pastmaps = pass_maps[previ]
+
+    thisV = TransposeVectorArray(thesemaps['V'])
+    pastV = TransposeVectorArray(pastmaps['V'])
+
+    B = TransposeVectorArray(thesemaps['B'])
+    rhom = thesemaps['rho'].T * 1.6726e-27
+    Pres = thesemaps['Pressure'].T
+
+    dUdt = (thisV-pastV)/DT
+    rhodUdt = rhom[:,:,np.newaxis] * dUdt
+    BperB2 =  B / (B*B).sum(-1)[:,:,np.newaxis]
+
+    gradP = numgradscalar(Pres)
+
+    term1 = numcrossproduct(BperB2, rhodUdt)
+    term2 = numcrossproduct(BperB2, gradP)
+
+    result = np.linalg.norm(term1+term2, axis=-1)
+    return result.T
+
+def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','Pressure']
+    # pass_maps is a list of numpy arrays
+    # Each array has 2 dimensions [ysize, xsize]
+    # or 3 dimensions [ysize, xsize, components]
+
+    B = TransposeVectorArray(pass_maps['B'])
+    Pres = pass_maps['Pressure'].T
+
+    BperB2 =  B / (B*B).sum(-1)[:,:,np.newaxis]
+    gradP = numgradscalar(Pres)
+
+    # Dropping the first term i.e. inertial current
+    term2 = numcrossproduct(BperB2, gradP)
+
+    result = np.linalg.norm(term2, axis=-1)
+    return result.T
