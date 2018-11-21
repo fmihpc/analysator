@@ -461,6 +461,9 @@ for j in range(start,end):
     # Source data files
     bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
     fluxname = "flux."+str(time).rjust(7,'0')+".bin"
+    if run=="BFD":
+        fluxname = "bulk."+str(time).rjust(7,'0')+".bin"
+    
 
     # Special case for restart files
     if not filename is None:
@@ -486,8 +489,12 @@ for j in range(start,end):
 
     # Special case for restart files
     if not filename is None:
-        if "pass_times" in call:
+        if "pass_times=" in call:
             continue
+        if "step=" in call:
+            continue
+        call = call.replace("var='V'","var='restart_V'")
+        
 
     # Many different plots
     print(j, runid, jrun, call)

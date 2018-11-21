@@ -666,9 +666,9 @@ def plot_colormap(filename=None,
         vmaxuse=np.ma.amax(datamap)
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
-    # e.g. to plot transverse field components
+    # e.g. to plot transverse field components. Always done for symlog.
     if vmin==None and vmax==None:
-        if np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+        if np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) or symlog!=None:
             absval = max(abs(vminuse),abs(vmaxuse))
             vminuse = -absval
             vmaxuse = absval
@@ -952,7 +952,7 @@ def plot_colormap(filename=None,
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
     if noborder==None:
-        plt.tight_layout()
+        plt.tight_layout(pad=0.1)
         savefig_pad=0.05 # The default is 0.1
         bbox_inches=None
     else:
