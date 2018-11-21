@@ -906,7 +906,7 @@ def plot_colormap(filename=None,
         if type(wmark) is str:
             anchor = wmark
         else:
-            anchor="NE"
+            anchor="NW"
         # Allowed region and anchor used in tandem for desired effect
         if anchor=="NW" or anchor=="W" or anchor=="SW":
             rect = [0.01, 0.01, 0.3, 0.98]
@@ -952,7 +952,7 @@ def plot_colormap(filename=None,
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
     if noborder==None:
-        plt.tight_layout(pad=0.1)
+        plt.tight_layout()
         savefig_pad=0.05 # The default is 0.1
         bbox_inches=None
     else:
