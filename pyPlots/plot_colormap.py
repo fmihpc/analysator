@@ -628,16 +628,13 @@ def plot_colormap(filename=None,
     # Scale final generated datamap if requested
     datamap = datamap * vscale
 
-    # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
-    # e.g. pressure is not, and these cells aren't excluded by this method.
+    # Find rhom map for use in masking out ionosphere
     if f.check_variable("moments"):
         rhomap = f.read_variable("restart_rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
     else:
         rhomap = f.read_variable("rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
-    XYmask = rhomap.mask
 
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
@@ -649,10 +646,15 @@ def plot_colormap(filename=None,
             datamap = datamap[MaskX,:]
             datamap = datamap[:,MaskY]
 
-    # Also mask away regions where datamap is invalid
+    # Mask region outside ionosphere. Note that for some boundary layer cells, 
+    # a density is calculated, but e.g. pressure is not, and these cells aren't
+    # excluded by this method. Also mask away regions where datamap is invalid
+    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    # datamap is now masked
-    datamap = np.ma.array(datamap, mask=rhomap.mask)
+    if np.ma.is_masked(rhomap):
+        XYmask = rhomap.mask
+        # Mask datamap
+        datamap = np.ma.array(datamap, mask=XYmask)
     
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -794,7 +796,8 @@ def plot_colormap(filename=None,
         flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
 
         # Mask region (e.g. ionosphere)
-        flux_function = np.ma.array(flux_function, mask=XYmask)
+        if np.ma.is_masked(rhomap):
+            flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
         flux_levels = np.linspace(-10,10,fluxlines*60)
@@ -809,7 +812,8 @@ def plot_colormap(filename=None,
         if f.check_variable("fSaved"):
             fSmap = f.read_variable("fSaved")
             fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-            fSmap = np.ma.array(fSmap, mask=XYmask)            
+            if np.ma.is_masked(rhomap):
+                fSmap = np.ma.array(fSmap, mask=XYmask)            
             fScont = ax1.contour(XmeshXY,YmeshXY,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
