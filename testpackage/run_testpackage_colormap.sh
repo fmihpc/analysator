@@ -3,7 +3,7 @@
 #SBATCH -J analysator_testpackage
 #SBATCH -p serial
 #SBATCH -n 1
-#SBATCH --array=0-39
+#SBATCH --array=0-59
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 #SBATCH --constraint=hsw

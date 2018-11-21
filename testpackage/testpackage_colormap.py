@@ -17,6 +17,7 @@ runs.append( { 'name': 'ABC',
                  'fluxLocation': '/proj/vlasov/2D/ABC/flux/',
                  'pops': ['avgs'],
                  'time': 1000,
+                 'filename': None,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQ',
                  'verifydir': 'testpackage/BCQ/', 
@@ -24,15 +25,40 @@ runs.append( { 'name': 'BCQ',
                  'fluxLocation': '/proj/vlasov/2D/BCQ/flux/',
                  'pops': ['avgs'],
                  'time': 1600,
+                 'filename': None,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
+runs.append( { 'name': 'BED', 
+                 'verifydir': 'testpackage/BED/', 
+                 'fileLocation': '/proj/vlasov/2D/BED/bulk/',
+                 'fluxLocation': None,
+                 'pops': ['avgs'],
+                 'time': 2000,
+                 'filename': None,
+                 'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFD',
                  'verifydir': 'testpackage/BFD/', 
                  'fileLocation': '/proj/vlasov/2D/BFD/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/BFD/fluxfunction/',
                  'pops': ['proton','helium'],
                  'time': 1000,
+                 'filename': None,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
-
+runs.append( { 'name': 'BCQr',
+                 'verifydir': 'testpackage/BCQr/', 
+                 'fileLocation': '/proj/vlasiato/BCQ/',
+                 'fluxLocation': None,
+                 'pops': ['avgs'],
+                 'time': 0,
+                 'filename': 'restart.0001361.vlsv',
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
+runs.append( { 'name': 'BFDr',
+                 'verifydir': 'testpackage/BFDr/', 
+                 'fileLocation': '/proj/vlasov/2D/BFD/restart/',
+                 'fluxLocation': None,
+                 'pops': ['avgs'],
+                 'time': 0,
+                 'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv',
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
                      
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
@@ -191,7 +217,7 @@ regularcalls = [
 # Input and output methods, nooverwrite
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
-"pt.plot.plot_colormap(filedir=fileLocation, step=REPLACEINDEX, run=verifydir+REPLACEINDEX)",
+"pt.plot.plot_colormap(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
 
@@ -220,7 +246,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1, boxre=[-10,10,5,50])",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=0.5, fluxlines=10)",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
 
 # title, axes, noborders
@@ -240,16 +266,18 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', colormap='nipy_spectral', vscale=1e9)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='x', colormap='bwr')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='z', colormap='bwr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1, vscale=1e-3)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='x', colormap='PuOr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='y', colormap='PuOr',symlog=0, usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)",]
+
+nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated', vscale=1e3)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='x', colormap='RdBu',symlog=0, usesci=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='y', colormap='RdBu',symlog=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='z', colormap='RdBu',symlog=0, usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1, vscale=1e-3)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='x', colormap='PuOr')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='y', colormap='PuOr',symlog=0, usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)",
 
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='RhoBackstream', colormap='jet')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='beta',lin=1, usesci=0, colormap='viridis',vmax=50)",
@@ -377,9 +405,11 @@ multipopcalls = [
 ntests = []
 for i,run in enumerate(runs):
     n = len(regularcalls)
+    if run['filename']==None: #non-restart run
+        n += len(nonrestartcalls)
     for pop in run['pops']:
         if pop!='avgs':
-            n = n + len(multipopcalls)
+            n += len(multipopcalls)
     ntests.append(n)
 nteststot = np.sum(np.array(ntests))
 
@@ -418,6 +448,7 @@ for j in range(start,end):
     fluxLocation = runs[runid]['fluxLocation']
     pops = runs[runid]['pops']
     time = runs[runid]['time']
+    filename = runs[runid]['filename']
 
     level_bow_shock = runs[runid]['cavitonparams'][0]
     level_n_caviton = runs[runid]['cavitonparams'][1]
@@ -431,18 +462,34 @@ for j in range(start,end):
     bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
     fluxname = "flux."+str(time).rjust(7,'0')+".bin"
 
+    # Special case for restart files
+    if not filename is None:
+        bulkname = filename
+
     if jrun<len(regularcalls):
         call = regularcalls[jrun]
+    elif jrun<(len(regularcalls)+len(nonrestartcalls)):
+        call = nonrestartcalls[jrun-len(regularcalls)]
     else:
-        jrunmp = jrun-len(regularcalls)
+        jrunmp = jrun-len(regularcalls)-len(nonrestartcalls)
         popid = int(jrunmp/len(multipopcalls))
         jrunmp = jrunmp % len(multipopcalls)
         call = multipopcalls[jrunmp].replace('REPLACEPOP',pops[popid])
     
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
     call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
+    call = call.replace('REPLACETIME',"'"+str(time)+"'")
+
+    # Skip flux function calls if no flux files
+    if "flux" in call and fluxLocation is None:
+        continue
+
+    # Special case for restart files
+    if not filename is None:
+        if "pass_times" in call:
+            continue
 
     # Many different plots
-    f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     print(j, runid, jrun, call)
+    f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     exec(call)

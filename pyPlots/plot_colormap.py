@@ -249,23 +249,6 @@ def plot_colormap(filename=None,
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
-    outputprefix = ''
-    if outputfile==None:
-        if outputdir==None:
-            outputdir=os.path.expandvars('$HOME/Plots/')
-        outputprefixind = outputdir.rfind('/')
-        if outputprefixind >= 0:
-            outputprefix = outputdir[outputprefixind+1:]
-            outputdir = outputdir[:outputprefixind+1]
-        if not os.path.exists(outputdir):
-            os.makedirs(outputdir)
-    else:
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:
-            outputdir = outputfile[:outputprefixind+1]
-        if not os.path.exists(outputdir):            
-            os.makedirs(outputdir)
-
     # Input file or object
     if filename!=None:
         f=pt.vlsvfile.VlsvReader(filename)
@@ -316,13 +299,7 @@ def plot_colormap(filename=None,
     if internalcb!=None: fontsize3=fontsize3*2
 
     # Plot title with time
-    if f.check_parameter("time"):
-        timeval=f.read_parameter("time")
-    elif f.check_parameter("t"):
-        timeval=f.read_parameter("t")
-    else:
-        timeval=None
-        print "Unknown time format encountered"
+    timeval=f.read_parameter("time")
 
     # Plot title with time
     if title==None or title=="msec" or title=="musec":        
@@ -376,25 +353,49 @@ def plot_colormap(filename=None,
         if var==None:
             # If no expression or variable given, defaults to rho
             var='rho'
+            if f.check_variable("proton/rho"): # multipop
+                var = 'proton/rho'
+            if f.check_variable("moments"): # restart
+                if len(f.read_variable("moments",cellids=1))==4:
+                    var = 'restart_rho'
+                else: # multipop restart
+                    var = 'restart_rhom'
         varstr=var.replace("/","_")
 
-    if outputfile==None:
-        outputfile = outputdir+outputprefix+run+"_map_"+varstr+opstr+stepstr+".png"
-
-    # Check if target file already exists and overwriting is disabled
-    if (draw==None and nooverwrite!=None and os.path.exists(outputfile)):
-        # Also check that file is not empty
-        if os.stat(outputfile).st_size > 0:
-            print("Found existing file "+outputfile+". Skipping.")
-            return
-        else:
-            print("Found existing file "+outputfile+" of size zero. Re-rendering.")
-
-    # Verify access to target directory
+    # File output checks
     if draw==None:
-        if not os.access('/'.join(outputfile.split('/')[:-1]), os.W_OK):
-            print("No write access for "+outputfile+"! Exiting.")
+        if outputfile==None: # Generate filename
+            if outputdir==None: # default initial path
+                outputdir=os.path.expandvars('$HOME/Plots/')
+            # Sub-directories can still be defined in the "run" variable
+            outputfile = outputdir+run+"_map_"+varstr+opstr+stepstr+".png"
+        else: 
+            if outputdir!=None:
+                outputfile = outputdir+outputfile
+
+        # Re-check to find actual target sub-directory
+        outputprefixind = outputfile.rfind('/')
+        if outputprefixind >= 0:            
+            outputdir = outputfile[:outputprefixind+1]
+
+        # Ensure output directory exists
+        if not os.path.exists(outputdir):
+            try:
+                os.makedirs(outputdir)
+            except:
+                pass
+
+        if not os.access(outputdir, os.W_OK):
+            print("No write access for directory "+outputdir+"! Exiting.")
             return
+
+        # Check if target file already exists and overwriting is disabled
+        if (nooverwrite!=None and os.path.exists(outputfile)):            
+            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+                print("Found existing file "+outputfile+". Skipping.")
+                return
+            else:
+                print("Found existing file "+outputfile+" of size zero. Re-rendering.")
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -629,18 +630,12 @@ def plot_colormap(filename=None,
 
     # Find region outside ionosphere. Note that for some boundary layer cells, a density is calculated, but
     # e.g. pressure is not, and these cells aren't excluded by this method.
-    if f.check_variable("rho"):
-        rhomap = f.read_variable("rho")
-        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-    elif f.check_variable("rhom"):
-        rhomap = f.read_variable("rhom")
-        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-    elif f.check_variable("proton/rho"):
-        rhomap = f.read_variable("proton/rho")
+    if f.check_variable("moments"):
+        rhomap = f.read_variable("restart_rhom")
         rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
     else:
-        print("Unable to exclude non-zero mass density region from range finder!")
-        rhomap = datamap
+        rhomap = f.read_variable("rhom")
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
     rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     XYmask = rhomap.mask
 
@@ -786,26 +781,11 @@ def plot_colormap(filename=None,
 
         # Find inflow position values
         cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_b = f.read_variable("B", cellids=cid)
-        # Multipop-safe bulkV fetch
-        if f.check_variable("proton/V"):
-            ff_v = f.read_variable("proton/V", cellids=cid)            
-        elif f.check_variable("rho_v"):
-            ff_v = f.read_variable("v", cellids=cid)
-        elif f.check_variable("moments"):
-            ff_v = f.read_variable("moments", cellids=cid)
-            # Old version moments has 4 elements, multipop version has 5
-            if len(ff_v)==4:
-                ff_v = ff_v[1:4]/ff_v[0]
-            elif len(ff_v)==5:
-                ff_v = ff_v[1:4]
-            else:
-                print("Error parsing moments, could not identify if version was multipop or not!")
-                ff_v = [-600000,0,0]
+        ff_b = f.read_variable("B", cellids=cid)       
+        if f.check_variable("moments"): # restart file
+            ff_v = f.read_variable("restart_V", cellids=cid)            
         else:
-            print("Error finding bulk velocity!")
-            ff_v = [-600000,0,0]
-
+            ff_v = f.read_variable("V", cellids=cid)            
         # Account for movement
         bdirsign = -1.0 
         outofplane = [0,1,0] # For ecliptic runs

@@ -120,6 +120,112 @@ def restart_B( variables ):
    '''
    return variables[0]+variables[1]
 
+def restart_V( variables ):
+   ''' Data reducer function for finding bulk V for a restart fike
+   '''
+   moments = variables[0]
+
+   if np.ndim(moments)==1: # single cell
+      if len(moments)==4:  # pre-multipop restart
+         V = moments[1:4]/moments[0]
+      elif len(moments)==5: # multipop restart
+         V = moments[1:4]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   else: # array of cells
+      if len(moments[0,:])==4:  # pre-multipop restart
+         rho = np.ma.masked_less_equal(moments[:,0],0)
+         V = np.ma.divide(moments[:,1:4],rho[:,np.newaxis])
+      elif len(moments[0,:])==5: # multipop restart
+         V = moments[:,1:4]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   return V
+
+def restart_rho( variables ):
+   ''' Data reducer function for calculating proton number density rho from restart file
+   '''
+   moments = variables[0]
+
+   if np.ndim(moments)==1: # single cell
+      if len(moments)==4:  # pre-multipop restart
+         rho = moments[0]
+      else:
+         print("Unable to determine rho from moments!")
+         return None
+   else: # array of cells
+      if len(moments[0,:])==4:  # pre-multipop restart
+         rho = moments[:,0]
+      else:
+         print("Unable to determine rho from moments!")
+         return None
+   return rho
+
+def restart_rhom( variables ):
+   ''' Data reducer function for calculating rhom from restart file
+   '''
+   moments = variables[0]
+   mp = 1.672622e-27
+
+   if np.ndim(moments)==1: # single cell
+      if len(moments)==4:  # pre-multipop restart
+         rhom = moments[0]*mp
+      elif len(moments)==5: # multipop restart
+         rhom = moments[0]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   else: # array of cells
+      if len(moments[0,:])==4:  # pre-multipop restart
+         rhom = moments[:,0]*mp
+      elif len(moments[0,:])==5: # multipop restart
+         rhom = moments[:,0]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   return rhom
+
+def restart_rhoq( variables ):
+   ''' Data reducer function for calculating rhoq from restart file
+   '''
+   moments = variables[0]
+   charge = 1.6021773e-19
+
+   if np.ndim(moments)==1: # single cell
+      if len(moments)==4:  # pre-multipop restart
+         rhoq = moments[0]*charge
+      elif len(moments)==5: # multipop restart
+         rhoq = moments[4]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   else: # array of cells
+      if len(moments[0,:])==4:  # pre-multipop restart
+         rhoq = moments[:,0]*charge
+      elif len(moments[0,:])==5: # multipop restart
+         rhoq = moments[:,4]
+      else:
+         print("Unrecognized length for moments!")
+         return None
+   return rhoq
+
+
+def rhom( variables ):
+   ''' Data reducer function for calculating rhom from pre-multipop file
+   '''
+   rho = variables[0]
+   mp = 1.672622e-27
+   return rho*mp
+
+def rhoq( variables ):
+   ''' Data reducer function for calculating rhoq from pre-multipop file
+   '''
+   rho = variables[0]
+   charge = 1.6021773e-19
+   return rho*charge
+
 def v( variables ):
    ''' Data reducer function for getting velocity from rho and rho_v
        variables[0] = rho_v and variables[1] = rho
@@ -439,8 +545,14 @@ datareducers["VPerpendicularNonBackstream"]=DataReducerVariable(["VNonBackstream
 # Reducers for simplifying access calls for old and/or new output data versions
 datareducers["VBackstream"] =            DataReducerVariable(["RhoVBackstream", "RhoBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{st}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["VNonBackstream"] =         DataReducerVariable(["RhoVNonBackstream", "RhoNonBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{th}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+datareducers["rhom"] =                   DataReducerVariable(["rho"], rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
+datareducers["rhoq"] =                   DataReducerVariable(["rho"], rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
+# Reducers for restart files
 datareducers["B"] =                      DataReducerVariable(["background_B", "perturbed_B"], restart_B, "T", 3, latex=r"$B$",latexunits=r"T")
-# Todo: Add rhom and rho calculations by recognizing the active population and if necessary, extracting values from moments
+datareducers["restart_V"] =              DataReducerVariable(["moments"], restart_V, "m/s", 3, latex=r"$V$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+datareducers["restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
+datareducers["restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
+datareducers["restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 
 datareducers["Pressure"] =               DataReducerVariable(["PTensorDiagonal"], Pressure, "Pa", 1, latex=r"$P$", latexunits=r"Pa")
 datareducers["PTensor"] =                DataReducerVariable(["PTensorDiagonal", "PTensorOffDiagonal"], PTensor, "Pa", 9, latex=r"$\mathcal{P}$", latexunits=r"Pa")

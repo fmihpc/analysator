@@ -1270,6 +1270,14 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
+      
+      # Special handling for time
+      if name=="time":
+         if self.check_parameter(name="t"):
+            return self.read(name="t", tag="PARAMETER")
+      if name=="t":
+         if self.check_parameter(name="time"):
+            return self.read(name="time", tag="PARAMETER")
 
       return self.read(name=name, tag="PARAMETER")
 
