@@ -167,6 +167,8 @@ def VectorArrayParallelComponent(inputvector, directionvector):
 
 def VectorArrayPerpendicularComponent(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
+    # Calculates the magnitude of the perpendicular vector component
+    # of each inputvector to each directionvector. 
     dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
     # paravector = dirnorm
@@ -177,6 +179,16 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     perpcomp = np.linalg.norm(inputvector - paravector, axis=-1) 
     # Output array is of format [nx,ny]
     return perpcomp
+
+def VectorArrayPerpendicularVector(inputvector, directionvector):
+    # assumes inputvector and directionvector are of shape [nx,ny,3]
+    # Calculates the perpendicular vector component of each
+    # inputvector to each directionvector *as a vector*
+    dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
+    paravector = dirnorm * (inputvector*dirnorm).sum(-1)[:,:,np.newaxis] #dot product, alternatively numpy.einsum("ijk,ijk->ij",a,b)
+    perpvector = inputvector - paravector
+    # Output array is of format [nx,ny,3]
+    return perpvector
 
 def VectorArrayAnisotropy(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
@@ -298,12 +310,12 @@ def expr_MagneticPressureForce_aniso(pass_maps, requestvariables=False):
     return MagneticPressureForceAniso.T
 
 # def expr_MagneticPressureForce_inplane_mag(pass_maps):
-#     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+#     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
 #     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
 #     return np.linalg.norm(inplane(MagneticPressureForce), axis=-1).T
 
 # def expr_MagneticPressureForce_inplane_aniso(pass_maps):
-#     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+#     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
 #     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
 #     MagneticPressureForceIPAniso = VectorArrayAnisotropy(inplane(MagneticPressureForce), inplane(Bmap))
 #     return MagneticPressureForceIPAniso.T
@@ -323,8 +335,8 @@ def expr_ThermalPressureForce_aniso(pass_maps, requestvariables=False):
     return ThermalPressureForceAniso.T
 
 # def expr_ThermalPressureForce_inplane_aniso(pass_maps):
-#     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-#     Pmap = pass_maps[1].T #Pressure (scalar)
+#     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+#     Pmap = pass_maps['Pressure'].T #Pressure (scalar)
 #     ThermalPressureForce = vec_ThermalPressureForce(Pmap)
 #     ThermalPressureForceIPAniso = VectorArrayAnisotropy(inplane(ThermalPressureForce), inplane(Bmap))
 #     return ThermalPressureForceIPAniso.T
@@ -409,24 +421,38 @@ def expr_flowcompression(pass_maps, requestvariables=False):
     return numdiv(Vmap).T
 
 # def expr_gradB_aniso(pass_maps):
-#     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
+#     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
 #     gradB = numjacobian(Bmap)
 #     rotatedgradB = rotateTensorArrayToVectorArray(gradB,Bmap)
 #     gradBaniso = TensorArrayAnisotropy(rotatedgradB)
 #     return gradBaniso.T
 
 # def expr_gradPTD_aniso(pass_maps):
-#     Bmap = TransposeVectorArray(pass_maps[0]) # Magnetic field
-#     PTDmap = TransposeVectorArray(pass_maps[1]) # PressureTensorDiagonal
+#     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+#     PTDmap = TransposeVectorArray(pass_maps['PTensorDiagonal']) # PressureTensorDiagonal
 #     gradP = numjacobian(PTDmap)
 #     rotatedgradP = rotateTensorArrayToVectorArray(gradP,Bmap)
 #     gradPaniso = TensorArrayAnisotropy(rotatedgradP)
 #     return gradPaniso.T
 
-# Pressure anisotropy is PPerpOverPar
+slippageVA=3937129.92717945   #Effective alfven speed (in m/s) to use when calculating slippage.
+def expr_Slippage(pass_maps):
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_Slippage expected a single timestep, but got multiple. Exiting.")
+        quit()
 
-# betaParallel, betaPerpendicular, betaPerpOverPar, rMirror
+    expr_Slippage.__name__ = r"Slippage $[v_\mathrm{A}]$"
 
+    E = pass_maps['E']
+    B = pass_maps['V']
+    V = pass_maps['V']
+
+    Vperp = VectorArrayPerpendicularVector(V,B)
+    EcrossB = np.divide(np.cross(E,B), (B*B).sum(-1)[:,:,np.newaxis])
+    metricSlippage = EcrossB-Vperp
+    alfvenicSlippage = metricSlippage/slippageVA
+    return np.linalg.norm(alfvenicSlippage, axis=-1)
 
 
 def expr_betatron(pass_maps, requestvariables=False):
@@ -440,7 +466,7 @@ def expr_betatron(pass_maps, requestvariables=False):
     # is 2N+1 timesteps with the middle one the requested time step
 
     # This custom expression returns a proxy for betatron acceleration
-    if type(pass_maps[0]) is not list:
+    if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
         print("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()

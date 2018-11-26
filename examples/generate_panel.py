@@ -251,6 +251,11 @@ for j in timetot:
     # Colour bar.and associated title.
     pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='OrRd',step=j,outputdir=outputLocation+'cSHFA/', lin=1,vmin=0,vmax=1, expression=expr_cav_cust, external=cavitoncontours, pass_vars=['rho','B','beta'], pass_times=10, nocb=1, cbtitle='', boxre=[-20,20,-40,0])
 
+    # Plot a custom nightside reconnection slippage calculation
+    pt.plot.plot_helpers.slippageVA=3000000
+    pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='seismic',step=j,outputdir=outputLocation+'slippage/', wmark=1, fluxdir=fluxLocation, fluxlines=4, boxre=[-40,-10,-15,15], vmin=1e-2, vmax=1e0, pass_vars=['E','B','V'], expression=expr_Slippage)
+
+
     # Plot beam number density with inset VDF
     pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeamVDF/',wmark=1, boxre=[-10,20,-30,0], external=insetVDF)
 
