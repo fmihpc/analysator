@@ -162,7 +162,7 @@ def VectorArrayPerpendicularVector(inputvector, directionvector):
     dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     paravector = dirnorm * (inputvector*dirnorm).sum(-1)[:,:,np.newaxis] #dot product, alternatively numpy.einsum("ijk,ijk->ij",a,b)
     perpcomp = inputvector - paravector
-    # Output array is of format [nx,ny]
+    # Output array is of format [nx,ny,3]
     return perpcomp
 
 def VectorArrayAnisotropy(inputvector, directionvector):
@@ -454,7 +454,7 @@ slippageVA=3937129.92717945   #Effective alfven speed (in m/s) to use when calcu
 def expr_Slippage(pass_maps):
     # Verify that time averaging wasn't used
     if type(pass_maps[0]) is list:
-        print("exprMA_cust expected a single timestep, but got multiple. Exiting.")
+        print("expr_Slippage expected a single timestep, but got multiple. Exiting.")
         quit()
 
     expr_Slippage.__name__ = "Slippage [in v_A]"
