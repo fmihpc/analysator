@@ -26,12 +26,14 @@ speciesdict ={
     'proton': 'p',
     'helium': 'He',
     'oxygen': 'O',
+    'electron': 'e',
 }
 speciesamu ={
     'avgs': 1,
     'proton': 1,
     'helium': 4,
     'oxygen': 16,
+    'electron': 5.488e-4,
 }
 
 # Define some units for intrinsic values
