@@ -847,14 +847,17 @@ def plot_colormap(filename=None,
                 vectmap = vectmap[MaskX,:,:]
                 vectmap = vectmap[:,MaskY,:]
             if np.ma.is_masked(rhomap):
-                vectmap = np.ma.array(vectmap, mask=XYmask[:,:,np.newaxis]) 
+#                vectmap = np.ma.array(vectmap, mask=XYmask[:,:,np.newaxis]) 
+                vectmap = np.ma.array(vectmap)
+                for i in range(3):
+                    vectmap[:,:,i].mask = XYmask
 
             # Find vector lengths and define color
             lengths=np.linalg.norm(vectmap, axis=-1)
             colors = np.log10(lengths/np.mean(lengths))
 
             # Try to estimate step so there's about 100 vectors in the image area
-            step = int(np.sqrt(colors.shape[0] * colors.shape[1])/vectordensity)
+            step = int(np.sqrt(colors.shape[0] * colors.shape[1]/vectordensity))
 
             # inplane unit length vectors
             if zsize==1:
@@ -870,8 +873,10 @@ def plot_colormap(filename=None,
                 V = vectmap[::step,::step,1]
             elif ysize==1:
                 V = vectmap[::step,::step,2]
-            C = colors[::step,::step]
-            ax.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05*scale, scale_units='dots', pivot='middle')
+            C = colors[::step,::step] 
+            # quiver uses scale in the inverse fashion
+            ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.03/scale, headlength=2, headwidth=2,                       
+                       headaxislength=2, scale_units='dots', pivot='middle')
 
     if streamlines!=None:
         if f.check_variable(streamlines):
@@ -881,14 +886,17 @@ def plot_colormap(filename=None,
                 slinemap = slinemap[MaskX,:,:]
                 slinemap = slinemap[:,MaskY,:]
             if np.ma.is_masked(rhomap):
-                slinemap = np.ma.array(slinemap, mask=XYmask[:,:,np.newaxis]) 
+#                slinemap = np.ma.array(slinemap, mask=XYmask[:,:,np.newaxis]) 
+                slinemap = np.ma.array(slinemap)
+                for i in range(3):
+                    slinemap[:,:,i].mask = XYmask
 
             U = slinemap[:,:,0]
             if zsize==1:
                 V = slinemap[::step,::step,1]
             elif ysize==1:
                 V = slinemap[::step,::step,2]
-            ax.streamplot(XmeshPass,YmeshPass,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
+            ax1.streamplot(XmeshPass,YmeshPass,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
 
 
     # Optional external additional plotting routine overlayed on color plot

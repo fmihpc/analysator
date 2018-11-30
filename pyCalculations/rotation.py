@@ -51,7 +51,7 @@ def rotateArrayTensorToVector( Tensor, vector ):
    '''
    vector_u = np.cross(vector, np.array([0.,0.,1.])[np.newaxis,:])
    vector_u_len = np.ma.masked_less_equal(np.linalg.norm(vector_u, axis=-1), 0)
-   vector_u = vector_u / vector_u_len[:,np.newaxis]
+   vector_u = np.ma.divide(vector_u, vector_u_len[:,np.newaxis])
    vector_len = np.ma.masked_less_equal(np.linalg.norm(vector, axis=-1), 0)
    vector_n = vector / vector_len[:,np.newaxis]
    angle = np.arccos(vector_n[:,2])

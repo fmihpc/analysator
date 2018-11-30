@@ -637,7 +637,7 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     lengths=np.linalg.norm(vf, axis=-1)
     colors = np.log10(lengths/np.mean(lengths))
     # Try to estimate step so there's about 100 vectors in the image area
-    step = int(np.sqrt(colors.shape[0] * colors.shape[1])/100)
+    step = int(np.sqrt(colors.shape[0] * colors.shape[1]/100.))
 
     # inplane unit length vectors
     vectmap = pt.plot.plot_helpers.inplanevec(vectmap)
@@ -651,4 +651,23 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     elif PLANE=="XZ":
         V = vectmap[::step,::step,2]
     C = colors[::step,::step]
-    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.05, scale_units='dots', pivot='middle')
+    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,                       
+                       headaxislength=2, scale_units='dots', pivot='middle')
+
+
+def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):
+    # Select first valid variable
+    listofkeys = iter(pass_maps)
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+
+    # Take in-plane component
+    vfip = pt.plot.plot_helpers.inplanevec(var)
+
+    X = XmeshXY
+    Y = YmeshXY
+    U = vfip[:,:,0]
+    V = vfip[:,:,1]
+    ax.streamplot(X,Y,U,V,linewidth=0.5, density=3, color='white')
+
