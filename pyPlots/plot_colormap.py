@@ -127,7 +127,9 @@ def plot_colormap(filename=None,
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
-                  fsaved=None
+                  fsaved=None,
+                  vectors=None, vectordensity=100, vectorcolormap='gray',
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white'
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -196,6 +198,10 @@ def plot_colormap(filename=None,
                         If the function accepts a second variable, if set to true, it is expected to 
                         return a list of required variables for pass_maps.
 
+    Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
+    for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+    on, see the plot_helpers.py file.
+
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
@@ -218,6 +224,14 @@ def plot_colormap(filename=None,
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+
+    :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
+    :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
+    :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+
+    :kword streamlines: Set to a vector variable to overplot as streamlines
+    :kword streamlinedensity: Set streamline density (default 1)
+    :kword streamlinecolor: Set streamline color (default white)
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -823,6 +837,59 @@ def plot_colormap(filename=None,
                 fSmap = np.ma.array(fSmap, mask=XYmask)            
             fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
+
+    # add vectors on top
+    if vectors != None:
+        if f.check_variable(vectors):
+            vectmap = f.read_variable(vectors)
+            vectmap = vectmap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+            if np.ma.is_masked(maskgrid):
+                vectmap = vectmap[MaskX,:,:]
+                vectmap = vectmap[:,MaskY,:]
+            if np.ma.is_masked(rhomap):
+                vectmap = np.ma.array(vectmap, mask=XYmask[:,:,np.newaxis]) 
+
+            # Find vector lengths and define color
+            lengths=np.linalg.norm(vectmap, axis=-1)
+            colors = np.log10(lengths/np.mean(lengths))
+
+            # Try to estimate step so there's about 100 vectors in the image area
+            step = int(np.sqrt(colors.shape[0] * colors.shape[1])/vectordensity)
+
+            # inplane unit length vectors
+            if zsize==1:
+                vectmap[:,:,2] = np.zeros(vectmap[:,:,2].shape)
+            elif ysize==1:
+                vectmap[:,:,1] = np.zeros(vectmap[:,:,1].shape)
+            vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
+
+            X = XmeshPass[::step,::step]
+            Y = YmeshPass[::step,::step]
+            U = vectmap[::step,::step,0]            
+            if zsize==1:
+                V = vectmap[::step,::step,1]
+            elif ysize==1:
+                V = vectmap[::step,::step,2]
+            C = colors[::step,::step]
+            ax.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05*scale, scale_units='dots', pivot='middle')
+
+    if streamlines!=None:
+        if f.check_variable(streamlines):
+            slinemap = f.read_variable(streamlines)
+            slinemap = slinemap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+            if np.ma.is_masked(maskgrid):
+                slinemap = slinemap[MaskX,:,:]
+                slinemap = slinemap[:,MaskY,:]
+            if np.ma.is_masked(rhomap):
+                slinemap = np.ma.array(slinemap, mask=XYmask[:,:,np.newaxis]) 
+
+            U = slinemap[:,:,0]
+            if zsize==1:
+                V = slinemap[::step,::step,1]
+            elif ysize==1:
+                V = slinemap[::step,::step,2]
+            ax.streamplot(XmeshPass,YmeshPass,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
+
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions

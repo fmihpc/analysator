@@ -621,3 +621,34 @@ def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
 
     result = np.linalg.norm(term2, axis=-1)
     return result.T
+
+
+def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):    
+    # Example: B curvature force
+    B = TransposeVectorArray(pass_maps['B'])
+    vf = pt.plot.plot_helpers.vec_MagneticTensionForce(B)
+    # any of the vec_ functions in plot_helpers.py are ok, and new ones can be constructed.
+    # Variables already included in analysator can be plotted directly using plot_colormap.py.
+
+    # Transpose back
+    vf = TransposeVectorArray(vf)
+
+    # Find vector lengths and define color
+    lengths=np.linalg.norm(vf, axis=-1)
+    colors = np.log10(lengths/np.mean(lengths))
+    # Try to estimate step so there's about 100 vectors in the image area
+    step = int(np.sqrt(colors.shape[0] * colors.shape[1])/100)
+
+    # inplane unit length vectors
+    vectmap = pt.plot.plot_helpers.inplanevec(vectmap)
+    vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
+
+    X = XmeshXY[::step,::step]
+    Y = YmeshXY[::step,::step]
+    U = vectmap[::step,::step,0]            
+    if PLANE=="XY":
+        V = vectmap[::step,::step,1]
+    elif PLANE=="XZ":
+        V = vectmap[::step,::step,2]
+    C = colors[::step,::step]
+    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.05, scale_units='dots', pivot='middle')

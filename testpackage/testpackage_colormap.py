@@ -324,6 +324,37 @@ nonrestartcalls = [
 # Everything at once
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
 
+# Streamlines, vectors
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B', vectorcolormap='viridis')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B', vectorcolormap='magma')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=20)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=400)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=400, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E', vectorcolormap='viridis')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E', vectorcolormap='magma')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400, boxre=[-10,10,5,50])",
+
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinecolor='black')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinecolor='gray')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B',streamlinedensity=0.1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B',streamlinedensity=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B',streamlinedensity=0.1, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B',streamlinedensity=10, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinecolor='black')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinecolor='gray')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V',streamlinedensity=0.1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V',streamlinedensity=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V',streamlinedensity=0.1, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V',streamlinedensity=10, boxre=[-10,10,5,50])",
+
 # More data reducers
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VBackstream',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VNonBackstream',lin=1)",
