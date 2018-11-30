@@ -158,7 +158,7 @@ def plot_colormap(filename=None,
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of map name
-    :kword axisunit:    Plot axes using 10^{unit} m (default: Earth radius R_E)
+    :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
     :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
 
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
@@ -455,7 +455,8 @@ def plot_colormap(filename=None,
         datamap_info = f.read_variable_info(var, operator=op)
 
         cb_title_use = datamap_info.latex
-        if cb_title_use == "": cb_title_use = r""+var.replace("_","\_")
+        # if cb_title_use == "": 
+        #     cb_title_use = r""+var.replace("_","\_")
         datamap_unit = datamap_info.latexunits
 
         # If vscale is in use
@@ -796,12 +797,15 @@ def plot_colormap(filename=None,
         flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
 
         # Mask region (e.g. ionosphere)
+        if np.ma.is_masked(maskgrid):
+            flux_function = flux_function[MaskX,:]
+            flux_function = flux_function[:,MaskY]
         if np.ma.is_masked(rhomap):
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
         flux_levels = np.linspace(-10,10,fluxlines*60)
-        fluxcont = ax1.contour(XmeshXY,YmeshXY,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+        fluxcont = ax1.contour(XmeshPass,YmeshPass,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
     if fsaved != None:
@@ -812,9 +816,12 @@ def plot_colormap(filename=None,
         if f.check_variable("fSaved"):
             fSmap = f.read_variable("fSaved")
             fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+            if np.ma.is_masked(maskgrid):
+                fSmap = fSmap[MaskX,:]
+                fSmap = fSmap[:,MaskY]
             if np.ma.is_masked(rhomap):
                 fSmap = np.ma.array(fSmap, mask=XYmask)            
-            fScont = ax1.contour(XmeshXY,YmeshXY,fSmap,[0.5],colors=fScolour, 
+            fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
     # Optional external additional plotting routine overlayed on color plot

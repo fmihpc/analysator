@@ -436,7 +436,9 @@ def expr_flowcompression(pass_maps, requestvariables=False):
 #     return gradPaniso.T
 
 slippageVA=3937129.92717945   #Effective alfven speed (in m/s) to use when calculating slippage.
-def expr_Slippage(pass_maps):
+def expr_Slippage(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['E','B','V']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
         print("expr_Slippage expected a single timestep, but got multiple. Exiting.")
@@ -445,7 +447,7 @@ def expr_Slippage(pass_maps):
     expr_Slippage.__name__ = r"Slippage $[v_\mathrm{A}]$"
 
     E = pass_maps['E']
-    B = pass_maps['V']
+    B = pass_maps['B']
     V = pass_maps['V']
 
     Vperp = VectorArrayPerpendicularVector(V,B)
@@ -453,6 +455,20 @@ def expr_Slippage(pass_maps):
     metricSlippage = EcrossB-Vperp
     alfvenicSlippage = metricSlippage/slippageVA
     return np.linalg.norm(alfvenicSlippage, axis=-1)
+
+def expr_EcrossB(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['E','B']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_EcrossB expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    E = pass_maps['E']
+    B = pass_maps['B']
+
+    EcrossB = np.divide(np.cross(E,B), (B*B).sum(-1)[:,:,np.newaxis])
+    return np.linalg.norm(EcrossB, axis=-1)
 
 
 def expr_betatron(pass_maps, requestvariables=False):

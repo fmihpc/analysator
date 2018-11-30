@@ -542,6 +542,12 @@ datareducers["VPerpendicularBackstream"]=DataReducerVariable(["VBackstream", "B"
 datareducers["VParallelNonBackstream"] =    DataReducerVariable(["VNonBackstream", "B"], VParallel, "m/s", 1, latex=r"$V_{\parallel,\mathrm{th}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["VPerpendicularNonBackstream"]=DataReducerVariable(["VNonBackstream", "B"], VPerpendicular, "m/s", 1, latex=r"$V_{\perp,\mathrm{th}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
+datareducers["EParallel"] =              DataReducerVariable(["E", "B"], VParallel, "V/m", 1, latex=r"$E_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+datareducers["EPerpendicular"] =         DataReducerVariable(["E", "B"], VPerpendicular, "V/m", 1, latex=r"$E_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+datareducers["EJEParallel"] =              DataReducerVariable(["EJE", "B"], VParallel, "V/m", 1, latex=r"$EJE_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+datareducers["EJEPerpendicular"] =         DataReducerVariable(["EJE", "B"], VPerpendicular, "V/m", 1, latex=r"$EJE_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+
+
 # Reducers for simplifying access calls for old and/or new output data versions
 datareducers["VBackstream"] =            DataReducerVariable(["RhoVBackstream", "RhoBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{st}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["VNonBackstream"] =         DataReducerVariable(["RhoVNonBackstream", "RhoNonBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{th}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -604,13 +610,13 @@ datareducers["beta"] =                   DataReducerVariable(["Pressure", "B"], 
 datareducers["betaParallel"] =           DataReducerVariable(["PParallel", "B"], beta ,"", 1, latex=r"$\beta_\parallel$", latexunits=r"")
 datareducers["betaPerpendicular"] =      DataReducerVariable(["PPerpendicular", "B"], beta ,"", 1, latex=r"$\beta_\perp$", latexunits=r"")
 
-datareducers["Rmirror"] =                DataReducerVariable(["PTensor", "B"], rMirror, "", 1)
-datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParallel", "PPerpendicular", "B"], Dng, "", 1) # I think this has vector length 1?
+datareducers["Rmirror"] =                DataReducerVariable(["PTensor", "B"], rMirror, "", 1, latex=r"$R_\mathrm{m}$")
+datareducers["Dng"] =                    DataReducerVariable(["PTensor", "PParallel", "PPerpendicular", "B"], Dng, "", 1, latex=r"$\mathrm{Dng}$") # I think this has vector length 1?
 datareducers["vBeam"] =                  DataReducerVariable(["VBackstream", "VNonBackstream"], v_beam, "m/s", 3, latex=r"$V_\mathrm{st}-V$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["vBeamRatio"] =             DataReducerVariable(["VBackstream", "VNonBackstream"], v_beam_ratio, "", 1, latex=r"$V_\mathrm{st} V^{-1}$", latexunits=r"")
 datareducers["vThermal"] =               DataReducerVariable(["Temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
-datareducers["Bz_linedipole_avg"] =      DataReducerVariable(["X", "Y", "Z", "DX", "DY", "DZ"], Bz_linedipole_avg, "T", 1)
-datareducers["Bz_linedipole_diff"] =     DataReducerVariable(["B", "Bz_linedipole_avg"], Bz_linedipole_diff, "", 1)
+datareducers["Bz_linedipole_avg"] =      DataReducerVariable(["X", "Y", "Z", "DX", "DY", "DZ"], Bz_linedipole_avg, "T", 1, latex=r"$\langle B_{z,\mathrm{ld}}\rangle$")
+datareducers["Bz_linedipole_diff"] =     DataReducerVariable(["B", "Bz_linedipole_avg"], Bz_linedipole_diff, "", 1, latex=r"$\Delta B_{z,\mathrm{ld}}$")
 
 #reducers with useVspace
 datareducers["gyrophase_relstddev"] =    DataReducerVariable(["v", "B"], gyrophase_relstddev, "", 1, useVspace=True) # I think this has vector length 1?
@@ -679,6 +685,6 @@ multipopdatareducers["pop/beta"] =                   DataReducerVariable(["pop/P
 multipopdatareducers["pop/betaParallel"] =           DataReducerVariable(["pop/PParallel", "B"], beta ,"", 1, latex=r"$\beta_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"")
 multipopdatareducers["pop/betaPerpendicular"] =      DataReducerVariable(["pop/PPerpendicular", "B"], beta ,"", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"")
 
-multipopdatareducers["pop/Rmirror"] =                DataReducerVariable(["pop/PTensor", "B"], rMirror, "", 1)
-multipopdatareducers["pop/Dng"] =                    DataReducerVariable(["pop/PTensor", "pop/PParallel", "pop/PPerpendicular", "B"], Dng, "", 1)
+multipopdatareducers["pop/Rmirror"] =                DataReducerVariable(["pop/PTensor", "B"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
+multipopdatareducers["pop/Dng"] =                    DataReducerVariable(["pop/PTensor", "pop/PParallel", "pop/PPerpendicular", "B"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 

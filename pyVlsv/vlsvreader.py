@@ -919,7 +919,7 @@ class VlsvReader(object):
          latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
-         latex = ""
+         latex = r""+name.replace("_","\_")
          latexunits = ""
 
       if operator != "pass":

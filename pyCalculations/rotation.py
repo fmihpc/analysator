@@ -49,9 +49,11 @@ def rotateArrayTensorToVector( Tensor, vector ):
       :param vector:          n x 3 element array (n Vectors for creating the rotation matrix)
       :returns: n x 3 x 3 element array of rotated tensors
    '''
-   vector_u = np.cross(vector, np.array([0,0,1])[np.newaxis,:])
-   vector_u = vector_u / np.linalg.norm(vector_u, axis=-1)[:,np.newaxis]
-   vector_n = vector / np.linalg.norm(vector, axis=-1)[:,np.newaxis]
+   vector_u = np.cross(vector, np.array([0.,0.,1.])[np.newaxis,:])
+   vector_u_len = np.ma.masked_less_equal(np.linalg.norm(vector_u, axis=-1), 0)
+   vector_u = vector_u / vector_u_len[:,np.newaxis]
+   vector_len = np.ma.masked_less_equal(np.linalg.norm(vector, axis=-1), 0)
+   vector_n = vector / vector_len[:,np.newaxis]
    angle = np.arccos(vector_n[:,2])
    # A unit vector version of the given vector
    R = rotation_array_matrix( vector_u, angle )

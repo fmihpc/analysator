@@ -12,7 +12,7 @@ level_beta_SHFA_SW = 10.
 
 runs = []
 runs.append( { 'name': 'ABC',
-                 'verifydir': 'testpackage/ABC/', 
+                 'verifydir': 'testpackage_colormap/ABC/', 
                  'fileLocation': '/proj/vlasov/2D/ABC/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/ABC/flux/',
                  'pops': ['avgs'],
@@ -20,7 +20,7 @@ runs.append( { 'name': 'ABC',
                  'filename': None,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQ',
-                 'verifydir': 'testpackage/BCQ/', 
+                 'verifydir': 'testpackage_colormap/BCQ/', 
                  'fileLocation': '/proj/vlasov/2D/BCQ/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/BCQ/flux/',
                  'pops': ['avgs'],
@@ -28,7 +28,7 @@ runs.append( { 'name': 'BCQ',
                  'filename': None,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BED', 
-                 'verifydir': 'testpackage/BED/', 
+                 'verifydir': 'testpackage_colormap/BED/', 
                  'fileLocation': '/proj/vlasov/2D/BED/bulk/',
                  'fluxLocation': None,
                  'pops': ['avgs'],
@@ -36,7 +36,7 @@ runs.append( { 'name': 'BED',
                  'filename': None,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFD',
-                 'verifydir': 'testpackage/BFD/', 
+                 'verifydir': 'testpackage_colormap/BFD/', 
                  'fileLocation': '/proj/vlasov/2D/BFD/bulk/',
                  'fluxLocation': '/proj/vlasov/2D/BFD/fluxfunction/',
                  'pops': ['proton','helium'],
@@ -44,7 +44,7 @@ runs.append( { 'name': 'BFD',
                  'filename': None,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQr',
-                 'verifydir': 'testpackage/BCQr/', 
+                 'verifydir': 'testpackage_colormap/BCQr/', 
                  'fileLocation': '/proj/vlasiato/BCQ/',
                  'fluxLocation': None,
                  'pops': ['avgs'],
@@ -52,7 +52,7 @@ runs.append( { 'name': 'BCQr',
                  'filename': 'restart.0001361.vlsv',
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFDr',
-                 'verifydir': 'testpackage/BFDr/', 
+                 'verifydir': 'testpackage_colormap/BFDr/', 
                  'fileLocation': '/proj/vlasov/2D/BFD/restart/',
                  'fluxLocation': None,
                  'pops': ['avgs'],
@@ -242,15 +242,8 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
 
-# Overplots and flux lines
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1, boxre=[-10,10,5,50])",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
-
 # title, axes, noborders
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$') #39",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
@@ -270,9 +263,16 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1, vscale=1e-3)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='x', colormap='PuOr')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='y', colormap='PuOr',symlog=0, usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)",]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)"]
 
 nonrestartcalls = [
+# Overplots and flux lines
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
+
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated', vscale=1e3)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='x', colormap='RdBu',symlog=0, usesci=0)",
@@ -321,6 +321,9 @@ nonrestartcalls = [
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['rho'], boxre=[0,30,-15,15])",
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['beta'])",
 
+# Everything at once
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
+
 # More data reducers
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VBackstream',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VNonBackstream',lin=1)",
@@ -363,7 +366,8 @@ nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeam',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vThermal',lin=1)",]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vThermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')"]
 
 
 multipopcalls = [
@@ -399,7 +403,8 @@ multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/beta')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaParallel')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpendicular')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')"]
 
 # count how many tests to run in total
 ntests = []
