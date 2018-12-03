@@ -50,11 +50,14 @@ import os
 import matplotlib.pyplot as plt
 
 if os.getenv('PTNONINTERACTIVE') != None:
+   # Non-interactive plotting mode
    try:
       plt.switch_backend('Agg')
    except:
       print "Note: Unable to switch to Agg backend"
 else:
+   # Interactive plotting mode
+   plt.ion()
    try:
       import grid
    except ImportError as e:

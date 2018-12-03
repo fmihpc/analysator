@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH -t 00:01:00
+#SBATCH -t 00:10:00
 #SBATCH -J array_movie
 #SBATCH -p serial
 #SBATCH -n 1

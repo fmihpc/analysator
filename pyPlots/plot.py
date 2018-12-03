@@ -21,8 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-''' The plot module has all the functions related to plotting variables. note: matplotlib can be used for this purpose too
-
+''' The plot module has all the functions related to plotting variables.
 
    .. code-block:: python
 
@@ -37,6 +36,6 @@ from plot_variables import plot_variables, plot_multiple_variables
 from plot2d_with_vspace import vlsv_plot2d_with_vspace
 
 import colormaps
-from plot_panel import plot_colormap
 import plot_helpers
+from plot_colormap import plot_colormap
 from plot_vdf import plot_vdf

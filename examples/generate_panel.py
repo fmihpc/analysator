@@ -26,51 +26,58 @@ import pytools as pt
 import sys, os, socket
 import numpy as np
 
-                     
+
 # Custom expression function                                                               
-def exprMA_cust(pass_maps):
-    # pass_maps is a list of numpy arrays
-    # Each array has 2 dimensions [ysize, xsize]
-    # or 3 dimensions [ysize, xsize, components]
-    # here it's assumed to contain va, and the function
-    # returns the M_A with a preset velocity
+def exprMA_cust(exprmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['va']
+    # exprmaps is a dictionary of numpy arrays
+    # Each array has 2 dimensions [xsize, ysize]
+    # or 3 dimensions [xsize, ysize, components]
+    # here the function returns the M_A with a preset bulk velocity
 
     # Verify that time averaging wasn't used
-    if type(pass_maps[0]) is list:
+    if type(pass_maps) is list:
         print("exprMA_cust expected a single timestep, but got multiple. Exiting.")
         quit()
 
-    custombulkspeed=750000. # m/s
-    va = pass_maps[0][:,:]
+    custombulkspeed=1500000. # m/s
+    va = exprmaps['va'][:,:]
     MA = custombulkspeed/va
     return MA
 
+
 # Second example of a more involved custom expression function
-def expr_cav_cust(pass_maps):
-    # pass_maps is a list of numpy arrays
+def expr_cav_cust(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho', 'B', 'beta']
+    # pass_maps is a dictionary of numpy arrays
     # Each array has 2 dimensions [ysize, xsize]
     # or 3 dimensions [ysize, xsize, components]
 
-    # for time averaging, it's a list of lists, where the top level
-    # is 2N+1 timesteps with the middle one the requested time step
+    # for time averaging, it's a list of dictionaries
+    # Each dictionary contains an entry called 'dstep'
+    # Which contains the relative time step position, i.e.
+    # a value of 0 indicates no time offset.
 
     # This custom expression returns a map with values of
     # either 0 (solar wind), 0.5 (caviton), or 1.0 (SHFA), calculated against
     # time-averaged background values. This version doesn't do intelligent checks for the
     # format of the incoming data.
-    if type(pass_maps[0]) is not list:
+    if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
         print("expr_cav_cust expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found
     ntimes = len(pass_maps)
-    curri = (ntimes-1)/2
+    dsteps = [x['dstep'] for x in pass_maps]
+    curri = dsteps.index(0)
     thesemaps = pass_maps[curri]
     
-    thisrho = np.ma.masked_less_equal(thesemaps[0][:,:], 0)
-    thisB = np.ma.masked_less_equal(thesemaps[1],0)
-    thisbeta = np.ma.masked_less_equal(thesemaps[2],0)
+    thisrho = np.ma.masked_less_equal(thesemaps['rho'][:,:], 0)
+    thisB = np.ma.masked_less_equal(thesemaps['B'],0)
+    thisbeta = np.ma.masked_less_equal(thesemaps['beta'],0)
     thisBmag = np.linalg.norm(thisB, axis=-1)
         
     avgrho = np.zeros(np.array(thisrho.shape))
@@ -81,8 +88,9 @@ def expr_cav_cust(pass_maps):
         if i==curri: # Exclude current frame from background value averaging
             continue
         nowmaps = pass_maps[i]
-        avgrho = np.add(avgrho, nowmaps[0])
-        avgBcalc = np.linalg.norm(nowmaps[1], axis=-1)
+        print(nowmaps['dstep'])
+        avgrho = np.add(avgrho, nowmaps['rho'])
+        avgBcalc = np.linalg.norm(nowmaps['B'], axis=-1)
         avgBmag = np.add(avgBmag, avgBcalc)
         # avgbeta = np.add(avgbeta, nowmaps[2])
 
@@ -90,8 +98,8 @@ def expr_cav_cust(pass_maps):
     avgBmag = np.divide(np.ma.masked_less_equal(avgBmag,0), np.array([ntimes-1]))
     #avgbeta = np.divide(np.ma.masked_less_equal(avgbeta,0), np.array([ntimes-1]))
 
-    rhoratio = np.divide(thisrho, avgrho)
-    Bmagratio = np.divide(thisBmag, avgBmag)
+    rhoratio = np.ma.divide(thisrho, avgrho)
+    Bmagratio = np.ma.divide(thisBmag, avgBmag)
     #betaratio = np.divide(thisbeta, avgbeta)
 
     # Calculations using masked arrays proved problematic so a less-than elegant method is used here.
@@ -113,28 +121,26 @@ def expr_cav_cust(pass_maps):
     return combo3
 
 
+
 # Helper function for drawing on existing panel
-def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
-    # pass_maps consists of [rho, B, beta]
+def cavitoncontours(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho', 'B', 'beta']
 
     # Check if pass_maps has multiple time steps or just one
-    if type(pass_maps[0]) is list:
-        # Multiple time steps
-        ntimes = len(pass_maps)
-        # pick values from "center" timestep
-        curri = (ntimes-1)/2
-        rho = pass_maps[curri][0]
-        B = pass_maps[curri][1]
-        beta = pass_maps[curri][2]
+    if type(pass_maps) is list:
+        dsteps = [x['dstep'] for x in pass_maps]
+        curri = dsteps.index(0)
+        rho = extmaps[curri]['rho']
+        beta = extmaps[curri]['beta']
+        # take magnitude of B
+        B = np.linalg.norm(extmaps[curri]['B'],axis=-1)
     else:
-        rho = pass_maps[0]
-        B = pass_maps[1]
-        beta = pass_maps[2]
+        rho = extmaps['rho']
+        beta = extmaps['beta']
+        # take magnitude of B
+        B = np.linalg.norm(extmaps['B'],axis=-1)
 
-    # take magnitude of B
-    #B=np.sum(B**2,axis=-1)**(0.5)
-    B=np.linalg.norm(B,axis=-1)
-        
     # Colours to use
     color_cavitons = '#924900'
     color_SHFAs    = '#B66DFF'
@@ -162,9 +168,11 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, pass_maps):
  
     # draw contours
     contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
-                               linewidths=0.5, colors=color_BS,label='Bow shock')
-    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=0.5, colors=color_cavitons)  
-    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=0.5, colors=color_SHFAs)           
+                               linewidths=1.2, colors=color_BS,label='Bow shock')
+    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
+    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
+
+
 
 
 # Helper function for drawing on existing panel
@@ -182,7 +190,6 @@ def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
     # 'lower center' : 8,
     # 'upper center' : 9,
     # 'center'       : 10
-
 
     # Generate inset axes for VDF #1
     VDFcoord = [10.8,0,-5]
@@ -243,6 +250,11 @@ for j in timetot:
     # Plot a custom time-averaged caviton and SHFA colourmap with non-timeaveraged contours on top for comparison. Leaves out the
     # Colour bar.and associated title.
     pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='OrRd',step=j,outputdir=outputLocation+'cSHFA/', lin=1,vmin=0,vmax=1, expression=expr_cav_cust, external=cavitoncontours, pass_vars=['rho','B','beta'], pass_times=10, nocb=1, cbtitle='', boxre=[-20,20,-40,0])
+
+    # Plot a custom nightside reconnection slippage calculation
+    pt.plot.plot_helpers.slippageVA=3000000
+    pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='seismic',step=j,outputdir=outputLocation+'slippage/', wmark=1, fluxdir=fluxLocation, fluxlines=4, boxre=[-40,-10,-15,15], vmin=1e-2, vmax=1e0, pass_vars=['E','B','V'], expression=expr_Slippage)
+
 
     # Plot beam number density with inset VDF
     pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeamVDF/',wmark=1, boxre=[-10,20,-30,0], external=insetVDF)

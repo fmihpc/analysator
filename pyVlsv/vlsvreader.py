@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
@@ -448,8 +449,33 @@ class VlsvReader(object):
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
+   def check_parameter( self, name ):
+      ''' Checks if a given parameter is in the vlsv reader
+
+          :param name:             Name of the parameter
+          :returns:                True if the parameter is in the vlsv file, false if not
+
+          .. note:: This should be used for checking if a parameter exists, e.g. for different Vlasiator versions and time output
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             if vlsvReader.check_parameter( "time" ):
+                time = vlsvReader.read_parameter("time")
+             elif vlsvReader.check_parameter( "t" ):
+                time = vlsvReader.read_parameter("t")
+             else:
+                time = None
+      '''
+      for child in self.__xml_root:
+         if child.tag == "PARAMETER" and "name" in child.attrib:
+            if child.attrib["name"] == name:
+               return True
+      return False
+
    def check_variable( self, name ):
-      ''' Checks if a given variable is in the vlsv reader or a part of the data reducer variables
+      ''' Checks if a given variable is in the vlsv reader
 
           :param name:             Name of the variable
           :returns:                True if the variable is in the vlsv file, false if not
@@ -464,7 +490,7 @@ class VlsvReader(object):
                 # Variable can be plotted
                 plot_B()
              else:
-                # Variaable not in the vlsv file
+                # Variable not in the vlsv file
                 plot_B_vol()
       '''
       for child in self.__xml_root:
@@ -559,6 +585,12 @@ class VlsvReader(object):
       else:
          varname = name
 
+      # POSSIBLE TODO:
+      # If read was to be made case-insensitive, checking through variables and datareducers can be
+      # done with an iterator as
+      # if name.lower() in (n.upper() for n in datareducers):
+      # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
+
       #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
       #     study multiple cells, e.g., along a line
       for child in self.__xml_root:
@@ -602,15 +634,32 @@ class VlsvReader(object):
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
             
+            # If variable vector size is 1, and requested magnitude, change it to "absolute"
+            if vector_size == 1 and operator=="magnitude":
+               print("Data variable with vector size 1: Changed magnitude operation to absolute")
+               operator="absolute"
+
             if array_size == 1:
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
 
+      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
+      if self.check_variable(self.active_populations[0]+'/'+name): 
+         tmp_vars = []
+         for pname in self.active_populations:
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+         return data_operators["sum"](tmp_vars)   
+
       # Check if the name is in datareducers
       if name in datareducers:
          reducer = datareducers[name]
          # Read the necessary variables:
+
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
        
          # Return the output of the datareducer
          if reducer.useVspace:
@@ -636,17 +685,15 @@ class VlsvReader(object):
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
-      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      if self.check_variable(self.active_populations[0]+'/'+name): 
-         tmp_vars = []
-         for pname in self.active_populations:
-            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
-
-         return data_operators["sum"](tmp_vars)   
-
       # Check if the name is in multidatareducers
       if 'pop/'+varname in multipopdatareducers:
          reducer = multipopdatareducers['pop/'+varname]
+
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
+
          # Read the necessary variables:
          if reducer.useVspace:
             print "Error: useVspace flag is not implemented for multipop datareducers!" 
@@ -661,7 +708,8 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
-
+      if name!="":
+         print "Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!" 
       if self.__fptr.closed:
          fptr.close()
 
@@ -839,14 +887,49 @@ class VlsvReader(object):
       '''
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
+
+      # Get population and variable names from data array name 
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
       if name in datareducers:
          units = datareducers[name].units
+         latex = datareducers[name].latex
+         latexunits = datareducers[name].latexunits
+      elif name in vlsvvariables.unitsdict:
+         units = vlsvvariables.unitsdict[name]
+         latex = vlsvvariables.latexdict[name]
+         latexunits = vlsvvariables.latexunitsdict[name]
+      elif 'pop/'+varname in multipopdatareducers:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = multipopdatareducers['pop/'+varname].units
+         latex = (multipopdatareducers['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
+         latexunits = multipopdatareducers['pop/'+varname].latexunits
+      elif varname in vlsvvariables.unitsdict:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = vlsvvariables.unitsdict[varname]
+         latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
+         latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
+         latex = r""+name.replace("_","\_")
+         latexunits = ""
+
       if operator != "pass":
-         return VariableInfo(data_array=data, name=name + "_" + operator, units=units)
+         if operator=="magnitude":
+            latex = r"$|$"+latex+r"$|$"
+         else:
+            latex = latex+r"{$_"+operator+r"$}"
+         return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
-         return VariableInfo(data_array=data, name=name, units=units)
+         return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
 
 
    def get_cellid(self, coordinates):
@@ -1187,6 +1270,14 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
+      
+      # Special handling for time
+      if name=="time":
+         if self.check_parameter(name="t"):
+            return self.read(name="t", tag="PARAMETER")
+      if name=="t":
+         if self.check_parameter(name="time"):
+            return self.read(name="time", tag="PARAMETER")
 
       return self.read(name=name, tag="PARAMETER")
 

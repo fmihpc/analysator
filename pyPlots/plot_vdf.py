@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy
 import os, sys
+import re
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -34,7 +35,6 @@ from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
-import plot_run_defaults
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector
@@ -67,8 +67,26 @@ plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
     a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    return r'${}\times10^{{{}}}$'.format(a, b)
+    # this should bring all colorbar ticks to the same horizontal position, but for
+    # some reason it doesn't work. (signchar=r'\enspace')
+    signchar=r'' 
+    # replaces minus sign with en-dash to fix big with latex descender value return
+    if np.sign(x)<0: signchar='\mbox{--}'
+    # Multiple braces for b take care of negative values in exponent
+    # brackets around \times remove extra whitespace
+    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
+
+# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
+def axisfmt(x, pos):
+    # Find out required decimal precision
+    a, b = '{:.1e}'.format(np.amax(abs(np.array(plot_vdf.boxcoords)))).split('e')
+    precision = '0'
+    if int(b)<1: precision = str(abs(-1-int(b)))
+    f = r'{:.'+precision+r'f}'
+    a = f.format(abs(x))
+    if np.sign(x)<0: a = r'\mbox{--}'+a
+    return r'$'+a+'$'
+
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
@@ -94,7 +112,7 @@ def verifyCellWithVspace(vlsvReader,cid):
 def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
     # Flux weighting?
     if wflux!=None:
-        fw = f*np.sqrt( np.sum(np.square([VX,VY,Vpara]),1) ) # use particle flux as weighting in the histogram
+        fw = f*np.linalg.norm([VX,VY,Vpara]) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
 
@@ -140,7 +158,7 @@ def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, wflux=None, cbulk=None, center=None, setThreshold=None):
+                  slicethick=None, wflux=None, center=None, setThreshold=None):
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -160,52 +178,10 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
     print("Found "+str(len(V))+" v-space cells")
 
-    if cbulk!=None:
-        bulkv=None
-        print("Transforming to plasma frame")
-        if type(cbulk) is str:
-            if vlsvReader.check_variable(cbulk):
-                bulkv = vlsvReader.read_variable(cbulk,cid)
-                print("Found bulk frame from variable "+cbulk)
-        if np.array(bulkv).any()==None and vlsvReader.check_variable('moments'):
-            # This should be a restart file
-            moments = np.array(vlsvReader.read_variable('moments',cid))
-            if moments==None:
-                print("Error reading moments from assumed restart file!")
-                sys.exit()
-            if len(moments.shape)==2:
-                moments = moments[0]    
-            # Old version moments has 4 elements, multipop version has 5
-            if ((len(moments)==4) and (moments[0]>0.0)):
-                bulkv = moments[1:4]/moments[0]
-            elif len(moments)==5:
-                bulkv = moments[1:4]
-            else:
-                print("Error parsing moments, could not identify if version was multipop or not!")
-        if np.array(bulkv).any()==None and vlsvReader.check_variable('v'):
-            # Multipop file with bulk v saved directly
-            bulkv = vlsvReader.read_variable('v',cid)
-        if np.array(bulkv).any()==None and vlsvReader.check_variable('V'):
-            # Multipop file with bulk v saved directly
-            bulkv = vlsvReader.read_variable('V',cid)
-        if np.array(bulkv).any()==None and vlsvReader.check_variable(pop+'/V'):
-            # Multipop file without V saved, use per-population bulk velocity
-            bulkv = vlsvReader.read_variable(pop+'/V',cid)
-        if np.array(bulkv).any()==None and ( vlsvReader.check_variable('rho') and vlsvReader.check_variable('rho_v')):
-            # Older regular bulk file
-            rhov = vlsvReader.read_variable('rho_v',cid)
-            rho = vlsvReader.read_variable('rho',cid)
-            bulkv = rhov/rho
-        if np.array(bulkv).any()==None:
-            print("Error in finding plasma bulk velocity!")
-            bulkv=[0.,0.,0.]
-            sys.exit()
-        # shift to velocities plasma frame
-        V = V - bulkv
-    elif center!=None:
+    if not center is None:
         if len(center)==3: # assumes it's a vector
             print("Transforming to frame travelling at speed "+str(center))
-            V - V - center
+            V = V - center
         else:
             print("Error in shape of center vector! Give in form (vx,vy,vz).")
 
@@ -296,18 +272,20 @@ def plot_vdf(filename=None,
              filedir=None, step=None,
              cellids=None, pop="proton",
              coordinates=None, coordre=None, 
-             outputdir=None, nooverwrite=None,
-             draw=None,unit=None,title=None, cbtitle=None,
+             outputdir=None, outputfile=None,
+             nooverwrite=None,
+             draw=None,axisunit=None,title=None, cbtitle=None,
              tickinterval=None,
              colormap=None, box=None, nocb=None, internalcb=None,
-             run=None, wmark=None, thick=1.0,
+             run=None, thick=1.0,
+             wmark=None, wmarkb=None, 
              fmin=None, fmax=None, slicethick=None, cellsize=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bperp=None,
              coordswap=None,
              bvector=None,
              cbulk=None, center=None, wflux=None, setThreshold=None,
-             legend=None, noborder=None, scale=1.0,
+             noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
              axes=None,
@@ -332,14 +310,16 @@ def plot_vdf(filename=None,
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
     :kword run:         run identifier, used for constructing output filename
-    :kword title:       string to use as plot title instead of time
+    :kword title:       string to use as plot title instead of time.
+                        Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
+                        for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of phase space density of flux
 
     :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
 
     :kword box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
-    :kword unit:        Plot v-axes using 10^{unit} m/s (default: km/s)
+    :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
     :kword tickinterval: Interval at which to have ticks on axes
    
     :kword xy:          Perform slice in x-y-direction
@@ -364,7 +344,10 @@ def plot_vdf(filename=None,
                         Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
                         with values below the sparsity threshold
 
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
+    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+
     :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
     :kword nocb:        Suppress plotting of colourbar legend
     :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
@@ -409,20 +392,8 @@ def plot_vdf(filename=None,
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
-    # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
-    # watermarkimage='/homeappl/home/marbat/appl_taito/analysator/logo_color.png'
-
-    if draw==None and axes==None:
-        outputprefix = ''
-        if outputdir==None:
-            outputdir=os.path.expandvars('$HOME/Plots/')
-        outputprefixind = outputdir.rfind('/')
-        if outputprefixind >= 0:
-            outputprefix = outputdir[outputprefixind+1:]
-            outputdir = outputdir[:outputprefixind+1]
-        if not os.path.exists(outputdir):
-            os.makedirs(outputdir)
-
+    watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
+    
     # Input file or object
     if filename!=None:
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
@@ -446,15 +417,17 @@ def plot_vdf(filename=None,
 
     # Plot title with time
     timeval=vlsvReader.read_parameter("time")
-    if timeval==None:
-        timeval=vlsvReader.read_parameter("t")
 
-    if title==None:        
+    # Plot title with time
+    if title==None or title=="msec" or title=="musec":        
         if timeval == None:    
             plot_title = ''
-            print "Unknown time format encountered"
         else:
-            plot_title = "t="+'{:4.2f}'.format(float(timeval))+' s'
+            timeformat='{:4.1f}'
+            if title=="sec": timeformat='{:4.0f}'
+            if title=="msec": timeformat='{:4.3f}'
+            if title=="musec": timeformat='{:4.6f}'
+            plot_title = "t="+timeformat.format(timeval)+' s'
     else:
         plot_title = title
 
@@ -482,6 +455,42 @@ def plot_vdf(filename=None,
         if slicethick==0:
             projstr="_proj"
 
+        # Verify directory
+        if outputfile==None:
+            if outputdir==None: # default initial path
+                savefigdir=os.path.expandvars('$HOME/Plots/')
+            else:
+                savefigdir=outputdir
+            # Sub-directories can still be defined in the "run" variable
+            savefigname = savefigdir+run
+        else: 
+            if outputdir!=None:
+                savefigname = outputdir+outputfile
+            else:
+                savefigname = outputfile
+            
+        # Re-check to find actual target sub-directory
+        savefigprefixind = savefigname.rfind('/')
+        if savefigprefixind >= 0:
+            savefigdir = savefigname[:savefigprefixind+1]
+            savefigprefix = savefigname[savefigprefixind+1:]
+        else:
+            savefigdir = "./"
+            savefigprefix = savefigname
+
+        # Ensure output directory exists
+        if not os.path.exists(savefigdir):
+            try:
+                os.makedirs(savefigdir)
+            except:
+                pass
+
+        if not os.access(savefigdir, os.W_OK):
+            print("No write access for directory "+outputdir2+"! Exiting.")
+            return
+
+
+
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
     if pop=="proton":
@@ -498,23 +507,7 @@ def plot_vdf(filename=None,
             sys.exit()       
 
     #read in mesh size and cells in ordinary space
-    # xsize = vlsvReader.read_parameter("xcells_ini")
-    # ysize = vlsvReader.read_parameter("ycells_ini")
-    # zsize = vlsvReader.read_parameter("zcells_ini")
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
-    # cellids = vlsvReader.read_variable("CellID")
-    # vxsize = vlsvReader.read_parameter("vxblocks_ini")*4
-    # vysize = vlsvReader.read_parameter("vyblocks_ini")*4
-    # vzsize = vlsvReader.read_parameter("vzblocks_ini")*4
-    # vxmin = vlsvReader.read_parameter("vxmin")
-    # vxmax = vlsvReader.read_parameter("vxmax")
-    # vymin = vlsvReader.read_parameter("vymin")
-    # vymax = vlsvReader.read_parameter("vymax")
-    # vzmin = vlsvReader.read_parameter("vzmin")
-    # vzmax = vlsvReader.read_parameter("vzmax")
-
-    # These apparently work with multipop at least for the default mesh of protons.
-    # Also works with older vlsv versions.
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
@@ -528,20 +521,21 @@ def plot_vdf(filename=None,
     # unit of velocity
     velUnit = 1e3
     velUnitStr = '[km/s]'
-    if unit!=None:
-        velUnit = np.power(10,int(unit))
-        if unit==1:
+    if axisunit!=None:
+        velUnit = np.power(10,int(axisunit))
+        if np.isclose(axisunit,0):
             velUnitStr = r'[m/s]'
         else:
-            velUnitStr = r'[$10^{'+str(int(unit))+'}$ m/s]'
+            velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m/s]'
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes==None: # If axes are provided, leave backend as-is.
         if draw!=None:
-            plt.switch_backend('TkAgg')
+            if str(matplotlib.get_backend()) is not 'TkAgg':
+                plt.switch_backend('TkAgg')
         else:
-            plt.switch_backend('Agg')  
-
+            if str(matplotlib.get_backend()) is not 'Agg':
+                plt.switch_backend('Agg')  
 
     if (cellids==None and coordinates==None and coordre==None):
         print("Error: must provide either cell id's or coordinates")
@@ -698,22 +692,42 @@ def plot_vdf(filename=None,
 
 
         if draw==None and axes==None:
-            savefigname=outputdir+outputprefix+run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+            if outputfile==None:
+                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+            else:
+                savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
-            if (nooverwrite!=None and os.path.exists(savefigname)):
-                # Also check that file is not empty
-                if os.stat(savefigname).st_size > 0:
+            if (nooverwrite!=None and os.path.exists(savefigname)):            
+                if os.stat(savefigname).st_size > 0: # Also check that file is not empty
+                    print("Found existing file "+savefigname+". Skipping.")
                     return
                 else:
                     print("Found existing file "+savefigname+" of size zero. Re-rendering.")
-            # Verify access to target directory
-            if not os.access('/'.join(savefigname.split('/')[:-1]), os.W_OK):
-                print("No write access for "+savefigname+"! Exiting.")
-                return
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
         normvect = normvect/np.linalg.norm(normvect)
+
+        if cbulk!=None:
+            center=None # Finds the bulk velocity and places it in the center vector
+            print("Transforming to plasma frame")
+            if type(cbulk) is str:
+                if vlsvReader.check_variable(cbulk):
+                    center = vlsvReader.read_variable(cbulk,cellid)
+                    print("Found bulk frame from variable "+cbulk)
+            if np.array(center).any()==None and vlsvReader.check_variable('moments'):
+                # This should be a restart file
+                center = vlsvReader.read_variable('restart_V',cellid)
+            if np.array(center).any()==None and vlsvReader.check_variable(pop+'/V'):
+                # multipop bulk file
+                center = vlsvReader.read_variable(pop+'/V',cellid)
+            if np.array(center).any()==None:
+                # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
+                center = vlsvReader.read_variable('V',cellid)
+            if np.array(center).any()==None:
+                print("Error in finding plasma bulk velocity!")
+                sys.exit()
+
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
@@ -749,7 +763,7 @@ def plot_vdf(filename=None,
         
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
-                                                       slicethick=slicethick, wflux=wflux, cbulk=cbulk, 
+                                                       slicethick=slicethick, wflux=wflux,
                                                        center=center,setThreshold=setThreshold)
 
         # Check that data is ok and not empty
@@ -775,7 +789,7 @@ def plot_vdf(filename=None,
             if np.any(nzindex):
                 fminuse=np.amin(binsXY[nzindex])
             else:
-                fminuse = 1e-20 # No valid values! use exterme default.
+                fminuse = 1e-20 # No valid values! use extreme default.
 
         if fmax!=None:
             fmaxuse=fmax
@@ -784,7 +798,7 @@ def plot_vdf(filename=None,
             if np.any(nzindex):
                 fmaxuse=np.amax(binsXY[nzindex])
             else:
-                fmaxuse = 1e-10 # No valid values! use exterme default.
+                fmaxuse = 1e-10 # No valid values! use extreme default.
 
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
@@ -796,11 +810,12 @@ def plot_vdf(filename=None,
             yvalsrange=[box[2],box[3]]
         else:
             # Find extent of nonzero data
-            xindexrange = [vxsize,0]
-            yindexrange = [vysize,0]
+            xindexrange = [vxsize,0] #last, first cell
+            yindexrange = [vysize,0] #last, first cell
             for xi in range(len(edgesX)-1):
                 for yi in range(len(edgesY)-1):
-                    if binsXY[xi,yi] > 0:
+#                    if binsXY[xi,yi] > 0:
+                    if binsXY[yi,xi] > 0:
                         xindexrange[0] = np.amin([xindexrange[0],xi])
                         xindexrange[1] = np.amax([xindexrange[1],xi])
                         yindexrange[0] = np.amin([yindexrange[0],yi])
@@ -820,6 +835,9 @@ def plot_vdf(filename=None,
             xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
             yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
 
+        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit
+        plot_vdf.boxcoords = boxcoords # make available for axis formatter
+
             # TODO make plot area square if it's almost square?
 
         # Define figure size        
@@ -837,25 +855,14 @@ def plot_vdf(filename=None,
         else:
             ax1=axes
         fig1 = ax1.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
-
-        # Some hacked lines to print a selection of distribution function value
-        # printout = np.ma.masked_where(abs(YmeshXY[:-1,:-1]) > 15.e3/velUnit, binsXY) 
-        # printout = np.ma.masked_where(abs(XmeshXY[:-1,:-1]) > 1000.e3/velUnit, printout) 
-        # print(printout[~printout.mask])
-        # print(XmeshXY[:-1,:-1][~printout.mask])
-        # print(YmeshXY[:-1,:-1][~printout.mask])
-
-
-        #plt.xlim([val/velUnit for val in yvalsrange])
-        #plt.ylim([val/velUnit for val in xvalsrange])
-        ax1.set_xlim([val/velUnit for val in yvalsrange])
-        ax1.set_ylim([val/velUnit for val in xvalsrange])
+        ax1.set_xlim([val/velUnit for val in xvalsrange])
+        ax1.set_ylim([val/velUnit for val in yvalsrange])
         ax1.set_aspect('equal')
 
         # Grid
         #plt.grid(color='grey',linestyle='-')
         #plt.minorticks_on()
-        ax1.grid(color='grey',linestyle='-')
+        ax1.grid(color='grey',linestyle='-',lw=thick)
         ax1.tick_params(axis='x',which='minor')
         ax1.tick_params(axis='y',which='minor')
 
@@ -869,6 +876,29 @@ def plot_vdf(filename=None,
 
         if len(plot_title)>0:
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
+
+        #fig.canvas.draw() # draw to get tick positions
+
+        # Find maximum possible lengths of axis tick labels
+        # Only counts digits
+        ticklens = [ len(re.sub(r'\D',"",axisfmt(bc,None))) for bc in boxcoords]
+        tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
+
+        # Adjust axis tick labels
+        for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
+            if tickinterval!=None:
+                axis.set_major_locator(mtick.MultipleLocator(tickinterval))
+            # Custom tick formatter
+            axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
+            ticklabs = axis.get_ticklabels()
+            # Set boldface.
+            for t in ticklabs: # note that the tick labels haven't yet been populated with text
+                t.set_fontweight("black")
+                # If label has >3 numbers, tilt it
+                if tickmaxlens[axisi]>3: 
+                    t.set_rotation(30)
+                    t.set_verticalalignment('top')
+                    t.set_horizontalalignment('right')
 
         if noxlabels==None:
             #plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
@@ -889,8 +919,7 @@ def plot_vdf(filename=None,
 
         if biglabel!=None:
             if biglabloc==None:
-                biglabloc = 0 # default top-left corner
-                
+                biglabloc = 0 # default top-left corner               
             if biglabloc==0:
                 BLcoords=[0.02,0.98]
                 BLha = "left"
@@ -923,29 +952,29 @@ def plot_vdf(filename=None,
             else:
                 print("Error finding B vector direction!")
                 sys.exit()
-            # Find plane projection of B-vector
-            boutofplane = normvect*(Bvect*normvect).sum()
-            boutofplanelength = np.linalg.norm(boutofplane) / np.linalg.norm(bvector)            
-            bvector = (Bvect - boutofplane)
-            bvector = bvector / np.linalg.norm(bvector)
+            if xy!=None and coordswap==None:
+                binplane = [Bvect[0],Bvect[1]]
+            if xy!=None and coordswap!=None:
+                binplane = [Bvect[1],Bvect[0]]
+            if xz!=None and coordswap==None:
+                binplane = [Bvect[0],Bvect[2]]
+            if xz!=None and coordswap!=None:
+                binplane = [Bvect[2],Bvect[0]]
+            if yz!=None and coordswap==None:
+                binplane = [Bvect[1],Bvect[2]]
+            if yz!=None and coordswap!=None:
+                binplane = [Bvect[2],Bvect[1]]
+            # normalize
+            bvector = binplane/np.linalg.norm(binplane)
             # Length default is 1/5 of axis length
             bvectormultiplier = np.amin([yvalsrange[1]-yvalsrange[0],xvalsrange[1]-xvalsrange[0]])/(velUnit*5.)
-            bvector = bvector * bvectormultiplier
-            if xy!=None:
-                ax1.arrow(0,0,bvector[0],bvector[1],width=0.02*thick,head_width=0.1*thick,
-                          head_length=0.2*thick,zorder=10,color='k')
-                ax1.plot([0,bvector[1]*boutofplanelength],[0,bvector[0]*boutofplanelength],
-                         lw=thick,zorder=10,color='k')
-            if xz!=None:
-                ax1.arrow(0,0,bvector[0],bvector[2],width=0.02*thick,head_width=0.1*thick,
-                          head_length=0.2*thick,zorder=10,color='k')
-                ax1.plot([0,bvector[2]*boutofplanelength],[0,bvector[0]*boutofplanelength],
-                         lw=thick,zorder=10,color='k')
-            if yz!=None:
-                ax1.arrow(0,0,bvector[1],bvector[2],width=0.02*thick,head_width=0.1*thick,
-                          head_length=0.2*thick,zorder=10,color='k')
-                ax1.plot([0,bvector[2]*boutofplanelength],[0,bvector[1]*boutofplanelength],
-                         lw=thick,zorder=10,color='k')
+            bvector *= bvectormultiplier
+#            ax1.arrow(0,0,bvector[0],bvector[1],width=0.02*thick,head_width=0.1*thick,
+#                      head_length=0.2*thick,zorder=10,color='k')
+            #ax1.arrow(origin[0],origin[1],bvector[0],bvector[1],zorder=10,color='k')
+            ax1.annotate("", xy=(bvector[0],bvector[1]), xytext=(0,0),
+                        arrowprops=dict(arrowstyle="->"),zorder=10)
+
         if nocb==None:
             cbtitleuse=None
             if cbtitle!=None:
@@ -981,7 +1010,6 @@ def plot_vdf(filename=None,
                         cbloc=4
                         cbdir="left"
                         horalign="right"
-                #cax = plt.axes(cbloc)
                 cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
                                  bbox_transform=ax1.transAxes, borderpad=1.0)
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
@@ -996,26 +1024,6 @@ def plot_vdf(filename=None,
             # Colourbar title
             cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
-            # # if too many subticks:
-            # # For non-square pictures, adjust tick count
-            # nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
-            # if nlabels > 10:
-            #     valids = ['1','2','3','4','5','6','8']
-            # if nlabels > 19:
-            #     valids = ['1','2','5']
-            # if nlabels > 28:
-            #     valids = ['1']
-            # # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-            # if nlabels > 10:
-            #     for label in cb.ax.yaxis.get_ticklabels():
-            #         # labels will be in format $x.0\times10^{y}$
-            #         if not label.get_text()[1] in valids:
-            #             label.set_visible(False)
-
-        if tickinterval!=None:
-            ax1.xaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
-            ax1.yaxis.set_major_locator(mtick.MultipleLocator(tickinterval))
-
         if noxlabels!=None:
             for label in ax1.xaxis.get_ticklabels():
                 label.set_visible(False)
@@ -1023,57 +1031,46 @@ def plot_vdf(filename=None,
             for label in ax1.yaxis.get_ticklabels():
                 label.set_visible(False)       
 
+        # Adjust layout. Uses tight_layout() but in fact this ensures 
+        # that long titles and tick labels are still within the plot area.
         if noborder==None:
-            # adjust layout
             plt.tight_layout()
-            savefig_pad=0.1 # The default is 0.1
+            savefig_pad=0.05 # The default is 0.1
             bbox_inches=None
         else:
-            # adjust layout
             plt.tight_layout(pad=0.01)
             savefig_pad=0.01
             bbox_inches='tight'
 
         # Add Vlasiator watermark
-        if wmark!=None and axes==None:        
-            wm = plt.imread(get_sample_data(watermarkimage))
-            newax = fig.add_axes([0.01, 0.90, 0.3, 0.08], anchor='NW', zorder=-1)
+        if wmark!=None or wmarkb!=None:
+            if wmark!=None:
+                wm = plt.imread(get_sample_data(watermarkimage))
+            else:
+                wmark=wmarkb # for checking for placement
+                wm = plt.imread(get_sample_data(watermarkimageblack))
+            if type(wmark) is str:
+                anchor = wmark
+            else:
+                anchor="NW"
+            # Allowed region and anchor used in tandem for desired effect
+            if anchor=="NW" or anchor=="W" or anchor=="SW":
+                rect = [0.01, 0.01, 0.3, 0.98]
+            elif anchor=="NE" or anchor=="E" or anchor=="SE":
+                rect = [0.69, 0.01, 0.3, 0.98]
+            elif anchor=="N" or anchor=="C" or anchor=="S":
+                rect = [0.35, 0.01, 0.3, 0.98]
+            newax = fig.add_axes(rect, anchor=anchor, zorder=1)
             newax.imshow(wm)
             newax.axis('off')
 
         # Save output or draw on-screen
         if draw==None and axes==None:
-            # Note: generated title can cause strange PNG header problems
-            # in rare cases. This problem is under investigation, but is related to the exact generated
-            # title string. This try-catch attempts to simplify the time string until output succedes.
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                savechange=0
             except:
-                savechange=1
-                plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
-                ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                try:
-                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                except:
-                    plot_title = "t="+str(np.int(timeval))+' s   '
-                    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                    try:
-                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                    except:
-                        plot_title = ""
-                        ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                        try:
-                            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                        except:
-                            print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-                            print("Usually removing the title should work, but this time even that failed.")
-                            savechange = -1
-            if savechange>0:
-                print("Due to rendering error, replaced image title with "+plot_title)
-            if savechange>=0:
-                print(savefigname+"\n")
-
+                print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            print(savefigname+"\n")
         elif axes==None:
             # Draw on-screen
             plt.draw()

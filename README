@@ -11,9 +11,10 @@ echo "export PYTHONPATH=$PYTHONPATH:$HOME/analysator" >> $HOME/.bashrc
 # Using Analysator:
 #################################################
 #################################################
-module load mayavi2 # Load mayavi2 dependencies, if necessary
-ipython # Start ipython
-import pytools as pt # Import Analysator
+module load mayavi2   # Load mayavi2 dependencies, if necessary (e.g. CSC system)
+ipython               # Start ipython
+import pytools as pt  # Import Analysator
+
 
 # Navigating functions:
 pt.calculations.pitch_angles? #press [Enter]
@@ -21,8 +22,11 @@ pt.vlsvfile.VlsvReader? #press [Enter]
 pt.plot.plot_colormap? #press [Enter]
 pt.plot.plot_vdf? #press [Enter]
 
+
 # For non-interactive mode (also when no X is available):
-# set the environment variable PTNONINTERACTIVE to any value before launching python/ipython
+# set the environment variable PTNONINTERACTIVE to any value before launching
+# python/ipython. If in interactive mode, experimental non-blocking
+# windows via matplotlib.pyplot.ion() are in use.
 #################################################
 #################################################
 export PTNONINTERACTIVE=1
