@@ -1,3 +1,26 @@
+# 
+# This file is part of Analysator.
+# Copyright 2013-2016 Finnish Meteorological Institute
+# Copyright 2017-2018 University of Helsinki
+# 
+# For details of usage, see the COPYING file and read the "Rules of the Road"
+# at http://www.physics.helsinki.fi/vlasiator/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# 
+
 import numpy as np
 import pylab as pl
 import matplotlib
@@ -22,15 +45,15 @@ proton_mass = 1.67e-27      # in kg
 themis_colors=[(0,0,0),(.5,0,.5),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0)]
 themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
 
-def get_dv(vlsvReader):
+def get_dv(vlsvReader,pop="proton"):
    # Get velocity grid sizes:
-   vel_mesh_size = vlsvReader.get_velocity_mesh_size()
-   vel_block_size = vlsvReader.get_velocity_block_size()
+   vel_mesh_size = vlsvReader.get_velocity_mesh_size(pop=pop)
+   vel_block_size = vlsvReader.get_velocity_block_size(pop=pop)
    vxcells = vel_mesh_size[0]*vel_block_size[0]
    vycells = vel_mesh_size[1]*vel_block_size[1]
    vzcells = vel_mesh_size[2]*vel_block_size[2]
    
-   vel_mesh_limits = vlsvReader.get_velocity_mesh_extent()
+   vel_mesh_limits = vlsvReader.get_velocity_mesh_extent(pop=pop)
    vxmin = vel_mesh_limits[0]
    vymin = vel_mesh_limits[1]
    vzmin = vel_mesh_limits[2]
@@ -92,7 +115,7 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
 
     print("Getting phasespace data...")
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader,
-                cellid=cellID, matrix=matrix, binOffset=[-0.5,-0.5])
+                cellid=cellID, matrix=matrix, binOffset=[-0.5,-0.5],pop=pop)
     if vmin == 0:
         vmin = 1e-3
     if vmax <= vmin:
@@ -119,7 +142,7 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
 
     matrix = simulation_to_observation_frame(plane_x,plane_y)
 
-    angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix)
+    angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix,pop=pop)
 
     if vmin == 0:
         vmin = 1e-15
@@ -196,7 +219,7 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.grid(True)
     fig.colorbar(cax)
     pl.show()
-def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.]):
+def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.],pop='proton'):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
    :type vlsvReader:         :class:`vlsvfile.VlsvReader`
@@ -220,10 +243,10 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
    pl.show()
    '''
    # Get velocity space resolution
-   dvx,dvy,dvz = get_dv(vlsvReader)
+   dvx,dvy,dvz = get_dv(vlsvReader,pop=pop)
 
    # Read the velocity cells:
-   velocity_cell_data = vlsvReader.read_velocity_cells(cellid)
+   velocity_cell_data = vlsvReader.read_velocity_cells(cellid,pop=pop)
    if velocity_cell_data == []:
       # No velocity space data here, return empty result
       return [[],[],0,0,[]]
@@ -231,7 +254,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
    # Get cells:
    vcellids = velocity_cell_data.keys()
    # Get a list of velocity coordinates:
-   velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids)
+   velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids,pop=pop)
    angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,matrix,dvx,countrates=countrates, interpolate=interpolate,binOffset=binOffset)
 
    # Calc min and max
