@@ -591,6 +591,7 @@ def plot_colormapmxm(filename=None,
         for aux in range(0,len(cellidplot)):
             print('cellid2plot: '+str(cellidplot[aux]))
             x,y,z = f.get_cell_coordinates(cellidplot[aux])
+            print("coordinates in Re: "+str(x/Re)+', '+str(z/Re))
             plt.plot(x/Re,z/Re,marker="o",markerfacecolor="None",markeredgecolor="w")
 
 
