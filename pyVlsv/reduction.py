@@ -28,8 +28,8 @@ import pylab as pl
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector, rotateArrayTensorToVector
 from gyrophaseangle import gyrophase_angles
+import vlsvvariables
 import sys
-
 
 def pass_op( variable ):
    # do nothing
@@ -397,6 +397,29 @@ def Pressure( variables ):
    PTensorDiagonal = variables[0]
    return 1.0/3.0 * np.ma.sum(np.ma.masked_invalid(PTensorDiagonal),axis=-1)
 
+def Pdyn( variables ):
+   ''' Data reducer function for dynamic pressure
+   '''
+   mp = 1.672622e-27
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
+   Vmag = np.linalg.norm(np.array(variables[0]), axis=-1)
+   rhom = np.array(variables[1])*mass
+   return Vmag*Vmag*rhom
+
+def Pdynx( variables ):
+   ''' Data reducer function for dynamic pressure with just V_x
+   '''
+   mp = 1.672622e-27
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
+   rhom = np.array(variables[1])*mass
+   V = np.array(variables[0])
+   if( np.ndim(V)==2 ):
+      Vx = V[:,0]
+   else:
+      Vx = V[0]
+   return Vx*Vx*rhom
+
+
 def Temperature( variables ):
    ''' Data reducer for converting pressure to temperature
    '''
@@ -423,12 +446,12 @@ def rMirror( variables ):
    return betaPerp * (TAniso - 1)   
 
 def v_thermal( variables ):
-   # This doesn't work for multipop.
    Temperature = variables[0]
    k = 1.38065e-23
-   proton_mass = 1.672622e-27
+   mp = 1.672622e-27
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    # Corrected to calculate the mean speed sqrt(8kT/pi m)
-   vThermal = np.sqrt(Temperature*(k*8./(proton_mass*3.14159)))
+   vThermal = np.sqrt(Temperature*(k*8./(mass*3.14159)))
    return vThermal
 
 def Vstream( variables ):
@@ -547,6 +570,9 @@ datareducers["EPerpendicular"] =         DataReducerVariable(["E", "B"], VPerpen
 datareducers["EJEParallel"] =              DataReducerVariable(["EJE", "B"], VParallel, "V/m", 1, latex=r"$EJE_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 datareducers["EJEPerpendicular"] =         DataReducerVariable(["EJE", "B"], VPerpendicular, "V/m", 1, latex=r"$EJE_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 
+datareducers["Pdyn"] =            DataReducerVariable(["V", "rho"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
+datareducers["Pdynx"] =            DataReducerVariable(["V", "rho"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
+
 
 # Reducers for simplifying access calls for old and/or new output data versions
 datareducers["VBackstream"] =            DataReducerVariable(["RhoVBackstream", "RhoBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{st}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -627,6 +653,9 @@ datareducers["gyrophase_relstddev"] =    DataReducerVariable(["v", "B"], gyropha
 
 #multipopdatareducers
 multipopdatareducers = {}
+multipopdatareducers["pop/Pdyn"] =            DataReducerVariable(["pop/V", "pop/rho"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn,\mathrm{REPLACEPOP}}$",latexunits=r"Pa")
+multipopdatareducers["pop/Pdynx"] =            DataReducerVariable(["pop/V", "pop/rho"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,\mathrm{REPLACEPOP},x}$",latexunits=r"Pa")
+
 multipopdatareducers["pop/VParallel"] =              DataReducerVariable(["pop/V", "B"], VParallel, "m/s", 1, latex=r"$V_{\parallel,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 multipopdatareducers["pop/VPerpendicular"] =         DataReducerVariable(["pop/V", "B"], VPerpendicular, "m/s", 1, latex=r"$V_{\perp,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
@@ -676,6 +705,8 @@ multipopdatareducers["pop/TPerpOverParNonBackstream"] =    DataReducerVariable([
 multipopdatareducers["pop/betaPerpOverPar"] =              DataReducerVariable(["pop/PTensorRotated"], PPerpOverPar, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}} \beta_{\parallel,\mathrm{REPLACEPOP}}^{-1}$", latexunits=r"")
 multipopdatareducers["pop/betaPerpOverParBackstream"] =    DataReducerVariable(["pop/PTensorRotatedBackstream"], PPerpOverPar, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,st}} \beta_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
 multipopdatareducers["pop/betaPerpOverParNonBackstream"] = DataReducerVariable(["pop/PTensorRotatedNonBackstream"], PPerpOverPar, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
+
+multipopdatareducers["pop/vThermal"] =               DataReducerVariable(["Temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 # multipopdatareducers["pop/TxRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TxRotated, "K")
 # multipopdatareducers["pop/TyRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TyRotated, "K")

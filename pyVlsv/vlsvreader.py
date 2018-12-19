@@ -591,8 +591,9 @@ class VlsvReader(object):
       # if name.lower() in (n.upper() for n in datareducers):
       # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
 
-      #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
-      #     study multiple cells, e.g., along a line
+      # TODO, read_single_cellid should perhaps be an list/numpy array with cellids that
+      # are read in. This could be more efficient to 
+      # study multiple cells, e.g., along a line
       for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
@@ -648,6 +649,7 @@ class VlsvReader(object):
       if self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
          for pname in self.active_populations:
+            vlsvvariables.activepopulation = pname
             tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
          return data_operators["sum"](tmp_vars)   
 
@@ -688,7 +690,8 @@ class VlsvReader(object):
       # Check if the name is in multidatareducers
       if 'pop/'+varname in multipopdatareducers:
          reducer = multipopdatareducers['pop/'+varname]
-
+         vlsvvariables.activepopulation = popname
+         
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")

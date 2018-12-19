@@ -58,7 +58,9 @@ def rotateArrayTensorToVector( Tensor, vector ):
    # A unit vector version of the given vector
    R = rotation_array_matrix( vector_u, angle )
    # Rotate Tensor
-   Tensor_rotated = np.matmul(np.matmul(R,Tensor),np.transpose(R,(0,2,1)) )
+   # matmul requires numpy 1.10 or newer. Can use einsum instead.
+   #Tensor_rotated = np.matmul(np.matmul(R,Tensor),np.transpose(R,(0,2,1)) )
+   Tensor_rotated = np.einsum('...ij,...jk', np.einsum('...ij,...jk',R,Tensor),np.transpose(R,(0,2,1)) )
    return Tensor_rotated
 
 def rotateVectorToVector( vector1, vector2 ):
