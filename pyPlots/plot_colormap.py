@@ -76,7 +76,7 @@ def fmt(x, pos):
     # some reason it doesn't work. (signchar=r'\enspace')
     signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar='\mbox{--}'
+    if np.sign(x)<0: signchar='\mbox{\textbf{--}}'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
@@ -89,7 +89,7 @@ def axisfmt(x, pos):
     if int(b)<1: precision = str(abs(-1-int(b)))
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{--}'+a
+    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
     return r'$'+a+'$'
 
 # cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
@@ -104,7 +104,7 @@ def cbfmt(x, pos):
         if int(bb)<1: precision = str(abs(-1+int(bb)))            
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{--}'+a
+    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
     return r'$'+a+'$'
 
 def plot_colormap(filename=None,
@@ -762,6 +762,7 @@ def plot_colormap(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
+        plot_title = r"\textbf{"+plot_title+"}"
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     plt.xlim([boxcoords[0],boxcoords[1]])
@@ -776,14 +777,14 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        plt.xlabel('X ['+axisunitstr+']',fontsize=fontsize,weight='black')
+        plt.xlabel(r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize,weight='black')
         plt.xticks(fontsize=fontsize,fontweight='black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            plt.ylabel('Z ['+axisunitstr+']',fontsize=fontsize,weight='black')
+            plt.ylabel(r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,weight='black')
         else: #Ecliptic
-            plt.ylabel('Y ['+axisunitstr+']',fontsize=fontsize,weight='black')
+            plt.ylabel(r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,weight='black')
         plt.yticks(fontsize=fontsize,fontweight='black')
         ax1.yaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
 
@@ -923,6 +924,7 @@ def plot_colormap(filename=None,
         # Colourbar title
         if len(cb_title_use)!=0:
             #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize3,weight='black', transform=ax1.transAxes, horizontalalignment='center')
+            cb_title_use = r"\textbf{"+cb_title_use+"}"        
             cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         # First draw colorbar
