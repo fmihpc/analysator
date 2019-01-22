@@ -124,7 +124,7 @@ def plot_colormap(filename=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
                   vscale=1.0,
-                  pass_vars=None, pass_times=None,
+                  pass_vars=None, pass_times=None, pass_full=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
@@ -218,6 +218,7 @@ def plot_colormap(filename=None,
                         a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
                         added as 'dstep' which gives the timestep offset from the master frame.
                         Does not work if working from a vlsv-object.
+    :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -527,12 +528,18 @@ def plot_colormap(filename=None,
 
     # Generates the mesh to map the data to.
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
-    # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
-    maskboundarybuffer = 2.*cellsize/axisunit
-    maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
-    maskgrid = np.ma.masked_where(XmeshXY>(boxcoords[1]+maskboundarybuffer), maskgrid)
-    maskgrid = np.ma.masked_where(YmeshXY<(boxcoords[2]-maskboundarybuffer), maskgrid)
-    maskgrid = np.ma.masked_where(YmeshXY>(boxcoords[3]+maskboundarybuffer), maskgrid)
+    
+    if pass_full is None:
+        # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
+        maskboundarybuffer = 2.*cellsize/axisunit
+        maskgrid = np.ma.masked_where(XmeshXY<(boxcoords[0]-maskboundarybuffer), XmeshXY)
+        maskgrid = np.ma.masked_where(XmeshXY>(boxcoords[1]+maskboundarybuffer), maskgrid)
+        maskgrid = np.ma.masked_where(YmeshXY<(boxcoords[2]-maskboundarybuffer), maskgrid)
+        maskgrid = np.ma.masked_where(YmeshXY>(boxcoords[3]+maskboundarybuffer), maskgrid)
+    else:
+        # If requested, pass all data along
+        maskgrid = np.ma.array(XmeshXY)
+
     if np.ma.is_masked(maskgrid):
         # Save lists for masking
         MaskX = np.array(~np.all(maskgrid.mask, axis=1))
