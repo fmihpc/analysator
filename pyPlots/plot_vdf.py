@@ -71,7 +71,7 @@ def fmt(x, pos):
     # some reason it doesn't work. (signchar=r'\enspace')
     signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar='\mbox{--}'
+    if np.sign(x)<0: signchar='\mbox{\textbf{--}}'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
@@ -84,7 +84,7 @@ def axisfmt(x, pos):
     if int(b)<1: precision = str(abs(-1-int(b)))
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{--}'+a
+    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
     return r'$'+a+'$'
 
 
@@ -780,6 +780,9 @@ def plot_vdf(filename=None,
             pltxstr = pltystr
             pltystr = temp
             binsXY = binsXY.T
+        # Boldface axis labels
+        pltxstr = r'\textbf{'+pltxstr+'}'
+        pltystr = r'\textbf{'+pltystr+'}'
 
         # If no other plotting fmin fmax values are given, take min and max of array
         if fmin!=None:
@@ -875,6 +878,7 @@ def plot_vdf(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
+            plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         #fig.canvas.draw() # draw to get tick positions
@@ -1022,6 +1026,7 @@ def plot_vdf(filename=None,
             cb.ax.yaxis.set_ticks_position(cbdir)
 
             # Colourbar title
+            cbtitleuse = r"\textbf{"+cbtitleuse+"}"                    
             cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         if noxlabels!=None:
