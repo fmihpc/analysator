@@ -58,7 +58,8 @@ def plot_colormapmxm(filename=None,
                   pass_vars=None, pass_times=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
-                  cellcoordplot=None, cellidplot=None
+                  cellcoordplot=None, cellidplot=None,
+                  symbols=None, colors=None, B_in_nT=False,
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -125,6 +126,9 @@ def plot_colormapmxm(filename=None,
     :kword fluxlines:   Relative density of fluxfunction contours
     :kword cellcoordplot:  Coordinates of cells to display as circles in the colormap plot, format [x1,y1,z1,...,xn,yn,zn]
     :kword cellidplot:  Cell IDs to display in the colormap plot
+    :kword symbols:     Symbols of virtual spacecraft (default circles)
+    :kword colors:      Colors of virtual spacecraft symbols (default black)
+    :kword B_in_nT:     To express B in nanoteslas rather than teslas (default False)
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -216,7 +220,7 @@ def plot_colormapmxm(filename=None,
             print "Unknown time format encountered"
             plot_title = ''
         else:
-            plot_title = "t="+str(np.int(timeval))+' s'
+            plot_title = "t="+"{:.1f}".format(timeval)+' s'
     else:
         plot_title = title
 
@@ -355,12 +359,19 @@ def plot_colormapmxm(filename=None,
 
         elif var == 'B':
             if op==None:
-                cb_title = r"$|B|$ [T]"
                 datamap = f.read_variable("B",operator='magnitude')
+                if not B_in_nT:
+                    cb_title = r"$|B|$ [T]"
+                else:
+                    cb_title = r"$|B|$ [nT]"
+                    datamap = datamap * 1e+9
             else:
-                cb_title = r"$B_"+op+"$ [T]"
                 datamap = f.read_variable("B",operator=op)
-                # datamap = datamap*1e+9 # could be used to ouptut nanotesla instead of tesla
+                if not B_in_nT:
+                    cb_title = r"$B_"+op+"$ [T]"
+                else:
+                    cb_title = r"$B_"+op+"$ [nT]"
+                    datamap = datamap*1e+9
 
         elif var == 'E':
             if op==None:
@@ -580,19 +591,53 @@ def plot_colormapmxm(filename=None,
     if external!=None:
         extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
 
+
+    # Symbols and colors for virtual spacecraft
+    if cellcoordplot!=None:
+        nb_spacecraft = len(cellcoordplot)/3
+    elif cellidplot!=None:
+        nb_spacecraft = len(cellidplot)
+    else:
+        nb_spacecraft = 0 # not expected to happen...
+
+    if symbols==None:
+        symbols = []
+        for aux in range(0,nb_spacecraft):
+            symbols.append('o')
+    elif len(symbols)<nb_spacecraft:
+        for aux in range(0,nb_spacecraft-len(symbols)):
+            symbols.append('o')
+
+    if colors==None:
+        colors = []
+        for aux in range(0,nb_spacecraft):
+            colors.append('k')
+    elif len(colors)<nb_spacecraft:
+        for aux in range(0,nb_spacecraft-len(colors)):
+            colors.append('k')
+
+    print(str(colors))
+
     # Loop over all cell ids
     if cellcoordplot!=None:
-        for aux in range(0,len(cellcoordplot)/3):	
+        for aux in range(0,nb_spacecraft):	
             x,y,z = cellcoordplot[3*aux],cellcoordplot[3*aux+1],cellcoordplot[3*aux+2]
             print('cellcoord2plot #' + str(aux) + ': x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
-            plt.plot(x,z,marker="o",markerfacecolor="None",markeredgecolor='w')
-
-    if cellidplot!=None:
-        for aux in range(0,len(cellidplot)):
+            if ysize==1: # Polar
+                plt.plot(x,z,marker=symbols[aux],markerfacecolor="None",markeredgecolor=colors[aux])
+            else: # Ecliptic
+                plt.plot(x,y,marker=symbols[aux],markerfacecolor="None",markeredgecolor=colors[aux])
+    elif cellidplot!=None:
+        for aux in range(0,nb_spacecraft):
             print('cellid2plot: '+str(cellidplot[aux]))
             x,y,z = f.get_cell_coordinates(cellidplot[aux])
             print("coordinates in Re: "+str(x/Re)+', '+str(z/Re))
-            plt.plot(x/Re,z/Re,marker="o",markerfacecolor="None",markeredgecolor="w")
+            if ysize==1: # Polar
+                plt.plot(x/Re,z/Re,marker=symbols[aux],markerfacecolor="None",markeredgecolor=colors[aux])
+            else: # Ecliptic
+                plt.plot(x/Re,y/Re,marker=symbols[aux],markerfacecolor="None",markeredgecolor=colors[aux])
+
+
 
 
     if cbtitle==None:
