@@ -1,9 +1,33 @@
+# 
+# This file is part of Analysator.
+# Copyright 2013-2016 Finnish Meteorological Institute
+# Copyright 2017-2018 University of Helsinki
+# 
+# For details of usage, see the COPYING file and read the "Rules of the Road"
+# at http://www.physics.helsinki.fi/vlasiator/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# 
+
 import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
-from reduction import datareducers,data_operators
+import vlsvvariables
+from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
@@ -80,6 +104,7 @@ class VlsvReader(object):
 
       # Iterate through the XML tree, find all populations
       # (identified by their BLOCKIDS tag)
+      self.active_populations=[]
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if child.attrib.has_key("name"):
@@ -89,6 +114,12 @@ class VlsvReader(object):
 
               # Create a new (empty) MeshInfo-object for this population
               pop = self.MeshInfo()
+              
+              # Update list of active populations
+              if not popname in self.active_populations: self.active_populations.append(popname)
+
+              # Update list of active populations
+              if not popname in self.active_populations: self. active_populations.append(popname)
 
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
@@ -154,7 +185,8 @@ class VlsvReader(object):
                  pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
               self.__meshes[popname]=pop
-              print "Found population " + popname
+              if os.getenv('PTNONINTERACTIVE') == None:
+                 print "Found population " + popname
 
       self.__fptr.close()
 
@@ -417,8 +449,33 @@ class VlsvReader(object):
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
             print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
 
+   def check_parameter( self, name ):
+      ''' Checks if a given parameter is in the vlsv reader
+
+          :param name:             Name of the parameter
+          :returns:                True if the parameter is in the vlsv file, false if not
+
+          .. note:: This should be used for checking if a parameter exists, e.g. for different Vlasiator versions and time output
+
+          .. code-block:: python
+
+             # Example usage:
+             vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
+             if vlsvReader.check_parameter( "time" ):
+                time = vlsvReader.read_parameter("time")
+             elif vlsvReader.check_parameter( "t" ):
+                time = vlsvReader.read_parameter("t")
+             else:
+                time = None
+      '''
+      for child in self.__xml_root:
+         if child.tag == "PARAMETER" and "name" in child.attrib:
+            if child.attrib["name"] == name:
+               return True
+      return False
+
    def check_variable( self, name ):
-      ''' Checks if a given variable is in the vlsv reader or a part of the data reducer variables
+      ''' Checks if a given variable is in the vlsv reader
 
           :param name:             Name of the variable
           :returns:                True if the variable is in the vlsv file, false if not
@@ -433,7 +490,7 @@ class VlsvReader(object):
                 # Variable can be plotted
                 plot_B()
              else:
-                # Variaable not in the vlsv file
+                # Variable not in the vlsv file
                 plot_B_vol()
       '''
       for child in self.__xml_root:
@@ -465,7 +522,7 @@ class VlsvReader(object):
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):
                if popname == child.attrib["name"]:
-                  findpop = True
+                  foundpop = True
             else:
                blockidsexist = True
       if blockidsexist:
@@ -473,8 +530,8 @@ class VlsvReader(object):
             if child.tag == "BLOCKVARIABLE":
                if child.attrib.has_key("name"):
                   if popname == child.attrib["name"]: # avgs
-                     findpop = True
-      return findpop
+                     foundpop = True
+      return foundpop
 
    def get_all_variables( self ):
       ''' Returns all variables in the vlsv reader and the data reducer
@@ -521,8 +578,22 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
-      #TODO, read_single_cellid should perhaps be an list/numpy array with cellids that are read in. This could be more efficient to 
-      #     study multiple cells, e.g., along a line
+      # Get population and variable names from data array name 
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
+      # POSSIBLE TODO:
+      # If read was to be made case-insensitive, checking through variables and datareducers can be
+      # done with an iterator as
+      # if name.lower() in (n.upper() for n in datareducers):
+      # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
+
+      # TODO, read_single_cellid should perhaps be an list/numpy array with cellids that
+      # are read in. This could be more efficient to 
+      # study multiple cells, e.g., along a line
       for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
@@ -564,15 +635,33 @@ class VlsvReader(object):
             if vector_size > 1:
                data=data.reshape(array_size, vector_size)
             
+            # If variable vector size is 1, and requested magnitude, change it to "absolute"
+            if vector_size == 1 and operator=="magnitude":
+               print("Data variable with vector size 1: Changed magnitude operation to absolute")
+               operator="absolute"
+
             if array_size == 1:
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
 
+      # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
+      if self.check_variable(self.active_populations[0]+'/'+name): 
+         tmp_vars = []
+         for pname in self.active_populations:
+            vlsvvariables.activepopulation = pname
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+         return data_operators["sum"](tmp_vars)   
+
       # Check if the name is in datareducers
       if name in datareducers:
          reducer = datareducers[name]
          # Read the necessary variables:
+
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
        
          # Return the output of the datareducer
          if reducer.useVspace:
@@ -598,6 +687,32 @@ class VlsvReader(object):
                tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
+      # Check if the name is in multidatareducers
+      if 'pop/'+varname in multipopdatareducers:
+         reducer = multipopdatareducers['pop/'+varname]
+         vlsvvariables.activepopulation = popname
+         
+         # If variable vector size is 1, and requested magnitude, change it to "absolute"
+         if reducer.vector_size == 1 and operator=="magnitude":
+            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            operator="absolute"
+
+         # Read the necessary variables:
+         if reducer.useVspace:
+            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            return 
+         else:
+            tmp_vars = []
+            for i in np.atleast_1d(reducer.variables):
+               if '/' not in i:
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+               else:
+                  tvar = i.split('/')[1]
+                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
+            return data_operators[operator](reducer.operation( tmp_vars ))
+
+      if name!="":
+         print "Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!" 
       if self.__fptr.closed:
          fptr.close()
 
@@ -617,9 +732,9 @@ class VlsvReader(object):
       if len(np.shape(coordinates)) == 1:
          #get closest id
          closest_cell_id=self.get_cellid(coordinates)
-         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
          if closest_cell_id == 0:
             return None
+         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
 
          #now identify the lower one of the 8 neighbor cells
          offset = [0 if coordinates[0] > closest_cell_coordinates[0] else -1,\
@@ -649,7 +764,7 @@ class VlsvReader(object):
          else:
             value_length=1
          
-      #now identify 8 cells, startign from the lower one
+         #now identify 8 cells, starting from the lower one
          ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
             for y in [0,1]:
@@ -676,8 +791,72 @@ class VlsvReader(object):
 
       else:
          #multiple coordinates
-         pass
-
+         
+         # read all cells as we're anyway going to need this
+         whole_cellids  = self.read_variable("CellID")
+         sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
+         
+         # Check one value for the length
+         if isinstance(sorted_variable[0], Iterable):
+            value_length=len(sorted_variable[0])
+         else:
+            value_length=1
+         
+         # start iteration
+         if value_length == 1:
+            ret_array = np.zeros(len(coordinates))
+         else:
+            ret_array = np.zeros((len(coordinates), value_length))
+         for i,cell_coords in enumerate(coordinates):
+            closest_cell_id=self.get_cellid(cell_coords)
+            if closest_cell_id == 0:
+               if value_length==1:
+                  ret_array[i]=None
+               else:
+                  ret_array[i,:] = None
+            closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
+            
+            #now identify the lower one of the 8 neighbor cells
+            offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
+                      0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
+                      0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
+            lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+            lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
+            offset = [1,1,1]
+            upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+            upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
+            
+            scaled_coordinates=np.zeros(3)
+            for j in range(3):
+               if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
+                  scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
+               else:
+                  scaled_coordinates[j] = 0.0 #Special case for periodic systems with one cell in a dimension
+            
+            ngbrvalues=np.zeros((2,2,2,value_length))
+            for x in [0,1]:
+               for y in [0,1]:
+                  for z  in [0,1]:
+                     id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
+                     ngbrvalues[x,y,z,:] = sorted_variable[id]
+            
+            c2d=np.zeros((2,2,value_length))
+            for y in  [0,1]:
+               for z in  [0,1]:
+                  c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
+            
+            c1d=np.zeros((2,value_length))
+            for z in [0,1]:
+               c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
+            
+            final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+            if len(final_value)==1:
+               ret_array[i] = final_value[0]
+            else:
+               ret_array[i, :] = final_value
+         
+         # Done.
+         return ret_array
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
@@ -711,14 +890,49 @@ class VlsvReader(object):
       '''
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
+
+      # Get population and variable names from data array name 
+      if '/' in name:
+         popname = name.split('/')[0]
+         varname = name.split('/')[1]
+      else:
+         varname = name
+
       if name in datareducers:
          units = datareducers[name].units
+         latex = datareducers[name].latex
+         latexunits = datareducers[name].latexunits
+      elif name in vlsvvariables.unitsdict:
+         units = vlsvvariables.unitsdict[name]
+         latex = vlsvvariables.latexdict[name]
+         latexunits = vlsvvariables.latexunitsdict[name]
+      elif 'pop/'+varname in multipopdatareducers:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = multipopdatareducers['pop/'+varname].units
+         latex = (multipopdatareducers['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
+         latexunits = multipopdatareducers['pop/'+varname].latexunits
+      elif varname in vlsvvariables.unitsdict:
+         poplatex='i'
+         if popname in vlsvvariables.speciesdict:
+            poplatex = vlsvvariables.speciesdict[popname]
+         units = vlsvvariables.unitsdict[varname]
+         latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
+         latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
+         latex = r""+name.replace("_","\_")
+         latexunits = ""
+
       if operator != "pass":
-         return VariableInfo(data_array=data, name=name + "_" + operator, units=units)
+         if operator=="magnitude":
+            latex = r"$|$"+latex+r"$|$"
+         else:
+            latex = latex+r"{$_"+operator+r"$}"
+         return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
-         return VariableInfo(data_array=data, name=name, units=units)
+         return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
 
 
    def get_cellid(self, coordinates):
@@ -1059,6 +1273,14 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
+      
+      # Special handling for time
+      if name=="time":
+         if self.check_parameter(name="t"):
+            return self.read(name="t", tag="PARAMETER")
+      if name=="t":
+         if self.check_parameter(name="time"):
+            return self.read(name="time", tag="PARAMETER")
 
       return self.read(name=name, tag="PARAMETER")
 

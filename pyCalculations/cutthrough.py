@@ -1,3 +1,26 @@
+# 
+# This file is part of Analysator.
+# Copyright 2013-2016 Finnish Meteorological Institute
+# Copyright 2017-2018 University of Helsinki
+# 
+# For details of usage, see the COPYING file and read the "Rules of the Road"
+# at http://www.physics.helsinki.fi/vlasiator/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# 
+
 # Cut-throughs from vlsv files
 
 import numpy as np
@@ -130,4 +153,76 @@ def cut_through( vlsvReader, point1, point2 ):
 
 
 
+def cut_through_step( vlsvReader, point1, point2 ):
+   ''' Returns cell ids and distances from point 1 to point 2, returning not every cell in a line
+       but rather the amount of cells which correspons with the largest axis-aligned component of the line.
 
+       :param vlsvReader:       Some open VlsvReader
+       :type vlsvReader:        :class:`vlsvfile.VlsvReader`
+       :param point1:           The starting point of a cut-through line
+       :param point2:           The ending point of a cut-through line
+       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]
+
+       .. code-block:: python
+
+          Example:
+          vlsvReader = VlsvReader(\"testfile.vlsv\")
+          cut_through = cut_through_step(vlsvReader, [0,0,0], [2,5e6,0])
+          cellids = cut_through[0]
+          distances = cut_through[1]
+          print \"Cell ids: \" + str(cellids)
+          print \"Distance from point 1 for every cell: \" + str(distances)
+   '''
+   # Transform point1 and point2 into numpy array:
+   point1 = np.array(point1)
+   point2 = np.array(point2)
+
+   # Make sure point1 and point2 are inside bounds
+   if vlsvReader.get_cellid(point1) == 0:
+      print "ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!"
+   if vlsvReader.get_cellid(point2) == 0:
+      print "ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!"
+   
+   # Find path
+   distances = point2-point1
+   largestindex = np.argmax(abs(distances))
+   derivative = distances/abs(distances[largestindex])
+
+   # Re=6371000.
+   # print("distances",distances/Re)
+   # print("largestindex",largestindex)
+   # print("derivative",derivative)
+
+   # Get parameters from the file to determine a good length between points (step length):
+   # Get xmax, xmin and xcells_ini   
+   [xcells, ycells, zcells] = vlsvReader.get_spatial_mesh_size()
+   [xmin, ymin, zmin, xmax, ymax, zmax] = vlsvReader.get_spatial_mesh_extent()
+
+   # Calculate cell lengths:
+   cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
+
+
+   # Initialize lists
+   distances = [0]
+   cellids = [vlsvReader.get_cellid(point1)]
+   coordinates = [point1]
+   finalcellid = vlsvReader.get_cellid(point2)
+   print(" cellids init ",cellids,finalcellid)
+
+   # Loop until final cellid is reached
+   while True:
+      newcoordinate = coordinates[-1]+cell_lengths*derivative
+      newcellid = vlsvReader.get_cellid( newcoordinate )
+
+      distances.append( np.linalg.norm( newcoordinate - point1 ) )
+      coordinates.append(newcoordinate)
+      cellids.append(newcellid)
+      #print(distances[-1]/Re,np.array(coordinates[-1])/Re,cellids[-1])
+
+      if newcellid==finalcellid:
+         break
+      
+   # Return the coordinates, cellids and distances for processing
+   from output import output_1d
+   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+      
