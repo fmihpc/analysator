@@ -256,6 +256,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = Vrot[:,2]
         VY = Vrot[:,1]
         Vpara = Vrot[:,0]
+    elif slicetype=="Bpara1":
+        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+        Vrot = rotateVectorToVector(V,N)
+        VX = Vrot[:,2]
+        VY = Vrot[:,0]
+        Vpara = Vrot[:,1]
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
@@ -281,7 +287,7 @@ def plot_vdf(filename=None,
              wmark=None, wmarkb=None, 
              fmin=None, fmax=None, slicethick=None, cellsize=None,
              xy=None, xz=None, yz=None, normal=None,
-             bpara=None, bperp=None,
+             bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,
              cbulk=None, center=None, wflux=None, setThreshold=None,
@@ -327,6 +333,7 @@ def plot_vdf(filename=None,
     :kword yz:          Perform slice in y-z-direction
     :kword normal:      Perform slice in plane perpendicular to given vector
     :kword bpara:       Perform slice in B_para / B_perp2 plane
+    :kword bpara1:       Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
 
@@ -616,7 +623,7 @@ def plot_vdf(filename=None,
 
         # Check slice to perform (and possibly normal vector)
         normvect=None
-        if xy==None and xz==None and yz==None and normal==None and bpara==None and bperp==None:
+        if xy==None and xz==None and yz==None and normal==None and bpara==None and bpara1==None and bperp==None:
             # Use default slice for this simulation
             # Check if ecliptic or polar run
             if ysize==1: # polar
@@ -662,7 +669,7 @@ def plot_vdf(filename=None,
             pltxstr=r"$v_y$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[1,0,0] # used just for cell size normalisation
-        elif bpara!=None or bperp!=None:
+        elif bpara!=None or bpara1!=None or bperp!=None:
             # Rotate based on B-vector
             if vlsvReader.check_variable("B"):
                 Bvect = vlsvReader.read_variable("B", cellid)
@@ -684,11 +691,16 @@ def plot_vdf(filename=None,
                 slicetype="Bperp"
                 pltxstr=r"$v_{\perp 1}$ "+velUnitStr
                 pltystr=r"$v_{\perp 2}$ "+velUnitStr
+            elif bpara1!=None:
+                # slice in b_parallel/b_perp1 plane
+                slicetype="Bpara1"
+                pltxstr=r"$v_{\parallel}$ "+velUnitStr
+                pltystr=r"$v_{\perp 1}$ "+velUnitStr
             else:
-                # means bpara!=None, slice in b_parallel/b_perp2 plane
+                # slice in b_parallel/b_perp2 plane
                 slicetype="Bpara"
                 pltxstr=r"$v_{\parallel}$ "+velUnitStr
-                pltystr=r"$v_{\perp}$ "+velUnitStr
+                pltystr=r"$v_{\perp 2}$ "+velUnitStr
 
 
         if draw==None and axes==None:
@@ -944,7 +956,7 @@ def plot_vdf(filename=None,
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
 
 
-        if bvector!=None and bpara==None and bperp==None:
+        if bvector!=None and bpara==None and bperp==None and bpara1==None:
             # Draw vector of magnetic field direction
             if vlsvReader.check_variable("B"):
                 Bvect = vlsvReader.read_variable("B", cellid)
