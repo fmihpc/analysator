@@ -243,7 +243,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = V[:,0]
         VY = V[:,2]
         Vpara = V[:,1]
-    elif slicetype=="vecperp" or slicetype=="Bperp":
+    elif slicetype=="vecperp":
+        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
+        VX = Vrot[:,0]
+        VY = Vrot[:,1]
+        Vpara = Vrot[:,2]
+    elif slicetype=="Bperp":
         # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
@@ -777,6 +783,8 @@ def plot_vdf(filename=None,
         if cellsize==None:
             samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
             sbrot = rotateVectorToVector(samplebox,normvect)
+            if normvectX is not None:
+                sbrot = rotateVectorToVector_X(sbrot,normvectX)
             rotminx=np.amin(sbrot[:,0])
             rotmaxx=np.amax(sbrot[:,0])
             rotminy=np.amin(sbrot[:,1])
@@ -784,16 +792,6 @@ def plot_vdf(filename=None,
             rotminz=np.amin(sbrot[:,2])
             rotmaxz=np.amax(sbrot[:,2])
             gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-
-            if normvectX is not None:
-                sbrot2 = rotateVectorToVector_X(sbrot,normvectX)
-                rotminx=np.amin(sbrot2[:,0])
-                rotmaxx=np.amax(sbrot2[:,0])
-                rotminy=np.amin(sbrot2[:,1])
-                rotmaxy=np.amax(sbrot2[:,1])
-                rotminz=np.amin(sbrot2[:,2])
-                rotmaxz=np.amax(sbrot2[:,2])
-                gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
         else:
             gridratio = cellsize
 
