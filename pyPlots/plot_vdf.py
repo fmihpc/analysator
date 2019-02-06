@@ -37,7 +37,7 @@ import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from rotation import rotateVectorToVector
+from rotation import rotateVectorToVector,rotateVectorToVector_X
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
@@ -158,7 +158,7 @@ def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, wflux=None, center=None, setThreshold=None):
+                  slicethick=None, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -243,30 +243,40 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = V[:,0]
         VY = V[:,2]
         Vpara = V[:,1]
-    elif slicetype=="vecperp" or slicetype=="Bperp":
-        # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
+    elif slicetype=="vecperp":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
+        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Vpara = Vrot[:,2]
+    elif slicetype=="Bperp":
+        # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
+        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
+        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
+        VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+        Vpara = Vrot2[:,2] # the Z axis of the slice is B
     elif slicetype=="Bpara":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
-        VX = Vrot[:,2]
-        VY = Vrot[:,1]
-        Vpara = Vrot[:,0]
+        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
+        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        VX = Vrot2[:,2] # the X axis of the slice is B
+        VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+        Vpara = Vrot2[:,0] # the Z axis of the slice is BcrossV=perp1
     elif slicetype=="Bpara1":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
-        VX = Vrot[:,2]
-        VY = Vrot[:,0]
-        Vpara = Vrot[:,1]
+        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
+        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        VX = Vrot2[:,2] # the X axis of the slice is B
+        VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
+        Vpara = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
-
-    # TODO: better rotation so perpendicular component can be defined?
 
     # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
     (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Vpara,VXBins,VYBins, slicethick, wflux=wflux)
@@ -621,8 +631,24 @@ def plot_vdf(filename=None,
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
         print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
+        # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
+        Vbulk=None
+        if vlsvReader.check_variable('moments'):
+            # This should be a restart file
+            Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable(pop+'/V'):
+            # multipop bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
+        else:
+            # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
+            Vbulk = vlsvReader.read_variable('V',cellid)
+        if Vbulk==None:
+            print("Error in finding plasma bulk velocity!")
+            sys.exit()
+
         # Check slice to perform (and possibly normal vector)
         normvect=None
+        normvectX=None
         if xy==None and xz==None and yz==None and normal==None and bpara==None and bpara1==None and bperp==None:
             # Use default slice for this simulation
             # Check if ecliptic or polar run
@@ -686,6 +712,10 @@ def plot_vdf(filename=None,
                 Bvect = Bvect[0]
             normvect = Bvect
 
+            # Calculates BcrossV
+            BcrossV = np.cross(Bvect,Vbulk)
+            normvectX = BcrossV
+
             if bperp!=None:
                 # slice in b_perp1/b_perp2
                 slicetype="Bperp"
@@ -719,6 +749,10 @@ def plot_vdf(filename=None,
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
         normvect = normvect/np.linalg.norm(normvect)
+        if normvectX is not None:
+            normvectX = np.array(normvectX)
+            normvectX = normvectX/np.linalg.norm(normvectX)
+
 
         if cbulk!=None:
             center=None # Finds the bulk velocity and places it in the center vector
@@ -727,18 +761,8 @@ def plot_vdf(filename=None,
                 if vlsvReader.check_variable(cbulk):
                     center = vlsvReader.read_variable(cbulk,cellid)
                     print("Found bulk frame from variable "+cbulk)
-            if np.array(center).any()==None and vlsvReader.check_variable('moments'):
-                # This should be a restart file
-                center = vlsvReader.read_variable('restart_V',cellid)
-            if np.array(center).any()==None and vlsvReader.check_variable(pop+'/V'):
-                # multipop bulk file
-                center = vlsvReader.read_variable(pop+'/V',cellid)
-            if np.array(center).any()==None:
-                # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
-                center = vlsvReader.read_variable('V',cellid)
-            if np.array(center).any()==None:
-                print("Error in finding plasma bulk velocity!")
-                sys.exit()
+            else:
+                center = Vbulk
 
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
@@ -759,6 +783,8 @@ def plot_vdf(filename=None,
         if cellsize==None:
             samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
             sbrot = rotateVectorToVector(samplebox,normvect)
+            if normvectX is not None:
+                sbrot = rotateVectorToVector_X(sbrot,normvectX)
             rotminx=np.amin(sbrot[:,0])
             rotmaxx=np.amax(sbrot[:,0])
             rotminy=np.amin(sbrot[:,1])
@@ -776,7 +802,7 @@ def plot_vdf(filename=None,
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, wflux=wflux,
-                                                       center=center,setThreshold=setThreshold)
+                                                       center=center,setThreshold=setThreshold,normvectX=normvectX)
 
         # Check that data is ok and not empty
         if checkOk == False:
