@@ -26,7 +26,7 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-import os, sys
+import os, sys, math
 import re
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
@@ -305,6 +305,7 @@ def plot_vdf(filename=None,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
              axes=None,
+             contours=None
              ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -330,6 +331,8 @@ def plot_vdf(filename=None,
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of phase space density of flux
+
+    :kword contours:    Set to number of contours to draw
 
     :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
@@ -912,6 +915,13 @@ def plot_vdf(filename=None,
         ax1.grid(color='grey',linestyle='-',lw=thick)
         ax1.tick_params(axis='x',which='minor')
         ax1.tick_params(axis='y',which='minor')
+
+        # plot contours?
+        if contours!=None:
+            contdraw=ax1.contour(XmeshXY[:-1,:-1]+0.5*(XmeshXY[1,0]-XmeshXY[0,0]),
+                                 YmeshXY[:-1,:-1]+0.5*(YmeshXY[0,1]-YmeshXY[0,0]),
+                                 binsXY,np.logspace(math.log10(fminuse),math.log10(fmaxuse),int(contours)),
+                                 linewidths=thick*0.5, colors='black')
 
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
