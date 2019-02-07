@@ -719,18 +719,24 @@ def plot_vdf(filename=None,
             if bperp!=None:
                 # slice in b_perp1/b_perp2
                 slicetype="Bperp"
-                pltxstr=r"$v_{\perp 1}$ "+velUnitStr
-                pltystr=r"$v_{\perp 2}$ "+velUnitStr
+                #pltxstr=r"$v_{\perp 1}$ "+velUnitStr
+                #pltystr=r"$v_{\perp 2}$ "+velUnitStr
+                pltxstr=r"$v_{B \times V}$ "+velUnitStr
+                pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
             elif bpara1!=None:
                 # slice in b_parallel/b_perp1 plane
                 slicetype="Bpara1"
-                pltxstr=r"$v_{\parallel}$ "+velUnitStr
-                pltystr=r"$v_{\perp 1}$ "+velUnitStr
+                #pltxstr=r"$v_{\parallel}$ "+velUnitStr
+                #pltystr=r"$v_{\perp 1}$ "+velUnitStr
+                pltxstr=r"$v_{B}$ "+velUnitStr
+                pltystr=r"$v_{B \times V}$ "+velUnitStr
             else:
                 # slice in b_parallel/b_perp2 plane
                 slicetype="Bpara"
-                pltxstr=r"$v_{\parallel}$ "+velUnitStr
-                pltystr=r"$v_{\perp 2}$ "+velUnitStr
+                #pltxstr=r"$v_{\parallel}$ "+velUnitStr
+                #pltystr=r"$v_{\perp 2}$ "+velUnitStr
+                pltxstr=r"$v_{B}$ "+velUnitStr
+                pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
 
 
         if draw==None and axes==None:
