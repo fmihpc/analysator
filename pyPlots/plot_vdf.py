@@ -1071,7 +1071,7 @@ def plot_vdf(filename=None,
 
             # Colourbar title
             cbtitleuse = r"\textbf{"+cbtitleuse+"}"                    
-            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign, pad=10)
 
         if noxlabels!=None:
             for label in ax1.xaxis.get_ticklabels():
