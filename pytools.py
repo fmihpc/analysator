@@ -35,14 +35,13 @@ filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
 
-# Check if user is on taito.csc.fi without loading the mayavi2 module
-import numpy as np
-
 # Make sure matplotlib has a unique temp directory
 mpldir = tempfile.mkdtemp()
 atexit.register(shutil.rmtree, mpldir)
-
 os.environ['MPLCONFIGDIR']=mpldir
+
+# Check if user is on taito.csc.fi without loading the mayavi2 module
+import numpy as np
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
    print "Warning, user appears to be using csc.taito.fi without loading the mayavi2 module"
