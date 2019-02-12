@@ -22,7 +22,7 @@
 # 
 
 import filemanagement
-import socket, re
+import socket, re, os, tempfile, atexit, shutil
 
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
@@ -34,6 +34,11 @@ filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyPlots")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
+
+# Make sure matplotlib has a unique temp directory
+mpldir = tempfile.mkdtemp()
+atexit.register(shutil.rmtree, mpldir)
+os.environ['MPLCONFIGDIR']=mpldir
 
 # Check if user is on taito.csc.fi without loading the mayavi2 module
 import numpy as np
