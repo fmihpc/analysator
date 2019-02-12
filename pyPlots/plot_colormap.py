@@ -551,7 +551,9 @@ def plot_colormap(filename=None,
     else:
         XmeshPass = XmeshXY
         YmeshPass = YmeshXY
-
+    # Calculate offsets for cell-centre coordinates
+    XmeshCentres = XmeshPass + (XmeshPass[0,1]-XmeshPass[0,0])
+    YmeshCentres = YmeshPass + (YmeshPass[1,0]-YmeshPass[0,0])
 
     # Attempt to call external and expression functions to see if they have required
     # variable information (If they accept the requestvars keyword, they should
@@ -826,8 +828,8 @@ def plot_colormap(filename=None,
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
-        flux_levels = np.linspace(-10,10,fluxlines*60)
-        fluxcont = ax1.contour(XmeshPass,YmeshPass,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+        flux_levels = np.linspace(-10,10,fluxlines*60)        
+        fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
     if fsaved != None:
@@ -843,7 +845,7 @@ def plot_colormap(filename=None,
                 fSmap = fSmap[:,MaskY]
             if np.ma.is_masked(rhomap):
                 fSmap = np.ma.array(fSmap, mask=XYmask)            
-            fScont = ax1.contour(XmeshPass,YmeshPass,fSmap,[0.5],colors=fScolour, 
+            fScont = ax1.contour(XmeshCentres,YmeshCentres,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
     # add vectors on top
@@ -872,8 +874,8 @@ def plot_colormap(filename=None,
             vectmap[:,:,1] = np.zeros(vectmap[:,:,1].shape)
         vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
 
-        X = XmeshPass[::step,::step]
-        Y = YmeshPass[::step,::step]
+        X = XmeshCentres[::step,::step]
+        Y = YmeshCentres[::step,::step]
         U = vectmap[::step,::step,0]            
         if zsize==1:
             V = vectmap[::step,::step,1]
@@ -900,13 +902,13 @@ def plot_colormap(filename=None,
             V = slinemap[::step,::step,1]
         elif ysize==1:
             V = slinemap[::step,::step,2]
-        ax1.streamplot(XmeshPass,YmeshPass,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
     if external!=None:
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
-        extresult=external(ax1, XmeshPass,YmeshPass, pass_maps)
+        extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
 
     if nocb==None:
         if internalcb==None:
