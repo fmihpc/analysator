@@ -552,8 +552,8 @@ def plot_colormap(filename=None,
         XmeshPass = XmeshXY
         YmeshPass = YmeshXY
     # Calculate offsets for cell-centre coordinates
-    XmeshCentres = XmeshPass + (XmeshPass[0,1]-XmeshPass[0,0])
-    YmeshCentres = YmeshPass + (YmeshPass[1,0]-YmeshPass[0,0])
+    XmeshCentres = XmeshPass + 0.5*(XmeshPass[0,1]-XmeshPass[0,0])
+    YmeshCentres = YmeshPass + 0.5*(YmeshPass[1,0]-YmeshPass[0,0])
 
     # Attempt to call external and expression functions to see if they have required
     # variable information (If they accept the requestvars keyword, they should
