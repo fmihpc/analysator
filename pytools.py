@@ -22,7 +22,7 @@
 # 
 
 import filemanagement
-import socket, re
+import socket, re, os, tempfile, atexit, shutil
 
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
@@ -37,6 +37,12 @@ filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.
 
 # Check if user is on taito.csc.fi without loading the mayavi2 module
 import numpy as np
+
+# Make sure matplotlib has a unique temp directory
+mpldir = tempfile.mkdtemp()
+atexit.register(shutil.rmtree, mpldir)
+
+os.environ['MPLCONFIGDIR']=mpldir
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
    print "Warning, user appears to be using csc.taito.fi without loading the mayavi2 module"
