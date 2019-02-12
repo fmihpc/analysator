@@ -645,7 +645,7 @@ def plot_vdf(filename=None,
         else:
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
-        if Vbulk==None:
+        if Vbulk is None:
             print("Error in finding plasma bulk velocity!")
             sys.exit()
 
@@ -654,7 +654,8 @@ def plot_vdf(filename=None,
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
-            # Otherwise perform linear reconstruction to find cell-center value
+            # Otherwise perform linear reconstruction to find
+            # approximation of cell-center value
             else:
                 # Find dimension of simulation
                 if ysize==1 or zsize==1: # 2D
@@ -671,7 +672,9 @@ def plot_vdf(filename=None,
                     Braw = BGB+PERBB
                 else:
                     print("Error finding B vector direction!")
-                # Now average in each face direction 
+                # Non-reconstruction version, using just cell-face-values
+                # Bvect = Braw[0]
+                # Now average in each face direction (not proper reconstruction)
                 if ysize==1: #polar
                     Bvect=np.array([0.5*(Braw[0][0]+Braw[1][0]), Braw[0][1], 0.5*(Braw[0][2]+Braw[2][2])])
                 elif zsize==1: # ecliptic
