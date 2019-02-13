@@ -44,7 +44,9 @@ os.environ['MPLCONFIGDIR']=mpldir
 import numpy as np
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   print "Warning, user appears to be using csc.taito.fi without loading the mayavi2 module"
+   print 'Warning, according to loaded numpy and matplotlib versions, user appears to be'
+   print 'either using csc.taito.fi without loading the mayavi2 module, or by invoking'
+   print 'the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"'
 
 # Import modules
 try:
