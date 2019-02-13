@@ -74,7 +74,7 @@ def fmt(x, pos):
     if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+r'10^{{{}}}$'.format(int(b))
+    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
 
 # axisfmt replaces minus sign with en-dash to fix big with latex descender value return
 def axisfmt(x, pos):
