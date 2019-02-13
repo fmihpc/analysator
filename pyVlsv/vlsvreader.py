@@ -760,7 +760,11 @@ class VlsvReader(object):
 
          test_val=self.read_variable(name,lower_cell_id,operator)
          if isinstance(test_val, Iterable):
-            value_length=len(test_val)
+            try:
+               value_length=len(test_val)
+            except Exception as e:
+               # Can't determine size, maybe some division by zero?
+               value_length=1
          else:
             value_length=1
          
