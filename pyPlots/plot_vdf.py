@@ -253,24 +253,27 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        Vrot = rotateVectorToVector(V,N)   # transforms V to frame where z is aligned with N=B
+        NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
+        Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
         VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
         VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
         Vpara = Vrot2[:,2] # the Z axis of the slice is B
     elif slicetype=="Bpara":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        Vrot = rotateVectorToVector(V,N)   # transforms V to frame where z is aligned with N=B
+        NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
+        Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
         VX = Vrot2[:,2] # the X axis of the slice is B
         VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
         Vpara = Vrot2[:,0] # the Z axis of the slice is BcrossV=perp1
     elif slicetype=="Bpara1":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
+        Vrot = rotateVectorToVector(V,N)   # transforms V to frame where z is aligned with N=B
+        NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
+        Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
         VX = Vrot2[:,2] # the X axis of the slice is B
         VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
         Vpara = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
