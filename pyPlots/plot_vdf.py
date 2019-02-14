@@ -71,7 +71,7 @@ def fmt(x, pos):
     # some reason it doesn't work. (signchar=r'\enspace')
     signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar='\mbox{\textbf{--}}'
+    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))

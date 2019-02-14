@@ -76,7 +76,7 @@ def fmt(x, pos):
     # some reason it doesn't work. (signchar=r'\enspace')
     signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar='\mbox{\textbf{--}}'
+    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
@@ -479,7 +479,7 @@ def plot_colormap(filename=None,
             datamap_unit=r"${\times}$"+fmt(vscale,None)
         # Allow specialist units for known vscale and unit combinations
         if datamap_info.units=="s" and np.isclose(vscale,1.e6):
-            datamap_unit = "$\mu$s"
+            datamap_unit = r"$\mu$s"
         if datamap_info.units=="s" and np.isclose(vscale,1.e3):
             datamap_unit = "ms"
         if datamap_info.units=="T" and np.isclose(vscale,1.e9):
@@ -489,11 +489,11 @@ def plot_colormap(filename=None,
         if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
             datamap_unit = "nPa"
         if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
-            datamap_unit = "$\mathrm{cm}^{-3}$"
+            datamap_unit = r"$\mathrm{cm}^{-3}$"
         if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
-            datamap_unit = "$\mathrm{km}\,\mathrm{s}^{-1}$"
+            datamap_unit = r"$\mathrm{km}\,\mathrm{s}^{-1}$"
         if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
-            datamap_unit = "$\mathrm{mV}\,\mathrm{m}^{-1}$"            
+            datamap_unit = r"$\mathrm{mV}\,\mathrm{m}^{-1}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":
