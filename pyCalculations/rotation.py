@@ -110,7 +110,7 @@ def rotateVectorToVector_X( vector1, vector2 ):
       return vector_rotated
 
 def rotation_matrix(vector, angle):
-   ''' Creates a rotation matrix that rotates into a given vector by a given angle
+   ''' Creates a rotation matrix that rotates around a given vector by a given angle
        :param vector        Some unit vector
        :param angle         Some angle
        :returns a rotation matrix
@@ -133,7 +133,7 @@ def rotation_matrix(vector, angle):
 
 
 def rotation_array_matrix(vector, angle):
-   ''' Creates a rotation matrix that rotates into a given vector by a given angle
+   ''' Creates a rotation matrix that rotates around a given vector by a given angle
        :param vector        n x 3 array of unit vectors
        :param angle         array of angles
        :returns a rotation matrix

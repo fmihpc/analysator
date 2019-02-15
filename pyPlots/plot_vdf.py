@@ -109,16 +109,16 @@ def verifyCellWithVspace(vlsvReader,cid):
     return found
 
 # create a 2-dimensional histogram
-def doHistogram(f,VX,VY,Vpara,vxBinEdges,vyBinEdges,vthick,wflux=None):
+def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
     # Flux weighting?
     if wflux!=None:
-        fw = f*np.linalg.norm([VX,VY,Vpara]) # use particle flux as weighting in the histogram
+        fw = f*np.linalg.norm([VX,VY,Voutofslice]) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
 
     # Select cells which are within slice area
     if vthick!=0:
-        indexes = [(abs(Vpara) <= 0.5*vthick) &
+        indexes = [(abs(Voutofslice) <= 0.5*vthick) &
                    (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
     else:
@@ -234,52 +234,62 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     if slicetype=="xy":
         VX = V[:,0]
         VY = V[:,1]
-        Vpara = V[:,2]
+        Voutofslice = V[:,2]
     elif slicetype=="yz":
         VX = V[:,1]
         VY = V[:,2]
-        Vpara = V[:,0]
+        Voutofslice = V[:,0]
     elif slicetype=="xz":
         VX = V[:,0]
         VY = V[:,2]
-        Vpara = V[:,1]
+        Voutofslice = V[:,1]
     elif slicetype=="vecperp":
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
         VX = Vrot[:,0]
         VY = Vrot[:,1]
-        Vpara = Vrot[:,2]
-    elif slicetype=="Bperp":
-        # Find velocity components in give nframe (e.g. B frame: (vx,vy,vz) -> (vperp2,vperp1,vpar))
+        Voutofslice = Vrot[:,2]
+    elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
+        # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
-        VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
-        VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
-        Vpara = Vrot2[:,2] # the Z axis of the slice is B
-    elif slicetype=="Bpara":
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
-        VX = Vrot2[:,2] # the X axis of the slice is B
-        VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
-        Vpara = Vrot2[:,0] # the Z axis of the slice is BcrossV=perp1
-    elif slicetype=="Bpara1":
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect=B
-        Vrot2 = rotateVectorToVector_X(Vrot,NX) # aligns the X axis of Vrot with normvectX=BcrossV
-        VX = Vrot2[:,2] # the X axis of the slice is B
-        VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
-        Vpara = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
+        Vrot = rotateVectorToVector(V,N) # transforms V to frame where z is aligned with N=B
+        NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
+        Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
+        # Choose the correct components for this plot
+        if slicetype=="Bperp":
+            VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
+            VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+            Voutofslice = Vrot2[:,2] # the Z axis of the slice is B
+        elif slicetype=="Bpara":
+            VX = Vrot2[:,2] # the X axis of the slice is B
+            VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+            Voutofslice = -Vrot2[:,0] # the Z axis of the slice is -BcrossV=perp1
+        elif slicetype=="Bpara1":
+            VX = Vrot2[:,2] # the X axis of the slice is B
+            VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
+            Voutofslice = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
+
+        # Calculations for verification of rotation:
+        testvectors = np.array([N,NX,np.cross(N,NX)]) # verifies B, BcrossV, and Bcross(BcrossV)
+        testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
+        testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
+        if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
+            print("Error in rotation: NXrot not a unit vector")
+        if abs(NXrot[2]) > 1.e-3:
+            print("Error in rotation: NXrot not in x-y-plane")
+        for count,testvect in enumerate(testrot2):
+            if abs(1.0-np.linalg.norm(testvect))>1.e-3:
+                print("Error in rotation: testvector ",count,testvect," not a unit vector")
+            if abs(1.0-np.amax(testvect))>1.e-3:
+                print("Error in rotation: testvector ",count,testvect," largest component is not unity")
+
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
 
     # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
-    (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Vpara,VXBins,VYBins, slicethick, wflux=wflux)
+    (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Voutofslice,VXBins,VYBins, slicethick, wflux=wflux)
     return (True,binsXY,edgesX,edgesY)
 
 
