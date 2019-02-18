@@ -554,22 +554,28 @@ class VlsvReader(object):
          self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
-   def read(self, name="", tag="", mesh="", operator="pass", read_single_cellid=-1):
+   def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
       
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
       :param operator: Datareduction operator. "pass" does no operation on data.
-      :param read_single_cellid:  If -1 then all data is read. If nonzero then only the vector for the specified cell id is read
+      :param cellids:  If -1 then all data is read. If nonzero then only the vector
+                       for the specified cell id or cellids is read
       :returns: numpy array with the data
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
 
       if (len( self.__fileindex_for_cellid ) == 0):
-         if read_single_cellid >= 0:
+         # Do we need to construct the cellid index?
+         if type(cellids) == int: # single or all cells
+            if cellids >= 0: # single cell
+               self.__read_fileindex_for_cellid()
+         else: # list of cellids
             self.__read_fileindex_for_cellid()
+               
       if tag == "" and name == "" and tag == "":
          print "Bad arguments at read"
 
@@ -591,9 +597,6 @@ class VlsvReader(object):
       # if name.lower() in (n.upper() for n in datareducers):
       # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
 
-      # TODO, read_single_cellid should perhaps be an list/numpy array with cellids that
-      # are read in. This could be more efficient to 
-      # study multiple cells, e.g., along a line
       for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
@@ -605,42 +608,79 @@ class VlsvReader(object):
             if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
                continue
          if child.tag == tag:
+            # Found the requested data entry in the file
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
-            offset = ast.literal_eval(child.text)
-            if read_single_cellid >= 0:
-               offset=offset+self.__fileindex_for_cellid[read_single_cellid]*element_size*vector_size
-               array_size=1
+            variable_offset = ast.literal_eval(child.text)
 
-            fptr.seek(offset)
+            # Define efficient method to read data in
+            if type(cellids) == int: # single cell or all cells
+               if cellids < 0: # -1, read all cells
+                  result_size = array_size
+                  read_size = array_size
+                  read_offsets = [0]
+               else: # single cell id
+                  result_size = 1
+                  read_size = 1
+                  read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            else: # Read multiple specified cells
+               arraydata = []
+               # If we're reading a large amount of single cells, it'll be faster to just read all
+               # data from the file system and sort through it. For the CSC disk system, this
+               # becomes more efficient for over ca. 5000 cellids.
+               if len(cellids)>5000: 
+                  result_size = len(cellids)
+                  read_size = array_size
+                  read_offsets = [0]
+               else: # Read multiple cell ids one-by-one
+                  result_size = len(cellids)
+                  read_size = 1
+                  read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+                  
+            for r_offset in read_offsets:
+               use_offset = variable_offset + r_offset
+               fptr.seek(use_offset)
+               if datatype == "float" and element_size == 4:
+                  data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
+               if datatype == "float" and element_size == 8:
+                  data = np.fromfile(fptr, dtype=np.float64, count=vector_size*read_size)
+               if datatype == "int" and element_size == 4:
+                  data = np.fromfile(fptr, dtype=np.int32, count=vector_size*read_size)
+               if datatype == "int" and element_size == 8:
+                  data = np.fromfile(fptr, dtype=np.int64, count=vector_size*read_size)
+               if datatype == "uint" and element_size == 4:
+                  data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*read_size)
+               if datatype == "uint" and element_size == 8:
+                  data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
+               if len(read_offsets)!=1:
+                  arraydata.append(data)
+            
+            if len(read_offsets)==1 and result_size<read_size:
+               # Many single cell id's requested
+               # Pick the elements corresponding to the requested cells
+               for cid in cellids:
+                  append_offset = self.__fileindex_for_cellid[cid]*vector_size
+                  arraydata.append(data[append_offset:append_offset+vector_size])
+               data = np.squeeze(np.array(arraydata))
 
-            if datatype == "float" and element_size == 4:
-               data = np.fromfile(fptr, dtype = np.float32, count=vector_size*array_size)
-            if datatype == "float" and element_size == 8:
-               data = np.fromfile(fptr, dtype=np.float64, count=vector_size*array_size)
-            if datatype == "int" and element_size == 4:
-               data = np.fromfile(fptr, dtype=np.int32, count=vector_size*array_size)
-            if datatype == "int" and element_size == 8:
-               data = np.fromfile(fptr, dtype=np.int64, count=vector_size*array_size)
-            if datatype == "uint" and element_size == 4:
-               data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*array_size)
-            if datatype == "uint" and element_size == 8:
-               data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*array_size)
+            if len(read_offsets)!=1:
+               # Not-so-many single cell id's requested
+               data = np.squeeze(np.array(arraydata))
 
             if self.__fptr.closed:
                fptr.close()
 
             if vector_size > 1:
-               data=data.reshape(array_size, vector_size)
+               data=data.reshape(result_size, vector_size)
             
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
                print("Data variable with vector size 1: Changed magnitude operation to absolute")
                operator="absolute"
 
-            if array_size == 1:
+            if result_size == 1:
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
@@ -650,7 +690,7 @@ class VlsvReader(object):
          tmp_vars = []
          for pname in self.active_populations:
             vlsvvariables.activepopulation = pname
-            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", read_single_cellid ) )
+            tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", cellids ) )
          return data_operators["sum"](tmp_vars)   
 
       # Check if the name is in datareducers
@@ -665,7 +705,7 @@ class VlsvReader(object):
        
          # Return the output of the datareducer
          if reducer.useVspace:
-            cellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, read_single_cellid=read_single_cellid)
+            cellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
             output = np.zeros(len(cellids))
             index = 0
             for cellid in cellids:
@@ -684,7 +724,7 @@ class VlsvReader(object):
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
-               tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+               tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multidatareducers
@@ -705,10 +745,10 @@ class VlsvReader(object):
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
                if '/' not in i:
-                  tmp_vars.append( self.read( i, tag, mesh, "pass", read_single_cellid ) )
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
                else:
                   tvar = i.split('/')[1]
-                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", read_single_cellid ) )
+                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
@@ -869,14 +909,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
-      if len(np.shape(cellids)) == 0:
-         return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=cellids)
-      else:
-         # NOTE: Should the file read be optimized by opening the file here until all cellids have been read? It can be optimized by the user manually, as well
-         variable = []
-         for i in cellids:
-            variable.append( self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, read_single_cellid=i) )
-         return np.array(variable, copy=False)
+      # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
+      return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
 
    def read_variable_info(self, name, cellids=-1, operator="pass"):
       ''' Read variables from the open vlsv file and input the data into VariableInfo
