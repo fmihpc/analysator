@@ -608,12 +608,12 @@ class VlsvReader(object):
             if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
                continue
          if child.tag == tag:
-            # Found the requested data in the file
-            variable_offset = ast.literal_eval(child.text)
+            # Found the requested data entry in the file
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
             array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
+            variable_offset = ast.literal_eval(child.text)
 
             # Define efficient method to read data in
             if type(cellids) == int: # single cell or all cells
@@ -663,11 +663,11 @@ class VlsvReader(object):
                for cid in cellids:
                   append_offset = self.__fileindex_for_cellid[cid]*vector_size
                   arraydata.append(data[append_offset:append_offset+vector_size])
-               data = np.array(arraydata)
+               data = np.squeeze(np.array(arraydata))
 
             if len(read_offsets)!=1:
                # Not-so-many single cell id's requested
-               data = np.array(arraydata)
+               data = np.squeeze(np.array(arraydata))
 
             if self.__fptr.closed:
                fptr.close()
