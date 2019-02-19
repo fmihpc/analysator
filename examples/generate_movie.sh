@@ -8,8 +8,8 @@
 #SBATCH --mem-per-cpu=16000
 #SBATCH --constraint=hsw
 
-# This script can be used on taito to generate an array job, which renders multiple frames
-# in order to e.g. make a movie.
+# This script can be used on CSC/taito to generate an array job, 
+# which renders multiple frames in order to e.g. make a movie.
 
 frameStart=0  # set to initial frame
 frameEnd=2708 # set to the final frame
@@ -55,6 +55,6 @@ fi;
 #echo from $start to $end 
 
 module load mayavi2
-export PTNONINTERACTIVE=1
+export PTNONINTERACTIVE=1 # Turns off x-windowing and Mayavi2 loading
 python generate_panel.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.

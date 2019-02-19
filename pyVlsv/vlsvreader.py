@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators
 from collections import Iterable
@@ -570,7 +571,7 @@ class VlsvReader(object):
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
-         if type(cellids) == int: # single or all cells
+         if isinstance(cellids, numbers.Number): # single or all cells
             if cellids >= 0: # single cell
                self.__read_fileindex_for_cellid()
          else: # list of cellids
