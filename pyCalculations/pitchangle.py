@@ -183,7 +183,7 @@ def pitch_angles( vlsvReader,
       outfilewrite=open(outputfile,'w')
       outfilewrite.write("# cellid time rho rho_nonsphere Bx By Bz pop\n")
       outfilewrite.write(str(int(cellid))+" "+timestr)
-      outfilewrite.write(' {:12.4f} {:12.4f} {:12.4f} {:12.4f} {:12.4f}'.format(rho_summed,rho_nonsphere,B[0],B[1],B[2])+" "+pop+"\n")
+      outfilewrite.write(' {:E} {:E} {:E} {:E} {:E}'.format(rho_summed,rho_nonsphere,B[0],B[1],B[2])+" "+pop+"\n")
 
       outfilewrite.write("# nbins, bin_edges\n")
       for angle in angles:
