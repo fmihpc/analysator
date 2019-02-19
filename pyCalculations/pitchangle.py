@@ -22,7 +22,6 @@
 # 
 
 import numpy as np
-import pylab as pl
 import sys, os
 from output import output_1d
 
@@ -42,24 +41,25 @@ def pitch_angles( vlsvReader,
    :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.
    :param cellid:            The cell id whose pitch angle the user wants 
                              NOTE: The cell id must have a velocity distribution!
-   :kword filename:     path to .vlsv file to use for input.
-   :kword filedir:      Optionally provide directory where files are located and use step for bulk file name
-   :kword step:         output step index, used for constructing output (and possibly input) filename
-   :kword outputdir:    path to directory where output files are created (default: $HOME/Plots/)
-                        If directory does not exist, it will be created. If the string does not end in a
-                        forward slash, the final parti will be used as a perfix for the files.
+   :kword filename:          path to .vlsv file to use for input.
+   :kword filedir:           Optionally provide directory where files are located and use step for bulk file name
+   :kword step:              output step index, used for constructing output (and possibly input) filename
 
    :kword nbins:             How many bins to use for the distribution
    :kword cosine:            True if returning the pitch angles as a cosine(alpha) plot [-1,1].
                              If false, returns as pitch angle in degrees [0,180].
+
    :kword plasmaframe:       True if the user wants to get the pitch angle distribution
                              in the plasma frame (for this population).
                              If set to a string, will try to use the string as a variable for
                              the frame to transform into.
                              If set to a 3-element vector, will use that frame instead.
+
    :kword vcut:              Set to True to ignore velocity cells below 2x the thermal speed.
                              If set to a number, will use that velocity in m/s instead.
+
    :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
+                             If directory does not exist, it will be created.
    :kword outputfile:        Provide exact output file name
 
    :kword pop:               Active population, defaults to proton (avgs)
@@ -69,11 +69,9 @@ def pitch_angles( vlsvReader,
        .. code-block:: python
 
           # Example usage:
-          vlsvReader = VlsvReader("fullf.0001.vlsv")
-          result = pitch_angles( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
-          # Plot the data
-          import pylab as pl
-          pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
+          vlsvReader = VlsvReader("restart.0000798.vlsv")
+          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True, 
+                                 plasmaframe=True, outputdir="/wrk/username/pitchangledirectory/" )
    '''
 
    # Input file or object
