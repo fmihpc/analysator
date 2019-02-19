@@ -623,6 +623,14 @@ def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
     return result.T
 
 
+
+
+################
+## Note: pyPlots/plot_colormap.py already includes some functionality for plotting
+## vectors and streamlines on top of the colormap. For simple variables, those will
+## likely suffice. Use these external plotting routines for more involved calculations.
+
+
 def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):    
     # Example: B curvature force
     B = TransposeVectorArray(pass_maps['B'])

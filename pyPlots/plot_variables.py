@@ -23,6 +23,12 @@
 
 # This class has a function for plotting multiple variables as subplots in one plot figure
 
+###############################
+# WARNING!  This function should be considered deprecated. It is provided only as the
+# rankine-hugoniot calculation rankine.py assumes it is available.
+###############################
+
+
 import pylab as pl
 import numpy as np
 from matplotlib.ticker import MaxNLocator

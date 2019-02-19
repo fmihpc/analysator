@@ -41,7 +41,7 @@ def extract_velocity_cells_sphere( vlsvReader, cellid, origin, radius ):
    origin = np.array(origin)
    v = vlsvReader.get_velocity_cell_coordinates(vcellids) - origin
    # Get sum of radiuses:
-   radiuses = np.sum(np.abs(v)**2,axis=-1)
+   radiuses = np.sum(v**2,axis=-1)
    # Check radius condition
    radius2 = radius**2
    condition = (radiuses <= radius2)
@@ -70,7 +70,7 @@ def extract_velocity_cells_non_sphere( vlsvReader, cellid, origin, radius ):
    origin = np.array(origin)
    v = vlsvReader.get_velocity_cell_coordinates(vcellids) - origin
    # Get sum of radiuses:
-   radiuses = np.sum(np.abs(v)**2,axis=-1)
+   radiuses = np.sum(v**2,axis=-1)
    # Check radius condition
    radius2 = radius**2
    condition = (radiuses > radius2)

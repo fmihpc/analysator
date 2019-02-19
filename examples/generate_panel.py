@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2019 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -21,6 +21,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+
+# This file contains a number of examples on how to use the plot_colormap
+# functionality to plot various .vlsv variables. 
+#
+# The file first defines some sample expressions (derived variables)
+# and external plotting functions (overlays) which can then be passed to
+# plot_colormap. A Script like this can be adapter for personal use, and
+# passed to a job submission system for generating a multitude of frames
+# via e.g. array jobs.
 
 import pytools as pt
 import sys, os, socket
@@ -175,7 +184,9 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
 
 
 
-# Helper function for drawing on existing panel
+# Helper function for drawing on existing panel. This one assumes
+# it has access to the name of the .vlsv file, and then calls plot_vdf to
+# create insets on top of the variable map.
 def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
     # pass_maps is a list of numpy arrays, not used here.
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -216,9 +227,11 @@ def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
     ax.scatter(VDFcoord[0], VDFcoord[2], color='gray',marker='o',s=2)
    
 
+# Define where our files are
 fileLocation="/proj/vlasov/2D/BCQ/bulk/"
 fluxLocation="/proj/vlasov/2D/BCQ/flux/"
 outputLocation=outputdir=os.path.expandvars('$HOME/Plots/')
+
 
 # Frame extent for this job given as command-line arguments
 if len(sys.argv)==3: # Starting and end frames given
@@ -230,39 +243,9 @@ for j in timetot:
     bulkname = "bulk."+str(j).rjust(7,'0')+".vlsv"
     print(bulkname)
 
-    # Five different plots
-
-    # Plot rho with caviton and SHFA contours
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rho",run="BCQ",colormap='viridis_r',step=j,outputdir=outputLocation+'rho/',wmark=1, external=cavitoncontours, pass_vars=['rho','B','beta'], boxre=[-20,40,-40,20])
-
-    # Plot B-magnitude with caviton and SHFA contours
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="B",run="BCQ",colormap='inferno_r',step=j,outputdir=outputLocation+'Bmag/',wmark=1, external=cavitoncontours, pass_vars=['rho','B','beta'], boxre=[-20,40,-40,20])
-
-    # Plot beam number density with magnetic field lines on top
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeam/',wmark=1, fluxdir=fluxLocation, boxre=[-20,40,-40,20])
-
-    # Plot a linear plot of magnetic field y-component
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,run="BCQ",colormap='RdBu',step=j,outputdir=outputLocation+'By/', var='B',op='y', symlog=0, boxre=[-20,40,-40,20])
-
-    # Plot a custom expression of MA using a pre-set bulk flow speed
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,run="BCQ",colormap='plasma',step=j,outputdir=outputLocation+'cMA/',lin=1,expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20, usesci=0, boxre=[-20,20,-40,0])
-
-    # Plot a custom time-averaged caviton and SHFA colourmap with non-timeaveraged contours on top for comparison. Leaves out the
-    # Colour bar.and associated title.
-    pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='OrRd',step=j,outputdir=outputLocation+'cSHFA/', lin=1,vmin=0,vmax=1, expression=expr_cav_cust, external=cavitoncontours, pass_vars=['rho','B','beta'], pass_times=10, nocb=1, cbtitle='', boxre=[-20,20,-40,0])
-
-    # Plot a custom nightside reconnection slippage calculation
-    pt.plot.plot_helpers.slippageVA=3000000
-    pt.plot.plot_colormap(filename=fileLocation+bulkname, run="BCQ",colormap='seismic',step=j,outputdir=outputLocation+'slippage/', wmark=1, fluxdir=fluxLocation, fluxlines=4, boxre=[-40,-10,-15,15], vmin=1e-2, vmax=1e0, pass_vars=['E','B','V'], expression=expr_Slippage)
-
-
-    # Plot beam number density with inset VDF
-    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",run="BCQ",colormap='bwr',step=j,outputdir=outputLocation+'rhoBeamVDF/',wmark=1, boxre=[-10,20,-30,0], external=insetVDF)
-
-
-
    # Useful flags
    # (Find more by entering pt.plot.plot_colormap? in python
+   # or by looking a the documentation in pyPlots/plot_colormap.py
    #
    #   nooverwrite = 1:    Set to only perform actions if the target output file does not yet exist                    
    #   boxm=[x0,x1,y0,y1]  Zoom to this box (size given in metres)
@@ -273,4 +256,124 @@ for j in timetot:
    #                       A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
    #   wmark=1             If set to non-zero, will plot a Vlasiator watermark in the top left corner.
    #   draw=1              Set to nonzero to draw image on-screen instead of saving to file (requires x-windowing)
+
+    # Various sample plots
+
+    # Plot rho with caviton and SHFA contours
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          var="rho",
+                          run="BCQ",
+                          colormap='viridis_r',
+                          step=j,
+                          outputdir=outputLocation+'rho/',
+                          wmark=1, 
+                          external=cavitoncontours, 
+                          pass_vars=['rho','B','beta'], 
+                          boxre=[-20,40,-40,20])
+
+    # Plot B-magnitude with caviton and SHFA contours
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          var="B",
+                          run="BCQ",
+                          colormap='inferno_r',
+                          step=j,
+                          outputdir=outputLocation+'Bmag/',
+                          wmark=1, 
+                          external=cavitoncontours, 
+                          pass_vars=['rho','B','beta'], 
+                          boxre=[-20,40,-40,20])
+
+    # Plot beam number density with magnetic field lines on top
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,var="rhoBeam",
+                          run="BCQ",
+                          colormap='bwr',
+                          step=j,
+                          outputdir=outputLocation+'rhoBeam/',
+                          wmark=1, 
+                          fluxdir=fluxLocation, 
+                          boxre=[-20,40,-40,20])
+
+    # Plot a linear plot of magnetic field y-component
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          run="BCQ",
+                          colormap='RdBu',
+                          step=j,
+                          outputdir=outputLocation+'By/', 
+                          var='B',
+                          op='y', 
+                          lin=0, 
+                          boxre=[-20,40,-40,20])
+
+    # Plot a symmetric logarithmic plot of magnetic field y-component
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          run="BCQ",
+                          colormap='RdBu',
+                          step=j,
+                          outputdir=outputLocation+'By/', 
+                          var='B',
+                          op='y', 
+                          symlog=0, 
+                          boxre=[-20,40,-40,20])
+
+    # Plot a custom expression of MA using a pre-set bulk flow speed
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          run="BCQ",
+                          colormap='plasma',
+                          step=j,
+                          outputdir=outputLocation+'cMA/',
+                          lin=1,
+                          expression=exprMA_cust, 
+                          pass_vars=['va'], 
+                          vmin=1, 
+                          vmax=20, 
+                          usesci=0, 
+                          boxre=[-20,20,-40,0])
+
+    # Plot a custom time-averaged caviton and SHFA colourmap with non-timeaveraged contours on top for comparison. Leaves out the
+    # Colour bar.and associated title.
+    pt.plot.plot_colormap(filename=fileLocation+bulkname, 
+                          run="BCQ",
+                          colormap='OrRd',
+                          step=j,
+                          outputdir=outputLocation+'cSHFA/', 
+                          lin=1,
+                          vmin=0,
+                          vmax=1, 
+                          expression=expr_cav_cust, 
+                          external=cavitoncontours, 
+                          pass_vars=['rho','B','beta'], 
+                          pass_times=10, 
+                          nocb=1, 
+                          cbtitle='', 
+                          boxre=[-20,20,-40,0])
+
+    # Plot a custom nightside reconnection slippage calculation.
+    # More information on derived expressions and helper functions
+    # can be found in the pyPlots/plot_helpers.py file
+    pt.plot.plot_helpers.slippageVA=3000000
+    pt.plot.plot_colormap(filename=fileLocation+bulkname, 
+                          run="BCQ",
+                          colormap='seismic',
+                          step=j,
+                          outputdir=outputLocation+'slippage/', 
+                          wmark=1, 
+                          fluxdir=fluxLocation, 
+                          fluxlines=4, 
+                          boxre=[-40,-10,-15,15], 
+                          vmin=1e-2, 
+                          vmax=1e0, 
+                          pass_vars=['E','B','V'], 
+                          expression=expr_Slippage)
+
+
+    # Plot beam number density with inset VDF
+    pt.plot.plot_colormap(filename=fileLocation+bulkname,
+                          var="rhoBeam",
+                          run="BCQ",
+                          colormap='bwr',
+                          step=j,
+                          outputdir=outputLocation+'rhoBeamVDF/',
+                          wmark=1, 
+                          boxre=[-10,20,-30,0], 
+                          external=insetVDF)
 
