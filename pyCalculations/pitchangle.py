@@ -74,10 +74,7 @@ def pitch_angles( vlsvReader,
          frame = plasmaframe
          
    # Find the magnetic field direction
-   if vlsvReader.check_variable("moments"): # restart
-      B = vlsvReader.read_variable("restart_B", cellid)
-   else:
-      B = vlsvReader.read_variable("B", cellid)
+   B = vlsvReader.read_variable("B", cellid)
    Bmag = np.linalg.norm(B)
    B_unit = B / Bmag
 
@@ -163,9 +160,9 @@ def pitch_angles( vlsvReader,
    print("rho",rho_summed, rho_nonsphere)
 
    if outputfile!=None or outputdir!=None: # Save output to file
-      # Generate filename
+      # Generate filename 
+      timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
       if outputfile==None: 
-         timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
 
       # Check to find actual target sub-directory
