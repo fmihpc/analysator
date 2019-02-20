@@ -314,7 +314,7 @@ def plot_vdf(filename=None,
              noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
-             axes=None, caxes=None,
+             axes=None, cbaxes=None,
              contours=None
              ):
 
@@ -387,7 +387,7 @@ def plot_vdf(filename=None,
     :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
-    :kword caxes:       Provide the routine a set of axes for the colourbar.
+    :kword cbaxes:       Provide the routine a set of axes for the colourbar.
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -1066,16 +1066,16 @@ def plot_vdf(filename=None,
                 else:
                     cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
 
-            if caxes is not None:
-                cax = caxes
+            if cbaxes is not None:
+                cax = cbaxes
                 cbdir="right"
                 horalign="left"
             elif internalcb==None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
                 cax = divider.append_axes("right", size="5%", pad=0.05)
-                horalign="left"
                 cbdir="right"
+                horalign="left"
             else:
                 # Colorbar within plot area
                 cbloc=1
@@ -1105,7 +1105,7 @@ def plot_vdf(filename=None,
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
-            if caxes is None:
+            if cbaxes is None:
                 cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
                 cb_title = cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
