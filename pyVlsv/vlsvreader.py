@@ -708,21 +708,21 @@ class VlsvReader(object):
        
          # Return the output of the datareducer
          if reducer.useVspace:
-            cellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
-            output = np.zeros(len(cellids))
+            actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
+            output = np.zeros(len(actualcellids))
             index = 0
-            for cellid in cellids:
-               velocity_cell_data = self.read_velocity_cells(cellid)
+            for singlecellid in actualcellids:
+               velocity_cell_data = self.read_velocity_cells(singlecellid)
                # Get cells:
                vcellids = velocity_cell_data.keys()
                # Get coordinates:
                velocity_coordinates = self.get_velocity_cell_coordinates(vcellids)
                tmp_vars = []
                for i in np.atleast_1d(reducer.variables):
-                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellid ) )
+                  tmp_vars.append( self.read( i, tag, mesh, "pass", singlecellid ) )
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
-               print index,"/",len(cellids)
+               print index,"/",len(actualcellids)
             return data_operators[operator](output)
          else:
             tmp_vars = []
