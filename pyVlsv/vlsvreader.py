@@ -617,7 +617,22 @@ class VlsvReader(object):
             variable_offset = ast.literal_eval(child.text)
 
             # Define efficient method to read data in
-            if type(cellids) == int: # single cell or all cells
+            try: # try-except to see how many cellids were given
+               lencellids=len(cellids) 
+               # Read multiple specified cells
+               # If we're reading a large amount of single cells, it'll be faster to just read all
+               # data from the file system and sort through it. For the CSC disk system, this
+               # becomes more efficient for over ca. 5000 cellids.
+               arraydata = []
+               if lencellids>5000: 
+                  result_size = len(cellids)
+                  read_size = array_size
+                  read_offsets = [0]
+               else: # Read multiple cell ids one-by-one
+                  result_size = len(cellids)
+                  read_size = 1
+                  read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+            except: # single cell or all cells
                if cellids < 0: # -1, read all cells
                   result_size = array_size
                   read_size = array_size
@@ -626,19 +641,6 @@ class VlsvReader(object):
                   result_size = 1
                   read_size = 1
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-            else: # Read multiple specified cells
-               arraydata = []
-               # If we're reading a large amount of single cells, it'll be faster to just read all
-               # data from the file system and sort through it. For the CSC disk system, this
-               # becomes more efficient for over ca. 5000 cellids.
-               if len(cellids)>5000: 
-                  result_size = len(cellids)
-                  read_size = array_size
-                  read_offsets = [0]
-               else: # Read multiple cell ids one-by-one
-                  result_size = len(cellids)
-                  read_size = 1
-                  read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
                   
             for r_offset in read_offsets:
                use_offset = variable_offset + r_offset
