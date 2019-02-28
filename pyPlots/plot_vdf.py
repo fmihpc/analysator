@@ -314,7 +314,7 @@ def plot_vdf(filename=None,
              noborder=None, scale=1.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
-             axes=None,
+             axes=None, cbaxes=None,
              contours=None
              ):
 
@@ -387,6 +387,7 @@ def plot_vdf(filename=None,
     :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+    :kword cbaxes:       Provide the routine a set of axes for the colourbar.
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -550,13 +551,13 @@ def plot_vdf(filename=None,
     Re = 6.371e+6 # Earth radius in m
     # unit of velocity
     velUnit = 1e3
-    velUnitStr = '[km/s]'
+    velUnitStr = r'[km s$^{-1}$]'
     if axisunit!=None:
         velUnit = np.power(10,int(axisunit))
         if np.isclose(axisunit,0):
-            velUnitStr = r'[m/s]'
+            velUnitStr = r'[m s$^{-1}$]'
         else:
-            velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m/s]'
+            velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m s$^{-1}$]'
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes==None: # If axes are provided, leave backend as-is.
@@ -1065,12 +1066,16 @@ def plot_vdf(filename=None,
                 else:
                     cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
 
-            if internalcb==None:
+            if cbaxes is not None:
+                cax = cbaxes
+                cbdir="right"
+                horalign="left"
+            elif internalcb==None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
                 cax = divider.append_axes("right", size="5%", pad=0.05)
-                horalign="left"
                 cbdir="right"
+                horalign="left"
             else:
                 # Colorbar within plot area
                 cbloc=1
@@ -1093,16 +1098,22 @@ def plot_vdf(filename=None,
                                  bbox_transform=ax1.transAxes, borderpad=1.0)
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
-                   
+            # Colourbar title
+            cbtitleuse = r"\textbf{"+cbtitleuse+"}"
+
             # First draw colorbar
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
+            if cbaxes is None:
+                cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+                cb_title = cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+            else:
+                cb.ax.tick_params(labelsize=fontsize)
+                cb_title = cax.set_title(cbtitleuse,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+                    
 
-            # Colourbar title
-            cbtitleuse = r"\textbf{"+cbtitleuse+"}"                    
-            cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         if noxlabels!=None:
             for label in ax1.xaxis.get_ticklabels():
@@ -1113,7 +1124,10 @@ def plot_vdf(filename=None,
 
         # Adjust layout. Uses tight_layout() but in fact this ensures 
         # that long titles and tick labels are still within the plot area.
-        if noborder==None:
+        if axes is not None:
+            savefig_pad=0.01
+            bbox_inches='tight'
+        elif noborder==None:
             plt.tight_layout()
             savefig_pad=0.05 # The default is 0.1
             bbox_inches=None
