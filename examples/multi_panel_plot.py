@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import colormaps as cmaps
 import matplotlib
+import os
 
 
 # Avoids opening a figure window
