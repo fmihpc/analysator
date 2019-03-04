@@ -223,6 +223,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         rotminz=np.amin(sbrot[:,2])
         rotmaxz=np.amax(sbrot[:,2])
         gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
+        if gridratio > 1.0:
+            gridratio = 1.05*gridratio
         slicethick=inputcellsize*gridratio
     else:
         slicethick=inputcellsize*slicethick
@@ -244,16 +246,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VY = V[:,2]
         Voutofslice = V[:,1]
     elif slicetype=="vecperp":
-        if gridratio > 1.0:
-            slicethick = 1.05*slicethick # adds a 5% margin to slice thickness
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
-        if gridratio > 1.0:
-            slicethick = 1.05*slicethick # adds a 5% margin to slice thickness
         # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
         NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
@@ -837,8 +835,6 @@ def plot_vdf(filename=None,
             rotminz=np.amin(sbrot[:,2])
             rotmaxz=np.amax(sbrot[:,2])
             gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-            if gridratio > 1.0:
-                gridratio = 1.05*gridratio
         else:
             gridratio = cellsize
 
