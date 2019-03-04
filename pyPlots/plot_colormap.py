@@ -129,7 +129,8 @@ def plot_colormap(filename=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray',
-                  streamlines=None, streamlinedensity=1, streamlinecolor='white'
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white',
+                  axes=None, cbaxes=None,
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -233,6 +234,12 @@ def plot_colormap(filename=None,
     :kword streamlines: Set to a vector variable to overplot as streamlines
     :kword streamlinedensity: Set streamline density (default 1)
     :kword streamlinecolor: Set streamline color (default white)
+    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+                        It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
+                        to be automatically added next to the panel (but this may affect the overall layout)
+                        Note that the aspect ratio of the colormap is made equal in any case, hence the axes
+                        proportions may change if the box and axes size are not designed to match by the user
+    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -378,7 +385,7 @@ def plot_colormap(filename=None,
         varstr=var.replace("/","_")
 
     # File output checks
-    if draw==None:
+    if draw==None and axes==None:
         if outputfile==None: # Generate filename
             if outputdir==None: # default initial path
                 outputdir=os.path.expandvars('$HOME/Plots/')
@@ -739,13 +746,14 @@ def plot_colormap(filename=None,
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
         ticks = np.linspace(vminuse,vmaxuse,num=7)            
 
-    # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw!=None:
-        if str(matplotlib.get_backend()) is not 'TkAgg':
-            plt.switch_backend('TkAgg')
-    else:
-        if str(matplotlib.get_backend()) is not 'Agg':
-            plt.switch_backend('Agg')  
+    # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
+    if axes==None: # If axes are provided, leave backend as-is.
+        if draw!=None:
+            if str(matplotlib.get_backend()) is not 'TkAgg':
+                plt.switch_backend('TkAgg')
+        else:
+            if str(matplotlib.get_backend()) is not 'Agg':
+                plt.switch_backend('Agg')  
 
     # Select image shape to match plotted area
     boxlenx = boxcoords[1]-boxcoords[0]
@@ -763,19 +771,24 @@ def plot_colormap(filename=None,
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
         figsize = [8.0,8.0*ratio]
 
-    # Create 300 dpi image of suitable size
-    fig = plt.figure(figsize=figsize,dpi=300)
+    if axes==None:
+        # Create 300 dpi image of suitable size
+        fig = plt.figure(figsize=figsize,dpi=300)
+        ax1 = plt.gca() # get current axes
+    else:
+        ax1=axes
+        fig = plt.gcf() # get current figure
+
     # Plot the actual mesh
-    fig1 = plt.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
-    ax1 = plt.gca() # get current axes
+    fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
 
     # Title and plot limits
     if len(plot_title)!=0:
         plot_title = r"\textbf{"+plot_title+"}"
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
-    plt.xlim([boxcoords[0],boxcoords[1]])
-    plt.ylim([boxcoords[2],boxcoords[3]])
+    ax1.set_xlim([boxcoords[0],boxcoords[1]])
+    ax1.set_ylim([boxcoords[2],boxcoords[3]])
     ax1.set_aspect('equal')
 
     for axis in ['top','bottom','left','right']:
@@ -786,15 +799,19 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        plt.xlabel(r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize,weight='black')
-        plt.xticks(fontsize=fontsize,fontweight='black')
+        ax1.set_xlabel(r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+        for item in ax1.get_xticklabels():
+            item.set_fontsize(fontsize)
+            item.set_fontweight('black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            plt.ylabel(r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+            ax1.set_ylabel(r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,weight='black')
         else: #Ecliptic
-            plt.ylabel(r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,weight='black')
-        plt.yticks(fontsize=fontsize,fontweight='black')
+            ax1.set_ylabel(r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+        for item in ax1.get_yticklabels():
+            item.set_fontsize(fontsize)
+            item.set_fontweight('black')
         ax1.yaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
 
     # Limit ticks, slightly according to ratio
@@ -911,7 +928,10 @@ def plot_colormap(filename=None,
         extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
 
     if nocb==None:
-        if internalcb==None:
+        if cbaxes is not None:
+            cax = cbaxes
+            cbdir="right"; horalign="left"
+        elif internalcb==None:
             # Witchcraft used to place colourbar
             divider = make_axes_locatable(ax1)
             cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -934,7 +954,6 @@ def plot_colormap(filename=None,
         if len(cb_title_use)!=0:
             #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize3,weight='black', transform=ax1.transAxes, horizontalalignment='center')
             cb_title_use = r"\textbf{"+cb_title_use+"}"        
-            cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
 
         # First draw colorbar
         if usesci==True:
@@ -942,9 +961,17 @@ def plot_colormap(filename=None,
         else:
             #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(cbfmt))
-        cb.ax.tick_params(labelsize=fontsize3)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
+
+        if cbaxes is None:
+            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+        else:
+            cb.ax.tick_params(labelsize=fontsize)
+            cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+        cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (symlog!=None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (lin==None and symlog==None):
@@ -1043,7 +1070,10 @@ def plot_colormap(filename=None,
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    if noborder==None:
+    if axes is not None:
+        savefig_pad=0.01
+        bbox_inches='tight'
+    elif noborder==None:
         plt.tight_layout()
         savefig_pad=0.05 # The default is 0.1
         bbox_inches=None
@@ -1053,12 +1083,13 @@ def plot_colormap(filename=None,
         bbox_inches='tight'
         
     # Save output or draw on-screen
-    if draw==None:
+    if draw==None and axes==None:
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             print("Error with attempting to save figure due to matplotlib LaTeX integration.")
         print(outputfile+"\n")
-    else:
+    elif axes==None:
+        # Draw on-screen
         plt.draw()
         plt.show()

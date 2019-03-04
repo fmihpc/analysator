@@ -223,6 +223,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         rotminz=np.amin(sbrot[:,2])
         rotmaxz=np.amax(sbrot[:,2])
         gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
+        if gridratio > 1.0:  # adds a 5% margin to slice thickness
+            gridratio = 1.05*gridratio
         slicethick=inputcellsize*gridratio
     else:
         slicethick=inputcellsize*slicethick
@@ -387,7 +389,7 @@ def plot_vdf(filename=None,
     :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
-    :kword cbaxes:       Provide the routine a set of axes for the colourbar.
+    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -833,6 +835,8 @@ def plot_vdf(filename=None,
             rotminz=np.amin(sbrot[:,2])
             rotmaxz=np.amax(sbrot[:,2])
             gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
+            if gridratio > 1.0:  # adds a 5% margin to slice thickness
+                gridratio = 1.05*gridratio
         else:
             gridratio = cellsize
 
