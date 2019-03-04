@@ -223,7 +223,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         rotminz=np.amin(sbrot[:,2])
         rotmaxz=np.amax(sbrot[:,2])
         gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-        if gridratio > 1.0:
+        if gridratio > 1.0:  # adds a 5% margin to slice thickness
             gridratio = 1.05*gridratio
         slicethick=inputcellsize*gridratio
     else:
@@ -835,6 +835,8 @@ def plot_vdf(filename=None,
             rotminz=np.amin(sbrot[:,2])
             rotmaxz=np.amax(sbrot[:,2])
             gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
+            if gridratio > 1.0:  # adds a 5% margin to slice thickness
+                gridratio = 1.05*gridratio
         else:
             gridratio = cellsize
 
