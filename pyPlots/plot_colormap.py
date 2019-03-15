@@ -925,7 +925,10 @@ def plot_colormap(filename=None,
     # Uses the same pass_maps variable as expressions
     if external!=None:
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
-        extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
+        if axes==None:
+            extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
+        else:
+            extresult=external(axes, XmeshCentres,YmeshCentres, pass_maps)
 
     if nocb==None:
         if cbaxes is not None:
@@ -967,10 +970,10 @@ def plot_colormap(filename=None,
         if cbaxes is None:
             cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
             cb.ax.tick_params(labelsize=fontsize)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
-        cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
 
         # Perform intermediate draw if necessary to gain access to ticks
