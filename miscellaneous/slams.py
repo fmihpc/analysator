@@ -1,3 +1,30 @@
+# 
+# This file is part of Analysator.
+# Copyright 2013-2016 Finnish Meteorological Institute
+# Copyright 2017-2018 University of Helsinki
+# 
+# For details of usage, see the COPYING file and read the "Rules of the Road"
+# at http://www.physics.helsinki.fi/vlasiator/
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+'''
+Functions and scripts related to finding, sorting, tracking and statistically analysing SLAMS.
+'''
+
 import numpy as np
 import pytools as pt
 import scipy
@@ -9,10 +36,6 @@ import scipy.constants as sc
 
 m_p = 1.672621898e-27
 r_e = 6.371e+6
-
-'''
-This file should contain all functions and scripts related to finding, sorting, tracking and statistically analysing SLAMS.
-'''
 
 def bow_shock_r(runid,t):
 
@@ -401,6 +424,7 @@ def make_slams_mask(filenumber,runid,boxre=[6,18,-8,6]):
         B_sw = 5.0e-9
 
     # make custom SLAMS mask
+    # THESE ARE THE CRITERIA
     slams = np.ma.masked_greater(Bmag,1.25*B_sw)
     slams.mask[pdyn < 1.25*pdyn_sw] = False
     slams.mask[rho > 3*rho_sw] = False
