@@ -1,41 +1,17 @@
-# 
-# This file is part of Analysator.
-# Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
-# 
-# For details of usage, see the COPYING file and read the "Rules of the Road"
-# at http://www.physics.helsinki.fi/vlasiator/
-# 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-
-'''
-Functions and scripts related to finding, sorting, tracking and statistically analysing SLAMS.
-'''
-
 import numpy as np
 import pytools as pt
-import scipy
-import pandas as pd
 import os
 import copy
 import matplotlib.pyplot as plt
-import scipy.constants as sc
 
-m_p = 1.672621898e-27
-r_e = 6.371e+6
+m_p  = 1.672621898e-27
+r_e  = 6.371e+6
+k    = 1.3806488e-23
+mu_0 = 1.2566370614359173e-06
+
+'''
+This file should contain all functions and scripts related to finding, sorting, tracking and statistically analysing SLAMS.
+'''
 
 def bow_shock_r(runid,t):
 
@@ -296,7 +272,7 @@ def sw_par_dict(runid):
     sw_B = [5.0e-9,5.0e-9,10.0e-9,10.0e-9,5.0e-9]
     sw_T = [500e+3,500e+3,500e+3,500e+3,500e+3]
     sw_pdyn = [m_p*sw_rho[n]*(sw_v[n]**2) for n in xrange(len(runs))]
-    sw_beta = [2*sc.mu_0*sw_rho[n]*sc.k*sw_T[n]/(sw_B[n]**2) for n in xrange(len(runs))]
+    sw_beta = [2*mu_0*sw_rho[n]*k*sw_T[n]/(sw_B[n]**2) for n in xrange(len(runs))]
 
     return [sw_rho[runs.index(runid)],sw_v[runs.index(runid)],sw_B[runs.index(runid)],sw_pdyn[runs.index(runid)],sw_beta[runs.index(runid)]]
 
@@ -437,7 +413,6 @@ def make_slams_mask(filenumber,runid,boxre=[6,18,-8,6]):
         B_sw = 5.0e-9
 
     # make custom SLAMS mask
-    # THESE ARE THE CRITERIA
     slams = np.ma.masked_greater(Bmag,1.25*B_sw)
     slams.mask[pdyn < 1.25*pdyn_sw] = False
     slams.mask[rho > 3*rho_sw] = False
@@ -1516,9 +1491,14 @@ class PropReader:
             self.fname = fname
 
         try:
-            self.props = pd.read_csv("SLAMS/slams/"+runid+"/"+self.fname).as_matrix()
+            props_f = open("SLAMS/slams/"+runid+"/"+self.fname)
         except IOError:
             raise IOError("File not found!")
+
+        props = props_f.read()
+        props = props.split("\n")[1:]
+        props = [line.split(",") for line in props]
+        self.props = np.asarray(props,dtype="float")
 
         var_list = ["time","x_mean","y_mean","z_mean","A","Nr_cells","r_mean","theta_mean","phi_mean","size_rad","size_tan","x_vmax","y_vmax","z_vmax","n_avg","n_med","n_max","v_avg","v_med","v_max","B_avg","B_med","B_max","T_avg","T_med","T_max","TPar_avg","TPar_med","TPar_max","TPerp_avg","TPerp_med","TPerp_max","beta_avg","beta_med","beta_max","x_min","rho_vmax","b_vmax","pd_avg","pd_med","pd_max"]
         n_list = list(xrange(len(var_list)))
