@@ -526,7 +526,22 @@ def Dng( variables ):
       N = PTensor - G
       return [np.divide(2.0*np.linalg.norm(N[i], 'fro'), PTensor[i].trace()) for i in np.arange(len(PParallel))]
 
+def ion_inertial( variables ):
+   rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
+   charge = 1.6021773e-19
+   mp = 1.672622e-27
+   c = 2.9979e8
+   epsilonnaught = 8.8542e-12
+   omegapi = np.sqrt(rho/(mp*epsilonnaught))*charge
+   di = np.ma.divide(c,omegapi)
+   return di
 
+def firstadiabatic( variables ):
+   Tperp = variables[0]
+   bvector = variables[1]
+   B = np.linalg.norm(bvector, axis=-1)
+   B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
+   return np.ma.divide(Tperp,B)
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
@@ -573,6 +588,9 @@ datareducers["EJEPerpendicular"] =         DataReducerVariable(["EJE", "B"], VPe
 datareducers["Pdyn"] =            DataReducerVariable(["V", "rho"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
 datareducers["Pdynx"] =            DataReducerVariable(["V", "rho"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
 
+datareducers["di"] =              DataReducerVariable(["rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
+datareducers["dimp"] =              DataReducerVariable(["proton_rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
+datareducers["firstadiabatic"] =    DataReducerVariable(["TPerpendicular","B"], firstadiabatic, "K/T", 1, latex=r"$T_\perp B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
 # Reducers for simplifying access calls for old and/or new output data versions
 datareducers["VBackstream"] =            DataReducerVariable(["RhoVBackstream", "RhoBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{st}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -707,6 +725,8 @@ multipopdatareducers["pop/betaPerpOverParBackstream"] =    DataReducerVariable([
 multipopdatareducers["pop/betaPerpOverParNonBackstream"] = DataReducerVariable(["pop/PTensorRotatedNonBackstream"], PPerpOverPar, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
 multipopdatareducers["pop/vThermal"] =               DataReducerVariable(["Temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
+datareducers["pop/firstadiabatic"] =    DataReducerVariable(["pop/TPerpendicular","B"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
 # multipopdatareducers["pop/TxRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TxRotated, "K")
 # multipopdatareducers["pop/TyRotated"] =              DataReducerVariable(["pop/TTensorRotated"], TyRotated, "K")
