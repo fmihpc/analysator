@@ -240,10 +240,10 @@ def vec_Hallterm(currentdensity, magneticfield, numberdensity):
     # assumes Magnetic field of shape [nx,ny,3]
     # assumes number density of shape [nx,ny]
     unitcharge = 1.602177e-19
-    crossp = np.linalg.norm(np.cross(currentdensity, magneticfield), axis=-1)
-    chargedensity = unitcharge * np.ma.masked_less_equal(numberdensity, 0)
+    crossp = np.cross(currentdensity, magneticfield)
+    chargedensity = np.ma.masked_less_equal(numberdensity, 0) * unitcharge
     # Output array is of format [nx,ny,3]
-    return np.divide(crossp,chargedensity)
+    return np.ma.divide(crossp[:,:,0], chargedensity[:,:,np.newaxis])
 
 def vec_ElectricFieldForce(electricfield, numberdensity):
     unitcharge = 1.602177e-19
@@ -269,7 +269,7 @@ def expr_Hall_mag(pass_maps, requestvariables=False):
     Rhomap = pass_maps['rho'].T # number density
     Jmap = vec_currentdensity(Bmap)
     Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
-    return Hallterm.T
+    return np.linalg.norm(Hallterm, axis=-1).T
 
 def expr_Hall_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
