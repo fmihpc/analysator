@@ -831,11 +831,9 @@ def plot_colormap(filename=None,
         else:
             ff_v = f.read_variable("V", cellids=cid)            
         # Account for movement
-        bdirsign = -1.0 
         outofplane = [0,1,0] # For ecliptic runs
         if zsize==1: outofplane = [0,0,1]  # For polar runs
-        if np.inner(np.cross(ff_v,ff_b), outofplane) < 0: bdirsign = 1.0
-        flux_function = flux_function - timeval * np.linalg.norm(np.cross(ff_v,ff_b)) * bdirsign
+        flux_function = flux_function - timeval * np.inner(np.cross(ff_v,ff_b), outofplane)
 
         # Mask region (e.g. ionosphere)
         if np.ma.is_masked(maskgrid):
@@ -916,10 +914,10 @@ def plot_colormap(filename=None,
 
         U = slinemap[:,:,0]
         if zsize==1:
-            V = slinemap[::step,::step,1]
+            V = slinemap[:,:,1]
         elif ysize==1:
-            V = slinemap[::step,::step,2]
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
+            V = slinemap[:,:,2]
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*fluxthick, density=streamlinedensity, color=streamlinecolor)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
