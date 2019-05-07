@@ -419,6 +419,12 @@ def Pdynx( variables ):
       Vx = V[0]
    return Vx*Vx*rhom
 
+def Poynting( variables ):
+   ''' Data reducer for the Poynting vector
+   '''
+   E=np.array(variables[0])
+   B=np.array(variables[1])
+   return np.cross(E, B) / 1.25663706144e-6
 
 def Temperature( variables ):
    ''' Data reducer for converting pressure to temperature
@@ -573,6 +579,7 @@ datareducers["EJEPerpendicular"] =         DataReducerVariable(["EJE", "B"], VPe
 datareducers["Pdyn"] =            DataReducerVariable(["V", "rho"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
 datareducers["Pdynx"] =            DataReducerVariable(["V", "rho"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
 
+datareducers["Poynting"] = DataReducerVariable(["E", "B"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")
 
 # Reducers for simplifying access calls for old and/or new output data versions
 datareducers["VBackstream"] =            DataReducerVariable(["RhoVBackstream", "RhoBackstream"], v, "m/s", 3, latex=r"$V_\mathrm{st}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
