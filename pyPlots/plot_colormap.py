@@ -881,8 +881,8 @@ def plot_colormap(filename=None,
         lengths=np.linalg.norm(vectmap, axis=-1)
         colors = np.log10(lengths/np.mean(lengths))
 
-        # Try to estimate step so there's about 100 vectors in the image area
-        step = int(np.sqrt(colors.shape[0] * colors.shape[1]/vectordensity))
+        # Try to estimate vectstep so there's about 100 vectors in the image area
+        vectstep = int(np.sqrt(colors.shape[0] * colors.shape[1]/vectordensity))
 
         # inplane unit length vectors
         if zsize==1:
@@ -891,14 +891,14 @@ def plot_colormap(filename=None,
             vectmap[:,:,1] = np.zeros(vectmap[:,:,1].shape)
         vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
 
-        X = XmeshCentres[::step,::step]
-        Y = YmeshCentres[::step,::step]
-        U = vectmap[::step,::step,0]            
+        X = XmeshCentres[::vectstep,::vectstep]
+        Y = YmeshCentres[::vectstep,::vectstep]
+        U = vectmap[::vectstep,::vectstep,0]            
         if zsize==1:
-            V = vectmap[::step,::step,1]
+            V = vectmap[::vectstep,::vectstep,1]
         elif ysize==1:
-            V = vectmap[::step,::step,2]
-        C = colors[::step,::step] 
+            V = vectmap[::vectstep,::vectstep,2]
+        C = colors[::vectstep,::vectstep] 
         # quiver uses scale in the inverse fashion
         ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.03/scale, headlength=2, headwidth=2,                       
                    headaxislength=2, scale_units='dots', pivot='middle')
@@ -916,9 +916,9 @@ def plot_colormap(filename=None,
 
         U = slinemap[:,:,0]
         if zsize==1:
-            V = slinemap[::step,::step,1]
+            V = slinemap[:,:,1]
         elif ysize==1:
-            V = slinemap[::step,::step,2]
+            V = slinemap[:,:,2]
         ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*thick, density=streamlinedensity, color=streamlinecolor)
 
     # Optional external additional plotting routine overlayed on color plot
