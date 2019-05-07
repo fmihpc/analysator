@@ -243,7 +243,7 @@ def vec_Hallterm(currentdensity, magneticfield, numberdensity):
     crossp = np.cross(currentdensity, magneticfield)
     chargedensity = np.ma.masked_less_equal(numberdensity, 0) * unitcharge
     # Output array is of format [nx,ny,3]
-    return np.ma.divide(crossp[:,:,0], chargedensity[:,:,np.newaxis])
+    return np.ma.divide(crossp, chargedensity[:,:,np.newaxis])
 
 def vec_ElectricFieldForce(electricfield, numberdensity):
     unitcharge = 1.602177e-19
