@@ -831,8 +831,8 @@ def plot_colormap(filename=None,
         else:
             ff_v = f.read_variable("V", cellids=cid)            
         # Account for movement
-        outofplane = [0,1,0] # For ecliptic runs
-        if zsize==1: outofplane = [0,0,1]  # For polar runs
+        outofplane = [0,-1,0] # For polar runs
+        if zsize==1: outofplane = [0,0,1] # For ecliptic runs
         flux_function = flux_function - timeval * np.inner(np.cross(ff_v,ff_b), outofplane)
 
         # Mask region (e.g. ionosphere)
