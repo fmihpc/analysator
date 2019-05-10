@@ -88,6 +88,8 @@ unitsdict = {
     'MinValue': 's3/m6',
     'EffectiveSparsityThreshold': 's3/m6',
     'rho_loss_adjust': '1/m3',
+    'EnergyDensity': 'eV/cm3'
+    'PrecipitationDiffFlux': '1/(cm2 sr s eV)'
     }
 
 # Define some LaTeX markup names for intrinsic values
@@ -165,6 +167,8 @@ latexdictmultipop = {
     'PTensorNonBackstreamOffDiagonal': r'$\mathcal{P}_\mathrm{REPLACEPOP,th,off-diag}$',
     'MinValue': r'$f_\mathrm{REPLACEPOP,Min}}$',
     'EffectiveSparsityThreshold': r'$f_\mathrm{REPLACEPOP,Min}$',
+    'EnergyDensity': r'$U_\mathrm{REPLACEPOP}$'
+    'PrecipitationDiffFlux': r'$\mathcal{F}_\mathrm{REPLACEPOP}$'
     }
 
 # Define some LaTeX markup units for intrinsic values
@@ -217,5 +221,7 @@ latexunitsdict = {
     'MinValue': r'$\mathrm{m}^{-6}\,\mathrm{s}^{3}$',
     'EffectiveSparsityThreshold': r'$\mathrm{m}^{-6}\,\mathrm{s}^{3}$',
     'rho_loss_adjust': r'$\mathrm{m}^{-3}$',
+    'EnergyDensity': r'$\mathrm{eV}\,\mathrm{cm}^{-3}$'
+    'PrecipitationDiffFlux': r'$\mathrm{cm}^{-2} \,\mathrm{sr}^{-1}\,\mathrm{s}^{-1}\,\mathrm{eV}^{-1}$'
     }
 
