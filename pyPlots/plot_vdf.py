@@ -178,19 +178,26 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
     print("Found "+str(len(V))+" v-space cells")
 
-    if not center is None:
-        if len(center)==3: # assumes it's a vector
-            print("Transforming to frame travelling at speed "+str(center))
-            V = V - center
-        else:
-            print("Error in shape of center vector! Give in form (vx,vy,vz).")
-
     f = zip(*velcells.items())
     # check that velocity space has cells
     if(len(f) > 0):
         f = np.asarray(zip(*velcells.items())[1])
     else:
         return (False,0,0,0)
+
+    # center on highest f-value
+    if center is "peak":
+        peakindex = np.argmax(f)
+        Vpeak = V[peakindex,:]
+        V = V - Vpeak
+        print(peakindex)
+        print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
+    elif not center is None:
+        if len(center)==3: # assumes it's a vector
+            print("Transforming to frame travelling at speed "+str(center))
+            V = V - center
+        else:
+            print("Error in shape of center vector! Give in form (vx,vy,vz).")
 
     if setThreshold==None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
@@ -368,6 +375,8 @@ def plot_vdf(filename=None,
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
     :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
+                        If set instead to "bulk" will center on bulk velocity
+                        If set instead to "peak" will center on velocity with highest phase-space density
     :kword wflux:       Plot flux instead of distribution function
     :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
                         This can be set to zero in order to project the whole VDF to a plane.
@@ -797,7 +806,7 @@ def plot_vdf(filename=None,
             normvectX = normvectX/np.linalg.norm(normvectX)
 
 
-        if cbulk!=None:
+        if cbulk!=None or center=='bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:

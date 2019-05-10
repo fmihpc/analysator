@@ -185,6 +185,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
    
    # Find path
    distances = point2-point1
+   largestdistance = np.linalg.norm(distances)
    largestindex = np.argmax(abs(distances))
    derivative = distances/abs(distances[largestindex])
 
@@ -207,7 +208,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
    cellids = [vlsvReader.get_cellid(point1)]
    coordinates = [point1]
    finalcellid = vlsvReader.get_cellid(point2)
-   print(" cellids init ",cellids,finalcellid)
+   #print(" cellids init ",cellids,finalcellid)
 
    # Loop until final cellid is reached
    while True:
@@ -220,6 +221,8 @@ def cut_through_step( vlsvReader, point1, point2 ):
       #print(distances[-1]/Re,np.array(coordinates[-1])/Re,cellids[-1])
 
       if newcellid==finalcellid:
+         break
+      if distances[-1]>largestdistance:
          break
       
    # Return the coordinates, cellids and distances for processing
