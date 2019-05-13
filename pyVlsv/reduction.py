@@ -563,9 +563,10 @@ data_operators["z"] = z_component
 
 # Hacky way to add vector access
 def makelambda(index):
-   return lambda data: (data.T)[index,:]
+   return lambda data: data[index] if np.ndim(data)==1 else data[:,index]
 for i in range(50):
-   data_operators[str(i)] = makelambda(i)
+   data_operators[i] = makelambda(i)
+   data_operators[str(i)] = data_operators[i]
 
 # When vlsvreader tries to read data, it will check using the following order:
 # 1) Is the variable directly in the file?

@@ -34,7 +34,7 @@ class DataReducerVariable:
    def __init__(self, variables, operation, units, vector_size, latex="", latexunits="",useVspace=False):
       ''' Constructor for the class
           :param variables          List of variables for doing calculations with
-          :param operation          The operator that operates on the variables
+          :param operation          The operation (function) that operates on the variables
           :param units              Units of the variable
           :param latex              Name of the variable in LaTeX markup
           :param latexunits         Units of the variable in LaTeX markup

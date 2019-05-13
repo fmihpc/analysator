@@ -444,8 +444,9 @@ class VlsvReader(object):
          print "   ",name, " based on ", datareducers[name].variables
       print "Data operators:"
       for name in data_operators:
-         if not name.isdigit():
-            print "   ",name
+         if type(name) is str:
+            if not name.isdigit():
+               print "   ",name
       print "Other:"
       for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
@@ -695,7 +696,7 @@ class VlsvReader(object):
          for pname in self.active_populations:
             vlsvvariables.activepopulation = pname
             tmp_vars.append( self.read( pname+'/'+name, tag, mesh, "pass", cellids ) )
-         return data_operators["sum"](tmp_vars)   
+         return data_operators[operator](data_operators["sum"](tmp_vars))
 
       # Check if the name is in datareducers
       if name in datareducers:
