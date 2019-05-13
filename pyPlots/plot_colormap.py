@@ -112,7 +112,7 @@ def plot_colormap(filename=None,
                   filedir=None, step=None,
                   outputdir=None, outputfile=None,
                   nooverwrite=None,
-                  var=None, op=None,
+                  var=None, op=None, operator=None,
                   title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
@@ -149,8 +149,9 @@ def plot_colormap(filename=None,
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                         E, B, v, V or others. Accepts any variable known by analysator/pytools.
                         Per-population variables are simply given as "proton/rho" etc
-    :kword op:          Operator to apply to variable: None, x, y, or z. Vector variables return either
+    :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
+    :kword op:          duplicate of operator
            
     :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
@@ -307,10 +308,14 @@ def plot_colormap(filename=None,
     if usesci!=True:
         usesci=False
     
+    if operator==None:
+        if op!=None:
+            operator=op
+
     if colormap==None:
         # Default values
         colormap="hot_desaturated"
-        if op!=None:
+        if operator=='x' or operator=='y' or operator=='z':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -354,19 +359,26 @@ def plot_colormap(filename=None,
                 run = filename[16:19]
 
     # Verify validity of operator
-    if op!=None:
-        if op!='x' and op!='y' and op!='z' and op!='magnitude':
-            print("Unknown operator "+op)
-            op=None
-            opstr=''
-        else:
+    if operator!=None:
+        # .isdigit checks if the operator is an integer (for taking an element from a vector)
+        if type(operator) is int:
+            operator = str(operator)
+        if operator!='x' and operator!='y' and operator!='z' and operator!='magnitude' and not operator.isdigit():
+            print("Unknown operator "+operator)
+            operator=None
+            operatorstr=''
+        if operator=='x' or operator=='y' or operator=='z':
             # For components, always use linear scale, unless symlog is set
-            opstr='_'+op
+            operatorstr='_'+operator
             if symlog==None:
                 lin=1
+        # index a vector
+        if operator.isdigit():
+            operator = str(operator)
+            operatorstr='_{'+operator+'}'
     else:
-        op=None
-        opstr=''
+        operator=None
+        operatorstr=''
 
     # Output file name
     if expression!=None:
@@ -390,7 +402,7 @@ def plot_colormap(filename=None,
             if outputdir==None: # default initial path
                 outputdir=os.path.expandvars('$HOME/Plots/')
             # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+opstr+stepstr+".png"
+            outputfile = outputdir+run+"_map_"+varstr+operatorstr+stepstr+".png"
         else: 
             if outputdir!=None:
                 outputfile = outputdir+outputfile
@@ -472,9 +484,9 @@ def plot_colormap(filename=None,
     ##########
     if expression==None:        
         # Read data from file
-        if op==None:
-            op="pass"
-        datamap_info = f.read_variable_info(var, operator=op)
+        if operator==None:
+            operator="pass"
+        datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
         # if cb_title_use == "": 
@@ -501,6 +513,8 @@ def plot_colormap(filename=None,
             datamap_unit = r"$\mathrm{km}\,\mathrm{s}^{-1}$"
         if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
             datamap_unit = r"$\mathrm{mV}\,\mathrm{m}^{-1}$"            
+        if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
+            datamap_unit = r"$\mathrm{keV}\,\mathrm{cm}^{-3}$"            
         
         # Add unit to colorbar title
         if datamap_unit!="":

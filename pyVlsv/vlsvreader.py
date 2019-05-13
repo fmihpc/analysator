@@ -444,7 +444,8 @@ class VlsvReader(object):
          print "   ",name, " based on ", datareducers[name].variables
       print "Data operators:"
       for name in data_operators:
-         print "   ",name
+         if not name.isdigit():
+            print "   ",name
       print "Other:"
       for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
@@ -966,7 +967,7 @@ class VlsvReader(object):
          if operator=="magnitude":
             latex = r"$|$"+latex+r"$|$"
          else:
-            latex = latex+r"{$_"+operator+r"$}"
+            latex = latex+r"{$_{"+operator+r"}$}"
          return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
          return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
