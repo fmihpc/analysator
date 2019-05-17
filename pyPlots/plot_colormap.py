@@ -943,15 +943,11 @@ def plot_colormap(filename=None,
             extresult=external(axes, XmeshCentres,YmeshCentres, pass_maps)
 
     if nocb==None:
-        if cbaxes is not None:
+        if cbaxes is not None: 
+            # Colorbar axes are provided
             cax = cbaxes
             cbdir="right"; horalign="left"
-        elif internalcb==None:
-            # Witchcraft used to place colourbar
-            divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
-        else:
+        elif internalcb is not None:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
             if type(internalcb) is str:
@@ -964,6 +960,11 @@ def plot_colormap(filename=None,
             # borderpad default value is 0.5, need to increase it to make room for colorbar title
             cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1.5,
                              bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1))
+        else:
+            # Split existing axes to make room for colorbar
+            divider = make_axes_locatable(ax1)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            cbdir="right"; horalign="left"
 
         # Colourbar title
         if len(cb_title_use)!=0:
@@ -986,7 +987,6 @@ def plot_colormap(filename=None,
         else:
             cb.ax.tick_params(labelsize=fontsize)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
-
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (symlog!=None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (lin==None and symlog==None):
@@ -1031,7 +1031,7 @@ def plot_colormap(filename=None,
                 if not firstdigit in valids: label.set_visible(False)
 
     # Add Vlasiator watermark
-    if wmark!=None or wmarkb!=None:
+    if (wmark is not None or wmarkb is not None) and axes is None:
         if wmark!=None:
             wm = plt.imread(get_sample_data(watermarkimage))
         else:

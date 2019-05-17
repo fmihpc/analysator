@@ -1150,7 +1150,7 @@ def plot_vdf(filename=None,
             bbox_inches='tight'
 
         # Add Vlasiator watermark
-        if wmark!=None or wmarkb!=None:
+        if (wmark is not None or wmarkb is not None) and axes is None:
             if wmark!=None:
                 wm = plt.imread(get_sample_data(watermarkimage))
             else:
