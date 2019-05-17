@@ -712,6 +712,11 @@ def plot_colormap(filename=None,
     else:
         vmaxuse=np.ma.amax(datamap)
 
+    # If both values are zero, we have an empty array
+    if vmaxuse==vminuse==0:
+        print("Error, requested array is zero everywhere. Exiting.")
+        return 0
+
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
     if vmin==None and vmax==None:
