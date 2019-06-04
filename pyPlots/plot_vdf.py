@@ -103,6 +103,9 @@ def getNearestCellWithVspace(vlsvReader,cid):
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS').tolist()
+    # tolist returns a scalar (non-iterable) if array is 0-dim, this variable needs to be an iterable
+    if type(cell_candidates) is not list:
+        cell_candidates = [cell_candidates]
     found=False
     if cid in cell_candidates:
         found=True
