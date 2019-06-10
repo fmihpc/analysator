@@ -434,6 +434,32 @@ def Temperature( variables ):
    divisor = np.ma.masked_less_equal( np.ma.masked_invalid(np.array(rho)),0) * 1.38065e-23
    return np.ma.divide(Pressure, divisor)
 
+def aGyrotropy( variables ):
+   ''' Data reducer function to evaluate agyrotropy
+   from equation (6) of M. Swisdak, Quantifying gyrotropy in magnetic reconnection
+   https://doi.org/10.1002/2015GL066980
+   (read also the appendix)
+   '''
+   PTensorRot = np.array(variables[0])
+   # np.array([[PTensorDiagonal[0], PTensorOffDiagonal[2], PTensorOffDiagonal[1]],
+   #           [PTensorOffDiagonal[2], PTensorDiagonal[1], PTensorOffDiagonal[0]],
+   #           [PTensorOffDiagonal[1], PTensorOffDiagonal[0], PTensorDiagonal[2]]])
+   if(np.ndim(PTensorRot)==2):
+      PPerp = 0.5*(PTensorRot[0,0]+PTensorRot[1,1])
+      numerator = PTensorRot[1,0]*PTensorRot[1,0] + PTensorRot[2,0]*PTensorRot[2,0] + PTensorRot[2,1]*PTensorRot[2,1]
+      denominator = PPerp*PPerp + 2.0*PPerp*PTensorRot[2,2]
+      if denominator > 1.e-20:
+         aGyro = numerator/denominator
+      else:
+         aGyro = 0.0
+      return np.array(aGyro)
+   else:
+      PPerp = 0.5*(PTensorRot[:,0,0]+PTensorRot[:,1,1])
+      numerator = np.ma.masked_less_equal( PTensorRot[:,1,0]*PTensorRot[:,1,0] + PTensorRot[:,2,0]*PTensorRot[:,2,0] + PTensorRot[:,2,1]*PTensorRot[:,2,1], 0)
+      denominator = np.ma.masked_less_equal( PPerp*PPerp + 2.0*PPerp*PTensorRot[:,2,2], 0)
+      aGyro = np.ma.divide(numerator, denominator)
+      return np.array(aGyro)
+
 def beta( variables ):
    ''' Data reducer for finding the plasma beta
    '''
@@ -623,6 +649,7 @@ datareducers["PTensorRotated"] =         DataReducerVariable(["PTensor", "B"], P
 datareducers["PParallel"] =              DataReducerVariable(["PTensorRotated"], PParallel, "Pa", 1, latex=r"$P_\parallel$", latexunits=r"Pa")
 datareducers["PPerpendicular"] =         DataReducerVariable(["PTensorRotated"], PPerpendicular, "Pa", 1, latex=r"$P_\perp$", latexunits=r"Pa")
 datareducers["PPerpOverPar"] =           DataReducerVariable(["PTensorRotated"], PPerpOverPar, "", 1, latex=r"$P_\perp P_\parallel^{-1}$", latexunits=r"")
+datareducers["aGyrotropy"] =             DataReducerVariable(["PTensorRotated"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag}$", latexunits=r"")
 
 datareducers["PBackstream"] =                 DataReducerVariable(["PTensorBackstreamDiagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{st}$", latexunits=r"Pa")
 datareducers["PTensorBackstream"] =           DataReducerVariable(["PTensorBackstreamDiagonal", "PTensorBackstreamOffDiagonal"], PTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{st}$", latexunits=r"Pa")
@@ -630,6 +657,7 @@ datareducers["PTensorRotatedBackstream"] =    DataReducerVariable(["PTensorBacks
 datareducers["PParallelBackstream"] =         DataReducerVariable(["PTensorRotatedBackstream"], PParallel, "Pa", 1, latex=r"$P_{\parallel,\mathrm{st}}$", latexunits=r"Pa")
 datareducers["PPerpendicularBackstream"] =    DataReducerVariable(["PTensorRotatedBackstream"], PPerpendicular, "Pa", 1, latex=r"$P_{\perp,\mathrm{st}}$", latexunits=r"Pa")
 datareducers["PPerpOverParBackstream"] =      DataReducerVariable(["PTensorRotatedBackstream"], PPerpOverPar, "", 1, latex=r"$P_{\perp,\mathrm{st}} P_{\parallel,\mathrm{st}}^{-1}$", latexunits=r"")
+datareducers["aGyrotropyBackstream"] =        DataReducerVariable(["PTensorRotatedBackstream"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,st}$", latexunits=r"")
 
 datareducers["PNonBackstream"] =              DataReducerVariable(["PTensorNonBackstreamDiagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{th}$", latexunits=r"Pa")
 datareducers["PTensorNonBackstream"] =        DataReducerVariable(["PTensorNonBackstreamDiagonal", "PTensorNonBackstreamOffDiagonal"], PTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{th}$", latexunits=r"Pa")
@@ -637,6 +665,7 @@ datareducers["PTensorRotatedNonBackstream"] = DataReducerVariable(["PTensorNonBa
 datareducers["PParallelNonBackstream"] =      DataReducerVariable(["PTensorRotatedNonBackstream"], PParallel, "Pa", 1, latex=r"$P_{\parallel,\mathrm{th}}$", latexunits=r"Pa")
 datareducers["PPerpendicularNonBackstream"] = DataReducerVariable(["PTensorRotatedNonBackstream"], PPerpendicular, "Pa", 1, latex=r"$P_{\perp,\mathrm{th}}$", latexunits=r"Pa")
 datareducers["PPerpOverParNonBackstream"] =   DataReducerVariable(["PTensorRotatedNonBackstream"], PPerpOverPar, "", 1, latex=r"$P_{\perp,\mathrm{th}} P_{\parallel,\mathrm{th}}^{-1}$", latexunits=r"")
+datareducers["aGyrotropyNonBackstream"] =     DataReducerVariable(["PTensorRotatedNonBackstream"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,th}$", latexunits=r"")
 
 datareducers["Temperature"] =            DataReducerVariable(["Pressure", "rho"], Temperature, "K", 1, latex=r"$T$", latexunits=r"K")
 datareducers["TTensor"] =                DataReducerVariable(["PTensor", "rho"], Temperature, "K", 9, latex=r"$\mathcal{T}$", latexunits=r"K")
@@ -696,6 +725,7 @@ multipopdatareducers["pop/PTensorRotated"] =         DataReducerVariable(["pop/P
 multipopdatareducers["pop/PParallel"] =              DataReducerVariable(["pop/PTensorRotated"], PParallel, "Pa", 1, latex=r"$P_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpendicular"] =         DataReducerVariable(["pop/PTensorRotated"], PPerpendicular, "Pa", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpOverPar"] =           DataReducerVariable(["pop/PTensorRotated"], PPerpOverPar, "", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP}} P_{\parallel,\mathrm{REPLACEPOP}}^{-1}$", latexunits=r"")
+multipopdatareducers["pop/aGyrotropy"] =             DataReducerVariable(["pop/PTensorRotated"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,REPLACEPOP}$", latexunits=r"")
 
 multipopdatareducers["pop/PBackstream"] =            DataReducerVariable(["pop/PTensorBackstreamDiagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP,st}$", latexunits=r"Pa")
 multipopdatareducers["pop/PTensorBackstream"] =      DataReducerVariable(["pop/PTensorBackstreamDiagonal", "pop/PTensorBackstreamOffDiagonal"], PTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{REPLACEPOP,st}$", latexunits=r"Pa")
@@ -703,6 +733,7 @@ multipopdatareducers["pop/PTensorRotatedBackstream"]=DataReducerVariable(["pop/P
 multipopdatareducers["pop/PParallelBackstream"] =    DataReducerVariable(["pop/PTensorRotatedBackstream"], PParallel, "Pa", 1, latex=r"$P_{\parallel,\mathrm{REPLACEPOP,st}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpendicularBackstream"]=DataReducerVariable(["pop/PTensorRotatedBackstream"], PPerpendicular, "Pa", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP,st}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpOverParBackstream"] = DataReducerVariable(["pop/PTensorRotatedBackstream"], PPerpOverPar, "", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP,st}} P_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
+multipopdatareducers["pop/aGyrotropyBackstream"] =   DataReducerVariable(["pop/PTensorRotatedBackstream"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,REPLACEPOP,st}$", latexunits=r"")
 
 multipopdatareducers["pop/PNonBackstream"] =              DataReducerVariable(["pop/PTensorNonBackstreamDiagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP,th}$", latexunits=r"Pa")
 multipopdatareducers["pop/PTensorNonBackstream"] =        DataReducerVariable(["pop/PTensorNonBackstreamDiagonal", "pop/PTensorNonBackstreamOffDiagonal"], PTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{REPLACEPOP,th}$", latexunits=r"Pa")
@@ -710,6 +741,7 @@ multipopdatareducers["pop/PTensorRotatedNonBackstream"] = DataReducerVariable(["
 multipopdatareducers["pop/PParallelNonBackstream"] =      DataReducerVariable(["pop/PTensorRotatedNonBackstream"], PParallel, "Pa", 1, latex=r"$P_{\parallel,\mathrm{REPLACEPOP,th}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpendicularNonBackstream"] = DataReducerVariable(["pop/PTensorRotatedNonBackstream"], PPerpendicular, "Pa", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP,th}}$", latexunits=r"Pa")
 multipopdatareducers["pop/PPerpOverParNonBackstream"] =   DataReducerVariable(["pop/PTensorRotatedNonBackstream"], PPerpOverPar, "", 1, latex=r"$P_{\perp,\mathrm{REPLACEPOP,th}} P_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
+multipopdatareducers["pop/aGyrotropyNonBackstream"] =     DataReducerVariable(["pop/PTensorRotatedNonBackstream"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,REPLACEPOP,th}$", latexunits=r"")
 
 multipopdatareducers["pop/Temperature"] =            DataReducerVariable(["pop/Pressure", "pop/rho"], Temperature, "K", 1, latex=r"$T_\mathrm{REPLACEPOP}$", latexunits=r"K")
 multipopdatareducers["pop/TTensor"] =                DataReducerVariable(["pop/PTensor", "pop/rho"], Temperature, "K", 9, latex=r"$\mathcal{T}_\mathrm{REPLACEPOP}$", latexunits=r"K")
