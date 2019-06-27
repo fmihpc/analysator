@@ -432,7 +432,24 @@ def Temperature( variables ):
    Pressure = variables[0] # either a tensor, vector, array, or value
    rho = variables[1] # eithern array or a value
    divisor = np.ma.masked_less_equal( np.ma.masked_invalid(np.array(rho)),0) * 1.38065e-23
-   return np.ma.divide(Pressure, divisor)
+   # assumes first dimension is either single cell or a single-dimension array
+   if np.ndim(divisor)==0: # single cell
+      if np.ndim(Pressure)==0:
+         return np.ma.divide(Pressure, divisor)
+      elif np.ndim(Pressure)==1:
+         return np.ma.divide(Pressure, divisor[np.newaxis])
+      elif np.ndim(Pressure)==2:
+         return np.ma.divide(Pressure, divisor[np.newaxis,np.newaxis])
+   else: # array of cellids
+      if np.ndim(Pressure)==1:
+         return np.ma.divide(Pressure, divisor)
+      elif np.ndim(Pressure)==2:
+         return np.ma.divide(Pressure, divisor[:,np.newaxis])
+      elif np.ndim(Pressure)==3:
+         return np.ma.divide(Pressure, divisor[:,np.newaxis,np.newaxis])
+   # Should not reach here...
+   print("Error finding dimensions in calculating temperature!")
+   return -1
 
 def aGyrotropy( variables ):
    ''' Data reducer function to evaluate agyrotropy
