@@ -669,7 +669,7 @@ def plot_colormap(filename=None,
                             pass_map = pass_map[MaskX,:,:]
                             pass_map = pass_map[:,MaskY,:]
                     elif np.ndim(pass_map)==3:  # tensor variable
-                        pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map[0].shape[1:]])
+                        pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[MaskX,:,:,:]
                             pass_map = pass_map[:,MaskY,:,:]
