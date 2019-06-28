@@ -610,11 +610,19 @@ def plot_colormap(filename=None,
                     if np.ma.is_masked(maskgrid):
                         pass_map = pass_map[MaskX,:]
                         pass_map = pass_map[:,MaskY]
-                else: # vector variable
+                elif np.ndim(pass_map)==2: # vector variable
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
                     if np.ma.is_masked(maskgrid):
                         pass_map = pass_map[MaskX,:,:]
                         pass_map = pass_map[:,MaskY,:]
+                elif np.ndim(pass_map)==3:  # tensor variable
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                    if np.ma.is_masked(maskgrid):
+                        pass_map = pass_map[MaskX,:,:,:]
+                        pass_map = pass_map[:,MaskY,:,:]
+                else:
+                    print("Error in reshaping pass_maps!") 
+
                 pass_maps[mapval] = pass_map # add to the dictionary
         else:
             # Or gather over a number of time steps
@@ -655,11 +663,18 @@ def plot_colormap(filename=None,
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[MaskX,:]
                             pass_map = pass_map[:,MaskY]
-                    else: # vector variable
+                    elif np.ndim(pass_map)==2: # vector variable
                         pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
                         if np.ma.is_masked(maskgrid):
                             pass_map = pass_map[MaskX,:,:]
                             pass_map = pass_map[:,MaskY,:]
+                    elif np.ndim(pass_map)==3:  # tensor variable
+                        pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                        if np.ma.is_masked(maskgrid):
+                            pass_map = pass_map[MaskX,:,:,:]
+                            pass_map = pass_map[:,MaskY,:,:]
+                    else:
+                        print("Error in reshaping pass_maps!") 
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
