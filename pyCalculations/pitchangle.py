@@ -59,8 +59,9 @@ def pitch_angles( vlsvReader,
                              If set to a number, will use that velocity in m/s instead.
 
    :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
-                             If directory does not exist, it will be created.
-   :kword outputfile:        Provide exact output file name
+                             If directory does not exist, it will be created. Filenames within directory are
+                             generated automatically.
+   :kword outputfile:        Provide exact output file name (including complete path)
 
    :kword pop:               Active population, defaults to proton (avgs)
                                       
@@ -185,6 +186,8 @@ def pitch_angles( vlsvReader,
       timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
       if outputfile==None: 
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
+      if outputfile!=None and outputdir=!None:
+         print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory
       outputprefixind = outputfile.rfind('/')
