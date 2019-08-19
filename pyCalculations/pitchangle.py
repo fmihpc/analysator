@@ -186,7 +186,7 @@ def pitch_angles( vlsvReader,
       timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
       if outputfile==None: 
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
-      if outputfile!=None and outputdir=!None:
+      if outputfile!=None and outputdir!=None:
          print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory
