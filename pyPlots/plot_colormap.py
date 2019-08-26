@@ -178,7 +178,7 @@ def plot_colormap(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
-    :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
