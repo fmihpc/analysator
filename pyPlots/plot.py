@@ -38,3 +38,4 @@ import colormaps
 import plot_helpers
 from plot_colormap import plot_colormap
 from plot_vdf import plot_vdf
+from plot_vdf_profiles import plot_vdf_profiles
