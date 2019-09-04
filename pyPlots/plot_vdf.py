@@ -256,8 +256,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VY = V[:,2]
         Voutofslice = V[:,1]
     elif slicetype=="vecperp":
+        # Find velocity components in rotated frame where normavect is outofslice and optional
+        # normvectX is in VX direction
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
+        Vrot = rotateVectorToVector(V,N)
+        if normvectX is not None:
+            NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+            NXrot = rotateVectorToVector(NX,N)
+            Vrot2 = rotateVectorToVector_X(Vrot,NXrot)
+            Vrot = Vrot2
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
@@ -319,7 +326,8 @@ def plot_vdf(filename=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
              fmin=None, fmax=None, slicethick=None, cellsize=None,
-             xy=None, xz=None, yz=None, normal=None,
+             xy=None, xz=None, yz=None,
+             normal=None, normalx=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,
@@ -368,6 +376,8 @@ def plot_vdf(filename=None,
     :kword xz:          Perform slice in x-z-direction
     :kword yz:          Perform slice in y-z-direction
     :kword normal:      Perform slice in plane perpendicular to given vector
+    :kword normalx:     X-axis direction for slice in plane perpendicular to given vector
+
     :kword bpara:       Perform slice in B_para / B_perp2 plane
     :kword bpara1:       Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
@@ -668,6 +678,9 @@ def plot_vdf(filename=None,
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop V5 bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         else:
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
@@ -742,6 +755,15 @@ def plot_vdf(filename=None,
             else:
                 print("Error parsing slice normal vector!")
                 sys.exit()
+            if normalx!=None:
+                if len(normalx)==3:
+                    normvectX=normalx
+                    if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
+                        print("Error, normalx dot normal is not zero!")
+                        sys.exit()
+                else:
+                    print("Error parsing slice normalx vector!")
+                    sys.exit()
         elif xy!=None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
