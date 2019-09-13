@@ -925,7 +925,7 @@ class VlsvReader(object):
 
        # Determine fsgrid domain decomposition
        numWritingRanks = self.read_parameter("numWritingRanks")
-       orderedData = np.array([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+       orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
 
        # Helper functions ported from c++ (fsgrid.hpp)
        def computeDomainDecomposition(globalsize, ntasks):
@@ -939,7 +939,7 @@ class VlsvReader(object):
                        break
                    processBox[1] = max(globalsize[1]/j,1)
                    for k in range(1,min(ntasks,globalsize[2])):
-                       if(i * j * k > ntasks):
+                       if(i * j * k != ntasks):
                            break
                        processBox[2] = max(globalsize[2]/k,1)
                        value = 10 * processBox[0] * processBox[1] * processBox[2] + \
@@ -970,26 +970,26 @@ class VlsvReader(object):
        currentOffset = 0;
        fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
        for i in range(0,numWritingRanks):
-
-           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], i), \
-                            calcLocalSize(bbox[1], fsgridDecomposition[2], i), \
-                            calcLocalSize(bbox[0], fsgridDecomposition[0], i)]
-           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], i), \
-                             calcLocalStart(bbox[1], fsgridDecomposition[2], i), \
-                             calcLocalStart(bbox[0], fsgridDecomposition[0], i)]
-           thatTasksEnd = thatTasksStart + thatTasksSize
-
+           x = i % fsgridDecomposition[0]
+           y = (i / fsgridDecomposition[0]) % fsgridDecomposition[1]
+           z = (i / fsgridDecomposition[0]) / fsgridDecomposition[1]
+ 
+           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
+                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
+                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
+                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
+                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
            totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
-
+           # Extract datacube of that task... 
            thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-           thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]])
-           orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksdata
+           thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]])
 
+           # ... and put it into place 
+           orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
 
-       if len(a.shape) == 1:
-           return a.reshape([bbox[0],bbox[1],bbox[2]])
-       else:
-           return a.reshape([bbox[0],bbox[1],bbox[2],a.shape[1]])
+       return orderedData
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
