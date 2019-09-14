@@ -932,15 +932,15 @@ class VlsvReader(object):
            processDomainDecomposition = [1,1,1]
            processBox = [0,0,0]
            optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0])):
+           for i in range(1,min(ntasks,globalsize[0]+1)):
                processBox[0] = max(globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1])):
+               for j in range(1,min(ntasks,globalsize[1]+1)):
                    if(i * j > ntasks):
                        break
                    processBox[1] = max(globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2])):
+                   for k in range(1,min(ntasks,globalsize[2]+1)):
                        if(i * j * k != ntasks):
-                           break
+                           continue
                        processBox[2] = max(globalsize[2]/k,1)
                        value = 10 * processBox[0] * processBox[1] * processBox[2] + \
                         (processBox[1] * processBox[2] if i>1 else 0) + \
@@ -969,6 +969,8 @@ class VlsvReader(object):
 
        currentOffset = 0;
        fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       #print "Global size:"+str([bbox[0],bbox[1],bbox[2]])
+       #print 'decomposition: ' + str(fsgridDecomposition) + '(' + str(numWritingRanks ) + ' ranks)'
        for i in range(0,numWritingRanks):
            x = i % fsgridDecomposition[0]
            y = (i / fsgridDecomposition[0]) % fsgridDecomposition[1]
@@ -981,6 +983,7 @@ class VlsvReader(object):
                              calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
                              calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
+
            totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
            # Extract datacube of that task... 
            thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
