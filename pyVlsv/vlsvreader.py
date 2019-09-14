@@ -925,7 +925,10 @@ class VlsvReader(object):
 
        # Determine fsgrid domain decomposition
        numWritingRanks = self.read_parameter("numWritingRanks")
-       orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+       if len(rawData.shape) > 1:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+       else:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
 
        # Helper functions ported from c++ (fsgrid.hpp)
        def computeDomainDecomposition(globalsize, ntasks):
@@ -986,11 +989,19 @@ class VlsvReader(object):
 
            totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
            # Extract datacube of that task... 
-           thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-           thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]])
+           if len(rawData.shape) > 1:
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]])
 
-           # ... and put it into place 
-           orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
+	   else:
+           	# Special case for scalar data
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]])
+
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
        return orderedData
 
