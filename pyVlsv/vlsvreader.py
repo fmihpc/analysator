@@ -975,9 +975,9 @@ class VlsvReader(object):
        #print "Global size:"+str([bbox[0],bbox[1],bbox[2]])
        #print 'decomposition: ' + str(fsgridDecomposition) + '(' + str(numWritingRanks ) + ' ranks)'
        for i in range(0,numWritingRanks):
-           x = i % fsgridDecomposition[0]
-           y = (i / fsgridDecomposition[0]) % fsgridDecomposition[1]
-           z = (i / fsgridDecomposition[0]) / fsgridDecomposition[1]
+           x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
+           y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
+           z = i % fsgridDecomposition[2]
  
            thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
                             calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
