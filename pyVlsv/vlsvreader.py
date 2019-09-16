@@ -936,22 +936,23 @@ class VlsvReader(object):
            processBox = [0,0,0]
            optimValue = 999999999999999.
            for i in range(1,min(ntasks,globalsize[0]+1)):
-               processBox[0] = max(globalsize[0]/i,1)
+               processBox[0] = max(1.*globalsize[0]/i,1)
                for j in range(1,min(ntasks,globalsize[1]+1)):
                    if(i * j > ntasks):
                        break
-                   processBox[1] = max(globalsize[1]/j,1)
+                   processBox[1] = max(1.*globalsize[1]/j,1)
                    for k in range(1,min(ntasks,globalsize[2]+1)):
-                       if(i * j * k != ntasks):
+                       if(i * j * k > ntasks):
                            continue
-                       processBox[2] = max(globalsize[2]/k,1)
+                       processBox[2] = max(1.*globalsize[2]/k,1)
                        value = 10 * processBox[0] * processBox[1] * processBox[2] + \
-                        (processBox[1] * processBox[2] if i>1 else 0) + \
-                        (processBox[0] * processBox[2] if j>1 else 0) + \
-                        (processBox[0] * processBox[1] if k>1 else 0)
-                       if(value < optimValue):
-                           optimeValue = value
-                           processDomainDecomposition=[i,j,k]
+                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
+                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
+                        ((processBox[0] * processBox[1]) if k>1 else 0)
+                       if i*j*k == ntasks:
+			       if value < optimValue:
+				   optimValue = value
+				   processDomainDecomposition=[i,j,k]
            return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
@@ -978,7 +979,7 @@ class VlsvReader(object):
            x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
            y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
            z = i % fsgridDecomposition[2]
- 
+ 	   
            thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
                             calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
                             calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
@@ -991,17 +992,19 @@ class VlsvReader(object):
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
 		thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]])
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
 
 		# ... and put it into place 
 		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
 	   else:
            	# Special case for scalar data
 		thatTasksData = rawData[currentOffset:currentOffset+totalSize]
-		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]])
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
 
 		# ... and put it into place 
 		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
+
+           currentOffset += totalSize
 
        return orderedData
 
