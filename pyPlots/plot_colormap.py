@@ -32,6 +32,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import LogLocator
+from matplotlib.patches import Circle, Wedge
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
@@ -95,13 +96,14 @@ def axisfmt(x, pos):
 # cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
 def cbfmt(x, pos):
     # Find out required decimal precision
-    a, b = '{:.1e}'.format(np.amax(abs(np.array([plot_colormap.vminuse,plot_colormap.vmaxuse])))).split('e')
+    a, b = '{:.1e}'.format(x).split('e')
     precision = '0'
-    if int(b)<1: precision = str(abs(-1+int(b)))
-    # For symlog, make sure the linthresh value is still resolved
-    if plot_colormap.linthresh!=None:
-        aa, bb = '{:.1e}'.format(plot_colormap.linthresh).split('e')
-        if int(bb)<1: precision = str(abs(-1+int(bb)))            
+    if (plot_colormap.lin is None):
+        if int(b)<1: precision = str(abs(int(b)))
+    else:
+        # for linear, use more precision
+        if int(b)<1: precision = str(abs(-1+int(b)))
+
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
     if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
@@ -128,6 +130,7 @@ def plot_colormap(filename=None,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
+                  Earth=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray',
                   streamlines=None, streamlinedensity=1, streamlinecolor='white',
                   axes=None, cbaxes=None,
@@ -168,7 +171,8 @@ def plot_colormap(filename=None,
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
-    :kword lin:         Flag for using linear colour scaling instead of log
+    :kword lin:         Flag for using linear colour scaling instead of log. If an integer, defines number
+                        of colorbar ticks.
     :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
@@ -177,6 +181,7 @@ def plot_colormap(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kword Earth:       If set, draws an earth at (0,0)
 
     :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
 
@@ -249,7 +254,7 @@ def plot_colormap(filename=None,
     # Example usage:
     plot_colormap(filename=fileLocation, var="MA", run="BCQ",
                   colormap='nipy_spectral',step=j, outputdir=outputLocation,
-                  lin=1, wmark=1, vmin=2.7, vmax=10, 
+                  lin=True, wmark=1, vmin=2.7, vmax=10, 
                   external=cavitoncontours, pass_vars=['rho','B','beta'])
     # Where cavitoncontours is an external function which receives the arguments
     #  ax, XmeshXY,YmeshXY, pass_maps
@@ -263,7 +268,7 @@ def plot_colormap(filename=None,
         va = exprmaps['va'][:,:]
         MA = custombulkspeed/va
         return MA
-    plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
+    plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
 
     '''
 
@@ -305,7 +310,7 @@ def plot_colormap(filename=None,
             fluxfile=None
                 
     # Scientific notation for colorbar ticks?
-    if usesci!=True:
+    if usesci is not True:
         usesci=False
     
     if operator==None:
@@ -371,7 +376,7 @@ def plot_colormap(filename=None,
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
             if symlog==None:
-                lin=1
+                lin=True
         # index a vector
         if operator.isdigit():
             operator = str(operator)
@@ -741,13 +746,14 @@ def plot_colormap(filename=None,
             vmaxuse = absval
 
     # Ensure that lower bound is valid for logarithmic plots
-    if (vminuse <= 0) and (lin==None) and (symlog==None):
+    if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
         vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
 
     # Make vmaxuse and vminuse available for formatter functions
     plot_colormap.vminuse = vminuse
     plot_colormap.vmaxuse = vmaxuse
+    plot_colormap.lin = lin
 
     # If symlog scaling is set:
     plot_colormap.linthresh = None
@@ -758,7 +764,7 @@ def plot_colormap(filename=None,
             plot_colormap.linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
 
     # Lin or log colour scaling, defaults to log
-    if lin==None:
+    if lin is None:
         # Special SymLogNorm case
         if symlog!=None:
             #norm = SymLogNorm(linthresh=plot_colormap.linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, ncolors=cmapuse.N, clip=True)
@@ -776,9 +782,15 @@ def plot_colormap(filename=None,
             ticks = LogLocator(base=10,subs=range(10)) # where to show labels
     else:
         # Linear
+        linticks = 7
+        if isinstance(lin, int):
+            linticks = abs(lin)
+            if linticks==1: # old default was to set lin=1 for seven linear ticks
+                linticks = 7
+                
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=7)            
+        ticks = np.linspace(vminuse,vmaxuse,num=linticks)
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes==None: # If axes are provided, leave backend as-is.
@@ -897,6 +909,13 @@ def plot_colormap(filename=None,
             fScont = ax1.contour(XmeshCentres,YmeshCentres,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
+
+    if Earth is not None:
+        Earth = Circle((0, 0), 1.0, color='k')
+        Earth2 = Wedge((0,0), 0.9, -90, 90, fc='white')
+        ax1.add_artist(Earth)
+        ax1.add_artist(Earth2)
+
     # add vectors on top
     if vectors != None:
         vectmap = f.read_variable(vectors)
@@ -992,7 +1011,7 @@ def plot_colormap(filename=None,
             cb_title_use = r"\textbf{"+cb_title_use+"}"        
 
         # First draw colorbar
-        if usesci==True:
+        if usesci is True:
             cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
         else:
             #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
@@ -1043,11 +1062,12 @@ def plot_colormap(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for label in cb.ax.yaxis.get_ticklabels():
-                if usesci==True:
-                    firstdigit = label.get_text()[1]
+                if usesci is True:
+                    # labels will be in format $x.0\times10^{y}$
+                    firstdigit = label.get_text().replace('$','')[0]
                 else:
-                    firstdigit = (label.get_text().replace('.','')).lstrip('0')[1]
-                # labels will be in format $x.0\times10^{y}$
+                    firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]
+                
                 if not firstdigit in valids: label.set_visible(False)
 
     # Add Vlasiator watermark
