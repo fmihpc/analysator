@@ -333,10 +333,10 @@ def vSpaceReducer(ii):
  velcells = vlsvReader.read_velocity_cells(cid)
  V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
  Ekin = 0.5*mp*(np.sum(np.square(V),1))/qe/1e3 # keV
- f = list(zip(*list(velcells.items())))
+ f = list(zip(*velcells.items()))
  # check that velocity space has cells
  if(len(f) > 0):
-  f = np.asarray(list(zip(*velcells.items()))[1])
+  f = np.asarray(f[1])
  else:
   return
  #if len(f[f < 0]) > 10:

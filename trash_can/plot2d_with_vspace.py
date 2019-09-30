@@ -138,10 +138,10 @@ def vlsv_plot2d_with_vspace(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbin
    V = vlsvReader.get_velocity_cell_coordinates(jj)
    Vtot2 = (np.sum(np.square(V),1))
    Ekin = 0.5*mp*Vtot2/qe/1e3 # keV
-   f = list(zip(*list(velcells.items())))
+   f = list(zip(*velcells.items()))
    # check that velocity space has cells
    if(len(f) > 0):
-    f = np.asarray(list(zip(*velcells.items()))[1])
+    f = np.asarray(f[1])
    else:
     continue
    xsub = xfig0 + xfigsize*(x-xmin)/xsize

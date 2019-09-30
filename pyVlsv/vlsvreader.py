@@ -1014,8 +1014,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cellcoordinates = np.zeros(3)
@@ -1039,8 +1039,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
       # Return the coordinates:
       return np.array(cellindices)
 
@@ -1108,19 +1108,19 @@ class VlsvReader(object):
       '''
       vcellids = np.atleast_1d(vcellids)
       # Get block ids:
-      blocks = vcellids.astype(int) / 64
+      blocks = vcellids.astype(int) // 64
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
       # Get cell indices:
       cellids = np.remainder(vcellids.astype(int), (int)(64))
       cellIndicesX = np.remainder(cellids.astype(int), (int)(4))
-      cellIndicesY = np.remainder((cellids.astype(int)/(int)(4)).astype(int), (int)(4))
-      cellIndicesZ = cellids.astype(int)/(int)(16)
+      cellIndicesY = np.remainder((cellids.astype(int)//(int)(4)).astype(int), (int)(4))
+      cellIndicesZ = cellids.astype(int)//(int)(16)
       # Get cell coordinates:
       cellCoordinates = np.array([blockCoordinatesX.astype(float) + (cellIndicesX.astype(float) + 0.5) * self.__meshes[pop].__dvx,
                                   blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__meshes[pop].__dvy,
@@ -1137,8 +1137,8 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_cell_coordinates`
       '''
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
@@ -1192,8 +1192,8 @@ class VlsvReader(object):
       blocks = np.array(blocks)
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks)).astype(np.uint16)
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
-      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesZ = (blocks.astype(np.uint64)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
@@ -1201,8 +1201,8 @@ class VlsvReader(object):
       # Get velocity cell min coordinates (per velocity block)
       vcellids = np.arange(cellsPerBlock).astype(np.uint32)
       cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
+      cellIndicesY = np.remainder((vcellids.astype(int)//(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
+      cellIndicesZ = (vcellids.astype(int)//(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
@@ -1242,9 +1242,9 @@ class VlsvReader(object):
       nodeKeys = np.array([], dtype=np.uint64)
       N = 10
       for i in range(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          nodeKeys = np.append(nodeKeys, calculate_node_indices( self, blockIndicesX[fromIndex:toIndex], blockIndicesY[fromIndex:toIndex], blockIndicesZ[fromIndex:toIndex], nodeIndices_local, nodesPerBlock, cellsPerDirection ) )
@@ -1275,9 +1275,9 @@ class VlsvReader(object):
       N = 10
       # Append keys in cuts to save memory
       for i in range(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          # Append cell keys
@@ -1288,8 +1288,8 @@ class VlsvReader(object):
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1)).astype(np.float32) * self.__meshes[pop].__dvx + self.__meshes[pop].__vxmin
-      nodeCoordinatesY = np.remainder(nodeKeys/(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
-      nodeCoordinatesZ = ( nodeKeys / (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
+      nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
+      nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
       
       # Nodekeyss is no longer needed
       del nodeKeys

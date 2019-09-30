@@ -158,16 +158,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=pop)
-    V += 0.5*inputcellsize
-    print("Found "+str(len(V))+" v-space cells")
-
-    f = list(zip(*list(velcells.items())))
+    velcellslist = list(zip(*velcells.items()))
+    
     # check that velocity space has cells
-    if(len(f) > 0):
-        f = np.asarray(list(zip(*velcells.items()))[1])
-    else:
+    if(len(velcellslist) <= 0):
         return (False,0,0,0)
+    
+    f = np.asarray(velcellslist[1])
+    V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
+    print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
     if center is "peak":
@@ -779,7 +778,7 @@ def plot_vdf_profiles(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            print('ERROR: error from velocity space reducer')
+            print('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # If no other plotting fmin fmax values are given, take min and max of array

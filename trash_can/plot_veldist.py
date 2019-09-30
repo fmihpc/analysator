@@ -238,10 +238,10 @@ def vSpaceReducer(vlsvReader,cid,Bx,By,Bz):
  print('Cell ' + str(cid).zfill(9))
  velcells = vlsvReader.read_velocity_cells(cid)
  V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
- f = list(zip(*list(velcells.items())))
+ f = list(zip(*velcells.items()))
  # check that velocity space has cells
  if(len(f) > 0):
-  f = np.asarray(list(zip(*velcells.items()))[1])
+  f = np.asarray(f[1])
  else:
   return (False,0,0)
  ii_f = np.where(f >= fMin)
