@@ -665,6 +665,9 @@ def plot_vdf(filename=None,
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)

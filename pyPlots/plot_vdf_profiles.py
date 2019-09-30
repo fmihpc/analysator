@@ -288,9 +288,11 @@ def plot_vdf_profiles(filename=None,
              nooverwrite=None,
              draw=None,axisunit=None,title=None,
              tickinterval=None,
+             lin=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
              fmin=None, fmax=None,
+             vmin=None, vmax=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bpara1=None, bperp=None,
              cbulk=None, cpeak=None, center=None, setThreshold=None,
@@ -319,9 +321,11 @@ def plot_vdf_profiles(filename=None,
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
+    :kword vmin,vmax:   min and max values for x-axis
 
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
     :kword tickinterval: Interval at which to have ticks on axes
+    :kword lin:         Plot using linear y-axis (default log)
    
     :kword xy:          Perform slice in x-y-direction
     :kword xz:          Perform slice in x-z-direction
@@ -331,8 +335,6 @@ def plot_vdf_profiles(filename=None,
     :kword bpara1:       Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
-
-    :kword bvector:     Plot a magnetic field vector projection in-plane
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
@@ -437,11 +439,6 @@ def plot_vdf_profiles(filename=None,
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
         
-        # Indicate projection in file name
-        projstr=""
-        if slicethick==0:
-            projstr="_proj"
-
         # Verify directory
         if outputfile==None:
             if outputdir==None: # default initial path
@@ -606,15 +603,21 @@ def plot_vdf_profiles(filename=None,
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable('vg_moments'):
+            # This should be a restart file
+            Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
-        else:
+        elif vlsvReader.check_variable('V'):
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
-        if Vbulk is None:
-            print("Error in finding plasma bulk velocity!")
-            sys.exit()
+        # if Vbulk is None:
+        #     print("Error in finding plasma bulk velocity!")
+        #     sys.exit()
 
         # If necessary, find magnetic field
         if bpara!=None or bperp!=None or bpara1!=None:
@@ -630,7 +633,11 @@ def plot_vdf_profiles(filename=None,
                 else:
                     cellidlist = [cellid,cellid+1,cellid+xsize,cellid+xsize*ysize]
                 # Read raw data for the required cells    
-                if vlsvReader.check_variable("B"):
+                if vlsvReader.check_variable("vg_b"):
+                    Braw = vlsvReader.read_variable("vg_b", cellidlist)
+                elif vlsvReader.check_variable("fg_b"):
+                    Braw = vlsvReader.read_variable("fg_b", cellidlist)
+                elif vlsvReader.check_variable("B"):
                     Braw = vlsvReader.read_variable("B", cellidlist)
                 elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
                     # used e.g. for restart files
@@ -741,7 +748,7 @@ def plot_vdf_profiles(filename=None,
 
         if draw==None and axes==None:
             if outputfile==None:
-                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
             else:
                 savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
@@ -761,7 +768,7 @@ def plot_vdf_profiles(filename=None,
 
 
         if cpeak!=None:
-            center='bulk'
+            center='peak'
         if cbulk!=None or center is 'bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
@@ -794,7 +801,18 @@ def plot_vdf_profiles(filename=None,
             #fmaxuse=np.nanmax(np.concatenate((bins1,np.concatenate((bins2,bins3)))))
             fmaxuse=np.nanmax(np.concatenate((bins1,bins2,bins3)))*1.5
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
-        
+
+                # If no other plotting fmin fmax values are given, take min and max of array
+        if vmin!=None:
+            vminuse=vmin
+        else:
+            vminuse=np.nanmin(np.concatenate((axis1,axis2,axis3)))*0.8
+        if vmax!=None:
+            vmaxuse=vmax
+        else:
+            vmaxuse=np.nanmax(np.concatenate((axis1,axis2,axis3)))*1.5
+        print("Active v range is "+str(vminuse)+" to "+str(vmaxuse))
+
         axis1=np.array(axis1)/velUnit
         axis2=np.array(axis2)/velUnit
         axis3=np.array(axis3)/velUnit
@@ -811,11 +829,14 @@ def plot_vdf_profiles(filename=None,
         else:
             ax1=axes
 
-        ax1.set_yscale('log')
+        if lin is None:
+            ax1.set_yscale('log')
         ax1.plot(axis1,bins1, drawstyle='steps-mid', label=pltxstr)
         ax1.plot(axis2,bins2, drawstyle='steps-mid', label=pltystr)
         ax1.plot(axis3,bins3, drawstyle='steps-mid', label=pltzstr)
         ax1.set_ylim([fminuse,fmaxuse])
+        ax1.set_xlim([vminuse,vmaxuse])
+
         
         # ax1.set_xlim([val/velUnit for val in xvalsrange])
         # ax1.set_ylim([val/velUnit for val in yvalsrange])
@@ -840,7 +861,8 @@ def plot_vdf_profiles(filename=None,
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         handles, labels = ax1.get_legend_handles_labels()
-        ax1.legend(handles, labels, fontsize=fontsize2, handlelength=0.6)
+        #ax1.legend(handles, labels, fontsize=fontsize2, handlelength=0.6)
+        ax1.legend(handles, labels, fontsize=fontsize2)
 
         # Find maximum possible lengths of axis tick labels
         # Only counts digits

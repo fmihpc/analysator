@@ -387,6 +387,8 @@ def plot_colormap(filename=None,
         if var==None:
             # If no expression or variable given, defaults to rho
             var='rho'
+            if f.check_variable("proton/vg_rho"): # multipop v5
+                var = 'proton/vg_rho'
             if f.check_variable("proton/rho"): # multipop
                 var = 'proton/rho'
             if f.check_variable("moments"): # restart
@@ -689,13 +691,18 @@ def plot_colormap(filename=None,
     datamap = datamap * vscale
 
     # Find rhom map for use in masking out ionosphere
-    if f.check_variable("moments"):
+    if f.check_variable("vg_rhom"):
+        rhomap = f.read_variable("vg_rhom")
+    elif f.check_variable("proton/vg_rho"):
+        rhomap = f.read_variable("proton/vg_rho")
+    elif f.check_variable("proton/rho"):
+        rhomap = f.read_variable("proton/rho")
+    elif f.check_variable("moments"):
         rhomap = f.read_variable("restart_rhom")
-        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
     else:
         rhomap = f.read_variable("rhom")
-        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-
+    rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
         # Strip away columns and rows which are outside the plot region
