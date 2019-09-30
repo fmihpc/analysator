@@ -227,7 +227,7 @@ def vSpaceReducer(vlsvReader,cid):
  f = list(zip(*list(velcells.items())))
  # check that velocity space has cells
  if(len(f) > 0):
-  f = np.asarray(zip(*velcells.items())[1])  # Does this work?
+  f = np.asarray(list(zip(*velcells.items()))[1])
  else:
   return (False,0,0)
  ii_f = np.where(f >= fMin)

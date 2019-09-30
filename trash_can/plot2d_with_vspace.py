@@ -141,7 +141,7 @@ def vlsv_plot2d_with_vspace(vlsvReader,varName="rho",withDistr=0,Nstride=97,Nbin
    f = list(zip(*list(velcells.items())))
    # check that velocity space has cells
    if(len(f) > 0):
-    f = np.asarray(zip(*velcells.items())[1]) # Does this work?
+    f = np.asarray(list(zip(*velcells.items()))[1])
    else:
     continue
    xsub = xfig0 + xfigsize*(x-xmin)/xsize
