@@ -190,7 +190,7 @@ memuse = psccount*22*(1./(1024**3)) # estimated memory use due to ghost cells an
 nodes = memuse / 60 # each sisu node has about 60 GB for use
 print("Total block count %10.5e " % blockcount)
 print("Total psc count %10.5e " % psccount)
-print("Total memory use [GiB] %10.5f " % memuse) 
-print("Sisu nodes required %10.5f " % nodes) 
+print("Total memory use [GiB] %10.5f " % memuse)
+print("Sisu nodes required %10.5f " % nodes)
 
 

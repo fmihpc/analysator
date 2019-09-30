@@ -167,7 +167,7 @@ def make_moving_frame_of_reference_movie( x_begin, x_end, y_begin, y_end, speed_
       startFrame = 0
    
    # Iterate through frames
-   for i in xrange(startFrame, endFrame+1):
+   for i in range(startFrame, endFrame+1):
       vis.SetTimeSliderState(i)
       frame = i - startFrame
       vis.View2DAtts = vis.View2DAttributes()

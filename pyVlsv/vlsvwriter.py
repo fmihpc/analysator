@@ -82,7 +82,7 @@ class VlsvWriter(object):
             else: mesh = ''
             tag = child.tag
             extra_attribs = {}
-            for i in child.attrib.iteritems():
+            for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
@@ -115,7 +115,7 @@ class VlsvWriter(object):
             tag = child.tag
             # Copy extra attributes:
             extra_attribs = {}
-            for i in child.attrib.iteritems():
+            for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
@@ -167,13 +167,13 @@ class VlsvWriter(object):
       child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
       if extra_attribs != '':
-         for i in extra_attribs.iteritems():
+         for i in extra_attribs.items():
             child.attrib[i[0]] = i[1]
       if len(np.shape(data)) == 2:
          child.attrib["vectorsize"] = np.shape(data)[1]
          datatype = str(type(data[0][0]))
       elif len(np.shape(data)) > 2:
-         print "ERROR, np.shape returned len(np.shape(data)) > 2"
+         print("ERROR, np.shape returned len(np.shape(data)) > 2")
          return False
       else:
          child.attrib["vectorsize"] = 1
@@ -187,7 +187,7 @@ class VlsvWriter(object):
       elif 'float' in datatype:
          child.attrib["datatype"] = "float"
       else:
-         print "BAD DATATYPE"
+         print("BAD DATATYPE")
          return False
 
       if '64' in datatype:
@@ -195,7 +195,7 @@ class VlsvWriter(object):
       elif '32' in datatype:
          child.attrib["datasize"] = 4
       else:
-         print "BAD DATASIZE"
+         print("BAD DATASIZE")
          return False
 
       current_offset = fptr.tell()
@@ -218,7 +218,7 @@ class VlsvWriter(object):
       #self.__xml_root.write( fptr )
       # Convert everything to string:
       for child in self.__xml_root:
-         for i in child.attrib.iteritems():
+         for i in child.attrib.items():
             child.attrib[i[0]] = str(child.attrib[i[0]])
       tree = ET.ElementTree( self.__xml_root)
       tree.write(fptr)

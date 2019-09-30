@@ -39,7 +39,7 @@ def extract_file(filename):
         if t == None:
 	    t=f.read_parameter("t")
             if t == None:	    
-		print "Unknown time format in file " + filename
+		print("Unknown time format in file " + filename)
         
         for coord in coords:
             if(args.re):
@@ -118,4 +118,4 @@ if __name__ == '__main__':
 
 for i in sorted(return_array):
     for j in i:
-        print j[1]
+        print(j[1])

@@ -51,7 +51,7 @@ def make_movie_auto( variableName, boundaryBox, vlsvFileName, inputDirectory, in
    :param endFrame=-1                   Starting frame of the movie (-1 equals last frame)
    '''
    if thresholdCoefficient < 0:
-      print "thresholdCoefficient must be non-negative!"
+      print("thresholdCoefficient must be non-negative!")
       return
    # OPTIONS
    #################################################################
@@ -115,7 +115,7 @@ def make_movie_auto( variableName, boundaryBox, vlsvFileName, inputDirectory, in
    cellidlocations = []
    # Get all of the cell ids locations:
    allcellids = vlsvReader.read(name="SpatialGrid",tag="MESH")
-   for i in xrange(len(allcellids)):
+   for i in range(len(allcellids)):
       if allcellids[i] in cellids:
          #This cell id is within the user-given boundary
          cellidlocations.append(allcellids[i])
@@ -204,7 +204,7 @@ def make_movie_auto( variableName, boundaryBox, vlsvFileName, inputDirectory, in
       _startFrame = 0
    
    # Iterate through frames
-   for i in xrange(_startFrame, _endFrame+1):
+   for i in range(_startFrame, _endFrame+1):
       vis.SetTimeSliderState(i)
       frame = i - _startFrame
       vis.SaveWindowAtts = vis.SaveWindowAttributes()

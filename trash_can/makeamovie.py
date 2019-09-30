@@ -137,7 +137,7 @@ def make_movie( variableName, minValue, maxValue, inputDirectory, inputFileName,
       _startFrame = 0
    
    # Iterate through frames
-   for i in xrange(_startFrame, _endFrame+1):
+   for i in range(_startFrame, _endFrame+1):
       vis.SetTimeSliderState(i)
       frame = i - _startFrame
       vis.SaveWindowAtts = vis.SaveWindowAttributes()

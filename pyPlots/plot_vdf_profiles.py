@@ -158,14 +158,14 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=pop)
     V += 0.5*inputcellsize
     print("Found "+str(len(V))+" v-space cells")
 
-    f = zip(*velcells.items())
+    f = list(zip(*list(velcells.items())))
     # check that velocity space has cells
     if(len(f) > 0):
-        f = np.asarray(zip(*velcells.items())[1])
+        f = np.asarray(zip(*velcells.items())[1]) # Does this work?
     else:
         return (False,0,0,0)
 

@@ -178,13 +178,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
+    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=pop)
     print("Found "+str(len(V))+" v-space cells")
 
-    f = zip(*velcells.items())
+    f = list(zip(*list(velcells.items())))
     # check that velocity space has cells
     if(len(f) > 0):
-        f = np.asarray(zip(*velcells.items())[1])
+        f = np.asarray(zip(*velcells.items())[1]) # Does this work?
     else:
         return (False,0,0,0)
 
@@ -902,7 +902,7 @@ def plot_vdf(filename=None,
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
-        ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+        ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
 
         if box!=None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]

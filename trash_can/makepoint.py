@@ -194,7 +194,7 @@ def create_visit_point_movie( variableName, minValue, maxValue, inputDirectory, 
    '''
    coordinates=[coordinates]
 
-   for i in xrange(len(inputFileNames)):
+   for i in range(len(inputFileNames)):
       # OPTIONS
       #################################################################
       
@@ -282,7 +282,7 @@ def create_visit_point_movie( variableName, minValue, maxValue, inputDirectory, 
       vis.SetActivePlots(0)
 
       for coordinate in coordinates[i]:
-         print str(coordinate)
+         print(str(coordinate))
          create_point_vtk( fileName=inputFileName2, coordinates=coordinate )
          vis.OpenDatabase(databaseName2, 0)
          vis.AddPlot("Mesh", "mesh", 1, 1)

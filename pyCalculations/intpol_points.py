@@ -59,20 +59,20 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
       varlist = vlsvReader.get_all_variables()
       N_vars = len(varlist)
    if N_vars <= 0:
-      print "ERROR: len(varlist) = 0"
+      print("ERROR: len(varlist) = 0")
       return
    if N_points < 0:
-      print "ERROR: len(points) = 0"
+      print("ERROR: len(points) = 0")
       return
    header = "x y z cellid " # header string
    for i in range(N_vars): # loop variable list
       var = varlist[i]
       if vlsvReader.check_variable(var) == False:
-         print "ERROR: variable " + var + " does not exist in file " + vlsvReader.file_name
+         print("ERROR: variable " + var + " does not exist in file " + vlsvReader.file_name)
          return
       dim=len(np.atleast_1d(vlsvReader.read_interpolated_variable(var,points[0],operator))) # variable dimensions
       if dim <= 0:
-         print "ERROR: bad variable dimension (dim=" + str(dim) + ")"
+         print("ERROR: bad variable dimension (dim=" + str(dim) + ")")
          return
       values=np.zeros((N_points,dim))
       crds=np.zeros((N_points,3)) # coordinates

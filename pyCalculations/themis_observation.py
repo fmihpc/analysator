@@ -252,7 +252,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
       return [[],[],0,0,[]]
    # Calculate the detector histogram
    # Get cells:
-   vcellids = velocity_cell_data.keys()
+   vcellids = list(velocity_cell_data.keys())
    # Get a list of velocity coordinates:
    velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids,pop=pop)
    angles,energies,detector_values = themis_observation(velocity_cell_data, velocity_coordinates,matrix,dvx,countrates=countrates, interpolate=interpolate,binOffset=binOffset)
@@ -290,7 +290,7 @@ def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3
    '''
 
    # Get avgs data:
-   avgs = velocity_cell_data.values()
+   avgs = list(velocity_cell_data.values())
    # Shift to plasma frame
    #if plasmaframe == True:
    #   velocity_coordinates = velocity_coordinates - bulk_velocity

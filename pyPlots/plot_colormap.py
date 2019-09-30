@@ -779,7 +779,7 @@ def plot_colormap(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7

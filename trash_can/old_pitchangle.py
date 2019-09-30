@@ -54,9 +54,9 @@ def pitch_angles( vlsvReader, cellid, cosine=True, plasmaframe=False ):
    B = vlsvReader.read_variable("B", cellid)
    B_unit = B / np.linalg.norm(B)
    # Get cells:
-   vcellids = velocity_cell_data.keys()
+   vcellids = list(velocity_cell_data.keys())
    # Get avgs data:
-   avgs = velocity_cell_data.values()
+   avgs = list(velocity_cell_data.values())
    # Get a list of velocity coordinates:
    if plasmaframe == True:
       v = vlsvReader.get_velocity_cell_coordinates(vcellids) - bulk_velocity
