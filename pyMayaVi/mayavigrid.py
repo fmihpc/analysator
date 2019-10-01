@@ -631,7 +631,7 @@ class MayaviGrid(HasTraits):
       # We reorder the points, scalars and vectors so this is as per VTK's
       # requirement of x first, y next and z last.
       pts = pts.transpose(2, 1, 0, 3).copy()
-      pts.shape = pts.size/3, 3
+      pts.shape = pts.size//3, 3
       scalars = scalars.T.copy()
       
       # Create the dataset.

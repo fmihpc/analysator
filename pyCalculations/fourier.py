@@ -70,6 +70,6 @@ def fourier( t, y, kaiserwindowparameter=0 ):
    from output import output_1d
    from variable import get_name
    # Get the indexes:
-   toIndex = (int)((len(freq)/2)/2.0 + 1)
+   toIndex = (int)((len(freq)//2)/2.0 + 1) # the division // truncates to int. Kept this way so consistent with python2.7
    return output_1d([2*np.abs(fourier[1:toIndex]), freq[1:toIndex], t2, y2], ["FFT", "frequency", "time", get_name(y)])
 

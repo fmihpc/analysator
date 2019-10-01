@@ -46,7 +46,7 @@ def exprrhocm3(pass_maps):
     else:
         # Multiple time steps were found
         ntimes = len(pass_maps)
-        curri = (ntimes-1)/2
+        curri = (ntimes-1)//2
         thesemaps = pass_maps[curri]
 
     thisrho = np.ma.masked_less_equal(thesemaps[0][:,:], 0)
@@ -72,7 +72,7 @@ def jetcontours(ax, XmeshXY,YmeshXY, pass_maps):
 
     # Multiple time steps were found
     ntimes = len(pass_maps)
-    curri = (ntimes-1)/2
+    curri = (ntimes-1)//2
     thesemaps = pass_maps[curri]
 
     thisrho = np.ma.masked_less_equal(thesemaps[0][:,:], 0)

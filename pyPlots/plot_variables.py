@@ -108,7 +108,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
    yticks = {}
    for i in range(18):
       tick = i+1
-      yticks[tick] = 7 - (int)(i)/(int)(4)
+      yticks[tick] = 7 - (int)(i)//(int)(4)
 
 
    import numpy as np
