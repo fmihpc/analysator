@@ -114,7 +114,7 @@ def verifyCellWithVspace(vlsvReader,cid):
 # create a 2-dimensional histogram
 def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
     # Flux weighting?
-    if wflux!=None:
+    if wflux is not None:
         fw = f*np.linalg.norm([VX,VY,Voutofslice]) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
@@ -152,7 +152,7 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
     nVhist = nVhist.transpose()
 
     # Flux weighting
-    if wflux!=None:
+    if wflux is not None:
         dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
         nVhist = np.divide(nVhist,(dV*4*np.pi)) # normalization
 
@@ -202,7 +202,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         else:
             print("Error in shape of center vector! Give in form (vx,vy,vz).")
 
-    if setThreshold==None:
+    if setThreshold is None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
         # cells as well.
         if vlsvReader.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
@@ -222,7 +222,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     f = f[ii_f]
     V = V[ii_f,:][0,:,:]
 
-    if slicethick==None:
+    if slicethick is None:
         # Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.
         samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
         sbrot = rotateVectorToVector(samplebox,normvect)
@@ -256,8 +256,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VY = V[:,2]
         Voutofslice = V[:,1]
     elif slicetype=="vecperp":
+        # Find velocity components in rotated frame where normavect is outofslice and optional
+        # normvectX is in VX direction
         N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N) # aligns the Z axis of V with normvect
+        Vrot = rotateVectorToVector(V,N)
+        if normvectX is not None:
+            NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+            NXrot = rotateVectorToVector(NX,N)
+            Vrot2 = rotateVectorToVector_X(Vrot,NXrot)
+            Vrot = Vrot2
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
@@ -319,7 +326,8 @@ def plot_vdf(filename=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
              fmin=None, fmax=None, slicethick=None, cellsize=None,
-             xy=None, xz=None, yz=None, normal=None,
+             xy=None, xz=None, yz=None,
+             normal=None, normalx=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,
@@ -368,6 +376,8 @@ def plot_vdf(filename=None,
     :kword xz:          Perform slice in x-z-direction
     :kword yz:          Perform slice in y-z-direction
     :kword normal:      Perform slice in plane perpendicular to given vector
+    :kword normalx:     X-axis direction for slice in plane perpendicular to given vector
+
     :kword bpara:       Perform slice in B_para / B_perp2 plane
     :kword bpara1:       Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
@@ -441,18 +451,18 @@ def plot_vdf(filename=None,
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
     
     # Input file or object
-    if filename!=None:
+    if filename is not None:
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
-    elif vlsvobj!=None:
+    elif vlsvobj is not None:
         vlsvReader=vlsvobj
-    elif ((filedir!=None) and (step!=None)):
+    elif ((filedir is not None) and (step is not None)):
         filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
-    if colormap==None:
+    if colormap is None:
         colormap="hot_desaturated"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -465,7 +475,7 @@ def plot_vdf(filename=None,
     timeval=vlsvReader.read_parameter("time")
 
     # Plot title with time
-    if title==None or title=="msec" or title=="musec":        
+    if title is None or title=="msec" or title=="musec":        
         if timeval == None:    
             plot_title = ''
         else:
@@ -477,9 +487,9 @@ def plot_vdf(filename=None,
     else:
         plot_title = title
 
-    if draw==None and axes==None:
+    if draw is None and axes is None:
         # step, used for file name
-        if step!=None:
+        if step is not None:
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
@@ -488,10 +498,10 @@ def plot_vdf(filename=None,
                 stepstr = ''
 
         # If run name isn't given, just put "plot" in the output file name
-        if run==None:
+        if run is None:
             run='plot'
             # If working within CSC filesystem, make a guess:
-            if filename!=None:
+            if filename is not None:
                 if type(filename) is str:
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
@@ -502,15 +512,15 @@ def plot_vdf(filename=None,
             projstr="_proj"
 
         # Verify directory
-        if outputfile==None:
-            if outputdir==None: # default initial path
+        if outputfile is None:
+            if outputdir is None: # default initial path
                 savefigdir=os.path.expandvars('$HOME/Plots/')
             else:
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
             savefigname = savefigdir+run
         else: 
-            if outputdir!=None:
+            if outputdir is not None:
                 savefigname = outputdir+outputfile
             else:
                 savefigname = outputfile
@@ -567,7 +577,7 @@ def plot_vdf(filename=None,
     # unit of velocity
     velUnit = 1e3
     velUnitStr = r'[km s$^{-1}$]'
-    if axisunit!=None:
+    if axisunit is not None:
         velUnit = np.power(10,int(axisunit))
         if np.isclose(axisunit,0):
             velUnitStr = r'[m s$^{-1}$]'
@@ -575,23 +585,23 @@ def plot_vdf(filename=None,
             velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m s$^{-1}$]'
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if axes==None: # If axes are provided, leave backend as-is.
-        if draw!=None:
+    if axes is None: # If axes are provided, leave backend as-is.
+        if draw is not None:
             if str(matplotlib.get_backend()) is not 'TkAgg':
                 plt.switch_backend('TkAgg')
         else:
             if str(matplotlib.get_backend()) is not 'Agg':
                 plt.switch_backend('Agg')  
 
-    if (cellids==None and coordinates==None and coordre==None):
+    if (cellids is None and coordinates is None and coordre is None):
         print("Error: must provide either cell id's or coordinates")
         return -1
 
-    if coordre!=None:
+    if coordre is not None:
         # Transform to metres
         coordinates = (Re*np.asarray(coordre)).tolist()
 
-    if coordinates!=None:
+    if coordinates is not None:
         # Check if coordinates given were actually just a single 3-element list
         # instead of a list of 3-element lists:
         if type(coordinates[0]) is not list:
@@ -636,7 +646,7 @@ def plot_vdf(filename=None,
         print("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
 
-    if coordinates==None and coordre==None:
+    if coordinates is None and coordre is None:
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
@@ -644,7 +654,7 @@ def plot_vdf(filename=None,
                 return
 
 
-    if draw!=None or axes!=None:
+    if draw is not None or axes is not None:
         # Program was requested to draw to screen or existing axes instead of saving to a file. 
         # Just handle the first cellid.
         if len(cellids) > 1:
@@ -668,6 +678,9 @@ def plot_vdf(filename=None,
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop V5 bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         else:
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
@@ -676,7 +689,7 @@ def plot_vdf(filename=None,
             sys.exit()
 
         # If necessary, find magnetic field
-        if bvector!=None or bpara!=None or bperp!=None or bpara1!=None:
+        if bvector is not None or bpara is not None or bperp is not None or bpara1 is not None:
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
@@ -711,7 +724,7 @@ def plot_vdf(filename=None,
         # Check slice to perform (and possibly normal vector)
         normvect=None
         normvectX=None
-        if xy==None and xz==None and yz==None and normal==None and bpara==None and bpara1==None and bperp==None:
+        if xy is None and xz is None and yz is None and normal is None and bpara is None and bpara1 is None and bperp is None:
             # Use default slice for this simulation
             # Check if ecliptic or polar run
             if ysize==1: # polar
@@ -733,7 +746,7 @@ def plot_vdf(filename=None,
                 pltxstr=r"$v_y$ "+velUnitStr
                 pltystr=r"$v_z$ "+velUnitStr
                 normvect=[1,0,0] # used just for cell size normalisation
-        elif normal!=None:
+        elif normal is not None:
             if len(normal)==3:
                 slicetype="vecperp"
                 normvect=normal
@@ -742,22 +755,31 @@ def plot_vdf(filename=None,
             else:
                 print("Error parsing slice normal vector!")
                 sys.exit()
-        elif xy!=None:
+            if normalx is not None:
+                if len(normalx)==3:
+                    normvectX=normalx
+                    if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
+                        print("Error, normalx dot normal is not zero!")
+                        sys.exit()
+                else:
+                    print("Error parsing slice normalx vector!")
+                    sys.exit()
+        elif xy is not None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
             pltystr=r"$v_y$ "+velUnitStr
             normvect=[0,0,1] # used just for cell size normalisation
-        elif xz!=None:
+        elif xz is not None:
             slicetype="xz"
             pltxstr=r"$v_x$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[0,1,0] # used just for cell size normalisation
-        elif yz!=None:
+        elif yz is not None:
             slicetype="yz"
             pltxstr=r"$v_y$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[1,0,0] # used just for cell size normalisation
-        elif bpara!=None or bpara1!=None or bperp!=None:
+        elif bpara is not None or bpara1 is not None or bperp is not None:
             if Bvect.shape==(1,3):
                 Bvect = Bvect[0]
             normvect = Bvect
@@ -766,14 +788,14 @@ def plot_vdf(filename=None,
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
 
-            if bperp!=None:
+            if bperp is not None:
                 # slice in b_perp1/b_perp2
                 slicetype="Bperp"
                 #pltxstr=r"$v_{\perp 1}$ "+velUnitStr
                 #pltystr=r"$v_{\perp 2}$ "+velUnitStr
                 pltxstr=r"$v_{B \times V}$ "+velUnitStr
                 pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
-            elif bpara1!=None:
+            elif bpara1 is not None:
                 # slice in b_parallel/b_perp1 plane
                 slicetype="Bpara1"
                 #pltxstr=r"$v_{\parallel}$ "+velUnitStr
@@ -789,13 +811,13 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
 
 
-        if draw==None and axes==None:
-            if outputfile==None:
+        if draw is None and axes is None:
+            if outputfile is None:
                 savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
             else:
                 savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
-            if (nooverwrite!=None and os.path.exists(savefigname)):            
+            if (nooverwrite is not None and os.path.exists(savefigname)):            
                 if os.stat(savefigname).st_size > 0: # Also check that file is not empty
                     print("Found existing file "+savefigname+". Skipping.")
                     return
@@ -810,7 +832,7 @@ def plot_vdf(filename=None,
             normvectX = normvectX/np.linalg.norm(normvectX)
 
 
-        if cbulk!=None or center=='bulk':
+        if cbulk is not None or center=='bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
@@ -824,7 +846,7 @@ def plot_vdf(filename=None,
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
         # norm_srt = sorted(abs(normvect))
-        # if cellsize==None:
+        # if cellsize is None:
         #     if norm_srt[1] > 0:
         #         temp = norm_srt[0]/norm_srt[1]
         #         aratio = (1.+temp)/np.sqrt( 1+temp**2)
@@ -836,7 +858,7 @@ def plot_vdf(filename=None,
         # else:
         #     gridratio = 1.
 
-        if cellsize==None:
+        if cellsize is None:
             samplebox=np.array([ [0.0,0.0,0.0], [0.0,0.0,1.0], [0.0,1.0,0.0], [0.0,1.0,1.0], [1.0,0.0,0.0], [1.0,0.0,1.0], [1.0,1.0,0.0], [1.0,1.0,1.0] ])
             sbrot = rotateVectorToVector(samplebox,normvect)
             if normvectX is not None:
@@ -868,7 +890,7 @@ def plot_vdf(filename=None,
             continue
 
         # Perform swap of coordinate axes, if requested
-        if coordswap!=None:
+        if coordswap is not None:
             temp = edgesX
             edgesX = edgesY
             edgesY = temp
@@ -881,7 +903,7 @@ def plot_vdf(filename=None,
         pltystr = r'\textbf{'+pltystr+'}'
 
         # If no other plotting fmin fmax values are given, take min and max of array
-        if fmin!=None:
+        if fmin is not None:
             fminuse=fmin
         else:
             nzindex = np.where(binsXY > 0)
@@ -890,7 +912,7 @@ def plot_vdf(filename=None,
             else:
                 fminuse = 1e-20 # No valid values! use extreme default.
 
-        if fmax!=None:
+        if fmax is not None:
             fmaxuse=fmax
         else:
             nzindex = np.where(binsXY > 0)
@@ -904,7 +926,7 @@ def plot_vdf(filename=None,
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
         ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
 
-        if box!=None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
+        if box is not None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]
             yvalsrange=[box[2],box[3]]
         else:
@@ -947,7 +969,7 @@ def plot_vdf(filename=None,
         # Plot the slice         
         [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
-        if axes==None:
+        if axes is None:
             # Create 300 dpi image of suitable size
             fig = plt.figure(figsize=figsize,dpi=300)
             ax1 = plt.gca() # get current axes
@@ -966,7 +988,7 @@ def plot_vdf(filename=None,
         ax1.tick_params(axis='y',which='minor')
 
         # plot contours?
-        if contours!=None:
+        if contours is not None:
             contdraw=ax1.contour(XmeshXY[:-1,:-1]+0.5*(XmeshXY[1,0]-XmeshXY[0,0]),
                                  YmeshXY[:-1,:-1]+0.5*(YmeshXY[0,1]-YmeshXY[0,0]),
                                  binsXY,np.logspace(math.log10(fminuse),math.log10(fmaxuse),int(contours)),
@@ -993,7 +1015,7 @@ def plot_vdf(filename=None,
 
         # Adjust axis tick labels
         for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
-            if tickinterval!=None:
+            if tickinterval is not None:
                 axis.set_major_locator(mtick.MultipleLocator(tickinterval))
             # Custom tick formatter
             axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
@@ -1007,7 +1029,7 @@ def plot_vdf(filename=None,
                     t.set_verticalalignment('top')
                     t.set_horizontalalignment('right')
 
-        if noxlabels==None:
+        if noxlabels is None:
             #plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
             #plt.xticks(fontsize=fontsize,fontweight='black')
             ax1.set_xlabel(pltxstr,fontsize=fontsize,weight='black')
@@ -1015,7 +1037,7 @@ def plot_vdf(filename=None,
                 item.set_fontsize(fontsize)
                 item.set_fontweight('black')
             ax1.xaxis.offsetText.set_fontsize(fontsize)
-        if noylabels==None:
+        if noylabels is None:
             #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
             #plt.yticks(fontsize=fontsize,fontweight='black')
             ax1.set_ylabel(pltystr,fontsize=fontsize,weight='black')
@@ -1024,8 +1046,8 @@ def plot_vdf(filename=None,
                 item.set_fontweight('black')
             ax1.yaxis.offsetText.set_fontsize(fontsize)
 
-        if biglabel!=None:
-            if biglabloc==None:
+        if biglabel is not None:
+            if biglabloc is None:
                 biglabloc = 0 # default top-left corner               
             if biglabloc==0:
                 BLcoords=[0.02,0.98]
@@ -1047,19 +1069,19 @@ def plot_vdf(filename=None,
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
 
 
-        if bvector!=None and bpara==None and bperp==None and bpara1==None:
+        if bvector is not None and bpara is None and bperp is None and bpara1 is None:
             # Draw vector of magnetic field direction
-            if xy!=None and coordswap==None:
+            if xy is not None and coordswap is None:
                 binplane = [Bvect[0],Bvect[1]]
-            if xy!=None and coordswap!=None:
+            if xy is not None and coordswap is not None:
                 binplane = [Bvect[1],Bvect[0]]
-            if xz!=None and coordswap==None:
+            if xz is not None and coordswap is None:
                 binplane = [Bvect[0],Bvect[2]]
-            if xz!=None and coordswap!=None:
+            if xz is not None and coordswap is not None:
                 binplane = [Bvect[2],Bvect[0]]
-            if yz!=None and coordswap==None:
+            if yz is not None and coordswap is None:
                 binplane = [Bvect[1],Bvect[2]]
-            if yz!=None and coordswap!=None:
+            if yz is not None and coordswap is not None:
                 binplane = [Bvect[2],Bvect[1]]
             # normalize
             bvector = binplane/np.linalg.norm(binplane)
@@ -1072,13 +1094,13 @@ def plot_vdf(filename=None,
             ax1.annotate("", xy=(bvector[0],bvector[1]), xytext=(0,0),
                         arrowprops=dict(arrowstyle="->"),zorder=10)
 
-        if nocb==None:
+        if nocb is None:
             cbtitleuse=None
-            if cbtitle!=None:
+            if cbtitle is not None:
                 if type(cbtitle) is str:
                     cbtitleuse = cbtitle
-            if cbtitleuse==None:
-                if wflux==None:
+            if cbtitleuse is None:
+                if wflux is None:
                     cbtitleuse=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
                 else:
                     cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
@@ -1087,7 +1109,7 @@ def plot_vdf(filename=None,
                 cax = cbaxes
                 cbdir="right"
                 horalign="left"
-            elif internalcb==None:
+            elif internalcb is None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
                 cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -1132,10 +1154,10 @@ def plot_vdf(filename=None,
                     
 
 
-        if noxlabels!=None:
+        if noxlabels is not None:
             for label in ax1.xaxis.get_ticklabels():
                 label.set_visible(False)
-        if noylabels!=None:
+        if noylabels is not None:
             for label in ax1.yaxis.get_ticklabels():
                 label.set_visible(False)       
 
@@ -1144,7 +1166,7 @@ def plot_vdf(filename=None,
         if axes is not None:
             savefig_pad=0.01
             bbox_inches='tight'
-        elif noborder==None:
+        elif noborder is None:
             plt.tight_layout()
             savefig_pad=0.05 # The default is 0.1
             bbox_inches=None
@@ -1155,7 +1177,7 @@ def plot_vdf(filename=None,
 
         # Add Vlasiator watermark
         if (wmark is not None or wmarkb is not None) and axes is None:
-            if wmark!=None:
+            if wmark is not None:
                 wm = plt.imread(get_sample_data(watermarkimage))
             else:
                 wmark=wmarkb # for checking for placement
@@ -1176,13 +1198,13 @@ def plot_vdf(filename=None,
             newax.axis('off')
 
         # Save output or draw on-screen
-        if draw==None and axes==None:
+        if draw is None and axes is None:
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")
-        elif axes==None:
+        elif axes is None:
             # Draw on-screen
             plt.draw()
             plt.show()
