@@ -169,7 +169,6 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
         if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
             return (False,0,0,0)
-
         
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)

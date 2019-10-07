@@ -146,6 +146,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
             return (False,0,0,0)
+    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
+        if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
+            return (False,0,0,0)
 
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
@@ -192,6 +195,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
             print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+        elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+            setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
+            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
             print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
             print("Using a default value of 1.e-16. Override with setThreshold=value.")
@@ -624,6 +630,8 @@ def plot_vdf_profiles(filename=None,
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
+            elif vlsvReader.check_variable("vg_b_vol"):
+                Bvect = vlsvReader.read_variable("vg_b_vol", cellid)
             # Otherwise perform linear reconstruction to find
             # approximation of cell-center value
             else:

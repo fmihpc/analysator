@@ -389,9 +389,9 @@ def plot_colormap(filename=None,
             var='rho'
             if f.check_variable("proton/vg_rho"): # multipop v5
                 var = 'proton/vg_rho'
-            if f.check_variable("proton/rho"): # multipop
+            elif f.check_variable("proton/rho"): # multipop
                 var = 'proton/rho'
-            if f.check_variable("moments"): # restart
+            elif f.check_variable("moments"): # restart
                 if len(f.read_variable("moments",cellids=1))==4:
                     var = 'restart_rho'
                 else: # multipop restart
@@ -893,8 +893,13 @@ def plot_colormap(filename=None,
             fScolour = fsaved
         else:
             fScolour = 'black'
+        fsavedvariable=None
         if f.check_variable("fSaved"):
-            fSmap = f.read_variable("fSaved")
+            fsavedvariable="fSaved"
+        if f.check_variable("vg_f_saved"):
+            fsavedvariable="vg_f_saved"
+        if fsavedvariable is not None:
+            fSmap = f.read_variable(fsavedvariable)
             fSmap = fSmap[cellids.argsort()].reshape([sizes[1],sizes[0]])
             if np.ma.is_masked(maskgrid):
                 fSmap = fSmap[MaskX,:]
