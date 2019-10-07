@@ -163,10 +163,14 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
                   slicethick=None, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
-    if vlsvReader.check_variable('fSaved'): #restart files will not have this value
+    if vlsvReader.check_variable('fSaved'): #restart files will not have this value        
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
             return (False,0,0,0)
+    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
+        if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
+            return (False,0,0,0)
 
+        
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
     # Account for 4x4x4 cells per block
@@ -211,6 +215,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
             print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+        elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+            setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
+            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
             print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
             print("Using a default value of 1.e-16. Override with setThreshold=value.")
@@ -666,7 +673,7 @@ def plot_vdf(filename=None,
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
         elif vlsvReader.check_variable(pop+'/vg_v'):
-            # multipop bulk file
+            # multipop v5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
@@ -683,6 +690,8 @@ def plot_vdf(filename=None,
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
+            elif vlsvReader.check_variable("vg_b_vol"):
+                Bvect = vlsvReader.read_variable("vg_b_vol", cellid)
             # Otherwise perform linear reconstruction to find
             # approximation of cell-center value
             else:
