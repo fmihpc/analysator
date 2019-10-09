@@ -801,3 +801,7 @@ multipopdatareducers["pop/betaPerpendicular"] =      DataReducerVariable(["pop/P
 multipopdatareducers["pop/Rmirror"] =                DataReducerVariable(["pop/PTensor", "B"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopdatareducers["pop/Dng"] =                    DataReducerVariable(["pop/PTensor", "pop/PParallel", "pop/PPerpendicular", "B"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 
+
+
+multipopdatareducers["pop/vg_temperature"] =            DataReducerVariable(["pop/vg_pressure", "pop/vg_rho"], Temperature, "K", 1, latex=r"$T_\mathrm{REPLACEPOP}$", latexunits=r"K")
+multipopdatareducers["pop/vg_pressure"] =               DataReducerVariable(["pop/vg_ptensor_diagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
