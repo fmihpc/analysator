@@ -943,10 +943,12 @@ def plot_colormap3dslice(filename=None,
             vectmap = np.ma.array(vectmap)
             for i in range(3):
                 vectmap[:,:,i].mask = XYmask
-
+    
         # Find vector lengths and define color
         lengths=np.linalg.norm(vectmap, axis=-1)
-        colors = np.log10(lengths/np.mean(lengths))
+        # Mask out the smallest vectors (at e.g. inner boundary)
+        lengths=np.ma.masked_less(lengths, 0.01*np.amax(lengths))
+        colors = np.log10(np.ma.divide(lengths,np.ma.mean(lengths)))
 
         # Try to estimate vectstep so there's about 100 vectors in the image area
         vectstep = int(np.sqrt(colors.shape[0] * colors.shape[1]/vectordensity))
