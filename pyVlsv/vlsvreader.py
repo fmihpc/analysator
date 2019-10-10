@@ -28,7 +28,7 @@ import numpy as np
 import os
 import numbers
 import vlsvvariables
-from reduction import datareducers,multipopdatareducers,data_operators
+from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
@@ -473,7 +473,7 @@ class VlsvReader(object):
       '''
       for child in self.__xml_root:
          if child.tag == "PARAMETER" and "name" in child.attrib:
-            if child.attrib["name"] == name:
+            if child.attrib["name"].lower() == name.lower():
                return True
       return False
 
@@ -498,7 +498,7 @@ class VlsvReader(object):
       '''
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
-            if child.attrib["name"] == name:
+            if child.attrib["name"].lower() == name.lower():
                return True
       return False
 
@@ -524,7 +524,7 @@ class VlsvReader(object):
       for child in self.__xml_root:
          if child.tag == "BLOCKIDS":
             if child.attrib.has_key("name"):
-               if popname == child.attrib["name"]:
+               if popname.lower() == child.attrib["name"].lower():
                   foundpop = True
             else:
                blockidsexist = True
@@ -532,7 +532,7 @@ class VlsvReader(object):
          for child in self.__xml_root:
             if child.tag == "BLOCKVARIABLE":
                if child.attrib.has_key("name"):
-                  if popname == child.attrib["name"]: # avgs
+                  if popname.lower() == child.attrib["name"].lower(): # avgs
                      foundpop = True
       return foundpop
 
@@ -587,6 +587,9 @@ class VlsvReader(object):
       else:
          fptr = self.__fptr
 
+      # Force lowercase name for internal checks
+      name = name.lower()
+         
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -594,18 +597,13 @@ class VlsvReader(object):
       else:
          varname = name
 
-      # POSSIBLE TODO:
-      # If read was to be made case-insensitive, checking through variables and datareducers can be
-      # done with an iterator as
-      # if name.lower() in (n.upper() for n in datareducers):
-      # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
-
+      # Seek for requested data in VLSV file
       for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
                continue
          if name != "":
-            if "name" in child.attrib and child.attrib["name"] != name:
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
                continue
          if mesh != "":
             if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
@@ -690,6 +688,14 @@ class VlsvReader(object):
             else:
                return data_operators[operator](data)
 
+      # Check which set of datareducers to use
+      if varname[0:3]=="vg_":
+         reducer_reg = v5reducers
+         reducer_multipop = multipopv5reducers
+      else:
+         reducer_reg = datareducers
+         reducer_multipop = multipopdatareducers
+            
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
       if self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
@@ -699,8 +705,8 @@ class VlsvReader(object):
          return data_operators[operator](data_operators["sum"](tmp_vars))
 
       # Check if the name is in datareducers
-      if name in datareducers:
-         reducer = datareducers[name]
+      if name in reducer_reg:
+         reducer = reducer_reg[name]
          # Read the necessary variables:
 
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
@@ -733,8 +739,8 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multidatareducers
-      if 'pop/'+varname in multipopdatareducers:
-         reducer = multipopdatareducers['pop/'+varname]
+      if 'pop/'+varname in reducer_multipop:
+         reducer = reducer_multipop['pop/'+varname]
          vlsvvariables.activepopulation = popname
          
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
@@ -761,6 +767,51 @@ class VlsvReader(object):
       if self.__fptr.closed:
          fptr.close()
 
+
+   def read_metadata(self, name="", tag="", mesh=""):
+      ''' Read variable metadata from the open vlsv file. 
+      
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :returns: four strings:
+                the unit of the variable as a regular string
+                the unit of the variable as a LaTeX-formatted string
+                the description of the variable as a LaTeX-formatted string
+                the conversion factor to SI units as a string                  
+      '''
+
+      if tag == "" and name == "":
+         print "Bad arguments at read"
+
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+
+      # Force lowercase name for internal checks
+      name = name.lower()
+
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if tag != "":
+            if child.tag != tag:
+               continue
+         if name != "":
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
+               continue
+         # Found the requested data entry in the file
+         return child.attrib["unit"],child.attrib["unitLaTeX"],child.attrib["variableLaTeX"],child.attrib["unitConversion"]
+            
+      if name!="":
+         print "Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" 
+      if self.__fptr.closed:
+         fptr.close()
+      return -1
+         
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
@@ -937,28 +988,42 @@ class VlsvReader(object):
       else:
          varname = name
 
-      if name in datareducers:
-         units = datareducers[name].units
-         latex = datareducers[name].latex
-         latexunits = datareducers[name].latexunits
+      # Check which set of datareducers to use
+      if varname[0:3]=="vg_":
+         reducer_reg = v5reducers
+         reducer_multipop = multipopv5reducers
+      else:
+         reducer_reg = datareducers
+         reducer_multipop = multipopdatareducers
+
+      if name in reducer_reg:
+         units = reducer_reg[name].units
+         latex = reducer_reg[name].latex
+         latexunits = reducer_reg[name].latexunits
       elif name in vlsvvariables.unitsdict:
-         units = vlsvvariables.unitsdict[name]
-         latex = vlsvvariables.latexdict[name]
-         latexunits = vlsvvariables.latexunitsdict[name]
-      elif 'pop/'+varname in multipopdatareducers:
+         if varname[0:3]=="vg_":
+            units, latexunits ,latex, conversion = self.read_metadata(name=name)
+         else:
+            units = vlsvvariables.unitsdict[name]
+            latex = vlsvvariables.latexdict[name]
+            latexunits = vlsvvariables.latexunitsdict[name]            
+      elif 'pop/'+varname in reducer_multipop:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
             poplatex = vlsvvariables.speciesdict[popname]
-         units = multipopdatareducers['pop/'+varname].units
-         latex = (multipopdatareducers['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
-         latexunits = multipopdatareducers['pop/'+varname].latexunits
+         units = reducer_multipop['pop/'+varname].units
+         latex = (reducer_multipop['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
+         latexunits = reducer_multipop['pop/'+varname].latexunits
       elif varname in vlsvvariables.unitsdict:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
             poplatex = vlsvvariables.speciesdict[popname]
-         units = vlsvvariables.unitsdict[varname]
-         latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
-         latexunits = vlsvvariables.latexunitsdict[varname]
+         if varname[0:3]=="vg_":
+            units, latexunits ,latex, conversion = self.read_metadata(name=name)
+         else:
+            units = vlsvvariables.unitsdict[varname]
+            latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
+            latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
          latex = r""+name.replace("_","\_")

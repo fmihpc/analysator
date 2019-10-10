@@ -37,6 +37,13 @@ speciesamu ={
     'oxygen': 16,
     'electron': 5.488e-4,
 }
+speciescharge ={
+    'avgs': 1,
+    'proton': 1,
+    'helium': 2,
+    'oxygen': 1,
+    'electron': -1,
+}
 
 # Define some units for intrinsic values
 unitsdict = {
