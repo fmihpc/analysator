@@ -370,17 +370,12 @@ def plot_colormap3dslice(filename=None,
         varstr=expression.__name__.replace("/","_")
     else:        
         if var is None:
-            # If no expression or variable given, defaults to rho
-            var='rho'
+            # If no expression or variable given, defaults to rhom
+            var='vg_rhom'
             if f.check_variable("proton/vg_rho"): # multipop v5
                 var = 'proton/vg_rho'
-            elif f.check_variable("proton/rho"): # multipop
-                var = 'proton/rho'
             elif f.check_variable("moments"): # restart
-                if len(f.read_variable("moments",cellids=1))==4:
-                    var = 'restart_rho'
-                else: # multipop restart
-                    var = 'restart_rhom'
+                var = 'vg_restart_rhom'
         varstr=var.replace("/","_")
 
     # File output checks
@@ -512,12 +507,12 @@ def plot_colormap3dslice(filename=None,
     # Find rhom map for use in masking out ionosphere
     #################################################
     if f.check_variable("moments"):
-        rhomap = f.read_variable("restart_rhom")
+        rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
     else:
-        rhomap = f.read_variable("rhom")            
-
+        rhomap = f.read_variable("vg_rhom")
+        
     rhomap = rhomap[indexids] # sort
     rhomap = rhomap[indexlist] # find required cells
     # Create the plotting grid
@@ -915,8 +910,8 @@ def plot_colormap3dslice(filename=None,
             fScolour = fsaved
         else:
             fScolour = 'black'
-        if f.check_variable("fSaved"):
-            fSmap = f.read_variable("fSaved")
+        if f.check_variable("vg_f_saved"):
+            fSmap = f.read_variable("vg_f_saved")
             fSmap = fSmap[indexids] # sort
             fSmap = fSmap[indexlist] # find required cells
             fSmap = ids3d.idmesh3d(idlist, fSmap, reflevel, xsize, ysize, zsize, xyz, None)                        
