@@ -791,9 +791,9 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-
+      
       # Seek for requested data in VLSV file
-      for child in self.__xml_root:
+      for child in self.__xml_root:         
          if tag != "":
             if child.tag != tag:
                continue
@@ -803,8 +803,14 @@ class VlsvReader(object):
          if mesh != "":
             if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
                continue
+         if not "name" in child.attrib:
+            continue
          # Found the requested data entry in the file
-         return child.attrib["unit"],child.attrib["unitLaTeX"],child.attrib["variableLaTeX"],child.attrib["unitConversion"]
+         unit = child.attrib["unit"]
+         unitLaTeX = child.attrib["unitLaTeX"]
+         variableLaTeX = child.attrib["variableLaTeX"]
+         unitConversion = child.attrib["unitConversion"] 
+         return unit, unitLaTeX, variableLaTeX, unitConversion
             
       if name!="":
          print "Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" 
@@ -1001,12 +1007,9 @@ class VlsvReader(object):
          latex = reducer_reg[name].latex
          latexunits = reducer_reg[name].latexunits
       elif name in vlsvvariables.unitsdict:
-         if varname[0:3]=="vg_":
-            units, latexunits ,latex, conversion = self.read_metadata(name=name)
-         else:
-            units = vlsvvariables.unitsdict[name]
-            latex = vlsvvariables.latexdict[name]
-            latexunits = vlsvvariables.latexunitsdict[name]            
+         units = vlsvvariables.unitsdict[name]
+         latex = vlsvvariables.latexdict[name]
+         latexunits = vlsvvariables.latexunitsdict[name]            
       elif 'pop/'+varname in reducer_multipop:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
@@ -1018,12 +1021,12 @@ class VlsvReader(object):
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
             poplatex = vlsvvariables.speciesdict[popname]
-         if varname[0:3]=="vg_":
-            units, latexunits ,latex, conversion = self.read_metadata(name=name)
-         else:
-            units = vlsvvariables.unitsdict[varname]
-            latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
-            latexunits = vlsvvariables.latexunitsdict[varname]
+         units = vlsvvariables.unitsdict[varname]
+         latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
+         latexunits = vlsvvariables.latexunitsdict[varname]
+      elif (self.check_variable(name) and varname[0:3]=="vg_" or varname[0:3]=="fg_"):
+         # For Vlasiator 5 vlsv files, metadata is included
+         units, latexunits ,latex, conversion = self.read_metadata(name=name)
       else:
          units = ""
          latex = r""+name.replace("_","\_")
