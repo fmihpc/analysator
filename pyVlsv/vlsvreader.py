@@ -805,7 +805,11 @@ class VlsvReader(object):
 
          test_val=self.read_variable(name,lower_cell_id,operator)
          if isinstance(test_val, Iterable):
-            value_length=len(test_val)
+            try:
+               value_length=len(test_val)
+            except Exception as e:
+               # Can't determine size, maybe some division by zero?
+               value_length=1
          else:
             value_length=1
          
@@ -902,6 +906,107 @@ class VlsvReader(object):
          
          # Done.
          return ret_array
+
+   def read_fsgrid_variable(self, name, operator="pass"):
+       ''' Reads fsgrid variables from the open vlsv file.
+       Arguments:
+       :param name: Name of the variable
+       :param operator: Datareduction operator. "pass" does no operation on data
+       :returns: *ordered* numpy array with the data
+
+       ... seealso:: :func:`read_variable`
+       '''
+
+       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
+       bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+
+       # Read the raw array data
+       rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
+
+       # Determine fsgrid domain decomposition
+       numWritingRanks = self.read_parameter("numWritingRanks")
+       if len(rawData.shape) > 1:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+       else:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
+
+       # Helper functions ported from c++ (fsgrid.hpp)
+       def computeDomainDecomposition(globalsize, ntasks):
+           processDomainDecomposition = [1,1,1]
+           processBox = [0,0,0]
+           optimValue = 999999999999999.
+           for i in range(1,min(ntasks,globalsize[0]+1)):
+               processBox[0] = max(1.*globalsize[0]/i,1)
+               for j in range(1,min(ntasks,globalsize[1]+1)):
+                   if(i * j > ntasks):
+                       break
+                   processBox[1] = max(1.*globalsize[1]/j,1)
+                   for k in range(1,min(ntasks,globalsize[2]+1)):
+                       if(i * j * k > ntasks):
+                           continue
+                       processBox[2] = max(1.*globalsize[2]/k,1)
+                       value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
+                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
+                        ((processBox[0] * processBox[1]) if k>1 else 0)
+                       if i*j*k == ntasks:
+			       if value < optimValue:
+				   optimValue = value
+				   processDomainDecomposition=[i,j,k]
+           return processDomainDecomposition
+
+       def calcLocalStart(globalCells, ntasks, my_n):
+           n_per_task = globalCells/ntasks
+           remainder = globalCells%ntasks
+           if my_n < remainder:
+               return my_n * (n_per_task+1)
+           else:
+               return my_n * n_per_task + remainder
+       def calcLocalSize(globalCells, ntasks, my_n):
+           n_per_task = globalCells/ntasks
+           remainder = globalCells%ntasks
+           if my_n < remainder:
+               return n_per_task+1;
+           else:
+               return n_per_task
+
+
+       currentOffset = 0;
+       fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       #print "Global size:"+str([bbox[0],bbox[1],bbox[2]])
+       #print 'decomposition: ' + str(fsgridDecomposition) + '(' + str(numWritingRanks ) + ' ranks)'
+       for i in range(0,numWritingRanks):
+           x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
+           y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
+           z = i % fsgridDecomposition[2]
+ 	   
+           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
+                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
+                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
+                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
+                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
+
+           totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
+           # Extract datacube of that task... 
+           if len(rawData.shape) > 1:
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
+
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
+	   else:
+           	# Special case for scalar data
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
+
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
+
+           currentOffset += totalSize
+
+       return orderedData
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
