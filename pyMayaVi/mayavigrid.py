@@ -694,6 +694,9 @@ class MayaviGrid(HasTraits):
       ug.set_cells(tet_type,tets)
       # Input data
       values=np.ravel(avgs)
+      maxval = np.ma.max(np.ma.masked_less_equal(values, 0))
+      minval = np.ma.min(np.ma.masked_less_equal(values, 0))
+
       ug.cell_data.scalars=values
       ug.cell_data.scalars.name=pop
 
@@ -724,8 +727,9 @@ class MayaviGrid(HasTraits):
       if iso_surface == False:
          iso = mayavi.mlab.pipeline.surface(d)
       else:
+         isosurfaces=[np.exp(0.5*(np.log(maxval) + np.log(minval))), maxval/10.]
          ptdata = mayavi.mlab.pipeline.cell_to_point_data(d)
-         iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=[1e-15,1e-14,1e-12], opacity=0.3)
+         iso = mayavi.mlab.pipeline.iso_surface(ptdata, contours=isosurfaces, opacity=0.3)
       figure.scene.disable_render = False
       self.__unstructured_figures.append(figure)
       # Name the figure
