@@ -139,7 +139,7 @@ def axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize):
 
 
 
-def plot_surface3d(filename=None,
+def plot_threeslice(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
                   var=None, op=None, operator=None,
