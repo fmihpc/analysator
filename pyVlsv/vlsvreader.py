@@ -992,6 +992,7 @@ class VlsvReader(object):
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
+         popname = "none"
          varname = name
 
       # Check which set of datareducers to use
@@ -1002,7 +1003,13 @@ class VlsvReader(object):
          reducer_reg = datareducers
          reducer_multipop = multipopdatareducers
 
-      if name in reducer_reg:
+      if (self.check_variable(name) and (varname[0:3]=="vg_" or varname[0:3]=="fg_")):
+         # For Vlasiator 5 vlsv files, metadata is included
+         units, latexunits, latex, conversion = self.read_metadata(name=name)
+         # Correction for early version incorrect number density (extra backslash)
+         if latex[0:3]=="$\n":
+            latex = "$"+latex [2:]
+      elif name in reducer_reg:
          units = reducer_reg[name].units
          latex = reducer_reg[name].latex
          latexunits = reducer_reg[name].latexunits
@@ -1024,9 +1031,6 @@ class VlsvReader(object):
          units = vlsvvariables.unitsdict[varname]
          latex = vlsvvariables.latexdictmultipop[varname].replace('REPLACEPOP',poplatex)
          latexunits = vlsvvariables.latexunitsdict[varname]
-      elif (self.check_variable(name) and varname[0:3]=="vg_" or varname[0:3]=="fg_"):
-         # For Vlasiator 5 vlsv files, metadata is included
-         units, latexunits ,latex, conversion = self.read_metadata(name=name)
       else:
          units = ""
          latex = r""+name.replace("_","\_")
