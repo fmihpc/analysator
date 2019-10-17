@@ -375,7 +375,7 @@ def plot_colormap(filename=None,
         if operator=='x' or operator=='y' or operator=='z':
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
-            if symlog==None:
+            if symlog==None and lin is None:
                 lin=True
         # index a vector
         if operator.isdigit():
