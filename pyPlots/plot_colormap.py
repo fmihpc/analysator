@@ -328,7 +328,7 @@ def plot_colormap(filename=None,
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
     # Small internal colorbar needs increased font size
-    if internalcb!=None: fontsize3=fontsize3*2
+    #if internalcb!=None: fontsize3=fontsize3*1.5
 
     # Plot title with time
     timeval=f.read_parameter("time")
@@ -997,8 +997,8 @@ def plot_colormap(filename=None,
                 if internalcb=="SE": 
                     cbloc=4; cbdir="left";  horalign="right"
             # borderpad default value is 0.5, need to increase it to make room for colorbar title
-            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1.5,
-                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1))
+            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1,
+                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,0.95))
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
