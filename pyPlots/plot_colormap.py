@@ -327,8 +327,10 @@ def plot_colormap(filename=None,
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
-    # Small internal colorbar needs increased font size
-    #if internalcb!=None: fontsize3=fontsize3*1.5
+    # Small internal colorbar needs increased font size in old matplotlib
+    if internalcb!=None:
+        if int(matplotlib.__version__[0]) < 2:
+            fontsize3=fontsize3*2
 
     # Plot title with time
     timeval=f.read_parameter("time")
