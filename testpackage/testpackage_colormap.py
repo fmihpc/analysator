@@ -59,6 +59,14 @@ runs.append( { 'name': 'BFDr',
                  'time': 0,
                  'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv',
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
+runs.append( { 'name': 'BFH',
+                 'verifydir': 'testpackage_colormap/BFH/', 
+                 'fileLocation': '/proj/vlasov/2D/BFH/zero_ehall_layers_23/',
+                 'fluxLocation': None,
+                 'pops': ['proton'],
+                 'time': 380,
+                 'filename': None,
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
                      
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):

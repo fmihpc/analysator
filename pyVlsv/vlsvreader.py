@@ -987,6 +987,9 @@ class VlsvReader(object):
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
 
+      # Force lowercase
+      name = name.lower()
+
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -1009,14 +1012,14 @@ class VlsvReader(object):
          # Correction for early version incorrect number density (extra backslash)
          if latex[0:3]==r"$\n":
             latex = r"$n"+latex [3:]
+      elif (self.check_variable(name) and (name in vlsvvariables.unitsdict)):
+         units = vlsvvariables.unitsdict[name]
+         latex = vlsvvariables.latexdict[name]
+         latexunits = vlsvvariables.latexunitsdict[name]            
       elif name in reducer_reg:
          units = reducer_reg[name].units
          latex = reducer_reg[name].latex
          latexunits = reducer_reg[name].latexunits
-      elif name in vlsvvariables.unitsdict:
-         units = vlsvvariables.unitsdict[name]
-         latex = vlsvvariables.latexdict[name]
-         latexunits = vlsvvariables.latexunitsdict[name]            
       elif 'pop/'+varname in reducer_multipop:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
