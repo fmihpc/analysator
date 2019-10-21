@@ -1011,7 +1011,7 @@ class VlsvReader(object):
          units, latexunits, latex, conversion = self.read_metadata(name=name)
          # Correction for early version incorrect number density (extra backslash)
          if latex[0:3]==r"$\n":
-            latex = r"$n"+latex [3:]
+            latex = r"$n"+latex[3:]
       elif (self.check_variable(name) and (name in vlsvvariables.unitsdict)):
          units = vlsvvariables.unitsdict[name]
          latex = vlsvvariables.latexdict[name]
