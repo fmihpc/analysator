@@ -1007,8 +1007,8 @@ class VlsvReader(object):
          # For Vlasiator 5 vlsv files, metadata is included
          units, latexunits, latex, conversion = self.read_metadata(name=name)
          # Correction for early version incorrect number density (extra backslash)
-         if latex[0:3]=="$\n":
-            latex = "$"+latex [2:]
+         if latex[0:3]==r"$\n":
+            latex = r"$n"+latex [3:]
       elif name in reducer_reg:
          units = reducer_reg[name].units
          latex = reducer_reg[name].latex

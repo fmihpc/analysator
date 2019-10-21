@@ -170,7 +170,7 @@ def restart_rhom( variables ):
    ''' Data reducer function for calculating rhom from restart file
    '''
    moments = variables[0]
-   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mass
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
 
    if np.ndim(moments)==1: # single cell
       if len(moments)==4:  # pre-multipop restart

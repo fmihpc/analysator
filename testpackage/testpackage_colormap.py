@@ -417,7 +417,8 @@ nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeam',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vThermal',lin=1)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='aGyrotropy')"]
 
 
 multipopcalls = [
@@ -457,7 +458,8 @@ multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpendicular')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vThermal',lin=1)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/aGyrotropy')"]
 
 # count how many tests to run in total
 ntests = []
