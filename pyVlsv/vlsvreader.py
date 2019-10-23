@@ -57,7 +57,13 @@ class VlsvReader(object):
       self.__fptr = open(self.file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
+
+      self.__use_dict_for_blocks = False
       self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
+      self.__cells_with_blocks = {} # per-pop
+      self.__blocks_per_cell = {} # per-pop
+      self.__blocks_per_cell_offsets = {} # per-pop
+      self.__order_for_cellid_blocks = {} # per-pop
       
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
@@ -237,14 +243,28 @@ class VlsvReader(object):
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
-      if not pop in self.__fileindex_for_cellid_blocks:
-         self.__set_cell_offset_and_blocks(pop)
+      if self.__use_dict_for_blocks: #deprecated version
+         if not pop in self.__fileindex_for_cellid_blocks:
+            self.__set_cell_offset_and_blocks(pop)
 
-      if( (cellid in self.__fileindex_for_cellid_blocks[pop]) == False ):
-         # Cell id has no blocks
-         return []
-      offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
-      num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
+         if( (cellid in self.__fileindex_for_cellid_blocks[pop]) == False ):
+            # Cell id has no blocks
+            return []
+         offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
+         num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
+      else:
+         # Uses arrays (much faster to initialize)
+         if not pop in self.__cells_with_blocks:
+            self.__set_cell_offset_and_blocks_nodict(pop) 
+         # Check that cells has vspace
+         try:
+            cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
+         except:
+            print "Cell does not have velocity distribution"
+            return []
+         offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
+         num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
+
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -305,7 +325,9 @@ class VlsvReader(object):
       return [data_block_ids, data_avgs]
 
    def __set_cell_offset_and_blocks(self, pop="proton"):
-      ''' Read blocks per cell and the offset in the velocity space arrays for every cell with blocks into a private dictionary
+      ''' Read blocks per cell and the offset in the velocity space arrays for
+          every cell with blocks into a private dictionary.
+          Deprecated in favor of below version.
       '''
       print "Getting offsets for population " + pop
       if pop in self.__fileindex_for_cellid_blocks:
@@ -320,10 +342,30 @@ class VlsvReader(object):
       # Navigate to the correct position:
       from copy import copy
       offset = 0
-      self.__fileindex_for_cellid_blocks[pop] = {}
+      #self.__fileindex_for_cellid_blocks[pop] = {}
+      self.__fileindex_for_cellid_blocks[pop] = dict.fromkeys(cells_with_blocks) # should be faster but negligible difference
       for i in xrange(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
+
+   def __set_cell_offset_and_blocks_nodict(self, pop="proton"):
+      ''' Read blocks per cell and the offset in the velocity space arrays for every cell with blocks.
+          Stores them in arrays. Creates a private dictionary with addressing to the array.
+          This method should be faster than the above function.
+      '''
+      if pop in self.__cells_with_blocks:
+         # There's stuff already saved into the dictionary, don't save it again
+         return
+
+      print "Getting offsets for population " + pop
+
+      self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+      self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+
+      self.__blocks_per_cell_offsets[pop] = np.cumsum(self.__blocks_per_cell[pop])
+      self.__order_for_cellid_blocks[pop] = {}
+      for index,cellid in enumerate(self.__cells_with_blocks[pop]):
+         self.__order_for_cellid_blocks[pop][cellid]=index
 
    def list(self):
       ''' Print out a description of the content of the file. Useful
@@ -1359,17 +1401,30 @@ class VlsvReader(object):
       .. seealso:: :func:`read_blocks`
       '''
       
-      if not pop in self.__fileindex_for_cellid_blocks:
-         self.__set_cell_offset_and_blocks(pop) 
+      if self.__use_dict_for_blocks: # old deprecated version, uses dict for blocks data
+         if not pop in self.__fileindex_for_cellid_blocks:
+            self.__set_cell_offset_and_blocks(pop) 
+         # Check that cells has vspace
+         if not cellid in self.__fileindex_for_cellid_blocks[pop]:
+            print "Cell does not have velocity distribution"
+            return []
+         # Navigate to the correct position:
+         offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
+         num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
 
-      # Check that cells has vspace
-      if not cellid in self.__fileindex_for_cellid_blocks[pop]:
-         print "Cell does not have velocity distribution"
-         return []
+      else:  # Uses arrays (much faster to initialize)
+         if not pop in self.__cells_with_blocks:
+            self.__set_cell_offset_and_blocks_nodict(pop) 
+         # Check that cells has vspace
+         try:
+            cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
+         except:
+            print "Cell does not have velocity distribution"
+            return []
+         # Navigate to the correct position:
+         offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
+         num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
 
-      # Navigate to the correct position:
-      offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
-      num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -1510,10 +1565,6 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_velocity_cells`
       '''
-      if not self.__fileindex_for_cellid_blocks.has_key(pop):
-         # Set the locations
-         self.__set_cell_offset_and_blocks(pop)
-
       # Uses new format
       return self.__read_blocks(cellid,pop)
 
@@ -1578,6 +1629,10 @@ class VlsvReader(object):
          .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid_blocks = {}
+      self.__cells_with_blocks = {}
+      self.__blocks_per_cell = {}
+      self.__blocks_per_cell_offsets = {}
+      self.__order_for_cellid_blocks = {}
 
    def optimize_clear_fileindex_for_cellid(self):
       ''' Clears a private variable containing cell ids and their locations
