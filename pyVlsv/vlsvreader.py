@@ -58,7 +58,7 @@ class VlsvReader(object):
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 
-      self.__use_dict_for_blocks = False
+      self.use_dict_for_blocks = False
       self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
       self.__cells_with_blocks = {} # per-pop
       self.__blocks_per_cell = {} # per-pop
@@ -243,7 +243,7 @@ class VlsvReader(object):
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
-      if self.__use_dict_for_blocks: #deprecated version
+      if self.use_dict_for_blocks: #deprecated version
          if not pop in self.__fileindex_for_cellid_blocks:
             self.__set_cell_offset_and_blocks(pop)
 
@@ -362,7 +362,9 @@ class VlsvReader(object):
       self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
       self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
 
-      self.__blocks_per_cell_offsets[pop] = np.cumsum(self.__blocks_per_cell[pop])
+      self.__blocks_per_cell_offsets[pop] = np.empty(len(self.__cells_with_blocks[pop]))
+      self.__blocks_per_cell_offsets[pop][0] = 0.0
+      self.__blocks_per_cell_offsets[pop][1:] = np.cumsum(self.__blocks_per_cell[pop][:-1])
       self.__order_for_cellid_blocks[pop] = {}
       for index,cellid in enumerate(self.__cells_with_blocks[pop]):
          self.__order_for_cellid_blocks[pop][cellid]=index
@@ -1401,7 +1403,7 @@ class VlsvReader(object):
       .. seealso:: :func:`read_blocks`
       '''
       
-      if self.__use_dict_for_blocks: # old deprecated version, uses dict for blocks data
+      if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
             self.__set_cell_offset_and_blocks(pop) 
          # Check that cells has vspace
