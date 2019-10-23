@@ -18,6 +18,7 @@ runs.append( { 'name': 'ABC',
                  'pops': ['avgs'],
                  'time': 1000,
                  'filename': None,
+                 'vlasiator5': False,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQ',
                  'verifydir': 'testpackage_colormap/BCQ/', 
@@ -26,6 +27,7 @@ runs.append( { 'name': 'BCQ',
                  'pops': ['avgs'],
                  'time': 1600,
                  'filename': None,
+                 'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BED', 
                  'verifydir': 'testpackage_colormap/BED/', 
@@ -34,6 +36,7 @@ runs.append( { 'name': 'BED',
                  'pops': ['avgs'],
                  'time': 2000,
                  'filename': None,
+                 'vlasiator5': False,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFD',
                  'verifydir': 'testpackage_colormap/BFD/', 
@@ -42,6 +45,7 @@ runs.append( { 'name': 'BFD',
                  'pops': ['proton','helium'],
                  'time': 1000,
                  'filename': None,
+                 'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BCQr',
                  'verifydir': 'testpackage_colormap/BCQr/', 
@@ -50,6 +54,7 @@ runs.append( { 'name': 'BCQr',
                  'pops': ['avgs'],
                  'time': 0,
                  'filename': 'restart.0001361.vlsv',
+                 'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFDr',
                  'verifydir': 'testpackage_colormap/BFDr/', 
@@ -58,6 +63,7 @@ runs.append( { 'name': 'BFDr',
                  'pops': ['avgs'],
                  'time': 0,
                  'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv',
+                 'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
 runs.append( { 'name': 'BFH',
                  'verifydir': 'testpackage_colormap/BFH/', 
@@ -66,6 +72,7 @@ runs.append( { 'name': 'BFH',
                  'pops': ['proton'],
                  'time': 380,
                  'filename': None,
+                 'vlasiator5': True,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,150,10] } )
                      
 # Custom expression function                                                               
@@ -539,12 +546,18 @@ for j in range(start,end):
 
     if jrun<len(regularcalls):
         call = regularcalls[jrun]
+        if runs[runid]['vlasiator5']:
+            call.replace("var='","var='vg_")
     elif jrun<(len(regularcalls)+len(nonrestartcalls)):
         call = nonrestartcalls[jrun-len(regularcalls)]
+        if runs[runid]['vlasiator5']:
+            call.replace("var='","var='vg_")
     else:
         jrunmp = jrun-len(regularcalls)-len(nonrestartcalls)
         popid = int(jrunmp/len(multipopcalls))
         jrunmp = jrunmp % len(multipopcalls)
+        if runs[runid]['vlasiator5']:
+            call.replace("var='REPLACEPOP/","var='REPLACEPOP/vg_")
         call = multipopcalls[jrunmp].replace('REPLACEPOP',pops[popid])
     
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
