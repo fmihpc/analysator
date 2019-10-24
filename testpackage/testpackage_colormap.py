@@ -78,7 +78,10 @@ runs.append( { 'name': 'BFH',
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
     if requestvariables==True:
-        return ['va']
+        if vlasiator5 is True:
+            return ['vg_va']
+        else:
+            return ['va']
     # exprmaps is a dictionary of numpy arrays
     # Each array has 2 dimensions [xsize, ysize]
     # or 3 dimensions [xsize, ysize, components]
@@ -91,7 +94,10 @@ def exprMA_cust(exprmaps, requestvariables=False):
 # Second example of a more involved custom expression function
 def expr_cav_cust(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['rho', 'B', 'beta']
+        if vlasiator5 is True:
+            return ['vg_rho','vg_b_vol','vg_beta']
+        else:
+            return ['rho', 'B', 'beta']
     # pass_maps is a dictionary of numpy arrays
     # Each array has 2 dimensions [ysize, xsize]
     # or 3 dimensions [ysize, xsize, components]
@@ -196,7 +202,10 @@ def timesmooth(pass_maps):
 # Helper function for drawing on existing panel
 def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     if requestvariables==True:
-        return ['rho', 'B', 'beta']
+        if vlasiator5 is True:
+            return ['vg_rho','vg_b_vol','vg_beta']
+        else:
+            return ['rho', 'B', 'beta']
 
     rho = extmaps['rho']
     beta = extmaps['beta']
@@ -431,7 +440,7 @@ nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeam',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vThermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Thermalvelocity',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='aGyrotropy')"]
 
@@ -472,9 +481,254 @@ multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaParallel')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpendicular')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vThermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Thermalvelocity',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/aGyrotropy')"]
+
+v5regularcalls = [
+# Input and output methods, nooverwrite
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
+"pt.plot.plot_colormap(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
+"pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
+"pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
+
+# Thickness, scale
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=5.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=4.0)",
+
+# Tick interval
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=1)",
+
+# msec musec titles
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='msec')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='musec')",
+
+# Watermarks
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmarkb=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NE')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NW')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
+
+# title, axes, noborders
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1,noborder=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noborder=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noxlabels=1,noborder=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,nocb=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
+
+# Variables, operators, colormaps, usesci, lin, vscale
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', colormap='nipy_spectral')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', colormap='nipy_spectral', vscale=1e9)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='x', colormap='bwr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='z', colormap='bwr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', colormap='warhol',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', colormap='warhol',lin=1, vscale=1e-3)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='x', colormap='PuOr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='y', colormap='PuOr',symlog=0, usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='z', colormap='PuOr',symlog=0, usesci=0)"]
+
+v5nonrestartcalls = [
+# Overplots and flux lines
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
+
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_e_vol', colormap='hot_desaturated')",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_e_vol', colormap='hot_desaturated', vscale=1e3)",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_e_vol', op='x', colormap='RdBu',symlog=0, usesci=0)",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_e_vol', op='y', colormap='RdBu',symlog=0)",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_e_vol', op='z', colormap='RdBu',symlog=0, usesci=0)",
+
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rho_nonthermal', colormap='jet')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta',lin=1, usesci=0, colormap='viridis',vmax=50)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_MA',lin=1,usesci=0,vmin=2,vmax=40, colormap='inferno_r')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_Mms',lin=1,usesci=0, colormap='magma')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_va',lin=1,usesci=0, colormap='magma_r')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vms',lin=1, colormap='plasma_r')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vs',lin=1, colormap='viridis_r')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_maxdt_acceleration', vscale=1e6)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_maxdt_acceleration', vscale=1e3)",
+
+# Vscale
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e3, vmax=7.e6)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e-3, vmax=7.e0, vscale=1e-6)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e6, vmax=7.e9, vscale=1e3)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_temperature', colormap='plasma', vscale=1e-6,lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pressure', vscale=1e9)",
+
+# Symlog and vscale
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=1e-9)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=1e-12)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=0,vscale=1e9)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=1,vscale=1e9)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', op='y', colormap='bwr',symlog=1e-3,vscale=1e9)",
+
+# Zoom and units
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
+
+# Externals and expressions
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['vg_va'], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust_v5, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_rho'], boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_beta'])",
+
+# Everything at once
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour_v5, boxre=[0,30,-15,15], expression=exprMA_cust_v5, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
+
+# Streamlines, vectors
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol', vectorcolormap='viridis')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol', vectorcolormap='magma')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=20)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=400)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=400, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20,scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400,scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',boxre=[-10,10,5,50],scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20, boxre=[-10,10,5,50],scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400, boxre=[-10,10,5,50],scale=1.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20,scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400,scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',boxre=[-10,10,5,50],scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=20, boxre=[-10,10,5,50],scale=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_e_vol',vectordensity=400, boxre=[-10,10,5,50],scale=0.5)",
+
+
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinecolor='black')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinecolor='gray')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinedensity=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinedensity=2)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinedensity=0.5, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_b_vol', streamlinedensity=2, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=2)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=0.5,thick=2)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', thick=2)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=2,thick=2)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=0.5,thick=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', thick=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=2,thick=0.5)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=0.5, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='vg_v', streamlinedensity=2, boxre=[-10,10,5,50])",
+
+# More data reducers
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_nonthermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_thermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel', op='magnitude',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel_nonthermal', op='magnitude',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular_nonthermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel_thermal', op='magnitude',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular_thermal',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pressure')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pdyn',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pdynx',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_temperature')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vBeam',lin=1)",
+# "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vBeamRatio')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_agyrotropy')"]
+
+v5multipopcalls = [
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_v_parallel', op='magnitude',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_v_perpendicular',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_pressure')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_parallel_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_perpendicular_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_parallel_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_perpendicular_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_p_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_pdyn',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_pdynx',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_temperature')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_parallel_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_perpendicular_nonthermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_parallel_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_perpendicular_thermal')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_t_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta_anisotropy', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta_parallel')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_beta_perpendicular')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_thermalvelocity',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_blocks')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_agyrotropy')"]
 
 # count how many tests to run in total
 ntests = []
@@ -524,6 +778,7 @@ for j in range(start,end):
     pops = runs[runid]['pops']
     time = runs[runid]['time']
     filename = runs[runid]['filename']
+    vlasiator5 = runs[runid]['vlasiator5']
 
     level_bow_shock = runs[runid]['cavitonparams'][0]
     level_n_caviton = runs[runid]['cavitonparams'][1]
@@ -545,20 +800,23 @@ for j in range(start,end):
         bulkname = filename
 
     if jrun<len(regularcalls):
-        call = regularcalls[jrun]
-        if runs[runid]['vlasiator5']:
-            call.replace("var='","var='vg_")
+        if vlasiator5:
+            call = v5regularcalls[jrun]
+        else:
+            call = regularcalls[jrun]
     elif jrun<(len(regularcalls)+len(nonrestartcalls)):
-        call = nonrestartcalls[jrun-len(regularcalls)]
-        if runs[runid]['vlasiator5']:
-            call.replace("var='","var='vg_")
+        if vlasiator5:
+            call = v5nonrestartcalls[jrun-len(regularcalls)]
+        else:
+            call = nonrestartcalls[jrun-len(regularcalls)]
     else:
         jrunmp = jrun-len(regularcalls)-len(nonrestartcalls)
         popid = int(jrunmp/len(multipopcalls))
         jrunmp = jrunmp % len(multipopcalls)
-        if runs[runid]['vlasiator5']:
-            call.replace("var='REPLACEPOP/","var='REPLACEPOP/vg_")
-        call = multipopcalls[jrunmp].replace('REPLACEPOP',pops[popid])
+        if vlasiator5:
+            call = v5multipopcalls[jrunmp].replace('REPLACEPOP',pops[popid])
+        else:
+            call = multipopcalls[jrunmp].replace('REPLACEPOP',pops[popid])
     
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
     call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
@@ -574,9 +832,10 @@ for j in range(start,end):
             continue
         if "step=" in call:
             continue
-        call = call.replace("var='V'","var='restart_V'")
-        
-
+        if vlasiator5:
+            call = call.replace("var='V'","var='restart_V'")
+        else:        
+            call = call.replace("var='V'","var='restart_V'")
     # Many different plots
     print(j, runid, jrun, call)
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)

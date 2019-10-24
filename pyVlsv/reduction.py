@@ -498,13 +498,13 @@ def rMirror( variables ):
    betaPerp = beta([PPerp,B])
    return betaPerp * (TAniso - 1)   
 
-def v_thermal( variables ):
+def thermalvelocity( variables ):
    Temperature = variables[0]
    kb = 1.38065e-23
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    # Corrected to calculate the mean speed sqrt(8kT/pi m)
-   vThermal = np.sqrt(Temperature*(kb*8./(mass*3.14159)))
-   return vThermal
+   thermalvelocity = np.sqrt(Temperature*(kb*8./(mass*3.14159)))
+   return thermalvelocity
 
 def Vstream( variables ):
    rhoVstream = variables[0]
@@ -726,7 +726,7 @@ datareducers["rmirror"] =                DataReducerVariable(["ptensor", "b"], r
 datareducers["dng"] =                    DataReducerVariable(["ptensor", "pparallel", "pperpendicular", "b"], Dng, "", 1, latex=r"$\mathrm{Dng}$") # I think this has vector length 1?
 datareducers["vbeam"] =                  DataReducerVariable(["vbackstream", "vnonbackstream"], v_beam, "m/s", 3, latex=r"$V_\mathrm{st}-V$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["vbeamratio"] =             DataReducerVariable(["vbackstream", "vnonbackstream"], v_beam_ratio, "", 1, latex=r"$V_\mathrm{st} V^{-1}$", latexunits=r"")
-datareducers["vthermal"] =               DataReducerVariable(["temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+datareducers["thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["bz_linedipole_avg"] =      DataReducerVariable(["x", "y", "z", "dx", "dy", "dz"], Bz_linedipole_avg, "T", 1, latex=r"$\langle B_{z,\mathrm{ld}}\rangle$")
 datareducers["bz_linedipole_diff"] =     DataReducerVariable(["b", "bz_linedipole_avg"], Bz_linedipole_diff, "", 1, latex=r"$\Delta B_{z,\mathrm{ld}}$")
 
@@ -747,6 +747,12 @@ multipopdatareducers["pop/pdynx"] =            DataReducerVariable(["pop/v", "po
 
 multipopdatareducers["pop/vparallel"] =              DataReducerVariable(["pop/v", "b"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 multipopdatareducers["pop/vperpendicular"] =         DataReducerVariable(["pop/v", "b"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
+multipopdatareducers["pop/vparallelbackstream"] =         DataReducerVariable(["pop/vbackstream", "b"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{st},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/vparallelnonbackstream"] =         DataReducerVariable(["pop/vnonbackstream", "b"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{th},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/vperpendicularbackstream"] =         DataReducerVariable(["pop/vbackstream", "b"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{st},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/vperpendicularnonbackstream"] =         DataReducerVariable(["pop/vnonbackstream", "b"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{th},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
 
 multipopdatareducers["pop/pressure"] =               DataReducerVariable(["pop/ptensordiagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
 multipopdatareducers["pop/ptensor"] =                DataReducerVariable(["pop/ptensordiagonal", "pop/ptensoroffdiagonal"], FullTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
@@ -800,7 +806,7 @@ multipopdatareducers["pop/betaperpoverpar"] =              DataReducerVariable([
 multipopdatareducers["pop/betaperpoverparbackstream"] =    DataReducerVariable(["pop/ptensorrotatedbackstream"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,st}} \beta_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
 multipopdatareducers["pop/betaperpoverparnonbackstream"] = DataReducerVariable(["pop/ptensorrotatednonbackstream"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
-multipopdatareducers["pop/vthermal"] =               DataReducerVariable(["temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopdatareducers["pop/firstadiabatic"] =    DataReducerVariable(["pop/tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
@@ -813,33 +819,10 @@ multipopdatareducers["pop/rmirror"] =                DataReducerVariable(["pop/p
 multipopdatareducers["pop/dng"] =                    DataReducerVariable(["pop/ptensor", "pop/pparallel", "pop/pperpendicular", "b"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 
 
+##########################################
+#  v5reducers for use with Vlasiator5 data
+##########################################
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#v5reducers for use with Vlasiator5 data
 v5reducers = {}
 v5reducers["vg_vms"] =                    DataReducerVariable(["vg_pressure", "vg_rhom", "vg_b_vol"], vms, "m/s", 1, latex=r"$v_\mathrm{ms}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_vs"] =                     DataReducerVariable(["vg_pressure", "vg_rhom"], vs, "m/s", 1, latex=r"$v_\mathrm{s}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -908,6 +891,10 @@ v5reducers["vg_beta_perpendicular"] =      DataReducerVariable(["vg_p_perpendicu
 
 v5reducers["vg_rmirror"] =                DataReducerVariable(["vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m}$")
 
+v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], restart_V, "m/s", 3, latex=r"$V$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
+v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
+v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 
 
 #multipopv5reducers
@@ -919,6 +906,11 @@ multipopv5reducers["pop/vg_pdynx"] =            DataReducerVariable(["pop/vg_v",
 
 multipopv5reducers["pop/vg_v_parallel"] =              DataReducerVariable(["pop/vg_v", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 multipopv5reducers["pop/vg_v_perpendicular"] =         DataReducerVariable(["pop/vg_v", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
+multipopv5reducers["pop/vg_v_parallel_thermal"] =              DataReducerVariable(["pop/vg_v_thermal", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{th},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_v_perpendicular_thermal"] =         DataReducerVariable(["pop/vg_v_thermal", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{th},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_v_parallel_nonthermal"] =              DataReducerVariable(["pop/vg_v_nonthermal", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_{\parallel,\mathrm{st},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_v_perpendicular_nonthermal"] =         DataReducerVariable(["pop/vg_v_nonthermal", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_{\perp,\mathrm{st},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopv5reducers["pop/vg_pressure"] =               DataReducerVariable(["pop/vg_ptensor_diagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
 multipopv5reducers["pop/vg_ptensor"] =                DataReducerVariable(["pop/vg_ptensor_diagonal", "pop/vg_ptensor_offdiagonal"], FullTensor, "Pa", 9, latex=r"$\mathcal{P}_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
@@ -970,7 +962,7 @@ multipopv5reducers["pop/vg_beta_anisotropy"] =              DataReducerVariable(
 multipopv5reducers["pop/vg_beta_anisotropy_nonthermal"] =    DataReducerVariable(["pop/vg_ptensor_rotated_nonthermal"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,st}} \beta_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_anisotropy_thermal"] = DataReducerVariable(["pop/vg_ptensor_rotated_thermal"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
-multipopv5reducers["pop/vg_v_thermal"] =               DataReducerVariable(["vg_temperature"], v_thermal, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_thermalvelocity"] =               DataReducerVariable(["vg_temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_perpendicular","vg_b_vol"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
