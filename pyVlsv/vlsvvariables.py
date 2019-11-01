@@ -109,7 +109,7 @@ latexdict = {
     'rho_v': r'$\Gamma_\mathrm{p}$',
     'rhovbackstream': r'$\Gamma_\mathrm{p,st}$',
     'rhovnonbackstream': r'$\Gamma_\mathrm{p,th}$',
-    'V': r'$V$',
+    'v': r'$V$',
     'vbackstream': r'$V_\mathrm{p,st}$',
     'vnonbackstream': r'$V_\mathrm{p,th}$',
     'b': r'$B$',

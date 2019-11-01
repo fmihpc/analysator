@@ -595,6 +595,7 @@ class VlsvReader(object):
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
+         popname = 'pop'
          varname = name
 
       # Seek for requested data in VLSV file
@@ -995,7 +996,7 @@ class VlsvReader(object):
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
-         popname = "none"
+         popname = "pop"
          varname = name
 
       # Check which set of datareducers to use

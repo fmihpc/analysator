@@ -131,8 +131,8 @@ def plot_colormap(filename=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
-                  vectors=None, vectordensity=100, vectorcolormap='gray',
-                  streamlines=None, streamlinedensity=1, streamlinecolor='white',
+                  vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
                   ):
 
@@ -236,10 +236,13 @@ def plot_colormap(filename=None,
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
     :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
     :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+    :kword vectorsize:  Scaling of vector sizes
 
     :kword streamlines: Set to a vector variable to overplot as streamlines
     :kword streamlinedensity: Set streamline density (default 1)
     :kword streamlinecolor: Set streamline color (default white)
+    :kword streamlinethick: Set streamline thickness
+
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
                         It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
                         to be automatically added next to the panel (but this may affect the overall layout)
@@ -364,6 +367,7 @@ def plot_colormap(filename=None,
                 run = filename[16:19]
 
     # Verify validity of operator
+    operatorstr=''
     if operator!=None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
@@ -371,19 +375,15 @@ def plot_colormap(filename=None,
         if operator!='x' and operator!='y' and operator!='z' and operator!='magnitude' and not operator.isdigit():
             print("Unknown operator "+operator)
             operator=None
-            operatorstr=''
         if operator=='x' or operator=='y' or operator=='z':
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
             if symlog==None:
-                lin=True
+                lin=True            
         # index a vector
         if operator.isdigit():
             operator = str(operator)
             operatorstr='_{'+operator+'}'
-    else:
-        operator=None
-        operatorstr=''
 
     # Output file name
     if expression!=None:
@@ -502,7 +502,7 @@ def plot_colormap(filename=None,
 
         # If vscale is in use
         if not np.isclose(vscale,1.):
-            datamap_unit=r"${\times}$"+fmt(vscale,None)
+            datamap_unit=datamap_info.latexunits+r"${\times}$"+fmt(vscale,None)
         # Allow specialist units for known vscale and unit combinations
         if datamap_info.units=="s" and np.isclose(vscale,1.e6):
             datamap_unit = r"$\mu$s"
@@ -970,7 +970,7 @@ def plot_colormap(filename=None,
             V = vectmap[::vectstep,::vectstep,2]
         C = colors[::vectstep,::vectstep] 
         # quiver uses scale in the inverse fashion
-        ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05/scale, headlength=4, headwidth=4,
+        ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05/vectorsize, headlength=4, headwidth=4,
                    headaxislength=2, scale_units='dots', pivot='middle')
 
     if streamlines!=None:
@@ -989,7 +989,7 @@ def plot_colormap(filename=None,
             V = slinemap[:,:,1]
         elif ysize==1:
             V = slinemap[:,:,2]
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*fluxthick, density=streamlinedensity, color=streamlinecolor)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
