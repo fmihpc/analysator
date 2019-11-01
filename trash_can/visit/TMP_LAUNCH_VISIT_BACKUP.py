@@ -30,13 +30,13 @@ def launch_visit(noWindow=True):
    '''
    global visitLaunched
    if visitLaunched == True:
-      print "Visit already launched"
+      print("Visit already launched")
       return
    if noWindow == True:
       LaunchNowin(vdir=pathToVisit)
    else:
       Launch(vdir=pathToVisit)
    visitLaunched = True
-   print "Visit launched"
+   print("Visit launched")
    return
 

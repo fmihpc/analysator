@@ -44,20 +44,20 @@ os.environ['MPLCONFIGDIR']=mpldir
 import numpy as np
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   print 'Warning, according to loaded numpy and matplotlib versions, user appears to be'
-   print 'either using csc.taito.fi without loading the mayavi2 module, or by invoking'
-   print 'the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"'
+   print('Warning, according to loaded numpy and matplotlib versions, user appears to be')
+   print('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
+   print('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
 # Import modules
 try:
    import calculations
 except ImportError as e:
-   print "Note: Did not import calculations module: ", e
+   print("Note: Did not import calculations module: ", e)
 
 try:
    import vlsvfile
 except ImportError as e:
-   print "Note: Did not import vlsvfile module: ", e
+   print("Note: Did not import vlsvfile module: ", e)
 
 import os
 import matplotlib.pyplot as plt
@@ -67,26 +67,26 @@ if os.getenv('PTNONINTERACTIVE') != None:
    try:
       plt.switch_backend('Agg')
    except:
-      print "Note: Unable to switch to Agg backend"
+      print("Note: Unable to switch to Agg backend")
 else:
    # Interactive plotting mode
    plt.ion()
    try:
       import grid
    except ImportError as e:
-      print "Note: Did not import grid module: ", e
+      print("Note: Did not import grid module: ", e)
    try:
       plt.switch_backend('TkAgg')
    except:
-      print "Note: Unable to switch to TkAgg backend"
+      print("Note: Unable to switch to TkAgg backend")
 
 try:
    import plot
 except ImportError as e:
-   print "Note: Did not import plot module: ", e
+   print("Note: Did not import plot module: ", e)
 
 try:
    import miscellaneous
 except ImportError as e:
-   print "Note: Did not import miscellaneous: ", e
+   print("Note: Did not import miscellaneous: ", e)
 

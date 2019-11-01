@@ -276,9 +276,9 @@ def doPlot(vlsvFile):
   vlsvFileTime = vlsvReader.read_parameter('time')
  # (cell id: index) dict
  locs = vlsvReader.get_cellid_locations()
- cellids = locs.keys()
+ cellids = list(locs.keys())
  # sort variable array according to cell ids
- locsSorted = sorted(locs.iteritems(), key=oper.itemgetter(0))
+ locsSorted = sorted(locs.items(), key=oper.itemgetter(0))
  outFileName = outFilePrefix + os.path.basename(vlsvFile) + '_'
  if colorMapLog == 1:
   outFileName = outFileName + 'log_'

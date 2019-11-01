@@ -131,8 +131,9 @@ def plot_colormap(filename=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
+                  highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
-                  streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
+                  streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
                   axes=None, cbaxes=None,
                   ):
 
@@ -182,6 +183,7 @@ def plot_colormap(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
     :kword Earth:       If set, draws an earth at (0,0)
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
 
     :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
 
@@ -330,8 +332,6 @@ def plot_colormap(filename=None,
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
-    # Small internal colorbar needs increased font size
-    if internalcb!=None: fontsize3=fontsize3*2
 
     # Plot title with time
     timeval=f.read_parameter("time")
@@ -791,7 +791,7 @@ def plot_colormap(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -827,7 +827,22 @@ def plot_colormap(filename=None,
     # Special case for edge-to-edge figures
     if len(plot_title)==0 and (nocb!=None or internalcb!=None) and noborder!=None and noxlabels!=None and noylabels!=None:
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
-        figsize = [8.0,8.0*ratio]
+        figsize = [3.0,3.0*ratio]
+
+    # If requested high res image
+    if highres is not None:
+        highresscale = 2
+        if ((type(highres) is float) or (type(highres) is int)):
+            highresscale = float(highres)
+        ratio = [x * highresscale for x in ratio]
+        fontsize=fontsize*highresscale
+        fontsize2=fontsize2*highresscale
+        fontsize3=fontsize3*highresscale
+        scale=scale*highresscale
+        thick=thick*highresscale
+        fluxthick=fluxthick*highresscale
+        streamlinethick=streamlinethick*highresscale
+        vectorsize=vectorsize*highresscale
 
     if axes==None:
         # Create 300 dpi image of suitable size
@@ -1009,6 +1024,8 @@ def plot_colormap(filename=None,
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
             if type(internalcb) is str:
+                if internalcb=="NE":
+                    cbloc=1; cbdir="left"; horalign="right"
                 if internalcb=="NW":
                     cbloc=2; cbdir="right"; horalign="left"
                 if internalcb=="SW": 
@@ -1016,8 +1033,8 @@ def plot_colormap(filename=None,
                 if internalcb=="SE": 
                     cbloc=4; cbdir="left";  horalign="right"
             # borderpad default value is 0.5, need to increase it to make room for colorbar title
-            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1.5,
-                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0,0,1,1))
+            cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, borderpad=1.0,
+                             bbox_transform=ax1.transAxes, bbox_to_anchor=(0.15,0,0.85,0.92))
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)

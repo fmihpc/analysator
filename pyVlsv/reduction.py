@@ -543,7 +543,7 @@ def Bz_linedipole_diff( variables ):
    # This reducer needs to be verified
    Bb = variables[0]
    Bzldp = variables[1]
-   print Bzldp.shape
+   print(Bzldp.shape)
    divisor = np.ma.masked_less_equal( np.ma.masked_invalid(magnitude(Bb)),0)
    return np.ma.divide(np.abs(Bb[:,2] - Bzldp), divisor)
 

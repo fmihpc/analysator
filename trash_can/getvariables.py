@@ -32,7 +32,7 @@ def get_variables(variable, fileNames, cellids):
    for f in fileNames:
       vlsvReader = VlsvReader(f)
       variables = vlsvReader.read_variables_for_cellids(name=variable, cellids=cellids)
-      for i in xrange(len(cellids)):
+      for i in range(len(cellids)):
          cellidvariables[cellids[i]].append(variables[i])
    #Return cell id variables
    return cellidvariables

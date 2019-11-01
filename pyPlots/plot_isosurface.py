@@ -193,12 +193,12 @@ def plot_isosurface(filename=None,
     if timeval==None:
         timeval=f.read_parameter("t")
     if timeval==None:
-        print "Unknown time format encountered"
+        print("Unknown time format encountered")
 
     # Plot title with time
     if title==None:        
         if timeval == None:    
-            print "Unknown time format encountered"
+            print("Unknown time format encountered")
             plot_title = ''
         else:
             #plot_title = "t="+str(np.int(timeval))+' s'
@@ -482,7 +482,7 @@ def plot_isosurface(filename=None,
                         +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
             else:
                 norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-                ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+                ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
         else:
             # Linear
             levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
@@ -634,7 +634,7 @@ def plot_isosurface(filename=None,
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        print "Error:", sys.exc_info()
+                        print("Error:", sys.exc_info())
                         print("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
                         print("Usually removing the title should work, but this time even that failed.")                        
                         savechange = -1

@@ -70,10 +70,10 @@ class VariableInfo:
       '''
       import numpy as np
       if len(self.data) <= 0:
-         print "BAD DATA LENGTH"
+         print("BAD DATA LENGTH")
          return []
       if len(np.atleast_1d(self.data[0])) <= index:
-         print "BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!"
+         print("BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!")
          return []
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 

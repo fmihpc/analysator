@@ -108,7 +108,7 @@ class VlsvReader(object):
       self.active_populations=[]
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
-              if child.attrib.has_key("name"):
+              if "name" in child.attrib:
                   popname = child.attrib["name"] 
               else:
                   popname = "avgs"
@@ -187,7 +187,7 @@ class VlsvReader(object):
 
               self.__meshes[popname]=pop
               if os.getenv('PTNONINTERACTIVE') == None:
-                 print "Found population " + popname
+                 print("Found population " + popname)
 
       self.__fptr.close()
 
@@ -236,7 +236,7 @@ class VlsvReader(object):
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
-      if not self.__fileindex_for_cellid_blocks.has_key(pop):
+      if pop not in self.__fileindex_for_cellid_blocks:
          self.__set_cell_offset_and_blocks(pop)
 
       if( (cellid in self.__fileindex_for_cellid_blocks[pop]) == False ):
@@ -287,8 +287,8 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad block id data!"
-               print "Data type: " + datatype + ", element size: " + str(element_size)
+               print("Error! Bad block id data!")
+               print("Data type: " + datatype + ", element size: " + str(element_size))
                return
 
             data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
@@ -297,9 +297,9 @@ class VlsvReader(object):
          fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
-      print "data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids)
+      print("data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids))
       if len(data_avgs) != len(data_block_ids):
-         print "BAD DATA SIZES"
+         print("BAD DATA SIZES")
 
       return [data_block_ids, data_avgs]
 
@@ -310,7 +310,7 @@ class VlsvReader(object):
       # Read in the coordinates:
       # Navigate to the correct position:
       offset = 0
-      for i in xrange(0, cells_with_blocks_index[0]):
+      for i in range(0, cells_with_blocks_index[0]):
          offset += blocks_per_cell[i]
 
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
@@ -353,7 +353,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad data type in blocks!"
+               print("Error! Bad data type in blocks!")
                return
 
          if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
@@ -370,7 +370,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad data type in blocks!"
+               print("Error! Bad data type in blocks!")
                return
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
@@ -380,19 +380,19 @@ class VlsvReader(object):
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
-         print "BAD DATA SIZES"
+         print("BAD DATA SIZES")
       # Make a dictionary (hash map) out of velocity cell ids and avgs:
       velocity_cells = {}
       array_size = len(data_avgs)
 
       # Construct velocity cells:
       velocity_cell_ids = []
-      for kv in xrange(4):
-         for jv in xrange(4):
-            for iv in xrange(4):
+      for kv in range(4):
+         for jv in range(4):
+            for iv in range(4):
                velocity_cell_ids.append(kv*16 + jv*4 + iv)
 
-      for i in xrange(array_size):
+      for i in range(array_size):
          velocity_block_id = data_block_ids[i]
          avgIndex = 0
          avgs = data_avgs[i]
@@ -405,8 +405,8 @@ class VlsvReader(object):
    def __set_cell_offset_and_blocks(self, pop="proton"):
       ''' Read blocks per cell and the offset in the velocity space arrays for every cell with blocks into a private dictionary
       '''
-      print "Getting offsets for population " + pop
-      if self.__fileindex_for_cellid_blocks.has_key(pop):
+      print("Getting offsets for population " + pop)
+      if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
       #these two arrays are in the same order: 
@@ -419,7 +419,7 @@ class VlsvReader(object):
       from copy import copy
       offset = 0
       self.__fileindex_for_cellid_blocks[pop] = {}
-      for i in xrange(0, len(cells_with_blocks)):
+      for i in range(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
 
@@ -427,30 +427,30 @@ class VlsvReader(object):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
-      print "tag = PARAMETER"
+      print("tag = PARAMETER")
       for child in self.__xml_root:
          if child.tag == "PARAMETER" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "tag = VARIABLE"
+            print("   ", child.attrib["name"])
+      print("tag = VARIABLE")
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "tag = MESH"
+            print("   ", child.attrib["name"])
+      print("tag = MESH")
       for child in self.__xml_root:
          if child.tag == "MESH" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "Datareducers:"
+            print("   ", child.attrib["name"])
+      print("Datareducers:")
       for name in datareducers:
-         print "   ",name, " based on ", datareducers[name].variables
-      print "Data operators:"
+         print("   ",name, " based on ", datareducers[name].variables)
+      print("Data operators:")
       for name in data_operators:
          if type(name) is str:
             if not name.isdigit():
-               print "   ",name
-      print "Other:"
+               print("   ",name)
+      print("Other:")
       for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
-            print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
+            print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
 
    def check_parameter( self, name ):
       ''' Checks if a given parameter is in the vlsv reader
@@ -523,7 +523,7 @@ class VlsvReader(object):
       foundpop = False
       for child in self.__xml_root:
          if child.tag == "BLOCKIDS":
-            if child.attrib.has_key("name"):
+            if "name" in child.attrib:
                if popname.lower() == child.attrib["name"].lower():
                   foundpop = True
             else:
@@ -531,7 +531,7 @@ class VlsvReader(object):
       if blockidsexist:
          for child in self.__xml_root:
             if child.tag == "BLOCKVARIABLE":
-               if child.attrib.has_key("name"):
+               if "name" in child.attrib:
                   if popname.lower() == child.attrib["name"].lower(): # avgs
                      foundpop = True
       return foundpop
@@ -580,7 +580,7 @@ class VlsvReader(object):
             self.__read_fileindex_for_cellid()
                
       if tag == "" and name == "" and tag == "":
-         print "Bad arguments at read"
+         print("Bad arguments at read")
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -723,7 +723,7 @@ class VlsvReader(object):
             for singlecellid in actualcellids:
                velocity_cell_data = self.read_velocity_cells(singlecellid)
                # Get cells:
-               vcellids = velocity_cell_data.keys()
+               vcellids = list(velocity_cell_data.keys())
                # Get coordinates:
                velocity_coordinates = self.get_velocity_cell_coordinates(vcellids)
                tmp_vars = []
@@ -731,7 +731,7 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( i, tag, mesh, "pass", singlecellid ) )
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
-               print index,"/",len(actualcellids)
+               print(index,"/",len(actualcellids))
             return data_operators[operator](output)
          else:
             tmp_vars = []
@@ -751,7 +751,7 @@ class VlsvReader(object):
 
          # Read the necessary variables:
          if reducer.useVspace:
-            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            print("Error: useVspace flag is not implemented for multipop datareducers!") 
             return 
          else:
             tmp_vars = []
@@ -764,7 +764,7 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         print "Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!" 
+         print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
       if self.__fptr.closed:
          fptr.close()
 
@@ -1090,8 +1090,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cellcoordinates = np.zeros(3)
@@ -1115,8 +1115,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
       # Return the coordinates:
       return np.array(cellindices)
 
@@ -1184,19 +1184,19 @@ class VlsvReader(object):
       '''
       vcellids = np.atleast_1d(vcellids)
       # Get block ids:
-      blocks = vcellids.astype(int) / 64
+      blocks = vcellids.astype(int) // 64
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
       # Get cell indices:
       cellids = np.remainder(vcellids.astype(int), (int)(64))
       cellIndicesX = np.remainder(cellids.astype(int), (int)(4))
-      cellIndicesY = np.remainder((cellids.astype(int)/(int)(4)).astype(int), (int)(4))
-      cellIndicesZ = cellids.astype(int)/(int)(16)
+      cellIndicesY = np.remainder((cellids.astype(int)//(int)(4)).astype(int), (int)(4))
+      cellIndicesZ = cellids.astype(int)//(int)(16)
       # Get cell coordinates:
       cellCoordinates = np.array([blockCoordinatesX.astype(float) + (cellIndicesX.astype(float) + 0.5) * self.__meshes[pop].__dvx,
                                   blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__meshes[pop].__dvy,
@@ -1213,8 +1213,8 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_cell_coordinates`
       '''
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
@@ -1268,8 +1268,8 @@ class VlsvReader(object):
       blocks = np.array(blocks)
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks)).astype(np.uint16)
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
-      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesZ = (blocks.astype(np.uint64)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
@@ -1277,8 +1277,8 @@ class VlsvReader(object):
       # Get velocity cell min coordinates (per velocity block)
       vcellids = np.arange(cellsPerBlock).astype(np.uint32)
       cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
+      cellIndicesY = np.remainder((vcellids.astype(int)//(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
+      cellIndicesZ = (vcellids.astype(int)//(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
@@ -1292,9 +1292,9 @@ class VlsvReader(object):
       nodeIndices_local = []
       nodesPerDirection = 5
 
-      for i in xrange(nodesPerDirection):
-         for j in xrange(nodesPerDirection):
-            for k in xrange(nodesPerDirection):
+      for i in range(nodesPerDirection):
+         for j in range(nodesPerDirection):
+            for k in range(nodesPerDirection):
                nodeIndices_local.append(np.array([i,j,k]))
       nodeIndices_local = np.array(nodeIndices_local).astype(np.uint16)
 
@@ -1317,10 +1317,10 @@ class VlsvReader(object):
       # Put the node indices into keys:
       nodeKeys = np.array([], dtype=np.uint64)
       N = 10
-      for i in xrange(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+      for i in range(N):
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          nodeKeys = np.append(nodeKeys, calculate_node_indices( self, blockIndicesX[fromIndex:toIndex], blockIndicesY[fromIndex:toIndex], blockIndicesZ[fromIndex:toIndex], nodeIndices_local, nodesPerBlock, cellsPerDirection ) )
@@ -1350,10 +1350,10 @@ class VlsvReader(object):
       cellKeys = np.zeros(len(blockIndicesX)*cellsPerBlock*nodesPerCell, dtype=np.uint32)
       N = 10
       # Append keys in cuts to save memory
-      for i in xrange(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+      for i in range(N):
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          # Append cell keys
@@ -1364,8 +1364,8 @@ class VlsvReader(object):
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1)).astype(np.float32) * self.__meshes[pop].__dvx + self.__meshes[pop].__vxmin
-      nodeCoordinatesY = np.remainder(nodeKeys/(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
-      nodeCoordinatesZ = ( nodeKeys / (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
+      nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
+      nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
       
       # Nodekeyss is no longer needed
       del nodeKeys
@@ -1436,7 +1436,7 @@ class VlsvReader(object):
 
       if len(cells_with_blocks_index) == 0:
          #block data did not exist
-         print "Cell does not have velocity distribution"
+         print("Cell does not have velocity distribution")
          return []
 
       num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
@@ -1493,7 +1493,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_velocity_cells`
       '''
-      if not self.__fileindex_for_cellid_blocks.has_key(pop):
+      if pop not in self.__fileindex_for_cellid_blocks:
          # Set the locations
          self.__set_cell_offset_and_blocks(pop)
 

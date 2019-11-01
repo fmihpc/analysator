@@ -89,8 +89,8 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
          solutions.append(X)
    
    if len(solutions) != 1:
-      print "MORE THAN ONE SOLUTION: "
-      print solutions
+      print("MORE THAN ONE SOLUTION: ")
+      print(solutions)
       return
 
    X = solutions[0]
@@ -103,10 +103,10 @@ def oblique_shock( Vx1, Vy1, Bx1, By1, T1, rho1 ):
    Bx2 = Bx1
    By2 = By1 * (V1**2 - vA1**2) * X / (V1**2 - X * vA1**2)
    P2 = P1 * (X + (Gamma - 1) * X * V1**2 * (1 - V2**2 / V1**2) / (2.0 * vs1**2));
-   print "PRINT"
-   print vs1
-   print P2
-   print P1
+   print("PRINT")
+   print(vs1)
+   print(P2)
+   print(P1)
    T2 = P2 / (rho2 * kb)
    return [Vx2, Vy2, Bx2, By2, T2, rho2, P2, X ]
 
@@ -186,7 +186,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
    By_rankine = []
    T_rankine = []
    rho_rankine = []
-   for i in xrange( len(cellids) ):
+   for i in range( len(cellids) ):
       if i < 0.5*len(cellids):
          Vx_rankine.append(Vx)
          Vy_rankine.append(Vy)

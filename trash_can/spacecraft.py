@@ -39,15 +39,15 @@ def make_moving_spacecraft_plot_scalars( filename, variables_to_plot, x_variable
    :param time_limit            The amount of time in seconds that the spacecraft will move (or until hits a boundary or gets stuck)
    '''
    if time_limit <= 0:
-      print "TIME_LIMIT MUST BE GREATER THAN ZERO!"
+      print("TIME_LIMIT MUST BE GREATER THAN ZERO!")
       return
    mySpaceCraft = SpaceCraft(time=0, dt=0.5, dt_global=0.8, filenames=np.array([filename]), variables=np.array(variables_to_plot), coordinates=np.array(starting_coordinates), cellid=-1)
    while True:
       if mySpaceCraft.record_next_value() == False:
-         print "HIT BOUNDARY OR GOT STUCK"
+         print("HIT BOUNDARY OR GOT STUCK")
          break
       if mySpaceCraft.get_time() >= time_limit:
-         print "TIME LIMIT HIT"
+         print("TIME LIMIT HIT")
          break
    i = 0
    for varName in variables_to_plot:
@@ -64,45 +64,45 @@ def make_moving_spacecraft_plot( filename, variables_to_plot, x_variable, starti
    :param time_limit            The amount of time in seconds that the spacecraft will move (or until hits a boundary or gets stuck)
    '''
    if len(x_variable) != 1:
-      print "Bad x_variable size!"
+      print("Bad x_variable size!")
       return
    if time_limit <= 0:
-      print "TIME_LIMIT MUST BE GREATER THAN ZERO!"
+      print("TIME_LIMIT MUST BE GREATER THAN ZERO!")
       return
    # Make sure x_variable is a dictionary
    x_var = dict(x_variable)
    # Get variable names:
    variableNames = []
-   for i in x_var.iteritems():
+   for i in x_var.items():
       x_variableName = i[0]
       # Check length
       if len([i[1]]) != 1:
-         print "Bad x_variable index length!"
+         print("Bad x_variable index length!")
          return
-   for i in variables_to_plot.iteritems():
+   for i in variables_to_plot.items():
       variableNames.append(i[0])
    # Create spacecraft
    mySpaceCraft = SpaceCraft(time=0, dt=0.5, dt_global=0.8, filenames=np.array([filename]), variables=np.array(variableNames), coordinates=np.array(starting_coordinates), cellid=-1)
    # Move spacecraft
    while True:
       if mySpaceCraft.record_next_value() == False:
-         print "HIT BOUNDARY OR GOT STUCK"
+         print("HIT BOUNDARY OR GOT STUCK")
          break
       if mySpaceCraft.get_time() >= time_limit:
-         print "TIME LIMIT HIT"
+         print("TIME LIMIT HIT")
          break
    # Get number of plots:
    num_of_plots = 0
-   for i in variables_to_plot.iteritems():
+   for i in variables_to_plot.items():
       indexes = np.array(i[1])
-      for j in xrange(len(indexes)):
+      for j in range(len(indexes)):
          num_of_plots = num_of_plots + 1
    # Plot results
    plotindice = 1
-   for i in variables_to_plot.iteritems():
+   for i in variables_to_plot.items():
       varName = i[0]
       indexes = np.array(i[1])
-      for j in xrange(len(indexes)):
+      for j in range(len(indexes)):
          # Plot all indexes
          mySpaceCraft.plot_values(variable1=varName, variable2=x_variableName, variable1index=j, variable2index=-1, showplot=False, subplotnum=[num_of_plots,1,plotindice])
          plotindice = plotindice + 1
@@ -137,11 +137,11 @@ class SpaceCraft(object):
    __velocity=np.zeros(3)
    __cell_lengths=np.zeros(3)
    __variables=[]
-   def __init__(self, time, dt, filenames, variables, dt_global=sys.maxint, coordinates=np.zeros(3), cellid=-1):
+   def __init__(self, time, dt, filenames, variables, dt_global=sys.maxsize, coordinates=np.zeros(3), cellid=-1):
       if (coordinates == np.zeros(3)).all() and cellid == -1:
-         print "YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT"
+         print("YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT")
       if (coordinates != np.zeros(3)).all() and cellid != -1:
-         print "YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT"
+         print("YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT")
       self.__time = time
       self.__dt = dt
       self.__dt_global = dt_global
@@ -176,7 +176,7 @@ class SpaceCraft(object):
       rho_v = self.__vlsvfile.read_variable("rho_v", self.__cellid)
       rho = self.__vlsvfile.read_variable("rho", self.__cellid)
       if len(rho_v) != 3:
-         print "BAD RHO_V LENGTH"
+         print("BAD RHO_V LENGTH")
       # Check if we're in 2d:
       if self.__zcells == 1:
          rho_v[2] = 0
@@ -198,27 +198,27 @@ class SpaceCraft(object):
       # Update variables: (Appends variables at the space craft's current location to list of variables)
       self.record_values()
       # Print for debugging:
-      print "xmin:" + str(self.__xmin)
-      print "ymin:" + str(self.__ymin)
-      print "zmin:" + str(self.__zmin)
-      print "xmax:" + str(self.__xmax)
-      print "ymax:" + str(self.__ymax)
-      print "zmax:" + str(self.__zmax)
-      print "xcells:" + str(self.__xcells)
-      print "ycells:" + str(self.__ycells)
-      print "zcells:" + str(self.__zcells)
-      print "cell_lengths:" + str(self.__cell_lengths)
-      print "time:" + str(self.__time)
-      print "timeindex:" + str(self.__time_index)
-      print "dt:" + str(self.__dt)
-      print "filenames:" + str(self.__filenames)
-      print "values:" + str(self.__values)
-      print "variables:" + str(self.__variables)
-      print "velocity:" + str(self.__velocity)
-      print "coordinates:" + str(self.__coordinates)
-      print "cellid: " + str(self.__cellid)
-      print "values: "
-      print self.__values
+      print("xmin:" + str(self.__xmin))
+      print("ymin:" + str(self.__ymin))
+      print("zmin:" + str(self.__zmin))
+      print("xmax:" + str(self.__xmax))
+      print("ymax:" + str(self.__ymax))
+      print("zmax:" + str(self.__zmax))
+      print("xcells:" + str(self.__xcells))
+      print("ycells:" + str(self.__ycells))
+      print("zcells:" + str(self.__zcells))
+      print("cell_lengths:" + str(self.__cell_lengths))
+      print("time:" + str(self.__time))
+      print("timeindex:" + str(self.__time_index))
+      print("dt:" + str(self.__dt))
+      print("filenames:" + str(self.__filenames))
+      print("values:" + str(self.__values))
+      print("variables:" + str(self.__variables))
+      print("velocity:" + str(self.__velocity))
+      print("coordinates:" + str(self.__coordinates))
+      print("cellid: " + str(self.__cellid))
+      print("values: ")
+      print(self.__values)
 
    def __get_coordinates(self, cellid):
       '''Gets the coordinates of a given cell id
@@ -248,7 +248,7 @@ class SpaceCraft(object):
       '''Resets variables (and cellid/coordinates if specified)
       '''
       if (coordinates != np.zeros(3)).all() and cellid != -1:
-         print "YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT, NOT BOTH"
+         print("YOU MUST SPECIFY EITHER COORDINATES OR CELLID TO SPACECRAFT INIT, NOT BOTH")
       # Get the cell id and coordinates:
       if cellid != -1:
          self.__cellid = cellid
@@ -276,13 +276,13 @@ class SpaceCraft(object):
       rho_v = self.__vlsvfile.read_variable("rho_v", self.__cellid)
       rho = self.__vlsvfile.read_variable("rho", self.__cellid)
       if len(rho_v) != 3:
-         print "BAD RHO_V LENGTH"
+         print("BAD RHO_V LENGTH")
       # Check if we're in 2d:
       if self.__zcells == 1:
          rho_v[2] = 0
       if rho == 0:
-         print "BAD RHO: " + str(rho)
-         print "CELLID: " + str(self.__cellid)
+         print("BAD RHO: " + str(rho))
+         print("CELLID: " + str(self.__cellid))
          rho = 0.00000001
       self.__velocity = np.array([rho_v[0]/(float)(rho), rho_v[1]/(float)(rho), rho_v[2]/(float)(rho)])
       self.__cellidlist = []
@@ -316,7 +316,7 @@ class SpaceCraft(object):
                self.__time_index = self.__time_index + 1
                self.__vlsvfile = VlsvReader(self.__filenames[self.__time_index])
             else:
-               print "Hit the global time limit!"
+               print("Hit the global time limit!")
                return False
          else:
             break
@@ -327,7 +327,7 @@ class SpaceCraft(object):
          self.__cellid = newcellid
          # Check if the cell id is within bounds:
          if newcellid >= self.__xcells*self.__ycells*self.__zcells or newcellid <= 0:
-            print "CELL ID OUT OF BOUNDS, EXITING increase_time FUNCTION"
+            print("CELL ID OUT OF BOUNDS, EXITING increase_time FUNCTION")
             return False
          # Update velocity
          rho_v = self.__vlsvfile.read_variable("rho_v", self.__cellid)
@@ -336,10 +336,10 @@ class SpaceCraft(object):
             rho_v[2] = 0
          rho = self.__vlsvfile.read_variable("rho", self.__cellid)
          if( rho == 0 ):
-            print "BAD RHO IN INCREASE_TIME (SPACE CRAFT)"
-            print "rho: " + str(rho)
-            print "rho_v: " + str(rho_v)
-            print "newcellid: " + str(newcellid)
+            print("BAD RHO IN INCREASE_TIME (SPACE CRAFT)")
+            print("rho: " + str(rho))
+            print("rho_v: " + str(rho_v))
+            print("newcellid: " + str(newcellid))
             return False
          # self.__velocity = np.array([(float)(rho_v[self.__time_index])/(float)(rho), (float)(rho_v[self.__time_index])/(float)(rho), (float)(rho_v[self.__time_index])/(float)(rho)])a
          # Update velocity:
@@ -369,14 +369,14 @@ class SpaceCraft(object):
       max_bounds = np.array([min_bounds[i] + self.__cell_lengths[i] for i in range(0,3)])
       # Get the smallest time step required to get to the next cell
       smallest_dt = sys.float_info.max
-      for i in xrange(len(min_bounds)):
+      for i in range(len(min_bounds)):
          # Get the time step required to get to the x, y, z min and max boundary and get the smallest NON-NEGATIVE time step:
          if self.__velocity[i] != 0:
             calculated_dt = ((min_bounds[i] - coordinates[i]) - self.__cell_lengths[i]*0.0001) / self.__velocity[i]
             # Edit smallest dt if calculated_dt is smaller:
             if smallest_dt > calculated_dt and calculated_dt > 0:
                smallest_dt = calculated_dt
-      for i in xrange(len(max_bounds)):
+      for i in range(len(max_bounds)):
          # Get the time step required to get to the x, y, z min and max boundary and get the smallest NON-NEGATIVE time step:
          if self.__velocity[i] != 0:
             calculated_dt = ((max_bounds[i] - coordinates[i]) + self.__cell_lengths[i]*0.0001) / self.__velocity[i]
@@ -385,9 +385,9 @@ class SpaceCraft(object):
                smallest_dt = calculated_dt
       # Check if we found any good values:
       if smallest_dt == sys.float_info.max:
-         print "COULDNT FIND A GOOD DT IN record_next_value"
-         print "Coordinates: " + str(coordinates)
-         print "Velocity: " + str(self.__velocity)
+         print("COULDNT FIND A GOOD DT IN record_next_value")
+         print("Coordinates: " + str(coordinates))
+         print("Velocity: " + str(self.__velocity))
          return False
       # Do the update depending on if the time needed is greater than the time needed for the frame of the files to change:
       dt_to_next_frame = 1.01*((self.__time_index + 1)*self.__dt_global - self.__time)
@@ -427,10 +427,10 @@ class SpaceCraft(object):
       '''
       # Get the index of the variables:
       if (variable1 in self.__values) == False:
-         print "Variable " + variable1 + " not found!"
+         print("Variable " + variable1 + " not found!")
          return
       if (variable2 in self.__values) == False:
-         print "Variable " + variable2 + " not found!"
+         print("Variable " + variable2 + " not found!")
          return
       # Input variables:
       if fromIndex == -1 and toIndex == -1:
@@ -439,32 +439,32 @@ class SpaceCraft(object):
       else:
          # User input
          if toIndex >= len(self.__values[variable1]):
-            print "Bad index (index out of bounds)!"
+            print("Bad index (index out of bounds)!")
             return
-         var1 = np.array([self.__values[variable1][i] for i in xrange(fromIndex, toIndex+1)])
-         var2 = np.array([self.__values[variable2][i] for i in xrange(fromIndex, toIndex+1)])
+         var1 = np.array([self.__values[variable1][i] for i in range(fromIndex, toIndex+1)])
+         var2 = np.array([self.__values[variable2][i] for i in range(fromIndex, toIndex+1)])
       if len(var1) == 0 or len(var2) == 0:
-         print "Bad variable length"
+         print("Bad variable length")
          return
       
       # Input variable 1
       if len(np.atleast_1d(var1[0])) != 1:
          # The variable is a vector
          if variable1index == -1:
-            print "Variable is of size " + str(len(var1[0])) + " so can't input variable1index -1"
+            print("Variable is of size " + str(len(var1[0])) + " so can't input variable1index -1")
             return
          if variable1index >= len(var1[0]):
-            print "Bad variable1index! Index out of bounds!"
+            print("Bad variable1index! Index out of bounds!")
             return
          plot_variable1 = []
          # Input vector's values for index variable1index
-         for i in xrange(len(var1)):
+         for i in range(len(var1)):
             plot_variable1.append(var1[i][variable1index])
          # Transform to numpy array
          plot_variable1 = np.array(plot_variable1)
       else:
-         print "This called"
-         print var1
+         print("This called")
+         print(var1)
          # The variable is a scalar
          plot_variable1 = np.array(var1)
       
@@ -472,14 +472,14 @@ class SpaceCraft(object):
       if len(np.atleast_1d(var2[0])) != 1:
          # The variable is a vector
          if variable2index == 0:
-            print "Variable is of size " + str(len(var1[0])) + " so can't input variable1index -1"
+            print("Variable is of size " + str(len(var1[0])) + " so can't input variable1index -1")
             return
          if variable2index >= len(var2[0]):
-            print "Bad variable1index! Index out of bounds!"
+            print("Bad variable1index! Index out of bounds!")
             return
          plot_variable2 = []
          # Input vector's values for index variable1index
-         for i in xrange(len(var2)):
+         for i in range(len(var2)):
             plot_variable2.append(var2[i][variable2index])
          # Transform to numpy array
          plot_variable2 = np.array(plot_variable2)
@@ -489,7 +489,7 @@ class SpaceCraft(object):
       # Plot it:
       if showplot == False:
          if len(subplotnum) != 3:
-            print "Bad subplotnum length"
+            print("Bad subplotnum length")
             return
          pl.subplot(subplotnum[0], subplotnum[1], subplotnum[2])
       pl.ion()
@@ -536,18 +536,18 @@ class SpaceCraft(object):
    #   create_visit_point_movie( variableName="rho", minValue=1.0e5, maxValue=6.0e6, inputDirectory=os.getcwd() + "/", inputFileNames=[fileName], coordinates=coordinates, outputDirectory="/home/hannukse/visitTestMovies/", outputFileName="SPACECRAFT_ROUTE_", colorTable="hot_desaturated")
 
    def list_variables(self):
-      print "xmin:" + str(self.__xmin)
-      print "ymin:" + str(self.__ymin)
-      print "zmin:" + str(self.__zmin)
-      print "xmax:" + str(self.__xmax)
-      print "ymax:" + str(self.__ymax)
-      print "zmax:" + str(self.__zmax)
-      print "xcells:" + str(self.__xcells)
-      print "ycells:" + str(self.__ycells)
-      print "zcells:" + str(self.__zcells)
-      print "time:" + str(self.__time)
-      print "timeindex:" + str(self.__time_index)
-      print "dt:" + str(self.__dt)
-      print "filenames:" + str(self.__filenames)
-      print "values:" + str(self.__values)
+      print("xmin:" + str(self.__xmin))
+      print("ymin:" + str(self.__ymin))
+      print("zmin:" + str(self.__zmin))
+      print("xmax:" + str(self.__xmax))
+      print("ymax:" + str(self.__ymax))
+      print("zmax:" + str(self.__zmax))
+      print("xcells:" + str(self.__xcells))
+      print("ycells:" + str(self.__ycells))
+      print("zcells:" + str(self.__zcells))
+      print("time:" + str(self.__time))
+      print("timeindex:" + str(self.__time_index))
+      print("dt:" + str(self.__dt))
+      print("filenames:" + str(self.__filenames))
+      print("values:" + str(self.__values))
 

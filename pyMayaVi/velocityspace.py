@@ -57,7 +57,7 @@ def generate_custom_velocity_grid( vlsvReader, blocks_and_values, iso_surface=Fa
    blocksAndAvgs = blocks_and_values
 
    if len(blocksAndAvgs) == 0:
-      print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
+      print("CELL " + str(cellid) + " HAS NO VELOCITY BLOCK")
       return False
    # Create a new scene
    #engine.new_scene()

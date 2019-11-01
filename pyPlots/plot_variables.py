@@ -44,7 +44,7 @@ def set_yticks( figure, yticks ):
    from math import ceil
    new_figure = figure
    if yticks <= 1:
-      print "BAD YTICKS SET AT SET_YTICKS!"
+      print("BAD YTICKS SET AT SET_YTICKS!")
       return []
    # Get sub axes
    axes = new_figure.get_axes()
@@ -74,11 +74,11 @@ def plot_variables( x, y, figure=[] ):
    if x_dim != y_dim:
       if x_dim == y_dim - 1:
          from variable import get_data, get_name, get_units
-         new_x = [get_data(x) for i in xrange(len(y)-1)]
+         new_x = [get_data(x) for i in range(len(y)-1)]
          new_x.append(x)
          return plot_multiple_variables( new_x, y, figure, clean_xticks=True )
       else:
-         print "ERROR; BAD X AND Y DIMENSIONS " + str(x_dim) + " " + str(y_dim)
+         print("ERROR; BAD X AND Y DIMENSIONS " + str(x_dim) + " " + str(y_dim))
          return []
    else:
       if x_dim == 0 and y_dim == 0:
@@ -106,9 +106,9 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
        .. note:: If for some reason some variable list (x or y) is empty, e.g. variables_x_list = [B_x, [], B_z, rho], then the variable will not be plotted. This can be used if one wants to plot only into certain subplots.
    '''
    yticks = {}
-   for i in xrange(18):
+   for i in range(18):
       tick = i+1
-      yticks[tick] = 7 - (int)(i)/(int)(4)
+      yticks[tick] = 7 - (int)(i)//(int)(4)
 
 
    import numpy as np
@@ -125,10 +125,10 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
             variables_x_list = [variables_x_list]
 
    if len(variables_x_list) != len(variables_y_list):
-      print "BAD VARIABLE LENGTH: " + str(len(variables_x_list)) + " " + str(len(variables_y_list))
+      print("BAD VARIABLE LENGTH: " + str(len(variables_x_list)) + " " + str(len(variables_y_list)))
       return []
    if len(variables_y_list) > 18:
-      print "TOO MANY VARIABLES: " + str(len(variables_y_list))
+      print("TOO MANY VARIABLES: " + str(len(variables_y_list)))
       return []
       
    length_of_list = len(variables_x_list)
@@ -140,12 +140,12 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
             fig.add_subplot(length_of_list,1,i)
    else:
       fig = pl.figure()
-      for i in xrange(length_of_list):
+      for i in range(length_of_list):
          fig.add_subplot(length_of_list,1,i+1)
 
    axes = fig.get_axes()
    from variable import get_data, get_name, get_units
-   for i in xrange(length_of_list):
+   for i in range(length_of_list):
       
       x = variables_x_list[i]
       y = variables_y_list[i]
@@ -174,7 +174,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
       ax.ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
 
    if clean_xticks == True:
-      for i in xrange(len(np.atleast_1d(axes))-1):
+      for i in range(len(np.atleast_1d(axes))-1):
          axes[i].set_xticks([])
 
    # Set yticks:

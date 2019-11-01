@@ -132,8 +132,8 @@ def pitch_angles( vlsvReader,
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid, pop=pop)
-   vcellids = velocity_cell_data.keys()
-   avgs = velocity_cell_data.values()
+   vcellids = list(velocity_cell_data.keys())
+   avgs = list(velocity_cell_data.values())
 
    # Transform to a frame
    v = vlsvReader.get_velocity_cell_coordinates(vcellids, pop=pop) - frame

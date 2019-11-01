@@ -33,7 +33,7 @@ def get_function( fitfunction ):
    fetchedFunction = False
    global functionList
    # Try to get the function by name first
-   for i in functionList.iteritems():
+   for i in functionList.items():
       if fitfunction == i[0]:
          functionClass = functionList[fitfunction]
          fetchedFunction = True
@@ -48,7 +48,7 @@ def get_parameters( fitfunction ):
    fetchedFunction = False
    global functionList
    # Try to get the function by name first
-   for i in functionList.iteritems():
+   for i in functionList.items():
       if fitfunction == i[0]:
          functionClass = functionList[fitfunction]
          fetchedFunction = True
@@ -62,7 +62,7 @@ def fit_function_into_data( x, y, fitfunction ):
    function = get_function(fitfunction)
    parameters = get_parameters(fitfunction)
    fit = optimize.leastsq(function, np.ones(parameters), args=(x,y))
-   print "Parameters: " + str(fit[0])
+   print("Parameters: " + str(fit[0]))
    y_fitted = (-1)*function(fit[0], x, 0)
    return y_fitted
 
@@ -131,13 +131,13 @@ def plot_from_list( list_of_coordinates, fitfunction="nullfit", cubicspline=True
       # Set y ticks
       if yticks > 0 and len(i) == 4:
          ticks = min(y) + np.arange(yticks + 1) / (float)(yticks)*ylength
-         print len(i)
+         print(len(i))
          from decimal import *
          getcontext().prec = 2
          # Get two decimals
          ticks = [float(Decimal(j)/Decimal(1)) for j in ticks]
          pl.yticks(ticks)
-         print ticks
+         print(ticks)
       # Set x ticks
       if xticks > 0 and len(i) == 4:
          ticks = min(x) + np.arange(xticks + 1) / (float)(xticks)*xlength
