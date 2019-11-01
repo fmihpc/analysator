@@ -278,9 +278,13 @@ regularcalls = [
 
 # Thickness, scale
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=5.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=4.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=3)",
 
 # Tick interval
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=10)",
@@ -296,6 +300,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NW')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
 
 # title, axes, noborders
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
@@ -308,6 +313,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noxlabels=1,noborder=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,nocb=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1,highres=True)",
 
 # Variables, operators, colormaps, usesci, lin, vscale
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', colormap='nipy_spectral')",
@@ -530,6 +536,10 @@ v5regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=5.0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=4.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0, highres=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=3)",
 
 # Tick interval
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=10)",
@@ -545,6 +555,7 @@ v5regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NW')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
 
 # title, axes, noborders
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
@@ -557,6 +568,7 @@ v5regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noxlabels=1,noborder=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,nocb=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1,highres=True)",
 
 # Variables, operators, colormaps, usesci, lin, vscale
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', colormap='nipy_spectral')",

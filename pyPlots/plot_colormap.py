@@ -834,6 +834,8 @@ def plot_colormap(filename=None,
         highresscale = 2
         if ((type(highres) is float) or (type(highres) is int)):
             highresscale = float(highres)
+            if np.isclose(highresscale, 1.0):
+                highresscale = 2
         ratio = [x * highresscale for x in ratio]
         fontsize=fontsize*highresscale
         fontsize2=fontsize2*highresscale
