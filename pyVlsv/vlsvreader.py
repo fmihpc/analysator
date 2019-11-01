@@ -57,7 +57,14 @@ class VlsvReader(object):
       self.__fptr = open(self.file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
-      self.__fileindex_for_cellid_blocks={}
+
+      self.use_dict_for_blocks = False
+      self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
+      self.__cells_with_blocks = {} # per-pop
+      self.__blocks_per_cell = {} # per-pop
+      self.__blocks_per_cell_offsets = {} # per-pop
+      self.__order_for_cellid_blocks = {} # per-pop
+      
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -236,14 +243,28 @@ class VlsvReader(object):
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
-      if pop not in self.__fileindex_for_cellid_blocks:
-         self.__set_cell_offset_and_blocks(pop)
+      if self.use_dict_for_blocks: #deprecated version
+         if not pop in self.__fileindex_for_cellid_blocks:
+            self.__set_cell_offset_and_blocks(pop)
 
-      if( (cellid in self.__fileindex_for_cellid_blocks[pop]) == False ):
-         # Cell id has no blocks
-         return []
-      offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
-      num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
+         if( (cellid in self.__fileindex_for_cellid_blocks[pop]) == False ):
+            # Cell id has no blocks
+            return []
+         offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
+         num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
+      else:
+         # Uses arrays (much faster to initialize)
+         if not pop in self.__cells_with_blocks:
+            self.__set_cell_offset_and_blocks_nodict(pop) 
+         # Check that cells has vspace
+         try:
+            cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
+         except:
+            print "Cell does not have velocity distribution"
+            return []
+         offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
+         num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
+
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -303,109 +324,12 @@ class VlsvReader(object):
 
       return [data_block_ids, data_avgs]
 
-
-
-
-   def __read_velocity_cells( self, cellid, cells_with_blocks, blocks_per_cell, cells_with_blocks_index, pop="proton" ):
-      # Read in the coordinates:
-      # Navigate to the correct position:
-      offset = 0
-      for i in range(0, cells_with_blocks_index[0]):
-         offset += blocks_per_cell[i]
-
-      num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
-
-      if self.__fptr.closed:
-         fptr = open(self.file_name,"rb")
-      else:
-         fptr = self.__fptr
-
-      # Read in avgs and velocity cell ids:
-      for child in self.__xml_root:
-         # Read in avgs
-         if "name" in child.attrib and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
-            vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
-            element_size = ast.literal_eval(child.attrib["datasize"])
-            datatype = child.attrib["datatype"]
-
-            # Navigate to the correct position
-            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
-
-            fptr.seek(offset_avgs)
-            if datatype == "float" and element_size == 4:
-               data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
-            if datatype == "float" and element_size == 8:
-               data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
-            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
-         # Read in block coordinates:
-         if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
-            vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
-            element_size = ast.literal_eval(child.attrib["datasize"])
-            datatype = child.attrib["datatype"]
-
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
-
-            fptr.seek(offset_block_ids)
-            if datatype == "uint" and element_size == 4:
-               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
-            elif datatype == "uint" and element_size == 8:
-               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
-            else:
-               print("Error! Bad data type in blocks!")
-               return
-
-         if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
-            vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
-            element_size = ast.literal_eval(child.attrib["datasize"])
-            datatype = child.attrib["datatype"]
-
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
-
-            fptr.seek(offset_block_ids)
-            if datatype == "uint" and element_size == 4:
-               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
-            elif datatype == "uint" and element_size == 8:
-               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
-            else:
-               print("Error! Bad data type in blocks!")
-               return
-
-            data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
-
-      if self.__fptr.closed:
-         fptr.close()
-
-      # Check to make sure the sizes match (just some extra debugging)
-      if len(data_avgs) != len(data_block_ids):
-         print("BAD DATA SIZES")
-      # Make a dictionary (hash map) out of velocity cell ids and avgs:
-      velocity_cells = {}
-      array_size = len(data_avgs)
-
-      # Construct velocity cells:
-      velocity_cell_ids = []
-      for kv in range(4):
-         for jv in range(4):
-            for iv in range(4):
-               velocity_cell_ids.append(kv*16 + jv*4 + iv)
-
-      for i in range(array_size):
-         velocity_block_id = data_block_ids[i]
-         avgIndex = 0
-         avgs = data_avgs[i]
-
-         for j in velocity_cell_ids + 64*velocity_block_id:
-            velocity_cells[(int)(j)] = avgs[avgIndex]
-            avgIndex = avgIndex + 1
-      return velocity_cells
-
    def __set_cell_offset_and_blocks(self, pop="proton"):
-      ''' Read blocks per cell and the offset in the velocity space arrays for every cell with blocks into a private dictionary
+      ''' Read blocks per cell and the offset in the velocity space arrays for
+          every cell with blocks into a private dictionary.
+          Deprecated in favor of below version.
       '''
-      print("Getting offsets for population " + pop)
+      print "Getting offsets for population " + pop
       if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
@@ -418,10 +342,32 @@ class VlsvReader(object):
       # Navigate to the correct position:
       from copy import copy
       offset = 0
-      self.__fileindex_for_cellid_blocks[pop] = {}
-      for i in range(0, len(cells_with_blocks)):
+      #self.__fileindex_for_cellid_blocks[pop] = {}
+      self.__fileindex_for_cellid_blocks[pop] = dict.fromkeys(cells_with_blocks) # should be faster but negligible difference
+      for i in xrange(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
+
+   def __set_cell_offset_and_blocks_nodict(self, pop="proton"):
+      ''' Read blocks per cell and the offset in the velocity space arrays for every cell with blocks.
+          Stores them in arrays. Creates a private dictionary with addressing to the array.
+          This method should be faster than the above function.
+      '''
+      if pop in self.__cells_with_blocks:
+         # There's stuff already saved into the dictionary, don't save it again
+         return
+
+      print "Getting offsets for population " + pop
+
+      self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+      self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+
+      self.__blocks_per_cell_offsets[pop] = np.empty(len(self.__cells_with_blocks[pop]))
+      self.__blocks_per_cell_offsets[pop][0] = 0.0
+      self.__blocks_per_cell_offsets[pop][1:] = np.cumsum(self.__blocks_per_cell[pop][:-1])
+      self.__order_for_cellid_blocks[pop] = {}
+      for index,cellid in enumerate(self.__cells_with_blocks[pop]):
+         self.__order_for_cellid_blocks[pop][cellid]=index
 
    def list(self):
       ''' Print out a description of the content of the file. Useful
@@ -863,7 +809,11 @@ class VlsvReader(object):
 
          test_val=self.read_variable(name,lower_cell_id,operator)
          if isinstance(test_val, Iterable):
-            value_length=len(test_val)
+            try:
+               value_length=len(test_val)
+            except Exception as e:
+               # Can't determine size, maybe some division by zero?
+               value_length=1
          else:
             value_length=1
          
@@ -960,6 +910,107 @@ class VlsvReader(object):
          
          # Done.
          return ret_array
+
+   def read_fsgrid_variable(self, name, operator="pass"):
+       ''' Reads fsgrid variables from the open vlsv file.
+       Arguments:
+       :param name: Name of the variable
+       :param operator: Datareduction operator. "pass" does no operation on data
+       :returns: *ordered* numpy array with the data
+
+       ... seealso:: :func:`read_variable`
+       '''
+
+       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
+       bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+
+       # Read the raw array data
+       rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
+
+       # Determine fsgrid domain decomposition
+       numWritingRanks = self.read_parameter("numWritingRanks")
+       if len(rawData.shape) > 1:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+       else:
+		orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
+
+       # Helper functions ported from c++ (fsgrid.hpp)
+       def computeDomainDecomposition(globalsize, ntasks):
+           processDomainDecomposition = [1,1,1]
+           processBox = [0,0,0]
+           optimValue = 999999999999999.
+           for i in range(1,min(ntasks,globalsize[0]+1)):
+               processBox[0] = max(1.*globalsize[0]/i,1)
+               for j in range(1,min(ntasks,globalsize[1]+1)):
+                   if(i * j > ntasks):
+                       break
+                   processBox[1] = max(1.*globalsize[1]/j,1)
+                   for k in range(1,min(ntasks,globalsize[2]+1)):
+                       if(i * j * k > ntasks):
+                           continue
+                       processBox[2] = max(1.*globalsize[2]/k,1)
+                       value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
+                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
+                        ((processBox[0] * processBox[1]) if k>1 else 0)
+                       if i*j*k == ntasks:
+			       if value < optimValue:
+				   optimValue = value
+				   processDomainDecomposition=[i,j,k]
+           return processDomainDecomposition
+
+       def calcLocalStart(globalCells, ntasks, my_n):
+           n_per_task = globalCells/ntasks
+           remainder = globalCells%ntasks
+           if my_n < remainder:
+               return my_n * (n_per_task+1)
+           else:
+               return my_n * n_per_task + remainder
+       def calcLocalSize(globalCells, ntasks, my_n):
+           n_per_task = globalCells/ntasks
+           remainder = globalCells%ntasks
+           if my_n < remainder:
+               return n_per_task+1;
+           else:
+               return n_per_task
+
+
+       currentOffset = 0;
+       fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       #print "Global size:"+str([bbox[0],bbox[1],bbox[2]])
+       #print 'decomposition: ' + str(fsgridDecomposition) + '(' + str(numWritingRanks ) + ' ranks)'
+       for i in range(0,numWritingRanks):
+           x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
+           y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
+           z = i % fsgridDecomposition[2]
+ 	   
+           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
+                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
+                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
+                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
+                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
+
+           totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
+           # Extract datacube of that task... 
+           if len(rawData.shape) > 1:
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
+
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
+	   else:
+           	# Special case for scalar data
+		thatTasksData = rawData[currentOffset:currentOffset+totalSize]
+		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
+
+		# ... and put it into place 
+		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
+
+           currentOffset += totalSize
+
+       return orderedData
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
@@ -1427,22 +1478,119 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_blocks`
       '''
-      #these two arrays are in the same order: 
-      #list of cells for which dist function is saved
-      cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop)
-      #number of blocks in each cell for which data is stored
-      blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop)
-      (cells_with_blocks_index,) = np.where(cells_with_blocks == cellid)
-
-      if len(cells_with_blocks_index) == 0:
-         #block data did not exist
-         print("Cell does not have velocity distribution")
-         return []
-
-      num_of_blocks = np.atleast_1d(blocks_per_cell)[cells_with_blocks_index[0]]
-
-      return self.__read_velocity_cells(cellid=cellid, cells_with_blocks=cells_with_blocks, blocks_per_cell=blocks_per_cell, cells_with_blocks_index=cells_with_blocks_index, pop=pop)
       
+      if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
+         if not pop in self.__fileindex_for_cellid_blocks:
+            self.__set_cell_offset_and_blocks(pop) 
+         # Check that cells has vspace
+         if not cellid in self.__fileindex_for_cellid_blocks[pop]:
+            print "Cell does not have velocity distribution"
+            return []
+         # Navigate to the correct position:
+         offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
+         num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
+
+      else:  # Uses arrays (much faster to initialize)
+         if not pop in self.__cells_with_blocks:
+            self.__set_cell_offset_and_blocks_nodict(pop) 
+         # Check that cells has vspace
+         try:
+            cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
+         except:
+            print "Cell does not have velocity distribution"
+            return []
+         # Navigate to the correct position:
+         offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
+         num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
+
+
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+
+      # Read in avgs and velocity cell ids:
+      for child in self.__xml_root:
+         # Read in avgs
+         if "name" in child.attrib and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            #array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+
+            # Navigate to the correct position
+            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
+
+            fptr.seek(offset_avgs)
+            if datatype == "float" and element_size == 4:
+               data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks)
+            if datatype == "float" and element_size == 8:
+               data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks)
+            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
+         # Read in block coordinates:
+         if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            #array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+
+            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+
+            fptr.seek(offset_block_ids)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad data type in blocks!"
+               return
+
+         if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            #array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+
+            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+
+            fptr.seek(offset_block_ids)
+            if datatype == "uint" and element_size == 4:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
+            elif datatype == "uint" and element_size == 8:
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
+            else:
+               print "Error! Bad data type in blocks!"
+               return
+
+            data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
+
+      if self.__fptr.closed:
+         fptr.close()
+
+      # Check to make sure the sizes match (just some extra debugging)
+      if len(data_avgs) != len(data_block_ids):
+         print "BAD DATA SIZES"
+      # Make a dictionary (hash map) out of velocity cell ids and avgs:
+      velocity_cells = {}
+      array_size = len(data_avgs)
+
+      # Construct velocity cells:
+      velocity_cell_ids = []
+      for kv in xrange(4):
+         for jv in xrange(4):
+            for iv in xrange(4):
+               velocity_cell_ids.append(kv*16 + jv*4 + iv)
+
+      for i in xrange(array_size):
+         velocity_block_id = data_block_ids[i]
+         avgIndex = 0
+         avgs = data_avgs[i]
+
+         for j in velocity_cell_ids + 64*velocity_block_id:
+            velocity_cells[(int)(j)] = avgs[avgIndex]
+            avgIndex = avgIndex + 1
+      return velocity_cells
+
    def get_spatial_mesh_size(self):
       ''' Read spatial mesh size
       
@@ -1493,10 +1641,6 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_velocity_cells`
       '''
-      if pop not in self.__fileindex_for_cellid_blocks:
-         # Set the locations
-         self.__set_cell_offset_and_blocks(pop)
-
       # Uses new format
       return self.__read_blocks(cellid,pop)
 
@@ -1561,6 +1705,10 @@ class VlsvReader(object):
          .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid_blocks = {}
+      self.__cells_with_blocks = {}
+      self.__blocks_per_cell = {}
+      self.__blocks_per_cell_offsets = {}
+      self.__order_for_cellid_blocks = {}
 
    def optimize_clear_fileindex_for_cellid(self):
       ''' Clears a private variable containing cell ids and their locations
