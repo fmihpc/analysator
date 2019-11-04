@@ -1,6 +1,7 @@
 import pytools as pt
 import sys, os
 import numpy as np
+import traceback
 
 runs = []
 runs.append( { 'name': 'ABC',
@@ -261,4 +262,9 @@ for j in range(start,end):
     # Many different plots
     print(j, runid, jrun, call)
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
-    exec(call)
+
+    try:
+        exec(call)
+    except Exception as e:
+        print("FAILURE IN CALL: \n",repr(e))
+        traceback.print_exc()

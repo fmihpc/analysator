@@ -35,6 +35,7 @@ filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
 
+
 # Make sure matplotlib has a unique temp directory
 mpldir = tempfile.mkdtemp()
 atexit.register(shutil.rmtree, mpldir)
@@ -47,6 +48,15 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
    print('Warning, according to loaded numpy and matplotlib versions, user appears to be')
    print('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
    print('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
+
+# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
+# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
+matplotlib.rc('text', usetex=True)
+matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
+matplotlib.rcParams['mathtext.fontset'] = 'stix'
+matplotlib.rcParams['font.family'] = 'STIXGeneral'
+# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
+
 
 # Import modules
 try:

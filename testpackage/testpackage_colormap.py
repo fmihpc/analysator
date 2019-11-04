@@ -1,7 +1,7 @@
 import pytools as pt
 import sys, os
 import numpy as np
-
+import traceback
 
 runs = []
 runs.append( { 'name': 'ABC',
@@ -936,3 +936,4 @@ for j in range(start,end):
         exec(call)
     except Exception as e:
         print("FAILURE IN CALL: \n",repr(e))
+        traceback.print_exc()

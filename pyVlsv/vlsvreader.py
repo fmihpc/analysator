@@ -281,7 +281,7 @@ class VlsvReader(object):
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
-            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 #            for i in range(0, cells_with_blocks_index[0]):
 #               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
@@ -300,7 +300,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:
@@ -590,7 +590,7 @@ class VlsvReader(object):
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
                   
             for r_offset in read_offsets:
-               use_offset = variable_offset + r_offset
+               use_offset = int(variable_offset + r_offset)
                fptr.seek(use_offset)
                if datatype == "float" and element_size == 4:
                   data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
@@ -1510,7 +1510,7 @@ class VlsvReader(object):
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
-            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
@@ -1525,7 +1525,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:
@@ -1542,7 +1542,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:

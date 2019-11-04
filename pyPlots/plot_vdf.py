@@ -39,14 +39,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
-
 # Register custom colourmaps
 plt.register_cmap(name='viridis', cmap=cmaps.viridis)
 plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
