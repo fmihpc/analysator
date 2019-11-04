@@ -100,7 +100,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
    coordinates = np.array([x,y,z])
    # Debug:
    if( len(x) != sizes[0] ):
-      print "SIZE WRONG: " + str(len(x)) + " " + str(sizes[0])
+      print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
 
    # Create grid interpolation
    interpolator_face_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]] - 0.5*dcell[indices[0]], coordinates[indices[1]], face_B[indices[0]], kx=2, ky=2, s=0)

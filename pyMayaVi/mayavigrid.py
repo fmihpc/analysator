@@ -49,7 +49,7 @@ from mayavi.modules.labels import Labels
 
 #Catch SIGINT as mayavi (VTK) has disabled the normal signal handler
 def SigHandler(SIG, FRM):
-    print "Ctrl+C"
+    print("Ctrl+C")
     return
 signal.signal(signal.SIGINT, SigHandler)
 
@@ -249,7 +249,7 @@ class MayaviGrid(HasTraits):
          variable_array = variable
       # Sort the dictionary by cell id
       import operator as oper
-      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.iteritems(), key=oper.itemgetter(0))
+      sorted_index_for_cellid_dict = sorted(index_for_cellid_dict.items(), key=oper.itemgetter(0))
       # Add the variable values:
       variable_array_sorted = []
       for i in sorted_index_for_cellid_dict:
@@ -275,15 +275,15 @@ class MayaviGrid(HasTraits):
       coordinates = picker.pick_position
       coordinates = np.array([coordinates[0], coordinates[1], coordinates[2]])
       # Check for 2d
-      for i in xrange(3):
+      for i in range(3):
          if self.__cells[i] == 1:
             coordinates[i] = (self.__mins[i] + self.__maxs[i])/2.0
-      print "CLICKED COORDINATES:" + str(coordinates)
+      print("CLICKED COORDINATES:" + str(coordinates))
       cellid = self.vlsvReader.get_cellid(coordinates)
-      print "CLICKED CELL ID: " + str(int(cellid))
+      print("CLICKED CELL ID: " + str(int(cellid)))
       # Check for an invalid cell id
       if cellid == 0:
-         print "Invalid cell id"
+         print("Invalid cell id")
          return
 
       args = self.args.split() # Split args field in the mayavi into a list
@@ -306,7 +306,7 @@ class MayaviGrid(HasTraits):
             # Read in the cell's coordinates:
             pick_cell_coordinates = self.vlsvReader.get_cell_coordinates(cellid)
             if len(cell_candidates) == 0:
-               print "No velocity distribution data found in this file!"
+               print("No velocity distribution data found in this file!")
                return
             # Find the nearest:
             from operator import itemgetter
@@ -314,7 +314,7 @@ class MayaviGrid(HasTraits):
             norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
             # Get the cell id:
             cellid = cell_candidates[i]
-            print "PLOTTED CELL ID: " + str(cellid)
+            print("PLOTTED CELL ID: " + str(cellid))
             # Set label to give out the location of the cell:
             self.__add_label( cellid )
             # Generate velocity grid
@@ -332,7 +332,7 @@ class MayaviGrid(HasTraits):
             pop = pop.encode("ascii",'replace')
             cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
             if len(cell_candidates) == 0:
-               print "No velocity distribution data found in this file!"
+               print("No velocity distribution data found in this file!")
                return
             # Read in the coordinates of the cells:
             cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -344,7 +344,7 @@ class MayaviGrid(HasTraits):
             norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
             # Get the cell id:
             cellid = cell_candidates[i]
-            print "PLOTTED CELL ID: " + str(cellid)
+            print("PLOTTED CELL ID: " + str(cellid))
             # Set label to give out the location of the cell:
             self.__add_label( cellid )
             # Generate velocity grid
@@ -354,7 +354,7 @@ class MayaviGrid(HasTraits):
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
+            print("No velocity distribution data found in this file!")
             return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -366,7 +366,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
+         print("PLOTTED CELL ID: " + str(cellid))
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -380,7 +380,7 @@ class MayaviGrid(HasTraits):
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
+            print("No velocity distribution data found in this file!")
             return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -392,7 +392,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
+         print("PLOTTED CELL ID: " + str(cellid))
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
 
@@ -411,7 +411,7 @@ class MayaviGrid(HasTraits):
             from variable import VariableInfo
             if len(args) == 0:
                #Do nothing
-               print "Bad args"
+               print("Bad args")
                self.__last_pick = []
                return
             plotCut = False
@@ -421,7 +421,7 @@ class MayaviGrid(HasTraits):
             distances = []
             # Save variables
             plotCut = False
-            for i in xrange(len(args)):
+            for i in range(len(args)):
                # Check if the user has given the plot argument
                if args[i] == "plot":
                   plotCut = True
@@ -464,7 +464,7 @@ class MayaviGrid(HasTraits):
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
+            print("No velocity distribution data found in this file!")
             return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -476,7 +476,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
+         print("PLOTTED CELL ID: " + str(cellid))
          # Set label to give out the location of the cell:
          self.__add_label( cellid )
          # Plot pitch angle distribution:
@@ -487,7 +487,7 @@ class MayaviGrid(HasTraits):
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
+            print("No velocity distribution data found in this file!")
             return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -499,7 +499,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
+         print("PLOTTED CELL ID: " + str(cellid))
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
@@ -538,7 +538,7 @@ class MayaviGrid(HasTraits):
          # Read cell ids with velocity distribution in:
          cell_candidates = self.vlsvReader.read(mesh = "SpatialGrid", tag = "CELLSWITHBLOCKS")
          if len(cell_candidates) == 0:
-            print "No velocity distribution data found in this file!"
+            print("No velocity distribution data found in this file!")
             return
          # Read in the coordinates of the cells:
          cell_candidate_coordinates = [self.vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
@@ -550,7 +550,7 @@ class MayaviGrid(HasTraits):
          norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
          # Get the cell id:
          cellid = cell_candidates[i]
-         print "PLOTTED CELL ID: " + str(cellid)
+         print("PLOTTED CELL ID: " + str(cellid))
          # Parse args: Plotting plane
          plane = [np.array([1.,0,0]),np.array([0,1.,0])]
          labels = ["Vx", "Vy"]
@@ -631,7 +631,7 @@ class MayaviGrid(HasTraits):
       # We reorder the points, scalars and vectors so this is as per VTK's
       # requirement of x first, y next and z last.
       pts = pts.transpose(2, 1, 0, 3).copy()
-      pts.shape = pts.size/3, 3
+      pts.shape = pts.size//3, 3
       scalars = scalars.T.copy()
       
       # Create the dataset.
@@ -651,7 +651,7 @@ class MayaviGrid(HasTraits):
 #      testlabels = self.scene.mlab.pipeline.labels(d)
 
       self.dataset = d
-      print scalars[0]
+      print(scalars[0])
       # Configure traits
       self.configure_traits()
       
@@ -669,10 +669,10 @@ class MayaviGrid(HasTraits):
       '''
       # Create nodes
       # Get velocity blocks and avgs:
-      print "generating velocity grid for cellid = " + str(cellid) + " and pop = " + pop
+      print("generating velocity grid for cellid = " + str(cellid) + " and pop = " + pop)
       blocksAndAvgs = self.vlsvReader.read_blocks(cellid, pop=pop)
       if len(blocksAndAvgs) == 0:
-         print "CELL " + str(cellid) + " HAS NO VELOCITY BLOCK"
+         print("CELL " + str(cellid) + " HAS NO VELOCITY BLOCK")
          return False
       # Create a new scene
       self.__engine.new_scene()
@@ -768,7 +768,7 @@ class MayaviGrid(HasTraits):
       # Get velocity blocks and avgs (of cellid 1)
       blocksAndAvgs1 = self.vlsvReader.read_blocks(cellid1)
       if len(blocksAndAvgs1) == 0:
-         print "CELL " + str(cellid1) + " HAS NO VELOCITY BLOCK"
+         print("CELL " + str(cellid1) + " HAS NO VELOCITY BLOCK")
          return False
       blocks1 = blocksAndAvgs1[0]
       avgs1 = blocksAndAvgs1[1]
@@ -776,12 +776,12 @@ class MayaviGrid(HasTraits):
       # Get velocity blocks and avgs (of cellid 2)
       blocksAndAvgs2 = self.vlsvReader.read_blocks(cellid2)
       if len(blocksAndAvgs2) == 0:
-         print "CELL " + str(cellid2) + " HAS NO VELOCITY BLOCK"
+         print("CELL " + str(cellid2) + " HAS NO VELOCITY BLOCK")
          return False
       blocks2 = blocksAndAvgs2[0]
       avgs2 = blocksAndAvgs2[1]
-      print len(avgs2)
-      print len(blocks2)
+      print(len(avgs2))
+      print(len(blocks2))
 
       # Compare blocks and create a new avgs array values:
       avgs_same = []
@@ -790,8 +790,8 @@ class MayaviGrid(HasTraits):
       blocks_same = []
       blocks_cellid1 = []
       blocks_cellid2 = []
-      print np.shape(avgs1[0])
-      for i in xrange(len(blocks1)):
+      print(np.shape(avgs1[0]))
+      for i in range(len(blocks1)):
          b = blocks1[i]
          # Get index of block
          i2 = np.where(blocks2 == b)[0]
@@ -804,7 +804,7 @@ class MayaviGrid(HasTraits):
          else:
             avgs_cellid1.append(avgs1[i:(i+1)])
             blocks_cellid1.append(b)
-      for i in xrange(len(blocks2)):
+      for i in range(len(blocks2)):
          b = blocks2[i]
          if (b in blocks1) == False:
             avgs_cellid2.append(avgs2[i:(i+1)])
@@ -812,7 +812,7 @@ class MayaviGrid(HasTraits):
       # Make a list for the avgs etc
       avgs = np.zeros(64*(len(avgs_same)+len(avgs_cellid1)+len(avgs_cellid2)))
       #avgs = np.reshape(avgs, (len(avgs_same)+len(avgs_cellid1)+len(avgs_cellid2), 64))
-      print np.shape(avgs_same)
+      print(np.shape(avgs_same))
       blocks = np.zeros(len(blocks_same)+len(blocks_cellid1)+len(blocks_cellid2))
 
       index = 0

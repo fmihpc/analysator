@@ -28,7 +28,7 @@ import numpy as np
 import os
 import numbers
 import vlsvvariables
-from reduction import datareducers,multipopdatareducers,data_operators
+from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
 from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
@@ -115,7 +115,7 @@ class VlsvReader(object):
       self.active_populations=[]
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
-              if child.attrib.has_key("name"):
+              if "name" in child.attrib:
                   popname = child.attrib["name"] 
               else:
                   popname = "avgs"
@@ -194,7 +194,7 @@ class VlsvReader(object):
 
               self.__meshes[popname]=pop
               if os.getenv('PTNONINTERACTIVE') == None:
-                 print "Found population " + popname
+                 print("Found population " + popname)
 
       self.__fptr.close()
 
@@ -260,7 +260,7 @@ class VlsvReader(object):
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
          except:
-            print "Cell does not have velocity distribution"
+            print("Cell does not have velocity distribution")
             return []
          offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
          num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
@@ -281,7 +281,7 @@ class VlsvReader(object):
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
-            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 #            for i in range(0, cells_with_blocks_index[0]):
 #               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
@@ -300,7 +300,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:
@@ -308,8 +308,8 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad block id data!"
-               print "Data type: " + datatype + ", element size: " + str(element_size)
+               print("Error! Bad block id data!")
+               print("Data type: " + datatype + ", element size: " + str(element_size))
                return
 
             data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
@@ -318,9 +318,9 @@ class VlsvReader(object):
          fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
-      print "data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids)
+      print("data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids))
       if len(data_avgs) != len(data_block_ids):
-         print "BAD DATA SIZES"
+         print("BAD DATA SIZES")
 
       return [data_block_ids, data_avgs]
 
@@ -329,7 +329,7 @@ class VlsvReader(object):
           every cell with blocks into a private dictionary.
           Deprecated in favor of below version.
       '''
-      print "Getting offsets for population " + pop
+      print("Getting offsets for population " + pop)
       if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
@@ -344,7 +344,7 @@ class VlsvReader(object):
       offset = 0
       #self.__fileindex_for_cellid_blocks[pop] = {}
       self.__fileindex_for_cellid_blocks[pop] = dict.fromkeys(cells_with_blocks) # should be faster but negligible difference
-      for i in xrange(0, len(cells_with_blocks)):
+      for i in range(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
          offset += blocks_per_cell[i]
 
@@ -357,7 +357,7 @@ class VlsvReader(object):
          # There's stuff already saved into the dictionary, don't save it again
          return
 
-      print "Getting offsets for population " + pop
+      print("Getting offsets for population " + pop)
 
       self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
       self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
@@ -373,30 +373,30 @@ class VlsvReader(object):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
-      print "tag = PARAMETER"
+      print("tag = PARAMETER")
       for child in self.__xml_root:
          if child.tag == "PARAMETER" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "tag = VARIABLE"
+            print("   ", child.attrib["name"])
+      print("tag = VARIABLE")
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "tag = MESH"
+            print("   ", child.attrib["name"])
+      print("tag = MESH")
       for child in self.__xml_root:
          if child.tag == "MESH" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
-      print "Datareducers:"
+            print("   ", child.attrib["name"])
+      print("Datareducers:")
       for name in datareducers:
-         print "   ",name, " based on ", datareducers[name].variables
-      print "Data operators:"
+         print("   ",name, " based on ", datareducers[name].variables)
+      print("Data operators:")
       for name in data_operators:
          if type(name) is str:
             if not name.isdigit():
-               print "   ",name
-      print "Other:"
+               print("   ",name)
+      print("Other:")
       for child in self.__xml_root:
          if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
-            print "    tag = ", child.tag, " mesh = ", child.attrib["mesh"]
+            print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
 
    def check_parameter( self, name ):
       ''' Checks if a given parameter is in the vlsv reader
@@ -419,7 +419,7 @@ class VlsvReader(object):
       '''
       for child in self.__xml_root:
          if child.tag == "PARAMETER" and "name" in child.attrib:
-            if child.attrib["name"] == name:
+            if child.attrib["name"].lower() == name.lower():
                return True
       return False
 
@@ -444,7 +444,7 @@ class VlsvReader(object):
       '''
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
-            if child.attrib["name"] == name:
+            if child.attrib["name"].lower() == name.lower():
                return True
       return False
 
@@ -469,16 +469,16 @@ class VlsvReader(object):
       foundpop = False
       for child in self.__xml_root:
          if child.tag == "BLOCKIDS":
-            if child.attrib.has_key("name"):
-               if popname == child.attrib["name"]:
+            if "name" in child.attrib:
+               if popname.lower() == child.attrib["name"].lower():
                   foundpop = True
             else:
                blockidsexist = True
       if blockidsexist:
          for child in self.__xml_root:
             if child.tag == "BLOCKVARIABLE":
-               if child.attrib.has_key("name"):
-                  if popname == child.attrib["name"]: # avgs
+               if "name" in child.attrib:
+                  if popname.lower() == child.attrib["name"].lower(): # avgs
                      foundpop = True
       return foundpop
 
@@ -526,32 +526,31 @@ class VlsvReader(object):
             self.__read_fileindex_for_cellid()
                
       if tag == "" and name == "" and tag == "":
-         print "Bad arguments at read"
+         print("Bad arguments at read")
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
+      # Force lowercase name for internal checks
+      name = name.lower()
+         
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
+         popname = 'pop'
          varname = name
 
-      # POSSIBLE TODO:
-      # If read was to be made case-insensitive, checking through variables and datareducers can be
-      # done with an iterator as
-      # if name.lower() in (n.upper() for n in datareducers):
-      # At this time, this has not been implemented, as learning the cases of variables may be a better choice.
-
+      # Seek for requested data in VLSV file
       for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
                continue
          if name != "":
-            if "name" in child.attrib and child.attrib["name"] != name:
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
                continue
          if mesh != "":
             if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
@@ -591,7 +590,7 @@ class VlsvReader(object):
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
                   
             for r_offset in read_offsets:
-               use_offset = variable_offset + r_offset
+               use_offset = int(variable_offset + r_offset)
                fptr.seek(use_offset)
                if datatype == "float" and element_size == 4:
                   data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
@@ -636,6 +635,14 @@ class VlsvReader(object):
             else:
                return data_operators[operator](data)
 
+      # Check which set of datareducers to use
+      if varname[0:3]=="vg_":
+         reducer_reg = v5reducers
+         reducer_multipop = multipopv5reducers
+      else:
+         reducer_reg = datareducers
+         reducer_multipop = multipopdatareducers
+            
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
       if self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
@@ -645,8 +652,8 @@ class VlsvReader(object):
          return data_operators[operator](data_operators["sum"](tmp_vars))
 
       # Check if the name is in datareducers
-      if name in datareducers:
-         reducer = datareducers[name]
+      if name in reducer_reg:
+         reducer = reducer_reg[name]
          # Read the necessary variables:
 
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
@@ -662,7 +669,7 @@ class VlsvReader(object):
             for singlecellid in actualcellids:
                velocity_cell_data = self.read_velocity_cells(singlecellid)
                # Get cells:
-               vcellids = velocity_cell_data.keys()
+               vcellids = list(velocity_cell_data.keys())
                # Get coordinates:
                velocity_coordinates = self.get_velocity_cell_coordinates(vcellids)
                tmp_vars = []
@@ -670,7 +677,7 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( i, tag, mesh, "pass", singlecellid ) )
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
-               print index,"/",len(actualcellids)
+               print(index,"/",len(actualcellids))
             return data_operators[operator](output)
          else:
             tmp_vars = []
@@ -679,8 +686,8 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multidatareducers
-      if 'pop/'+varname in multipopdatareducers:
-         reducer = multipopdatareducers['pop/'+varname]
+      if 'pop/'+varname in reducer_multipop:
+         reducer = reducer_multipop['pop/'+varname]
          vlsvvariables.activepopulation = popname
          
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
@@ -690,7 +697,7 @@ class VlsvReader(object):
 
          # Read the necessary variables:
          if reducer.useVspace:
-            print "Error: useVspace flag is not implemented for multipop datareducers!" 
+            print("Error: useVspace flag is not implemented for multipop datareducers!") 
             return 
          else:
             tmp_vars = []
@@ -703,10 +710,61 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         print "Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!" 
+         print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
       if self.__fptr.closed:
          fptr.close()
 
+
+   def read_metadata(self, name="", tag="", mesh=""):
+      ''' Read variable metadata from the open vlsv file. 
+      
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :returns: four strings:
+                the unit of the variable as a regular string
+                the unit of the variable as a LaTeX-formatted string
+                the description of the variable as a LaTeX-formatted string
+                the conversion factor to SI units as a string                  
+      '''
+
+      if tag == "" and name == "":
+         print("Bad arguments at read")
+
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+
+      # Force lowercase name for internal checks
+      name = name.lower()
+      
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:         
+         if tag != "":
+            if child.tag != tag:
+               continue
+         if name != "":
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
+               continue
+         if not "name" in child.attrib:
+            continue
+         # Found the requested data entry in the file
+         unit = child.attrib["unit"]
+         unitLaTeX = child.attrib["unitLaTeX"]
+         variableLaTeX = child.attrib["variableLaTeX"]
+         unitConversion = child.attrib["unitConversion"] 
+         return unit, unitLaTeX, variableLaTeX, unitConversion
+            
+      if name!="":
+         print("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
+      if self.__fptr.closed:
+         fptr.close()
+      return -1
+         
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
@@ -744,11 +802,6 @@ class VlsvReader(object):
             else:
                scaled_coordinates[i] = 0.0 #Special case for periodic systems with one cell in a dimension
 
-#         print lower_cell_coordinates
-#         print upper_cell_coordinates
-#         print scaled_coordinates
-
-
          test_val=self.read_variable(name,lower_cell_id,operator)
          if isinstance(test_val, Iterable):
             try:
@@ -768,7 +821,6 @@ class VlsvReader(object):
                                                            self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic), \
                                                            operator)
 
-#         print ngbrvalues
          c2d=np.zeros((2,2,value_length))
          for y in  [0,1]:
             for z in  [0,1]:
@@ -872,86 +924,83 @@ class VlsvReader(object):
        # Determine fsgrid domain decomposition
        numWritingRanks = self.read_parameter("numWritingRanks")
        if len(rawData.shape) > 1:
-		orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
+          orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
        else:
-		orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
+          orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
 
        # Helper functions ported from c++ (fsgrid.hpp)
        def computeDomainDecomposition(globalsize, ntasks):
-           processDomainDecomposition = [1,1,1]
-           processBox = [0,0,0]
-           optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0]+1)):
-               processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1]+1)):
-                   if(i * j > ntasks):
-                       break
-                   processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2]+1)):
-                       if(i * j * k > ntasks):
-                           continue
-                       processBox[2] = max(1.*globalsize[2]/k,1)
-                       value = 10 * processBox[0] * processBox[1] * processBox[2] + \
-                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
-                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
-                        ((processBox[0] * processBox[1]) if k>1 else 0)
-                       if i*j*k == ntasks:
-			       if value < optimValue:
-				   optimValue = value
-				   processDomainDecomposition=[i,j,k]
-           return processDomainDecomposition
+          processDomainDecomposition = [1,1,1]
+          processBox = [0,0,0]
+          optimValue = 999999999999999.
+          for i in range(1,min(ntasks,globalsize[0]+1)):
+             processBox[0] = max(1.*globalsize[0]/i,1)
+             for j in range(1,min(ntasks,globalsize[1]+1)):
+                if(i * j > ntasks):
+                   break
+                processBox[1] = max(1.*globalsize[1]/j,1)
+                for k in range(1,min(ntasks,globalsize[2]+1)):
+                   if(i * j * k > ntasks):
+                      continue
+                   processBox[2] = max(1.*globalsize[2]/k,1)
+                   value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+                       ((processBox[1] * processBox[2]) if i>1 else 0) + \
+                       ((processBox[0] * processBox[2]) if j>1 else 0) + \
+                       ((processBox[0] * processBox[1]) if k>1 else 0)
+                   if i*j*k == ntasks:
+                      if value < optimValue:
+                         optimValue = value
+                         processDomainDecomposition=[i,j,k]
+          return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
-           n_per_task = globalCells/ntasks
-           remainder = globalCells%ntasks
-           if my_n < remainder:
-               return my_n * (n_per_task+1)
-           else:
-               return my_n * n_per_task + remainder
+          n_per_task = globalCells/ntasks
+          remainder = globalCells%ntasks
+          if my_n < remainder:
+             return my_n * (n_per_task+1)
+          else:
+             return my_n * n_per_task + remainder
        def calcLocalSize(globalCells, ntasks, my_n):
-           n_per_task = globalCells/ntasks
-           remainder = globalCells%ntasks
-           if my_n < remainder:
-               return n_per_task+1;
-           else:
-               return n_per_task
-
+          n_per_task = globalCells/ntasks
+          remainder = globalCells%ntasks
+          if my_n < remainder:
+             return n_per_task+1;
+          else:
+             return n_per_task
 
        currentOffset = 0;
        fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
-       #print "Global size:"+str([bbox[0],bbox[1],bbox[2]])
-       #print 'decomposition: ' + str(fsgridDecomposition) + '(' + str(numWritingRanks ) + ' ranks)'
        for i in range(0,numWritingRanks):
-           x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
-           y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
-           z = i % fsgridDecomposition[2]
+          x = (i / fsgridDecomposition[2]) / fsgridDecomposition[1]
+          y = (i / fsgridDecomposition[2]) % fsgridDecomposition[1]
+          z = i % fsgridDecomposition[2]
  	   
-           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
-                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
-                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
-           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
-                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
-                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
-           thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
+          thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
+                              calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
+                              calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
+          thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
+                               calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
+                               calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+          thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
+          
+          totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
+          # Extract datacube of that task... 
+          if len(rawData.shape) > 1:
+             thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
+             thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
 
-           totalSize = thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2]
-           # Extract datacube of that task... 
-           if len(rawData.shape) > 1:
-		thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
+             # ... and put it into place 
+             orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
+          else:
+             # Special case for scalar data
+             thatTasksData = rawData[currentOffset:currentOffset+totalSize]
+             thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
 
-		# ... and put it into place 
-		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
-	   else:
-           	# Special case for scalar data
-		thatTasksData = rawData[currentOffset:currentOffset+totalSize]
-		thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
+             # ... and put it into place 
+             orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
-		# ... and put it into place 
-		orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
-
-           currentOffset += totalSize
-
+          currentOffset += totalSize
+             
        return orderedData
 
    def read_variable(self, name, cellids=-1,operator="pass"):
@@ -981,28 +1030,46 @@ class VlsvReader(object):
       data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
 
+      # Force lowercase
+      name = name.lower()
+
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
          varname = name.split('/')[1]
       else:
+         popname = "pop"
          varname = name
 
-      if name in datareducers:
-         units = datareducers[name].units
-         latex = datareducers[name].latex
-         latexunits = datareducers[name].latexunits
-      elif name in vlsvvariables.unitsdict:
+      # Check which set of datareducers to use
+      if varname[0:3]=="vg_":
+         reducer_reg = v5reducers
+         reducer_multipop = multipopv5reducers
+      else:
+         reducer_reg = datareducers
+         reducer_multipop = multipopdatareducers
+
+      if (self.check_variable(name) and (varname[0:3]=="vg_" or varname[0:3]=="fg_")):
+         # For Vlasiator 5 vlsv files, metadata is included
+         units, latexunits, latex, conversion = self.read_metadata(name=name)
+         # Correction for early version incorrect number density (extra backslash)
+         if latex[0:3]==r"$\n":
+            latex = r"$n"+latex[3:]
+      elif (self.check_variable(name) and (name in vlsvvariables.unitsdict)):
          units = vlsvvariables.unitsdict[name]
          latex = vlsvvariables.latexdict[name]
-         latexunits = vlsvvariables.latexunitsdict[name]
-      elif 'pop/'+varname in multipopdatareducers:
+         latexunits = vlsvvariables.latexunitsdict[name]            
+      elif name in reducer_reg:
+         units = reducer_reg[name].units
+         latex = reducer_reg[name].latex
+         latexunits = reducer_reg[name].latexunits
+      elif 'pop/'+varname in reducer_multipop:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
             poplatex = vlsvvariables.speciesdict[popname]
-         units = multipopdatareducers['pop/'+varname].units
-         latex = (multipopdatareducers['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
-         latexunits = multipopdatareducers['pop/'+varname].latexunits
+         units = reducer_multipop['pop/'+varname].units
+         latex = (reducer_multipop['pop/'+varname].latex).replace('REPLACEPOP',poplatex)
+         latexunits = reducer_multipop['pop/'+varname].latexunits
       elif varname in vlsvvariables.unitsdict:
          poplatex='i'
          if popname in vlsvvariables.speciesdict:
@@ -1065,8 +1132,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cellcoordinates = np.zeros(3)
@@ -1090,8 +1157,8 @@ class VlsvReader(object):
       cellid = (int)(cellid - 1)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)/(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)/(int)(self.__xcells*self.__ycells)
+      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
       # Return the coordinates:
       return np.array(cellindices)
 
@@ -1159,19 +1226,19 @@ class VlsvReader(object):
       '''
       vcellids = np.atleast_1d(vcellids)
       # Get block ids:
-      blocks = vcellids.astype(int) / 64
+      blocks = vcellids.astype(int) // 64
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
       # Get cell indices:
       cellids = np.remainder(vcellids.astype(int), (int)(64))
       cellIndicesX = np.remainder(cellids.astype(int), (int)(4))
-      cellIndicesY = np.remainder((cellids.astype(int)/(int)(4)).astype(int), (int)(4))
-      cellIndicesZ = cellids.astype(int)/(int)(16)
+      cellIndicesY = np.remainder((cellids.astype(int)//(int)(4)).astype(int), (int)(4))
+      cellIndicesZ = cellids.astype(int)//(int)(16)
       # Get cell coordinates:
       cellCoordinates = np.array([blockCoordinatesX.astype(float) + (cellIndicesX.astype(float) + 0.5) * self.__meshes[pop].__dvx,
                                   blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__meshes[pop].__dvy,
@@ -1188,8 +1255,8 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_cell_coordinates`
       '''
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
       blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * 4 + self.__meshes[pop].__vxmin
       blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * 4 + self.__meshes[pop].__vymin
       blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * 4 + self.__meshes[pop].__vzmin
@@ -1243,8 +1310,8 @@ class VlsvReader(object):
       blocks = np.array(blocks)
       # Get block coordinates:
       blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks)).astype(np.uint16)
-      blockIndicesY = np.remainder(blocks.astype(int)/(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
-      blockIndicesZ = (blocks.astype(np.uint64)/(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesZ = (blocks.astype(np.uint64)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
 
       cellsPerDirection = 4
       cellsPerBlock = 64
@@ -1252,8 +1319,8 @@ class VlsvReader(object):
       # Get velocity cell min coordinates (per velocity block)
       vcellids = np.arange(cellsPerBlock).astype(np.uint32)
       cellIndicesX = np.remainder(vcellids.astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesY = np.remainder((vcellids.astype(int)/(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
-      cellIndicesZ = (vcellids.astype(int)/(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
+      cellIndicesY = np.remainder((vcellids.astype(int)//(int)(cellsPerDirection)).astype(int), (int)(cellsPerDirection)).astype(np.uint16)
+      cellIndicesZ = (vcellids.astype(int)//(int)(cellsPerDirection*cellsPerDirection)).astype(np.uint16)
 
       # Construct velocity cell node indices for every velocity cell per velocity block
 
@@ -1267,9 +1334,9 @@ class VlsvReader(object):
       nodeIndices_local = []
       nodesPerDirection = 5
 
-      for i in xrange(nodesPerDirection):
-         for j in xrange(nodesPerDirection):
-            for k in xrange(nodesPerDirection):
+      for i in range(nodesPerDirection):
+         for j in range(nodesPerDirection):
+            for k in range(nodesPerDirection):
                nodeIndices_local.append(np.array([i,j,k]))
       nodeIndices_local = np.array(nodeIndices_local).astype(np.uint16)
 
@@ -1292,10 +1359,10 @@ class VlsvReader(object):
       # Put the node indices into keys:
       nodeKeys = np.array([], dtype=np.uint64)
       N = 10
-      for i in xrange(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+      for i in range(N):
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          nodeKeys = np.append(nodeKeys, calculate_node_indices( self, blockIndicesX[fromIndex:toIndex], blockIndicesY[fromIndex:toIndex], blockIndicesZ[fromIndex:toIndex], nodeIndices_local, nodesPerBlock, cellsPerDirection ) )
@@ -1325,10 +1392,10 @@ class VlsvReader(object):
       cellKeys = np.zeros(len(blockIndicesX)*cellsPerBlock*nodesPerCell, dtype=np.uint32)
       N = 10
       # Append keys in cuts to save memory
-      for i in xrange(N):
-         fromIndex = i*(len(blockIndicesX)/N)
+      for i in range(N):
+         fromIndex = i*(len(blockIndicesX)//N)
          if i != N-1:
-            toIndex = (i+1)*(len(blockIndicesX)/N)
+            toIndex = (i+1)*(len(blockIndicesX)//N)
          else:
             toIndex = len(blockIndicesX)
          # Append cell keys
@@ -1339,8 +1406,8 @@ class VlsvReader(object):
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1)).astype(np.float32) * self.__meshes[pop].__dvx + self.__meshes[pop].__vxmin
-      nodeCoordinatesY = np.remainder(nodeKeys/(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
-      nodeCoordinatesZ = ( nodeKeys / (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
+      nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
+      nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
       
       # Nodekeyss is no longer needed
       del nodeKeys
@@ -1408,7 +1475,7 @@ class VlsvReader(object):
             self.__set_cell_offset_and_blocks(pop) 
          # Check that cells has vspace
          if not cellid in self.__fileindex_for_cellid_blocks[pop]:
-            print "Cell does not have velocity distribution"
+            print("Cell does not have velocity distribution")
             return []
          # Navigate to the correct position:
          offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
@@ -1421,7 +1488,7 @@ class VlsvReader(object):
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
          except:
-            print "Cell does not have velocity distribution"
+            print("Cell does not have velocity distribution")
             return []
          # Navigate to the correct position:
          offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
@@ -1443,7 +1510,7 @@ class VlsvReader(object):
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
-            offset_avgs = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
@@ -1458,7 +1525,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:
@@ -1466,7 +1533,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad data type in blocks!"
+               print("Error! Bad data type in blocks!")
                return
 
          if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
@@ -1475,7 +1542,7 @@ class VlsvReader(object):
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
-            offset_block_ids = offset * vector_size * element_size + ast.literal_eval(child.text)
+            offset_block_ids = int(offset * vector_size * element_size + ast.literal_eval(child.text))
 
             fptr.seek(offset_block_ids)
             if datatype == "uint" and element_size == 4:
@@ -1483,7 +1550,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print "Error! Bad data type in blocks!"
+               print("Error! Bad data type in blocks!")
                return
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
@@ -1493,19 +1560,19 @@ class VlsvReader(object):
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
-         print "BAD DATA SIZES"
+         print("BAD DATA SIZES")
       # Make a dictionary (hash map) out of velocity cell ids and avgs:
       velocity_cells = {}
       array_size = len(data_avgs)
 
       # Construct velocity cells:
       velocity_cell_ids = []
-      for kv in xrange(4):
-         for jv in xrange(4):
-            for iv in xrange(4):
+      for kv in range(4):
+         for jv in range(4):
+            for iv in range(4):
                velocity_cell_ids.append(kv*16 + jv*4 + iv)
 
-      for i in xrange(array_size):
+      for i in range(array_size):
          velocity_block_id = data_block_ids[i]
          avgIndex = 0
          avgs = data_avgs[i]
@@ -1514,8 +1581,6 @@ class VlsvReader(object):
             velocity_cells[(int)(j)] = avgs[avgIndex]
             avgIndex = avgIndex + 1
       return velocity_cells
-
-
 
    def get_spatial_mesh_size(self):
       ''' Read spatial mesh size
@@ -1581,7 +1646,7 @@ class VlsvReader(object):
             #Example usage:
             variables = []
             vlsvReader.optimize_open_file()
-            for i in xrange(1000):
+            for i in range(1000):
                variables.append(vlsvReader.read_variable("rho", cellids=i))
             vlsvReader.optimize_close_file()
 
@@ -1599,7 +1664,7 @@ class VlsvReader(object):
             # Example usage:
             variables = []
             vlsvReader.optimize_open_file()
-            for i in xrange(1000):
+            for i in range(1000):
                variables.append(vlsvReader.read_variable("rho", cellids=i))
             vlsvReader.optimize_close_file()
 
@@ -1619,7 +1684,7 @@ class VlsvReader(object):
              # Example usage:
              vlsvReaders = []
              # Open a list of vlsv files
-             for i in xrange(1000):
+             for i in range(1000):
                 vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
@@ -1644,7 +1709,7 @@ class VlsvReader(object):
              # Example usage:
              vlsvReaders = []
              # Open a list of vlsv files
-             for i in xrange(1000):
+             for i in range(1000):
                 vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
              # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:

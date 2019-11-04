@@ -39,14 +39,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
-
 # Register custom colourmaps
 plt.register_cmap(name='viridis', cmap=cmaps.viridis)
 plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
@@ -146,6 +138,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
             return (False,0,0,0)
+    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
+        if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
+            return (False,0,0,0)
 
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
@@ -158,16 +153,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
-    V += 0.5*inputcellsize
-    print("Found "+str(len(V))+" v-space cells")
-
-    f = zip(*velcells.items())
+    velcellslist = list(zip(*velcells.items()))
+    
     # check that velocity space has cells
-    if(len(f) > 0):
-        f = np.asarray(zip(*velcells.items())[1])
-    else:
+    if(len(velcellslist) <= 0):
         return (False,0,0,0)
+    
+    f = np.asarray(velcellslist[1])
+    V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
+    print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
     if center is "peak":
@@ -192,6 +186,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
             print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+        elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+            setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
+            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
             print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
             print("Using a default value of 1.e-16. Override with setThreshold=value.")
@@ -288,9 +285,11 @@ def plot_vdf_profiles(filename=None,
              nooverwrite=None,
              draw=None,axisunit=None,title=None,
              tickinterval=None,
+             lin=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
              fmin=None, fmax=None,
+             vmin=None, vmax=None,
              xy=None, xz=None, yz=None, normal=None,
              bpara=None, bpara1=None, bperp=None,
              cbulk=None, cpeak=None, center=None, setThreshold=None,
@@ -319,9 +318,11 @@ def plot_vdf_profiles(filename=None,
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
+    :kword vmin,vmax:   min and max values for x-axis
 
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
     :kword tickinterval: Interval at which to have ticks on axes
+    :kword lin:         Plot using linear y-axis (default log)
    
     :kword xy:          Perform slice in x-y-direction
     :kword xz:          Perform slice in x-z-direction
@@ -331,8 +332,6 @@ def plot_vdf_profiles(filename=None,
     :kword bpara1:       Perform slice in B_para / B_perp1 plane
     :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
-
-    :kword bvector:     Plot a magnetic field vector projection in-plane
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
@@ -437,11 +436,6 @@ def plot_vdf_profiles(filename=None,
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
         
-        # Indicate projection in file name
-        projstr=""
-        if slicethick==0:
-            projstr="_proj"
-
         # Verify directory
         if outputfile==None:
             if outputdir==None: # default initial path
@@ -606,21 +600,29 @@ def plot_vdf_profiles(filename=None,
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable('vg_moments'):
+            # This should be a restart file
+            Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
-        else:
+        elif vlsvReader.check_variable('V'):
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
-        if Vbulk is None:
-            print("Error in finding plasma bulk velocity!")
-            sys.exit()
+        # if Vbulk is None:
+        #     print("Error in finding plasma bulk velocity!")
+        #     sys.exit()
 
         # If necessary, find magnetic field
         if bpara!=None or bperp!=None or bpara1!=None:
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
+            elif vlsvReader.check_variable("vg_b_vol"):
+                Bvect = vlsvReader.read_variable("vg_b_vol", cellid)
             # Otherwise perform linear reconstruction to find
             # approximation of cell-center value
             else:
@@ -630,7 +632,11 @@ def plot_vdf_profiles(filename=None,
                 else:
                     cellidlist = [cellid,cellid+1,cellid+xsize,cellid+xsize*ysize]
                 # Read raw data for the required cells    
-                if vlsvReader.check_variable("B"):
+                if vlsvReader.check_variable("vg_b"):
+                    Braw = vlsvReader.read_variable("vg_b", cellidlist)
+                elif vlsvReader.check_variable("fg_b"):
+                    Braw = vlsvReader.read_variable("fg_b", cellidlist)
+                elif vlsvReader.check_variable("B"):
                     Braw = vlsvReader.read_variable("B", cellidlist)
                 elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
                     # used e.g. for restart files
@@ -741,7 +747,7 @@ def plot_vdf_profiles(filename=None,
 
         if draw==None and axes==None:
             if outputfile==None:
-                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
             else:
                 savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
@@ -761,7 +767,7 @@ def plot_vdf_profiles(filename=None,
 
 
         if cpeak!=None:
-            center='bulk'
+            center='peak'
         if cbulk!=None or center is 'bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
@@ -779,7 +785,7 @@ def plot_vdf_profiles(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            print('ERROR: error from velocity space reducer')
+            print('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # If no other plotting fmin fmax values are given, take min and max of array
@@ -794,7 +800,18 @@ def plot_vdf_profiles(filename=None,
             #fmaxuse=np.nanmax(np.concatenate((bins1,np.concatenate((bins2,bins3)))))
             fmaxuse=np.nanmax(np.concatenate((bins1,bins2,bins3)))*1.5
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
-        
+
+                # If no other plotting fmin fmax values are given, take min and max of array
+        if vmin!=None:
+            vminuse=vmin
+        else:
+            vminuse=np.nanmin(np.concatenate((axis1,axis2,axis3)))*0.8
+        if vmax!=None:
+            vmaxuse=vmax
+        else:
+            vmaxuse=np.nanmax(np.concatenate((axis1,axis2,axis3)))*1.5
+        print("Active v range is "+str(vminuse)+" to "+str(vmaxuse))
+
         axis1=np.array(axis1)/velUnit
         axis2=np.array(axis2)/velUnit
         axis3=np.array(axis3)/velUnit
@@ -811,11 +828,14 @@ def plot_vdf_profiles(filename=None,
         else:
             ax1=axes
 
-        ax1.set_yscale('log')
+        if lin is None:
+            ax1.set_yscale('log')
         ax1.plot(axis1,bins1, drawstyle='steps-mid', label=pltxstr)
         ax1.plot(axis2,bins2, drawstyle='steps-mid', label=pltystr)
         ax1.plot(axis3,bins3, drawstyle='steps-mid', label=pltzstr)
         ax1.set_ylim([fminuse,fmaxuse])
+        ax1.set_xlim([vminuse,vmaxuse])
+
         
         # ax1.set_xlim([val/velUnit for val in xvalsrange])
         # ax1.set_ylim([val/velUnit for val in yvalsrange])
@@ -840,7 +860,8 @@ def plot_vdf_profiles(filename=None,
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         handles, labels = ax1.get_legend_handles_labels()
-        ax1.legend(handles, labels, fontsize=fontsize2, handlelength=0.6)
+        #ax1.legend(handles, labels, fontsize=fontsize2, handlelength=0.6)
+        ax1.legend(handles, labels, fontsize=fontsize2)
 
         # Find maximum possible lengths of axis tick labels
         # Only counts digits

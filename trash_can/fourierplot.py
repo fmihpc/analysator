@@ -31,10 +31,10 @@ def saveplotdata( xcoordinates, ycoordinates, fileName ):
    xcoordinates = np.atleast_1d(xcoordinates)
    ycoordinates = np.atleast_1d(ycoordinates)
    if len(xcoordinates) != len(ycoordinates):
-      print "BAD LENGTHS"
+      print("BAD LENGTHS")
       return False
    if len(np.atleast_1d(xcoordinates[0])) != 1:
-      data = np.array([[xcoordinates[i], ycoordinates[i]] for i in xrange(len(xcoordinates))])
+      data = np.array([[xcoordinates[i], ycoordinates[i]] for i in range(len(xcoordinates))])
    else:
       data = np.array([[xcoordinates, ycoordinates]])
    np.save(fileName, data)
@@ -42,12 +42,12 @@ def saveplotdata( xcoordinates, ycoordinates, fileName ):
 
 def loadplotdata( fileName, showplot=True ):
    data = np.load(fileName)
-   xcoordinates = np.array([data[i][0] for i in xrange(len(data))])
-   ycoordinates = np.array([data[i][1] for i in xrange(len(data))])
+   xcoordinates = np.array([data[i][0] for i in range(len(data))])
+   ycoordinates = np.array([data[i][1] for i in range(len(data))])
    maxPlots = len(data)
    subplotnums = [maxPlots, 1, 1]
    pl.figure()
-   for i in xrange(maxPlots):
+   for i in range(maxPlots):
       pl.subplot(subplotnums[0], subplotnums[1], subplotnums[2])
       pl.plot(xcoordinates[i], ycoordinates[i])
       subplotnums[2] = subplotnums[2] + 1
@@ -64,9 +64,9 @@ def fourier_array(t, y, kaiserwindowparameter=0):
    '''
    # First check the t array whether it has a constant dt
    dt = t[1] - t[0]
-   for i in xrange(len(t)-1):
+   for i in range(len(t)-1):
       if dt != t[i+1] - t[i]:
-         print "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
+         print("Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)")
    # Use kaiser window on y
    y = y*np.kaiser(len(y), kaiserwindowparameter)
    # Do FFT on the data
@@ -87,13 +87,13 @@ def plot_fourier(t, y, subplotnums=[[2,1,1],[2,1,2]], savedata="none", kaiserwin
        :subplotnums     subplotnum for plotting multiple plots in one window
    '''
    if len(subplotnums) - 1 != len(np.atleast_1d(kaiserwindowparameter)):
-      print "Bad subplotnum vs kaiserwindowparameter"
+      print("Bad subplotnum vs kaiserwindowparameter")
       return
    # First check the t array whether it has a constant dt
    dt = t[1] - t[0]
-   for i in xrange(len(t)-1):
+   for i in range(len(t)-1):
       if dt != t[i+1] - t[i]:
-         print "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
+         print("Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)")
    # Use kaiser window on y
    _y = y*np.kaiser(len(y), np.atleast_1d(kaiserwindowparameter)[0])
    # Plot the raw data as well as the fitted data (fourier series)

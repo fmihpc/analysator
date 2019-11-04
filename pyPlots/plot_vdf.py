@@ -39,14 +39,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
-
 # Register custom colourmaps
 plt.register_cmap(name='viridis', cmap=cmaps.viridis)
 plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
@@ -163,10 +155,13 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
                   slicethick=None, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
-    if vlsvReader.check_variable('fSaved'): #restart files will not have this value
+    if vlsvReader.check_variable('fSaved'): #restart files will not have this value        
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
             return (False,0,0,0)
-
+    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
+        if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
+            return (False,0,0,0)
+        
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
     # Account for 4x4x4 cells per block
@@ -178,15 +173,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
-    V = vlsvReader.get_velocity_cell_coordinates(velcells.keys(), pop=pop)
-    print("Found "+str(len(V))+" v-space cells")
-
-    f = zip(*velcells.items())
+    velcellslist = list(zip(*velcells.items()))
+    
     # check that velocity space has cells
-    if(len(f) > 0):
-        f = np.asarray(zip(*velcells.items())[1])
-    else:
+    if(len(velcellslist) <= 0):
         return (False,0,0,0)
+    
+    f = np.asarray(velcellslist[1])
+    V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
+    print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
     if center is "peak":
@@ -211,6 +206,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
             print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+        elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+            setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
+            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
             print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
             print("Using a default value of 1.e-16. Override with setThreshold=value.")
@@ -675,6 +673,9 @@ def plot_vdf(filename=None,
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable(pop+'/vg_v'):
+            # multipop v5 bulk file
+            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
@@ -693,6 +694,8 @@ def plot_vdf(filename=None,
             # First check if volumetric fields are present
             if vlsvReader.check_variable("B_vol"):
                 Bvect = vlsvReader.read_variable("B_vol", cellid)
+            elif vlsvReader.check_variable("vg_b_vol"):
+                Bvect = vlsvReader.read_variable("vg_b_vol", cellid)
             # Otherwise perform linear reconstruction to find
             # approximation of cell-center value
             else:
@@ -886,7 +889,7 @@ def plot_vdf(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            print('ERROR: error from velocity space reducer')
+            print('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # Perform swap of coordinate axes, if requested
@@ -924,7 +927,7 @@ def plot_vdf(filename=None,
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
-        ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+        ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
 
         if box is not None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]

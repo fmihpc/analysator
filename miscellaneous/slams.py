@@ -67,8 +67,8 @@ def get_neighbors(vlsvobj,c_i,neighborhood_reach=[1,1]):
     neighbors = np.array([],dtype=int)
 
     # range of offsets to take into account
-    x_r = xrange(-1*neighborhood_reach[0],neighborhood_reach[0]+1)
-    y_r = xrange(-1*neighborhood_reach[1],neighborhood_reach[1]+1)
+    x_r = range(-1*neighborhood_reach[0],neighborhood_reach[0]+1)
+    y_r = range(-1*neighborhood_reach[1],neighborhood_reach[1]+1)
 
     
     if simsize[1] == 1:
@@ -294,8 +294,8 @@ def sw_par_dict(runid):
     sw_v = [750e+3,600e+3,750e+3,600e+3,750e+3]
     sw_B = [5.0e-9,5.0e-9,10.0e-9,10.0e-9,5.0e-9]
     sw_T = [500e+3,500e+3,500e+3,500e+3,500e+3]
-    sw_pdyn = [m_p*sw_rho[n]*(sw_v[n]**2) for n in xrange(len(runs))]
-    sw_beta = [2*mu_0*sw_rho[n]*k*sw_T[n]/(sw_B[n]**2) for n in xrange(len(runs))]
+    sw_pdyn = [m_p*sw_rho[n]*(sw_v[n]**2) for n in range(len(runs))]
+    sw_beta = [2*mu_0*sw_rho[n]*k*sw_T[n]/(sw_B[n]**2) for n in range(len(runs))]
 
     return [sw_rho[runs.index(runid)],sw_v[runs.index(runid)],sw_B[runs.index(runid)],sw_pdyn[runs.index(runid)],sw_beta[runs.index(runid)]]
 
@@ -476,7 +476,7 @@ def sort_slams(vlsvobj,cells,min_size=0,max_size=3000,neighborhood_reach=[1,1]):
             continue
 
         # number of times to search for more neighbors, larger is better but possibly slower.
-        it_range = xrange(200)
+        it_range = range(200)
 
         # initialise current event
         curr_event = np.array([cell])
@@ -512,7 +512,7 @@ def slams_maker(runid,start,stop,boxre=[6,18,-8,6],maskfile=False):
         except OSError:
             pass
 
-    for file_nr in xrange(start,stop+1):
+    for file_nr in range(start,stop+1):
 
         # find correct file based on file number and run id
         if runid in ["AEC","AEF","BEA","BEB"]:
@@ -574,7 +574,7 @@ def eventfile_read(runid,filenr):
 
     for line in lines:
 
-        outputlist.append(map(int,line.split(",")))
+        outputlist.append(list(map(int,line.split(","))))
 
     return outputlist
 
@@ -661,7 +661,7 @@ def track_slams(runid,start,stop,threshold=0.5):
                 break
 
     # Track jets
-    for n in xrange(start+2,stop+1):
+    for n in range(start+2,stop+1):
 
         for jetobj in jetobj_list:
             if float(n)/2 - jetobj.times[-1] > 5:
@@ -787,7 +787,7 @@ def timefile_read(runid,filenr,key):
     contents = tf.read().split("\n")
     tf.close()
 
-    return map(float,contents)
+    return list(map(float,contents))
 
 def jetfile_read(runid,filenr,key):
     # Read array of cellids from file
@@ -800,7 +800,7 @@ def jetfile_read(runid,filenr,key):
 
     for line in lines:
 
-        outputlist.append(map(int,line.split(",")))
+        outputlist.append(list(map(int,line.split(","))))
 
     return outputlist
 
@@ -848,7 +848,7 @@ def plotmake_script_BFD(start,stop,runid="BFD",vmax=1.5,boxre=[4,20,-10,4]):
         if runid in ["BFD"]:
             y_mean = z_mean
             y_vmax = z_vmax
-        for itr in xrange(time.size):
+        for itr in range(time.size):
             if time[itr] not in xmean_dict:
                 xmean_dict[time[itr]] = [x_mean[itr]]
                 ymean_dict[time[itr]] = [y_mean[itr]]
@@ -867,7 +867,7 @@ def plotmake_script_BFD(start,stop,runid="BFD",vmax=1.5,boxre=[4,20,-10,4]):
     else:
         bulkpath = "/proj/vlasov/2D/"+runid+"/bulk/"
 
-    for itr2 in xrange(start,stop+1):
+    for itr2 in range(start,stop+1):
 
         t = float(itr2)/2
 
@@ -894,7 +894,7 @@ def plotmake_script_BFD(start,stop,runid="BFD",vmax=1.5,boxre=[4,20,-10,4]):
         try:
             fileobj = open("SLAMS/events/"+runid+"/"+str(itr2)+".events","r")
             contents = fileobj.read()
-            cells = map(int,contents.replace("\n",",").split(",")[:-1])
+            cells = list(map(int,contents.replace("\n",",").split(",")[:-1]))
         except IOError:
             cells = []
 
@@ -961,7 +961,7 @@ def calc_slams_properties(runid,start,jetid,tp_files=False):
     # Initialise property array
     prop_arr = np.array([])
 
-    for n in xrange(len(nr_list)):
+    for n in range(len(nr_list)):
 
         curr_list = jet_list[n]
         curr_list.sort()
@@ -1153,7 +1153,7 @@ def slams_2d_hist(runids,var1,var2,time_thresh=10):
     "A",
     "death_distance"]
 
-    n_list = list(xrange(len(key_list)))
+    n_list = list(range(len(key_list)))
     var_dict = dict(zip(key_list,n_list))
 
     # Initialise input variable list and variable list
@@ -1161,8 +1161,8 @@ def slams_2d_hist(runids,var1,var2,time_thresh=10):
     var_list = [[],[]]
 
     # Append variable values to var lists
-    for ind in xrange(len(inp_var_list)):
-        for n in xrange(len(runids)):
+    for ind in range(len(inp_var_list)):
+        for n in range(len(runids)):
             for fname in file_list_list[n]:
                 props = PropReader("",runids[n],fname=fname)
                 if props.read("time")[-1]-props.read("time")[0] > time_thresh and max(props.read("r_mean")) > run_cutoff_dict[runids[n]]:
@@ -1265,7 +1265,7 @@ def slams_vs_hist(runids,var,time_thresh=10):
     "A",
     "death_distance"]
 
-    n_list = list(xrange(len(key_list)))
+    n_list = list(range(len(key_list)))
     var_dict = dict(zip(key_list,n_list))
 
     # Initialise var list
@@ -1274,7 +1274,7 @@ def slams_vs_hist(runids,var,time_thresh=10):
     val_dict = dict(zip(runids,var_list))
 
     # Append variable values to var lists
-    for n in xrange(len(runids)):
+    for n in range(len(runids)):
         for fname in file_list_list[n]:
             props = PropReader("",runids[n],fname=fname)
             if props.read("time")[-1]-props.read("time")[0] > time_thresh and max(props.read("r_mean")) > run_cutoff_dict[runids[n]]:
@@ -1313,7 +1313,7 @@ def slams_vs_hist(runids,var,time_thresh=10):
     ax.set_xlim(xmin,xmax)
     ax.set_ylim(0,0.75)
     ax.tick_params(labelsize=20)
-    weights = [[1/float(len(val_dict[runids[n]]))]*len(val_dict[runids[n]]) for n in xrange(len(runids))] # Normalise by total number of jets
+    weights = [[1/float(len(val_dict[runids[n]]))]*len(val_dict[runids[n]]) for n in range(len(runids))] # Normalise by total number of jets
 
     ax.set_yticks(np.arange(0.1,0.8,0.1))
     ax.set_yticklabels(["$\\mathtt{"+lab+"}$" for lab in np.arange(0.1,0.8,0.1).astype(str)])
@@ -1396,14 +1396,14 @@ def slams_all_hist(runids,var,time_thresh=10):
     "A",
     "death_distance"]
 
-    n_list = list(xrange(len(key_list)))
+    n_list = list(range(len(key_list)))
     var_dict = dict(zip(key_list,n_list))
 
     # Initialise var list
     var_list = []
 
     # Append variable values to var list
-    for n in xrange(len(runids)):
+    for n in range(len(runids)):
         for fname in file_list_list[n]:
             props = PropReader("",runids[n],fname=fname)
             if props.read("time")[-1]-props.read("time")[0] > time_thresh and max(props.read("r_mean")) > run_cutoff_dict[runids[n]]:
@@ -1524,7 +1524,7 @@ class PropReader:
         self.props = np.asarray(props,dtype="float")
 
         var_list = ["time","x_mean","y_mean","z_mean","A","Nr_cells","r_mean","theta_mean","phi_mean","size_rad","size_tan","x_vmax","y_vmax","z_vmax","n_avg","n_med","n_max","v_avg","v_med","v_max","B_avg","B_med","B_max","T_avg","T_med","T_max","TPar_avg","TPar_med","TPar_max","TPerp_avg","TPerp_med","TPerp_max","beta_avg","beta_med","beta_max","x_min","rho_vmax","b_vmax","pd_avg","pd_med","pd_max"]
-        n_list = list(xrange(len(var_list)))
+        n_list = list(range(len(var_list)))
         self.var_dict = dict(zip(var_list,n_list))
 
     def read(self,name):
