@@ -108,7 +108,7 @@ def exprMA_cust(exprmaps, requestvariables=False):
     # here the function returns the M_A with a preset bulk velocity
     custombulkspeed=1500000. # m/s
     va = exprmaps[reqs[0]][:,:]
-    MA = custombulkspeed/va
+    MA = np.ma.divide(custombulkspeed,va)
     return MA
 
 # Second example of a more involved custom expression function
@@ -535,7 +535,7 @@ v5regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=5.0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=4.0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=True)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0, highres=True)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0, highres=True)",
@@ -599,7 +599,7 @@ v5nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rho_nonthermal', colormap='jet')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta',lin=1, usesci=0, colormap='viridis',vmax=50)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_MA',lin=1,usesci=0,vmin=2,vmax=40, colormap='inferno_r')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_Mms',lin=1,usesci=0, colormap='magma')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_Mms',lin=1,usesci=0, vmin=0, colormap='magma')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_va',lin=1,usesci=0, colormap='magma_r')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vms',lin=1, colormap='plasma_r')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vs',lin=1, colormap='viridis_r')",

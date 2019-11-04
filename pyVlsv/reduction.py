@@ -303,29 +303,29 @@ def Mms( variables ):
 def ParallelVectorComponent( variables ):
    ''' Data reducer function for vector component parallel to the magnetic field (or another vector)
    '''
-   bulkv = variables[0]
-   bvector = variables[1]
-   if( np.ndim(bulkv)==1 ):
-      bnorm = bvector / np.linalg.norm(bvector)
-      return (bulkv*bnorm).sum()
+   inputvector = variables[0]
+   bgvector = variables[1]
+   if( np.ndim(inputvector)==1 ):
+      bgnorm = bgvector/np.linalg.norm(bgvector)
+      return (inputvector*bgnorm).sum()
    else:
-      bnorm = bvector / np.linalg.norm(bvector, axis=-1)[:,np.newaxis]
-      return (bulkv*bnorm).sum(-1)
+      bgnorm = np.ma.divide(bgvector, np.linalg.norm(bgvector, axis=-1)[:,np.newaxis])
+      return (inputvector*bgnorm).sum(-1)
 
 def PerpendicularVectorComponent( variables ):
    ''' Data reducer function for vector component perpendicular to the magnetic field (or another vector)
    '''
-   bulkv = variables[0]
-   bvector = variables[1]
-   if( np.ndim(bulkv)==1 ):
-      bnorm = bvector / np.linalg.norm(bvector)
-      vpara = (bulkv*bnorm).sum()
-      vmag = np.linalg.norm(bulkv)
+   inputvector = variables[0]
+   bgvector = variables[1]
+   if( np.ndim(inputvector)==1 ):
+      bgnorm = bgvector / np.linalg.norm(bgvector)
+      vpara = (inputvector*bgnorm).sum()
+      vmag = np.linalg.norm(inputvector)
       return np.sqrt(vmag*vmag - vpara*vpara)
    else:
-      bnorm = bvector / np.linalg.norm(bvector, axis=-1)[:,np.newaxis]
-      vpara = (bulkv*bnorm).sum(-1)
-      vmag = np.linalg.norm(bulkv, axis=-1)
+      bgnorm = np.ma.divide(bgvector, np.linalg.norm(bgvector, axis=-1)[:,np.newaxis])
+      vpara = (inputvector*bgnorm).sum(-1)
+      vmag = np.linalg.norm(inputvector, axis=-1)
       return np.sqrt(vmag*vmag - vpara*vpara)
    
 def FullTensor( variables ):
@@ -485,8 +485,8 @@ def beta( variables ):
    ''' Data reducer for finding the plasma beta
    '''
    Pressure = variables[0]
-   Magneticfield = variables[1]
-   return 2.0 * 1.25663706144e-6 * Pressure / np.sum(np.asarray(Magneticfield)**2,axis=-1)
+   Magneticfield = variables[1]   
+   return 2.0 * 1.25663706144e-6 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
 
 def rMirror( variables ):
    # More efficient file access, now just takes PTensor and B
