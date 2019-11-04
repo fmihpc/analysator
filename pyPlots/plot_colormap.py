@@ -1006,7 +1006,7 @@ def plot_colormap(filename=None,
             V = slinemap[:,:,1]
         elif ysize==1:
             V = slinemap[:,:,2]
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor, arrowsize=streamlinethick)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
@@ -1072,19 +1072,19 @@ def plot_colormap(filename=None,
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
         if symlog!=None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
-            (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
+            (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
             if abs(0.5-cbty)/scale < 0.1:
-                cbt[len(cbt)/2-1].set_va("top")
-            (cbtx,cbty) = cbt[len(cbt)/2+1].get_position() # just above zero
+                cbt[len(cbt)//2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
             if abs(0.5-cbty)/scale < 0.1:
-                cbt[len(cbt)/2+1].set_va("bottom")
+                cbt[len(cbt)//2+1].set_va("bottom")
             if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
-                (cbtx,cbty) = cbt[len(cbt)/2-2].get_position() # second below zero
+                (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
                 if abs(0.5-cbty)/scale < 0.15:
-                    cbt[len(cbt)/2-2].set_va("top")
-                (cbtx,cbty) = cbt[len(cbt)/2+2].get_position() # second above zero
+                    cbt[len(cbt)//2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
                 if abs(0.5-cbty)/scale < 0.15:
-                    cbt[len(cbt)/2+2].set_va("bottom")
+                    cbt[len(cbt)//2+2].set_va("bottom")
 
         # if too many subticks in logarithmic colorbar:
         if lin==None and symlog==None:
