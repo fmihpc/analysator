@@ -987,7 +987,7 @@ class VlsvReader(object):
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
                thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
+               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]],order='F')
 
                # ... and put it into place 
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
@@ -999,7 +999,7 @@ class VlsvReader(object):
                # ... and put it into place 
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
-               currentOffset += totalSize
+           currentOffset += totalSize
 
        return orderedData
 
@@ -1027,7 +1027,6 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable`
       '''
-      data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
 
       # Force lowercase
@@ -1081,6 +1080,10 @@ class VlsvReader(object):
          units = ""
          latex = r""+name.replace("_","\_")
          latexunits = ""
+      
+      data = self.read_variable(name=name, operator=operator, cellids=cellids)
+      if data == None:
+          data = self.read_fsgrid_variable(name=name, operator=operator) 
 
       if operator != "pass":
          if operator=="magnitude":
