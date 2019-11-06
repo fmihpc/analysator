@@ -667,29 +667,29 @@ def plot_colormap(filename=None,
                 pass_maps[-1]['dstep'] = ds
                 # Gather the required variable maps
                 for mapval in pass_vars:
-                   pass_map = fstep.read_variable(mapval)[step_cellids.argsort()]
-                   if pass_map == None:
-                           pass_map = fstep.read_fsgrid_variable(mapval)
-                   else:
-                           if np.ndim(pass_map)==1:
-                               pass_map = pass_map.reshape([sizes[1],sizes[0]])
-                               if np.ma.is_masked(maskgrid):
-                                   pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                                   pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                           elif np.ndim(pass_map)==2: # vector variable
-                               pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
-                               if np.ma.is_masked(maskgrid):
-                                   pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                                   pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                           elif np.ndim(pass_map)==3:  # tensor variable
-                               pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
-                               if np.ma.is_masked(maskgrid):
-                                   pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                                   pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
-                           else:
-                               print("Error in reshaping pass_maps!") 
+                    if mapval.startswith('fg_'):
+                        pass_map = fstep.read_fsgrid_variable(mapval)
+                    else:
+                        pass_map = fstep.read_variable(mapval)[step_cellids.argsort()]
+                        if np.ndim(pass_map)==1:
+                            pass_map = pass_map.reshape([sizes[1],sizes[0]])
+                            if np.ma.is_masked(maskgrid):
+                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
+                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                        elif np.ndim(pass_map)==2: # vector variable
+                            pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
+                            if np.ma.is_masked(maskgrid):
+                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
+                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                        elif np.ndim(pass_map)==3:  # tensor variable
+                            pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                            if np.ma.is_masked(maskgrid):
+                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
+                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                        else:
+                            print("Error in reshaping pass_maps!") 
                 
-                   pass_maps[-1][mapval] = pass_map # add to the dictionary
+                    pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression!=None:

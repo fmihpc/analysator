@@ -1080,10 +1080,11 @@ class VlsvReader(object):
          units = ""
          latex = r""+name.replace("_","\_")
          latexunits = ""
-      
-      data = self.read_variable(name=name, operator=operator, cellids=cellids)
-      if data == None:
-          data = self.read_fsgrid_variable(name=name, operator=operator) 
+
+      if name.startswith('fg_'):
+          data = self.read_fsgrid_variable(name=name, operator=operator)
+      else:
+          data = self.read_variable(name=name, operator=operator, cellids=cellids)
 
       if operator != "pass":
          if operator=="magnitude":
