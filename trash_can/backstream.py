@@ -33,9 +33,9 @@ def get_rho_nonbackstream( vlsvReader, cellid, radius ):
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid)
    # Get cells:
-   vcellids = velocity_cell_data.keys()
+   vcellids = list(velocity_cell_data.keys())
    # Get avgs data:
-   avgs = velocity_cell_data.values()
+   avgs = list(velocity_cell_data.values())
    # Get a list of velocity coordinates shifted by the solar wind bulk velocity:
    V_sw = np.array([-500000,0,0])
    v = vlsvReader.get_velocity_cell_coordinates(vcellids) - V_sw
@@ -45,7 +45,7 @@ def get_rho_nonbackstream( vlsvReader, cellid, radius ):
    #radius2 = 468621**2
    radius2 = radius**2
    rho_nonbackstream = 0
-   for i in xrange(len(radiuses)):
+   for i in range(len(radiuses)):
       if radiuses[i] <= radius2:
          rho_nonbackstream = rho_nonbackstream + avgs[i]
 

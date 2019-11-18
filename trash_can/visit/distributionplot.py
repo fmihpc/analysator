@@ -37,7 +37,7 @@ def make_distribution_movie(cellids, rotated, inputDirectory, outputDirectory, o
       Note: viewNormal determines the angle of view (straight from visit)
    '''
    if len(viewNormal) != 3:
-      print "ERROR, INVALID VIEWNORMAL LENGTH, SHOULD BE 3"
+      print("ERROR, INVALID VIEWNORMAL LENGTH, SHOULD BE 3")
       return
    for cell in sorted(cellids):
       # OPTIONS

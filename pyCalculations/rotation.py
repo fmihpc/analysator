@@ -53,7 +53,7 @@ def rotateArrayTensorToVector( Tensor, vector ):
    vector_u_len = np.ma.masked_less_equal(np.linalg.norm(vector_u, axis=-1), 0)
    vector_u = np.ma.divide(vector_u, vector_u_len[:,np.newaxis])
    vector_len = np.ma.masked_less_equal(np.linalg.norm(vector, axis=-1), 0)
-   vector_n = vector / vector_len[:,np.newaxis]
+   vector_n = np.ma.divide(vector,vector_len[:,np.newaxis])
    angle = np.arccos(vector_n[:,2])
    # A unit vector version of the given vector
    R = rotation_array_matrix( vector_u, angle )

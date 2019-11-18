@@ -28,14 +28,14 @@ functionList = dict()
 
 def list_fit_functions():
    global functionList
-   print "Functions:"
-   for i in functionList.iteritems():
-      print i[0]
+   print("Functions:")
+   for i in functionList.items():
+      print(i[0])
 
 class PlotFunction:
    parameters = 1
    def function(self, args, x, y):
-      print "Called PlotFunction's function in plotfunctions.py (not allowed)"
+      print("Called PlotFunction's function in plotfunctions.py (not allowed)")
    def get_function(self):
       return self.function
    def get_parameters(self):

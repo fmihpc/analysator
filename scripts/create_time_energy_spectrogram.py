@@ -219,15 +219,15 @@ def vSpaceReducer(vlsvReader,cid):
  fMin = 1e-15 # default
  if vlsvReader.check_variable('MinValue') == True:
   fMin = vlsvReader.read_variable('MinValue',cid)
- print 'Cell ' + str(cid).zfill(9)
+ print('Cell ' + str(cid).zfill(9))
  velcells = vlsvReader.read_velocity_cells(cid)
- V = vlsvReader.get_velocity_cell_coordinates(velcells.keys())
+ V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
  V2 = np.sum(np.square(V),1)
  Ekin = 0.5*mp*V2/qe
- f = zip(*velcells.items())
+ f = list(zip(*velcells.items()))
  # check that velocity space has cells
  if(len(f) > 0):
-  f = np.asarray(zip(*velcells.items())[1])
+  f = np.asarray(f[1])
  else:
   return (False,0,0)
  ii_f = np.where(f >= fMin)
@@ -264,9 +264,9 @@ def doSpectra(vlsvFile):
   return
  # cell id - index  dict
  locs = vlsvReader.get_cellid_locations()
- cellids = locs.keys()
+ cellids = list(locs.keys())
  # sort variable array according to cell ids
- locs_sorted = sorted(locs.iteritems(), key=oper.itemgetter(0))
+ locs_sorted = sorted(locs.items()), key=oper.itemgetter(0))
  fileNameStr = os.path.basename(vlsvFile)
  spectraStr = [] # spectra file contents
  bulkStr = [] # bulk parameter file contents

@@ -146,14 +146,14 @@ def get_2d_array( fileNames, variables, BBOX ):
       coordinates[2] = coordinates[2] + cell_lengths[2]
       coordinates[1] = minCoordinates[1]
       coordinates[0] = minCoordinates[0]
-   print ""
+   print("")
    # Create an array for holding variables:
    maxIndices = get_cell_indices( bounds, max(cellids) )
    minIndices = get_cell_indices( bounds, min(cellids) )
 
    # Create an array for holding variables
    two_d_variables = []
-   for i in xrange(maxIndices[1] - minIndices[1] + 1):
+   for i in range(maxIndices[1] - minIndices[1] + 1):
       two_d_variables.append(np.zeros((maxIndices[0] - minIndices[0] + 1)))
    two_d_variables = np.array(two_d_variables)
 
@@ -166,7 +166,7 @@ def get_2d_array( fileNames, variables, BBOX ):
    for i in variables:
       variable_dict[i] = []
 
-   print cellids
+   print(cellids)
    # Read variables:
    for f in fileNames:
       # Open file
@@ -176,7 +176,7 @@ def get_2d_array( fileNames, variables, BBOX ):
          # Read in the variable
          variableArray = vlsvReader.read_variables_for_cellids(i, cellids)
          # Input into correct positions:
-         for j in xrange(len(cellids)):
+         for j in range(len(cellids)):
             position = positions[cellids[j]]
             two_d_variables[position[1]][position[0]] = variableArray[j]
          # Input variables:
@@ -186,7 +186,7 @@ def get_2d_array( fileNames, variables, BBOX ):
 
 def fourier_2d_array( variables, showplots=False, saveplots="none", showraw=False, kaiserwindowparameter=0, t_start=0, dt=1.0 ):
    # Go through all the variables:
-   for i in variables.iteritems():
+   for i in variables.items():
       variable = i[0]
       arrays = i[1]
       index = 0

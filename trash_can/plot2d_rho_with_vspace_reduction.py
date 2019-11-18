@@ -302,11 +302,11 @@ else:
 
 # (cell id: index) dict
 locs = vlsvReader.get_cellid_locations()
-cellids = locs.keys()
+cellids = list(locs.keys())
 # (cell id: index) dict with only vspace locations
 cellidsWithVspace = np.sort(vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS'))
 # sort variable array according to cell ids
-locsSorted = sorted(locs.iteritems(), key=oper.itemgetter(0))
+locsSorted = sorted(locs.items(), key=oper.itemgetter(0))
 
 # initialize arrays where rho with different energy limits is stored
 if Ncores > 1:
@@ -331,12 +331,12 @@ def vSpaceReducer(ii):
  if vlsvReader.check_variable('MinValue') == True:
   fMin = vlsvReader.read_variable('MinValue',cid)
  velcells = vlsvReader.read_velocity_cells(cid)
- V = vlsvReader.get_velocity_cell_coordinates(velcells.keys())
+ V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
  Ekin = 0.5*mp*(np.sum(np.square(V),1))/qe/1e3 # keV
- f = zip(*velcells.items())
+ f = list(zip(*velcells.items()))
  # check that velocity space has cells
  if(len(f) > 0):
-  f = np.asarray(zip(*velcells.items())[1])
+  f = np.asarray(f[1])
  else:
   return
  #if len(f[f < 0]) > 10:
@@ -359,7 +359,7 @@ def vSpaceReducer(ii):
     rhoReduced[ii,jj] = sum_f_filtered
 
 # computed reduction sequentially or via multithreading
-inds = range(0,len(cellidsWithVspace),Nstride)
+inds = list(range(0,len(cellidsWithVspace),Nstride))
 print('reducing velocity spaces in ' + str(int(len(inds))) + ' cells')
 if Ncores > 1:
  if __name__ == '__main__':

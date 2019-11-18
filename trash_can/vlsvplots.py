@@ -133,7 +133,7 @@ def draw_plots_by_cellid(vlsvReader, variables1, variables2, cellids, coordinate
       fetchedFunction = False
       global functionList
       # Try to get the function by name first
-      for i in functionList.iteritems():
+      for i in functionList.items():
          if fitFunction == i[0]:
             functionClass = functionList[fitFunction]
             fetchedFunction = True
@@ -145,19 +145,19 @@ def draw_plots_by_cellid(vlsvReader, variables1, variables2, cellids, coordinate
 
    # Number of variables to be plotted in y-axis
    xplotnum = 0
-   for var in variables1.iteritems():
+   for var in variables1.items():
       xplotnum = xplotnum + len(np.atleast_1d(var[1]))
    # Number of variables to be plotted in x-axis
    yplotnum = 0
-   for var in variables2.iteritems():
+   for var in variables2.items():
       yplotnum = yplotnum + len(np.atleast_1d(var[1]))
    # Plot the variables:
    pl.figure()
    index = 1
    # Insert variables into the plot:
    # Note: variables1 is a python dictionary dict()
-   for variable1 in variables1.iteritems():
-      for variable2 in variables2.iteritems():
+   for variable1 in variables1.items():
+      for variable2 in variables2.items():
          # Read the variables:
          def read_plot_var(variable, cellids, coordinates, distances, vlsvReader):
             if variable != "CellID" and variable != "coordinates" and variable != "distance":
@@ -170,7 +170,7 @@ def draw_plots_by_cellid(vlsvReader, variables1, variables2, cellids, coordinate
             elif variable == "coordinates":
                variablelist = np.array(coordinates)
             else:
-               print "Bad variable1 name " + str(variable)
+               print("Bad variable1 name " + str(variable))
                variablelist = []
             return variablelist
          variable1list = read_plot_var(variable=variable1[0], cellids=cellids, coordinates=coordinates, distances=distances, vlsvReader=vlsvReader)
@@ -220,7 +220,7 @@ def draw_plots_by_cellid(vlsvReader, variables1, variables2, cellids, coordinate
                   fit = optimize.leastsq(function, np.ones(parameters), args=(x,y))
                   # Get arguments
                   fitargs = []
-                  for k in xrange(parameters):
+                  for k in range(parameters):
                      fitargs.append(fit[0][k])
                   # Get the X coordinates for the fit plot:
                   X = min(x) + np.arange(100*len(x)).astype(float) / (float)(100*len(x)) * max(x)
@@ -271,10 +271,10 @@ def take_cut_through_array( fileName, point1, point2 ):
    numberOfPoints = (int)(np.linalg.norm(point2 - point1) / np.linalg.norm(oneVec)) + 1
    # Some routine checks:
    if numberOfPoints <= 2:
-      print "ERROR, TOO SMALL A DISTANCE BETWEEN POINT1 AND POINT2"
+      print("ERROR, TOO SMALL A DISTANCE BETWEEN POINT1 AND POINT2")
       return
    # Input coordinates:
-   for i in xrange((int)(np.linalg.norm(point2 - point1) / np.linalg.norm(oneVec)) + 1):
+   for i in range((int)(np.linalg.norm(point2 - point1) / np.linalg.norm(oneVec)) + 1):
       coordinateList.append( point1 + oneVec*i )
 #   # Get the cell ids at the coordinates:
 #   cellids = []
@@ -377,7 +377,7 @@ t2 & y2                   |                    frequencies
    # Read and record files
    t = []
    y = []
-   for i in variables.iteritems():
+   for i in variables.items():
       for j in np.atleast_1d(i[1]):
          y.append([])
    index=0
@@ -389,7 +389,7 @@ t2 & y2                   |                    frequencies
       # Open file for reading
       vlsvReader = VlsvReader(f)
       # Get the variable(s)
-      for i in variables.iteritems():
+      for i in variables.items():
          readVariable = vlsvReader.read_variable(cellid=cellid, name=i[0])
          for j in np.atleast_1d(i[1]):
             y[yindex].append( np.atleast_1d(readVariable)[j] )
@@ -399,7 +399,7 @@ t2 & y2                   |                    frequencies
    # Check if the user wants to force constant amplitudes
    if forceConstantAmplitude==False:
       fourier_variables = []
-      for i in xrange(len(np.atleast_1d(y))):
+      for i in range(len(np.atleast_1d(y))):
          fourier_variables.append(fourier_array(t, y[i], kaiserwindowparameter=kaiserwindowparameter))
    else:
       fitFunction = np.atleast_1d(fitFunction)
@@ -414,7 +414,7 @@ t2 & y2                   |                    frequencies
             fetchedFunction = False
             global functionList
             # Try to get the function by name first
-            for i in functionList.iteritems():
+            for i in functionList.items():
                if j == i[0]:
                   functionClass = functionList[j]
                   fetchedFunction = True
@@ -424,7 +424,7 @@ t2 & y2                   |                    frequencies
          # Get the function and the num of parameters
          function = functionClass.get_function()
          parameters = functionClass.get_parameters()
-         for i in xrange(len(np.atleast_1d(y))):
+         for i in range(len(np.atleast_1d(y))):
             # Fit a polynomial into the data
             fit = optimize.leastsq(function, np.ones(parameters), args=(t,y[i]))
             y_fitted = (-1)*function(fit[0], t, 0)
@@ -449,7 +449,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
    #y = [[] for i in xrange(len(np.atleast_1d(variables)))]
    y = []
    names = []
-   for i in variables.iteritems():
+   for i in variables.items():
       for j in np.atleast_1d(i[1]):
          y.append([])
          names.append(i[0] + "[" + str(j) + "]")
@@ -461,7 +461,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
       # Open file for reading
       vlsvReader = VlsvReader(f)
       # Get the variable(s)
-      for i in variables.iteritems():
+      for i in variables.items():
          readVariable = vlsvReader.read_variable(cellid=cellid, name=i[0])
          for j in np.atleast_1d(i[1]):
             y[yindex].append( np.atleast_1d(readVariable)[j] )
@@ -475,13 +475,13 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
       #subplotnums=[[len(y)*2,1,1],[len(y)*2,1,2]]
       plotsPerVariable = (len(np.atleast_1d(kaiserwindowparameter)) + 1)
       subplotnums=[[len(y)*plotsPerVariable, 1, k + 1] for k in range(plotsPerVariable)]
-      for i in xrange(len(np.atleast_1d(y))):
+      for i in range(len(np.atleast_1d(y))):
          if savedata == True:
             save=saveplot
          else:
             save="none"
          plot_fourier(t, y[i], subplotnums=subplotnums, savedata=save, kaiserwindowparameter=kaiserwindowparameter)
-         for k in xrange(len(subplotnums)):
+         for k in range(len(subplotnums)):
             subplotnums[k][2] = subplotnums[k][2] + plotsPerVariable
          # Save the plot if user wants to:
          pl.tight_layout()
@@ -501,7 +501,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
             fetchedFunction = False
             global functionList
             # Try to get the function by name first
-            for i in functionList.iteritems():
+            for i in functionList.items():
                if j == i[0]:
                   functionClass = functionList[j]
                   fetchedFunction = True
@@ -516,7 +516,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
          numberofVariables = len(y)
          subplotnums=[[numberofVariables*plotsPerVariable, 1, k + 2] for k in range(plotsPerVariable - 1)]
          #subplotnums=[[len(y)*3,1,2],[len(y)*3,1,3]]
-         for i in xrange(len(np.atleast_1d(y))):
+         for i in range(len(np.atleast_1d(y))):
             # Fit a polynomial into the data
             if functionClass != functionList["emptyfit"]:
                fit = optimize.leastsq(function, np.ones(parameters), args=(t,y[i]))
@@ -543,7 +543,7 @@ def plot_time_evolution( fileNames, dt, cellid, variables, forceConstantAmplitud
             else:
                save="none"
             plot_fourier(t, y2, subplotnums=subplotnums, savedata=save, kaiserwindowparameter=kaiserwindowparameter)
-            for k in xrange(len(subplotnums)):
+            for k in range(len(subplotnums)):
                subplotnums[k][2] = subplotnums[k][2] + plotsPerVariable
             #subplotnums[0][2] = subplotnums[0][2] + 3
             #subplotnums[1][2] = subplotnums[1][2] + 3

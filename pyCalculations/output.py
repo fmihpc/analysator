@@ -42,13 +42,13 @@ def output_1d( arrays, names, units="" ):
           This would interpret [2,1,23] as an array called \"rho\"
    '''
    if units == "":
-      units = ["" for i in xrange(len(arrays))]
+      units = ["" for i in range(len(arrays))]
    if( (len(arrays) != len(names)) or (len(arrays) != len(units)) ):
-      print "BAD ARRAY AND NAME LENGTH IN OUTPUT_1D (pyCalculations/output.py)"
+      print("BAD ARRAY AND NAME LENGTH IN OUTPUT_1D (pyCalculations/output.py)")
       return []
    new_format = []
    from variable import VariableInfo
-   for i in xrange(len(arrays)):
+   for i in range(len(arrays)):
       variable = VariableInfo(arrays[i])
       variable.name = names[i]
       variable.units = units[i]

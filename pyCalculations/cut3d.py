@@ -89,14 +89,14 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
                                (int)((max_coordinates[1] - min_coordinates[1]) / cell_lengths[1] + 1),
                                (int)((max_coordinates[2] - min_coordinates[2]) / cell_lengths[2] + 1)
                                ])
-   array = [[np.zeros(array_dimensions[0]) for i in xrange(array_dimensions[1])] for j in xrange(array_dimensions[2])]
+   array = [[np.zeros(array_dimensions[0]) for i in range(array_dimensions[1])] for j in range(array_dimensions[2])]
 
    # Optimize file read:
    vlsvReader.optimize_open_file()
    # Loop through the array
-   for k in xrange(array_dimensions[2]):
-      for j in xrange(array_dimensions[1]):
-         for i in xrange(array_dimensions[0]):
+   for k in range(array_dimensions[2]):
+      for j in range(array_dimensions[1]):
+         for i in range(array_dimensions[0]):
             coordinates = np.array([
                                    min_coordinates[0] + i*cell_lengths[0],
                                    min_coordinates[1] + j*cell_lengths[1],
@@ -113,7 +113,7 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
       shape = np.shape(array)
       new_shape = []
       # Loop through shape:
-      for i in xrange(len(shape)):
+      for i in range(len(shape)):
          # If the array has no dimensions in some directions, dont add it to the new_shape (e.g. if the cut3d has only one layer of cells in z-direction):
          if shape[i] > 1:
             new_shape.append( shape[i] )

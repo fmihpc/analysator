@@ -52,7 +52,7 @@ def draw_streamlines( particlepusherinterface, coordinates_map ):
    ''' Draws streamlines into the particlepusherinterface
    '''
    # Loop through particles and their coordinates:
-   for i in coordinates_map.iteritems():
+   for i in coordinates_map.items():
       particle_number = i[0]
       coordinates_list = np.array(i[1])
       particlepusherinterface.draw_streamline_long( np.transpose(coordinates_list) )
@@ -87,7 +87,7 @@ def read_subprocess( particlepusherinterface, pipe ):
       output_parsed = re.split('\t| |\n', output)
       # Update coordinates:
       coordinates_map = update_coordinates( coordinates_map, output_parsed )
-      print "Iteration " + str(iterator) + " done!"
+      print("Iteration " + str(iterator) + " done!")
       iterator = iterator + 1
    # Draw the streamlines:
    draw_streamlines(particlepusherinterface, coordinates_map)
@@ -96,7 +96,7 @@ def read_subprocess( particlepusherinterface, pipe ):
 
 def get_file_name( name ):
    lower=-2; upper=-2;
-   for i in xrange(len(name)):
+   for i in range(len(name)):
       if name[i].isdigit():
          if upper < i-1:
             lower = i;
@@ -120,9 +120,9 @@ def call_particle_pusher( particlepusherinterface, coordinates_list, args ):
       parse_args.append(args[i])
    # File location:
    parse_args.append("--particles.input_filename_pattern")
-   print particlepusherinterface.vlsvReader.file_name
+   print(particlepusherinterface.vlsvReader.file_name)
    parse_args.append(get_file_name(particlepusherinterface.vlsvReader.file_name))
-   print parse_args
+   print(parse_args)
 
    # Open a pipe for the process (get input, output and error output to the pipe)
    pipe = subprocess.Popen(parse_args,stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -138,7 +138,7 @@ def call_particle_pusher( particlepusherinterface, coordinates_list, args ):
    # Close the stdin
    pipe.stdin.close()
    # Read the output in a separate thread and kill the process at the end:
-   import thread
+   import _thread
    #thread.start_new_thread( read_subprocess, (particlepusherinterface, pipe) )
    read_subprocess(particlepusherinterface, pipe)
    particlepusherinterface.particle_coordinates = []
@@ -155,22 +155,22 @@ def call_particle_pusher_velocity_sampling( particlepusherinterface, vlsvReader,
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
    if len(args) <= 1:
-      print "Bad args field, should be <number of velocity samples> <particle pusher options>"
+      print("Bad args field, should be <number of velocity samples> <particle pusher options>")
       return
-   print "COORDS:"
-   print coordinates
+   print("COORDS:")
+   print(coordinates)
    # Note: vlsvReader must be VlasiatorReader type
    vlasiatorReader = vlsvReader
    coordinates = vlasiatorReader.get_nearest_coordinates_with_distribution( coordinates )
-   print "NEAREST COORDS:"
-   print coordinates
+   print("NEAREST COORDS:")
+   print(coordinates)
    # Get the cellid:
    cellid = vlasiatorReader.get_cellid( coordinates )
 
    
    # Read in the velocity space
    velocity_cell_map = vlasiatorReader.read_velocity_cells( cellid )
-   velocity_cell_coordinates = vlasiatorReader.get_velocity_cell_coordinates(velocity_cell_map.keys())
+   velocity_cell_coordinates = vlasiatorReader.get_velocity_cell_coordinates(list(velocity_cell_map.keys()))
    number_of_particles = int(args[0])
    step = int(float(len(velocity_cell_coordinates))/float(number_of_particles))
    # Input particles:
@@ -191,7 +191,7 @@ def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinate
        :param args: Arguments (these are used to parse how many particles we want to launch currently)
    '''
    if len(args) <= 1:
-      print "Bad args field, should be <number of velocity samples> <particle pusher options>"
+      print("Bad args field, should be <number of velocity samples> <particle pusher options>")
       return
 
    # Input new coordinates ( This is vx, vy, vz )
@@ -201,7 +201,7 @@ def call_particle_pusher_bulk_v( particlepusherinterface, vlsvReader, coordinate
    
    # Read in the velocity coordinates:
    bulk_V = vlsvReader.read_variable(name="v", cellids=vlsvReader.get_cellid(new_coordinates))
-   for i in xrange(3):
+   for i in range(3):
      new_coordinates.append( bulk_V[i] )
    
    # Input the new coordinates into the particle pusher
@@ -220,8 +220,8 @@ def draw_B_stream( particlepusherinterface, vlsvReader, coordinates, args ):
    # Draw the streamlines for vlsvreader:
    from fieldtracer import static_field_tracer
    stream=static_field_tracer( vlsvReader, x0=coordinates, max_iterations=10, dx=10000, direction='+' )
-   print stream
-   print np.transpose(stream)
+   print(stream)
+   print(np.transpose(stream))
    particlepusherinterface.draw_streamline_long( np.transpose(stream) )
 
 

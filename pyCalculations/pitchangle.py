@@ -132,8 +132,8 @@ def pitch_angles( vlsvReader,
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid, pop=pop)
-   vcellids = velocity_cell_data.keys()
-   avgs = velocity_cell_data.values()
+   vcellids = list(velocity_cell_data.keys())
+   avgs = list(velocity_cell_data.values())
 
    # Transform to a frame
    v = vlsvReader.get_velocity_cell_coordinates(vcellids, pop=pop) - frame
@@ -186,7 +186,7 @@ def pitch_angles( vlsvReader,
       timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
       if outputfile==None: 
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
-      if outputfile!=None and outputdir=!None:
+      if outputfile!=None and outputdir!=None:
          print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory

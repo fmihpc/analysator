@@ -68,7 +68,10 @@ def numjacobian(inputarray):
         print("Error defining plane!")
         return -1
     # Output array is of format [nx,ny,3,3]
-    return jac
+    #  :,:,component, derivativedirection
+    # so dAx/dx = :,:,0,0
+    #    DAy/dz = :,:,1,2
+    return jac    
 
 def numgradscalar(inputarray):
     # Assumes input array is of format [nx,ny]
@@ -90,6 +93,14 @@ def numdiv(inputarray):
     # Output array is of format [nx,ny]
     return jac[:,:,0,0] + jac[:,:,1,1] + jac[:,:,2,2]
 
+def numdivtensor(inputtensor):
+    # Assumes input tensor is of format [nx,ny,3,3]
+    result = np.zeros_like(inputtensor[:,:,0,:])
+    result[:,:,0] = numdiv(inputtensor[:,:,0,:])
+    result[:,:,1] = numdiv(inputtensor[:,:,1,:])
+    result[:,:,2] = numdiv(inputtensor[:,:,2,:])
+    return result
+
 def numcrossproduct(inputvector1, inputvector2):
     # assumes inputvectors are of shape [nx,ny,3]
     # in fact nothing special here
@@ -105,6 +116,25 @@ def numcurl(inputarray):
     curl[:,:,1] = jac[:,:,0,2]-jac[:,:,2,0]
     curl[:,:,2] = jac[:,:,1,0]-jac[:,:,0,1]
     return curl
+
+def numvecdotdelvec(inputarray1, inputarray2):
+    # (V1 dot Del)V2
+    # Assumesinput arrays are of format [nx,ny,3]
+    if inputarray1.shape!=inputarray2.shape:
+        print("Error: Input array shapes don't match!",inputarray1.shape,inputarray2.shape)
+        return -1
+    result = np.zeros(inputarray1.shape)
+    jac = numjacobian(inputarray2)
+    result[:,:,0] = (inputarray1[:,:,0]*jac[:,:,0,0] +
+                     inputarray1[:,:,1]*jac[:,:,0,1] +
+                     inputarray1[:,:,2]*jac[:,:,0,2] )
+    result[:,:,1] = (inputarray1[:,:,0]*jac[:,:,1,0] +
+                     inputarray1[:,:,1]*jac[:,:,1,1] +
+                     inputarray1[:,:,2]*jac[:,:,1,2] )
+    result[:,:,2] = (inputarray1[:,:,0]*jac[:,:,2,0] +
+                     inputarray1[:,:,1]*jac[:,:,2,1] +
+                     inputarray1[:,:,2]*jac[:,:,2,2] )
+    return result
 
 def numvecdottensor(inputarray, inputtensor):
     # Assumesinput array is of format [nx,ny,3]
@@ -623,8 +653,118 @@ def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
     return result.T
 
 
+def expr_jc(pass_maps, requestvariables=False):
+    # current from curvature drift
+    if requestvariables==True:
+        return ['B','PParallel']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_jc expected a single timestep, but got multiple. Exiting.")
+        quit()
 
+    Pparallel = pass_maps['PParallel'].T #Pressure (scalar)
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    upBmag4 = np.linalg.norm(Bmap,axis=-1)**(-4)
+    # (B dot Del)B 
+    BdotDelB = numvecdotdelvec(Bmap,Bmap)
+    BxBdotDelB = numcrossproduct(Bmap, BdotDelB)
+    result = BxBdotDelB * (Pparallel*upBmag4)[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
 
+def expr_jg(pass_maps, requestvariables=False):
+    # current from gradient drift
+    if requestvariables==True:
+        return ['B','PPerpendicular']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_jg expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Bmag = np.linalg.norm(Bmap,axis=-1)
+    upBmag3 = Bmag**(-3)
+    gradB = numgradscalar(Bmag)
+    BxgradB = numcrossproduct(Bmap, gradB)
+    result = BxgradB * (Pperp*upBmag3)[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
+
+def expr_jp(pass_maps, requestvariables=False):
+    # current from polarization drift
+    if requestvariables==True:
+        return ['B','V','rho']
+
+    # This custom expression returns a proxy for betatron acceleration
+    if type(pass_maps) is not list:
+        # Not a list of time steps, calculating this value does not make sense.
+        print("expr_jp expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        quit()
+
+    # Multiple time steps were found. This should be 3, for a time derivative.
+    dsteps = [x['dstep'] for x in pass_maps]
+    curri = dsteps.index(0)
+    previ = dsteps.index(-1)
+    thesemaps = pass_maps[curri]
+    pastmaps = pass_maps[previ]
+
+    thisV = TransposeVectorArray(thesemaps['V'])
+    pastV = TransposeVectorArray(pastmaps['V'])    
+    dVdt = (thisV-pastV)/DT
+
+    Bmap = TransposeVectorArray(thesemaps['B'])
+    upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
+    rhom = thesemaps['rho'].T * 1.6726e-27
+    
+    BxdVdt = numcrossproduct(Bmap, dVdt)
+    result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
+
+def expr_jm(pass_maps, requestvariables=False):
+    # magnetization current
+    if requestvariables==True:
+        return ['B','PPerpendicular']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_jm expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
+    curlB = numcurl(Bmap)
+    # (B dot Del)B 
+    result = -curlB * (Pperp*upBmag2)[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
+
+def expr_ja(pass_maps, requestvariables=False):
+    # Li, Guo, Li, Li (2017)
+    # https://doi.org/10.3847/1538-4357/aa745e
+    # additional current density (7), non-magnetization current
+    if requestvariables==True:
+        return ['B','PTensorRotated']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_ja expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    Ptensor = np.transpose(pass_maps['PTensorRotated'], (1,0,2,3))
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field    
+    Bmag = np.linalg.norm(Bmap,axis=-1)
+    Bnorm = np.ma.divide(Bmap,Bmag[:,:,np.newaxis])
+    upBmag2 = Bmag**(-2)
+    Ppara = Ptensor[:,:,2,2]
+    Pperp = 0.5*(Ptensor[:,:,0,0]+Ptensor[:,:,1,1])
+    Pperpident = np.zeros_like(Ptensor)
+    Pperpident[:,:,0,0] = Pperp
+    Pperpident[:,:,1,1] = Pperp
+    Pperpident[:,:,2,2] = Pperp
+    bbtensor = np.einsum('ijk,ijl->ijkl',Bnorm,Bnorm)
+    sumtensor = Ptensor - Pperpident - bbtensor*(Ppara-Pperp)[:,:,np.newaxis,np.newaxis]
+    divsumtemsor = numdivtensor(sumtensor)    
+    result = - numcrossproduct(divsumtemsor,Bmap) * upBmag2[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
+    
+    
 ################
 ## Note: pyPlots/plot_colormap.py already includes some functionality for plotting
 ## vectors and streamlines on top of the colormap. For simple variables, those will

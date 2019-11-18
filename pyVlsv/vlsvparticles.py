@@ -86,10 +86,10 @@ class VlsvParticles(object):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
-      print "tag = MESH"
+      print("tag = MESH")
       for child in self.__xml_root:
          if child.tag == "MESH" and "name" in child.attrib:
-            print "   ", child.attrib["name"]
+            print("   ", child.attrib["name"])
 
    def read_particles_all(self):
       ''' Read particle pusher data from the open vlsv file.

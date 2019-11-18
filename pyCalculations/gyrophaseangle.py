@@ -71,7 +71,7 @@ def gyrophase_angles_from_file( vlsvReader, cellid):
       from output import output_1d
       return output_1d([[0.0, 1.0], [1.0, 1.0]], ["Gyrophase_angle", "avgs"], ["", ""])
    # Get cells:
-   vcellids = velocity_cell_data.keys()
+   vcellids = list(velocity_cell_data.keys())
    # Get a list of velocity coordinates:
    velocity_coordinates = vlsvReader.get_velocity_cell_coordinates(vcellids)
    return gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
@@ -99,7 +99,7 @@ def gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordin
    '''
    
    # Get avgs data:
-   avgs = velocity_cell_data.values()
+   avgs = list(velocity_cell_data.values())
    # Shift to plasma frame
    if plasmaframe == True:
       velocity_coordinates = velocity_coordinates - bulk_velocity

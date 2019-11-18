@@ -44,7 +44,7 @@ def make_moving_frame_of_reference_line_plot(  point1, point2, velocity, variabl
    :param frame_skip_dt       The number of seconds one skip in frame equals (1.0 by default) (Note: This may change depending on the run and should always be checked)
    '''
    if len(point1) != 3 or len(point2) != 3 or len(velocity) != 3:
-      print "BAD INPUT IN make_moving_frame_of_reference_line_plot, POINT1, POINT2 AND VELOCITY MUST BE ARRAYS OF SIZE 3"
+      print("BAD INPUT IN make_moving_frame_of_reference_line_plot, POINT1, POINT2 AND VELOCITY MUST BE ARRAYS OF SIZE 3")
    
    # OPTIONS
    #################################################################
@@ -129,7 +129,7 @@ def make_moving_frame_of_reference_line_plot(  point1, point2, velocity, variabl
    vis.DrawPlots()
    
    # Iterate through frames
-   for i in xrange(startFrame, endFrame+1):
+   for i in range(startFrame, endFrame+1):
       vis.SetTimeSliderState(i)
       frame = i - startFrame
       vis.LineoutAtts = vis.LineoutAttributes()
