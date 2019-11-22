@@ -517,32 +517,47 @@ def plot_colormap(filename=None,
 
         # Verify data shape
         datamap = datamap_info.data
+
         if np.ndim(datamap)==0:
             print("Error, read only single value from vlsv file!",datamap.shape)
             return -1
-        if np.ndim(datamap)==4: #if 4D, then fsgrid data
-            if datamap.shape[0]==1:
-                datamap=np.linalg.norm(datamap[0,:,:,:],axis=-1).T
-            elif datamap.shape[1]==1:
-                datamap=np.linalg.norm(datamap[:,0,:,:],axis=-1).T
-            elif datamap.shape[2]==1:
-                datamap=np.linalg.norm(datamap[:,:,0,:],axis=-1).T
+        # fsgrid reader returns array in correct shape but needs to be transposed
+        if var.startswith('fg_'):
+            datamap = np.swapaxes(datamap, 0,1)
+        else:            
+            # For vlasov grid reader, reorder and reshape.
+            if np.ndim(datamap)==1:
+                datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+            elif np.ndim(datamap)==2: # vector variable
+                datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1]])
+            elif np.ndim(datamap)==3:  # tensor variable
+                datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1],datamap.shape[2]])
             else:
-                print('ERROR: No support for 3D fsgrid data yet')
-        else:
-            if np.ndim(datamap)==2:
-                if len(datamap[0,:])!=3:
-                    print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
-                    return -1
-                # 2-dimensional array: take magnitude of three-element vectors
-                datamap = np.linalg.norm(datamap, axis=-1)
-            if np.ndim(datamap)!=1:
-                # Array dimensions not as expected
-                print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
-                return -1
+                print("Error in reshaping datamap!") 
+        # Now, if map is a vector or tensor, reduce it down
 
-            # Now reshape data to an ordered 2D array that can be plotted
-            datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+        if np.ndim(datamap)==3: # vector
+            if datamap.shape[2]!=3:
+                # This may also catch 3D simulation fsgrid variables
+                print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
+                return -1
+            # take magnitude of three-element vectors
+            datamap = np.linalg.norm(datamap, axis=-1)
+        if np.ndim(datamap)==4: # tensor
+            if datamap.shape[2]!=3 or datamap.shape[3]!=3:
+                # This may also catch 3D simulation fsgrid variables
+                print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
+                return -1
+            # take trace
+            datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
+        if np.ndim(datamap)==5: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+            return -1
+
+        if np.ndim(datamap)!=2:
+            # Array dimensions not as expected
+            print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
+            return -1
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__.replace("_","\_")
@@ -614,25 +629,37 @@ def plot_colormap(filename=None,
             for mapval in pass_vars:
                 # a check_variable(mapval) doesn't work as it doesn't know about
                 # data reducers. Try/catch?
-                pass_map = f.read_variable(mapval)
-                if np.ndim(pass_map)==1:
-                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
-                    if np.ma.is_masked(maskgrid):
+                if mapval.startswith('fg_'):
+                    pass_map = f.read_fsgrid_variable(mapval)
+                    pass_map = np.swapaxes(pass_map, 0,1)
+                else:
+                    pass_map = f.read_variable(mapval)
+                if np.ndim(pass_map)==0:
+                    print("Error, read only single value from vlsv file!",pass_map.shape)
+                    return -1
+                # fsgrid reader returns array in correct shape. 
+                # For vlasov grid reader, reorder and reshape.
+                if not mapval.startswith('fg_'):
+                    if np.ndim(pass_map)==1:
+                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                    elif np.ndim(pass_map)==2: # vector variable
+                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
+                    elif np.ndim(pass_map)==3:  # tensor variable
+                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                    else:
+                        print("Error in reshaping pass_map!") 
+                if np.ma.is_masked(maskgrid):
+                    if np.ndim(pass_map)==2:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                elif np.ndim(pass_map)==2: # vector variable
-                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],len(pass_map[0])])
-                    if np.ma.is_masked(maskgrid):
+                    elif np.ndim(pass_map)==3: # vector variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                elif np.ndim(pass_map)==3:  # tensor variable
-                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
-                    if np.ma.is_masked(maskgrid):
+                    elif np.ndim(pass_map)==4:  # tensor variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
-                else:
-                    print("Error in reshaping pass_maps!") 
-
+                    else:
+                        print("Error in masking pass_maps!") 
                 pass_maps[mapval] = pass_map # add to the dictionary
         else:
             # Or gather over a number of time steps
@@ -669,26 +696,35 @@ def plot_colormap(filename=None,
                 for mapval in pass_vars:
                     if mapval.startswith('fg_'):
                         pass_map = fstep.read_fsgrid_variable(mapval)
+                        pass_map = np.swapaxes(pass_map, 0,1)
                     else:
-                        pass_map = fstep.read_variable(mapval)[step_cellids.argsort()]
+                        pass_map = fstep.read_variable(mapval)
+                    if np.ndim(pass_map)==0:
+                        print("Error, read only single value from vlsv file!",pass_map.shape)
+                        return -1
+                    # fsgrid reader returns array in correct shape. 
+                    # For vlasov grid reader, reorder and reshape.
+                    if not mapval.startswith('fg_'):
                         if np.ndim(pass_map)==1:
-                            pass_map = pass_map.reshape([sizes[1],sizes[0]])
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
                         elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = pass_map.reshape([sizes[1],sizes[0],len(pass_map[0])])
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
                         elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = pass_map.reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                         else:
-                            print("Error in reshaping pass_maps!") 
-                
+                            print("Error in reshaping pass_map!") 
+                    if np.ma.is_masked(maskgrid):
+                        if np.ndim(pass_map)==2:
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                        elif np.ndim(pass_map)==3: # vector variable
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                        elif np.ndim(pass_map)==4:  # tensor variable
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                        else:
+                            print("Error in masking pass_maps!") 
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var

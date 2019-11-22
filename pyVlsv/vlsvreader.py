@@ -1001,7 +1001,7 @@ class VlsvReader(object):
 
            currentOffset += totalSize
 
-       return orderedData
+       return np.squeeze(orderedData)
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
