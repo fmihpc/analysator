@@ -999,7 +999,7 @@ class VlsvReader(object):
                # ... and put it into place 
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
-               currentOffset += totalSize
+           currentOffset += totalSize
 
        return orderedData
 
