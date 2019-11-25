@@ -1007,7 +1007,7 @@ def plot_colormap(filename=None,
         # Try to estimate vectstep so there's about 100 vectors in the image area
         visibleboxcells = (axisunit**2)*(boxcoords[1]-boxcoords[0])*(boxcoords[3]-boxcoords[2])/(cellsize**2)
         vectstep = int(np.sqrt(visibleboxcells/vectordensity))
-        
+        vectstep = max(1,vectstep)        
         
         # inplane unit length vectors
         if zsize==1:

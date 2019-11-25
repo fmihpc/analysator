@@ -723,9 +723,6 @@ def plot_colormap3dslice(filename=None,
                             pass_map = pass_map[:,fgslice[1],:]
                         elif fgslice[2]>=0:
                             pass_map = pass_map[:,:,fgslice[2]]
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
                     elif np.ndim(pass_map)==4: # vector variable
                         if fgslice[0]>=0:
                             pass_map = pass_map[fgslice[0],:,:,:]
@@ -733,9 +730,6 @@ def plot_colormap3dslice(filename=None,
                             pass_map = pass_map[:,fgslice[1],:,:]
                         elif fgslice[2]>=0:
                             pass_map = pass_map[:,:,fgslice[2],:]
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
                     elif np.ndim(pass_map)==5:  # tensor variable
                         if fgslice[0]>=0:
                             pass_map = pass_map[fgslice[0],:,:,:,:]
@@ -743,9 +737,6 @@ def plot_colormap3dslice(filename=None,
                             pass_map = pass_map[:,fgslice[1],:,:,:]
                         elif fgslice[2]>=0:
                             pass_map = pass_map[:,:,fgslice[2],:,:]
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     else:
                         print("Error in reshaping fsgrid pass_map!") 
                     pass_map = np.squeeze(pass_map)
@@ -758,24 +749,25 @@ def plot_colormap3dslice(filename=None,
                     if np.ndim(pass_map)==1:
                         # Create the plotting grid
                         pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
                     elif np.ndim(pass_map)==2: # vector variable
                         # Create the plotting grid
                         pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
                     elif np.ndim(pass_map)==3:  # tensor variable
                         # Create the plotting grid
                         pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
-                        if np.ma.is_masked(maskgrid):
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     else:
                         print("Error in reshaping pass_maps!")
                     
+                if np.ma.is_masked(maskgrid):
+                    if np.ndim(pass_map)==1:
+                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
+                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                    elif np.ndim(pass_map)==2: # vector variable
+                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
+                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                    elif np.ndim(pass_map)==3:  # tensor variable
+                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
+                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                 pass_maps[mapval] = pass_map # add to the dictionary
         else:
             # Or gather over a number of time steps
@@ -821,9 +813,6 @@ def plot_colormap3dslice(filename=None,
                                 pass_map = pass_map[:,fgslice[1],:]
                             elif fgslice[2]>=0:
                                 pass_map = pass_map[:,:,fgslice[2]]
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
                         elif np.ndim(pass_map)==4: # vector variable
                             if fgslice[0]>=0:
                                 pass_map = pass_map[fgslice[0],:,:,:]
@@ -831,9 +820,6 @@ def plot_colormap3dslice(filename=None,
                                 pass_map = pass_map[:,fgslice[1],:,:]
                             elif fgslice[2]>=0:
                                 pass_map = pass_map[:,:,fgslice[2],:]
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
                         elif np.ndim(pass_map)==5:  # tensor variable
                             if fgslice[0]>=0:
                                 pass_map = pass_map[fgslice[0],:,:,:,:]
@@ -841,9 +827,6 @@ def plot_colormap3dslice(filename=None,
                                 pass_map = pass_map[:,fgslice[1],:,:,:]
                             elif fgslice[2]>=0:
                                 pass_map = pass_map[:,:,fgslice[2],:,:]
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                         else:
                             print("Error in reshaping fsgrid pass_map!") 
                         pass_map = np.squeeze(pass_map)
@@ -856,23 +839,25 @@ def plot_colormap3dslice(filename=None,
                         if np.ndim(pass_map)==1:
                             # Create the plotting grid
                             pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
                         elif np.ndim(pass_map)==2: # vector variable
                             # Create the plotting grid
                             pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
                         elif np.ndim(pass_map)==3:  # tensor variable
                             # Create the plotting grid
                             pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
-                            if np.ma.is_masked(maskgrid):
-                                pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                                pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                         else:
                             print("Error in reshaping pass_maps!")
+
+                    if np.ma.is_masked(maskgrid):
+                        if np.ndim(pass_map)==1:
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                        elif np.ndim(pass_map)==2: # vector variable
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                        elif np.ndim(pass_map)==3:  # tensor variable
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     #Optional user-defined expression used for color panel instead of a single pre-existing var
@@ -1058,10 +1043,27 @@ def plot_colormap3dslice(filename=None,
 
     # add vectors on top
     if vectors != None:
-        vectmap = f.read_variable(vectors)
-        vectmap = vectmap[indexids] # sort
-        vectmap = vectmap[indexlist] # find required cells
-        vectmap = ids3d.idmesh3d(idlist, vectmap, reflevel, xsize, ysize, zsize, xyz, 3)
+        if vectors.startswith('fg_'):
+            # fsgrid reader returns array in correct shape but needs to be sliced and transposed
+            vectmap = f.read_fsgrid_variable(vectors)
+            if np.ndim(vectmap)==4: # vector variable
+                if fgslice[0]>=0:
+                    vectmap = vectmap[fgslice[0],:,:,:]
+                elif fgslice[1]>=0:
+                    vectmap = vectmap[:,fgslice[1],:,:]
+                elif fgslice[2]>=0:
+                    vectmap = vectmap[:,:,fgslice[2],:]
+            else:
+                print("Error in reshaping fsgrid vectmap!") 
+            vectmap = np.squeeze(vectmap)
+            vectmap = np.swapaxes(vectmap, 0,1)
+        else:
+            # vlasov grid, AMR
+            vectmap = f.read_variable(vectors)
+            vectmap = vectmap[indexids] # sort
+            vectmap = vectmap[indexlist] # find required cells
+            vectmap = ids3d.idmesh3d(idlist, vectmap, reflevel, xsize, ysize, zsize, xyz, 3)
+
         if np.ma.is_masked(maskgrid):
             vectmap = vectmap[MaskX[0]:MaskX[-1]+1,:,:]
             vectmap = vectmap[:,MaskY[0]:MaskY[-1]+1,:]
@@ -1079,6 +1081,7 @@ def plot_colormap3dslice(filename=None,
         # Try to estimate vectstep so there's about 100 vectors in the image area
         visibleboxcells = (axisunit**2)*(boxcoords[1]-boxcoords[0])*(boxcoords[3]-boxcoords[2])/((cellsize*(0.5**reflevel))**2)
         vectstep = int(np.sqrt(visibleboxcells/vectordensity))
+        vectstep = max(1,vectstep)
         
         # inplane unit length vectors
         if xyz==0:
@@ -1107,11 +1110,27 @@ def plot_colormap3dslice(filename=None,
                    headaxislength=2, scale_units='dots', pivot='middle')
 
     if streamlines is not None:
-        slinemap = f.read_variable(streamlines)
-        slinemap = slinemap[indexids] # sort
-        slinemap = slinemap[indexlist] # find required cells
-        slinemap = ids3d.idmesh3d(idlist, slinemap, reflevel, xsize, ysize, zsize, xyz, 3)
-        #slinemap = slinemap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+        if streamlines.startswith('fg_'):
+            # fsgrid reader returns array in correct shape but needs to be sliced and transposed
+            slinemap = f.read_fsgrid_variable(streamlines)
+            if np.ndim(slinemap)==4: # vector variable
+                if fgslice[0]>=0:
+                    slinemap = slinemap[fgslice[0],:,:,:]
+                elif fgslice[1]>=0:
+                    slinemap = slinemap[:,fgslice[1],:,:]
+                elif fgslice[2]>=0:
+                    slinemap = slinemap[:,:,fgslice[2],:]
+            else:
+                print("Error in reshaping fsgrid slinemap!") 
+            slinemap = np.squeeze(slinemap)
+            slinemap = np.swapaxes(slinemap, 0,1)
+        else:
+            # vlasov grid, AMR
+            slinemap = f.read_variable(streamlines)
+            slinemap = slinemap[indexids] # sort
+            slinemap = slinemap[indexlist] # find required cells
+            slinemap = ids3d.idmesh3d(idlist, slinemap, reflevel, xsize, ysize, zsize, xyz, 3)
+
         if np.ma.is_masked(maskgrid):
             slinemap = slinemap[MaskX[0]:MaskX[-1]+1,:,:]
             slinemap = slinemap[:,MaskY[0]:MaskY[-1]+1,:]
