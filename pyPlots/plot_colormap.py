@@ -515,9 +515,9 @@ def plot_colormap(filename=None,
         if datamap_unit!="":
             cb_title_use = cb_title_use + " ["+datamap_unit+"]"
 
-        # Verify data shape
         datamap = datamap_info.data
 
+        # Verify data shape
         if np.ndim(datamap)==0:
             print("Error, read only single value from vlsv file!",datamap.shape)
             return -1
@@ -550,7 +550,7 @@ def plot_colormap(filename=None,
                 return -1
             # take trace
             datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
-        if np.ndim(datamap)==5: # Too many dimensions
+        if np.ndim(datamap)>=5: # Too many dimensions
             print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
             return -1
 

@@ -1607,6 +1607,22 @@ class VlsvReader(object):
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
+   def get_fsgrid_mesh_size(self):
+      ''' Read fsgrid mesh size
+      
+      :returns: Size of mesh in number of cells, array with three elements
+      '''
+      # Get fsgrid domain size (this can differ from vlasov grid size if refined)
+      bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+      return np.array(bbox[0:3])
+
+   def get_fsgrid_mesh_extent(self):
+      ''' Read fsgrid mesh extent
+      
+      :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
+      '''
+      return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
+
    def get_velocity_mesh_size(self, pop="proton"):
       ''' Read velocity mesh size
       
