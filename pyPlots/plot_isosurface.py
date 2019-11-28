@@ -69,12 +69,6 @@ plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_
 plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
 plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    return r'${}\times10^{{{}}}$'.format(a, b)
-
 
 def plot_isosurface(filename=None,
                     vlsvobj=None,
@@ -301,7 +295,10 @@ def plot_isosurface(filename=None,
             unitstr = r'$10^{'+str(int(unit))+'}$ m'
         unit = np.power(10,int(unit))
     else:
-        unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        if os.getenv('PTNOLATEX') is None:
+            unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        else:
+            unitstr = r'$R_E$'
         unit = Re
         
     # Scale data extent and plot box
@@ -348,10 +345,12 @@ def plot_isosurface(filename=None,
     print("Minimum found surface value "+str(np.amin(surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(surf_data)))
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw!=None:
-        plt.switch_backend('TkAgg')
+    if draw is not None:
+        if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            plt.switch_backend(pt.backend_interactive)
     else:
-        plt.switch_backend('Agg')  
+        if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+            plt.switch_backend(pt.backend_noninteractive)  
 
     # skimage.measure.marching_cubes_lewiner(volume, level=None, spacing=(1.0, 1.0, 1.0), 
     #                                        gradient_direction='descent', step_size=1, 
@@ -571,7 +570,7 @@ def plot_isosurface(filename=None,
         if usesci==0:        
             cb = fig.colorbar(generatedsurface,ticks=ticks, drawedges=False, fraction=0.023, pad=0.02)
         else:
-            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.046, pad=0.04)
+            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),drawedges=False, fraction=0.046, pad=0.04)
 
         if len(cb_title_use)!=0:
             cb.ax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')

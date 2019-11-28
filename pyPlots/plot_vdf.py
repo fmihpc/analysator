@@ -56,30 +56,6 @@ plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
 plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work. (signchar=r'\enspace')
-    signchar=r'' 
-    # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
-    # Multiple braces for b take care of negative values in exponent
-    # brackets around \times remove extra whitespace
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-
-# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
-def axisfmt(x, pos):
-    # Find out required decimal precision
-    a, b = '{:.1e}'.format(np.amax(abs(np.array(plot_vdf.boxcoords)))).split('e')
-    precision = '0'
-    if int(b)<1: precision = str(abs(-1-int(b)))
-    f = r'{:.'+precision+r'f}'
-    a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-    return r'$'+a+'$'
-
-
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
@@ -585,11 +561,11 @@ def plot_vdf(filename=None,
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
-            if str(matplotlib.get_backend()) is not 'TkAgg':
-                plt.switch_backend('TkAgg')
+            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+                plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not 'Agg':
-                plt.switch_backend('Agg')  
+            if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+                plt.switch_backend(pt.backend_noninteractive)  
 
     if (cellids is None and coordinates is None and coordre is None):
         print("Error: must provide either cell id's or coordinates")
@@ -902,8 +878,9 @@ def plot_vdf(filename=None,
             pltystr = temp
             binsXY = binsXY.T
         # Boldface axis labels
-        pltxstr = r'\textbf{'+pltxstr+'}'
-        pltystr = r'\textbf{'+pltystr+'}'
+        if os.getenv('PTNOLATEX') is None:
+            pltxstr = r'\textbf{'+pltxstr+'}'
+            pltystr = r'\textbf{'+pltystr+'}'
 
         # If no other plotting fmin fmax values are given, take min and max of array
         if fmin is not None:
@@ -959,10 +936,13 @@ def plot_vdf(filename=None,
             xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
             yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
 
-        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit
-        plot_vdf.boxcoords = boxcoords # make available for axis formatter
+        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit       
+        # Set required decimal precision
+        precision_a, precision_b = '{:.1e}'.format(np.amax(abs(np.array(boxcoords)))).split('e')
+        pt.plot.decimalprecision_ax = '0'
+        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))        
 
-            # TODO make plot area square if it's almost square?
+        # TODO make plot area square if it's almost square?
 
         # Define figure size        
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
@@ -1006,14 +986,15 @@ def plot_vdf(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            plot_title = r"\textbf{"+plot_title+"}"            
+            if os.getenv('PTNOLATEX') is None:
+                plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         #fig.canvas.draw() # draw to get tick positions
 
         # Find maximum possible lengths of axis tick labels
         # Only counts digits
-        ticklens = [ len(re.sub(r'\D',"",axisfmt(bc,None))) for bc in boxcoords]
+        ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in boxcoords]
         tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
 
         # Adjust axis tick labels
@@ -1021,7 +1002,7 @@ def plot_vdf(filename=None,
             if tickinterval is not None:
                 axis.set_major_locator(mtick.MultipleLocator(tickinterval))
             # Custom tick formatter
-            axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
+            axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))
             ticklabs = axis.get_ticklabels()
             # Set boldface.
             for t in ticklabs: # note that the tick labels haven't yet been populated with text
@@ -1033,16 +1014,12 @@ def plot_vdf(filename=None,
                     t.set_horizontalalignment('right')
 
         if noxlabels is None:
-            #plt.xlabel(pltxstr,fontsize=fontsize,weight='black')
-            #plt.xticks(fontsize=fontsize,fontweight='black')
             ax1.set_xlabel(pltxstr,fontsize=fontsize,weight='black')
             for item in ax1.get_xticklabels():
                 item.set_fontsize(fontsize)
                 item.set_fontweight('black')
             ax1.xaxis.offsetText.set_fontsize(fontsize)
         if noylabels is None:
-            #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
-            #plt.yticks(fontsize=fontsize,fontweight='black')
             ax1.set_ylabel(pltystr,fontsize=fontsize,weight='black')
             for item in ax1.get_yticklabels():
                 item.set_fontsize(fontsize)
@@ -1098,15 +1075,15 @@ def plot_vdf(filename=None,
                         arrowprops=dict(arrowstyle="->"),zorder=10)
 
         if nocb is None:
-            cbtitleuse=None
+            cb_title_use=None
             if cbtitle is not None:
                 if type(cbtitle) is str:
-                    cbtitleuse = cbtitle
-            if cbtitleuse is None:
+                    cb_title_use = cbtitle
+            if cb_title_use is None:
                 if wflux is None:
-                    cbtitleuse=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
+                    cb_title_use=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
                 else:
-                    cbtitleuse=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
+                    cb_title_use=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
@@ -1140,8 +1117,13 @@ def plot_vdf(filename=None,
                                  bbox_transform=ax1.transAxes, borderpad=1.0)
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
-            # Colourbar title
-            cbtitleuse = r"\textbf{"+cbtitleuse+"}"
+            # Colourbar title             
+            if os.getenv('PTNOLATEX') is not None:
+                cb_title_use.replace('\textbf{','')
+                cb_title_use.replace('\mathrm{','')
+                cb_title_use.replace('}','')
+            else:
+                cb_title_use = r"\textbf{"+cb_title_use+"}"        
 
             # First draw colorbar
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
@@ -1149,10 +1131,10 @@ def plot_vdf(filename=None,
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
                 cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-                cb_title = cax.set_title(cbtitleuse,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+                cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
                 cb.ax.tick_params(labelsize=fontsize)
-                cb_title = cax.set_title(cbtitleuse,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+                cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
                     
 

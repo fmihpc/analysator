@@ -58,45 +58,6 @@ plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colorma
 
 plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work. (signchar=r'\enspace')
-    signchar=r'' 
-    # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
-    # Multiple braces for b take care of negative values in exponent
-    # brackets around \times remove extra whitespace
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-
-# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
-def axisfmt(x, pos):
-    # Find out required decimal precision
-    a, b = '{:.1e}'.format(np.amax(abs(np.array(plot_colormap.boxcoords)))).split('e')
-    precision = '0'
-    if int(b)<1: precision = str(abs(-1-int(b)))
-    f = r'{:.'+precision+r'f}'
-    a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-    return r'$'+a+'$'
-
-# cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
-def cbfmt(x, pos):
-    # Find out required decimal precision
-    a, b = '{:.1e}'.format(x).split('e')
-    precision = '0'
-    if (plot_colormap.lin is None):
-        if int(b)<1: precision = str(abs(int(b)))
-    else:
-        # for linear, use more precision
-        if int(b)<1: precision = str(abs(-1+int(b)))
-
-    f = r'{:.'+precision+r'f}'
-    a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-    return r'$'+a+'$'
-
 def plot_colormap(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
@@ -371,7 +332,7 @@ def plot_colormap(filename=None,
         # index a vector
         if operator.isdigit():
             operator = str(operator)
-            operatorstr='_{'+operator+'}'
+            operatorstr='_'+operator
 
     # Output file name
     if expression!=None:
@@ -472,7 +433,11 @@ def plot_colormap(filename=None,
     # Scale data extent and plot box
     simext=[i/axisunit for i in simext]
     boxcoords=[i/axisunit for i in boxcoords]    
-    plot_colormap.boxcoords = boxcoords # Make boxcoords available for formatter function
+
+    # Set required decimal precision
+    precision_a, precision_b = '{:.1e}'.format(np.amax(abs(np.array(boxcoords)))).split('e')
+    pt.plot.decimalprecision_ax = '0'
+    if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))
 
     ##########
     # Read data and calculate required variables
@@ -490,7 +455,7 @@ def plot_colormap(filename=None,
 
         # If vscale is in use
         if not np.isclose(vscale,1.):
-            datamap_unit=datamap_info.latexunits+r"${\times}$"+fmt(vscale,None)
+            datamap_unit=datamap_info.latexunits+r"${\times}$"+pt.plot.fmt(vscale,None)
         # Allow specialist units for known vscale and unit combinations
         if datamap_info.units=="s" and np.isclose(vscale,1.e6):
             datamap_unit = r"$\mu$s"
@@ -750,28 +715,22 @@ def plot_colormap(filename=None,
         # Drop negative and zero values
         vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
 
-    # Make vmaxuse and vminuse available for formatter functions
-    plot_colormap.vminuse = vminuse
-    plot_colormap.vmaxuse = vmaxuse
-    plot_colormap.lin = lin
-
     # If symlog scaling is set:
-    plot_colormap.linthresh = None
+    linthresh = None
     if symlog!=None:
         if symlog>0:
-            plot_colormap.linthresh = symlog 
+            linthresh = symlog 
         else:
-            plot_colormap.linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
+            linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
 
     # Lin or log colour scaling, defaults to log
     if lin is None:
         # Special SymLogNorm case
         if symlog!=None:
-            #norm = SymLogNorm(linthresh=plot_colormap.linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, ncolors=cmapuse.N, clip=True)
-            norm = SymLogNorm(linthresh=plot_colormap.linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
             minlog=int(np.ceil(np.log10(-vminuse)))
-            logthresh=int(np.floor(np.log10(plot_colormap.linthresh)))
+            logthresh=int(np.floor(np.log10(linthresh)))
             logstep=1
             ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
                     +[0.0]
@@ -793,13 +752,13 @@ def plot_colormap(filename=None,
         ticks = np.linspace(vminuse,vmaxuse,num=linticks)
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if axes==None: # If axes are provided, leave backend as-is.
-        if draw!=None:
-            if str(matplotlib.get_backend()) is not 'TkAgg':
-                plt.switch_backend('TkAgg')
+    if axes is None: # If axes are provided, leave backend as-is.
+        if draw is not None:
+            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+                plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not 'Agg':
-                plt.switch_backend('Agg')  
+            if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+                plt.switch_backend(pt.backend_noninteractive)  
 
     # Select image shape to match plotted area
     boxlenx = boxcoords[1]-boxcoords[0]
@@ -847,7 +806,8 @@ def plot_colormap(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
-        plot_title = r"\textbf{"+plot_title+"}"
+        if os.getenv('PTNOLATEX') is None:
+            plot_title = r"\textbf{"+plot_title+"}"
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     ax1.set_xlim([boxcoords[0],boxcoords[1]])
@@ -862,16 +822,25 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        ax1.set_xlabel(r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+        if os.getenv('PTNOLATEX') is None:
+            xlabelstr = r'\textbf{X ['+axisunitstr+']}'
+        else:
+            xlabelstr = r'X ['+axisunitstr+']'
+        ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
             item.set_fontweight('black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            ax1.set_ylabel(r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+            ylabelstr='Z'
         else: #Ecliptic
-            ax1.set_ylabel(r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,weight='black')
+            ylabelstr = 'Y'
+        if os.getenv('PTNOLATEX') is None:
+            ylabelstr = r'\textbf{'+ylabelstr+' ['+axisunitstr+']}'
+        else:
+            ylabelstr = ylabelstr+' ['+axisunitstr+']'
+        ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
             item.set_fontweight('black')
@@ -1034,14 +1003,26 @@ def plot_colormap(filename=None,
         # Colourbar title
         if len(cb_title_use)!=0:
             #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize3,weight='black', transform=ax1.transAxes, horizontalalignment='center')
-            cb_title_use = r"\textbf{"+cb_title_use+"}"        
+            if os.getenv('PTNOLATEX') is not None:
+                cb_title_use.replace('\textbf{','')
+                cb_title_use.replace('\mathrm{','')
+                cb_title_use.replace('}','')
+            else:
+                cb_title_use = r"\textbf{"+cb_title_use+"}"        
+            print("cb_title_use ",cb_title_use)
+
+        # Set flag which affects colorbar decimal precision
+        if (lin is None):
+            pt.plot.cb_linear = False
+        else:
+            pt.plot.cb_linear = True
 
         # First draw colorbar
         if usesci is True:
-            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(fmt),cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),cax=cax, drawedges=False)
         else:
             #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(cbfmt))
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(pt.plot.cbfmt))
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
@@ -1120,7 +1101,7 @@ def plot_colormap(filename=None,
 
     # Find maximum possible lengths of axis tick labels
     # Only counts digits
-    ticklens = [ len(re.sub(r'\D',"",axisfmt(bc,None))) for bc in boxcoords]
+    ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in boxcoords]
     tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
 
     # Adjust axis tick labels
@@ -1128,7 +1109,7 @@ def plot_colormap(filename=None,
         if tickinterval!=None:
             axis.set_major_locator(mtick.MultipleLocator(tickinterval))
         # Custom tick formatter
-        axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
+        axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))
         ticklabs = axis.get_ticklabels()
         # Set boldface.
         for t in ticklabs:

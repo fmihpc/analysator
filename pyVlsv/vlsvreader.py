@@ -1086,7 +1086,7 @@ class VlsvReader(object):
          if operator=="magnitude":
             latex = r"$|$"+latex+r"$|$"
          else:
-            latex = latex+r"{$_{"+operator+r"}$}"
+            latex = latex+r"$_{"+operator+r"}$"
          return VariableInfo(data_array=data, name=name + "_" + operator, units=units, latex=latex, latexunits=latexunits)
       else:
          return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)

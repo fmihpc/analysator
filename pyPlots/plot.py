@@ -41,3 +41,52 @@ from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
 
 from plot_colormap3dslice import plot_colormap3dslice
+
+import numpy as np, os
+
+decimalprecision_ax = 0
+cb_linear = False
+
+# Different style scientific format for colour bar ticks
+def fmt(x, pos):
+    a, b = '{:.1e}'.format(x).split('e')
+    # this should bring all colorbar ticks to the same horizontal position, but for
+    # some reason it doesn't work. (signchar=r'\enspace')
+    signchar=r'' 
+    # Multiple braces for b take care of negative values in exponent
+    # brackets around \times remove extra whitespace
+    if os.getenv('PTNOLATEX') is None:
+        # replaces minus sign with en-dash to fix big with latex descender value return
+        if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
+        return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
+    else:
+        return r'$'+'{}'.format(float(a))+r'{\times}'+'10^{{{}}}$'.format(int(b))
+
+# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
+def axisfmt(x, pos):
+    f = r'{:.'+decimalprecision_ax+r'f}'
+    if os.getenv('PTNOLATEX') is None:
+        a = f.format(abs(x))
+        if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
+        return r'$'+a+'$'
+    else:
+        return f.format(x)
+
+# cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
+def cbfmt(x, pos):
+    # Set required decimal precision
+    a, b = '{:.1e}'.format(x).split('e')
+    precision = '0'
+    if (cb_linear is True):
+        # for linear, use more precision
+        if int(b)<1: precision = str(abs(-1+int(b)))
+    else:
+        if int(b)<1: precision = str(abs(int(b)))
+    f = r'{:.'+precision+r'f}'
+    if os.getenv('PTNOLATEX') is None:
+        a = f.format(abs(x))
+        if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
+        return r'$'+a+'$'
+    else:
+        return f.format(x)
+

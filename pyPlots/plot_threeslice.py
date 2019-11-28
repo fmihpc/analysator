@@ -19,18 +19,6 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 import mpl_toolkits.mplot3d.art3d as art3d
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work. (signchar=r'\enspace')
-    signchar=r''
-    # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
-    # Multiple braces for b take care of negative values in exponent
-    # brackets around \times remove extra whitespace
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-
 
 # Create the 3d axes and the coordinate axes for the 3d plot
 def axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize):
@@ -244,7 +232,7 @@ def plot_threeslice(filename=None,
 
         # If vscale is in use
         if not np.isclose(vscale,1.):
-            datamap_unit=r"${\times}$"+fmt(vscale,None)
+            datamap_unit=r"${\times}$"+pt.plot.fmt(vscale,None)
         # Allow specialist units for known vscale and unit combinations
         if datamap_info.units=="s" and np.isclose(vscale,1.e6):
             datamap_unit = r"$\mu$s"
@@ -489,11 +477,16 @@ def plot_threeslice(filename=None,
     ticks = [10**(np.log10(vmin) + abfra*i) for i in range(7)]
 
     # draw the colorbar
-    cb = plt.colorbar(sm, ticks=ticks, format=mtick.FuncFormatter(fmt), drawedges=False)
+    cb = plt.colorbar(sm, ticks=ticks, format=mtick.FuncFormatter(pt.plot.fmt), drawedges=False)
 
 
-    #if len(cb_title_use)!=0:
-    #  cb_title_use = r"\textbf{"+cb_title_use+"}"
+    if len(cb_title_use)!=0:      
+        if os.getenv('PTNOLATEX') is not None:
+            cb_title_use.replace('\textbf{','')
+            cb_title_use.replace('\mathrm{','')
+            cb_title_use.replace('}','')
+        else:
+            cb_title_use = r"\textbf{"+cb_title_use+"}"        
 
     # define the size of the colorbar ticks
     cb.ax.tick_params(labelsize=fontsize3*1.7) # 1.7 is just a temporary scaling value
