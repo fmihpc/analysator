@@ -10,7 +10,6 @@ echo "export PYTHONPATH=$PYTHONPATH:$HOME/analysator" >> $HOME/.bashrc
 
 # Using Analysator:
 #################################################
-#################################################
 module load mayavi2   # Load mayavi2 dependencies, if necessary (e.g. CSC system)
 ipython               # Start ipython
 import pytools as pt  # Import Analysator
@@ -28,14 +27,21 @@ pt.plot.plot_vdf? #press [Enter]
 # python/ipython. If in interactive mode, experimental non-blocking
 # windows via matplotlib.pyplot.ion() are in use.
 #################################################
-#################################################
 export PTNONINTERACTIVE=1
+
+# For selecting a backend manually (if Agg or TkAgg is not available)
+#################################################
+export PTBACKEND=Qt5Agg
+
+# For disabling full LaTeX formatted output (if texlive is not installed)
+#################################################
+export PTNOLATEX=1
+
 
 # Examples and instructions for batch scripting (on CSC's system) are found in
 # examples/generate_panel.py and examples/generate_movie.sh
 
 # For more information visit the link:
-#################################################
 #################################################
 https://github.com/fmihpc/analysator/wiki
 
