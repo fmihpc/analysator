@@ -30,6 +30,7 @@ from rotation import rotateTensorToVector, rotateArrayTensorToVector
 from gyrophaseangle import gyrophase_angles
 import vlsvvariables
 import sys
+import math
 
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
@@ -588,6 +589,25 @@ def ion_inertial( variables ):
    di = np.ma.divide(c,omegapi)
    return di
 
+def gyroperiod( variables ):
+   B = np.array(variables[0])
+   Bmag = np.linalg.norm(B,axis=-1)
+   Bmag = np.ma.masked_less_equal(np.ma.masked_invalid(Bmag),0)
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
+   charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
+   omegaci = abs(charge*Bmag/mass)
+   #return np.ma.divide(2.*math.pi,omegaci)
+   return 2.*math.pi*(omegaci**-1)
+
+def plasmaperiod( variables ):
+   rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
+   charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
+   epsilonnought = 8.8542e-12
+   omegapi = abs(np.sqrt(rho/(mass*epsilonnought))*charge)
+   #return np.ma.divide(2.*math.pi,omegapi)
+   return 2.*math.pi*(omegapi**-1)
+
 def firstadiabatic( variables ):
    Tperp = variables[0]
    bvector = variables[1]
@@ -809,6 +829,8 @@ multipopdatareducers["pop/betaperpoverparnonbackstream"] = DataReducerVariable([
 multipopdatareducers["pop/thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopdatareducers["pop/firstadiabatic"] =    DataReducerVariable(["pop/tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
+multipopdatareducers["pop/gyroperiod"] =    DataReducerVariable(["b"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
+multipopdatareducers["pop/plasmaperiod"] =    DataReducerVariable(["pop/rho"], plasmaperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{p},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
 
 # Do these betas make sense per-population?
 multipopdatareducers["pop/beta"] =                   DataReducerVariable(["pop/pressure", "b"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
@@ -965,6 +987,8 @@ multipopv5reducers["pop/vg_beta_anisotropy_thermal"] = DataReducerVariable(["pop
 multipopv5reducers["pop/vg_thermalvelocity"] =               DataReducerVariable(["vg_temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_perpendicular","vg_b_vol"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
+multipopv5reducers["pop/vg_gyroperiod"] =    DataReducerVariable(["vg_b_vol","pop/vg_rho"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
+multipopv5reducers["pop/vg_plasmaperiod"] =    DataReducerVariable(["pop/vg_rho"], plasmaperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{p},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
 
 # Do these betas make sense per-population?
 multipopv5reducers["pop/vg_beta"] =                   DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
