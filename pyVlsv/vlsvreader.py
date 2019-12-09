@@ -987,7 +987,7 @@ class VlsvReader(object):
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
                thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
-               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]], order='F')
+               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]],order='F')
 
                # ... and put it into place 
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
@@ -1001,7 +1001,7 @@ class VlsvReader(object):
 
            currentOffset += totalSize
 
-       return orderedData
+       return np.squeeze(orderedData)
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
@@ -1027,7 +1027,6 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable`
       '''
-      data = self.read_variable(name=name, operator=operator, cellids=cellids)
       from variable import VariableInfo
 
       # Force lowercase
@@ -1081,6 +1080,11 @@ class VlsvReader(object):
          units = ""
          latex = r""+name.replace("_","\_")
          latexunits = ""
+
+      if name.startswith('fg_'):
+          data = self.read_fsgrid_variable(name=name, operator=operator)
+      else:
+          data = self.read_variable(name=name, operator=operator, cellids=cellids)
 
       if operator != "pass":
          if operator=="magnitude":
@@ -1598,6 +1602,22 @@ class VlsvReader(object):
 
    def get_spatial_mesh_extent(self):
       ''' Read spatial mesh extent
+      
+      :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
+      '''
+      return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
+
+   def get_fsgrid_mesh_size(self):
+      ''' Read fsgrid mesh size
+      
+      :returns: Size of mesh in number of cells, array with three elements
+      '''
+      # Get fsgrid domain size (this can differ from vlasov grid size if refined)
+      bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+      return np.array(bbox[0:3])
+
+   def get_fsgrid_mesh_extent(self):
+      ''' Read fsgrid mesh extent
       
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
