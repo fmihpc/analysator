@@ -158,7 +158,7 @@ def plot_threeslice(filename=None,
     :kword step:        output step index, used for constructing output (and possibly input) filename                    
 
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
-                        E, B, v, V or others. Accepts any variable known by analysator/analysator.
+                        E, B, v, V or others. Accepts any variable known by analysator.
                         Per-population variables are simply given as "proton/rho" etc
     :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
