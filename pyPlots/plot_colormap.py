@@ -437,10 +437,10 @@ def plot_colormap(filename=None,
     # Check if ecliptic or polar run
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
-        sizes=[xsize,zsize]
+        sizes=[int(xsize),int(zsize)]
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
-        sizes=[xsize,ysize]
+        sizes=[int(xsize),int(ysize)]
 
     # Select window to draw
     if len(boxm)==4:
@@ -706,11 +706,11 @@ def plot_colormap(filename=None,
                     # For vlasov grid reader, reorder and reshape.
                     if not mapval.startswith('fg_'):
                         if np.ndim(pass_map)==1:
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
                         elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
                         elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                         else:
                             print("Error in reshaping pass_map!") 
                     if np.ma.is_masked(maskgrid):
