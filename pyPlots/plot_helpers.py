@@ -478,7 +478,6 @@ def expr_J_mag_limiter_ratio(pass_maps, requestvariables=False):
     # Ratio between magnitudes of J = rot(B_vol) and J =
     if requestvariables is True:
         return ['B']
-    print('in expr')
 
     Bmap = TransposeVectorArray(pass_maps['B'])  # Magnetic field
 
@@ -488,7 +487,7 @@ def expr_J_mag_limiter_ratio(pass_maps, requestvariables=False):
     Jmap = vec_currentdensity(Bmap)
 
     jlimn = np.linalg.norm(vec_currentdensity_lim(Bmap), axis=-1)
-    Jmap = np.where(np.abs(jlimn) < 1e-18,0.0,np.linalg.norm(Jmap, axis=-1) / jlimn)
+    Jmap = np.where(np.abs(jlimn) < 1e-18, 0.0, np.linalg.norm(Jmap, axis=-1) / jlimn)
     return Jmap.T
 
 def expr_J_aniso(pass_maps, requestvariables=False):

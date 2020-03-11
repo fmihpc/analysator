@@ -112,7 +112,7 @@ class variable_versioner:
         if(v == 5):
             self.varmap = self.varmapV5
         self.revmap = {k: v for v, k in self.varmap.items()}
-        print("Re-mapping variables:" + self.varmap)
+        print("Variable remapping: " + str(self.varmap))
 
     def map(self, var):
         if(var in self.varmap.keys()):
@@ -653,7 +653,6 @@ def plot_colormap(filename=None,
             for i in reqvariables:
                 imapped = var_version.map(i)
                 if not (imapped in pass_vars): pass_vars.append(imapped)
-            print(pass_vars)
         except:
             pass
     if external!=None: # Check the external
