@@ -689,7 +689,9 @@ datareducers["pperpendicularnonbackstream"] = DataReducerVariable(["ptensorrotat
 datareducers["pperpoverparnonbackstream"] =   DataReducerVariable(["ptensorrotatednonbackstream"], Anisotropy, "", 1, latex=r"$P_{\perp,\mathrm{th}} P_{\parallel,\mathrm{th}}^{-1}$", latexunits=r"")
 datareducers["agyrotropynonbackstream"] =     DataReducerVariable(["ptensorrotatednonbackstream"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,th}$", latexunits=r"")
 
-# Note: Temperature summing over multipop works only if only one population.
+# Note: Temperature summing over multipop works only if only one population exists in simulation.
+# T=P/(n*kb), calculating  sum(T)=sum(P)/(sum(n)*kb) is incorrect
+# test-populations contribute to rho but not pressure (unless pressure is summed from ptensors).
 datareducers["temperature"] =            DataReducerVariable(["pressure", "rho"], Temperature, "K", 1, latex=r"$T$", latexunits=r"K")
 datareducers["ttensor"] =                DataReducerVariable(["ptensor", "rho"], Temperature, "K", 9, latex=r"$\mathcal{T}$", latexunits=r"K")
 datareducers["ttensorrotated"] =         DataReducerVariable(["ptensorrotated", "rho"], Temperature, "K", 9, latex=r"$\mathcal{T}^\mathrm{R}$", latexunits=r"K")
@@ -869,12 +871,14 @@ v5reducers["vg_p_perpendicular_thermal"] = DataReducerVariable(["vg_ptensor_rota
 v5reducers["vg_p_anisotropy_thermal"] =   DataReducerVariable(["vg_ptensor_rotated_thermal"], Anisotropy, "", 1, latex=r"$P_{\perp,\mathrm{th}} P_{\parallel,\mathrm{th}}^{-1}$", latexunits=r"")
 v5reducers["vg_agyrotropy_thermal"] =     DataReducerVariable(["vg_ptensor_rotated_thermal"], aGyrotropy, "", 1, latex=r"$Q_\mathrm{ag,th}$", latexunits=r"")
 
-# Note: Temperature summing over multipop works only if only one population.
-v5reducers["vg_temperature"] =            DataReducerVariable(["vg_pressure", "vg_rhom"], Temperature, "K", 1, latex=r"$T$", latexunits=r"K")
-v5reducers["vg_ttensor"] =                DataReducerVariable(["vg_ptensor", "vg_rhom"], Temperature, "K", 9, latex=r"$\mathcal{T}$", latexunits=r"K")
-v5reducers["vg_ttensor_rotated"] =         DataReducerVariable(["vg_ptensor_rotated", "vg_rhom"], Temperature, "K", 9, latex=r"$\mathcal{T}^\mathrm{R}$", latexunits=r"K")
-v5reducers["vg_t_parallel"] =              DataReducerVariable(["vg_p_parallel", "vg_rhom"], Temperature, "K", 1, latex=r"$T_\parallel$", latexunits=r"K")
-v5reducers["vg_t_perpendicular"] =         DataReducerVariable(["vg_p_perpendicular", "vg_rhom"], Temperature, "K", 1, latex=r"$T_\perp$", latexunits=r"K")
+# Note: Temperature summing over multipop works only if only one population exists in simulation.
+# T=P/(n*kb), calculating  sum(T)=sum(P)/(sum(n)*kb) is incorrect
+# test-populations contribute to rho but not vg_pressure. (unless vg_pressure is summed from vg_ptensors)
+v5reducers["vg_temperature"] =            DataReducerVariable(["vg_pressure", "vg_rho"], Temperature, "K", 1, latex=r"$T$", latexunits=r"K")
+v5reducers["vg_ttensor"] =                DataReducerVariable(["vg_ptensor", "vg_rho"], Temperature, "K", 9, latex=r"$\mathcal{T}$", latexunits=r"K")
+v5reducers["vg_ttensor_rotated"] =         DataReducerVariable(["vg_ptensor_rotated", "vg_rho"], Temperature, "K", 9, latex=r"$\mathcal{T}^\mathrm{R}$", latexunits=r"K")
+v5reducers["vg_t_parallel"] =              DataReducerVariable(["vg_p_parallel", "vg_rho"], Temperature, "K", 1, latex=r"$T_\parallel$", latexunits=r"K")
+v5reducers["vg_t_perpendicular"] =         DataReducerVariable(["vg_p_perpendicular", "vg_rho"], Temperature, "K", 1, latex=r"$T_\perp$", latexunits=r"K")
 
  # These ratios are identical to the pressure ratios
 v5reducers["vg_t_anisotropy"] =                DataReducerVariable(["vg_ptensor_rotated"], Anisotropy, "", 1, latex=r"$T_\perp T_\parallel^{-1}$", latexunits=r"")
@@ -962,7 +966,7 @@ multipopv5reducers["pop/vg_beta_anisotropy"] =              DataReducerVariable(
 multipopv5reducers["pop/vg_beta_anisotropy_nonthermal"] =    DataReducerVariable(["pop/vg_ptensor_rotated_nonthermal"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,st}} \beta_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_anisotropy_thermal"] = DataReducerVariable(["pop/vg_ptensor_rotated_thermal"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
-multipopv5reducers["pop/vg_thermalvelocity"] =               DataReducerVariable(["vg_temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_thermalvelocity"] =               DataReducerVariable(["pop/vg_temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
 multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_perpendicular","vg_b_vol"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
@@ -974,6 +978,3 @@ multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 
-
-multipopv5reducers["pop/vg_temperature"] =            DataReducerVariable(["pop/vg_pressure", "pop/vg_rho"], Temperature, "K", 1, latex=r"$T_\mathrm{REPLACEPOP}$", latexunits=r"K")
-multipopv5reducers["pop/vg_pressure"] =               DataReducerVariable(["pop/vg_ptensor_diagonal"], Pressure, "Pa", 1, latex=r"$P_\mathrm{REPLACEPOP}$", latexunits=r"Pa")
