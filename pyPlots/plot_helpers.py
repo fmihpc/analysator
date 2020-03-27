@@ -27,7 +27,7 @@ from rotation import rotateTensorToVector
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
-
+exprop=None
 CELLSIZE = 300000.0 # cell size
 DT = 0.5 # time step
 
@@ -856,4 +856,44 @@ def expr_electronflow(pass_maps, requestvariables=False):
         return reqjv[:,:,exprop].T
     else:
         return np.linalg.norm(reqjv, axis=-1).T
+
+def expr_electronflowerr(pass_maps, requestvariables=False):
+    # Calculates the required current density to support the observed magnetic field.
+    # Then calculates the required electron flow velocity to support that current.
+    # Then compares the current electron flow to that required.
+    if requestvariables==True:
+        return ['vg_b_vol','electron/vg_v','electron/vg_rho','proton/vg_v','proton/vg_rho']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    unitcharge = 1.602177e-19
+    mu0 = 1.25663706144e-6
+    Bmap = TransposeVectorArray(pass_maps['vg_b_vol']) # Magnetic field
+    evmap = TransposeVectorArray(pass_maps['electron/vg_v'])
+    pvmap = TransposeVectorArray(pass_maps['proton/vg_v'])
+    erhomap = pass_maps['electron/vg_rho'].T
+    prhomap = pass_maps['proton/vg_rho'].T
+    
+    j = numcurl(Bmap)/mu0
+    jprot = pvmap*prhomap[:,:,np.newaxis]*unitcharge
+    jele = -evmap*erhomap[:,:,np.newaxis]*unitcharge
+    reqjele = j - jprot
+    reqjv = reqjele / erhomap[:,:,np.newaxis] / (-unitcharge)
+
+    everror = evmap - reqjv
+    print("mean jprot",np.mean(np.linalg.norm(jprot,axis=-1)),'mean jele',np.mean(np.linalg.norm(jele,axis=-1)))
+    print("min jprot",np.min(np.linalg.norm(jprot,axis=-1)),'min jele',np.min(np.linalg.norm(jele,axis=-1)))
+    print("max jprot",np.max(np.linalg.norm(jprot,axis=-1)),'max jele',np.max(np.linalg.norm(jele,axis=-1)))
+
+    print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
+    print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
+    print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
+        
+#    return np.linalg.norm(reqjv, axis=-1).T
+    if exprop is not None:
+        return everror[:,:,exprop].T
+    else:
+        return np.linalg.norm(everror, axis=-1).T
 
