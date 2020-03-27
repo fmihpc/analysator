@@ -41,3 +41,4 @@ from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
 
 from plot_colormap3dslice import plot_colormap3dslice
+from plot_energy_spectrogram import plot_energy_spectrogram

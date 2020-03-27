@@ -254,7 +254,7 @@ def get_energy_spectrum(filedir, filetype, pop, start, stop, cid, emin, emax, en
     return (time_ar, energy_ar, datamap)
 
 
-def plot_energy_spectrum(filedir=None, filetype='bulk',
+def plot_energy_spectrogram(filedir=None, filetype='bulk',
                      pop='proton',
                      start=1, stop=20,
                      outputdir=None,
@@ -427,7 +427,7 @@ def plot_energy_spectrum(filedir=None, filetype='bulk',
     time_ar = np.array([])
 
     # Parallel construction of the spectrum
-    if __name__ == 'plot_energy':
+    if __name__ == 'plot_energy_spectrogram':
         pool = Pool(numproc)
         return_array = pool.map(make_timemap, range(start,stop+1))
     else:
