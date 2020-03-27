@@ -608,6 +608,14 @@ def plasmaperiod( variables ):
    #return np.ma.divide(2.*math.pi,omegapi)
    return 2.*math.pi*(omegapi**-1)
 
+def larmor( variables ):
+   B = variables[0]
+   Bmag = np.linalg.norm(B, axis=-1)
+   vth = variables[1] # thermal velocity
+   mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
+   charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
+   return np.ma.divide(mass*vth,charge*Bmag)
+
 def firstadiabatic( variables ):
    Tperp = variables[0]
    bvector = variables[1]
@@ -749,6 +757,8 @@ datareducers["dng"] =                    DataReducerVariable(["ptensor", "pparal
 datareducers["vbeam"] =                  DataReducerVariable(["vbackstream", "vnonbackstream"], v_beam, "m/s", 3, latex=r"$V_\mathrm{st}-V$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["vbeamratio"] =             DataReducerVariable(["vbackstream", "vnonbackstream"], v_beam_ratio, "", 1, latex=r"$V_\mathrm{st} V^{-1}$", latexunits=r"")
 datareducers["thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+datareducers["larmor"] =              DataReducerVariable(["b","thermalvelocity"], larmor, "m", 1, latex=r"$r_\mathrm{L}$",latexunits=r"$\mathrm{m}$")
+datareducers["di"] =              DataReducerVariable(["proton/rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
 datareducers["bz_linedipole_avg"] =      DataReducerVariable(["x", "y", "z", "dx", "dy", "dz"], Bz_linedipole_avg, "T", 1, latex=r"$\langle B_{z,\mathrm{ld}}\rangle$")
 datareducers["bz_linedipole_diff"] =     DataReducerVariable(["b", "bz_linedipole_avg"], Bz_linedipole_diff, "", 1, latex=r"$\Delta B_{z,\mathrm{ld}}$")
 
@@ -828,7 +838,8 @@ multipopdatareducers["pop/betaperpoverpar"] =              DataReducerVariable([
 multipopdatareducers["pop/betaperpoverparbackstream"] =    DataReducerVariable(["pop/ptensorrotatedbackstream"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,st}} \beta_{\parallel,\mathrm{REPLACEPOP,st}}^{-1}$", latexunits=r"")
 multipopdatareducers["pop/betaperpoverparnonbackstream"] = DataReducerVariable(["pop/ptensorrotatednonbackstream"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
-multipopdatareducers["pop/thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/thermalvelocity"] =               DataReducerVariable(["pop/temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopdatareducers["pop/larmor"] =              DataReducerVariable(["b","pop/thermalvelocity"], larmor, "m", 1, latex=r"$r_\mathrm{L,REPLACEPOP}$",latexunits=r"$\mathrm{m}$")
 
 multipopdatareducers["pop/firstadiabatic"] =    DataReducerVariable(["pop/tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 multipopdatareducers["pop/gyroperiod"] =    DataReducerVariable(["b"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
@@ -989,6 +1000,7 @@ multipopv5reducers["pop/vg_beta_anisotropy_nonthermal"] =    DataReducerVariable
 multipopv5reducers["pop/vg_beta_anisotropy_thermal"] = DataReducerVariable(["pop/vg_ptensor_rotated_thermal"], Anisotropy, "", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP,th}} \beta_{\parallel,\mathrm{REPLACEPOP,th}}^{-1}$", latexunits=r"")
 
 multipopv5reducers["pop/vg_thermalvelocity"] =               DataReducerVariable(["pop/vg_temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th,REPLACEPOP}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+multipopv5reducers["pop/vg_larmor"] =                        DataReducerVariable(["vg_b_vol","pop/vg_thermalvelocity"], larmor, "m", 1, latex=r"$r_\mathrm{L,REPLACEPOP}$",latexunits=r"$\mathrm{m}$")
 
 multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_perpendicular","vg_b_vol"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 multipopv5reducers["pop/vg_gyroperiod"] =    DataReducerVariable(["vg_b_vol","pop/vg_rho"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")

@@ -763,6 +763,37 @@ def expr_ja(pass_maps, requestvariables=False):
     divsumtemsor = numdivtensor(sumtensor)    
     result = - numcrossproduct(divsumtemsor,Bmap) * upBmag2[:,:,np.newaxis]
     return np.linalg.norm(result, axis=-1).T
+
+
+def expr_dLstardt(pass_maps, requestvariables=False):
+    # current from polarization drift
+    if requestvariables==True:
+        return ['B','E']
+
+    # This custom expression returns a proxy for betatron acceleration
+    if type(pass_maps) is not list:
+        # Not a list of time steps, calculating this value does not make sense.
+        print("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        quit()
+
+    # Multiple time steps were found. This should be 3, for a time derivative.
+    dsteps = [x['dstep'] for x in pass_maps]
+    curri = dsteps.index(0)
+    previ = dsteps.index(-1)
+    thesemaps = pass_maps[curri]
+    pastmaps = pass_maps[previ]
+
+    thisB = TransposeVectorArray(thesemaps['B'])
+    pastB = TransposeVectorArray(pastmaps['B'])    
+    Vddt = (thisV-pastV)/DT
+
+    Bmap = TransposeVectorArray(thesemaps['B'])
+    upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
+    rhom = thesemaps['rho'].T * 1.6726e-27
+    
+    BxdVdt = numcrossproduct(Bmap, dVdt)
+    result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
+    return np.linalg.norm(result, axis=-1).T
     
     
 ################
@@ -897,3 +928,54 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     else:
         return np.linalg.norm(everror, axis=-1).T
 
+# Helper function for drawing on existing panel
+def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho', 'B', 'beta']
+
+    # Check if extmaps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        rho = extmaps[curri]['rho']
+        beta = extmaps[curri]['beta']
+        # take magnitude of B
+        B = np.linalg.norm(extmaps[curri]['B'],axis=-1)
+    else:
+        rho = extmaps['rho']
+        beta = extmaps['beta']
+        # take magnitude of B
+        B = np.linalg.norm(extmaps['B'],axis=-1)
+
+    # Colours to use
+    color_cavitons = 'yellow'#'#924900'
+    color_SHFAs    = 'k'#'#B66DFF'
+    color_BS       = 'white'#'#FFFF6D'
+
+    # thresholds
+    level_bow_shock = 2.e+6
+    level_n_caviton = 4.e+6
+    level_B_caviton = 4.e-9
+    level_beta_SHFA = 150
+    level_beta_SHFA_SW = 10.
+
+    # mask cavitons
+    cavitons = np.ma.masked_greater_equal(B,level_B_caviton)
+    cavitons.mask[rho > level_n_caviton] = True
+    cavitons.fill_value = 0.
+    cavitons[cavitons.mask == False] = 1.
+
+    print("cavitons",cavitons.sum())
+
+    # mask SHFAs
+    SHFAs = np.ma.masked_greater_equal(B,level_B_caviton)
+    SHFAs.mask[rho > level_n_caviton] = True
+    SHFAs.mask[beta < level_beta_SHFA_SW] = True
+    SHFAs.fill_value = 0.
+    SHFAs[SHFAs.mask == False] = 1.
+    print("SHFA",SHFAs.sum())
+    # draw contours
+    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
+                               linewidths=1.2, colors=color_BS,label='Bow shock')
+    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
+    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
