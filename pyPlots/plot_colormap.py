@@ -768,7 +768,7 @@ def plot_colormap(filename=None,
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
     XYmask = rhomap.mask
     if np.ma.is_masked(XYmask):
-        if rhomap.mask.all():
+        if XYmask.mask.all():
             # if everything was masked in rhomap, allow plotting
             XYmask[:,:] = False
         else:
