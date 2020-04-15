@@ -139,7 +139,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center is "peak":
+    if center == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
@@ -776,15 +776,23 @@ def plot_vdf_profiles(filename=None,
             fmaxuse=np.nanmax(np.concatenate((bins1,bins2,bins3)))*1.5
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
-                # If no other plotting fmin fmax values are given, take min and max of array
+        # If no other plotting fmin fmax values are given, take min and max of array
         if vmin!=None:
             vminuse=vmin
         else:
-            vminuse=np.nanmin(np.concatenate((axis1,axis2,axis3)))*0.8
+            vminuse=np.nanmin(np.concatenate((axis1,axis2,axis3)))/velUnit
+            if vminuse < 0:
+                vminuse = vminuse*1.2
+            else:
+                vminuse = vminuse*0.8
         if vmax!=None:
             vmaxuse=vmax
         else:
-            vmaxuse=np.nanmax(np.concatenate((axis1,axis2,axis3)))*1.5
+            vmaxuse=np.nanmax(np.concatenate((axis1,axis2,axis3)))/velUnit
+            if vmaxuse < 0:
+                vmaxuse = vmaxuse*0.8
+            else:
+                vmaxuse = vmaxuse*1.2
         print("Active v range is "+str(vminuse)+" to "+str(vmaxuse))
 
         axis1=np.array(axis1)/velUnit
