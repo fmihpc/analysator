@@ -430,6 +430,9 @@ def plot_colormap(filename=None,
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
+    xsize = int(xsize)
+    ysize = int(ysize)
+    zsize = int(zsize)
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
@@ -438,11 +441,11 @@ def plot_colormap(filename=None,
     # Check if ecliptic or polar run
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
-        sizes=[int(xsize),int(zsize)]
+        sizes=[xsize,zsize]
         pt.plot.plot_helpers.PLANE = 'XZ'
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
-        sizes=[int(xsize),int(ysize)]
+        sizes=[xsize,ysize]
         pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
