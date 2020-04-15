@@ -433,14 +433,17 @@ def plot_colormap(filename=None,
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
-
+    pt.plot.plot_helpers.CELLSIZE = cellsize
+    
     # Check if ecliptic or polar run
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
         sizes=[int(xsize),int(zsize)]
+        pt.plot.plot_helpers.PLANE = 'XZ'
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
         sizes=[int(xsize),int(ysize)]
+        pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
     if len(boxm)==4:
@@ -534,30 +537,6 @@ def plot_colormap(filename=None,
                 datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1],datamap.shape[2]])
             else:
                 print("Error in reshaping datamap!") 
-        # Now, if map is a vector or tensor, reduce it down
-
-        if np.ndim(datamap)==3: # vector
-            if datamap.shape[2]!=3:
-                # This may also catch 3D simulation fsgrid variables
-                print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
-                return -1
-            # take magnitude of three-element vectors
-            datamap = np.linalg.norm(datamap, axis=-1)
-        if np.ndim(datamap)==4: # tensor
-            if datamap.shape[2]!=3 or datamap.shape[3]!=3:
-                # This may also catch 3D simulation fsgrid variables
-                print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
-                return -1
-            # take trace
-            datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
-        if np.ndim(datamap)>=5: # Too many dimensions
-            print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
-            return -1
-
-        if np.ndim(datamap)!=2:
-            # Array dimensions not as expected
-            print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
-            return -1
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__.replace("_","\_")
@@ -731,10 +710,40 @@ def plot_colormap(filename=None,
     if expression!=None:
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
-        if np.ndim(datamap)!=2:
-            print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
+        # Handle operators
+        if ((operator is not None) && (operator!='pass') && (operator!='magnitude')):
+            if operator==x: operator = '0'
+            if operator==y: operator = '1'
+            if operator==z: operator = '2'
+            if not operator.isdigit():
+                print("Error parsing operator for custom expression!")
+                return
+            elif np.ndim(datamap)==3:
+                datamap = datamap[:,:,int(operator)]
+                
+    # Now, if map is a vector or tensor, reduce it down
+    if np.ndim(datamap)==3: # vector
+        if datamap.shape[2]!=3:
+            # This may also catch 3D simulation fsgrid variables
+            print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
             return -1
-
+        # take magnitude of three-element vectors
+        datamap = np.linalg.norm(datamap, axis=-1)
+    if np.ndim(datamap)==4: # tensor
+        if datamap.shape[2]!=3 or datamap.shape[3]!=3:
+            # This may also catch 3D simulation fsgrid variables
+            print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
+            return -1
+        # take trace
+        datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
+    if np.ndim(datamap)>=5: # Too many dimensions
+        print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+        return -1
+    if np.ndim(datamap)!=2:
+        # Array dimensions not as expected
+        print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
+        return -1
+        
     # Scale final generated datamap if requested
     datamap = datamap * vscale
 

@@ -27,7 +27,6 @@ from rotation import rotateTensorToVector
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
-exprop=None
 CELLSIZE = 300000.0 # cell size
 DT = 0.5 # time step
 
@@ -292,14 +291,14 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
-def expr_Hall_mag(pass_maps, requestvariables=False):
+def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B','rho']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Rhomap = pass_maps['rho'].T # number density
     Jmap = vec_currentdensity(Bmap)
     Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
-    return np.linalg.norm(Hallterm, axis=-1).T
+    return np.swapaxes(Hallterm, 0,1)
 
 def expr_Hall_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -310,12 +309,12 @@ def expr_Hall_aniso(pass_maps, requestvariables=False):
     Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
     return VectorArrayAnisotropy(Hallterm,Bmap).T
 
-def expr_J_mag(pass_maps, requestvariables=False):
+def expr_J(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
-    return np.linalg.norm(Jmap, axis=-1).T
+    return np.swapaxes(Jmap, 0,1)
 
 def expr_J_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -324,12 +323,12 @@ def expr_J_aniso(pass_maps, requestvariables=False):
     Jmap = vec_currentdensity(Bmap)
     return VectorArrayAnisotropy(Jmap,Bmap).T
 
-def expr_MagneticPressureForce_mag(pass_maps, requestvariables=False):
+def expr_MagneticPressureForce(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
-    return np.linalg.norm(MagneticPressureForce, axis=-1).T
+    return np.swapaxes(MagneticPressureForce, 0,1)
 
 def expr_MagneticPressureForce_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -350,11 +349,11 @@ def expr_MagneticPressureForce_aniso(pass_maps, requestvariables=False):
 #     MagneticPressureForceIPAniso = VectorArrayAnisotropy(inplane(MagneticPressureForce), inplane(Bmap))
 #     return MagneticPressureForceIPAniso.T
 
-def expr_ThermalPressureForce_mag(pass_maps, requestvariables=False):
+def expr_ThermalPressureForce(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['Pressure']
     Pmap = pass_maps['Pressure'].T #Pressure (scalar)
-    return np.linalg.norm(vec_ThermalPressureForce(Pmap), axis=-1).T
+    return np.swapaxes(vec_ThermalPressureForce(Pmap), 0,1)
 
 def expr_ThermalPressureForce_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -377,26 +376,26 @@ def expr_Eforce(pass_maps, requestvariables=False):
     Emap = TransposeVectorArray(pass_maps['E']) # Electric field
     Rhomap = pass_maps['rho'].T # number density
     Efieldforce = vec_ElectricFieldForce(Emap, Rhomap)
-    return np.linalg.norm(Efieldforce, axis=-1).T
+    return np.swapaxes(Efieldforce, 0,1)
 
-def expr_Btension_mag(pass_maps, requestvariables=False):
+def expr_Btension(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagTensionForce = vec_MagneticTensionForce(Bmap)
-    return np.linalg.norm(MagTensionForce, axis=-1).T
+    return np.swapaxes(MagTensionForce, 0,1)
 
 # No expr_Btension_aniso as it's all in the perpendicular component
 
-def expr_Bforces_mag(pass_maps, requestvariables=False):
+def expr_Bforces(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
-    return np.linalg.norm(MagneticPressureForce+MagTensionForce, axis=-1).T
+    return np.swapaxes(MagneticPressureForce+MagTensionForce, 0,1)
 
-def expr_Totforces_mag(pass_maps, requestvariables=False):
+def expr_Totforces(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B','Pressure']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
@@ -404,7 +403,7 @@ def expr_Totforces_mag(pass_maps, requestvariables=False):
     MagneticPressureForce = vec_MagneticPressureForce(Bmap)
     MagTensionForce = vec_MagneticTensionForce(Bmap)
     ThermalPressureForce = vec_ThermalPressureForce(Pmap)
-    return np.linalg.norm(ThermalPressureForce+MagneticPressureForce+MagTensionForce, axis=-1).T
+    return np.swapaxes(ThermalPressureForce+MagneticPressureForce+MagTensionForce, 0,1)
 
 def expr_Totforces_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -484,7 +483,7 @@ def expr_Slippage(pass_maps, requestvariables=False):
     EcrossB = np.divide(np.cross(E,B), (B*B).sum(-1)[:,:,np.newaxis])
     metricSlippage = EcrossB-Vperp
     alfvenicSlippage = metricSlippage/slippageVA
-    return np.linalg.norm(alfvenicSlippage, axis=-1)
+    return alfvenicSlippage
 
 def expr_EcrossB(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -498,8 +497,7 @@ def expr_EcrossB(pass_maps, requestvariables=False):
     B = pass_maps['B']
 
     EcrossB = np.divide(np.cross(E,B), (B*B).sum(-1)[:,:,np.newaxis])
-    return np.linalg.norm(EcrossB, axis=-1)
-
+    return EcrossB
 
 def expr_betatron(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -630,8 +628,7 @@ def expr_diamagnetic(pass_maps, requestvariables=False):
     term1 = numcrossproduct(BperB2, rhodUdt)
     term2 = numcrossproduct(BperB2, gradP)
 
-    result = np.linalg.norm(term1+term2, axis=-1)
-    return result.T
+    return np.swapaxes(term1+term2, 0,1)
 
 def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -649,8 +646,7 @@ def expr_diamagnetic_noinertial(pass_maps, requestvariables=False):
     # Dropping the first term i.e. inertial current
     term2 = numcrossproduct(BperB2, gradP)
 
-    result = np.linalg.norm(term2, axis=-1)
-    return result.T
+    return np.swapaxes(term2, 0,1)
 
 
 def expr_jc(pass_maps, requestvariables=False):
@@ -669,7 +665,7 @@ def expr_jc(pass_maps, requestvariables=False):
     BdotDelB = numvecdotdelvec(Bmap,Bmap)
     BxBdotDelB = numcrossproduct(Bmap, BdotDelB)
     result = BxBdotDelB * (Pparallel*upBmag4)[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
 
 def expr_jg(pass_maps, requestvariables=False):
     # current from gradient drift
@@ -687,7 +683,7 @@ def expr_jg(pass_maps, requestvariables=False):
     gradB = numgradscalar(Bmag)
     BxgradB = numcrossproduct(Bmap, gradB)
     result = BxgradB * (Pperp*upBmag3)[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
 
 def expr_jp(pass_maps, requestvariables=False):
     # current from polarization drift
@@ -717,7 +713,7 @@ def expr_jp(pass_maps, requestvariables=False):
     
     BxdVdt = numcrossproduct(Bmap, dVdt)
     result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
 
 def expr_jm(pass_maps, requestvariables=False):
     # magnetization current
@@ -734,7 +730,7 @@ def expr_jm(pass_maps, requestvariables=False):
     curlB = numcurl(Bmap)
     # (B dot Del)B 
     result = -curlB * (Pperp*upBmag2)[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
 
 def expr_ja(pass_maps, requestvariables=False):
     # Li, Guo, Li, Li (2017)
@@ -762,15 +758,13 @@ def expr_ja(pass_maps, requestvariables=False):
     sumtensor = Ptensor - Pperpident - bbtensor*(Ppara-Pperp)[:,:,np.newaxis,np.newaxis]
     divsumtemsor = numdivtensor(sumtensor)    
     result = - numcrossproduct(divsumtemsor,Bmap) * upBmag2[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
 
 
 def expr_dLstardt(pass_maps, requestvariables=False):
-    # current from polarization drift
     if requestvariables==True:
         return ['B','E']
 
-    # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
         print("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
@@ -793,7 +787,7 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     
     BxdVdt = numcrossproduct(Bmap, dVdt)
     result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
-    return np.linalg.norm(result, axis=-1).T
+    return np.swapaxes(result, 0,1)
     
     
 ################
@@ -850,6 +844,7 @@ def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):
     V = vfip[:,:,1]
     ax.streamplot(X,Y,U,V,linewidth=0.5, density=3, color='white')
 
+    
 def expr_electronflow(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
     # Then calculates the required electron flow velocity to support that current.
@@ -881,12 +876,8 @@ def expr_electronflow(pass_maps, requestvariables=False):
     print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
     print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
     print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
-        
-#    return np.linalg.norm(reqjv, axis=-1).T
-    if exprop is not None:
-        return reqjv[:,:,exprop].T
-    else:
-        return np.linalg.norm(reqjv, axis=-1).T
+
+    return np.swapaxes(reqjv, 0,1)
 
 def expr_electronflowerr(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
@@ -922,13 +913,10 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
     print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
         
-#    return np.linalg.norm(reqjv, axis=-1).T
-    if exprop is not None:
-        return everror[:,:,exprop].T
-    else:
-        return np.linalg.norm(everror, axis=-1).T
+    return np.swapaxes(everror, 0,1)
 
-# Helper function for drawing on existing panel
+
+# Helper function (external) for drawing on existing panel
 def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     if requestvariables==True:
         return ['rho', 'B', 'beta']
