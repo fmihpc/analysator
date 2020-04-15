@@ -539,7 +539,7 @@ def plot_colormap(filename=None,
                 print("Error in reshaping datamap!") 
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_")
+        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
 
     # Allow title override
     if cbtitle!=None:
@@ -711,10 +711,10 @@ def plot_colormap(filename=None,
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
         # Handle operators
-        if ((operator is not None) && (operator!='pass') && (operator!='magnitude')):
-            if operator==x: operator = '0'
-            if operator==y: operator = '1'
-            if operator==z: operator = '2'
+        if ((operator is not None) and (operator!='pass') and (operator!='magnitude')):
+            if operator=='x': operator = '0'
+            if operator=='y': operator = '1'
+            if operator=='z': operator = '2'
             if not operator.isdigit():
                 print("Error parsing operator for custom expression!")
                 return
