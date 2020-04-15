@@ -766,10 +766,14 @@ def plot_colormap(filename=None,
     # excluded by this method. Also mask away regions where datamap is invalid
     rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    if np.ma.is_masked(rhomap):
-        XYmask = rhomap.mask
-        # Mask datamap
-        datamap = np.ma.array(datamap, mask=XYmask)
+    XYmask = rhomap.mask
+    if np.ma.is_masked(XYmask):
+        if XYmask.mask.all():
+            # if everything was masked in rhomap, allow plotting
+            XYmask[:,:] = False
+        else:
+            # Mask datamap
+            datamap = np.ma.array(datamap, mask=XYmask)
     
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -952,7 +956,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             flux_function = flux_function[MaskX[0]:MaskX[-1]+1,:]
             flux_function = flux_function[:,MaskY[0]:MaskY[-1]+1]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
@@ -976,7 +980,7 @@ def plot_colormap(filename=None,
             if np.ma.is_masked(maskgrid):
                 fSmap = fSmap[MaskX[0]:MaskX[-1]+1,:]
                 fSmap = fSmap[:,MaskY[0]:MaskY[-1]+1]
-            if np.ma.is_masked(rhomap):
+            if np.ma.is_masked(XYmask):
                 fSmap = np.ma.array(fSmap, mask=XYmask)            
             fScont = ax1.contour(XmeshCentres,YmeshCentres,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
@@ -995,7 +999,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             vectmap = vectmap[MaskX[0]:MaskX[-1]+1,:,:]
             vectmap = vectmap[:,MaskY[0]:MaskY[-1]+1,:]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             vectmap = np.ma.array(vectmap)
             for i in range(3):
                 vectmap[:,:,i].mask = XYmask
@@ -1034,7 +1038,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             slinemap = slinemap[MaskX[0]:MaskX[-1]+1,:,:]
             slinemap = slinemap[:,MaskY[0]:MaskY[-1]+1,:]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             slinemap = np.ma.array(slinemap)
             for i in range(3):
                 slinemap[:,:,i].mask = XYmask
