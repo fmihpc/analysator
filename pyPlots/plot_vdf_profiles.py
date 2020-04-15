@@ -743,7 +743,7 @@ def plot_vdf_profiles(filename=None,
 
         if cpeak!=None:
             center='peak'
-        if cbulk!=None or center is 'bulk':
+        if cbulk!=None or center == 'bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
