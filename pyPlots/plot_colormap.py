@@ -391,17 +391,23 @@ def plot_colormap(filename=None,
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
+    xsize = int(xsize)
+    ysize = int(ysize)
+    zsize = int(zsize)
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
-
+    pt.plot.plot_helpers.CELLSIZE = cellsize
+    
     # Check if ecliptic or polar run
     if ysize==1:
         simext=[xmin,xmax,zmin,zmax]
         sizes=[xsize,zsize]
+        pt.plot.plot_helpers.PLANE = 'XZ'
     if zsize==1:
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
+        pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
     if len(boxm)==4:
@@ -499,33 +505,9 @@ def plot_colormap(filename=None,
                 datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1],datamap.shape[2]])
             else:
                 print("Error in reshaping datamap!") 
-        # Now, if map is a vector or tensor, reduce it down
-
-        if np.ndim(datamap)==3: # vector
-            if datamap.shape[2]!=3:
-                # This may also catch 3D simulation fsgrid variables
-                print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
-                return -1
-            # take magnitude of three-element vectors
-            datamap = np.linalg.norm(datamap, axis=-1)
-        if np.ndim(datamap)==4: # tensor
-            if datamap.shape[2]!=3 or datamap.shape[3]!=3:
-                # This may also catch 3D simulation fsgrid variables
-                print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
-                return -1
-            # take trace
-            datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
-        if np.ndim(datamap)>=5: # Too many dimensions
-            print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
-            return -1
-
-        if np.ndim(datamap)!=2:
-            # Array dimensions not as expected
-            print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
-            return -1
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_")
+        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
 
     # Allow title override
     if cbtitle!=None:
@@ -671,11 +653,11 @@ def plot_colormap(filename=None,
                     # For vlasov grid reader, reorder and reshape.
                     if not mapval.startswith('fg_'):
                         if np.ndim(pass_map)==1:
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
                         elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
                         elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                         else:
                             print("Error in reshaping pass_map!") 
                     if np.ma.is_masked(maskgrid):
@@ -696,10 +678,40 @@ def plot_colormap(filename=None,
     if expression!=None:
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
-        if np.ndim(datamap)!=2:
-            print("Error calling custom expression "+expression+"! Result was not a 2-dimensional array. Exiting.")
+        # Handle operators
+        if ((operator is not None) and (operator!='pass') and (operator!='magnitude')):
+            if operator=='x': operator = '0'
+            if operator=='y': operator = '1'
+            if operator=='z': operator = '2'
+            if not operator.isdigit():
+                print("Error parsing operator for custom expression!")
+                return
+            elif np.ndim(datamap)==3:
+                datamap = datamap[:,:,int(operator)]
+                
+    # Now, if map is a vector or tensor, reduce it down
+    if np.ndim(datamap)==3: # vector
+        if datamap.shape[2]!=3:
+            # This may also catch 3D simulation fsgrid variables
+            print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
             return -1
-
+        # take magnitude of three-element vectors
+        datamap = np.linalg.norm(datamap, axis=-1)
+    if np.ndim(datamap)==4: # tensor
+        if datamap.shape[2]!=3 or datamap.shape[3]!=3:
+            # This may also catch 3D simulation fsgrid variables
+            print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
+            return -1
+        # take trace
+        datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
+    if np.ndim(datamap)>=5: # Too many dimensions
+        print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+        return -1
+    if np.ndim(datamap)!=2:
+        # Array dimensions not as expected
+        print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
+        return -1
+        
     # Scale final generated datamap if requested
     datamap = datamap * vscale
 
@@ -731,10 +743,14 @@ def plot_colormap(filename=None,
     # excluded by this method. Also mask away regions where datamap is invalid
     rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    if np.ma.is_masked(rhomap):
-        XYmask = rhomap.mask
-        # Mask datamap
-        datamap = np.ma.array(datamap, mask=XYmask)
+    XYmask = rhomap.mask
+    if np.ma.is_masked(XYmask):
+        if XYmask.mask.all():
+            # if everything was masked in rhomap, allow plotting
+            XYmask[:,:] = False
+        else:
+            # Mask datamap
+            datamap = np.ma.array(datamap, mask=XYmask)
     
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -921,7 +937,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             flux_function = flux_function[MaskX[0]:MaskX[-1]+1,:]
             flux_function = flux_function[:,MaskY[0]:MaskY[-1]+1]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
@@ -945,7 +961,7 @@ def plot_colormap(filename=None,
             if np.ma.is_masked(maskgrid):
                 fSmap = fSmap[MaskX[0]:MaskX[-1]+1,:]
                 fSmap = fSmap[:,MaskY[0]:MaskY[-1]+1]
-            if np.ma.is_masked(rhomap):
+            if np.ma.is_masked(XYmask):
                 fSmap = np.ma.array(fSmap, mask=XYmask)            
             fScont = ax1.contour(XmeshCentres,YmeshCentres,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
@@ -964,7 +980,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             vectmap = vectmap[MaskX[0]:MaskX[-1]+1,:,:]
             vectmap = vectmap[:,MaskY[0]:MaskY[-1]+1,:]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             vectmap = np.ma.array(vectmap)
             for i in range(3):
                 vectmap[:,:,i].mask = XYmask
@@ -1003,7 +1019,7 @@ def plot_colormap(filename=None,
         if np.ma.is_masked(maskgrid):
             slinemap = slinemap[MaskX[0]:MaskX[-1]+1,:,:]
             slinemap = slinemap[:,MaskY[0]:MaskY[-1]+1,:]
-        if np.ma.is_masked(rhomap):
+        if np.ma.is_masked(XYmask):
             slinemap = np.ma.array(slinemap)
             for i in range(3):
                 slinemap[:,:,i].mask = XYmask
