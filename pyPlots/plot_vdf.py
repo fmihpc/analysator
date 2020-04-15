@@ -140,6 +140,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
+    vxsize = int(vxsize)
+    vysize = int(vysize)
+    vzsize = int(vzsize)
     # Account for 4x4x4 cells per block
     vxsize = 4*vxsize
     vysize = 4*vysize
@@ -538,7 +541,14 @@ def plot_vdf(filename=None,
 
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
+    xsize = int(xsize)
+    ysize = int(ysize)
+    zsize = int(zsize)
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
+    vxsize = int(vxsize)
+    vysize = int(vysize)
+    vzsize = int(vzsize)
+
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
