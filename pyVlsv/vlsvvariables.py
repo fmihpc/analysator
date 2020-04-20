@@ -35,7 +35,8 @@ speciesamu ={
     'proton': 1,
     'helium': 4,
     'oxygen': 16,
-    'electron': 5.488e-4,
+#    'electron': 5.4461702e-4, # true electron mass
+    'electron': 5.4461702e-3, # electron mass x10 used in Tempo
 }
 speciescharge ={
     'avgs': 1,
