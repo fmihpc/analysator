@@ -470,7 +470,7 @@ def aGyrotropy( variables ):
       PPerp = 0.5*(PTensorRot[0,0]+PTensorRot[1,1])
       numerator = PTensorRot[1,0]*PTensorRot[1,0] + PTensorRot[2,0]*PTensorRot[2,0] + PTensorRot[2,1]*PTensorRot[2,1]
       denominator = PPerp*PPerp + 2.0*PPerp*PTensorRot[2,2]
-      if denominator > 1.e-20:
+      if denominator >0:
          aGyro = numerator/denominator
       else:
          aGyro = 0.0
@@ -677,7 +677,6 @@ datareducers["pdyn"] =            DataReducerVariable(["v", "rhom"], Pdyn, "Pa",
 datareducers["pdynx"] =            DataReducerVariable(["v", "rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
 
 datareducers["poynting"] = DataReducerVariable(["e", "b"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")
-datareducers["di"] =              DataReducerVariable(["proton/rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
 datareducers["firstadiabatic"] =    DataReducerVariable(["tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_\perp B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
 # Reducers for simplifying access calls for old and/or new output data versions
@@ -758,7 +757,8 @@ datareducers["vbeam"] =                  DataReducerVariable(["vbackstream", "vn
 datareducers["vbeamratio"] =             DataReducerVariable(["vbackstream", "vnonbackstream"], v_beam_ratio, "", 1, latex=r"$V_\mathrm{st} V^{-1}$", latexunits=r"")
 datareducers["thermalvelocity"] =               DataReducerVariable(["temperature"], thermalvelocity, "m/s", 1, latex=r"$v_\mathrm{th}$", latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 datareducers["larmor"] =              DataReducerVariable(["b","thermalvelocity"], larmor, "m", 1, latex=r"$r_\mathrm{L}$",latexunits=r"$\mathrm{m}$")
-datareducers["di"] =              DataReducerVariable(["proton/rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
+datareducers["plasmaperiod"] =    DataReducerVariable(["rho"], plasmaperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{pi}}^{-1}$",latexunits=r"$\mathrm{s}$")
+datareducers["di"] =              DataReducerVariable(["rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
 datareducers["bz_linedipole_avg"] =      DataReducerVariable(["x", "y", "z", "dx", "dy", "dz"], Bz_linedipole_avg, "T", 1, latex=r"$\langle B_{z,\mathrm{ld}}\rangle$")
 datareducers["bz_linedipole_diff"] =     DataReducerVariable(["b", "bz_linedipole_avg"], Bz_linedipole_diff, "", 1, latex=r"$\Delta B_{z,\mathrm{ld}}$")
 
