@@ -751,7 +751,7 @@ def plot_colormap(filename=None,
         else:
             # Mask datamap
             datamap = np.ma.array(datamap, mask=XYmask)
-    
+
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
     if vmin!=None:
@@ -975,8 +975,13 @@ def plot_colormap(filename=None,
 
     # add vectors on top
     if vectors != None:
-        vectmap = f.read_variable(vectors)
-        vectmap = vectmap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+        if vectors.startswith('fg_'):
+            vectmap = f.read_fsgrid_variable(vectors)
+            vectmap = np.swapaxes(vectmap, 0,1)
+        else:
+            vectmap = f.read_variable(vectors)
+            vectmap = vectmap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+
         if np.ma.is_masked(maskgrid):
             vectmap = vectmap[MaskX[0]:MaskX[-1]+1,:,:]
             vectmap = vectmap[:,MaskY[0]:MaskY[-1]+1,:]
@@ -986,7 +991,7 @@ def plot_colormap(filename=None,
                 vectmap[:,:,i].mask = XYmask
 
         # Find vector lengths and define color
-        lengths=np.linalg.norm(vectmap, axis=-1)
+        lengths = np.linalg.norm(vectmap, axis=-1)
         colors = np.ma.log10(np.ma.divide(lengths,np.ma.mean(lengths)))
         
         # Try to estimate vectstep so there's about 100 vectors in the image area
@@ -1014,8 +1019,12 @@ def plot_colormap(filename=None,
                    headaxislength=2, scale_units='dots', pivot='middle')
 
     if streamlines!=None:
-        slinemap = f.read_variable(streamlines)
-        slinemap = slinemap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
+        if streamlines.startswith('fg_'):
+            slinemap = f.read_fsgrid_variable(streamlines)
+            slinemap = np.swapaxes(slinemap, 0,1)
+        else:
+            slinemap = f.read_variable(streamlines)
+            slinemap = slinemap[cellids.argsort()].reshape([sizes[1],sizes[0],3])
         if np.ma.is_masked(maskgrid):
             slinemap = slinemap[MaskX[0]:MaskX[-1]+1,:,:]
             slinemap = slinemap[:,MaskY[0]:MaskY[-1]+1,:]
@@ -1029,7 +1038,7 @@ def plot_colormap(filename=None,
             V = slinemap[:,:,1]
         elif ysize==1:
             V = slinemap[:,:,2]
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor, arrowsize=streamlinethick)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor, arrowsize=streamlinethick*0.5)
 
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions

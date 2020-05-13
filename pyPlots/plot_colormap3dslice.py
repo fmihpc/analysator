@@ -420,7 +420,6 @@ def plot_colormap3dslice(filename=None,
         cutpoint = cutpointre * Re
 
     fgslice = [-1,-1,-1]
-            
     ##################
     # Find the cellids
     ##################
@@ -499,14 +498,16 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    else:
+    elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("vg_rhom")
-        
+    else:
+        print("error!")
+        quit
+              
     rhomap = rhomap[indexids] # sort
     rhomap = rhomap[indexlist] # find required cells
     # Create the plotting grid
     rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
-
     ############################################
     # Read data and calculate required variables
     ############################################
@@ -906,8 +907,15 @@ def plot_colormap3dslice(filename=None,
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
         vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
-
         linthresh = None
+
+    # # Make vmaxuse and vminuse available for formatter functions
+    # plot_colormap3dslice.vminuse = vminuse
+    # plot_colormap3dslice.vmaxuse = vmaxuse
+    # plot_colormap3dslice.lin = lin
+
+    # # If symlog scaling is set:
+    # plot_colormap3dslice.linthresh = None
     if symlog is not None:
         if symlog>0:
             linthresh = symlog 
