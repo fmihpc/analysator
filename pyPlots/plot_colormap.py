@@ -507,7 +507,7 @@ def plot_colormap(filename=None,
                 print("Error in reshaping datamap!") 
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
+        cb_title_use = expression.__name__ + (f'${operatorstr}$' if operatorstr else '') 
 
     # Allow title override
     if cbtitle!=None:

@@ -600,7 +600,7 @@ def plot_colormap3dslice(filename=None,
                 return -1
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
+        cb_title_use = expression.__name__ + (f'${operatorstr}$' if operatorstr else '') 
 
     # scale the sizes to the heighest refinement level because
     # plotting is done at that level
