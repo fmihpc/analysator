@@ -157,7 +157,6 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
 
 # creates 3d grid for ploting
 def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
-  t = time()
   # is the cut in x, y or z direction
   dims = np.array([xsize, ysize, zsize]) * 2**reflevel
 
