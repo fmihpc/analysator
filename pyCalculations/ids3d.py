@@ -1,4 +1,6 @@
 import numpy as np
+import scipy
+from time import time
 
 # finds the cell ids which are needed to plot a 2d cut through out of a 3d mesh # WARNING! works only if cellids is sorted
 def ids3d(cellids, depth, reflevel,
@@ -86,9 +88,9 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    dpoints = np.zeros((dims, datadimension))
+    dpoints = np.zeros(np.append(dims, datadimension))
   elif np.ndim(datadimension) == 1:
-    dpoints = np.zeros((dims, datadimension[0], datadimension[1]))
+    dpoints = np.zeros(np.append(dims, datadimension[0], datadimension[1]))
   else:
     print("Error finding data dimension in idmesh3d")
     return -1
@@ -154,6 +156,85 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
     cellsum += cells*8**(i+1)
 
   return np.swapaxes(dpoints, 0, 1)
+
+# creates 3d grid for ploting
+def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
+  t = time()
+  # is the cut in x, y or z direction
+  dims = np.array([xsize, ysize, zsize]) * 2**reflevel
+
+  # datadimension is None for scalar,
+  # N for vector, and (N,M) for tensor data
+  if datadimension is None:
+    dpoints = np.zeros(dims)
+  elif np.ndim(datadimension) == 0:
+    dpoints = np.zeros(np.append(dims, datadimension))
+  elif np.ndim(datadimension) == 1:
+    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])))
+  else:
+    print("Error finding data dimension in idmesh3d")
+    return -1
+
+  ######################
+  # create the plot grid
+  cells = int(xsize*ysize*zsize)
+  cellsum = cells # the number of cells up to refinement level i
+  cellsumII = 0 # the number of cells up to refinement level i-1 
+  for i in range(reflevel+1):
+    # the cell ids and the data at the refinement level i
+    ids = idlist[(cellsumII < idlist) & (idlist <= cellsum)]
+    if datadimension is None:
+      dat = data[(cellsumII < idlist) & (idlist <= cellsum)]
+    elif np.ndim(datadimension) == 0:
+      dat = data[(cellsumII < idlist) & (idlist <= cellsum),:]
+    elif np.ndim(datadimension) == 1:
+      dat = data[(cellsumII < idlist) & (idlist <= cellsum),:,:]
+
+    # compute every cell ids x, y and z coordinates
+    z = (ids - cellsumII - 1)//(xsize*ysize*4**i) +1 # goes from 1 to NZ
+    #z = np.where(np.isclose(z, z.astype(int)), z, z + 1)
+    z = z.astype(int)
+
+    # cellsumB = (cellsumII + the number of ids up to the coordinate z in the refinement level i)
+    cellsumB = ((z-1)*xsize*ysize*4**i).astype(int) + cellsumII
+
+    y = (ids - cellsumB - 1)//(xsize*2**i) +1 # goes from 1 to NY
+    #y = np.where(y - y.astype(int) == 0, y, y + 1)
+    y = y.astype(int)
+
+    cellsumC = ((y-1)*xsize*2**i)
+    x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
+    
+    # inserts the data values into dpoints
+    # Broadcasting magic for vectorization! Not quite a oneliner
+    # Skipping the declaration is actually faster but looks like hot garbage
+    coords = np.add(((np.stack((x, y, z)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(3, 1, -1))
+    #print(dims)
+    #if np.any(x):
+    #  print(scipy.stats.describe(x, axis=None))
+    #  print(scipy.stats.describe(coords[0,:,:], axis=None))
+    #if np.any(y):
+    #  print(scipy.stats.describe(y, axis=None))
+    #  print(scipy.stats.describe(coords[1,:,:], axis=None))
+    #if np.any(z):
+    #  print(scipy.stats.describe(z, axis=None))
+    #  print(scipy.stats.describe(coords[2,:,:], axis=None))
+    dpoints[coords[0, :, :], coords[1, :, :], coords[2, :, :]] = dat[:, np.newaxis]
+    #dpoints[np.add(((np.stack((a, b)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(2, 1, -1))[0,:,:], np.add(((np.stack((a, b)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(2, 1, -1))[1, :, :]] = dat[:, np.newaxis]
+    #for j in range(2**(reflevel-i)):
+    #  for k in range(2**(reflevel-i)):
+    #    if datadimension is None:
+    #      dpoints[(a - 1) * 2**(reflevel - i) + j, (b - 1) * 2**(reflevel - i) + k - 1] = dat
+    #    elif np.ndim(datadimension) == 0:
+    #      dpoints[(a - 1) * 2**(reflevel - i) + j - 1, (b - 1) * 2**(reflevel - i) + k - 1, :] = dat
+    #    elif np.ndim(datadimension) == 1:
+    #      dpoints[(a - 1) * 2**(reflevel - i) + j - 1, (b - 1) * 2**(reflevel - i) + k - 1, :, :] = dat
+
+    # update these values to match refinement level i+1
+    cellsumII = cellsum
+    cellsum += cells*8**(i+1)
+
+  return dpoints #np.swapaxes(dpoints, 0, 1)
 
 # find the highest refinement level 
 def refinement_level(xsize, ysize, zsize, bigid):
