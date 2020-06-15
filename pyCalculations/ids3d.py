@@ -1,6 +1,4 @@
 import numpy as np
-import scipy
-from time import time
 
 # finds the cell ids which are needed to plot a 2d cut through out of a 3d mesh # WARNING! works only if cellids is sorted
 def ids3d(cellids, depth, reflevel,
@@ -209,16 +207,6 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
     # Broadcasting magic for vectorization! Not quite a oneliner
     # Skipping the declaration is actually faster but looks like hot garbage
     coords = np.add(((np.stack((x, y, z)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(3, 1, -1))
-    #print(dims)
-    #if np.any(x):
-    #  print(scipy.stats.describe(x, axis=None))
-    #  print(scipy.stats.describe(coords[0,:,:], axis=None))
-    #if np.any(y):
-    #  print(scipy.stats.describe(y, axis=None))
-    #  print(scipy.stats.describe(coords[1,:,:], axis=None))
-    #if np.any(z):
-    #  print(scipy.stats.describe(z, axis=None))
-    #  print(scipy.stats.describe(coords[2,:,:], axis=None))
     dpoints[coords[0, :, :], coords[1, :, :], coords[2, :, :]] = dat[:, np.newaxis]
     #dpoints[np.add(((np.stack((a, b)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(2, 1, -1))[0,:,:], np.add(((np.stack((a, b)) - 1) * 2**(reflevel - i))[:, :, np.newaxis], np.array(np.meshgrid(np.arange(2**(reflevel-i)), np.arange(2**(reflevel-i)))).reshape(2, 1, -1))[1, :, :]] = dat[:, np.newaxis]
     #for j in range(2**(reflevel-i)):
