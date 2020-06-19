@@ -403,6 +403,10 @@ def plot_colormap3dslice(filename=None,
 
     # find the highest refiment level
     reflevel = ids3d.refinement_level(xsize, ysize, zsize, cellids[-1])
+    for i in range(5):
+        if xsize*(2**(reflevel + i)) == xsizefg:
+            reflevel += i
+            break
 
     # Verify that FSgrid and spatial grid agree
     if ((xmin!=xminfg) or (xmax!=xmaxfg) or
@@ -662,22 +666,25 @@ def plot_colormap3dslice(filename=None,
     # variable information (If they accept the requestvars keyword, they should
     # return a list of variable names as strings)
     pass3d = False
+    meshReflevel = reflevel
+    reqvariables = None
     if expression: # Check the expression
         try:
             reqvariables = expression(None,True)
-            for i in reqvariables:
-                if i is "3d":
-                    pass3d = True
-                elif not (i in pass_vars): 
-                    pass_vars.append(i)
         except:
             pass
     if external: # Check the external
         try:
             reqvariables = external(None,None,None,None,True)
+        except:
+            pass
+    if reqvariables:
+        try:
             for i in reqvariables:
                 if i is "3d":
                     pass3d = True
+                elif i is "noupscale":
+                    meshReflevel = 0
                 elif not (i in pass_vars): 
                     pass_vars.append(i)
         except:
@@ -724,23 +731,26 @@ def plot_colormap3dslice(filename=None,
                     pass_map = pass_map[indexids] # sort
                     if pass3d:
                         if np.ndim(pass_map)==1:
-                            pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, None)
+                            pass_shape = None
                         elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, pass_map.shape[1])
+                            pass_shape = pass_map.shape[1]
                         elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, (pass_map.shape[1],pass_map.shape[2]))
+                            pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
                             print("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                     else:
                         pass_map = pass_map[indexlist] # find required cells
                         if np.ndim(pass_map)==1:
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
+                            pass_shape = None
                         elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
+                            pass_shape = pass_map.shape[1]
                         elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
+                            pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
                             print("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
+                    print(f'Dimensions {np.shape(pass_map)}')
                     
                 if np.ma.is_masked(maskgrid) and not pass3d:
                     if np.ndim(pass_map)==1:
@@ -822,23 +832,25 @@ def plot_colormap3dslice(filename=None,
                         pass_map = pass_map[step_indexids] # sort
                         if pass3d:
                             if np.ndim(pass_map)==1:
-                                pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, None)
+                                pass_shape = None
                             elif np.ndim(pass_map)==2: # vector variable
-                                pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, pass_map.shape[1])
+                                pass_shape = pass_map.shape[1]
                             elif np.ndim(pass_map)==3:  # tensor variable
-                                pass_map = ids3d.idmesh3d2(cellids, pass_map, reflevel, xsize, ysize, zsize, (pass_map.shape[1],pass_map.shape[2]))
+                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
                             pass_map = pass_map[indexlist] # find required cells
                             if np.ndim(pass_map)==1:
-                                pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
+                                pass_shape = None
                             elif np.ndim(pass_map)==2: # vector variable
-                                pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
+                                pass_shape = pass_map.shape[1]
                             elif np.ndim(pass_map)==3:  # tensor variable
-                                pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
+                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map)==1:
