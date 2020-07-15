@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import pytools as pt
 import numpy as np
@@ -27,7 +27,6 @@ from rotation import rotateTensorToVector
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
-
 CELLSIZE = 300000.0 # cell size
 DT = 0.5 # time step
 
@@ -71,7 +70,7 @@ def numjacobian(inputarray):
     #  :,:,component, derivativedirection
     # so dAx/dx = :,:,0,0
     #    DAy/dz = :,:,1,2
-    return jac    
+    return jac
 
 def numgradscalar(inputarray):
     # Assumes input array is of format [nx,ny]
@@ -105,7 +104,7 @@ def numcrossproduct(inputvector1, inputvector2):
     # assumes inputvectors are of shape [nx,ny,3]
     # in fact nothing special here
     # Output array is of format [nx,ny,3]
-    return np.cross(inputvector1,inputvector2) 
+    return np.cross(inputvector1,inputvector2)
 
 def numcurl(inputarray):
     # Assumes input array is of format [nx,ny,3]
@@ -273,7 +272,7 @@ def TransposeVectorArray(inputarray):
     return np.transpose(inputarray, (1,0,2))
 
 def rotateTensorArrayToVectorArray(inputtensor, inputvector):
-    # assumes inputtensor is of shape [nx,ny,3,3] and 
+    # assumes inputtensor is of shape [nx,ny,3,3] and
     # inputvector is of shape [nx,ny,3]
     rotated = np.zeros(inputtensor.shape)
     nx, ny = inputtensor[:,:,0,0].shape
@@ -313,7 +312,7 @@ def VectorArrayParallelComponent(inputvector, directionvector):
 def VectorArrayPerpendicularComponent(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
     # Calculates the magnitude of the perpendicular vector component
-    # of each inputvector to each directionvector. 
+    # of each inputvector to each directionvector.
     dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
     # paravector = dirnorm
@@ -321,7 +320,7 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     #     paravector[i,:] = paravector[i,:] * np.inner(inputvector[i,:,:],dirnorm[i,:,:])[:,:,np.newaxis]
     #paravector = dirnorm * np.inner(inputvector, dirnorm)[:,:,np.newaxis]
     paravector = dirnorm * (inputvector*dirnorm).sum(-1)[:,:,np.newaxis] #dot product, alternatively numpy.einsum("ijk,ijk->ij",a,b)
-    perpcomp = np.linalg.norm(inputvector - paravector, axis=-1) 
+    perpcomp = np.linalg.norm(inputvector - paravector, axis=-1)
     # Output array is of format [nx,ny]
     return perpcomp
 
@@ -406,10 +405,6 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
     # force[:,:,2] = (-1.) * numberdensity * electricfield[:,:,2] * unitcharge
     # return force
 
-
-
-
-
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
@@ -434,13 +429,7 @@ def expr_Hall_aniso(pass_maps, requestvariables=False):
 def expr_J(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
-    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Jmap = vec_currentdensity(Bmap)
-    return np.swapaxes(Jmap, 0,1)
 
-def expr_J_mag(pass_maps, requestvariables=False):
-    if requestvariables==True:
-        return ['B']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
@@ -719,9 +708,9 @@ def expr_betatron(pass_maps, requestvariables=False):
     B2 = (thisBmag*thisBmag)
     UExB = numcrossproduct(thisE,thisB)/B2[:,:,np.newaxis]
     gradB = numgradscalar(thisBmag)
-    
+
     # dot product is (A*B).sum(-1)
-    result = (thisPperp/thisBmag)*(dBdt + (UExB*gradB).sum(-1)) 
+    result = (thisPperp/thisBmag)*(dBdt + (UExB*gradB).sum(-1))
     return result.T
 
 def expr_Fermi(pass_maps, requestvariables=False):
@@ -844,7 +833,7 @@ def expr_jc(pass_maps, requestvariables=False):
     Pparallel = pass_maps['PParallel'].T #Pressure (scalar)
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     upBmag4 = np.linalg.norm(Bmap,axis=-1)**(-4)
-    # (B dot Del)B 
+    # (B dot Del)B
     BdotDelB = numvecdotdelvec(Bmap,Bmap)
     BxBdotDelB = numcrossproduct(Bmap, BdotDelB)
     result = BxBdotDelB * (Pparallel*upBmag4)[:,:,np.newaxis]
@@ -887,13 +876,13 @@ def expr_jp(pass_maps, requestvariables=False):
     pastmaps = pass_maps[previ]
 
     thisV = TransposeVectorArray(thesemaps['V'])
-    pastV = TransposeVectorArray(pastmaps['V'])    
+    pastV = TransposeVectorArray(pastmaps['V'])
     dVdt = (thisV-pastV)/DT
 
     Bmap = TransposeVectorArray(thesemaps['B'])
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
     rhom = thesemaps['rho'].T * 1.6726e-27
-    
+
     BxdVdt = numcrossproduct(Bmap, dVdt)
     result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
@@ -911,7 +900,7 @@ def expr_jm(pass_maps, requestvariables=False):
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
     curlB = numcurl(Bmap)
-    # (B dot Del)B 
+    # (B dot Del)B
     result = -curlB * (Pperp*upBmag2)[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
 
@@ -927,7 +916,7 @@ def expr_ja(pass_maps, requestvariables=False):
         quit()
 
     Ptensor = np.transpose(pass_maps['PTensorRotated'], (1,0,2,3))
-    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field    
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Bmag = np.linalg.norm(Bmap,axis=-1)
     Bnorm = np.ma.divide(Bmap,Bmag[:,:,np.newaxis])
     upBmag2 = Bmag**(-2)
@@ -939,7 +928,7 @@ def expr_ja(pass_maps, requestvariables=False):
     Pperpident[:,:,2,2] = Pperp
     bbtensor = np.einsum('ijk,ijl->ijkl',Bnorm,Bnorm)
     sumtensor = Ptensor - Pperpident - bbtensor*(Ppara-Pperp)[:,:,np.newaxis,np.newaxis]
-    divsumtemsor = numdivtensor(sumtensor)    
+    divsumtemsor = numdivtensor(sumtensor)
     result = - numcrossproduct(divsumtemsor,Bmap) * upBmag2[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
 
@@ -979,7 +968,7 @@ def expr_dLstardt(pass_maps, requestvariables=False):
 ## likely suffice. Use these external plotting routines for more involved calculations.
 
 
-def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):    
+def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     # Example: B curvature force
     B = TransposeVectorArray(pass_maps['B'])
     vf = pt.plot.plot_helpers.vec_MagneticTensionForce(B)
@@ -1001,13 +990,13 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
 
     X = XmeshXY[::step,::step]
     Y = YmeshXY[::step,::step]
-    U = vectmap[::step,::step,0]            
+    U = vectmap[::step,::step,0]
     if PLANE=="XY":
         V = vectmap[::step,::step,1]
     elif PLANE=="XZ":
         V = vectmap[::step,::step,2]
     C = colors[::step,::step]
-    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,                       
+    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
                        headaxislength=2, scale_units='dots', pivot='middle')
 
 
