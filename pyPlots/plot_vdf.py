@@ -184,7 +184,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center is "peak":
+    if center == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
@@ -787,10 +787,13 @@ def plot_vdf(filename=None,
                 Bvect = Bvect[0]
             normvect = Bvect
 
+            # Ensure bulkV has some value
+            if np.linalg.norm(Vbulk) < 1e-10:
+                Vbulk = [-1,0,0]
+                print("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
-
             if bperp is not None:
                 # slice in b_perp1/b_perp2
                 slicetype="Bperp"
