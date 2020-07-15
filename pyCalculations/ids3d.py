@@ -16,18 +16,19 @@ def ids3d(cellids, depth, reflevel,
   elif zmin != None and zmax != None:
     imin = zmin; imax = zmax; size = zsize; sett = 2
 
-  # find the cut through depths for each refinement level
+  # find the cut through depths (index) for each refinement level
   pro = depth/(imax-imin)
   depths = []
   for i in range(reflevel+1):
-    depth = int(pro*size*2**i) + 1
-    if depth > int(size*2**i): depth -= 1
+    depth = int(pro*size*2**i) + 1 # goes from 1 to Nmax
+    if depth > int(size*2**i):
+      print("depth error ",depth,i)
+      depth -= 1
     depths.append(depth)
-
 
   #############
   # find the ids
-  lenght = 0
+  length = 0
   cellids = np.array(cellids)
   idlist = np.array([]); indexlist = np.array([])
   cells = int(xsize*ysize*zsize); cellsum = cells; cellsumII = 0 # cellsum = (the number of cells up to refinement 
@@ -36,24 +37,20 @@ def ids3d(cellids, depth, reflevel,
     # cell ids at the refinement level i
     ids = cellids[(cellsumII < cellids) & (cellids <= cellsum)]
 
-
-
     # compute every cell ids x, y and z coordinates
-
-    z = (ids - cellsumII)/(xsize*ysize*4**i)
-    z = np.where(z - z.astype(int) == 0, z, z + 1)
+    z = (ids - cellsumII - 1)//(xsize*ysize*4**i) +1 # goes from 1 to NZ
+    #z = np.where(np.isclose(z, z.astype(int)), z, z + 1)
     z = z.astype(int)
 
     # cellsumB = (cellsumII + the number of ids up to the coordinate z in the refinement level i)
     cellsumB = ((z-1)*xsize*ysize*4**i).astype(int) + cellsumII
 
-    y = (ids - cellsumB)/(xsize*2**i)
-    y = np.where(y - y.astype(int) == 0, y, y + 1)
+    y = (ids - cellsumB - 1)//(xsize*2**i) +1 # goes from 1 to NY
+    #y = np.where(y - y.astype(int) == 0, y, y + 1)
     y = y.astype(int)
 
-    x = (ids - cellsumB - (y-1)*xsize*2**i).astype(int)
-
-
+    cellsumC = ((y-1)*xsize*2**i)
+    x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
 
     # checks is the cut throughs normal in x, y or z direction
     if sett == 0:
@@ -64,17 +61,14 @@ def ids3d(cellids, depth, reflevel,
       xyz = z
       
     # finds the needed elements to create the asked cut throuhg and puts the results in the indexlist and the idlist
-    elements = xyz == depths[i] 
-    indexlist = np.append(indexlist, np.arange(lenght, lenght+len(xyz))[elements])
+    elements = xyz == depths[i]
+    indexlist = np.append(indexlist, np.arange(length, length+len(xyz))[elements])
     idlist = np.append(idlist, ids[elements])
 
-
     # update these values to match refinement level i+1
-    lenght += len(xyz)
+    length += len(xyz)
     cellsumII = cellsum
     cellsum += cells*8**(i+1)
-
-
   # returns a list of ids (idlist) and a equivalent list of indices (indexlist)
   return idlist.astype(int), indexlist.astype(int)
 
@@ -122,20 +116,20 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
       dat = data[(cellsumII < idlist) & (idlist <= cellsum),:,:]
 
     # compute every cell ids x, y and z coordinates
-    z = (ids - cellsumII)/(xsize*ysize*4**i)
-    z = np.where(z - z.astype(int) != 0, z + 1, z)
+    z = (ids - cellsumII - 1)//(xsize*ysize*4**i) +1 # goes from 1 to NZ
+    #z = np.where(np.isclose(z, z.astype(int)), z, z + 1)
     z = z.astype(int)
 
     # cellsumB = (cellsumII + the number of ids up to the coordinate z in the refinement level i)
     cellsumB = ((z-1)*xsize*ysize*4**i).astype(int) + cellsumII
 
-    y = (ids - cellsumB)/(xsize*2**i)
-    y = np.where(y - y.astype(int) != 0, y + 1, y)
+    y = (ids - cellsumB - 1)//(xsize*2**i) +1 # goes from 1 to NY
+    #y = np.where(y - y.astype(int) == 0, y, y + 1)
     y = y.astype(int)
 
-    x = (ids - cellsumB - (y-1)*xsize*2**i).astype(int)    
-
-
+    cellsumC = ((y-1)*xsize*2**i)
+    x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
+    
     # gets the correct coordinate values and the widths for the plot
     if xyz == 0:
       a = y; b = z
