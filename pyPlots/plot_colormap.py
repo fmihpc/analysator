@@ -65,7 +65,11 @@ def fmt(x, pos):
     # some reason it doesn't work. (signchar=r'\enspace')
     signchar=r'' 
     # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
+    if np.sign(x)<0:
+        if plt.rcParams['text.usetex']:
+            signchar=r'\mbox{\textbf{--}}'
+        else:
+            signchar='-'
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
@@ -78,7 +82,11 @@ def axisfmt(x, pos):
     if int(b)<1: precision = str(abs(-1-int(b)))
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
+    if np.sign(x)<0:
+        if plt.rcParams['text.usetex']:
+            a = r'\mbox{\textbf{--}}'+a
+        else:
+            a = '-'+a
     return r'$'+a+'$'
 
 # cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
@@ -94,7 +102,11 @@ def cbfmt(x, pos):
 
     f = r'{:.'+precision+r'f}'
     a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
+    if np.sign(x)<0: 
+        if plt.rcParams['text.usetex']:
+            a = r'\mbox{\textbf{--}}'+a
+        else:
+            a = '-'+a
     return r'$'+a+'$'
 
 def plot_colormap(filename=None,
