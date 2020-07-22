@@ -1139,4 +1139,3 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
                                linewidths=1.2, colors=color_BS,label='Bow shock')
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
-
