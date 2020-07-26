@@ -750,7 +750,6 @@ def plot_colormap3dslice(filename=None,
                         else:
                             print("Error in reshaping pass_maps!")
                         pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
-                    print(f'Dimensions {np.shape(pass_map)}')
                     
                 if np.ma.is_masked(maskgrid) and not pass3d:
                     if np.ndim(pass_map)==1:
