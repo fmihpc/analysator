@@ -37,12 +37,37 @@ from plot_variables import plot_variables, plot_multiple_variables
 import colormaps
 import plot_helpers
 from plot_colormap import plot_colormap
+
+import matplotlib.pyplot as plt
+import matplotlib
+import colormaps as cmaps
+
 from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
 
 from plot_colormap3dslice import plot_colormap3dslice
 
 import numpy as np, os
+
+# Register custom colourmaps
+plt.register_cmap(name='viridis', cmap=cmaps.viridis)
+plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
+plt.register_cmap(name='plasma', cmap=cmaps.plasma)
+plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
+plt.register_cmap(name='inferno', cmap=cmaps.inferno)
+plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
+plt.register_cmap(name='magma', cmap=cmaps.magma)
+plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
+plt.register_cmap(name='parula', cmap=cmaps.parula)
+plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
+# plt.register_cmap(name='cork',cmap=cork_map)
+# plt.register_cmap(name='davos_r',cmap=davos_r_map)
+plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+
 
 decimalprecision_ax = 0
 cb_linear = False
@@ -90,3 +115,58 @@ def cbfmt(x, pos):
     else:
         return f.format(x)
 
+
+# Helper routines for latex output handling    
+def bfstring(string):
+    if os.getenv('PTNOLATEX') is None:
+        if len(string)==0:
+            return '{'+string+'}'
+        else:
+            return r'\mathbf{'+string+'}'
+        # LaTeX output off
+        return string
+
+def rmstring(string):
+    if os.getenv('PTNOLATEX') is None:
+        if len(string)==0:
+            return '{'+string+'}'
+        else:
+            return r'\mathrm{'+string+'}'
+        # LaTeX output off
+        return string
+    
+def mathmode(string):
+    if len(string)==0:
+        return string
+    else:
+        # First remove any internal possible dollar signs, then wrap whole string into math block
+        result = string.replace('$','')
+        return r"$"+result+"$"
+    
+    
+# Helper routine for allowing specialist units for known vscale and unit combinations
+def scaleunits(datamap_info, vscale):
+    # Check if vscale is in use?
+    if np.isclose(vscale,1.):
+        return datamap_info.latexunits
+    # Check for known variables?
+    if datamap_info.units=="s" and np.isclose(vscale,1.e6):
+        return r"\mu"+rmstring("s")
+    if datamap_info.units=="s" and np.isclose(vscale,1.e3):
+        return rmstring("ms")
+    if datamap_info.units=="T" and np.isclose(vscale,1.e9):
+        return rmstring("nT")
+    if datamap_info.units=="K" and np.isclose(vscale,1.e-6):
+        return rmstring("MK")
+    if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
+        return rmstring("nPa")
+    if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
+        return rmstring("cm")+"^{-3}"
+    if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
+        return rmstring("km")+"\,"+rmstring("s")+"^{-1}"
+    if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
+        return rmstring("mV")+"\,"+rmstring("m")+"^{-1}"            
+    if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
+        return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"            
+    # fallthrough
+    return datamap_info.latexunits+r"{\times}"+fmt(vscale,None)

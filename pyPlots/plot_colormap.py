@@ -38,26 +38,6 @@ import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-# Register custom colourmaps
-plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
-plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
-plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
-plt.register_cmap(name='magma', cmap=cmaps.magma)
-plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
-# plt.register_cmap(name='cork',cmap=cork_map)
-# plt.register_cmap(name='davos_r',cmap=davos_r_map)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
-
 def plot_colormap(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
@@ -297,7 +277,8 @@ def plot_colormap(filename=None,
             plot_title = "t="+timeformat.format(timeval)+' s'
     else:
         plot_title = title
-
+    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
+    
     # step, used for file name
     if step!=None:
         stepstr = '_'+str(step).rjust(7,'0')
@@ -317,6 +298,7 @@ def plot_colormap(filename=None,
 
     # Verify validity of operator
     operatorstr=''
+    # operatorstr is used both for the colorbar title and for the output file name
     if operator!=None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
@@ -333,7 +315,8 @@ def plot_colormap(filename=None,
         if operator.isdigit():
             operator = str(operator)
             operatorstr='_'+operator
-
+        # Note: operator magnitude gets operatorstr=''
+            
     # Output file name
     if expression!=None:
         varstr=expression.__name__.replace("/","_")
@@ -426,14 +409,14 @@ def plot_colormap(filename=None,
     # Axes and units (default R_E)
     if axisunit!=None: # Use m or km or other
         if np.isclose(axisunit,0):
-            axisunitstr = r'm'
+            axisunitstr = pt.plot.rmstring('m')
         elif np.isclose(axisunit,3):
-            axisunitstr = r'km'
+            axisunitstr = pt.plot.rmstring('km')
         else:
-            axisunitstr = r'$10^{'+str(int(axisunit))+'}$ m'
+            axisunitstr = r'10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
         axisunit = np.power(10,int(axisunit))
     else:
-        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         axisunit = Re
         
     # Scale data extent and plot box
@@ -455,39 +438,16 @@ def plot_colormap(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        # if cb_title_use == "": 
-        #     cb_title_use = r""+var.replace("_","\_")
         datamap_unit = datamap_info.latexunits
-
-        # If vscale is in use
-        if not np.isclose(vscale,1.):
-            datamap_unit=datamap_info.latexunits+r"${\times}$"+pt.plot.fmt(vscale,None)
-        # Allow specialist units for known vscale and unit combinations
-        if datamap_info.units=="s" and np.isclose(vscale,1.e6):
-            datamap_unit = r"$\mu$s"
-        if datamap_info.units=="s" and np.isclose(vscale,1.e3):
-            datamap_unit = "ms"
-        if datamap_info.units=="T" and np.isclose(vscale,1.e9):
-            datamap_unit = "nT"
-        if datamap_info.units=="K" and np.isclose(vscale,1.e-6):
-            datamap_unit = "MK"
-        if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
-            datamap_unit = "nPa"
-        if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
-            datamap_unit = r"$\mathrm{cm}^{-3}$"
-        if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
-            datamap_unit = r"$\mathrm{km}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
-            datamap_unit = r"$\mathrm{mV}\,\mathrm{m}^{-1}$"            
-        if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
-            datamap_unit = r"$\mathrm{keV}\,\mathrm{cm}^{-3}$"            
+        # Check if vscale results in standard unit
+        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
         
         # Add unit to colorbar title
         if datamap_unit!="":
-            cb_title_use = cb_title_use + " ["+datamap_unit+"]"
+            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
 
         datamap = datamap_info.data
-
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
         # Verify data shape
         if np.ndim(datamap)==0:
             print("Error, read only single value from vlsv file!",datamap.shape)
@@ -507,12 +467,12 @@ def plot_colormap(filename=None,
                 print("Error in reshaping datamap!") 
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring(expression.__name__.replace("_","\_")) +operatorstr))
 
     # Allow title override
     if cbtitle!=None:
-        # Here allow underscores for manual math mode
-        cb_title_use = cbtitle       
+        # Here allow underscores for manual math mode        
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cbtitle))
 
     # Generates the mesh to map the data to.
     [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]+1),np.linspace(simext[2],simext[3],num=sizes[1]+1))
@@ -872,8 +832,6 @@ def plot_colormap(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
-        if os.getenv('PTNOLATEX') is None:
-            plot_title = r"\textbf{"+plot_title+"}"
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     ax1.set_xlim([boxcoords[0],boxcoords[1]])
@@ -888,10 +846,7 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        if os.getenv('PTNOLATEX') is None:
-            xlabelstr = r'\textbf{X ['+axisunitstr+']}'
-        else:
-            xlabelstr = r'X ['+axisunitstr+']'
+        xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x ['+axisunitstr+']'))
         ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
@@ -899,13 +854,9 @@ def plot_colormap(filename=None,
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            ylabelstr='Z'
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('z ['+axisunitstr+']'))
         else: #Ecliptic
-            ylabelstr = 'Y'
-        if os.getenv('PTNOLATEX') is None:
-            ylabelstr = r'\textbf{'+ylabelstr+' ['+axisunitstr+']}'
-        else:
-            ylabelstr = ylabelstr+' ['+axisunitstr+']'
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('y ['+axisunitstr+']'))
         ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
@@ -1075,17 +1026,6 @@ def plot_colormap(filename=None,
             cax = divider.append_axes("right", size="5%", pad=0.05)
             cbdir="right"; horalign="left"
 
-        # Colourbar title
-        if len(cb_title_use)!=0:
-            #plt.text(1.0, 1.01, cb_title_use, fontsize=fontsize3,weight='black', transform=ax1.transAxes, horizontalalignment='center')
-            if os.getenv('PTNOLATEX') is not None:
-                cb_title_use.replace('\textbf{','')
-                cb_title_use.replace('\mathrm{','')
-                cb_title_use.replace('}','')
-            else:
-                cb_title_use = r"\textbf{"+cb_title_use+"}"        
-            print("cb_title_use ",cb_title_use)
-
         # Set flag which affects colorbar decimal precision
         if (lin is None):
             pt.plot.cb_linear = False
@@ -1148,8 +1088,8 @@ def plot_colormap(filename=None,
                     # labels will be in format $x.0\times10^{y}$
                     firstdigit = label.get_text().replace('$','')[0]
                 else:
-                    firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]
-                
+                    # Find first digit from left which differs from zero
+                    firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]                
                 if not firstdigit in valids: label.set_visible(False)
 
     # Add Vlasiator watermark
@@ -1203,7 +1143,6 @@ def plot_colormap(filename=None,
     if noylabels!=None:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)
-
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
