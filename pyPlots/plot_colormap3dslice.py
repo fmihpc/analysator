@@ -62,20 +62,20 @@ def plot_colormap3dslice(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
                   outputdir=None, outputfile=None,
-                  nooverwrite=None,
+                  nooverwrite=False,
                   var=None, op=None, operator=None,
                   title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
                   boxm=[],boxre=[],colormap=None,
-                  run=None, nocb=None, internalcb=None,
-                  wmark=None,wmarkb=None,
+                  run=None, nocb=False, internalcb=False,
+                  wmark=False,wmarkb=False,
                   axisunit=None, thick=1.0,scale=1.0,
-                  tickinterval=None,
-                  noborder=None, noxlabels=None, noylabels=None,
+                  tickinterval=0, # Fairly certain this is a valid null value
+                  noborder=False, noxlabels=False, noylabels=False,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
                   vscale=1.0,
-                  pass_vars=None, pass_times=None, pass_full=None,
+                  pass_vars=[], pass_times=None, pass_full=False,
                   # fluxfile=None, fluxdir=None,
                   # fluxthick=1.0, fluxlines=1,
                   fsaved=None,
@@ -230,30 +230,40 @@ def plot_colormap3dslice(filename=None,
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
+    # Change certain falsy values:
+    if not lin and lin is not 0:
+        lin = None
+    if not symlog and symlog is not 0:
+        symlog = None
+    if symlog is True:
+        symlog = 0
+    if (filedir is ''):
+        filedir = './'
+    #if (fluxdir is ''):
+    #    fluxdir = './'
+    if (outputdir is ''):
+        outputdir = './'
+
     # Input file or object
-    if filename is not None:
+    if filename:
         f=pt.vlsvfile.VlsvReader(filename)
-    elif ((filedir is not None) and (step is not None)):
+    elif (filedir and step is not None):
         filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
-    elif vlsvobj is not None:
+    elif vlsvobj:
         f=vlsvobj
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
-                
-    # Scientific notation for colorbar ticks?
-    if usesci is not True:
-        usesci=False
     
-    if operator is None:
-        if op is not None:
+    if not operator:
+        if op:
             operator=op
 
-    if colormap is None:
+    if not colormap:
         # Default values
         colormap="hot_desaturated"
-        if operator=='x' or operator=='y' or operator=='z':
+        if operator and operator in 'xyz':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -261,14 +271,15 @@ def plot_colormap3dslice(filename=None,
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
     # Small internal colorbar needs increased font size
-    if internalcb is not None: fontsize3=fontsize3*2
+    if internalcb: 
+        fontsize3=fontsize3*2
 
     # Plot title with time
     timeval=f.read_parameter("time")
 
     # Plot title with time
     if title is None or title=="msec" or title=="musec":        
-        if timeval == None:    
+        if timeval is None:    
             plot_title = ''
         else:
             timeformat='{:4.1f}'
@@ -283,7 +294,7 @@ def plot_colormap3dslice(filename=None,
     if step is not None:
         stepstr = '_'+str(step).rjust(7,'0')
     else:
-        if filename is not None:
+        if filename:
             stepstr = '_'+filename[-12:-5]
         else:
             stepstr = ''
@@ -291,7 +302,7 @@ def plot_colormap3dslice(filename=None,
     # If run name isn't given, just put "plot" in the output file name
     if run is None:
         run='plot'
-        if filename is not None:
+        if filename:
             # If working within CSC filesystem, make a guess:
             if filename[0:16]=="/proj/vlasov/2D/":
                 run = filename[16:19]
@@ -299,19 +310,20 @@ def plot_colormap3dslice(filename=None,
     # Verify validity of operator
     operatorstr=''
     operatorfilestr=''
-    if operator is not None:
+    if operator:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
-        if operator!='x' and operator!='y' and operator!='z' and operator!='magnitude' and not operator.isdigit():
-            print(("Unknown operator "+operator))
+        if not operator in 'xyz' and operator is not 'magnitude' and not operator.isdigit():
+            print(f"Unknown operator {operator}")
             operator=None
-        if operator=='x' or operator=='y' or operator=='z':
+            operatorstr=''
+        if operator in 'xyz':
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
             operatorfilestr='_'+operator
             if symlog is None:
-                lin=1
+                lin=True
         # index a vector
         if operator.isdigit():
             operator = str(operator)
@@ -320,10 +332,10 @@ def plot_colormap3dslice(filename=None,
         # Note: operator magnitude gets operatorstr=''
 
     # Output file name
-    if expression is not None:
+    if expression:
         varstr=expression.__name__.replace("/","_")
     else:        
-        if var is None:
+        if not var:
             # If no expression or variable given, defaults to rhom
             var='vg_rhom'
             if f.check_variable("proton/vg_rho"): # multipop v5
@@ -333,14 +345,14 @@ def plot_colormap3dslice(filename=None,
         varstr=var.replace("/","_")
 
     # File output checks
-    if draw is None and axes is None:
-        if outputfile is None: # Generate filename
-            if outputdir is None: # default initial path
+    if not draw and not axes:
+        if not outputfile: # Generate filename
+            if not outputdir: # default initial path
                 outputdir=os.path.expandvars('$HOME/Plots/')
             # Sub-directories can still be defined in the "run" variable
             outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
-            if outputdir is not None:
+            if not outputdir:
                 outputfile = outputdir+outputfile
 
         # Re-check to find actual target sub-directory
@@ -360,7 +372,7 @@ def plot_colormap3dslice(filename=None,
             return
 
         # Check if target file already exists and overwriting is disabled
-        if (nooverwrite is not None and os.path.exists(outputfile)):            
+        if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
                 print(("Found existing file "+outputfile+". Skipping."))
                 return
@@ -393,6 +405,10 @@ def plot_colormap3dslice(filename=None,
 
     # find the highest refiment level
     reflevel = ids3d.refinement_level(xsize, ysize, zsize, cellids[-1])
+    for i in range(5):
+        if xsize*(2**(reflevel + i)) == xsizefg:
+            reflevel += i
+            break
 
     # Verify that FSgrid and spatial grid agree
     if ((xmin!=xminfg) or (xmax!=xmaxfg) or
@@ -512,9 +528,9 @@ def plot_colormap3dslice(filename=None,
     ############################################
     # Read data and calculate required variables
     ############################################
-    if expression is None:        
+    if not expression:        
         # Read data from file
-        if operator is None:
+        if not operator:
             operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
@@ -601,7 +617,7 @@ def plot_colormap3dslice(filename=None,
                 return -1
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__.replace("_","\_") +'$'+operatorstr+'$' 
+        cb_title_use = expression.__name__ + (f'${operatorstr}$' if operatorstr else '') 
 
     # scale the sizes to the heighest refinement level because
     # plotting is done at that level
@@ -622,7 +638,7 @@ def plot_colormap3dslice(filename=None,
     XmeshCentres = XmeshXY[:-1,:-1] + 0.5*(XmeshXY[0,1]-XmeshXY[0,0])
     YmeshCentres = YmeshXY[:-1,:-1] + 0.5*(YmeshXY[1,0]-YmeshXY[0,0])
     maskgrid = np.ma.array(XmeshCentres)
-    if pass_full is None:
+    if not pass_full:
         # If zoomed-in using a defined box, and not specifically asking to pass all values:
         # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
         maskboundarybuffer = 2.*cellsize/axisunit
@@ -651,25 +667,33 @@ def plot_colormap3dslice(filename=None,
     #Attempt to call external and expression functions to see if they have required
     # variable information (If they accept the requestvars keyword, they should
     # return a list of variable names as strings)
-    if pass_vars is None:        
-        pass_vars=[] # Initialise list unless already provided
-    if expression is not None: # Check the expression
+    pass3d = False
+    meshReflevel = reflevel
+    reqvariables = None
+    if expression: # Check the expression
         try:
             reqvariables = expression(None,True)
-            for i in reqvariables:
-                if not (i in pass_vars): pass_vars.append(i)
         except:
             pass
-    if external is not None: # Check the external
+    if external: # Check the external
         try:
             reqvariables = external(None,None,None,None,True)
+        except:
+            pass
+    if reqvariables:
+        try:
             for i in reqvariables:
-                if not (i in pass_vars): pass_vars.append(i)
+                if i is "3d":
+                    pass3d = True
+                elif i is "noupscale":
+                    meshReflevel = 0
+                elif not (i in pass_vars): 
+                    pass_vars.append(i)
         except:
             pass
     # If expression or external routine need variables, read them from the file.
-    if pass_vars is not None:        
-        if pass_times is None:
+    if pass_vars:        
+        if not pass_times:
             # Note: pass_maps is now a dictionary
             pass_maps = {}
             # Gather the required variable maps for a single time step
@@ -677,49 +701,59 @@ def plot_colormap3dslice(filename=None,
                 if mapval.startswith('fg_'):
                     # fsgrid reader returns array in correct shape but needs to be sliced and transposed
                     pass_map = f.read_fsgrid_variable(mapval)
-                    if np.ndim(pass_map)==3:
-                        if fgslice[0]>=0:
-                            pass_map = pass_map[fgslice[0],:,:]
-                        elif fgslice[1]>=0:
-                            pass_map = pass_map[:,fgslice[1],:]
-                        elif fgslice[2]>=0:
-                            pass_map = pass_map[:,:,fgslice[2]]
-                    elif np.ndim(pass_map)==4: # vector variable
-                        if fgslice[0]>=0:
-                            pass_map = pass_map[fgslice[0],:,:,:]
-                        elif fgslice[1]>=0:
-                            pass_map = pass_map[:,fgslice[1],:,:]
-                        elif fgslice[2]>=0:
-                            pass_map = pass_map[:,:,fgslice[2],:]
-                    elif np.ndim(pass_map)==5:  # tensor variable
-                        if fgslice[0]>=0:
-                            pass_map = pass_map[fgslice[0],:,:,:,:]
-                        elif fgslice[1]>=0:
-                            pass_map = pass_map[:,fgslice[1],:,:,:]
-                        elif fgslice[2]>=0:
-                            pass_map = pass_map[:,:,fgslice[2],:,:]
-                    else:
-                        print("Error in reshaping fsgrid pass_map!") 
-                    pass_map = np.squeeze(pass_map)
-                    pass_map = np.swapaxes(pass_map, 0,1)
+                    if not pass3d:
+                        if np.ndim(pass_map)==3:
+                            if fgslice[0]>=0:
+                                pass_map = pass_map[fgslice[0],:,:]
+                            elif fgslice[1]>=0:
+                                pass_map = pass_map[:,fgslice[1],:]
+                            elif fgslice[2]>=0:
+                                pass_map = pass_map[:,:,fgslice[2]]
+                        elif np.ndim(pass_map)==4: # vector variable
+                            if fgslice[0]>=0:
+                                pass_map = pass_map[fgslice[0],:,:,:]
+                            elif fgslice[1]>=0:
+                                pass_map = pass_map[:,fgslice[1],:,:]
+                            elif fgslice[2]>=0:
+                                pass_map = pass_map[:,:,fgslice[2],:]
+                        elif np.ndim(pass_map)==5:  # tensor variable
+                            if fgslice[0]>=0:
+                                pass_map = pass_map[fgslice[0],:,:,:,:]
+                            elif fgslice[1]>=0:
+                                pass_map = pass_map[:,fgslice[1],:,:,:]
+                            elif fgslice[2]>=0:
+                                pass_map = pass_map[:,:,fgslice[2],:,:]
+                        else:
+                            print("Error in reshaping fsgrid pass_map!") 
+                        pass_map = np.squeeze(pass_map)
+                        pass_map = np.swapaxes(pass_map, 0,1)
                 else:
                     # vlasov grid, AMR
                     pass_map = f.read_variable(mapval)
                     pass_map = pass_map[indexids] # sort
-                    pass_map = pass_map[indexlist] # find required cells
-                    if np.ndim(pass_map)==1:
-                        # Create the plotting grid
-                        pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
-                    elif np.ndim(pass_map)==2: # vector variable
-                        # Create the plotting grid
-                        pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
-                    elif np.ndim(pass_map)==3:  # tensor variable
-                        # Create the plotting grid
-                        pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
+                    if pass3d:
+                        if np.ndim(pass_map)==1:
+                            pass_shape = None
+                        elif np.ndim(pass_map)==2: # vector variable
+                            pass_shape = pass_map.shape[1]
+                        elif np.ndim(pass_map)==3:  # tensor variable
+                            pass_shape = (pass_map.shape[1], pass_map.shape[2])
+                        else:
+                            print("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                     else:
-                        print("Error in reshaping pass_maps!")
+                        pass_map = pass_map[indexlist] # find required cells
+                        if np.ndim(pass_map)==1:
+                            pass_shape = None
+                        elif np.ndim(pass_map)==2: # vector variable
+                            pass_shape = pass_map.shape[1]
+                        elif np.ndim(pass_map)==3:  # tensor variable
+                            pass_shape = (pass_map.shape[1], pass_map.shape[2])
+                        else:
+                            print("Error in reshaping pass_maps!")
+                        pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
                     
-                if np.ma.is_masked(maskgrid):
+                if np.ma.is_masked(maskgrid) and not pass3d:
                     if np.ndim(pass_map)==1:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
@@ -734,10 +768,10 @@ def plot_colormap3dslice(filename=None,
             # Or gather over a number of time steps
             # Note: pass_maps is now a list of dictionaries
             pass_maps = []
-            if step is not None and filename is not None:
+            if step is not None and filename:
                 currstep = step
             else:
-                if filename is not None: # parse from filename
+                if filename: # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
                     print("Error, cannot determine current step for time extent extraction!")
@@ -767,49 +801,59 @@ def plot_colormap3dslice(filename=None,
                     if mapval.startswith('fg_'):
                         # fsgrid reader returns array in correct shape but needs to be sliced and transposed
                         pass_map = fstep.read_fsgrid_variable(mapval)
-                        if np.ndim(pass_map)==3:
-                            if fgslice[0]>=0:
-                                pass_map = pass_map[fgslice[0],:,:]
-                            elif fgslice[1]>=0:
-                                pass_map = pass_map[:,fgslice[1],:]
-                            elif fgslice[2]>=0:
-                                pass_map = pass_map[:,:,fgslice[2]]
-                        elif np.ndim(pass_map)==4: # vector variable
-                            if fgslice[0]>=0:
-                                pass_map = pass_map[fgslice[0],:,:,:]
-                            elif fgslice[1]>=0:
-                                pass_map = pass_map[:,fgslice[1],:,:]
-                            elif fgslice[2]>=0:
-                                pass_map = pass_map[:,:,fgslice[2],:]
-                        elif np.ndim(pass_map)==5:  # tensor variable
-                            if fgslice[0]>=0:
-                                pass_map = pass_map[fgslice[0],:,:,:,:]
-                            elif fgslice[1]>=0:
-                                pass_map = pass_map[:,fgslice[1],:,:,:]
-                            elif fgslice[2]>=0:
-                                pass_map = pass_map[:,:,fgslice[2],:,:]
-                        else:
-                            print("Error in reshaping fsgrid pass_map!") 
-                        pass_map = np.squeeze(pass_map)
-                        pass_map = np.swapaxes(pass_map, 0,1)
+                        if not pass3d:
+                            if np.ndim(pass_map)==3:
+                                if fgslice[0]>=0:
+                                    pass_map = pass_map[fgslice[0],:,:]
+                                elif fgslice[1]>=0:
+                                    pass_map = pass_map[:,fgslice[1],:]
+                                elif fgslice[2]>=0:
+                                    pass_map = pass_map[:,:,fgslice[2]]
+                            elif np.ndim(pass_map)==4: # vector variable
+                                if fgslice[0]>=0:
+                                    pass_map = pass_map[fgslice[0],:,:,:]
+                                elif fgslice[1]>=0:
+                                    pass_map = pass_map[:,fgslice[1],:,:]
+                                elif fgslice[2]>=0:
+                                    pass_map = pass_map[:,:,fgslice[2],:]
+                            elif np.ndim(pass_map)==5:  # tensor variable
+                                if fgslice[0]>=0:
+                                    pass_map = pass_map[fgslice[0],:,:,:,:]
+                                elif fgslice[1]>=0:
+                                    pass_map = pass_map[:,fgslice[1],:,:,:]
+                                elif fgslice[2]>=0:
+                                    pass_map = pass_map[:,:,fgslice[2],:,:]
+                            else:
+                                print("Error in reshaping fsgrid pass_map!") 
+                            pass_map = np.squeeze(pass_map)
+                            pass_map = np.swapaxes(pass_map, 0,1)
                     else:
                         # vlasov grid, AMR
                         pass_map = fstep.read_variable(mapval)
                         pass_map = pass_map[step_indexids] # sort
-                        pass_map = pass_map[indexlist] # find required cells
-                        if np.ndim(pass_map)==1:
-                            # Create the plotting grid
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, None)
-                        elif np.ndim(pass_map)==2: # vector variable
-                            # Create the plotting grid
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, pass_map.shape[1])
-                        elif np.ndim(pass_map)==3:  # tensor variable
-                            # Create the plotting grid
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, reflevel, xsize, ysize, zsize, xyz, (pass_map.shape[1],pass_map.shape[2]))
+                        if pass3d:
+                            if np.ndim(pass_map)==1:
+                                pass_shape = None
+                            elif np.ndim(pass_map)==2: # vector variable
+                                pass_shape = pass_map.shape[1]
+                            elif np.ndim(pass_map)==3:  # tensor variable
+                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
+                            else:
+                                print("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
-                            print("Error in reshaping pass_maps!")
+                            pass_map = pass_map[indexlist] # find required cells
+                            if np.ndim(pass_map)==1:
+                                pass_shape = None
+                            elif np.ndim(pass_map)==2: # vector variable
+                                pass_shape = pass_map.shape[1]
+                            elif np.ndim(pass_map)==3:  # tensor variable
+                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
+                            else:
+                                print("Error in reshaping pass_maps!")
+                            pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
-                    if np.ma.is_masked(maskgrid):
+                    if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map)==1:
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
@@ -822,14 +866,54 @@ def plot_colormap3dslice(filename=None,
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     #Optional user-defined expression used for color panel instead of a single pre-existing var
-    if expression is not None:
-        # Here pass_maps is already the cropped-via-mask data array
+    if expression:
         datamap = expression(pass_maps)
+        if pass3d:
+            if np.ndim(datamap)==3:
+                if fgslice[0]>=0:
+                    datamap = datamap[fgslice[0],:,:]
+                elif fgslice[1]>=0:
+                    datamap = datamap[:,fgslice[1],:]
+                elif fgslice[2]>=0:
+                    datamap = datamap[:,:,fgslice[2]]
+            elif np.ndim(datamap)==4: # vector variable
+                if fgslice[0]>=0:
+                    datamap = datamap[fgslice[0],:,:,:]
+                elif fgslice[1]>=0:
+                    datamap = datamap[:,fgslice[1],:,:]
+                elif fgslice[2]>=0:
+                    datamap = datamap[:,:,fgslice[2],:]
+            elif np.ndim(datamap)==5:  # tensor variable
+                if fgslice[0]>=0:
+                    datamap = datamap[fgslice[0],:,:,:,:]
+                elif fgslice[1]>=0:
+                    datamap = datamap[:,fgslice[1],:,:,:]
+                elif fgslice[2]>=0:
+                    datamap = datamap[:,:,fgslice[2],:,:]
+            else:
+                print("Error in reshaping fsgrid datamap!") 
+            datamap = np.squeeze(datamap)
+            datamap = np.swapaxes(datamap, 0,1)
+
+            if np.ma.is_masked(maskgrid):
+                if np.ndim(datamap)==1:
+                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
+                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1]
+                elif np.ndim(datamap)==2: # vector variable
+                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:]
+                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:]
+                elif np.ndim(datamap)==3:  # tensor variable
+                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:,:]
+                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:,:]
         # Handle operators
-        if ((operator is not None) and (operator!='pass') and (operator!='magnitude')):
-            if operator=='x': operator = '0'
-            if operator=='y': operator = '1'
-            if operator=='z': operator = '2'
+
+        if (operator and (operator is not 'pass') and (operator is not 'magnitude')):
+            if operator=='x': 
+                operator = '0'
+            if operator=='y': 
+                operator = '1'
+            if operator=='z': 
+                operator = '2'
             if not operator.isdigit():
                 print("Error parsing operator for custom expression!")
                 return
@@ -866,7 +950,7 @@ def plot_colormap3dslice(filename=None,
         rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
         rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
         # Also for the datamap, unless it was already provided by an expression
-        if expression is None:
+        if not expression:
             datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
             datamap = datamap[:,MaskY[0]:MaskY[-1]+1]
 
@@ -922,7 +1006,7 @@ def plot_colormap3dslice(filename=None,
     # # If symlog scaling is set:
     # plot_colormap3dslice.linthresh = None
     if symlog is not None:
-        if symlog>0:
+        if symlog > 0:
             linthresh = symlog 
         else:
             linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
@@ -950,8 +1034,8 @@ def plot_colormap3dslice(filename=None,
         ticks = np.linspace(vminuse,vmaxuse,num=7)            
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if axes is None: # If axes are provided, leave backend as-is.
-        if draw is not None:
+    if not axes: # If axes are provided, leave backend as-is.
+        if draw:
             if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
                 plt.switch_backend(pt.backend_interactive)
         else:
@@ -970,12 +1054,11 @@ def plot_colormap3dslice(filename=None,
     # default for square figure is figsize=[4.0,3.15] (with some accounting for axes etc)
     figsize = [4.0,3.15*ratio]
     # Special case for edge-to-edge figures
-    if (len(plot_title)==0 and (nocb is not None or internalcb is not None)
-        and noborder is not None and noxlabels is not None and noylabels is not None):
+    if (len(plot_title)==0 and (nocb or internalcb) and noborder and noxlabels and noylabels):
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
         figsize = [8.0,8.0*ratio]
 
-    if axes is None:
+    if not axes:
         # Create 300 dpi image of suitable size
         fig = plt.figure(figsize=figsize,dpi=300)
         ax1 = plt.gca() # get current axes
@@ -988,7 +1071,7 @@ def plot_colormap3dslice(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
-        if os.getenv('PTNOLATEX') is None:
+        if os.getenv('PTNOLATEX') is None:  # This should probably check value...
             # Add 3D slice position in title
             plot_title = r"\textbf{"+slicelabel+plot_title+"}"
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
@@ -1004,7 +1087,7 @@ def plot_colormap3dslice(filename=None,
     #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
-    if noxlabels is None:
+    if not noxlabels:
         if os.getenv('PTNOLATEX') is None:
             xlabelstr = r'\textbf{'+axislabels[0]+' ['+axisunitstr+']}'
         else:
@@ -1014,7 +1097,7 @@ def plot_colormap3dslice(filename=None,
             item.set_fontsize(fontsize)
             item.set_fontweight('black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
-    if noylabels is None:
+    if not noylabels:
         if os.getenv('PTNOLATEX') is None:
             ylabelstr = r'\textbf{'+axislabels[1]+' ['+axisunitstr+']}'
         else:
@@ -1026,7 +1109,7 @@ def plot_colormap3dslice(filename=None,
         ax1.yaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
 
     # add fSaved identifiers
-    if fsaved is not None:
+    if fsaved:
         if type(fsaved) is str:
             fScolour = fsaved
         else:
@@ -1046,7 +1129,7 @@ def plot_colormap3dslice(filename=None,
 
 
     # add vectors on top
-    if vectors != None:
+    if vectors:
         if vectors.startswith('fg_'):
             # fsgrid reader returns array in correct shape but needs to be sliced and transposed
             vectmap = f.read_fsgrid_variable(vectors)
@@ -1113,7 +1196,7 @@ def plot_colormap3dslice(filename=None,
         ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05/vectorsize, headlength=4, headwidth=4,
                    headaxislength=2, scale_units='dots', pivot='middle')
 
-    if streamlines is not None:
+    if streamlines:
         if streamlines.startswith('fg_'):
             # fsgrid reader returns array in correct shape but needs to be sliced and transposed
             slinemap = f.read_fsgrid_variable(streamlines)
@@ -1156,19 +1239,19 @@ def plot_colormap3dslice(filename=None,
     
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
-    if external is not None:
+    if external:
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
-        if axes is None:
+        if not axes:
             extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
         else:
             extresult=external(axes, XmeshCentres,YmeshCentres, pass_maps)
 
-    if nocb is None:
-        if cbaxes is not None: 
+    if not nocb:
+        if cbaxes: 
             # Colorbar axes are provided
             cax = cbaxes
             cbdir="right"; horalign="left"
-        elif internalcb is not None:
+        elif internalcb:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
             if type(internalcb) is str:
@@ -1197,13 +1280,13 @@ def plot_colormap3dslice(filename=None,
                 cb_title_use = r"\textbf{"+cb_title_use+"}"   
 
         # Set flag which affects colorbar decimal precision
-        if (lin is None):
+        if lin is None:
             pt.plot.cb_linear = False
         else:
             pt.plot.cb_linear = True
 
         # First draw colorbar
-        if usesci is True:
+        if usesci:
             cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),cax=cax, drawedges=False)
         else:
             #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
@@ -1211,7 +1294,7 @@ def plot_colormap3dslice(filename=None,
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
-        if cbaxes is None:
+        if not cbaxes:
             cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
@@ -1244,7 +1327,8 @@ def plot_colormap3dslice(filename=None,
         if lin is None and symlog is None:
             nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
             # Force less ticks for internal colorbars
-            if internalcb is not None: nlabels = nlabels * 1.5
+            if internalcb: 
+                nlabels = nlabels * 1.5
             valids = ['1','2','3','4','5','6','7','8','9']
             if nlabels > 10:
                 valids = ['1','2','3','4','5','6','8']
@@ -1273,8 +1357,8 @@ def plot_colormap3dslice(filename=None,
     cb.update_ticks()
 
     # Add Vlasiator watermark
-    if (wmark is not None or wmarkb is not None) and axes is None:
-        if wmark is not None:
+    if (wmark or wmarkb) and not axes:
+        if wmark:
             wm = plt.imread(get_sample_data(watermarkimage))
         else:
             wmark=wmarkb # for checking for placement
@@ -1296,10 +1380,10 @@ def plot_colormap3dslice(filename=None,
 
     # Find required precision
     mintickinterval = np.amax(boxcoords)-np.amin(boxcoords)
-    if tickinterval is None:
+    if not tickinterval:
         fig.canvas.draw() # draw to get tick positions
     for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
-        if tickinterval!=None:
+        if tickinterval:
             axis.set_major_locator(mtick.MultipleLocator(tickinterval))
             mintickinterval = tickinterval
         else: # Find tick interval
@@ -1332,20 +1416,20 @@ def plot_colormap3dslice(filename=None,
                 t.set_horizontalalignment('right')
 
     # Or turn x-axis labels off
-    if noxlabels is not None:
+    if noxlabels:
         for label in ax1.xaxis.get_ticklabels():
             label.set_visible(False) 
     # Or turn y-axis labels off
-    if noylabels is not None:
+    if noylabels:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    if axes is not None:
+    if axes:
         savefig_pad=0.01
         bbox_inches='tight'
-    elif noborder is None:
+    elif not noborder:
         plt.tight_layout()
         savefig_pad=0.05 # The default is 0.1
         bbox_inches=None
@@ -1355,13 +1439,13 @@ def plot_colormap3dslice(filename=None,
         bbox_inches='tight'
         
     # Save output or draw on-screen
-    if draw is None and axes is None:
+    if not draw and not axes:
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             print("Error with attempting to save figure due to matplotlib LaTeX integration.")
         print(outputfile+"\n")
-    elif axes is None:
+    elif not axes:
         # Draw on-screen
         plt.draw()
         plt.show()
