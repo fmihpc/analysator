@@ -70,24 +70,11 @@ plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
 
 
 decimalprecision_ax = 0
+decimalprecision_cblin = 0
 cb_linear = False
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work. (signchar=r'\enspace')
-    signchar=r'' 
-    # Multiple braces for b take care of negative values in exponent
-    # brackets around \times remove extra whitespace
-    if os.getenv('PTNOLATEX') is None:
-        # replaces minus sign with en-dash to fix big with latex descender value return
-        if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
-        return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-    else:
-        return r'$'+'{}'.format(float(a))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-
-# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
+# axisfmt replaces minus sign with en-dash to fix bug with latex descender value return
+# nb: axis ticks are never plotted with scientific format
 def axisfmt(x, pos):
     f = r'{:.'+decimalprecision_ax+r'f}'
     if os.getenv('PTNOLATEX') is None:
@@ -97,17 +84,44 @@ def axisfmt(x, pos):
     else:
         return f.format(x)
 
-# cbfmt replaces minus sign with en-dash to fix big with latex descender value return, used for colorbar
+# cbfmtsci replaces minus sign with en-dash to fix bug with latex descender value return
+# Scientific format for colour bar ticks
+def cbfmtsci(x, pos):
+    if (cb_linear is True):
+        # for linear, use more precision
+        a, b = ('{:.'+str(int(decimalprecision_cblin))+'e}').format(x).split('e')
+        modifier = 0 # used to correct for scientific notation
+        if int(b) < 0:
+            modifier = int(b)
+        f = '{:.' + str(abs(int(decimalprecision_cblin)+modifier)) + 'f}'
+        number = f.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
+    else:
+        a, b = '{:.1e}'.format(x).split('e')
+        number = '{:.1f}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
+    signchar=r'' 
+    # Multiple braces for b take care of negative values in exponent
+    # brackets around \times remove extra whitespace
+    if os.getenv('PTNOLATEX') is None:
+        # replaces minus sign with en-dash to fix big with latex descender value return
+        if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
+    else:
+        if np.sign(x)<0: signchar=r'-'
+    return r'$'+signchar+number+'$'
+    
+# cbfmt replaces minus sign with en-dash to fix bug with latex descender value return, used for colorbar
+# nb: regular floating i.e. non-scientific format for colorbar ticks
 def cbfmt(x, pos):
     # Set required decimal precision
     a, b = '{:.1e}'.format(x).split('e')
-    precision = '0'
+    # e.g. 9.0e-1 means we need precision 1
     if (cb_linear is True):
         # for linear, use more precision
-        if int(b)<1: precision = str(abs(-1+int(b)))
+        precision = str(int(decimalprecision_cblin))
+        #if int(b)<1: precision = str(1+abs(int(b)))
     else:
+        precision = '0'
         if int(b)<1: precision = str(abs(int(b)))
-    f = r'{:.'+precision+r'f}'
+    f = r'{:.'+precision+'f}'
     if os.getenv('PTNOLATEX') is None:
         a = f.format(abs(x))
         if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
@@ -141,6 +155,9 @@ def mathmode(string):
     else:
         # First remove any internal possible dollar signs, then wrap whole string into math block
         result = string.replace('$','')
+        if os.getenv('PTNOLATEX') is None:
+            # Get rid of latex spaces
+            result = result.replace('\,',' ')            
         return r"$"+result+"$"
     
     

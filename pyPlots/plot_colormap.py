@@ -277,7 +277,6 @@ def plot_colormap(filename=None,
             plot_title = "t="+timeformat.format(timeval)+' s'
     else:
         plot_title = title
-    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
     
     # step, used for file name
     if step!=None:
@@ -298,6 +297,7 @@ def plot_colormap(filename=None,
 
     # Verify validity of operator
     operatorstr=''
+    operatorfilestr=''
     # operatorstr is used both for the colorbar title and for the output file name
     if operator!=None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
@@ -309,12 +309,14 @@ def plot_colormap(filename=None,
         if operator=='x' or operator=='y' or operator=='z':
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
+            operatorfilestr='_'+operator
             if symlog==None and lin is None:
                 lin=True
         # index a vector
         if operator.isdigit():
             operator = str(operator)
-            operatorstr='_'+operator
+            operatorstr='_{'+operator+'}'
+            operatorfilestr='_'+operator
         # Note: operator magnitude gets operatorstr=''
             
     # Output file name
@@ -341,7 +343,7 @@ def plot_colormap(filename=None,
             if outputdir==None: # default initial path
                 outputdir=os.path.expandvars('$HOME/Plots/')
             # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorstr+stepstr+".png"
+            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
             if outputdir!=None:
                 outputfile = outputdir+outputfile
@@ -422,11 +424,6 @@ def plot_colormap(filename=None,
     # Scale data extent and plot box
     simext=[i/axisunit for i in simext]
     boxcoords=[i/axisunit for i in boxcoords]    
-
-    # Set required decimal precision
-    precision_a, precision_b = '{:.1e}'.format(np.amax(abs(np.array(boxcoords)))).split('e')
-    pt.plot.decimalprecision_ax = '0'
-    if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))
 
     ##########
     # Read data and calculate required variables
@@ -776,7 +773,7 @@ def plot_colormap(filename=None,
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
         ticks = np.linspace(vminuse,vmaxuse,num=linticks)
-
+        
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
@@ -832,6 +829,7 @@ def plot_colormap(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
+        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     ax1.set_xlim([boxcoords[0],boxcoords[1]])
@@ -846,7 +844,7 @@ def plot_colormap(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if noxlabels==None:
-        xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x ['+axisunitstr+']'))
+        xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x\,['+axisunitstr+']'))
         ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
@@ -854,9 +852,9 @@ def plot_colormap(filename=None,
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if noylabels==None:
         if ysize==1: #Polar
-            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('z ['+axisunitstr+']'))
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('z\,['+axisunitstr+']'))
         else: #Ecliptic
-            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('y ['+axisunitstr+']'))
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('y\,['+axisunitstr+']'))
         ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
@@ -1034,10 +1032,10 @@ def plot_colormap(filename=None,
 
         # First draw colorbar
         if usesci is True:
-            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
         else:
-            #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(pt.plot.cbfmt))
+            #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
@@ -1092,6 +1090,17 @@ def plot_colormap(filename=None,
                     firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]                
                 if not firstdigit in valids: label.set_visible(False)
 
+    # Adjust precision for colorbar ticks
+    thesetickvalues = cb.locator()
+    thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
+    mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+    pt.plot.decimalprecision_cblin = 1
+    precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+    # e.g. 9.0e-1 means we need precision 1
+    # e.g. 1.33e-1 means we need precision 3?
+    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+    cb.update_ticks()
+
     # Add Vlasiator watermark
     if (wmark is not None or wmarkb is not None) and axes is None:
         if wmark!=None:
@@ -1114,15 +1123,31 @@ def plot_colormap(filename=None,
         newax.imshow(wm)
         newax.axis('off')
 
-    # Find maximum possible lengths of axis tick labels
-    # Only counts digits
-    ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in boxcoords]
-    tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
-
-    # Adjust axis tick labels
+    # Find required precision
+    mintickinterval = np.amax(boxcoords)-np.amin(boxcoords)
+    if tickinterval is None:
+        fig.canvas.draw() # draw to get tick positions
     for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
         if tickinterval!=None:
             axis.set_major_locator(mtick.MultipleLocator(tickinterval))
+            mintickinterval = tickinterval
+        else: # Find tick interval
+            thesetickvalues = axis.get_major_locator()()
+            mintickinterval = min(mintickinterval,abs(thesetickvalues[1]-thesetickvalues[0]))
+
+    # Adjust axis tick labels
+    for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
+        # Set required decimal precision
+        pt.plot.decimalprecision_ax = '0'
+        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+        # e.g. 9.0e-1 means we need precision 1
+        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-int(precision_b)))
+        # Find maximum possible lengths of axis tick labels
+        # Only counts digits
+        axisminmax = boxcoords[axisi*2:axisi*2+2]
+        ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in axisminmax]
+        tickmaxlens = np.amax(ticklens[0:1])
+        
         # Custom tick formatter
         axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))
         ticklabs = axis.get_ticklabels()
@@ -1130,7 +1155,7 @@ def plot_colormap(filename=None,
         for t in ticklabs:
             t.set_fontweight("black")
             # If label has >3 numbers, tilt it
-            if tickmaxlens[axisi]>3: 
+            if tickmaxlens>3: 
                 t.set_rotation(30)
                 t.set_verticalalignment('top')
                 t.set_horizontalalignment('right')
@@ -1143,7 +1168,7 @@ def plot_colormap(filename=None,
     if noylabels!=None:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)
-
+    
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
     if axes is not None:

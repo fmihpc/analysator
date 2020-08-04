@@ -297,6 +297,8 @@ def plot_colormap3dslice(filename=None,
                 run = filename[16:19]
 
     # Verify validity of operator
+    operatorstr=''
+    operatorfilestr=''
     if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
@@ -304,19 +306,18 @@ def plot_colormap3dslice(filename=None,
         if operator!='x' and operator!='y' and operator!='z' and operator!='magnitude' and not operator.isdigit():
             print(("Unknown operator "+operator))
             operator=None
-            operatorstr=''
         if operator=='x' or operator=='y' or operator=='z':
             # For components, always use linear scale, unless symlog is set
             operatorstr='_'+operator
+            operatorfilestr='_'+operator
             if symlog is None:
                 lin=1
         # index a vector
         if operator.isdigit():
             operator = str(operator)
             operatorstr='_{'+operator+'}'
-    else:
-        operator=None
-        operatorstr=''
+            operatorfilestr='_'+operator
+        # Note: operator magnitude gets operatorstr=''
 
     # Output file name
     if expression is not None:
@@ -337,7 +338,7 @@ def plot_colormap3dslice(filename=None,
             if outputdir is None: # default initial path
                 outputdir=os.path.expandvars('$HOME/Plots/')
             # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorstr+stepstr+".png"
+            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
             if outputdir is not None:
                 outputfile = outputdir+outputfile
@@ -1260,6 +1261,17 @@ def plot_colormap3dslice(filename=None,
                 # labels will be in format $x.0\times10^{y}$
                 if not firstdigit in valids: label.set_visible(False)
 
+    # Adjust precision for colorbar ticks
+    thesetickvalues = cb.locator()
+    thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
+    mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+    pt.plot.decimalprecision_cblin = 1
+    precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+    # e.g. 9.0e-1 means we need precision 1
+    # e.g. 1.33e-1 means we need precision 3?
+    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+    cb.update_ticks()
+
     # Add Vlasiator watermark
     if (wmark is not None or wmarkb is not None) and axes is None:
         if wmark is not None:
@@ -1282,16 +1294,31 @@ def plot_colormap3dslice(filename=None,
         newax.imshow(wm)
         newax.axis('off')
 
-
-    # Find maximum possible lengths of axis tick labels
-    # Only counts digits
-    ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in boxcoords]
-    tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
+    # Find required precision
+    mintickinterval = np.amax(boxcoords)-np.amin(boxcoords)
+    if tickinterval is None:
+        fig.canvas.draw() # draw to get tick positions
+    for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
+        if tickinterval!=None:
+            axis.set_major_locator(mtick.MultipleLocator(tickinterval))
+            mintickinterval = tickinterval
+        else: # Find tick interval
+            thesetickvalues = axis.get_major_locator()()
+            mintickinterval = min(mintickinterval,abs(thesetickvalues[1]-thesetickvalues[0]))
 
     # Adjust axis tick labels
     for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):
-        if tickinterval is not None:
-            axis.set_major_locator(mtick.MultipleLocator(tickinterval))
+        # Set required decimal precision
+        pt.plot.decimalprecision_ax = '0'
+        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+        # e.g. 9.0e-1 means we need precision 1
+        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-int(precision_b)))
+        # Find maximum possible lengths of axis tick labels
+        # Only counts digits
+        axisminmax = boxcoords[axisi*2:axisi*2+2]
+        ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in axisminmax]
+        tickmaxlens = np.amax(ticklens[0:1])
+        
         # Custom tick formatter
         axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))
         ticklabs = axis.get_ticklabels()
@@ -1299,7 +1326,7 @@ def plot_colormap3dslice(filename=None,
         for t in ticklabs:
             t.set_fontweight("black")
             # If label has >3 numbers, tilt it
-            if tickmaxlens[axisi]>3: 
+            if tickmaxlens>3: 
                 t.set_rotation(30)
                 t.set_verticalalignment('top')
                 t.set_horizontalalignment('right')
