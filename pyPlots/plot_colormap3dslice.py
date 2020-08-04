@@ -405,7 +405,7 @@ def plot_colormap3dslice(filename=None,
 
     # find the highest refiment level
     reflevel = ids3d.refinement_level(xsize, ysize, zsize, cellids[-1])
-    for i in range(5):
+    for i in range(5): # Check if Vlasov grid doesn't reach maximum (fsgrid) refinement
         if xsize*(2**(reflevel + i)) == xsizefg:
             reflevel += i
             break
