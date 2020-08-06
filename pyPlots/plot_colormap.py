@@ -354,7 +354,7 @@ def plot_colormap(filename=None,
             # Sub-directories can still be defined in the "run" variable
             outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
-            if not outputdir:
+            if outputdir:
                 outputfile = outputdir+outputfile
 
         # Re-check to find actual target sub-directory
@@ -1100,11 +1100,14 @@ def plot_colormap(filename=None,
     # Adjust precision for colorbar ticks
     thesetickvalues = cb.locator()
     thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
-    mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+    if len(thesetickvalues)<2:
+        precision_b=1
+    else:    
+        mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+        # e.g. 9.0e-1 means we need precision 1
+        # e.g. 1.33e-1 means we need precision 3?
     pt.plot.decimalprecision_cblin = 1
-    precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-    # e.g. 9.0e-1 means we need precision 1
-    # e.g. 1.33e-1 means we need precision 3?
     if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
     cb.update_ticks()
 
@@ -1195,7 +1198,7 @@ def plot_colormap(filename=None,
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            print("Error with attempting to save figure.")
         print(outputfile+"\n")
     elif not axes:
         # Draw on-screen

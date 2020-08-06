@@ -1,4 +1,4 @@
-# 
+ 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
@@ -315,7 +315,7 @@ def plot_colormap3dslice(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator is not 'magnitude' and not operator.isdigit():
-            print(f"Unknown operator {operator}")
+            print("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -352,7 +352,7 @@ def plot_colormap3dslice(filename=None,
             # Sub-directories can still be defined in the "run" variable
             outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
-            if not outputdir:
+            if outputdir:
                 outputfile = outputdir+outputfile
 
         # Re-check to find actual target sub-directory
@@ -617,7 +617,7 @@ def plot_colormap3dslice(filename=None,
                 return -1
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = expression.__name__ + (f'${operatorstr}$' if operatorstr else '') 
+        cb_title_use = expression.__name__ + operatorstr
 
     # scale the sizes to the heighest refinement level because
     # plotting is done at that level
@@ -1348,11 +1348,14 @@ def plot_colormap3dslice(filename=None,
     # Adjust precision for colorbar ticks
     thesetickvalues = cb.locator()
     thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
-    mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+    if len(thesetickvalues)<2:
+        precision_b=1
+    else:
+        mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+        # e.g. 9.0e-1 means we need precision 1
+        # e.g. 1.33e-1 means we need precision 3?
     pt.plot.decimalprecision_cblin = 1
-    precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-    # e.g. 9.0e-1 means we need precision 1
-    # e.g. 1.33e-1 means we need precision 3?
     if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
     cb.update_ticks()
 
@@ -1443,7 +1446,7 @@ def plot_colormap3dslice(filename=None,
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            print("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            print("Error with attempting to save figure.")
         print(outputfile+"\n")
     elif not axes:
         # Draw on-screen
