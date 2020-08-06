@@ -1097,19 +1097,19 @@ def plot_colormap(filename=None,
                     firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]                
                 if not firstdigit in valids: label.set_visible(False)
 
-    # Adjust precision for colorbar ticks
-    thesetickvalues = cb.locator()
-    thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
-    if len(thesetickvalues)<2:
-        precision_b=1
-    else:    
-        mintickinterval = thesetickvalues[1]-thesetickvalues[0]
-        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-        # e.g. 9.0e-1 means we need precision 1
-        # e.g. 1.33e-1 means we need precision 3?
-    pt.plot.decimalprecision_cblin = 1
-    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
-    cb.update_ticks()
+        # Adjust precision for colorbar ticks
+        thesetickvalues = cb.locator()
+        thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
+        if len(thesetickvalues)<2:
+            precision_b=1
+        else:    
+            mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+            # e.g. 9.0e-1 means we need precision 1
+            # e.g. 1.33e-1 means we need precision 3?
+        pt.plot.decimalprecision_cblin = 1
+        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+        cb.update_ticks()
 
     # Add Vlasiator watermark
     if (wmark or wmarkb) and not axes:
