@@ -134,24 +134,24 @@ def cbfmt(x, pos):
 def bfstring(string):
     if os.getenv('PTNOLATEX') is None:
         if len(string)==0:
-            return '{'+string+'}'
+            return ''
         else:
             return r'\mathbf{'+string+'}'
-        # LaTeX output off
-        return string
+    # LaTeX output off
+    return string
 
 def rmstring(string):
     if os.getenv('PTNOLATEX') is None:
         if len(string)==0:
-            return '{'+string+'}'
+            return ''
         else:
             return r'\mathrm{'+string+'}'
-        # LaTeX output off
-        return string
+    # LaTeX output off
+    return string
     
 def mathmode(string):
     if len(string)==0:
-        return string
+        return ''
     else:
         # First remove any internal possible dollar signs, then wrap whole string into math block
         result = string.replace('$','')
