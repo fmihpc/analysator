@@ -90,10 +90,12 @@ def cbfmtsci(x, pos):
     if (cb_linear is True):
         # for linear, use more precision
         a, b = ('{:.'+str(int(decimalprecision_cblin))+'e}').format(x).split('e')
-        modifier = 0 # used to correct for scientific notation
+        precisionvalue = int(decimalprecision_cblin)
         if int(b) < 0:
-            modifier = int(b)
-        f = '{:.' + str(abs(int(decimalprecision_cblin)+modifier)) + 'f}'
+            precisionvalue += int(b)
+        if abs(precisionvalue)<1:
+            precisionvalue=1
+        f = '{:.' + str(abs(precisionvalue)) + 'f}'
         number = f.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
     else:
         a, b = '{:.1e}'.format(x).split('e')
@@ -186,4 +188,4 @@ def scaleunits(datamap_info, vscale):
     if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
         return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"            
     # fallthrough
-    return datamap_info.latexunits+r"{\times}"+fmt(vscale,None)
+    return datamap_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)

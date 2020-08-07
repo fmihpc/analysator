@@ -996,15 +996,14 @@ def plot_colormap3dslice(filename=None,
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
         vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
-        linthresh = None
 
-    # # Make vmaxuse and vminuse available for formatter functions
-    # plot_colormap3dslice.vminuse = vminuse
-    # plot_colormap3dslice.vmaxuse = vmaxuse
-    # plot_colormap3dslice.lin = lin
-
+    # Special case of very small vminuse values
+    if (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
+        vminuse = vmaxuse*1e-5
+        if lin is not None:
+            vminuse = 0
+    
     # # If symlog scaling is set:
-    # plot_colormap3dslice.linthresh = None
     if symlog is not None:
         if symlog > 0:
             linthresh = symlog 

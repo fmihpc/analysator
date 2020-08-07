@@ -264,7 +264,7 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
  
     # draw contours
     contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
-                               linewidths=1.2, colors=color_BS,label='Bow shock')
+                               linewidths=1.2, colors=color_BS)
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
 
