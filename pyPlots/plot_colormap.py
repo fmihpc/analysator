@@ -72,7 +72,7 @@ def plot_colormap(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final part will be used as a prefix for the files.
     :kword outputfile:  Singular output file name
@@ -350,7 +350,7 @@ def plot_colormap(filename=None,
     if not draw and not axes:
         if not outputfile: # Generate filename
             if not outputdir: # default initial path
-                outputdir=os.path.expandvars('$HOME/Plots/')
+                outputdir=pt.plot.defaultoutputdir
             # Sub-directories can still be defined in the "run" variable
             outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
@@ -763,7 +763,7 @@ def plot_colormap(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
             minlog=int(np.ceil(np.log10(-vminuse)))
             logthresh=int(np.floor(np.log10(linthresh)))
@@ -810,7 +810,7 @@ def plot_colormap(filename=None,
     # Special case for edge-to-edge figures
     if len(plot_title)==0 and (nocb or internalcb) and noborder and noxlabels and noylabels:
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
-        figsize = [3.0,3.0*ratio]
+        figsize = [4.0,4.0*ratio]
 
     # If requested high res image
     if highres:
@@ -1061,7 +1061,7 @@ def plot_colormap(filename=None,
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks
-        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (lin is None and symlog is None):
+        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
@@ -1081,11 +1081,26 @@ def plot_colormap(filename=None,
                 if abs(0.5-cbty)/scale < 0.15:
                     cbt[len(cbt)//2+2].set_va("bottom")
 
+        # Adjust precision for colorbar ticks
+        thesetickvalues = cb.locator()
+        thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
+        if len(thesetickvalues)<2:
+            precision_b=1
+        else:
+            mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+            # e.g. 9.0e-1 means we need precision 1
+            # e.g. 1.33e-1 means we need precision 3?
+        pt.plot.decimalprecision_cblin = 1
+        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+        cb.update_ticks()
+
         # if too many subticks in logarithmic colorbar:
-        if lin is None and symlog is None:
+        if not lin and symlog is None:
             nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
             # Force less ticks for internal colorbars
-            if internalcb!=None: nlabels = nlabels * 1.5
+            if internalcb: 
+                nlabels = nlabels * 1.5
             valids = ['1','2','3','4','5','6','7','8','9']
             if nlabels > 10:
                 valids = ['1','2','3','4','5','6','8']
@@ -1094,28 +1109,13 @@ def plot_colormap(filename=None,
             if nlabels > 28:
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-            for label in cb.ax.yaxis.get_ticklabels():
-                if usesci:
-                    # labels will be in format $x.0\times10^{y}$
-                    firstdigit = label.get_text().replace('$','')[0]
-                else:
-                    # Find first digit from left which differs from zero
-                    firstdigit = (label.get_text().replace('$','').replace('.','')).lstrip('0')[0]                
-                if not firstdigit in valids: label.set_visible(False)
-
-        # Adjust precision for colorbar ticks
-        thesetickvalues = cb.locator()
-        thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
-        if len(thesetickvalues)<2:
-            precision_b=1
-        else:    
-            mintickinterval = thesetickvalues[1]-thesetickvalues[0]
-            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-            # e.g. 9.0e-1 means we need precision 1
-            # e.g. 1.33e-1 means we need precision 3?
-        pt.plot.decimalprecision_cblin = 1
-        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
-        cb.update_ticks()
+            for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                if not labeltext:
+                    continue
+                firstdigit = labeltext[0]
+                if not firstdigit in valids: 
+                    label.set_visible(False)
 
     # Add Vlasiator watermark
     if (wmark or wmarkb) and not axes:

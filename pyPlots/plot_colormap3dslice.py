@@ -38,26 +38,6 @@ from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import ids3d
 
-# Register custom colourmaps
-plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
-plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
-plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
-plt.register_cmap(name='magma', cmap=cmaps.magma)
-plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
-# plt.register_cmap(name='cork',cmap=cork_map)
-# plt.register_cmap(name='davos_r',cmap=davos_r_map)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
-
 def plot_colormap3dslice(filename=None,
                   vlsvobj=None,
                   filedir=None, step=None,
@@ -79,6 +59,8 @@ def plot_colormap3dslice(filename=None,
                   # fluxfile=None, fluxdir=None,
                   # fluxthick=1.0, fluxlines=1,
                   fsaved=None,
+                  Earth=None,
+                  highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
@@ -91,7 +73,7 @@ def plot_colormap3dslice(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword outputfile:  Singular output file name
@@ -129,6 +111,9 @@ def plot_colormap3dslice(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kword Earth:       If set, draws an earth at (0,0)
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
+
 
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
@@ -348,7 +333,7 @@ def plot_colormap3dslice(filename=None,
     if not draw and not axes:
         if not outputfile: # Generate filename
             if not outputdir: # default initial path
-                outputdir=os.path.expandvars('$HOME/Plots/')
+                outputdir=pt.plot.defaultoutputdir
             # Sub-directories can still be defined in the "run" variable
             outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
@@ -535,36 +520,13 @@ def plot_colormap3dslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        # if cb_title_use == "": 
-        #     cb_title_use = r""+var.replace("_","\_")
         datamap_unit = datamap_info.latexunits
-
-        # If vscale is in use
-        if not np.isclose(vscale,1.):
-            datamap_unit=r"${\times}$"+pt.plot.fmt(vscale,None)
-        # Allow specialist units for known vscale and unit combinations
-        if datamap_info.units=="s" and np.isclose(vscale,1.e6):
-            datamap_unit = r"$\mu$s"
-        if datamap_info.units=="s" and np.isclose(vscale,1.e3):
-            datamap_unit = "ms"
-        if datamap_info.units=="T" and np.isclose(vscale,1.e9):
-            datamap_unit = "nT"
-        if datamap_info.units=="K" and np.isclose(vscale,1.e-6):
-            datamap_unit = "MK"
-        if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
-            datamap_unit = "nPa"
-        if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
-            datamap_unit = r"$\mathrm{cm}^{-3}$"
-        if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
-            datamap_unit = r"$\mathrm{km}\,\mathrm{s}^{-1}$"
-        if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
-            datamap_unit = r"$\mathrm{mV}\,\mathrm{m}^{-1}$"            
-        if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
-            datamap_unit = r"$\mathrm{keV}\,\mathrm{cm}^{-3}$"            
+        # Check if vscale results in standard unit
+        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
         
         # Add unit to colorbar title
-        if datamap_unit!="":
-            cb_title_use = cb_title_use + " ["+datamap_unit+"]"
+        if datamap_unit:
+            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
 
         datamap = datamap_info.data
 
@@ -1014,7 +976,7 @@ def plot_colormap3dslice(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
             minlog=int(np.ceil(np.log10(-vminuse)))
             logthresh=int(np.floor(np.log10(linthresh)))
@@ -1055,7 +1017,24 @@ def plot_colormap3dslice(filename=None,
     # Special case for edge-to-edge figures
     if (len(plot_title)==0 and (nocb or internalcb) and noborder and noxlabels and noylabels):
         ratio = (boxcoords[3]-boxcoords[2])/(boxcoords[1]-boxcoords[0])
-        figsize = [8.0,8.0*ratio]
+        figsize = [4.0,4.0*ratio]
+
+    # If requested high res image
+    if highres:
+        highresscale = 2
+        if ((type(highres) is float) or (type(highres) is int)):
+            highresscale = float(highres)
+            if np.isclose(highresscale, 1.0):
+                highresscale = 2
+        figsize= [x * highresscale for x in figsize]
+        fontsize=fontsize*highresscale
+        fontsize2=fontsize2*highresscale
+        fontsize3=fontsize3*highresscale
+        scale=scale*highresscale
+        thick=thick*highresscale
+        fluxthick=fluxthick*highresscale
+        streamlinethick=streamlinethick*highresscale
+        vectorsize=vectorsize*highresscale
 
     if not axes:
         # Create 300 dpi image of suitable size
@@ -1126,6 +1105,12 @@ def plot_colormap3dslice(filename=None,
             fScont = ax1.contour(XmeshCentres,YmeshCentres,fSmap,[0.5],colors=fScolour, 
                                  linestyles='solid',linewidths=0.5,zorder=2)
 
+
+    if Earth:
+        Earth = Circle((0, 0), 1.0, color='k')
+        Earth2 = Wedge((0,0), 0.9, -90, 90, fc='white', ec=None,lw=0.0)
+        ax1.add_artist(Earth)
+        ax1.add_artist(Earth2)
 
     # add vectors on top
     if vectors:
@@ -1286,10 +1271,10 @@ def plot_colormap3dslice(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
         else:
-            #cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FormatStrFormatter('%4.2f'))
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax, drawedges=False, format=mtick.FuncFormatter(pt.plot.cbfmt))
+            #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
@@ -1302,47 +1287,25 @@ def plot_colormap3dslice(filename=None,
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks
-        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (lin is None and symlog is None):
+        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
         if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
-            (cbtx,cbty) = cbt[len(cbt)/2-1].get_position() # just below zero
+            (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
             if abs(0.5-cbty)/scale < 0.1:
-                cbt[len(cbt)/2-1].set_va("top")
-            (cbtx,cbty) = cbt[len(cbt)/2+1].get_position() # just above zero
+                cbt[len(cbt)//2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
             if abs(0.5-cbty)/scale < 0.1:
-                cbt[len(cbt)/2+1].set_va("bottom")
+                cbt[len(cbt)//2+1].set_va("bottom")
             if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
-                (cbtx,cbty) = cbt[len(cbt)/2-2].get_position() # second below zero
+                (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
                 if abs(0.5-cbty)/scale < 0.15:
-                    cbt[len(cbt)/2-2].set_va("top")
-                (cbtx,cbty) = cbt[len(cbt)/2+2].get_position() # second above zero
+                    cbt[len(cbt)//2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
                 if abs(0.5-cbty)/scale < 0.15:
-                    cbt[len(cbt)/2+2].set_va("bottom")
-
-        # if too many subticks in logarithmic colorbar:
-        if lin is None and symlog is None:
-            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
-            # Force less ticks for internal colorbars
-            if internalcb: 
-                nlabels = nlabels * 1.5
-            valids = ['1','2','3','4','5','6','7','8','9']
-            if nlabels > 10:
-                valids = ['1','2','3','4','5','6','8']
-            if nlabels > 19:
-                valids = ['1','2','5']
-            if nlabels > 28:
-                valids = ['1']
-            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-            for label in cb.ax.yaxis.get_ticklabels():
-                if usesci is True:
-                    firstdigit = label.get_text()[1]
-                else:
-                    firstdigit = (label.get_text().replace('.','')).lstrip('0')[1]
-                # labels will be in format $x.0\times10^{y}$
-                if not firstdigit in valids: label.set_visible(False)
+                    cbt[len(cbt)//2+2].set_va("bottom")
 
         # Adjust precision for colorbar ticks
         thesetickvalues = cb.locator()
@@ -1357,6 +1320,28 @@ def plot_colormap3dslice(filename=None,
         pt.plot.decimalprecision_cblin = 1
         if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
         cb.update_ticks()
+
+        # if too many subticks in logarithmic colorbar:
+        if not lin and symlog is None:
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            # Force less ticks for internal colorbars
+            if internalcb: 
+                nlabels = nlabels * 1.5
+            valids = ['1','2','3','4','5','6','7','8','9']
+            if nlabels > 10:
+                valids = ['1','2','3','4','5','6','8']
+            if nlabels > 19:
+                valids = ['1','2','5']
+            if nlabels > 28:
+                valids = ['1']
+            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+            for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                if not labeltext:
+                    continue
+                firstdigit = labeltext[0]
+                if not firstdigit in valids: 
+                    label.set_visible(False)
 
     # Add Vlasiator watermark
     if (wmark or wmarkb) and not axes:

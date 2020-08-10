@@ -73,6 +73,14 @@ decimalprecision_ax = 0
 decimalprecision_cblin = 0
 cb_linear = False
 
+# Output matplotlib version
+print("Using matplotlib version "+matplotlib.__version__)
+
+# Default output directory for plots
+defaultoutputdir=os.path.expandvars('$HOME/Plots/')
+if os.getenv('PTOUTPUTDIR'):
+    defaultoutputdir=os.getenv('PTOUTPUTDIR')
+
 # axisfmt replaces minus sign with en-dash to fix bug with latex descender value return
 # nb: axis ticks are never plotted with scientific format
 def axisfmt(x, pos):
@@ -146,7 +154,7 @@ def bfstring(string):
         else:
             return r'\mathbf{'+string+'}'
     # LaTeX output off
-    return string
+    return '{'+string+'}'
 
 def rmstring(string):
     if os.getenv('PTNOLATEX') is None:
@@ -155,7 +163,7 @@ def rmstring(string):
         else:
             return r'\mathrm{'+string+'}'
     # LaTeX output off
-    return string
+    return '{'+string+'}'
     
 def mathmode(string):
     if len(string)==0:
