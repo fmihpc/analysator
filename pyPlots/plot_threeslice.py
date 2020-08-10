@@ -481,7 +481,7 @@ def plot_threeslice(filename=None,
 
 
     if len(cb_title_use)!=0:      
-        if os.getenv('PTNOLATEX') is not None:
+        if os.getenv('PTNOLATEX'):
             cb_title_use.replace('\textbf{','')
             cb_title_use.replace('\mathrm{','')
             cb_title_use.replace('}','')

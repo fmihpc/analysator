@@ -85,7 +85,7 @@ if os.getenv('PTOUTPUTDIR'):
 # nb: axis ticks are never plotted with scientific format
 def axisfmt(x, pos):
     f = r'{:.'+decimalprecision_ax+r'f}'
-    if os.getenv('PTNOLATEX') is None:
+    if not os.getenv('PTNOLATEX'):
         a = f.format(abs(x))
         if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
         return r'$'+a+'$'
@@ -111,7 +111,7 @@ def cbfmtsci(x, pos):
     signchar=r'' 
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
-    if os.getenv('PTNOLATEX') is None:
+    if not os.getenv('PTNOLATEX'):
         # replaces minus sign with en-dash to fix big with latex descender value return
         if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
     else:
@@ -138,7 +138,7 @@ def cbfmt(x, pos):
         precision = '0'
         if int(b)<1: precision = str(abs(int(b)))
     f = r'{:.'+precision+'f}'
-    if os.getenv('PTNOLATEX') is None:
+    if not os.getenv('PTNOLATEX'):
         a = f.format(abs(x))
         if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
         return r'$'+a+'$'
@@ -148,7 +148,7 @@ def cbfmt(x, pos):
 
 # Helper routines for latex output handling    
 def bfstring(string):
-    if os.getenv('PTNOLATEX') is None:
+    if not os.getenv('PTNOLATEX'):
         if len(string)==0:
             return ''
         else:
@@ -157,7 +157,7 @@ def bfstring(string):
     return '{'+string+'}'
 
 def rmstring(string):
-    if os.getenv('PTNOLATEX') is None:
+    if not os.getenv('PTNOLATEX'):
         if len(string)==0:
             return ''
         else:
@@ -171,7 +171,7 @@ def mathmode(string):
     else:
         # First remove any internal possible dollar signs, then wrap whole string into math block
         result = string.replace('$','')
-        if os.getenv('PTNOLATEX') is None:
+        if not os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
             result = result.replace('\,',' ')            
         return r"$"+result+"$"

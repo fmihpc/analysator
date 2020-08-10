@@ -37,6 +37,7 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from distutils.version import LooseVersion, StrictVersion
 
 def plot_colormap(filename=None,
                   vlsvobj=None,
@@ -763,7 +764,12 @@ def plot_colormap(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+                norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+            else:
+                norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
             minlog=int(np.ceil(np.log10(-vminuse)))
             logthresh=int(np.floor(np.log10(linthresh)))
@@ -1083,11 +1089,13 @@ def plot_colormap(filename=None,
 
         # Adjust precision for colorbar ticks
         thesetickvalues = cb.locator()
-        thesetickvalues = np.sort(np.abs(thesetickvalues[thesetickvalues != 0]))
         if len(thesetickvalues)<2:
             precision_b=1
         else:
-            mintickinterval = thesetickvalues[1]-thesetickvalues[0]
+            mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
+            # find smallest interval
+            for ticki in range(len(thesetickvalues)-1):
+                mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
             precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
             # e.g. 9.0e-1 means we need precision 1
             # e.g. 1.33e-1 means we need precision 3?

@@ -848,7 +848,7 @@ def plot_vdf_profiles(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            if os.getenv('PTNOLATEX') is None:
+            if not os.getenv('PTNOLATEX'):
                 plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
@@ -888,7 +888,7 @@ def plot_vdf_profiles(filename=None,
         if True:
             #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
             #plt.yticks(fontsize=fontsize,fontweight='black')
-            if os.getenv('PTNOLATEX') is None:
+            if not os.getenv('PTNOLATEX'):
                 ylabelstr = r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
             else:
                 ylabelstr = r"$f(v)\,[m^{-6} s^{3}]$"

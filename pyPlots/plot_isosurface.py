@@ -295,7 +295,7 @@ def plot_isosurface(filename=None,
             unitstr = r'$10^{'+str(int(unit))+'}$ m'
         unit = np.power(10,int(unit))
     else:
-        if os.getenv('PTNOLATEX') is None:
+        if not os.getenv('PTNOLATEX'):
             unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
         else:
             unitstr = r'$R_E$'

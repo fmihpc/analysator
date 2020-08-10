@@ -15,8 +15,12 @@ module purge
 #module load python-env/3.5.3
 module load Python/3.7.2-GCCcore-8.2.0
 
+export PATH=/proj/jesuni/projappl/tex-basic/texlive/2020/bin/x86_64-linux:$PATH
+module load matplotlib
+
 export PTNONINTERACTIVE=1
-export PTNOLATEX=1
+#export PTNOLATEX=1
+export PTNOLATEX=
 export PTOUTPUTDIR=/wrk/users/markusb/Plots/
 
 python testpackage_colormap.py $jobcount $index
