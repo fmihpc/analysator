@@ -108,11 +108,17 @@ def cbfmtsci(x, pos):
         if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
     else:
         if np.sign(x)<0: signchar=r'-'
+    # Final special treatment for zero value
+    if x==0:
+        number = r'0.0{\times}10^{{{0}}}'
     return r'$'+signchar+number+'$'
     
 # cbfmt replaces minus sign with en-dash to fix bug with latex descender value return, used for colorbar
 # nb: regular floating i.e. non-scientific format for colorbar ticks
 def cbfmt(x, pos):
+    # Special treatment for zero value
+    if x==0:
+        return r'$0.0$'
     # Set required decimal precision
     a, b = '{:.1e}'.format(x).split('e')
     # e.g. 9.0e-1 means we need precision 1
