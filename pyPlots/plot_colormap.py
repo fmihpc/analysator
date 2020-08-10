@@ -746,7 +746,7 @@ def plot_colormap(filename=None,
         vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
 
     # Special case of very small vminuse values
-    if (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
+    if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
         vminuse = vmaxuse*1e-5
         if lin is not None:
             vminuse = 0
