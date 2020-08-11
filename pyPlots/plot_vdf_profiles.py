@@ -55,31 +55,6 @@ plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.p
 plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
 plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
-
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    # this should bring all colorbar ticks to the same horizontal position, but for
-    # some reason it doesn't work. (signchar=r'\enspace')
-    signchar=r'' 
-    # replaces minus sign with en-dash to fix big with latex descender value return
-    if np.sign(x)<0: signchar=r'\mbox{\textbf{--}}'
-    # Multiple braces for b take care of negative values in exponent
-    # brackets around \times remove extra whitespace
-    return r'$'+signchar+'{}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}$'.format(int(b))
-
-# axisfmt replaces minus sign with en-dash to fix big with latex descender value return
-def axisfmt(x, pos):
-    # Find out required decimal precision
-    a, b = '{:.1e}'.format(np.amax(abs(np.array(plot_vdf.boxcoords)))).split('e')
-    precision = '0'
-    if int(b)<1: precision = str(abs(-1-int(b)))
-    f = r'{:.'+precision+r'f}'
-    a = f.format(abs(x))
-    if np.sign(x)<0: a = r'\mbox{\textbf{--}}'+a
-    return r'$'+a+'$'
-
-
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
@@ -144,6 +119,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
 
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
+    vxsize = int(vxsize)
+    vysize = int(vysize)
+    vzsize = int(vzsize)
     # Account for 4x4x4 cells per block
     vxsize = 4*vxsize
     vysize = 4*vysize
@@ -302,7 +280,7 @@ def plot_vdf_profiles(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
@@ -439,7 +417,7 @@ def plot_vdf_profiles(filename=None,
         # Verify directory
         if outputfile==None:
             if outputdir==None: # default initial path
-                savefigdir=os.path.expandvars('$HOME/Plots/')
+                savefigdir=pt.plot.defaultoutputdir
             else:
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
@@ -489,7 +467,13 @@ def plot_vdf_profiles(filename=None,
 
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
+    xsize = int(xsize)
+    ysize = int(ysize)
+    zsize = int(zsize)
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
+    vxsize = int(vxsize)
+    vysize = int(vysize)
+    vzsize = int(vzsize)
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
@@ -510,13 +494,13 @@ def plot_vdf_profiles(filename=None,
             velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m s$^{-1}$]'
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if axes==None: # If axes are provided, leave backend as-is.
-        if draw!=None:
-            if str(matplotlib.get_backend()) is not 'TkAgg':
-                plt.switch_backend('TkAgg')
+    if axes is None: # If axes are provided, leave backend as-is.
+        if draw is not None:
+            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+                plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not 'Agg':
-                plt.switch_backend('Agg')  
+            if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+                plt.switch_backend(pt.backend_noninteractive)  
 
     if (cellids==None and coordinates==None and coordre==None):
         print("Error: must provide either cell id's or coordinates")
@@ -768,7 +752,7 @@ def plot_vdf_profiles(filename=None,
 
         if cpeak!=None:
             center='peak'
-        if cbulk!=None or center is 'bulk':
+        if cbulk!=None or center == 'bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
@@ -864,7 +848,8 @@ def plot_vdf_profiles(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            plot_title = r"\textbf{"+plot_title+"}"            
+            if not os.getenv('PTNOLATEX'):
+                plot_title = r"\textbf{"+plot_title+"}"            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         handles, labels = ax1.get_legend_handles_labels()
@@ -873,7 +858,7 @@ def plot_vdf_profiles(filename=None,
 
         # Find maximum possible lengths of axis tick labels
         # Only counts digits
-        # ticklens = [ len(re.sub(r'\D',"",axisfmt(bc,None))) for bc in boxcoords]
+        # ticklens = [ len(re.sub(r'\D',"",pt.plot.axisfmt(bc,None))) for bc in boxcoords]
         # tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]
 
         # # Adjust axis tick labels
@@ -881,7 +866,7 @@ def plot_vdf_profiles(filename=None,
         #     if tickinterval!=None:
         #         axis.set_major_locator(mtick.MultipleLocator(tickinterval))
         #     # Custom tick formatter
-        #     axis.set_major_formatter(mtick.FuncFormatter(axisfmt))
+        #     axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))
         #     ticklabs = axis.get_ticklabels()
         #     # Set boldface.
         #     for t in ticklabs: # note that the tick labels haven't yet been populated with text
@@ -903,7 +888,12 @@ def plot_vdf_profiles(filename=None,
         if True:
             #plt.ylabel(pltystr,fontsize=fontsize,weight='black')
             #plt.yticks(fontsize=fontsize,fontweight='black')
-            ax1.set_ylabel(r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$",fontsize=fontsize,weight='black')
+            if not os.getenv('PTNOLATEX'):
+                ylabelstr = r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
+            else:
+                ylabelstr = r"$f(v)\,[m^{-6} s^{3}]$"
+
+            ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
             for item in ax1.get_yticklabels():
                 item.set_fontsize(fontsize)
                 item.set_fontweight('black')

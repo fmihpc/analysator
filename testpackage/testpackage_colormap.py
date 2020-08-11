@@ -3,11 +3,12 @@ import sys, os
 import numpy as np
 import traceback
 
+datalocation = "/wrk/group/spacephysics/vlasiator"
 runs = []
 runs.append( { 'name': 'ABC',
                  'verifydir': 'testpackage_colormap/ABC/', 
-                 'fileLocation': '/proj/vlasov/2D/ABC/bulk/',
-                 'fluxLocation': '/proj/vlasov/2D/ABC/flux/',
+                 'fileLocation': datalocation+'/2D/ABC/bulk/',
+                 'fluxLocation': datalocation+'/2D/ABC/flux/',
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
@@ -17,8 +18,8 @@ runs.append( { 'name': 'ABC',
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
 runs.append( { 'name': 'BCQ',
                  'verifydir': 'testpackage_colormap/BCQ/', 
-                 'fileLocation': '/proj/vlasov/2D/BCQ/bulk/',
-                 'fluxLocation': '/proj/vlasov/2D/BCQ/flux/',
+                 'fileLocation': datalocation+'/2D/BCQ/bulk/',
+                 'fluxLocation': None, #datalocation+'/2D/BCQ/flux/', # missing on Vorna
                  'pops': ['avgs'],
                  'time': 2000,
                  'singletime': False,
@@ -28,8 +29,8 @@ runs.append( { 'name': 'BCQ',
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 runs.append( { 'name': 'BFD',
                  'verifydir': 'testpackage_colormap/BFD/', 
-                 'fileLocation': '/proj/vlasov/2D/BFD/bulk/',
-                 'fluxLocation': '/proj/vlasov/2D/BFD/fluxfunction/',
+                 'fileLocation': datalocation+'/2D/BFD/bulk/',
+                 'fluxLocation': datalocation+'/2D/BFD/fluxfunction/',
                  'fluxprefix': 'bulk.',
                  'pops': ['proton','helium'],
                  'time': 2000,
@@ -38,42 +39,42 @@ runs.append( { 'name': 'BFD',
                  'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-runs.append( { 'name': 'BCQr',
-                 'verifydir': 'testpackage_colormap/BCQr/', 
-                 'fileLocation': '/proj/vlasiato/BCQ/',
-                 'fluxLocation': None,
-                 'pops': ['avgs'],
-                 'time': 0,
-                 'singletime': False,
-                 'filename': 'restart.0001361.vlsv',
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-runs.append( { 'name': 'AFC',
-                 'verifydir': 'testpackage_colormap/AFC/', 
-                 'fileLocation': '/proj/vlasov/2D/AFC/production_halfres/',
-                 'fluxLocation': '/proj/vlasov/2D/AFC/production_halfres/flux/',
-                 'pops': ['proton'],
-                 'time': 1000,
-                 'singletime': False,
-                 'filename': None,
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
-runs.append( { 'name': 'AFCr',
-                 'verifydir': 'testpackage_colormap/AFCr/', 
-                 'fileLocation': '/proj/vlasov/2D/AFC/production_halfres/',
-                 'fluxLocation': None,
-                 'pops': ['proton'],
-                 'time': 0,
-                 'singletime': False,
-                 'filename': 'restart.0000592.2019-04-19_07-58-12.vlsv',
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
+# runs.append( { 'name': 'BCQr',
+#                  'verifydir': 'testpackage_colormap/BCQr/', 
+#                  'fileLocation': datalocation+'/2D/BCQ/',
+#                  'fluxLocation': None,
+#                  'pops': ['avgs'],
+#                  'time': 0,
+#                  'singletime': False,
+#                  'filename': 'restart.0001361.vlsv',
+#                  'nosubpops': False, # backstreaming / non-backstreaming
+#                  'vlasiator5': False,
+#                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
+# runs.append( { 'name': 'AFC',
+#                  'verifydir': 'testpackage_colormap/AFC/', 
+#                  'fileLocation': datalocation+'/2D/AFC/production_halfres/',
+#                  'fluxLocation': datalocation+'/2D/AFC/production_halfres/flux/',
+#                  'pops': ['proton'],
+#                  'time': 1000,
+#                  'singletime': False,
+#                  'filename': None,
+#                  'nosubpops': False, # backstreaming / non-backstreaming
+#                  'vlasiator5': False,
+#                  'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
+# runs.append( { 'name': 'AFCr',
+#                  'verifydir': 'testpackage_colormap/AFCr/', 
+#                  'fileLocation': datalocation+'/2D/AFC/production_halfres/',
+#                  'fluxLocation': None,
+#                  'pops': ['proton'],
+#                  'time': 0,
+#                  'singletime': False,
+#                  'filename': 'restart.0000592.2019-04-19_07-58-12.vlsv',
+#                  'nosubpops': False, # backstreaming / non-backstreaming
+#                  'vlasiator5': False,
+#                  'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
 # runs.append( { 'name': 'BFDr',
 #                  'verifydir': 'testpackage_colormap/BFDr/', 
-#                  'fileLocation': '/proj/vlasov/2D/BFD/restart/',
+#                  'fileLocation': datalocation+'/2D/BFD/restart/',
 #                  'fluxLocation': None,
 #                  'pops': ['avgs'],
 #                  'time': 0,
@@ -82,9 +83,9 @@ runs.append( { 'name': 'AFCr',
 #                  'nosubpops': False, # backstreaming / non-backstreaming
 #                  'vlasiator5': False,
 #                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-runs.append( { 'name': 'BFH',
-                 'verifydir': 'testpackage_colormap/BFH/', 
-                 'fileLocation': '/proj/vlasov/2D/BFH/zero_ehall_layers_23/',
+runs.append( { 'name': 'BGA',
+                 'verifydir': 'testpackage_colormap/BGA/', 
+                 'fileLocation': datalocation+'/2D/BGA/zero_ehall_layers_23/',
                  'fluxLocation': None,
                  'pops': ['proton'],
                  'time': 380,
@@ -263,11 +264,10 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     SHFAs[SHFAs.mask == False] = 1.
  
     # draw contours
-    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
-                               linewidths=1.2, colors=color_BS,label='Bow shock')
-    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
-    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
-
+    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock],
+                               linewidths=1.2, colors=color_BS)
+    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
+    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
 regularcalls = [
 # Input and output methods, nooverwrite
@@ -913,7 +913,7 @@ for j in range(start,end):
     level_B_caviton = runs[runid]['cavitonparams'][2]
     level_beta_SHFA = runs[runid]['cavitonparams'][3]
 
-    outputLocation=os.path.expandvars('$HOME/Plots/'+verifydir)
+    outputLocation=pt.plot.defaultoutputdir+verifydir
     
     # Source data files
     if filename is None:
