@@ -2,11 +2,6 @@ import pytools as pt
 import numpy as np
 import scipy
 
-# Evil globals!
-maxRefLevel = 3
-refineTreshold = 1.0
-refineMultiplier = 2.0
-
 def classify_alpha(exprmaps, requestvariables=False):
     if requestvariables==True:
         return ['3d', 'vg_amr_alpha', 'proton/vg_blocks', 'vg_amr_reflevel', 'vg_x', 'vg_y', 'vg_z', 'vg_dx']
@@ -34,9 +29,10 @@ def classify_alpha(exprmaps, requestvariables=False):
     return data_class
 
 # Filename here
-filename = '/wrk/users/lkotipal/REFINEMENT-TEST/REFINED-FILTERED-LEVEL3/bulk.-2147483647.vlsv'
+filename = '/wrk/users/lkotipal/REFINEMENT-TEST/bulk.-2147483647.vlsv'
 f = pt.vlsvfile.VlsvReader(filename)
 # Change these to match your run config
+# If you want to use classify_alpha by itself you'll need these as well
 maxRefLevel = 3
 refineTresh = 1.0
 refineMult = 2.0
