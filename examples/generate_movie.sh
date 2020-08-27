@@ -1,12 +1,11 @@
 #!/bin/bash -l
 #SBATCH -t 00:10:00
 #SBATCH -J array_movie
-#SBATCH -p serial
+#SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=0-200
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
-#SBATCH --constraint=hsw
 
 # This script can be used on CSC/taito to generate an array job, 
 # which renders multiple frames in order to e.g. make a movie.
@@ -54,7 +53,16 @@ fi;
 #echo Current job id is $SLURM_ARRAY_TASK_ID and calculated frames are
 #echo from $start to $end 
 
-module load mayavi2
-export PTNONINTERACTIVE=1 # Turns off x-windowing and Mayavi2 loading
+#module load mayavi2
+module purge
+module load Python/3.7.2-GCCcore-8.2.0
+export PATH=/proj/jesuni/projappl/tex-basic/texlive/2020/bin/x86_64-linux:$PATH
+module load matplotlib
+
+export PTNONINTERACTIVE=1
+#export PTNOLATEX=1
+export PTNOLATEX=
+export PTOUTPUTDIR=/wrk/users/markusb/Plots/
+
 python generate_panel.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.
