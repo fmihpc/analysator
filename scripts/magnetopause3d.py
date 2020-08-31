@@ -247,7 +247,19 @@ def make_streamlines():
 
     V = V[indexids]
 
+<<<<<<< HEAD
     Vdpoints = ids3d.idmesh3d2(cellids, V, reflevel, xsize, ysize, zsize, 3)
+=======
+    if np.ndim(V)==1:
+        shape = None
+    elif np.ndim(V)==2: # vector variable
+        shape = V.shape[1]
+    elif np.ndim(V)==3:  # tensor variable
+        shape = (V.shape[1], V.shape[2])
+
+
+    Vdpoints = ids3d.idmesh3d2(cellids, V, reflevel, xsize, ysize, zsize, shape)
+>>>>>>> 4760700b1e6bf2f57231d7c31e549a41968781f1
 
     Vxs = Vdpoints[:,:,:,0]
     Vys = Vdpoints[:,:,:,1]
@@ -383,6 +395,34 @@ def get_magnetopause(streams, ignore, count):
 
     return (pause_coords_by_slice, pause_coords_by_x)  #returns streamlines and array of magnetopause positions 
 
+<<<<<<< HEAD
+=======
+
+def plot_all(ax, XmeshXY=None, YmeshXY=None, pass_maps=None): #external function for plot_colormap
+
+    #command line args
+    if len(sys.argv) != 2:
+        ignore, count = 3, 3
+    else: 
+        ignore = int(sys.argv[1])
+        count = int(sys.argv[2])
+
+    streams, magnetopause_coords = get_magnetopause(ignore, count)
+
+    #plot streamlines
+    for s in np.arange(0, len(streams.streamlines)):
+        stream_pos = streams.streamlines[s]
+        ax.plot(stream_pos[:,0], stream_pos[:,2], color='#C4C4C4', lw=0.3)
+
+    #plot magnetopause
+    #for every slice
+    for sl in magnetopause_coords:
+        if not sl: #if slice is empty(works on nested lists?)
+            continue
+        
+        sl = np.array(sl)
+        ax.plot3D(sl[:,0], sl[:1], sl[:,2], 'k', lw = 0.4)
+>>>>>>> 4760700b1e6bf2f57231d7c31e549a41968781f1
     
     
 def make_surface(coords):

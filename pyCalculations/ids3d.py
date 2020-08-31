@@ -166,7 +166,9 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    dpoints = np.zeros(np.append(dims, datadimension))
+    l = np.append(dims, datadimension)
+    l = list(map(int, l))
+    dpoints = np.zeros(l)
   elif np.ndim(datadimension) == 1:
     dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])))
   else:
