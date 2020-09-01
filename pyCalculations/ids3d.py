@@ -80,15 +80,16 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
     dims = np.array([xsize, zsize]) * 2**reflevel
   elif xyz == 2:
     dims = np.array([xsize, ysize]) * 2**reflevel
+  dims = dims.astype(int)
 
   # datadimension is None for scalar,
   # N for vector, and (N,M) for tensor data
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    dpoints = np.zeros(np.append(dims, datadimension))
+    dpoints = np.zeros(np.append(dims, datadimension).astype(int))
   elif np.ndim(datadimension) == 1:
-    dpoints = np.zeros(np.append(dims, datadimension[0], datadimension[1]))
+    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
     print("Error finding data dimension in idmesh3d")
     return -1
@@ -159,18 +160,16 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
 def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   # is the cut in x, y or z direction
   dims = np.array([xsize, ysize, zsize]) * 2**reflevel
-  dims = list(map(int, dims))
+  dims = dims.astype(int)
   
   # datadimension is None for scalar,
   # N for vector, and (N,M) for tensor data
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    l = np.append(dims, datadimension)
-    l = list(map(int, l))
-    dpoints = np.zeros(l)
+    dpoints = np.zeros(np.append(dims, datadimension).astype(int))
   elif np.ndim(datadimension) == 1:
-    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])))
+    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
     print("Error finding data dimension in idmesh3d")
     return -1
