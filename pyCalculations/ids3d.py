@@ -30,8 +30,8 @@ def ids3d(cellids, depth, reflevel,
   length = 0
   cellids = np.array(cellids)
   idlist = np.array([]); indexlist = np.array([])
-  cells = int(xsize*ysize*zsize); cellsum = cells; cellsumII = 0 # cellsum = (the number of cells up to refinement 
-  # level i); cellsumII = (the number of cells up to refinement level i-1) 
+  cells = int(xsize*ysize*zsize); cellsum = cells; cellsumII = 0 # cellsum = (the number of cells up to refinement
+  # level i); cellsumII = (the number of cells up to refinement level i-1)
   for i in range(reflevel+1):
     # cell ids at the refinement level i
     ids = cellids[(cellsumII < cellids) & (cellids <= cellsum)]
@@ -58,7 +58,7 @@ def ids3d(cellids, depth, reflevel,
       xyz = y
     elif sett == 2:
       xyz = z
-      
+
     # finds the needed elements to create the asked cut throuhg and puts the results in the indexlist and the idlist
     elements = xyz == depths[i]
     indexlist = np.append(indexlist, np.arange(length, length+len(xyz))[elements])
@@ -80,15 +80,16 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
     dims = np.array([xsize, zsize]) * 2**reflevel
   elif xyz == 2:
     dims = np.array([xsize, ysize]) * 2**reflevel
+  dims = dims.astype(int)
 
   # datadimension is None for scalar,
   # N for vector, and (N,M) for tensor data
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    dpoints = np.zeros(np.append(dims, datadimension))
+    dpoints = np.zeros(np.append(dims, datadimension).astype(int))
   elif np.ndim(datadimension) == 1:
-    dpoints = np.zeros(np.append(dims, datadimension[0], datadimension[1]))
+    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
     print("Error finding data dimension in idmesh3d")
     return -1
@@ -97,7 +98,7 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
   # create the plot grid
   cells = int(xsize*ysize*zsize)
   cellsum = cells # the number of cells up to refinement level i
-  cellsumII = 0 # the number of cells up to refinement level i-1 
+  cellsumII = 0 # the number of cells up to refinement level i-1
   for i in range(reflevel+1):
     # the cell ids and the data at the refinement level i
     ids = idlist[(cellsumII < idlist) & (idlist <= cellsum)]
@@ -122,7 +123,7 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
 
     cellsumC = ((y-1)*xsize*2**i)
     x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
-    
+
     # gets the correct coordinate values and the widths for the plot
     if xyz == 0:
       a = y
@@ -159,15 +160,16 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
 def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   # is the cut in x, y or z direction
   dims = np.array([xsize, ysize, zsize]) * 2**reflevel
-
+  dims = dims.astype(int)
+  
   # datadimension is None for scalar,
   # N for vector, and (N,M) for tensor data
   if datadimension is None:
     dpoints = np.zeros(dims)
   elif np.ndim(datadimension) == 0:
-    dpoints = np.zeros(np.append(dims, datadimension))
+    dpoints = np.zeros(np.append(dims, datadimension).astype(int))
   elif np.ndim(datadimension) == 1:
-    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])))
+    dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
     print("Error finding data dimension in idmesh3d")
     return -1
@@ -176,7 +178,7 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   # create the plot grid
   cells = int(xsize*ysize*zsize)
   cellsum = cells # the number of cells up to refinement level i
-  cellsumII = 0 # the number of cells up to refinement level i-1 
+  cellsumII = 0 # the number of cells up to refinement level i-1
   for i in range(reflevel+1):
     # the cell ids and the data at the refinement level i
     ids = idlist[(cellsumII < idlist) & (idlist <= cellsum)]
@@ -201,7 +203,7 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
 
     cellsumC = ((y-1)*xsize*2**i)
     x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
-    
+
     # inserts the data values into dpoints
     # Broadcasting magic for vectorization! Not quite a oneliner
     # Skipping the declaration is actually faster but looks like hot garbage
@@ -223,7 +225,7 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
 
   return dpoints #np.swapaxes(dpoints, 0, 1)
 
-# find the highest refinement level 
+# find the highest refinement level
 def refinement_level(xsize, ysize, zsize, bigid):
   cells = int(xsize*ysize*zsize)
   reflevel = 0
