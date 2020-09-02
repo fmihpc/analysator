@@ -14,6 +14,16 @@ from yt.visualization.api import Streamlines
 
 import ids3d
 
+'''
+Finds the magnetopause in 3D-run and plots it with matplotlib
+Accepts 2 (or 0) command line arguments: 1) how many streamlines to ignore,  2) how many streamlines to count after the ignored ones
+
+output:
+saves png-image to the current folder 
+'''
+
+
+
 
 arcDeg = 10 # 360/arcDeg must be an integer. Best at 10, ok at 5, 10: 36 slices, 5: 72 slices
 
@@ -27,10 +37,10 @@ class Point: #a 3D-point
 
 
         self.x, self.r, self.phi = np.array(cartesian_to_polar(x,y,z))
-        
+
     def print(self):
         print(self.x, self.y, self.z)
-    
+
 
 class YZSlice: #a slice in yz-plane
 
@@ -48,7 +58,7 @@ class YZSlice: #a slice in yz-plane
 
     def add_point(self, p):
         p_phi = p.phi
-        if p_phi == 0: p_phi = 360 
+        if p_phi == 0: p_phi = 360
 
         if (p_phi <= self.max_deg) and (p_phi >= self.min_deg):
             self.points.append(p)
@@ -60,7 +70,7 @@ class YZSlice: #a slice in yz-plane
     def get_mean_point(self, ignore, count):
     #get mean of points in slice s ignoring first 'ignore' points
     #and counting the average of the next 'count' points
-    
+
         if len(self.points) < (ignore+count): #if there are no enough points in slice just ignore it
             return 0
 
@@ -94,7 +104,7 @@ class YZPlane: #an yz-plane at a certain x
         for i in range (0, int(360/arcDeg)): #initialize slices list
             s = YZSlice(self.x, (i*arcDeg+arcDeg))
             self.slices.append(s)
-    
+
 
     def add_point(self, p):
 
@@ -115,12 +125,12 @@ def get_bulk(): #fetch bulk file name
     return (fileLocation+fileN)
 
 
-def get_slice_index(deg): #aux function for indexing arcDeg-degree slices 
+def get_slice_index(deg): #aux function for indexing arcDeg-degree slices
 
     if deg == 0: #goes into last index slice
         return int((360/arcDeg)-1)
-    
-    if deg < 0:            
+
+    if deg < 0:
         deg = 360 + deg
 
     ind = 0
@@ -195,7 +205,7 @@ def make_streamlines():
 
     #boxre=[-30, 30, -30, 30, -30, 30]
     boxre = [0]
-                            
+
     # bulk file
     name = get_bulk()
     f = pt.vlsvfile.VlsvReader(file_name=name)
@@ -207,10 +217,10 @@ def make_streamlines():
     simext_m =[xmin,xmax,ymin,ymax,zmin,zmax]
     sizes = np.array([xsize,ysize,zsize])
     sizesfs = np.array([xsizefs,ysizefs,zsizefs])
-    
+
 
     simext = list(map(to_Re, simext_m))
-     
+
 
     #set box coordnates
     if len(boxre)==6:
@@ -218,7 +228,7 @@ def make_streamlines():
     else:
         boxcoords=list(simext)
 
-   
+
     # If box extents were provided manually, truncate to simulation extents
     boxcoords[0] = max(boxcoords[0],simext[0]) #xmax
     boxcoords[1] = min(boxcoords[1],simext[1]) #xmin
@@ -237,7 +247,7 @@ def make_streamlines():
 
 
     ##############
-    
+
     #Read the data from vlsv-file
     V = f.read_variable("vg_v")
 
@@ -247,19 +257,8 @@ def make_streamlines():
 
     V = V[indexids]
 
-<<<<<<< HEAD
     Vdpoints = ids3d.idmesh3d2(cellids, V, reflevel, xsize, ysize, zsize, 3)
-=======
-    if np.ndim(V)==1:
-        shape = None
-    elif np.ndim(V)==2: # vector variable
-        shape = V.shape[1]
-    elif np.ndim(V)==3:  # tensor variable
-        shape = (V.shape[1], V.shape[2])
 
-
-    Vdpoints = ids3d.idmesh3d2(cellids, V, reflevel, xsize, ysize, zsize, shape)
->>>>>>> 4760700b1e6bf2f57231d7c31e549a41968781f1
 
     Vxs = Vdpoints[:,:,:,0]
     Vys = Vdpoints[:,:,:,1]
@@ -270,13 +269,13 @@ def make_streamlines():
 
     #Create streamline seeds (starting points for streamlines)
     streamline_seeds = []
-    
+
     #range: np.arange(from, to, step)
     for i in np.arange(-15.0, 15.0, 0.5):
         for j in np. arange(-15.0, 15.0, 0.5):
             streamline_seeds.append([20, i, j])
 
-            
+
     streamline_seeds = np.array(streamline_seeds)
 
     #dataset in yt-form
@@ -286,7 +285,7 @@ def make_streamlines():
         bbox=np.array([[boxcoords[0], boxcoords[1]],
                     [boxcoords[2],boxcoords[3]],
                     [boxcoords[4],boxcoords[5]]]))
-                                    
+
 
     #data, seeds, dictionary positions, lenght of lines
     streamlines_pos = yt.visualization.api.Streamlines(yt_dataset, streamline_seeds,
@@ -294,12 +293,12 @@ def make_streamlines():
 
     #where the magic happens
     streamlines_pos.integrate_through_volume()
-        
+
     #get rid of lines that don't work
     #for s in np.arange(0, len(streamlines_pos.streamlines)):
     #    print(streamlines_pos.streamlines[s])
     #    stream_pos = streamlines_pos.streamlines[s]
-    #    stream_pos = stream_pos[(np.all(stream_pos != 0.0) | (np.linalg.norm(stream_pos, axis = 1) > 4.7)) & (stream_pos[0,2] != 0.0)] 
+    #    stream_pos = stream_pos[(np.all(stream_pos != 0.0) | (np.linalg.norm(stream_pos, axis = 1) > 4.7)) & (stream_pos[0,2] != 0.0)]
 
 
     return streamlines_pos #returns yt streamlines object
@@ -312,9 +311,9 @@ def interpolate(YTstream, x_points):
     '''
 
     streamline = YTstream.positions.to_value()
-    
+
     arr = np.array(streamline)
-    
+
     #maybe needs to be sorted???
     xp = arr[:,0] #x-coordinates of streamline
     yp = arr[:,1] #y-coordinates
@@ -325,13 +324,13 @@ def interpolate(YTstream, x_points):
     yp = yp[::-1]
     zp = zp[::-1]
 
-    
+
     #interpolate z from xz-plane
     z_points = np.interp(x_points, xp, zp, left=float('inf'), right=float('inf'))
 
     #interpolate y from xy-plane
     y_points = np.interp(x_points, xp, yp, left=float('inf'), right=float('inf'))
-    
+
     #if z or y -coordinate is inf at some point scrap the whole streamline from data
     for y, z in zip(y_points, z_points):
         if z == float('inf') or y == float('inf'):
@@ -341,7 +340,7 @@ def interpolate(YTstream, x_points):
 
 
 def get_magnetopause(streams, ignore, count):
-    
+
     #wanted points in x-axis (YZ-plane places)
     x_points = np.array(np.arange(8, -30, -0.5))
 
@@ -370,7 +369,7 @@ def get_magnetopause(streams, ignore, count):
 
     #Now we (should) have every interpolated Point saved
 
-    #where to save the magnetopause coordinates by slice 
+    #where to save the magnetopause coordinates by slice
     pause_coords_by_slice = []
     for i in range(0, int(360/arcDeg)):
         pause_coords_by_slice.append([])
@@ -382,7 +381,7 @@ def get_magnetopause(streams, ignore, count):
     for p in planes:
         p_ind = len(pause_coords_by_x)
         pause_coords_by_x.append([])
-        
+
         #for every slice get mean point
         for i in range(0, len(p.slices)):
             s = p.slices[i]
@@ -393,7 +392,7 @@ def get_magnetopause(streams, ignore, count):
 
     pause_coords_by_slice = np.array(pause_coords_by_slice)
 
-    return (pause_coords_by_slice, pause_coords_by_x)  #returns streamlines and array of magnetopause positions 
+    return (pause_coords_by_slice, pause_coords_by_x)  #returns streamlines and array of magnetopause positions
 
 <<<<<<< HEAD
 =======
@@ -403,7 +402,7 @@ def plot_all(ax, XmeshXY=None, YmeshXY=None, pass_maps=None): #external function
     #command line args
     if len(sys.argv) != 2:
         ignore, count = 3, 3
-    else: 
+    else:
         ignore = int(sys.argv[1])
         count = int(sys.argv[2])
 
@@ -419,12 +418,12 @@ def plot_all(ax, XmeshXY=None, YmeshXY=None, pass_maps=None): #external function
     for sl in magnetopause_coords:
         if not sl: #if slice is empty(works on nested lists?)
             continue
-        
+
         sl = np.array(sl)
         ax.plot3D(sl[:,0], sl[:1], sl[:,2], 'k', lw = 0.4)
 >>>>>>> 4760700b1e6bf2f57231d7c31e549a41968781f1
-    
-    
+
+
 def make_surface(coords):
 
     '''
@@ -432,7 +431,7 @@ def make_surface(coords):
     Returns list of verts and vert indices of surface triangles
 
     coordinates must be in form [...[c11, c21, c31, ... cn1,[c12, c22, c32, ... cn2],...
-    where cij = [xij, yij, zij], i marks slice, j marks yz-plane (x_coord) index 
+    where cij = [xij, yij, zij], i marks slice, j marks yz-plane (x_coord) index
 
     How it works:
     Three points make a triangle, triangles make the surface.
@@ -489,7 +488,7 @@ def make_surface(coords):
             ind3 = ind1 + 1
 
     first_triangles = np.array(first_triangles)
-    
+
     #Now the rest of the triangles are just the first triangles + (index of area * slices_in_plane)
     #maybe could be done better?
     for area_index in range(planes-1):
@@ -529,7 +528,7 @@ def triangle(A,B,C):
     #unit-length normal vector
     normal = cross / np.linalg.norm(cross)
 
-    # vector area = area * normal vector 
+    # vector area = area * normal vector
     vector_area = area * normal
 
     #check that area vector points inwards (TODO)
@@ -552,7 +551,7 @@ def main():
     #command line args
     if len(sys.argv) != 2:
         ignore, count = 3, 3
-    else: 
+    else:
         ignore = int(sys.argv[1])
         count = int(sys.argv[2])
 
@@ -565,8 +564,8 @@ def main():
     pause_by_slice, pause_by_x = get_magnetopause(streams, ignore, count)
 
     ax = plt.axes(projection='3d', xlabel='X (Re)', ylabel='Y (Re)', zlabel='Z (Re)')
-    
-    
+
+
 
     if plotting[0]: #plot streamlines
         for s in np.arange(0, len(streams.streamlines)):
@@ -600,22 +599,22 @@ def main():
         print('Making the surface...')
         verts, faces = make_surface(pause_by_x)
         verts = np.array(verts)
-        
+
         ax.plot_trisurf(verts[:, 0], verts[:,1], faces, verts[:, 2],
                 linewidth=0.2, antialiased=True)
 
     plt.savefig('magnetopause3d.png')
-    
+
     #save 2d projection
     #ax.view_init(azim=45, elev=0)
     #plt.savefig('magnetopause3dprojection.png')
-            
+
 
     print('Ready!')
 
 
 
-    
+
 
 if __name__ == "__main__":
     main()
