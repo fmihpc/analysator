@@ -871,6 +871,8 @@ v5reducers["vg_v_perpendicular"] =         DataReducerVariable(["vg_v", "vg_b_vo
 
 v5reducers["vg_eje_parallel"] =              DataReducerVariable(["vg_eje", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$EJE_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_eje_perpendicular"] =         DataReducerVariable(["vg_eje", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$EJE_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+v5reducers["vg_egradpe_parallel"] =              DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\parallel}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+v5reducers["vg_egradpe_perpendicular"] =         DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\perp}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 
 v5reducers["vg_pdyn"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"Pa")
 v5reducers["vg_pdynx"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"Pa")
