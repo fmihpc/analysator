@@ -1322,3 +1322,50 @@ def expr_electronpressure_check(pass_maps, requestvariables=False):
         egradpe = expandMask(egradpe)
     return np.ma.divide(egradpe, egradpe2)
 
+
+def expr_fgvgbvol(pass_maps, requestvariables=False):
+    # expression for verifying gridglue: downsamples (aggregates) fsgrid values to dccrg-grid resolution
+    if requestvariables==True:
+        return ['vg_b_vol','fg_b_vol','fg_boundarytype','3d']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expression expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    fg = np.ma.masked_invalid(pass_maps['fg_b_vol'])
+    # use boundarytype to mask which cells participate in aggregation
+    fg_boundarytype = np.ma.masked_values(pass_maps['fg_boundarytype'], 0)
+    fg.mask[:,:,:,0] = fg_boundarytype.mask[:,:,:]
+    fg.mask[:,:,:,1] = fg_boundarytype.mask[:,:,:]
+    fg.mask[:,:,:,2] = fg_boundarytype.mask[:,:,:]
+    # generate unity array for counting aggregation source cells
+    sums = np.ma.masked_invalid(np.zeros_like(fg)+1)
+    sums.mask[:,:,:,0] = fg_boundarytype.mask[:,:,:]
+    sums.mask[:,:,:,1] = fg_boundarytype.mask[:,:,:]
+    sums.mask[:,:,:,2] = fg_boundarytype.mask[:,:,:]
+
+    vg = pass_maps['vg_b_vol']
+    bin_size=2
+    (dim1,dim2,dim3,vect1)=fg.shape
+    (out1,out2,out3,vect2)=vg.shape
+    # reshape, then sum over the new mini-dimensions
+    fgavg = fg.reshape((out1//bin_size, bin_size,
+                        out2//bin_size, bin_size,
+                        out3//bin_size, bin_size, 3))
+    fgavg = np.ma.sum(fgavg, axis=1)
+    fgavg = np.ma.sum(fgavg, axis=2)
+    fgavg = np.ma.sum(fgavg, axis=3)
+    # reshape, then sum over the new mini-dimensions
+    summs = sums.reshape((out1//bin_size, bin_size,
+                        out2//bin_size, bin_size,
+                        out3//bin_size, bin_size, 3))
+    summs = np.ma.sum(summs, axis=1)
+    summs = np.ma.sum(summs, axis=2)
+    summs = np.ma.sum(summs, axis=3)
+    # divide by sum count to get average
+    summs = np.ma.masked_values(summs,0)
+    fgavg = np.ma.divide(fgavg,summs)
+    # resample back up for plotting
+    fgreturn = np.repeat(np.repeat(np.repeat(fgavg, 2, axis=0), 2, axis=1), 2, axis=2)
+    return np.abs(fgreturn-vg)
