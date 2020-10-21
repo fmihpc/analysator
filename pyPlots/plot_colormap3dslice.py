@@ -898,13 +898,13 @@ def plot_colormap3dslice(filename=None,
             datamap = np.swapaxes(datamap, 0,1)
 
             if np.ma.is_masked(maskgrid):
-                if np.ndim(datamap)==1:
+                if np.ndim(datamap)==2:
                     datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
                     datamap = datamap[:,MaskY[0]:MaskY[-1]+1]
-                elif np.ndim(datamap)==2: # vector variable
+                elif np.ndim(datamap)==3: # vector variable
                     datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:]
                     datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:]
-                elif np.ndim(datamap)==3:  # tensor variable
+                elif np.ndim(datamap)==4:  # tensor variable
                     datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:,:]
                     datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:,:]
         # Handle operators
