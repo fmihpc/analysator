@@ -394,9 +394,6 @@ def get_magnetopause(streams, ignore, count):
 
     return (pause_coords_by_slice, pause_coords_by_x)  #returns streamlines and array of magnetopause positions
 
-<<<<<<< HEAD
-=======
-
 def plot_all(ax, XmeshXY=None, YmeshXY=None, pass_maps=None): #external function for plot_colormap
 
     #command line args
@@ -421,8 +418,6 @@ def plot_all(ax, XmeshXY=None, YmeshXY=None, pass_maps=None): #external function
 
         sl = np.array(sl)
         ax.plot3D(sl[:,0], sl[:1], sl[:,2], 'k', lw = 0.4)
->>>>>>> 4760700b1e6bf2f57231d7c31e549a41968781f1
-
 
 def make_surface(coords):
 
