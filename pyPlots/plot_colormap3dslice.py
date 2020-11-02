@@ -786,6 +786,19 @@ def plot_colormap3dslice(filename=None,
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
                 step_indexids = step_cellids.argsort()
+                step_cellids = step_cellids[step_indexids]
+                step_reflevel = ids3d.refinement_level(xsize, ysize, zsize, step_cellids[-1])
+                for i in range(5): # Check if Vlasov grid doesn't reach maximum (fsgrid) refinement
+                    if xsize*(2**(step_reflevel + i)) == xsizefg:
+                        step_reflevel += i
+                        break
+                if normal[0] != 0 and normal[1] == 0 and normal[2] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
+                if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
+                if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
+
                 # Append new dictionary as new timestep
                 pass_maps.append({})
                 # Add relative step identifier to dictionary
@@ -834,9 +847,9 @@ def plot_colormap3dslice(filename=None,
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
+                            pass_map = ids3d.idmesh3d2(step_cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
-                            pass_map = pass_map[indexlist] # find required cells
+                            pass_map = pass_map[step_indexlist] # find required cells
                             if np.ndim(pass_map)==1:
                                 pass_shape = None
                             elif np.ndim(pass_map)==2: # vector variable
@@ -845,7 +858,7 @@ def plot_colormap3dslice(filename=None,
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
+                            pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map)==1:
