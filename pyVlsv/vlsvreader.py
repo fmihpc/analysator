@@ -1004,6 +1004,26 @@ class VlsvReader(object):
 
        return np.squeeze(orderedData)
 
+
+   def read_variable_shaped(self, name, cellids=-1,operator="pass"):
+      ''' Read variables from the open vlsv file and reshape the output. 
+      Arguments:
+      :param name: Name of the variable
+      :param cellids: a value of -1 reads all data
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read` :func:`read_variable_info`
+      '''
+      # Read variable as usual
+      data = self.read_variable(name, cellids=cellids,operator=operator)
+      # sort with CellID
+      data = data[self.read_variable("CellID").argsort()]
+      # reshape to mesh size
+      data = data.reshape(self.get_spatial_mesh_size())
+      return data
+
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:
