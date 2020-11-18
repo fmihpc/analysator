@@ -56,6 +56,7 @@ def plot_colormap3dslice(filename=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
                   vscale=1.0,
+                  symmetric=False,
                   pass_vars=[], pass_times=None, pass_full=False,
                   # fluxfile=None, fluxdir=None,
                   # fluxthick=1.0, fluxlines=1,
@@ -103,6 +104,7 @@ def plot_colormap3dslice(filename=None,
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
+    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
     :kword lin:         Flag for using linear colour scaling instead of log
     :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
@@ -945,7 +947,7 @@ def plot_colormap3dslice(filename=None,
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
     if vmin is None and vmax is None:
-        if np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) or symlog is not None:
+        if symmetric or np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) or symlog is not None:
             absval = max(abs(vminuse),abs(vmaxuse))
             vminuse = -absval
             vmaxuse = absval

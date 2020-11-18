@@ -1132,15 +1132,32 @@ class VlsvReader(object):
       .. note:: The cell ids go from 1 .. max not from 0
       '''
       # Get cell lengths:
-      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(self.__xcells), (self.__ymax - self.__ymin)/(float)(self.__ycells), (self.__zmax - self.__zmin)/(float)(self.__zcells)])
-      # Get cell indices:
+      xcells = self.__xcells
+      ycells = self.__ycells
+      zcells = self.__zcells
       cellid = (int)(cellid - 1)
+      # Handle AMR
+      cellscount = self.__xcells*self.__ycells*self.__zcells
+      reflevel=0
+      subtraction = (int)(cellscount * (2**reflevel)**3)
+      while (cellid >= subtraction):
+         cellid -= subtraction
+         reflevel += 1
+         subtraction = (int)(cellscount * (2**reflevel)**3)
+         xcells *= 2
+         ycells *= 2
+         zcells *= 2
+      # Get cell indices:
       cellindices = np.zeros(3)
-      cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
+      cellindices[0] = (int)(cellid)%(int)(xcells)
+      cellindices[1] = ((int)(cellid)//(int)(xcells))%(int)(ycells)
+      cellindices[2] = (int)(cellid)//(int)(xcells*ycells)
+      # cellindices[0] = (int)(cellid)%(int)(self.__xcells)
+      # cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
+      # cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
+      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(xcells), (self.__ymax - self.__ymin)/(float)(ycells), (self.__zmax - self.__zmin)/(float)(zcells)])
       cellcoordinates = np.zeros(3)
       cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
       cellcoordinates[1] = self.__ymin + (cellindices[1] + 0.5) * cell_lengths[1]
@@ -1150,6 +1167,7 @@ class VlsvReader(object):
 
    def get_cell_indices(self, cellid):
       ''' Returns a given cell's indices as a numpy array
+      # TODO: handle AMR indices somehow?
 
       :param cellid:            The cell's ID
       :returns: a numpy array with the coordinates
