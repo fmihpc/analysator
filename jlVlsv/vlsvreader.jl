@@ -29,7 +29,8 @@ struct Meta
    name::AbstractString
    fid::IOStream
    footer::XMLElement
-   fileindex_for_cellid::Dict{UInt64,Int64}
+   fileindex_for_cellid::Vector{UInt64}
+   cellIndex::Vector{Int64}
    use_dict_for_blocks::Bool
    fileindex_for_cellid_blocks::Dict{Int64,Int64} # [0] is index, [1] is blockcount
    cells_with_blocks::Dict{Int64,Int64}
@@ -86,21 +87,23 @@ function read_prep(fid, footer, name, tag, attr)
    datatype = ""
    vectorsize = 0
    variable_offset = 0
+
+   isFound = false
    
    for varinfo in footer[tag]
       if attribute(varinfo, attr) == name
+         #has_attribute(e, name)
          arraysize = parse(Int, attribute(varinfo, "arraysize"))
          datasize = parse(Int, attribute(varinfo, "datasize"))
          datatype = attribute(varinfo, "datatype")
          vectorsize = parse(Int, attribute(varinfo, "vectorsize"))
          variable_offset = parse(Int, content(varinfo))
+         isFound = true
          break
       end
    end
 
-   if variable_offset == 0
-      @error "unknown variable $(name)!"
-   end
+   if !isFound @error "unknown variable $(name)!" end
 
    seek(fid, variable_offset)
 
@@ -123,17 +126,11 @@ end
 
 
 """
-Read in the cell ids and create an internal dictionary to give the index of an
-arbitrary cellID.
+Return the cells ID.
 """
-function read_fileindex_for_cellid(fid, footer)
-
-   w = read_vector(fid, footer, "CellID", "VARIABLE")
-
-   fileindex_for_cellid = 
-      Dict(cellid => index for (index,cellid) in enumerate(w))
+read_fileindex_for_cellid(fid, footer) = 
+   read_vector(fid, footer, "CellID", "VARIABLE")
    
-end
 
 "Return vector data from vlsv file."
 function read_vector(fid, footer, name, tag)
@@ -173,6 +170,8 @@ function read_meta(filename::AbstractString; verbose=false)
    # [0] is index, [1] is blockcount
    fileindex_for_cellid = read_fileindex_for_cellid(fid, footer)
 
+   cellIndex = sortperm(fileindex_for_cellid)
+
    bbox = read_mesh(fid, footer, meshName, "MESH_BBOX") 
 
    nodeCoordsX = read_mesh(fid, footer, meshName, "MESH_NODE_CRDS_X")
@@ -194,19 +193,13 @@ function read_meta(filename::AbstractString; verbose=false)
    populations = String[]
 
    for varinfo in footer["BLOCKIDS"]
-      popname = attribute(varinfo, "name"; required=false)
-      if isnothing(popname) 
-         popname = "avgs"
-      end
 
-      # Update list of active populations
-      if popname ∉ populations 
-         push!(populations, popname)
-      end
+      if has_attribute(varinfo, "name")
+         # New style vlsv file with bounding box
+         popname = attribute(varinfo, "name")
 
-      bbox = read_mesh(fid, footer, popname, "MESH_BBOX")
+         bbox = read_mesh(fid, footer, popname, "MESH_BBOX")
 
-      if !isempty(bbox) # new style vlsv file with bounding box
          nodeCoordsX = read_mesh(fid, footer, popname, "MESH_NODE_CRDS_X")   
          nodeCoordsY = read_mesh(fid, footer, popname, "MESH_NODE_CRDS_Y")   
          nodeCoordsZ = read_mesh(fid, footer, popname, "MESH_NODE_CRDS_Z")   
@@ -218,10 +211,42 @@ function read_meta(filename::AbstractString; verbose=false)
          vxmax = nodeCoordsX[end]
          vymax = nodeCoordsY[end]
          vzmax = nodeCoordsZ[end]
-         # Velocity cell lengths
          dvx = (vxmax - vxmin) / vxblocks / vxblock_size
          dvy = (vymax - vymin) / vyblocks / vyblock_size
          dvz = (vzmax - vzmin) / vzblocks / vzblock_size
+      else
+         popname = "avgs"
+
+         if "vxblocks_ini" in attribute.(footer["PARAMETER"],"name") 
+            # Old vlsv files where the mesh is defined with parameters
+            vxblocks = read_parameter(fid, footer, "vxblocks_ini")
+            vyblocks = read_parameter(fid, footer, "vyblocks_ini")
+            vzblocks = read_parameter(fid, footer, "vzblocks_ini")
+            vxblock_size = 4
+            vyblock_size = 4
+            vzblock_size = 4
+            vxmin = read_parameter(fid, footer, "vxmin")
+            vymin = read_parameter(fid, footer, "vymin")
+            vzmin = read_parameter(fid, footer, "vzmin")
+            vxmax = read_parameter(fid, footer, "vxmax")
+            vymax = read_parameter(fid, footer, "vymax")
+            vzmax = read_parameter(fid, footer, "vzmax")
+            dvx = (vxmax - vxmin) / vxblocks / vxblock_size
+            dvy = (vymax - vymin) / vyblocks / vyblock_size
+            dvz = (vzmax - vzmin) / vzblocks / vzblock_size
+         else
+            # No velocity space info, e.g., file not written by Vlasiator 
+            vxblocks, vyblocks, vzblocks = 0, 0, 0
+            vxblock_size, vyblock_size, vzblock_size = 4, 4, 4
+            vxmin, vymin, vzmin = 0.0, 0.0, 0.0
+            vxmax, vymax, vzmax = 0.0, 0.0, 0.0
+            dvx, dvy, dvz = 1.0, 1.0, 1.0
+         end
+      end
+
+      # Update list of active populations
+      if popname ∉ populations 
+         push!(populations, popname)
       end
 
       # Create a new MeshInfo object for this population
@@ -239,7 +264,8 @@ function read_meta(filename::AbstractString; verbose=false)
 
    #close(fid) # Is it safe not to close it?
 
-   meta = Meta(filename, fid, footer, fileindex_for_cellid, use_dict_for_blocks, 
+   meta = Meta(filename, fid, footer, fileindex_for_cellid, cellIndex,
+      use_dict_for_blocks, 
       fileindex_for_cellid_blocks, cells_with_blocks, blocks_per_cell, 
       blocks_per_cell_offsets, order_for_cellid_blocks, 
       xcells, ycells, zcells, xblock_size, yblock_size, zblock_size,
@@ -307,7 +333,7 @@ function read_variable_select(meta, var, cellIDs=UInt[])
    T, variable_offset, arraysize, datasize, vectorsize = 
       read_prep(meta.fid, meta.footer, var, "VARIABLE", "name")
 
-   rOffsets = [meta.fileindex_for_cellid[i]*datasize*vectorsize for i in cellIDs]
+   rOffsets = [meta.cellIndex[i]*datasize*vectorsize for i in cellIDs]
 
    v = fill(T[], length(rOffsets))
 
@@ -324,12 +350,12 @@ function read_variable_select(meta, var, cellIDs=UInt[])
 end
 
 
-function read_parameter(meta, param)
-
-   fid, footer = meta.fid, meta.footer
-
+function read_parameter(fid, footer, param)
+   
    T, _, _, _, _ = read_prep(fid, footer, param, "PARAMETER", "name")
 
    p = read(fid, T)
-
 end
+
+
+read_parameter(meta, param) = read_parameter(meta.fid, meta.footer, param)
