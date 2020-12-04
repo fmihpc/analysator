@@ -311,15 +311,6 @@ function read_variable_info(footer, var)
       popname = "pop"
       varname = var
    end
-      
-#   # Check which set of datareducers to use
-#   if varname[1:3] == "vg_"
-#      reducer_reg = v5reducers
-#      reducer_multipop = multipopv5reducers
-#   else
-#      reducer_reg = datareducers
-#      reducer_multipop = multipopdatareducers
-#   end
 
    if has_variable(footer, var)
       if varname[1:3] == "vg_" || varname[1:3] == "fg_"
@@ -343,47 +334,8 @@ function read_variable_info(footer, var)
          unit = units_predefined[var]
          variableLaTeX = latex_predefined[var]
          unitLaTeX = latexunits_predefined[var]
-      end    
-#   elseif var in reducer_reg
-#      unit = reducer_reg[name].unit
-#      varLaTeX = reducer_reg[name].varLaTeX
-#      unitLaTeX = reducer_reg[name].unitLaTeX
-#   elseif "pop/"*varname in reducer_multipop
-#      poplatex = "i"
-#      if popname in vlsvvariables.speciesdict
-#         poplatex = vlsvvariables.speciesdict[popname]
-#      end
-#      unit = reducer_multipop["pop/"*varname].unit
-#      varLaTeX = (reducer_multipop["pop/"*varname].varLaTeX).replace("REPLACEPOP",poplatex)
-#      unitLaTeX = reducer_multipop["pop/"*varname].unitLaTeX
-#   elseif varname in vlsvvariables.unitsdict
-#      poplatex = "i"
-#      if popname in vlsvvariables.speciesdict
-#         poplatex = vlsvvariables.speciesdict[check_variablepopname]
-#      end
-#      unit = vlsvvariables.unitsdict[varname]
-#      varLaTeX = vlsvvariables.latexdictmultipop[varname].replace("REPLACEPOP",poplatex)
-#      unitLaTeX = vlsvvariables.latexunitsdict[varname]
-   else
-      #unit = ""
-      #varLaTeX = r""*name.replace("_","\_")
-      #unitLaTeX = ""
+      end
    end
-
-#   if startswith(name, "fg_")
-#       data = read_fsgrid_variable(name=name, operator=operator)
-#   else
-#       data = read_variable(name=name, operator=operator, cellids=cellids)
-#   end
-
-#   if operator != "pass"
-#      if operator == "magnitude"
-#         varLaTeX = r"$|$"*varLaTeX*r"$|$"
-#      else
-#         varLaTeX = varLaTeX*r"${_{"*operator*r"}}$"
-#      end
-#
-#   end
 
    return VarInfo(unit, unitLaTeX, variableLaTeX, unitConversion)
 end
