@@ -2,6 +2,8 @@
 #
 # Hongyang Zhou, hyzhou@umich.edu 12/01/2020
 
+include("vlsvvariables.jl")
+
 using LightXML
 
 "Mesh size information."
@@ -23,6 +25,18 @@ struct MeshInfo
    dvz::Float64
 end
 
+"""
+Variable metadata from the vlsv footer, including the unit of the 
+variable as a regular string, the unit of the variable as a LaTeX-formatted 
+string, the description of the variable as a LaTeX-formatted string, and the 
+conversion factor to SI units as a string.
+"""
+struct VarInfo
+   unit::String
+   unitLaTeX::LaTeXString
+   variableLaTeX::LaTeXString
+   unitConversion::String
+end
 
 "Meta data declaration."
 struct Meta
@@ -276,30 +290,102 @@ end
 
 
 """
-   read_var_meta(footer, var)
+   read_variable_info(footer, var)
 
-Return variable metadata from the vlsv footer, including the unit of the 
-variable as a regular string, the unit of the variable as a LaTeX-formatted 
-string, the description of the variable as a LaTeX-formatted string, and the 
-conversion factor to SI units as a string.             
+Return a struct of VarInfo.           
 """
-function read_var_meta(footer, var)
+function read_variable_info(footer, var)
 
    unit = ""
    unitLaTeX = ""
    variableLaTeX = ""
    unitConversion = ""
 
-   for varinfo in footer["VARIABLE"]
-      if attribute(varinfo, "name") == var
-         unit = attribute(varinfo, "unit")
-         unitLaTeX = attribute(varinfo, "unitLaTeX")
-         variableLaTeX = attribute(varinfo, "variableLaTeX")
-         unitConversion = attribute(varinfo, "unitConversion") 
-      end
+   # Force lowercase
+   var = lowercase(var)
+
+   # Get population and variable names from data array name 
+   if occursin("/", var)
+      popname, varname = split(a, "/")
+   else
+      popname = "pop"
+      varname = var
+   end
+      
+#   # Check which set of datareducers to use
+#   if varname[1:3] == "vg_"
+#      reducer_reg = v5reducers
+#      reducer_multipop = multipopv5reducers
+#   else
+#      reducer_reg = datareducers
+#      reducer_multipop = multipopdatareducers
+#   end
+
+   if has_variable(footer, var)
+      if varname[1:3] == "vg_" || varname[1:3] == "fg_"
+         # For Vlasiator 5 vlsv files, metadata is included
+
+         for varinfo in footer["VARIABLE"]
+            if attribute(varinfo, "name") == var
+               unit = attribute(varinfo, "unit")
+               unitLaTeX = attribute(varinfo, "unitLaTeX")
+               variableLaTeX = attribute(varinfo, "variableLaTeX")
+               unitConversion = attribute(varinfo, "unitConversion") 
+            end
+         end
+
+         # Correction for early version incorrect number density (extra backslash)
+         if variableLaTeX[1:3] == r"$\n"
+            variableLaTeX = r"$n"*variableLaTeX[4:end]
+         end
+
+      elseif var in keys(units_predefined)
+         unit = units_predefined[var]
+         variableLaTeX = latex_predefined[var]
+         unitLaTeX = latexunits_predefined[var]
+      end    
+#   elseif var in reducer_reg
+#      unit = reducer_reg[name].unit
+#      varLaTeX = reducer_reg[name].varLaTeX
+#      unitLaTeX = reducer_reg[name].unitLaTeX
+#   elseif "pop/"*varname in reducer_multipop
+#      poplatex = "i"
+#      if popname in vlsvvariables.speciesdict
+#         poplatex = vlsvvariables.speciesdict[popname]
+#      end
+#      unit = reducer_multipop["pop/"*varname].unit
+#      varLaTeX = (reducer_multipop["pop/"*varname].varLaTeX).replace("REPLACEPOP",poplatex)
+#      unitLaTeX = reducer_multipop["pop/"*varname].unitLaTeX
+#   elseif varname in vlsvvariables.unitsdict
+#      poplatex = "i"
+#      if popname in vlsvvariables.speciesdict
+#         poplatex = vlsvvariables.speciesdict[check_variablepopname]
+#      end
+#      unit = vlsvvariables.unitsdict[varname]
+#      varLaTeX = vlsvvariables.latexdictmultipop[varname].replace("REPLACEPOP",poplatex)
+#      unitLaTeX = vlsvvariables.latexunitsdict[varname]
+   else
+      #unit = ""
+      #varLaTeX = r""*name.replace("_","\_")
+      #unitLaTeX = ""
    end
 
-   return unit, unitLaTeX, variableLaTeX, unitConversion
+#   if startswith(name, "fg_")
+#       data = read_fsgrid_variable(name=name, operator=operator)
+#   else
+#       data = read_variable(name=name, operator=operator, cellids=cellids)
+#   end
+
+#   if operator != "pass"
+#      if operator == "magnitude"
+#         varLaTeX = r"$|$"*varLaTeX*r"$|$"
+#      else
+#         varLaTeX = varLaTeX*r"${_{"*operator*r"}}$"
+#      end
+#
+#   end
+
+   return VarInfo(unit, unitLaTeX, variableLaTeX, unitConversion)
 end
 
 
@@ -321,6 +407,9 @@ Return variable var from the vlsv file.
 """
 read_variable(meta, var) = 
    read_vector(meta.fid, meta.footer, var, "VARIABLE")
+
+
+has_variable(footer, var) = has_name(footer, "VARIABLE", var)
 
 
 function read_variable_select(meta, var, cellIDs=UInt[])
@@ -359,3 +448,18 @@ end
 
 
 read_parameter(meta, param) = read_parameter(meta.fid, meta.footer, param)
+
+
+has_parameter(meta, param) = has_name(meta.footer, "PARAMETER", param)
+
+
+function has_name(footer, tag, name)
+   isFound = false
+   
+   for varinfo in footer[tag]
+      attribute(varinfo, "name") == name && (isFound = true)
+      isFound && break
+   end
+   
+   return isFound
+end
