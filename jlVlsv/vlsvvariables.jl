@@ -160,3 +160,10 @@ const latexunits_predefined = Dict(
    "energydensity" => L"$\mathrm{eV}\,\mathrm{cm}^{-3}$",
    "precipitationdiffflux" => L"$\mathrm{cm}^{-2} \,\mathrm{sr}^{-1}\,\mathrm{s}^{-1}\,\mathrm{eV}^{-1}$"
 )
+
+
+const variables_predefined = Dict(
+   "b" => meta -> sqrt.(sum(read_variable(meta, "B").^2, dims=1)),
+   "e" => meta -> sqrt.(sum(read_variable(meta, "E").^2, dims=1)),
+   "u" => meta -> sqrt.(sum(read_variable(meta, "vg").^2, dims=1)),
+)

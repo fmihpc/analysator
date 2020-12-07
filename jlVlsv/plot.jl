@@ -40,20 +40,24 @@ function plot_pcolormesh(meta, var; axisunit="Re", isLinear=false)
 
    datainfo = read_variable_info(meta.footer, var)
 
-   data = read_variable(meta, var)
+   if var in keys(variables_predefined)
+      data = variables_predefined[var](meta)
+   else
+      data = read_variable(meta, var)
+   end
 
    # fsgrid array
    if startswith(var, "fg_")
       #data = swapaxes(data, 0, 1)
    else # vlasov grid
-      if ndims(data) == 1          
-          data = reshape(data[meta.cellIndex], sizes[1], sizes[2])
+      if ndims(data) == 1 || (ndims(data) == 2 && size(data)[1] == 1)       
+         data = reshape(data[meta.cellIndex], sizes[1], sizes[2])
       elseif ndims(data) == 2
-          #data = data[cellids.argsort()].reshape([sizes[2],sizes[1],data.shape[1]])
+         #data = data[cellids.argsort()].reshape([sizes[2],sizes[1],data.shape[1]])
       elseif ndims(data) == 3
-          #data = data[cellids.argsort()].reshape([sizes[2],sizes[1],data.shape[1],data.shape[2]])
+         #data = data[cellids.argsort()].reshape([sizes[2],sizes[1],data.shape[1],data.shape[2]])
       else
-          @error "Error in reshaping data $(var)!"
+         @error "Error in reshaping data $(var)!"
       end
    end
 
