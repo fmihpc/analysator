@@ -39,7 +39,7 @@ struct VarInfo
 end
 
 "Meta data declaration."
-struct Meta
+struct MetaData
    name::AbstractString
    fid::IOStream
    footer::XMLElement
@@ -71,7 +71,7 @@ struct Meta
 end
 
 
-function Base.show(io::IO, s::Meta)
+function Base.show(io::IO, s::MetaData)
    println(io, "filename = ", s.name)
 end
 
@@ -278,7 +278,7 @@ function read_meta(filename::AbstractString; verbose=false)
 
    #close(fid) # Is it safe not to close it?
 
-   meta = Meta(filename, fid, footer, fileindex_for_cellid, cellIndex,
+   meta = MetaData(filename, fid, footer, fileindex_for_cellid, cellIndex,
       use_dict_for_blocks, 
       fileindex_for_cellid_blocks, cells_with_blocks, blocks_per_cell, 
       blocks_per_cell_offsets, order_for_cellid_blocks, 
@@ -360,10 +360,10 @@ Return variable var from the vlsv file.
 read_variable(meta, var) = 
    read_vector(meta.fid, meta.footer, var, "VARIABLE")
 
-
+"Check if vlsv file contain a variable."
 has_variable(footer, var) = has_name(footer, "VARIABLE", var)
 
-
+"Read a variable in a collection of cells."
 function read_variable_select(meta, var, cellIDs=UInt[])
 
    if isempty(cellIDs)
@@ -390,7 +390,7 @@ function read_variable_select(meta, var, cellIDs=UInt[])
    return v
 end
 
-
+"Read a parameter from vlsv file."
 function read_parameter(fid, footer, param)
    
    T, _, _, _, _ = read_prep(fid, footer, param, "PARAMETER", "name")
@@ -399,10 +399,10 @@ function read_parameter(fid, footer, param)
 end
 
 
-read_parameter(meta, param) = read_parameter(meta.fid, meta.footer, param)
+read_parameter(meta::MetaData, param) = read_parameter(meta.fid, meta.footer, param)
 
-
-has_parameter(meta, param) = has_name(meta.footer, "PARAMETER", param)
+"Check if vlsv file contains a parameter."
+has_parameter(meta::MetaData, param) = has_name(meta.footer, "PARAMETER", param)
 
 
 function has_name(footer, tag, name)
