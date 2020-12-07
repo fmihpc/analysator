@@ -149,9 +149,14 @@ read_fileindex_for_cellid(fid, footer) =
 "Return vector data from vlsv file."
 function read_vector(fid, footer, name, tag)
 
-   T, _, arraysize, _, _ = read_prep(fid, footer, name, tag, "name")
+   T, _, arraysize, _, vectorsize = read_prep(fid, footer, name, tag, "name")
 
-   w = Vector{T}(undef, arraysize)
+   if vectorsize == 1
+      w = Vector{T}(undef, arraysize)
+   else
+      w = Array{T,2}(undef, vectorsize, arraysize)
+   end
+
    read!(fid, w)
 
    return w
