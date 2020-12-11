@@ -79,7 +79,7 @@ def plot_colormap3dslice(filename=None,
     :kword step:        output step index, used for constructing output (and possibly input) filename
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
-                        forward slash, the final parti will be used as a perfix for the files.
+                        forward slash, the final part will be used as a prefix for the files.
     :kword outputfile:  Singular output file name
 
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    

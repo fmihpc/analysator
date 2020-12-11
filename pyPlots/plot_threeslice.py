@@ -129,7 +129,9 @@ def axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize):
 
 def plot_threeslice(filename=None,
                   vlsvobj=None,
-                  filedir=None, step=None,
+                  filedir=None, step=None, run=None,
+                  outputdir=None, outputfile=None,
+                  nooverwrite=False,
                   var=None, op=None, operator=None,
                   colormap=None,
                   thick=1.0,scale=1.0,
@@ -143,7 +145,14 @@ def plot_threeslice(filename=None,
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename                    
+    :kword step:        output step index, used for constructing output (and possibly input) filename
+    :kword run:         run identifier, used for constructing output filename
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+                        If directory does not exist, it will be created. If the string does not end in a
+                        forward slash, the final part will be used as a prefix for the files.
+    :kword outputfile:  Singular output file name
+
+    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                         E, B, v, V or others. Accepts any variable known by analysator/pytools.
@@ -191,6 +200,9 @@ def plot_threeslice(filename=None,
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
+    if (outputdir is ''):
+        outputdir = './'
+
     if operator==None:
         if op!=None:
             operator=op
@@ -206,6 +218,93 @@ def plot_threeslice(filename=None,
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
     # Small internal colorbar needs increased font size
+
+    # step, used for file name
+    if step is not None:
+        stepstr = '_'+str(step).rjust(7,'0')
+    else:
+        if filename:
+            stepstr = '_'+filename[-12:-5]
+        else:
+            stepstr = ''
+
+    # If run name isn't given, just put "plot" in the output file name
+    if run is None:
+        run='plot'
+        if filename:
+            # If working within CSC filesystem, make a guess:
+            if filename[0:16]=="/proj/vlasov/3D/":
+                run = filename[16:19]
+
+    # Verify validity of operator
+    operatorstr=''
+    operatorfilestr=''
+    if operator:
+        # .isdigit checks if the operator is an integer (for taking an element from a vector)
+        if type(operator) is int:
+            operator = str(operator)
+        if not operator in 'xyz' and operator is not 'magnitude' and not operator.isdigit():
+            print("Unknown operator "+str(operator))
+            operator=None
+            operatorstr=''
+        if operator in 'xyz':
+            # For components, always use linear scale, unless symlog is set
+            operatorstr='_'+operator
+            operatorfilestr='_'+operator
+            if symlog is None:
+                lin=True
+        # index a vector
+        if operator.isdigit():
+            operator = str(operator)
+            operatorstr='_{'+operator+'}'
+            operatorfilestr='_'+operator
+        # Note: operator magnitude gets operatorstr=''
+
+    # Output file name
+    if expression:
+        varstr=expression.__name__.replace("/","_")
+    else:        
+        if not var:
+            # If no expression or variable given, defaults to rhom
+            var='vg_rhom'
+            if f.check_variable("proton/vg_rho"): # multipop v5
+                var = 'proton/vg_rho'
+            elif f.check_variable("moments"): # restart
+                var = 'vg_restart_rhom'
+        varstr=var.replace("/","_")
+
+    if not outputfile: # Generate filename
+        if not outputdir: # default initial path
+            outputdir=pt.plot.defaultoutputdir
+        # Sub-directories can still be defined in the "run" variable
+        outputfile = outputdir+run+"_threeSlice_"+varstr+operatorfilestr+stepstr+".png"
+    else: 
+        if outputdir:
+            outputfile = outputdir+outputfile
+
+    # Re-check to find actual target sub-directory
+    outputprefixind = outputfile.rfind('/')
+    if outputprefixind >= 0:            
+        outputdir = outputfile[:outputprefixind+1]
+
+    # Ensure output directory exists
+    if not os.path.exists(outputdir):
+        try:
+            os.makedirs(outputdir)
+        except:
+            pass
+
+    if not os.access(outputdir, os.W_OK):
+        print(("No write access for directory "+outputdir+"! Exiting."))
+        return
+
+    # Check if target file already exists and overwriting is disabled
+    if (nooverwrite and os.path.exists(outputfile)):            
+        if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+            print(("Found existing file "+outputfile+". Skipping."))
+            return
+        else:
+            print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -232,7 +331,7 @@ def plot_threeslice(filename=None,
 
         # If vscale is in use
         if not np.isclose(vscale,1.):
-            datamap_unit=r"${\times}$"+pt.plot.fmt(vscale,None)
+            datamap_unit=r"${\times}$"+pt.plot.cbfmt(vscale,None)
         # Allow specialist units for known vscale and unit combinations
         if datamap_info.units=="s" and np.isclose(vscale,1.e6):
             datamap_unit = r"$\mu$s"
@@ -292,15 +391,15 @@ def plot_threeslice(filename=None,
         # Create the needed data grids for the all three cut throughs
         idlist, indexlist = ids3d.ids3d(cellids, xr, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
         datamap1 = datamap[indexlist]
-        datamap1 = ids3d.idmesh3d(idlist, datamap1, reflevel, xsize, ysize, zsize, 0)
+        datamap1 = ids3d.idmesh3d(idlist, datamap1, reflevel, xsize, ysize, zsize, 0, None) # TODO adapt the last argument to also support vectors and tensors
 
         idlist, indexlist = ids3d.ids3d(cellids, yr, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
         datamap2 = datamap[indexlist]
-        datamap2 = ids3d.idmesh3d(idlist, datamap2, reflevel, xsize, ysize, zsize, 1)
+        datamap2 = ids3d.idmesh3d(idlist, datamap2, reflevel, xsize, ysize, zsize, 1, None) # TODO adapt the last argument to also support vectors and tensors
 
         idlist, indexlist = ids3d.ids3d(cellids, zr, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
         datamap3 = datamap[indexlist]
-        datamap3 = ids3d.idmesh3d(idlist, datamap3, reflevel, xsize, ysize, zsize, 2)
+        datamap3 = ids3d.idmesh3d(idlist, datamap3, reflevel, xsize, ysize, zsize, 2, None) # TODO adapt the last argument to also support vectors and tensors
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__.replace("_","\_")
@@ -477,7 +576,7 @@ def plot_threeslice(filename=None,
     ticks = [10**(np.log10(vmin) + abfra*i) for i in range(7)]
 
     # draw the colorbar
-    cb = plt.colorbar(sm, ticks=ticks, format=mtick.FuncFormatter(pt.plot.fmt), drawedges=False)
+    cb = plt.colorbar(sm, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), drawedges=False)
 
 
     if len(cb_title_use)!=0:      
@@ -494,7 +593,15 @@ def plot_threeslice(filename=None,
     cb.ax.set_title(cb_title_use, fontsize=fontsize3*1.7, weight="bold", # same thing here as in the later
                     position=(0.,1.+0.025*scale), horizontalalignment="left")
 
+    # Adjust layout. Uses tight_layout() but in fact this ensures 
+    # that long titles and tick labels are still within the plot area.
+    plt.tight_layout(pad=0.01)
+    savefig_pad=0.01
+    bbox_inches='tight'
 
-
-    # show the 3d plot on-screen
-    plt.show()
+    # Save output to file
+    try:
+        plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+    except:
+        print("Error with attempting to save figure.")
+    print(outputfile+"\n")
