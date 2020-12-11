@@ -1115,9 +1115,9 @@ def plot_colormap3dslice(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
-        if not os.getenv('PTNOLATEX'):  # This should probably check value...
-            # Add 3D slice position in title
-            plot_title = r"\textbf{"+slicelabel+plot_title+"}"
+        # Add 3D slice position in title
+        plot_title = slicelabel+plot_title
+        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))        
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     ax1.set_xlim([boxcoords[0],boxcoords[1]])
