@@ -171,7 +171,7 @@ def mathmode(string):
     else:
         # First remove any internal possible dollar signs, then wrap whole string into math block
         result = string.replace('$','')
-        if not os.getenv('PTNOLATEX'):
+        if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
             result = result.replace('\,',' ')            
         return r"$"+result+"$"
