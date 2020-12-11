@@ -47,17 +47,19 @@ def plot_colormap3dslice(filename=None,
                   var=None, op=None, operator=None,
                   title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
-                  boxm=[],boxre=[],colormap=None,
+                  boxm=None,boxre=None,colormap=None,
                   run=None, nocb=False, internalcb=False,
                   wmark=False,wmarkb=False,
                   axisunit=None, thick=1.0,scale=1.0,
                   tickinterval=0, # Fairly certain this is a valid null value
                   noborder=False, noxlabels=False, noylabels=False,
                   vmin=None, vmax=None, lin=None,
-                  external=None, expression=None, 
+                  external=None, expression=None,
+                  diff=None,
                   vscale=1.0,
+                  absolute=False,
                   symmetric=False,
-                  pass_vars=[], pass_times=None, pass_full=False,
+                  pass_vars=None, pass_times=None, pass_full=False,
                   # fluxfile=None, fluxdir=None,
                   # fluxthick=1.0, fluxlines=1,
                   fsaved=None,
@@ -147,6 +149,7 @@ def plot_colormap3dslice(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword absolute:    Plot the absolute of the evaluated variable
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
                         as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
@@ -161,6 +164,10 @@ def plot_colormap3dslice(filename=None,
                         added as 'dstep' which gives the timestep offset from the master frame.
                         Does not work if working from a vlsv-object.
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
+
+    :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
+                        the regular source file and the file given by this keyword. This overides external
+                        and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
     :kword fluxfile:    Filename to plot fluxfunction from
     :kword fluxdir:     Directory in which fluxfunction files can be found
@@ -217,6 +224,14 @@ def plot_colormap3dslice(filename=None,
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
+
+    # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
+    if boxm is None:
+        boxm=[],
+    if boxre is None:
+        boxre=[]
+    if pass_vars is None:
+        pass_vars=[]
 
     # Change certain falsy values:
     if not lin and lin is not 0:
@@ -332,13 +347,43 @@ def plot_colormap3dslice(filename=None,
                 var = 'vg_restart_rhom'
         varstr=var.replace("/","_")
 
+    # Activate diff mode?
+    if diff:
+        if (expression or external or pass_vars or pass_times or pass_full):
+            print("attempted to perform diff with one of the following active:")
+            print("expression or external or pass_vars or pass_times or pass_full. Exiting.")
+            return -1
+        expression=pt.plot.plot_helpers.expr_Diff
+        pass_vars.append(var)
+        varstr="DIFF_"+var.replace("/","_")
+        pass_times=[1,0]
+
+    # check if requested cut plane is normal to x, y, or z
+    #   sliceoffset = distance from simulation lower boundary at which 2D slice is to be made
+    #   xyz = (slice normal direction, 0:x, 1:y, 2:z
+    slicestr='_slice'
+    if not isinstance(normal, str):
+        if len(normal!=3):
+            print("Error in interpreting normal ",normal)
+            exit
+    else:
+        if normal[0]=='x':
+            normal = [1,0,0]
+            slicestr='_x'
+        elif normal[0]=='y':
+            slicestr='_y'
+            normal = [0,1,0]
+        elif normal[0]=='z':
+            slicestr='_z'
+            normal = [0,0,1]
+        
     # File output checks
     if not draw and not axes:
         if not outputfile: # Generate filename
             if not outputdir: # default initial path
                 outputdir=pt.plot.defaultoutputdir
             # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
+            outputfile = outputdir+run+slicestr+"_map_"+varstr+operatorfilestr+stepstr+".png"
         else: 
             if outputdir:
                 outputfile = outputdir+outputfile
@@ -406,21 +451,6 @@ def plot_colormap3dslice(filename=None,
         print("FSgrid and vlasov grid disagreement!")
         return -1
     
-    # check if requested cut plane is normal to x, y, or z
-    #   sliceoffset = distance from simulation lower boundary at which 2D slice is to be made
-    #   xyz = (slice normal direction, 0:x, 1:y, 2:z
-    if not isinstance(normal, str):
-        if len(normal!=3):
-            print("Error in interpreting normal ",normal)
-            exit
-    else:
-        if normal[0]=='x':
-            normal = [1,0,0]
-        elif normal[0]=='y':
-            normal = [0,1,0]
-        elif normal[0]=='z':
-            normal = [0,0,1]
-
     if cutpointre is not None:
         cutpoint = cutpointre * Re
 
@@ -728,7 +758,9 @@ def plot_colormap3dslice(filename=None,
             # Or gather over a number of time steps
             # Note: pass_maps is now a list of dictionaries
             pass_maps = []
-            if step is not None and filename:
+            if diff:
+                print("Comparing files "+filename+" and "+diff)
+            elif step is not None and filename:
                 currstep = step
             else:
                 if filename: # parse from filename
@@ -746,12 +778,31 @@ def plot_colormap3dslice(filename=None,
                 return
             # Loop over requested times
             for ds in dsteps:
-                # Construct using known filename.
-                filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
-                print(filenamestep)
+                if diff:
+                    if ds==0:
+                        filenamestep = filename
+                    else:
+                        filenamestep = diff
+                else:
+                    # Construct using known filename.
+                    filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
+                    print(filenamestep)
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
                 step_indexids = step_cellids.argsort()
+                step_cellids = step_cellids[step_indexids]
+                step_reflevel = ids3d.refinement_level(xsize, ysize, zsize, step_cellids[-1])
+                for i in range(5): # Check if Vlasov grid doesn't reach maximum (fsgrid) refinement
+                    if xsize*(2**(step_reflevel + i)) == xsizefg:
+                        step_reflevel += i
+                        break
+                if normal[0] != 0 and normal[1] == 0 and normal[2] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
+                if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
+                if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
+                    step_idlist, step_indexlist = ids3d.ids3d(step_cellids, sliceoffset, step_reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
+
                 # Append new dictionary as new timestep
                 pass_maps.append({})
                 # Add relative step identifier to dictionary
@@ -800,9 +851,9 @@ def plot_colormap3dslice(filename=None,
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
+                            pass_map = ids3d.idmesh3d2(step_cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
-                            pass_map = pass_map[indexlist] # find required cells
+                            pass_map = pass_map[step_indexlist] # find required cells
                             if np.ndim(pass_map)==1:
                                 pass_shape = None
                             elif np.ndim(pass_map)==2: # vector variable
@@ -811,7 +862,7 @@ def plot_colormap3dslice(filename=None,
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
                                 print("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
+                            pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map)==1:
@@ -824,6 +875,14 @@ def plot_colormap3dslice(filename=None,
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
+
+    # colorbar title for diffs:
+    if diff:
+        listofkeys = iter(pass_maps[0])
+        while True:
+            diffvar = next(listofkeys)
+            if diffvar!="dstep": break
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring("DIFF0~"+diffvar.replace("_","\_"))))
 
     #Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
@@ -903,6 +962,10 @@ def plot_colormap3dslice(filename=None,
         
     # Scale final generated datamap if requested
     datamap = datamap * vscale
+    
+    # Take absolute
+    if (absolute):
+        datamap = abs(datamap)
 
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
@@ -1052,9 +1115,9 @@ def plot_colormap3dslice(filename=None,
 
     # Title and plot limits
     if len(plot_title)!=0:
-        if not os.getenv('PTNOLATEX'):  # This should probably check value...
-            # Add 3D slice position in title
-            plot_title = r"\textbf{"+slicelabel+plot_title+"}"
+        # Add 3D slice position in title
+        plot_title = slicelabel+plot_title
+        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))        
         ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     ax1.set_xlim([boxcoords[0],boxcoords[1]])

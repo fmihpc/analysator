@@ -47,7 +47,8 @@ def plot_colormap(filename=None,
                   var=None, op=None, operator=None,
                   title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
-                  boxm=[],boxre=[],colormap=None,
+                  diff=None,
+                  boxm=None,boxre=None,colormap=None,
                   run=None, nocb=False, internalcb=False,
                   wmark=False, wmarkb=False,
                   axisunit=None, thick=1.0,scale=1.0,
@@ -56,8 +57,9 @@ def plot_colormap(filename=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
                   vscale=1.0,
+                  absolute=False,
                   symmetric=False,
-                  pass_vars=[], pass_times=None, pass_full=False,
+                  pass_vars=None, pass_times=None, pass_full=False,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
@@ -138,6 +140,9 @@ def plot_colormap(filename=None,
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                         If the function accepts a second variable, if set to true, it is expected to 
                         return a list of required variables for pass_maps.
+    :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
+                        the regular source file and the file given by this keyword. This overides external
+                        and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
     Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
     for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
@@ -146,6 +151,7 @@ def plot_colormap(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword absolute:    Plot the absolute of the evaluated variable
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
                         as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
@@ -208,6 +214,14 @@ def plot_colormap(filename=None,
     plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
 
     '''
+
+    # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
+    if boxm is None:
+        boxm=[],
+    if boxre is None:
+        boxre=[]
+    if pass_vars is None:
+        pass_vars=[]
 
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
@@ -330,7 +344,7 @@ def plot_colormap(filename=None,
             operatorstr='_{'+operator+'}'
             operatorfilestr='_'+operator
         # Note: operator magnitude gets operatorstr=''
-            
+
     # Output file name
     if expression is not None:
         varstr=expression.__name__.replace("/","_")
@@ -348,6 +362,17 @@ def plot_colormap(filename=None,
                 else: # multipop restart
                     var = 'restart_rhom'
         varstr=var.replace("/","_")
+
+    # Activate diff mode?
+    if diff:
+        if (expression or external or pass_vars or pass_times or pass_full):
+             print("attempted to perform diff with one of the following active:")
+             print("expression or external or pass_vars or pass_times or pass_full. Exiting.")
+             return -1
+        expression=pt.plot.plot_helpers.expr_Diff
+        pass_vars.append(var)
+        varstr="DIFF_"+var.replace("/","_")
+        pass_times=[1,0]
 
     # File output checks
     if not draw and not axes:
@@ -535,19 +560,92 @@ def plot_colormap(filename=None,
         except:
             pass
     # If expression or external routine need variables, read them from the file.
-    if pass_vars:        
-        if not pass_times:
-            # Note: pass_maps is now a dictionary
-            pass_maps = {}
-            # Gather the required variable maps for a single time step
+#    if pass_vars:
+    if not pass_times:
+        # Note: pass_maps is now a dictionary
+        pass_maps = {}
+        # Gather the required variable maps for a single time step
+        for mapval in pass_vars:
+            # a check_variable(mapval) doesn't work as it doesn't know about
+            # data reducers. Try/catch?
+            if mapval.startswith('fg_'):
+                pass_map = f.read_fsgrid_variable(mapval)
+                pass_map = np.swapaxes(pass_map, 0,1)
+            else:
+                pass_map = f.read_variable(mapval)
+            if np.ndim(pass_map)==0:
+                print("Error, read only single value from vlsv file!",pass_map.shape)
+                return -1
+            # fsgrid reader returns array in correct shape.
+            # For vlasov grid reader, reorder and reshape.
+            if not mapval.startswith('fg_'):
+                if np.ndim(pass_map)==1:
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                elif np.ndim(pass_map)==2: # vector variable
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
+                elif np.ndim(pass_map)==3:  # tensor variable
+                    pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                else:
+                    print("Error in reshaping pass_map!")
+            if np.ma.is_masked(maskgrid):
+                if np.ndim(pass_map)==2:
+                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
+                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
+                elif np.ndim(pass_map)==3: # vector variable
+                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
+                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
+                elif np.ndim(pass_map)==4:  # tensor variable
+                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
+                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                else:
+                    print("Error in masking pass_maps!")
+            pass_maps[mapval] = pass_map # add to the dictionary
+    else:
+        # Or gather over a number of time steps
+        # Note: pass_maps is now a list of dictionaries
+        pass_maps = []
+        if diff:
+            print("Comparing files "+filename+" and "+diff)
+        elif step is not None and filename:
+            currstep = step
+        else:
+            if filename: # parse from filename
+                currstep = int(filename[-12:-5])
+            else:
+                print("Error, cannot determine current step for time extent extraction!")
+                return
+        # define relative time step selection
+        if np.ndim(pass_times)==0:
+            dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
+        elif np.ndim(pass_times)==1 and len(pass_times)==2:
+            dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
+        else:
+            print("Invalid value given to pass_times")
+            return
+        # Loop over requested times
+        for ds in dsteps:
+            if diff:
+                if ds==0:
+                    filenamestep = filename
+                else:
+                    filenamestep = diff
+            else:
+                # Construct using known filename.
+                filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
+                print(filenamestep)
+            fstep=pt.vlsvfile.VlsvReader(filenamestep)
+            step_cellids = fstep.read_variable("CellID")
+            # Append new dictionary as new timestep
+            pass_maps.append({})
+            # Add relative step identifier to dictionary
+            pass_maps[-1]['dstep'] = ds
+            # Gather the required variable maps
             for mapval in pass_vars:
-                # a check_variable(mapval) doesn't work as it doesn't know about
-                # data reducers. Try/catch?
                 if mapval.startswith('fg_'):
-                    pass_map = f.read_fsgrid_variable(mapval)
+                    pass_map = fstep.read_fsgrid_variable(mapval)
                     pass_map = np.swapaxes(pass_map, 0,1)
                 else:
-                    pass_map = f.read_variable(mapval)
+                    pass_map = fstep.read_variable(mapval)
                 if np.ndim(pass_map)==0:
                     print("Error, read only single value from vlsv file!",pass_map.shape)
                     return -1
@@ -555,11 +653,11 @@ def plot_colormap(filename=None,
                 # For vlasov grid reader, reorder and reshape.
                 if not mapval.startswith('fg_'):
                     if np.ndim(pass_map)==1:
-                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0]])
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
                     elif np.ndim(pass_map)==2: # vector variable
-                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
                     elif np.ndim(pass_map)==3:  # tensor variable
-                        pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
+                        pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                     else:
                         print("Error in reshaping pass_map!") 
                 if np.ma.is_masked(maskgrid):
@@ -574,72 +672,16 @@ def plot_colormap(filename=None,
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     else:
                         print("Error in masking pass_maps!") 
-                pass_maps[mapval] = pass_map # add to the dictionary
-        else:
-            # Or gather over a number of time steps
-            # Note: pass_maps is now a list of dictionaries
-            pass_maps = []
-            if step is not None and filename:
-                currstep = step
-            else:
-                if filename: # parse from filename
-                    currstep = int(filename[-12:-5])
-                else:
-                    print("Error, cannot determine current step for time extent extraction!")
-                    return
-            # define relative time step selection
-            if np.ndim(pass_times)==0:
-                dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
-            elif np.ndim(pass_times)==1 and len(pass_times)==2:
-                dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
-            else:
-                print("Invalid value given to pass_times")
-                return
-            # Loop over requested times
-            for ds in dsteps:
-                # Construct using known filename.
-                filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
-                print(filenamestep)
-                fstep=pt.vlsvfile.VlsvReader(filenamestep)
-                step_cellids = fstep.read_variable("CellID")
-                # Append new dictionary as new timestep
-                pass_maps.append({})
-                # Add relative step identifier to dictionary
-                pass_maps[-1]['dstep'] = ds
-                # Gather the required variable maps
-                for mapval in pass_vars:
-                    if mapval.startswith('fg_'):
-                        pass_map = fstep.read_fsgrid_variable(mapval)
-                        pass_map = np.swapaxes(pass_map, 0,1)
-                    else:
-                        pass_map = fstep.read_variable(mapval)
-                    if np.ndim(pass_map)==0:
-                        print("Error, read only single value from vlsv file!",pass_map.shape)
-                        return -1
-                    # fsgrid reader returns array in correct shape. 
-                    # For vlasov grid reader, reorder and reshape.
-                    if not mapval.startswith('fg_'):
-                        if np.ndim(pass_map)==1:
-                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0]])
-                        elif np.ndim(pass_map)==2: # vector variable
-                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1]])
-                        elif np.ndim(pass_map)==3:  # tensor variable
-                            pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
-                        else:
-                            print("Error in reshaping pass_map!") 
-                    if np.ma.is_masked(maskgrid):
-                        if np.ndim(pass_map)==2:
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                        elif np.ndim(pass_map)==3: # vector variable
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                        elif np.ndim(pass_map)==4:  # tensor variable
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
-                        else:
-                            print("Error in masking pass_maps!") 
-                    pass_maps[-1][mapval] = pass_map # add to the dictionary
+                pass_maps[-1][mapval] = pass_map # add to the dictionary
+
+    # colorbar title for diffs:
+    if diff:
+        listofkeys = iter(pass_maps[0])
+        while True:
+            diffvar = next(listofkeys)
+            if diffvar!="dstep": break
+        if not cbtitle:
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring("DIFF0~"+diffvar.replace("_","\_"))))
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
@@ -682,6 +724,10 @@ def plot_colormap(filename=None,
     # Scale final generated datamap if requested
     datamap = datamap * vscale
 
+    # Take absolute
+    if (absolute):
+        datamap = abs(datamap)
+    
     # Find rhom map for use in masking out ionosphere
     if f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
