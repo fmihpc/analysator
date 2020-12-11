@@ -307,15 +307,15 @@ def plot_threeslice(filename=None,
         else:
             print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
-    if cutpointre is not None:
-        cutpoint = cutpointre * Re
-
     Re = 6.371e+6 # Earth radius in m
     # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
+
+    if cutpointre is not None:
+        cutpoint = np.asarray(cutpointre) * Re
 
 
     ############################################
