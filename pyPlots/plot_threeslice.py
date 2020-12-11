@@ -137,7 +137,7 @@ def plot_threeslice(filename=None,
                   thick=1.0,scale=1.0,
                   expression=None,
                   vscale=1.0,
-                  cutpoint=None
+                  cutpoint=None,cutpointre=None
                   ):
 
     ''' Plots a 3d plot constructed of three 2d cut throughs.
@@ -182,7 +182,8 @@ def plot_threeslice(filename=None,
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
 
-    :kword cutpoint:    The point which the all three 2D cut through cuts. 
+    :kword cutpoint:    Coordinates of the point through which all three 2D cuts must pass [m]
+    :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
 
     .. code-block:: python
 
@@ -306,6 +307,8 @@ def plot_threeslice(filename=None,
         else:
             print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
+    if cutpointre is not None:
+        cutpoint = cutpointre * Re
 
     Re = 6.371e+6 # Earth radius in m
     # read in mesh size and cells in ordinary space
