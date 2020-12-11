@@ -447,8 +447,7 @@ def expr_Diff(pass_maps, requestvariables=False):
     if (map0.shape != map1.shape):
         print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
         sys.exit(-1)
-    #return np.abs(map0-map1)
-    return (map0-map1)
+    return (map0-map1) # use keyword absolute to get abs diff
 
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:

@@ -57,6 +57,7 @@ def plot_colormap(filename=None,
                   vmin=None, vmax=None, lin=None,
                   external=None, expression=None, 
                   vscale=1.0,
+                  absolute=False,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fluxfile=None, fluxdir=None,
                   fluxthick=1.0, fluxlines=1,
@@ -148,6 +149,7 @@ def plot_colormap(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword absolute:    Plot the absolute of the evaluated variable
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
                         as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
@@ -720,6 +722,10 @@ def plot_colormap(filename=None,
     # Scale final generated datamap if requested
     datamap = datamap * vscale
 
+    # Take absolute
+    if (absolute):
+        datamap = abs(datamap)
+    
     # Find rhom map for use in masking out ionosphere
     if f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
