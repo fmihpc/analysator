@@ -23,8 +23,8 @@ import mpl_toolkits.mplot3d.art3d as art3d
 # Create the 3d axes and the coordinate axes for the 3d plot
 def axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize):
     # get 3d axes
-    ax = fig.gca(projection='3d')
-
+#    ax = fig.gca(projection='3d')
+    ax = fig.add_axes([.1,.1,.8,.8],projection='3d')
 
 
     # create 3d coordinate axes lines which cuts the point at xr, yr and zr
@@ -133,7 +133,10 @@ def plot_threeslice(filename=None,
                   outputdir=None, outputfile=None,
                   nooverwrite=False,
                   var=None, op=None, operator=None,
-                  colormap=None,
+                  colormap=None, vmin=None, vmax=None,
+                  symmetric=False, lin=None, symlog=None,
+                  usesci=True,
+                  wmark=False,wmarkb=False,
                   thick=1.0,scale=1.0,
                   expression=None,
                   vscale=1.0,
@@ -160,9 +163,23 @@ def plot_threeslice(filename=None,
     :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
     :kword op:          duplicate of operator
+
            
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
+    :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
+                        min and max values for whole plot (non-zero rho regions only) are used.
+    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
+    :kword lin:         Flag for using linear colour scaling instead of log
+    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+                        Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
+                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
+                        result in the innermost tick marks overlapping. In this case, using a larger value for 
+                        symlog is suggested.
+    :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
+    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
@@ -407,22 +424,94 @@ def plot_threeslice(filename=None,
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__.replace("_","\_")
 
+    #If automatic range finding is required, find min and max of array
+    # Performs range-finding on a masked array to work even if array contains invalid values
+    if vmin is not None:
+        vminuse=vmin
+    else: 
+        vminuse=np.ma.amin([np.ma.amin(datamap1),np.ma.amin(datamap2),np.ma.amin(datamap3)])
+    if vmax is not None:
+        vmaxuse=vmax
+    else:
+        vmaxuse=np.ma.amax([np.ma.amax(datamap1),np.ma.amax(datamap2),np.ma.amax(datamap3)])
+
+    # If both values are zero, we have an empty array
+    if vmaxuse==vminuse==0:
+        print("Error, requested array is zero everywhere. Exiting.")
+        return 0
+
+    # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
+    # e.g. to plot transverse field components. Always done for symlog.
+    if vmin is None and vmax is None:
+        if symmetric or np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) or symlog is not None:
+            absval = max(abs(vminuse),abs(vmaxuse))
+            vminuse = -absval
+            vmaxuse = absval
+
+    # Ensure that lower bound is valid for logarithmic plots
+    if (vminuse <= 0) and (lin is None) and (symlog is None):
+        # Drop negative and zero values
+        vminuse = np.ma.amin([np.ma.amin(np.ma.masked_less_equal(datamap1,0)),np.ma.amin(np.ma.masked_less_equal(datamap2,0)),np.ma.amin(np.ma.masked_less_equal(datamap3,0))])
+
+    # Special case of very small vminuse values
+    if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
+        vminuse = vmaxuse*1e-5
+        if lin is not None:
+            vminuse = 0
+    
+    # # If symlog scaling is set:
+    if symlog is not None:
+        if symlog > 0:
+            linthresh = symlog 
+        else:
+            linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
+
+    # Lin or log colour scaling, defaults to log
+    if lin is None:
+        # Special SymLogNorm case
+        if symlog is not None:
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+                norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+            else:
+                norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+            maxlog=int(np.ceil(np.log10(vmaxuse)))
+            minlog=int(np.ceil(np.log10(-vminuse)))
+            logthresh=int(np.floor(np.log10(linthresh)))
+            logstep=1
+            ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
+                    +[0.0]
+                    +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
+        else:
+            # Logarithmic plot
+            norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
+            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+    else:
+        # Linear
+        levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
+        norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
+        ticks = np.linspace(vminuse,vmaxuse,num=7)
 
 
-    # find the smallest and the largest values of the all three surface grids
-    mini = [np.ma.amin(datamap1[datamap1 > 0]), np.ma.amin(datamap2[datamap2 > 0]), np.ma.amin(datamap3[datamap3 > 0])]
-    maxi = [np.ma.amax(datamap1[datamap1 > 0]), np.ma.amax(datamap2[datamap2 > 0]), np.ma.amax(datamap3[datamap3 > 0])]
+    # Create the scalar mappable to define the face colouring of the surface elements
+    scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
+    scamap.set_array([])
+
+#    # find the smallest and the largest values of the all three surface grids
+#    mini = [np.ma.amin(datamap1[datamap1 > 0]), np.ma.amin(datamap2[datamap2 > 0]), np.ma.amin(datamap3[datamap3 > 0])]
+#    maxi = [np.ma.amax(datamap1[datamap1 > 0]), np.ma.amax(datamap2[datamap2 > 0]), np.ma.amax(datamap3[datamap3 > 0])]
 
 
-    # the smallest value of the surface grids
-    vmin = np.ma.amin(mini)
-    # the largest value of the surface grids
-    vmax = np.ma.amax(maxi)
+#    # the smallest value of the surface grids
+#    vmin = np.ma.amin(mini)
+#    # the largest value of the surface grids
+#    vmax = np.ma.amax(maxi)
 
 
-    # do we have logarithmic or linear norm # NOT FINISHED
-    #norm = matplotlib.colors.Normalize(vmin = vmin, vmax = vmax)
-    norm = LogNorm(vmin=vmin, vmax=vmax)
+#    # do we have logarithmic or linear norm # NOT FINISHED
+#    #norm = matplotlib.colors.Normalize(vmin = vmin, vmax = vmax)
+#    norm = LogNorm(vmin=vmin, vmax=vmax)
 
 
     # coordinates of the point where the all three 2d cut throughs cut in terms of cells
@@ -432,8 +521,8 @@ def plot_threeslice(filename=None,
 
 
     # create a new figure and a 3d axes with a custom 3d coordinate axes 
-    fig = plt.figure(figsize=(12,12))
-    ax = axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize)
+    fig = plt.figure(figsize=(9,9))
+    ax1 = axes3d(fig, reflevel,  xr, yr, zr, xsize, ysize, zsize)
 
 
     #########################
@@ -447,8 +536,8 @@ def plot_threeslice(filename=None,
     X = Y*0 + xr
 
     # plot a surface element of the 3d plot
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap1[:zr, :yr])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap1[:zr, :yr]),  # facecolors=plt.cm.plasma(norm(datamap1[:zr, :yr])),
                     shade=False, antialiased=False)
 
 
@@ -457,8 +546,8 @@ def plot_threeslice(filename=None,
     Y,Z = np.meshgrid(y,z)
     X = Y*0 + xr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap1[:zr, yr:])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap1[:zr, yr:]),  # facecolors=plt.cm.plasma(norm(datamap1[:zr, yr:])),
                     shade=False, antialiased=False)
 
 
@@ -467,8 +556,8 @@ def plot_threeslice(filename=None,
     Y,Z = np.meshgrid(y,z)
     X = Y*0 + xr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap1[zr:, :yr])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap1[zr:, :yr]),  # facecolors=plt.cm.plasma(norm(datamap1[zr:, :yr])),
                     shade=False, antialiased=False)
 
 
@@ -477,10 +566,9 @@ def plot_threeslice(filename=None,
     Y,Z = np.meshgrid(y,z)
     X = Y*0 + xr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap1[zr:, yr:])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap1[zr:, yr:]),  # facecolors=plt.cm.plasma(norm(datamap1[zr:, yr:])),
                     shade=False, antialiased=False)
-
 
 
     x = np.arange(xr + 1)
@@ -488,8 +576,8 @@ def plot_threeslice(filename=None,
     X,Z = np.meshgrid(x,z)
     Y = X*0 + yr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap2[:zr, :xr])), 
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap2[:zr, :xr]),  # facecolors=plt.cm.plasma(norm(datamap2[:zr, :xr])), 
                     shade=False, antialiased=False)
 
 
@@ -498,8 +586,8 @@ def plot_threeslice(filename=None,
     X,Z = np.meshgrid(x,z)
     Y = X*0 + yr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap2[:zr, xr:])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap2[:zr, xr:]),  # facecolors=plt.cm.plasma(norm(datamap2[:zr, xr:])),
                     shade=False, antialiased=False)
 
 
@@ -508,8 +596,8 @@ def plot_threeslice(filename=None,
     X,Z = np.meshgrid(x,z)
     Y = X*0 + yr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap2[zr:, :xr])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap2[zr:, :xr]),  # facecolors=plt.cm.plasma(norm(datamap2[zr:, :xr])),
                     shade=False, antialiased=False)
 
 
@@ -518,8 +606,8 @@ def plot_threeslice(filename=None,
     X,Z = np.meshgrid(x,z)
     Y = X*0 + yr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap2[zr:, xr:])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap2[zr:, xr:]),  # facecolors=plt.cm.plasma(norm(datamap2[zr:, xr:])),
                     shade=False, antialiased=False)
 
 
@@ -529,8 +617,8 @@ def plot_threeslice(filename=None,
     X,Y = np.meshgrid(x,y)
     Z = X*0 + zr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap3[:yr, :xr])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap3[:yr, :xr]),  # facecolors=plt.cm.plasma(norm(datamap3[:yr, :xr])),
                     shade=False, antialiased=False)
 
 
@@ -539,8 +627,8 @@ def plot_threeslice(filename=None,
     X,Y = np.meshgrid(x,y)
     Z = X*0 + zr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap3[:yr, xr:])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap3[:yr, xr:]),  # facecolors=plt.cm.plasma(norm(datamap3[:yr, xr:])),
                     shade=False, antialiased=False)
 
 
@@ -549,8 +637,8 @@ def plot_threeslice(filename=None,
     X,Y = np.meshgrid(x,y)
     Z = X*0 + zr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap3[yr:, :xr])),
+    ax1.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                    facecolors=scamap.to_rgba(datamap3[yr:, :xr]),  # facecolors=plt.cm.plasma(norm(datamap3[yr:, :xr])),
                     shade=False, antialiased=False)
 
 
@@ -559,8 +647,8 @@ def plot_threeslice(filename=None,
     X,Y = np.meshgrid(x,y)
     Z = X*0 + zr
 
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
-                    facecolors=plt.cm.plasma(norm(datamap3[yr:, xr:])),
+    fig1 = ax1.plot_surface(X, Y, Z, rstride=1, cstride=1, # The handle (fig1) is used to draw the colorbar further below
+                    facecolors=scamap.to_rgba(datamap3[yr:, xr:]),  # facecolors=plt.cm.plasma(norm(datamap3[yr:, xr:])),
                     shade=False, antialiased=False)
 
     #######################
@@ -569,36 +657,121 @@ def plot_threeslice(filename=None,
 
 
 
-    # create a ScalarMappable object to make a colorbar
-    sm = plt.cm.ScalarMappable(cmap=plt.get_cmap('plasma'), norm=norm)
-    sm.set_array([])
+    # Split existing axes to make room for colorbar
+#    divider = make_axes_locatable(ax1)                         # There seems to be issues with make_axes_locatable with 3d axes
+#    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cax = fig.add_axes([0.82,0.2,0.03,0.6])                     # TODO find a cleaner way to deal with this
+    cbdir="right"; horalign="left"
 
-    # compute the positions of the major ticks for the colorbar
-    ab = np.log10(vmax) - np.log10(vmin)
-    abfra = ab/6
-    ticks = [10**(np.log10(vmin) + abfra*i) for i in range(7)]
-
-    # draw the colorbar
-    cb = plt.colorbar(sm, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), drawedges=False)
-
-
-    if len(cb_title_use)!=0:      
+    # Colourbar title
+    if len(cb_title_use)!=0:
         if os.getenv('PTNOLATEX'):
             cb_title_use.replace('\textbf{','')
             cb_title_use.replace('\mathrm{','')
             cb_title_use.replace('}','')
         else:
-            cb_title_use = r"\textbf{"+cb_title_use+"}"        
+            cb_title_use = r"\textbf{"+cb_title_use+"}"   
 
-    # define the size of the colorbar ticks
-    cb.ax.tick_params(labelsize=fontsize3*1.7) # 1.7 is just a temporary scaling value
-    # make a titel for the colorbar
-    cb.ax.set_title(cb_title_use, fontsize=fontsize3*1.7, weight="bold", # same thing here as in the later
-                    position=(0.,1.+0.025*scale), horizontalalignment="left")
+    # Set flag which affects colorbar decimal precision
+    if lin is None:
+        pt.plot.cb_linear = False
+    else:
+        pt.plot.cb_linear = True
 
+    # First draw colorbar
+    if usesci:
+        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+    else:
+        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+    cb.outline.set_linewidth(thick)
+    cb.ax.yaxis.set_ticks_position(cbdir)
+
+    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+    cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+
+    # Perform intermediate draw if necessary to gain access to ticks
+    if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
+        fig.canvas.draw() # draw to get tick positions
+
+    # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+    if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+        cbt=cb.ax.yaxis.get_ticklabels()
+        (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
+        if abs(0.5-cbty)/scale < 0.1:
+            cbt[len(cbt)//2-1].set_va("top")
+        (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
+        if abs(0.5-cbty)/scale < 0.1:
+            cbt[len(cbt)//2+1].set_va("bottom")
+        if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
+            (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
+            if abs(0.5-cbty)/scale < 0.15:
+                cbt[len(cbt)//2-2].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
+            if abs(0.5-cbty)/scale < 0.15:
+                cbt[len(cbt)//2+2].set_va("bottom")
+
+    # Adjust precision for colorbar ticks
+    thesetickvalues = cb.locator()
+    if len(thesetickvalues)<2:
+        precision_b=1
+    else:
+        mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
+        # find smallest interval
+        for ticki in range(len(thesetickvalues)-1):
+            mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
+        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+        # e.g. 9.0e-1 means we need precision 1
+        # e.g. 1.33e-1 means we need precision 3?
+    pt.plot.decimalprecision_cblin = 1
+    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+    cb.update_ticks()
+
+    # if too many subticks in logarithmic colorbar:
+    if not lin and symlog is None:
+        nlabels = len(cb.ax.yaxis.get_ticklabels()) #/ ratio # TODO ratio
+        valids = ['1','2','3','4','5','6','7','8','9']
+        if nlabels > 10:
+            valids = ['1','2','3','4','5','6','8']
+        if nlabels > 19:
+            valids = ['1','2','5']
+        if nlabels > 28:
+            valids = ['1']
+        # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+        for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+            labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+            if not labeltext:
+                continue
+            firstdigit = labeltext[0]
+            if not firstdigit in valids: 
+                label.set_visible(False)
+
+    # Add Vlasiator watermark
+    if (wmark or wmarkb):
+        if wmark:
+            wm = plt.imread(get_sample_data(watermarkimage))
+        else:
+            wmark=wmarkb # for checking for placement
+            wm = plt.imread(get_sample_data(watermarkimageblack))
+        if type(wmark) is str:
+            anchor = wmark
+        else:
+            anchor="NW"
+        # Allowed region and anchor used in tandem for desired effect
+        if anchor=="NW" or anchor=="W" or anchor=="SW":
+            rect = [0.01, 0.01, 0.3, 0.98]
+        elif anchor=="NE" or anchor=="E" or anchor=="SE":
+            rect = [0.69, 0.01, 0.3, 0.98]
+        elif anchor=="N" or anchor=="C" or anchor=="S":
+            rect = [0.35, 0.01, 0.3, 0.98]
+        newax = fig.add_axes(rect, anchor=anchor, zorder=1)
+        newax.imshow(wm)
+        newax.axis('off')
+
+    
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    plt.tight_layout(pad=0.01)
+    plt.tight_layout(pad=0.01)   # TODO check: a warning says tight_layout() might not be compatible with those axes. Seems to work though...
     savefig_pad=0.01
     bbox_inches='tight'
 
