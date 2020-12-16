@@ -69,7 +69,7 @@ function plot_pcolormesh(meta, var; axisunit="Re", isLinear=false)
       y = range(plotrange[1], plotrange[2], length=sizes[2])
    end
 
-   if has_parameter(meta, "t")
+   if any([has_parameter(meta, p) for p in ("t", "time")])
       timesim = read_parameter(meta, "t")   
       plot_title = @sprintf "t= %4.1fs" timesim
    else
