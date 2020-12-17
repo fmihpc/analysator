@@ -32,6 +32,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
+from matplotlib.patches import Circle, Wedge
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
@@ -41,14 +42,14 @@ import ids3d
 
 def plot_colormap3dslice(filename=None,
                   vlsvobj=None,
-                  filedir=None, step=None,
+                  filedir=None, step=None, run=None,
                   outputdir=None, outputfile=None,
                   nooverwrite=False,
                   var=None, op=None, operator=None,
                   title=None, cbtitle=None, draw=None, usesci=True,
                   symlog=None,
                   boxm=None,boxre=None,colormap=None,
-                  run=None, nocb=False, internalcb=False,
+                  nocb=False, internalcb=False,
                   wmark=False,wmarkb=False,
                   axisunit=None, thick=1.0,scale=1.0,
                   tickinterval=0, # Fairly certain this is a valid null value
@@ -77,6 +78,7 @@ def plot_colormap3dslice(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
+    :kword run:         run identifier, used for constructing output filename
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final part will be used as a prefix for the files.
@@ -95,7 +97,6 @@ def plot_colormap3dslice(filename=None,
     :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
     :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
-    :kword run:         run identifier, used for constructing output filename
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -538,6 +539,7 @@ def plot_colormap3dslice(filename=None,
     rhomap = rhomap[indexlist] # find required cells
     # Create the plotting grid
     rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
+
     ############################################
     # Read data and calculate required variables
     ############################################
