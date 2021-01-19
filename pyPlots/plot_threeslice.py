@@ -23,20 +23,59 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, simext, boxcoords):
+def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale):
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
 
-#    # create 3d coordinate axes lines which cuts the point at xr, yr and zr
-    line=art3d.Line3D(*zip((simext[0], cutpoint[1], cutpoint[2]), (simext[1], cutpoint[1], cutpoint[2])),
+    Re = 6371e3
+    fontsize = 8*scale
+    axextents = np.asarray(boxcoords) + 8*Re/axisunit*np.asarray([-1,1,-1,1,-1,1])
+    (xr,yr,zr) = [cutpoint[i]/axisunit for i in range(0,3)]
+
+    # Axes and units (default R_E)
+    if np.isclose(axisunit,Re):
+        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+    elif np.isclose(axisunit,1):
+        axisunitstr = r'm'
+    elif np.isclose(axisunit,1000):
+        axisunitstr = r'km'
+    else:
+        axisunitstr = r'$10^{'+str(int(np.log10(axisunit)))+'}$ m'
+
+    # Create axis lines intersecting at (xr,yr,zr)
+    # x-axis
+    line=art3d.Line3D(*zip((axextents[0], yr, zr), (-Re/axisunit, yr, zr)),
+                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    line=art3d.Line3D(*zip((Re/axisunit, yr, zr), (axextents[1], yr, zr)),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    line=art3d.Line3D(*zip((cutpoint[0], simext[2], cutpoint[2]), (cutpoint[0], simext[3], cutpoint[2])),
+    line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)/2*Re/axisunit, yr-Re/2/axisunit, zr), (axextents[1], yr, zr),
+                      (axextents[1]-np.sqrt(3)/2*Re/axisunit, yr+Re/2/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    ax.text(axextents[1]+4*Re/axisunit, yr, zr-4*Re/axisunit,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
+    # y-axis
+    line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -Re/axisunit, zr)),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    line=art3d.Line3D(*zip((cutpoint[0], cutpoint[1], simext[4]), (cutpoint[0], cutpoint[1], simext[5])),
+    line=art3d.Line3D(*zip((xr, 2*Re/axisunit, zr), (xr, axextents[3], zr)),
+                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    line=art3d.Line3D(*zip((xr-Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr), (xr, axextents[3], zr),
+                      (xr+Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    ax.text(xr+2*Re/axisunit, axextents[3]+4*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize, ha='left',zorder=50)
+    # z-axis
+    line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -Re/axisunit)),
+                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    line=art3d.Line3D(*zip((xr, yr, Re/axisunit), (xr, yr, axextents[5])),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
+    line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
+                      (xr+Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+    ax.text(xr, yr, axextents[5]+2*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
 
     
     u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
@@ -733,56 +772,57 @@ def plot_threeslice(filename=None,
     ###############################################################################
     # Making the 12 meshes corresponding to the 12 elementary surfaces to plot #
     ###############################################################################
+    cutpointaxu = cutpoint/axisunit # TODO clean this!!!
     # {X = x0 slice}
-    [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpoint[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
-                               np.linspace(simext[4],cutpoint[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
-    XmeshYmZm = np.ones(YmeshYmZm.shape) * cutpoint[0]
+    [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+                               np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
+    XmeshYmZm = np.ones(YmeshYmZm.shape) * cutpointaxu[0]
 
-    [YmeshYpZm,ZmeshYpZm] = scipy.meshgrid(np.linspace(cutpoint[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
-                               np.linspace(simext[4],cutpoint[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
-    XmeshYpZm = np.ones(YmeshYpZm.shape) * cutpoint[0]
+    [YmeshYpZm,ZmeshYpZm] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+                               np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
+    XmeshYpZm = np.ones(YmeshYpZm.shape) * cutpointaxu[0]
 
-    [YmeshYmZp,ZmeshYmZp] = scipy.meshgrid(np.linspace(simext[2],cutpoint[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
-                               np.linspace(cutpoint[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
-    XmeshYmZp = np.ones(YmeshYmZp.shape) * cutpoint[0]
+    [YmeshYmZp,ZmeshYmZp] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+                               np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
+    XmeshYmZp = np.ones(YmeshYmZp.shape) * cutpointaxu[0]
 
-    [YmeshYpZp,ZmeshYpZp] = scipy.meshgrid(np.linspace(cutpoint[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
-                               np.linspace(cutpoint[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
-    XmeshYpZp = np.ones(YmeshYpZp.shape) * cutpoint[0]
+    [YmeshYpZp,ZmeshYpZp] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+                               np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
+    XmeshYpZp = np.ones(YmeshYpZp.shape) * cutpointaxu[0]
 
     # {Y = y0 slice}
-    [XmeshXmZm,ZmeshXmZm] = scipy.meshgrid(np.linspace(simext[0],cutpoint[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
-                               np.linspace(simext[4],cutpoint[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
-    YmeshXmZm = np.ones(XmeshXmZm.shape) * cutpoint[1]
+    [XmeshXmZm,ZmeshXmZm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+                               np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
+    YmeshXmZm = np.ones(XmeshXmZm.shape) * cutpointaxu[1]
 
-    [XmeshXpZm,ZmeshXpZm] = scipy.meshgrid(np.linspace(cutpoint[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
-                               np.linspace(simext[4],cutpoint[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
-    YmeshXpZm = np.ones(XmeshXpZm.shape) * cutpoint[1]
+    [XmeshXpZm,ZmeshXpZm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+                               np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
+    YmeshXpZm = np.ones(XmeshXpZm.shape) * cutpointaxu[1]
 
-    [XmeshXmZp,ZmeshXmZp] = scipy.meshgrid(np.linspace(simext[0],cutpoint[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
-                               np.linspace(cutpoint[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
-    YmeshXmZp = np.ones(XmeshXmZp.shape) * cutpoint[1]
+    [XmeshXmZp,ZmeshXmZp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+                               np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
+    YmeshXmZp = np.ones(XmeshXmZp.shape) * cutpointaxu[1]
 
-    [XmeshXpZp,ZmeshXpZp] = scipy.meshgrid(np.linspace(cutpoint[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
-                               np.linspace(cutpoint[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
-    YmeshXpZp = np.ones(XmeshXpZp.shape) * cutpoint[1]
+    [XmeshXpZp,ZmeshXpZp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+                               np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
+    YmeshXpZp = np.ones(XmeshXpZp.shape) * cutpointaxu[1]
 
     # {Z = z0 slice}
-    [XmeshXmYm,YmeshXmYm] = scipy.meshgrid(np.linspace(simext[0],cutpoint[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
-                               np.linspace(simext[2],cutpoint[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
-    ZmeshXmYm = np.ones(XmeshXmYm.shape) * cutpoint[2]
+    [XmeshXmYm,YmeshXmYm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+                               np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
+    ZmeshXmYm = np.ones(XmeshXmYm.shape) * cutpointaxu[2]
 
-    [XmeshXpYm,YmeshXpYm] = scipy.meshgrid(np.linspace(cutpoint[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
-                               np.linspace(simext[2],cutpoint[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
-    ZmeshXpYm = np.ones(XmeshXpYm.shape) * cutpoint[2]
+    [XmeshXpYm,YmeshXpYm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+                               np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
+    ZmeshXpYm = np.ones(XmeshXpYm.shape) * cutpointaxu[2]
 
-    [XmeshXmYp,YmeshXmYp] = scipy.meshgrid(np.linspace(simext[0],cutpoint[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
-                               np.linspace(cutpoint[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
-    ZmeshXmYp = np.ones(XmeshXmYp.shape) * cutpoint[2]
+    [XmeshXmYp,YmeshXmYp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+                               np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
+    ZmeshXmYp = np.ones(XmeshXmYp.shape) * cutpointaxu[2]
 
-    [XmeshXpYp,YmeshXpYp] = scipy.meshgrid(np.linspace(cutpoint[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
-                               np.linspace(cutpoint[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
-    ZmeshXpYp = np.ones(XmeshXpYp.shape) * cutpoint[2]
+    [XmeshXpYp,YmeshXpYp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+                               np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
+    ZmeshXpYp = np.ones(XmeshXpYp.shape) * cutpointaxu[2]
 
     # Creating lists of meshes to be called in a for loop
     Xmesh_list = [XmeshYmZm,XmeshYpZm,XmeshYmZp,XmeshYpZp, XmeshXmZm,XmeshXpZm,XmeshXmZp,XmeshXpZp, XmeshXmYm,XmeshXpYm,XmeshXmYp,XmeshXpYp]
@@ -806,7 +846,7 @@ def plot_threeslice(filename=None,
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel,  cutpoint/axisunit, simext, boxcoords)
+    ax1 = axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
@@ -866,6 +906,8 @@ def plot_threeslice(filename=None,
             # Save lists for masking
             MaskXY_X = np.where(~np.all(maskgrid_XY.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskXY_Y = np.where(~np.all(maskgrid_XY.mask, axis=0))[0]
+            print('MaskXY_X : ({:d})'.format(len(MaskXY_X)))
+            print('MaskXY_Y : ({:d})'.format(len(MaskXY_Y)))
             XmeshXYPass = XmeshXY[MaskXY_X[0]:MaskXY_X[-1]+2,:]
             XmeshXYPass = XmeshXYPass[:,MaskXY_Y[0]:MaskXY_Y[-1]+2]
             YmeshXYPass = YmeshXY[MaskXY_X[0]:MaskXY_X[-1]+2,:]
@@ -1162,7 +1204,7 @@ def plot_threeslice(filename=None,
 
     # Save output to file
     try:
-        plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        plt.savefig(outputfile,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
     except:
         print("Error with attempting to save figure.")
     print(outputfile+"\n")
