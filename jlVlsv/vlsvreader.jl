@@ -311,7 +311,7 @@ function read_variable_info(footer, var)
 
    # Get population and variable names from data array name 
    if occursin("/", var)
-      popname, varname = split(a, "/")
+      popname, varname = split(var, "/")
    else
       popname = "pop"
       varname = var
