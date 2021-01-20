@@ -126,9 +126,6 @@ class VlsvReader(object):
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
-              # Update list of active populations
-              if not popname in self.active_populations: self. active_populations.append(popname)
-
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
                  if self.read_parameter("vxblocks_ini") is not None:
