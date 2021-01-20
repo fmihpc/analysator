@@ -742,15 +742,16 @@ def plot_colormap3dslice(filename=None,
                         else:
                             print("Error in reshaping pass_maps!")
                         pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
-                    
+                        
+                # At this point, the map has been ordered into a 2D or 3D image
                 if np.ma.is_masked(maskgrid) and not pass3d:
-                    if np.ndim(pass_map)==1:
+                    if np.ndim(pass_map)==2:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                    elif np.ndim(pass_map)==2: # vector variable
+                    elif np.ndim(pass_map)==3: # vector variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                    elif np.ndim(pass_map)==3:  # tensor variable
+                    elif np.ndim(pass_map)==4:  # tensor variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                 pass_maps[mapval] = pass_map # add to the dictionary
