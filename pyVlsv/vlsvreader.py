@@ -1097,6 +1097,23 @@ class VlsvReader(object):
          return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
 
 
+   def get_max_refinement_level(self):
+      ''' Returns the maximum refinement level of the AMR
+      '''
+      # Read the file index for cellid
+      self.__read_fileindex_for_cellid()
+      maxcellid = max(self.__fileindex_for_cellid)
+      print('maxcellid (initial): '+str(maxcellid))
+
+      AMR_count = 0
+      while (maxcellid > 0):
+         maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
+         AMR_count += 1
+         print(AMR_count)
+         print(maxcellid)
+      return AMR_count
+      
+
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
 
@@ -1105,6 +1122,9 @@ class VlsvReader(object):
 
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
+      # Read the file index for cellid
+      self.__read_fileindex_for_cellid()
+
       # Check that the coordinates are not out of bounds:
       if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
          return 0
@@ -1114,12 +1134,36 @@ class VlsvReader(object):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
-   
+
       # Get cell indices:
       cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
       # Get the cell id:
       cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
-      return cellid
+
+      # Going through AMR levels as needed
+      AMR_count = 0
+      nCellID_lowLvL = 0
+      refmax = get_max_refinement_level()
+      print('Maximum refinement level: '+str(refmax))
+
+      while AMR_count < refmax + 1:
+          try:
+              self.__fileindex_for_cellid[cellid]
+              return cellid
+          except:
+              AMR_count = AMR_count+1
+              nCellID_lowLvL = nCellID_lowLvL + 2**(3*(AMR_count-1))*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
+
+              # Get cell lengths:
+              cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
+
+              # Get cell indices:
+              cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
+              # Get the cell id:
+              cellid = nCellID_lowLvL + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
+
+          if AMR_count == refmax + 1:
+              raise Exception('CellID does not exist in any AMR level')
 
    def get_cell_coordinates(self, cellid):
       ''' Returns a given cell's coordinates as a numpy array
