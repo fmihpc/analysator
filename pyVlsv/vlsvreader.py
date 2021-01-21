@@ -1130,8 +1130,9 @@ class VlsvReader(object):
 
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
-      # Read the file index for cellid
-      self.__read_fileindex_for_cellid()
+      # If needed, read the file index for cellid
+      if len(self.__fileindex_for_cellid) == 0:
+         self.__read_fileindex_for_cellid()
 
       # Check that the coordinates are not out of bounds:
       if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
@@ -1226,13 +1227,13 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-      # Calculating the number of cells in lower refinement levels
-      ncells_lowerlevel = 0
+      # Calculating the index of the first cell at this reflevel
+      index_at_reflevel = 0
       for i in range(0,reflevel):
-         ncells_lowerlevel += 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
+         index_at_reflevel += 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
 
       # Get cell indices:
-      cellid = (int)(cellid - 1 - ncells_lowerlevel)
+      cellid = (int)(cellid - 1 - index_at_reflevel)
       cellindices = np.zeros(3)
       cellindices[0] = (int)(cellid)%(int)(2**reflevel*self.__xcells)
       cellindices[1] = ((int)(cellid)//(int)(2**reflevel*self.__xcells))%(int)(2**reflevel*self.__ycells)
