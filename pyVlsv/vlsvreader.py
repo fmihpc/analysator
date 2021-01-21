@@ -57,6 +57,7 @@ class VlsvReader(object):
       self.__fptr = open(self.file_name,"rb")
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
+      self.__max_spatial_amr_level = -1
 
       self.use_dict_for_blocks = False
       self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
@@ -125,9 +126,6 @@ class VlsvReader(object):
               
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
-
-              # Update list of active populations
-              if not popname in self.active_populations: self. active_populations.append(popname)
 
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
@@ -1102,15 +1100,18 @@ class VlsvReader(object):
    def get_max_refinement_level(self):
       ''' Returns the maximum refinement level of the AMR
       '''
-      # Read the file index for cellid
-      cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-      maxcellid = max(cellids)
+      if self.__max_spatial_amr_level < 0:
+         # Read the file index for cellid
+         cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
+         maxcellid = max(cellids)
 
-      AMR_count = 0
-      while (maxcellid > 0):
-         maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
-         AMR_count += 1
-      return AMR_count - 1
+         AMR_count = 0
+         while (maxcellid > 0):
+            maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
+            AMR_count += 1
+            
+         self.__max_spatial_amr_level = AMR_count - 1
+      return self.__max_spatial_amr_level
       
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid

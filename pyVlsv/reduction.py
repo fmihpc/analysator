@@ -138,6 +138,8 @@ def restart_V( variables ):
          V = moments[1:4]/moments[0]
       elif len(moments)==5: # multipop restart
          V = moments[1:4]
+      elif len(moments)==6: # eVlasiator restart
+         V = moments[1:4]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -146,6 +148,8 @@ def restart_V( variables ):
          rho = np.ma.masked_less_equal(moments[:,0],0)
          V = np.ma.divide(moments[:,1:4],rho[:,np.newaxis])
       elif len(moments[0,:])==5: # multipop restart
+         V = moments[:,1:4]
+      elif len(moments[0,:])==6: # eVlasiator restart
          V = moments[:,1:4]
       else:
          print("Unrecognized length for moments!")
@@ -182,6 +186,8 @@ def restart_rhom( variables ):
          rhom = moments[0]*mass
       elif len(moments)==5: # multipop restart
          rhom = moments[0]
+      elif len(moments)==6: # eVlasiator restart
+         rhom = moments[0]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -189,6 +195,8 @@ def restart_rhom( variables ):
       if len(moments[0,:])==4:  # pre-multipop restart
          rhom = moments[:,0]*mass
       elif len(moments[0,:])==5: # multipop restart
+         rhom = moments[:,0]
+      elif len(moments[0,:])==6: # eVlasiator restart
          rhom = moments[:,0]
       else:
          print("Unrecognized length for moments!")
@@ -206,6 +214,8 @@ def restart_rhoq( variables ):
          rhoq = moments[0]*charge
       elif len(moments)==5: # multipop restart
          rhoq = moments[4]
+      elif len(moments)==6: # eVlasiator restart
+         rhoq = moments[4]
       else:
          print("Unrecognized length for moments!")
          return None
@@ -213,6 +223,8 @@ def restart_rhoq( variables ):
       if len(moments[0,:])==4:  # pre-multipop restart
          rhoq = moments[:,0]*charge
       elif len(moments[0,:])==5: # multipop restart
+         rhoq = moments[:,4]
+      elif len(moments[0,:])==6: # eVlasiator restart
          rhoq = moments[:,4]
       else:
          print("Unrecognized length for moments!")
