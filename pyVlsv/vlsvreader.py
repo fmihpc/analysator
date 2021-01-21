@@ -841,11 +841,12 @@ class VlsvReader(object):
          
          # read all cells as we're anyway going to need this
          whole_cellids  = self.read_variable("CellID")
-         sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
-         
+#         sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
+         whole_variable = self.read_variable(name,operator=operator)
+
          # Check one value for the length
-         if isinstance(sorted_variable[0], Iterable):
-            value_length=len(sorted_variable[0])
+         if isinstance(whole_variable[0], Iterable):
+            value_length=len(whole_variable[0])
          else:
             value_length=1
          
@@ -885,8 +886,9 @@ class VlsvReader(object):
             for x in [0,1]:
                for y in [0,1]:
                   for z  in [0,1]:
-                     id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
-                     ngbrvalues[x,y,z,:] = sorted_variable[id]
+#                     id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
+                     cellid_neighbor = int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic))
+                     ngbrvalues[x,y,z,:] = whole_variable[np.argwhere(whole_cellids==cellid_neighbor)[0][0]]
             
             c2d=np.zeros((2,2,value_length))
             for y in  [0,1]:
