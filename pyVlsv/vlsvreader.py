@@ -1094,6 +1094,31 @@ class VlsvReader(object):
          return VariableInfo(data_array=data, name=name, units=units, latex=latex, latexunits=latexunits)
 
 
+   def get_max_refinement_level(self):
+      ''' Returns the maximum refinement level of the AMR
+      '''
+      # Read the file index for cellid
+      cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
+      maxcellid = max(cellids)
+
+      AMR_count = 0
+      while (maxcellid > 0):
+         maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
+         AMR_count += 1
+      return AMR_count - 1
+      
+   def get_amr_level(self,cellid):
+      '''Returns the AMR level of a given cell defined by its cellid
+      
+      :param cellid:        The cell's cellid
+      :returns:             The cell's refinement level in the AMR
+      '''
+      AMR_count = 0
+      while (cellid > 0):
+         cellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
+         AMR_count += 1
+      return AMR_count - 1 
+
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
 
@@ -1102,6 +1127,10 @@ class VlsvReader(object):
 
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
+      # If needed, read the file index for cellid
+      if len(self.__fileindex_for_cellid) == 0:
+         self.__read_fileindex_for_cellid()
+
       # Check that the coordinates are not out of bounds:
       if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
          return 0
@@ -1111,12 +1140,34 @@ class VlsvReader(object):
          return 0
       # Get cell lengths:
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
-   
+
       # Get cell indices:
       cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
       # Get the cell id:
       cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
-      return cellid
+
+      # Going through AMR levels as needed
+      AMR_count = 0
+      ncells_lowerlevel = 0
+      refmax = self.get_max_refinement_level()
+
+      while AMR_count < refmax + 1:
+          try:
+              self.__fileindex_for_cellid[cellid]
+              return cellid
+          except:
+              ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
+              AMR_count += 1
+              # Get cell lengths:
+              cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
+
+              # Get cell indices:
+              cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
+              # Get the cell id:
+              cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
+
+          if AMR_count == refmax + 1:
+              raise Exception('CellID does not exist in any AMR level')
 
    def get_cell_coordinates(self, cellid):
       ''' Returns a given cell's coordinates as a numpy array
@@ -1162,24 +1213,30 @@ class VlsvReader(object):
       # Return the coordinates:
       return np.array(cellcoordinates)
 
-   def get_cell_indices(self, cellid):
+   def get_cell_indices(self, cellid, reflevel):
       ''' Returns a given cell's indices as a numpy array
-      # TODO: handle AMR indices somehow?
 
       :param cellid:            The cell's ID
+      :param reflevel:          The cell's refinement level in the AMR
       :returns: a numpy array with the coordinates
 
       .. seealso:: :func:`get_cellid`
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
+      # Calculating the index of the first cell at this reflevel
+      index_at_reflevel = 0
+      for i in range(0,reflevel):
+         index_at_reflevel += 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
+
       # Get cell indices:
-      cellid = (int)(cellid - 1)
+      cellid = (int)(cellid - 1 - index_at_reflevel)
       cellindices = np.zeros(3)
-      cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
-      cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
-      # Return the coordinates:
+      cellindices[0] = (int)(cellid)%(int)(2**reflevel*self.__xcells)
+      cellindices[1] = ((int)(cellid)//(int)(2**reflevel*self.__xcells))%(int)(2**reflevel*self.__ycells)
+      cellindices[2] = (int)(cellid)//(int)(4**reflevel*self.__xcells*self.__ycells)
+
+      # Return the indices:
       return np.array(cellindices)
 
    def get_cell_neighbor(self, cellid, offset, periodic):
@@ -1193,9 +1250,16 @@ class VlsvReader(object):
       .. note:: Returns 0 if the offset is out of bounds!
 
       '''
-      indices = self.get_cell_indices(cellid)
+      reflevel = self.get_amr_level(cellid)
+      indices = self.get_cell_indices(cellid, reflevel)
+
+      # Special case if no offset      
+      if ((offset[0]==0) * (offset[1]==0) * (offset[2]==0)):
+         return cellid
+
+      # Getting the neighbour at the same refinement level
       ngbr_indices = np.zeros(3)
-      sys_size = [self.__xcells, self.__ycells, self.__zcells]
+      sys_size = [2**reflevel*self.__xcells, 2**reflevel*self.__ycells, 2**reflevel*self.__zcells]
       for i in range(3):
          ngbr_indices[i] = indices[i] + offset[i]
          if periodic[i]:
@@ -1210,8 +1274,9 @@ class VlsvReader(object):
             #out of bounds
             return 0
 
-      return  ngbr_indices[0] + ngbr_indices[1] * self.__xcells + ngbr_indices[2] * self.__xcells * self.__ycells + 1
-
+      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + ngbr_indices * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
+      cellid_neighbour = self.get_cellid(coord_neighbour)
+      return cellid_neighbour
 
    def get_velocity_cell_ids(self, vcellcoord, pop="proton"):
       ''' Returns velocity cell ids of given coordinate
