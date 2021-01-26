@@ -367,34 +367,49 @@ class VlsvReader(object):
       for index,cellid in enumerate(self.__cells_with_blocks[pop]):
          self.__order_for_cellid_blocks[pop][cellid]=index
 
-   def list(self):
+   def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
       ''' Print out a description of the content of the file. Useful
-         for interactive usage
+         for interactive usage. Default is to list parameters and variables, query selection can be adjusted with keywords:
+
+         Default and supported keywords:
+
+         parameter=True 
+         variable=True
+         mesh=False
+         datareducer=False 
+         operator=False 
+         other=False
       '''
-      print("tag = PARAMETER")
-      for child in self.__xml_root:
-         if child.tag == "PARAMETER" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("tag = VARIABLE")
-      for child in self.__xml_root:
-         if child.tag == "VARIABLE" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("tag = MESH")
-      for child in self.__xml_root:
-         if child.tag == "MESH" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("Datareducers:")
-      for name in datareducers:
-         print("   ",name, " based on ", datareducers[name].variables)
-      print("Data operators:")
-      for name in data_operators:
-         if type(name) is str:
-            if not name.isdigit():
-               print("   ",name)
-      print("Other:")
-      for child in self.__xml_root:
-         if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
-            print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
+      if parameter:
+         print("tag = PARAMETER")
+         for child in self.__xml_root:
+            if child.tag == "PARAMETER" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if variable:
+         print("tag = VARIABLE")
+         for child in self.__xml_root:
+            if child.tag == "VARIABLE" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if mesh:
+         print("tag = MESH")
+         for child in self.__xml_root:
+            if child.tag == "MESH" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if datareducer:
+         print("Datareducers:")
+         for name in datareducers:
+            print("   ",name, " based on ", datareducers[name].variables)
+      if operator:
+         print("Data operators:")
+         for name in data_operators:
+            if type(name) is str:
+               if not name.isdigit():
+                  print("   ",name)
+      if other:
+         print("Other:")
+         for child in self.__xml_root:
+            if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
+               print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
 
    def check_parameter( self, name ):
       ''' Checks if a given parameter is in the vlsv reader
@@ -1013,6 +1028,14 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
+
+      # Wrapper, check if requesting an fsgrid variable
+      if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
+         if not cellids == -1:
+            print("Warning, CellID requests not supported for FSgrid variables! Aborting.")
+            return False
+         return self.read_fsgrid_variable(name=name, operator=operator)
+
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
 
