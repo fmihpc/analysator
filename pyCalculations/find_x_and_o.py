@@ -57,12 +57,12 @@ def findIntersection(v1,v2):
 ## Which frames to calculate points for?
 
 # for looping over many files
-if len(sys.argv)==1:
-   indexes = [int(sys.argv[0])]
-elif len(sys.argv)==2:
-   indexes = np.arange(int(sys.argv[0]),int(sys.argv[1]))
+if len(sys.argv)==2:
+   indexes = [int(sys.argv[1])]
 elif len(sys.argv)==3:
-   indexes = np.arange(int(sys.argv[0]),int(sys.argv[1]),,int(sys.argv[2]))
+   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]))
+elif len(sys.argv)==4:
+   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),,int(sys.argv[3]))
 else:
    sys.stderr.write("Syntax: size.py <index>\n")
    sys.stderr.write("or: size.py <starting_index> <final_index+1>\n")
