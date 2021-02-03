@@ -466,7 +466,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 0
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
         axislabels = ['Y','Z']
-        slicelabel = r"X={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"X={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'YZ'
     if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
         simext=[xmin,xmax,zmin,zmax]
@@ -476,7 +476,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 1
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
         axislabels = ['X','Z']
-        slicelabel = r"Y={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"Y={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'XZ'
     if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
         simext=[xmin,xmax,ymin,ymax]
@@ -486,7 +486,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 2
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
         axislabels = ['X','Y']
-        slicelabel = r"Z={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"Z={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
@@ -1286,7 +1286,7 @@ def plot_colormap3dslice(filename=None,
             U = slinemap[:,:,0]
             V = slinemap[:,:,1]
 
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor,arrowsize=0.3)
     
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
