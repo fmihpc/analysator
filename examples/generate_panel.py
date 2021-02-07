@@ -188,6 +188,8 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
 # it has access to the name of the .vlsv file, and then calls plot_vdf to
 # create insets on top of the variable map.
 def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
+    if requestvariables==True:
+        return []    
     # pass_maps is a list of numpy arrays, not used here.
     from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 

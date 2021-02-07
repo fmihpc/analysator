@@ -60,7 +60,11 @@ if not os.getenv('PTNOLATEX'):
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
 # Set backends
-if not os.getenv('PTBACKEND'):
+if matplotlib.get_backend()[:9] == 'module://':
+   print("Using backend "+matplotlib.get_backend())
+   backend_interactive = matplotlib.get_backend()
+   backend_noninteractive = matplotlib.get_backend()
+elif not os.getenv('PTBACKEND'):
    backend_interactive = 'TkAgg'
    backend_noninteractive = 'Agg'
 else:

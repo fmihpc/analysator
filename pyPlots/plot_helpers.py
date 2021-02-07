@@ -23,6 +23,7 @@
 
 import pytools as pt
 import numpy as np
+import sys
 from rotation import rotateTensorToVector
 
 PLANE = 'XY'
@@ -433,6 +434,21 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
+def expr_Diff(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return []
+    # Assumes two "time steps" i.e. files to diff
+    listofkeys = iter(pass_maps[0])
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+    map0=pass_maps[0][var]
+    map1=pass_maps[1][var]
+    if (map0.shape != map1.shape):
+        print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
+        sys.exit(-1)
+    return (map0-map1) # use keyword absolute to get abs diff
+
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B','rho']
