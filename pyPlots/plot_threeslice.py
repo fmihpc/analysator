@@ -15,7 +15,7 @@ from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 import ids3d
-from mpl_toolkits.mplot3d import axes3d
+#from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 import mpl_toolkits.mplot3d.art3d as art3d
 
@@ -23,7 +23,7 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale):
+def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, tickinterval, scale):
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
 
@@ -43,35 +43,59 @@ def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale):
         axisunitstr = r'$10^{'+str(int(np.log10(axisunit)))+'}$ m'
 
     # Create axis lines intersecting at (xr,yr,zr)
+    # If the cut point is at the Earth, leave some space around it
+    if abs(xr) < Re/axisunit:
+        junction_yz = Re/axisunit
+        junction_x  = Re/axisunit
+    else:
+        junction_yz = 0.
+        junction_x = xr
+
     # x-axis
-    line=art3d.Line3D(*zip((axextents[0], yr, zr), (-Re/axisunit, yr, zr)),
+    line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(junction_x,-Re/axisunit), yr, zr)),
                       color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    line=art3d.Line3D(*zip((Re/axisunit, yr, zr), (axextents[1], yr, zr)),
+
+    if xr < 0.: # distinguish two cases to avoid overlaying the Earth if xr < 0
+        line=art3d.Line3D(*zip((junction_x, yr, zr), (-Re/axisunit, yr, zr)),
+                          color='black', linewidth=0.5, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((-Re/axisunit, yr, zr), (junction_x, yr, zr)),
+                          color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line)
+
+    line=art3d.Line3D(*zip((max(junction_x,Re/axisunit), yr, zr), (axextents[1], yr, zr)),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
+
     line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)/2*Re/axisunit, yr-Re/2/axisunit, zr), (axextents[1], yr, zr),
                       (axextents[1]-np.sqrt(3)/2*Re/axisunit, yr+Re/2/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
     ax.text(axextents[1]+4*Re/axisunit, yr, zr-4*Re/axisunit,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
+
     # y-axis
-    line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -Re/axisunit, zr)),
+    line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -junction_yz, zr)),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    line=art3d.Line3D(*zip((xr, 2*Re/axisunit, zr), (xr, axextents[3], zr)),
+
+    line=art3d.Line3D(*zip((xr, 2*junction_yz, zr), (xr, axextents[3], zr)),
                       color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
+
     line=art3d.Line3D(*zip((xr-Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr), (xr, axextents[3], zr),
                       (xr+Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
     ax.text(xr+2*Re/axisunit, axextents[3]+4*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize, ha='left',zorder=50)
+
     # z-axis
-    line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -Re/axisunit)),
+    line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -junction_yz)),
                       color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    line=art3d.Line3D(*zip((xr, yr, Re/axisunit), (xr, yr, axextents[5])),
+
+    line=art3d.Line3D(*zip((xr, yr, junction_yz), (xr, yr, axextents[5])),
                       color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
+
     line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
                       (xr+Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
@@ -99,83 +123,51 @@ def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale):
     ax.axis('equal')
 
 
-#    # spacing between ticks
-#    s = int((xsize*2**reflevel)/20)
-#    # widths of the ticks
-#    l = int((xsize*2**reflevel)/100)
-#
-#
-#    ###################
-#    # plot ticks STARTS    
-#
-#    # plot the first ticks which position > xr or in the others yr or zr
-#    i = 1
-#    while xr+i*s < xsize*2**reflevel:
-#      line=art3d.Line3D(*zip((xr+i*s, yr-l, zr), (xr+i*s, yr+l, zr)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr+i*s, yr, zr-l), (xr+i*s, yr, zr+l)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#    # plot the last ticks which position < xr or in the others yr or zr
-#    i = 1
-#    while xr-i*s > 0:
-#      line=art3d.Line3D(*zip((xr-i*s, yr-l, zr), (xr-i*s, yr+l, zr)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr-i*s, yr, zr-l), (xr-i*s, yr, zr+l)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#
-#    i = 1
-#    while yr+i*s < ysize*2**reflevel:
-#      line=art3d.Line3D(*zip((xr-l, yr+i*s, zr), (xr+l, yr+i*s, zr)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr, yr+i*s, zr-l), (xr, yr+i*s, zr+l)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#    i = 1
-#    while yr-i*s > 0:
-#      line=art3d.Line3D(*zip((xr-l, yr-i*s, zr), (xr+l, yr-i*s, zr)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr, yr-i*s, zr-l), (xr, yr-i*s, zr+l)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#
-#    i = 1
-#    while zr+i*s < zsize*2**reflevel:
-#      line=art3d.Line3D(*zip((xr, yr-l, zr+i*s), (xr, yr+l, zr+i*s)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr-l, yr, zr+i*s), (xr+l, yr, zr+i*s)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#    i = 1
-#    while zr-i*s > 0:
-#      line=art3d.Line3D(*zip((xr, yr-l, zr-i*s), (xr, yr+l, zr-i*s)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      line=art3d.Line3D(*zip((xr-l, yr, zr-i*s), (xr+l, yr, zr-i*s)),
-#                        color='black', linewidth=0.7, alpha=0.25, zorder=100+i)
-#      ax.add_line(line)
-#      i += 1
-#
-#    # plot ticks ENDS
-#    #################
+    # Draw ticks
+    txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunit)
+    txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunit)
+    ticks_x = np.concatenate((np.flip(txm),txp[1:]))
+    if xr < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_x = ticks_x[abs(ticks_x) > Re/axisunit]
+    ticklength = Re/axisunit
+    for itick in range(0,len(ticks_x)):
+        tick=art3d.Line3D(*zip((ticks_x[itick],yr-ticklength,zr),(ticks_x[itick],yr+ticklength,zr)),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
 
+        tick=art3d.Line3D(*zip((ticks_x[itick],yr,zr-ticklength),(ticks_x[itick],yr,zr+ticklength)),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
 
+    tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunit)
+    typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunit)
+    ticks_y = np.concatenate((np.flip(tym),typ[1:]))
+    if xr < Re/axisunit and abs(yr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
+    ticklength = Re/axisunit
+    for itick in range(0,len(ticks_y)):
+        tick=art3d.Line3D(*zip((xr-ticklength,ticks_y[itick],zr),(xr+ticklength,ticks_y[itick],zr)),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
+
+        tick=art3d.Line3D(*zip((xr,ticks_y[itick],zr-ticklength),(xr,ticks_y[itick],zr+ticklength)),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
+
+    tzm = np.arange(zr,boxcoords[5]-0.1,-tickinterval/axisunit)
+    tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunit)
+    ticks_z = np.concatenate((np.flip(tzm),tzp[1:]))
+    if xr < Re/axisunit and abs(zr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
+    ticklength = Re/axisunit
+    for itick in range(0,len(ticks_z)):
+        tick=art3d.Line3D(*zip((xr-ticklength,yr,ticks_z[itick]),(xr+ticklength,yr,ticks_z[itick])),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
+
+        tick=art3d.Line3D(*zip((xr,yr-ticklength,ticks_z[itick]),(xr,yr+ticklength,ticks_z[itick])),
+                          color='black', linewidth=0.25, alpha=1, zorder=20)
+        ax.add_line(tick)
 
     # set the basic 3d coordinate axes off
     ax.set_axis_off()
@@ -854,7 +846,7 @@ def plot_threeslice(filename=None,
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale)
+    ax1 = axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, tickinterval, scale)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
