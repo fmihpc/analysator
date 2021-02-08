@@ -78,10 +78,11 @@ def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, scale):
     ax.text(xr, yr, axextents[5]+2*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
 
     
+    # Addition of the Earth at the origin of the domain
     u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-    x = np.cos(u)*np.sin(v)
-    y = np.sin(u)*np.sin(v)
-    z = np.cos(v)
+    x = Re/axisunit * np.cos(u)*np.sin(v)
+    y = Re/axisunit * np.sin(u)*np.sin(v)
+    z = Re/axisunit * np.cos(v)
     albedo = np.zeros(u.shape)
     albedo = np.arctan(-50.*x)/np.pi+0.5
     levels = MaxNLocator(nbins=255).tick_values(0,1)
@@ -196,7 +197,7 @@ def plot_threeslice(filename=None,
                   symmetric=False, absolute=None,
                   lin=None, symlog=None,
                   cbtitle=None, title=None,
-                  usesci=True, axisunit=None,
+                  usesci=True, axisunit=None, tickinterval=None,
                   pass_full=None,
                   wmark=False,wmarkb=False,
                   thick=1.0,scale=1.0,
@@ -247,6 +248,7 @@ def plot_threeslice(filename=None,
     :kword cbtitle:     string to use as colorbar title instead of map name
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+    :kword tickinterval:Axis tick interval, expressed in 10^{axisunit} (default: 10 Earth radii)
 
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
@@ -543,6 +545,12 @@ def plot_threeslice(filename=None,
     # Scale data extent and plot box
     simext=[i/axisunit for i in simext]
     boxcoords=[i/axisunit for i in boxcoords]
+
+    # Axis tick interval (default 10 R_E)
+    if tickinterval is None:
+        tickinterval = 10.*Re
+    else:
+        tickinterval = tickinterval * axisunit
 
 
     #################################################
@@ -1065,6 +1073,17 @@ def plot_threeslice(filename=None,
 
 #******
 
+    # Plot title - adding the cut point information and tick interval length
+    if np.all(np.isclose(cutpoint/axisunit % 1,0.)):
+        plot_title = plot_title + ' -- origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
+                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
+    else:
+        plot_title = plot_title + ' -- origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
+                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
+    tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
+    plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
+    title_obj = ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.93))
+    
 
     print('Adding the colorbar, Time since start = {:.2f} s'.format(time.time()-t0))
 
