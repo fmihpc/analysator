@@ -23,9 +23,54 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, tickinterval, scale):
+def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, scale, viewangle):
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
+
+    # Zooming in a little bit
+    #ax.dist = 9.
+
+    # Dealing with the plot orientation
+    azi,ele = viewangle
+    if azi > 180.: # Make sure azimuths are within ]-180.,180]
+        azi = azi - 360.
+    if azi%90. == 0.: # Dirty hack to avoid potential division by zero later
+        azi = azi + 1e-15
+    ax.azim = azi
+    ax.elev = ele
+
+    deg2rad = np.pi/180.
+    # Adapting line styles for axes and near-Earth break distances to the viewing angle
+    if ele >= 0.:
+        styleZp = '-'
+        styleZm = '--'
+        cZp = 1.
+        cZm = 1. + abs(np.tan(ele*deg2rad))
+    else:
+        styleZp = '--'
+        styleZm = '-'
+        cZp = 1. + abs(np.tan(ele*deg2rad))
+        cZm = 1.
+    if azi >= 0:
+        styleYp = '-'
+        styleYm = '--'
+        cYp = 1.
+        cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+    else:
+        styleYp = '--'
+        styleYm = '-'
+        cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+        cYm = 1.
+    if abs(azi) <= 90:
+        styleXp = '-'
+        styleXm = '--'
+        cXp = 1.
+        cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+    else:
+        styleXp = '--'
+        styleXm = '-'
+        cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+        cXm = 1.
 
     Re = 6371e3
     fontsize = 8*scale
@@ -51,55 +96,65 @@ def axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, tickinterval, s
         junction_yz = 0.
         junction_x = xr
 
-    # x-axis
-    line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(junction_x,-Re/axisunit), yr, zr)),
-                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
-    ax.add_line(line)
+    # -- x-axis --
+    line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(junction_x,-cXm*Re/axisunit), yr, zr)),
+                      color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line) # this goes from the lowest X to the Earth or the cut point
 
-    if xr < 0.: # distinguish two cases to avoid overlaying the Earth if xr < 0
-        line=art3d.Line3D(*zip((junction_x, yr, zr), (-Re/axisunit, yr, zr)),
-                          color='black', linewidth=0.5, alpha=1, zorder=20)
-    else:
-        line=art3d.Line3D(*zip((-Re/axisunit, yr, zr), (junction_x, yr, zr)),
-                          color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
-    ax.add_line(line)
+    # Distinguish four cases to avoid overlaying the Earth, based on xr and azi
+    if xr < -Re/axisunit and abs(azi) < 90.: # looking from the dayside, cut point on the nightside
+        line=art3d.Line3D(*zip((junction_x, yr, zr), (-cXm*Re/axisunit, yr, zr)),
+                          color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+        ax.add_line(line)
+    elif xr > Re/axisunit and abs(azi) < 90.: # looking from the dayside, cut point also on the dayside
+        line=art3d.Line3D(*zip((-cXm*Re/axisunit, yr, zr), (junction_x, yr, zr)),
+                          color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+        ax.add_line(line)
+    elif xr < -Re/axisunit: # looking from the nightside, cut point also on the nightside
+        line=art3d.Line3D(*zip((junction_x, yr, zr), (cXp*Re/axisunit, yr, zr)),
+                          color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+        ax.add_line(line)
+    else: # looking from the nightside, cut point on the dayside
+        line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (junction_x, yr, zr)),
+                          color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+        ax.add_line(line)
 
     line=art3d.Line3D(*zip((max(junction_x,Re/axisunit), yr, zr), (axextents[1], yr, zr)),
-                      color='black', linewidth=0.5, alpha=1, zorder=20)
-    ax.add_line(line)
+                      color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+    ax.add_line(line) # this goes from the Earth or the cut point to the highest X
 
     line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)/2*Re/axisunit, yr-Re/2/axisunit, zr), (axextents[1], yr, zr),
                       (axextents[1]-np.sqrt(3)/2*Re/axisunit, yr+Re/2/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
-    ax.add_line(line)
-    ax.text(axextents[1]+4*Re/axisunit, yr, zr-4*Re/axisunit,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
+    ax.add_line(line) # this makes an arrow at the end of the axis
+    ax.text(axextents[1]+4*Re/axisunit, yr, zr,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',va='center',zorder=50)
 
-    # y-axis
-    line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -junction_yz, zr)),
-                      color='black', linewidth=0.5, alpha=1, zorder=20)
+    # -- y-axis --
+    line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*junction_yz, zr)),
+                      color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    line=art3d.Line3D(*zip((xr, 2*junction_yz, zr), (xr, axextents[3], zr)),
-                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((xr, cYp*junction_yz, zr), (xr, axextents[3], zr)),
+                      color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
     line=art3d.Line3D(*zip((xr-Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr), (xr, axextents[3], zr),
                       (xr+Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    ax.text(xr+2*Re/axisunit, axextents[3]+4*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize, ha='left',zorder=50)
+    ax.text(xr, axextents[3]+4*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
 
-    # z-axis
-    line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -junction_yz)),
-                      color='black', linestyle='--', linewidth=0.5, alpha=1, zorder=20)
+    # -- z-axis --
+    line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*junction_yz)),
+                      color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    line=art3d.Line3D(*zip((xr, yr, junction_yz), (xr, yr, axextents[5])),
-                      color='black', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((xr, yr, cZp*junction_yz), (xr, yr, axextents[5])),
+                      color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
-                      (xr+Re/2/axisunit, yr, axextents[3]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
+                      (xr+Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    ax.text(xr, yr, axextents[5]+2*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize, ha='center',zorder=50)
+    ax.text(xr, yr, axextents[5]+2*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
 
     
     # Addition of the Earth at the origin of the domain
@@ -194,7 +249,7 @@ def plot_threeslice(filename=None,
                   wmark=False,wmarkb=False,
                   thick=1.0,scale=1.0,
                   expression=None,
-                  vscale=1.0,
+                  vscale=1.0,viewangle=(-60.,30.),
                   cutpoint=None,cutpointre=None
                   ):
 
@@ -265,6 +320,8 @@ def plot_threeslice(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
+                        (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
     :kword cutpoint:    Coordinates of the point through which all three 2D cuts must pass [m]
     :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
@@ -846,7 +903,7 @@ def plot_threeslice(filename=None,
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel, cutpoint, simext, boxcoords, axisunit, tickinterval, scale)
+    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, scale, viewangle)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
@@ -1074,7 +1131,7 @@ def plot_threeslice(filename=None,
                      cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
     tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
     plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
-    title_obj = ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.93))
+    title_obj = ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
     
 
     print('Adding the colorbar, Time since start = {:.2f} s'.format(time.time()-t0))
