@@ -7,6 +7,7 @@ import os, sys
 import re
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
+from matplotlib.colors import LightSource
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
@@ -161,7 +162,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
 
     
     # Addition of the Earth at the origin of the domain
-    u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
     x = Re/axisunit * np.cos(u)*np.sin(v)
     y = Re/axisunit * np.sin(u)*np.sin(v)
     z = Re/axisunit * np.cos(v)
@@ -255,7 +256,7 @@ def plot_threeslice(filename=None,
                   symmetric=False, absolute=None,
                   lin=None, symlog=None,
                   cbtitle=None, title=None,
-                  usesci=True, axisunit=None,
+                  usesci=True, axisunit=None, shadings=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
                   wmark=False,wmarkb=False,
@@ -1116,18 +1117,35 @@ def plot_threeslice(filename=None,
         else:
                 fcolor_z_i = scamap.to_rgba(datamap_z_i)
 
+        # Introducing a slight shading to better distiguish the planes
+        if shadings is not None:
+            (shadx,shady,shadz) = shadings
+        else:
+            (azi,ele) = viewangle
+            deg2rad = np.pi/180.
+            shadx = np.cos(ele*deg2rad) * np.cos(azi*deg2rad)
+            shady = np.cos(ele*deg2rad) * np.sin(azi*deg2rad)
+            shadz = np.sin(ele*deg2rad)
+            maxshad = max(shadx,shady,shadz)
+            shadx = shadx / maxshad
+            shady = shady / maxshad
+            shadz = shadz / maxshad
+
         print('Ready to plot a set of surface elements! Time since start = {:.2f} s'.format(time.time()-t0))
         # Plotting the partial {X = x0} cut
         ax1.plot_surface(XmeshYZPass, YmeshYZPass, ZmeshYZPass, rstride=1, cstride=1,
-                    facecolors=fcolor_x_i, shade=False, antialiased=False)
+#                    facecolors=shaded_surface_x, shade=False, antialiased=False)
+                    facecolors=shadx*fcolor_x_i, shade=False, antialiased=False)
 
         # Plotting the partial {Y = y0} cut
         ax1.plot_surface(XmeshXZPass, YmeshXZPass, ZmeshXZPass, rstride=1, cstride=1,
-                    facecolors=fcolor_y_i, shade=False, antialiased=False)
+#                    facecolors=shaded_surface_y, shade=False, antialiased=False)
+                    facecolors=shady*fcolor_y_i, shade=False, antialiased=False)
 
         # Plotting the partial {Z = z0} cut
         ax1.plot_surface(XmeshXYPass, YmeshXYPass, ZmeshXYPass, rstride=1, cstride=1,
-                    facecolors=fcolor_z_i, shade=False, antialiased=False)
+#                    facecolors=shaded_surface_z, shade=False, antialiased=False)
+                    facecolors=shadz*fcolor_z_i, shade=False, antialiased=False)
 
 #******
 
