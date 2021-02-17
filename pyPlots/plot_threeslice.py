@@ -76,8 +76,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     fontsize = 8*scale
     axextents = np.asarray(boxcoords) + 8*Re/axisunit*np.asarray([-1,1,-1,1,-1,1])
     (xr,yr,zr) = [cutpoint[i]/axisunit for i in range(0,3)]
-    cXlabel = 1. + abs((3.*np.cos(azi)+3.*np.sin(azi))/np.sin(ele*deg2rad))
-    cYlabel = 1. + abs((3.*np.sin(azi)+3.*np.cos(azi))/np.sin(ele*deg2rad))
+    cXlabel = 1. + (3.*abs(np.cos(azi*deg2rad))+3.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad))
+    cYlabel = 1. + (3.*abs(np.sin(azi*deg2rad))+3.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad))
     cZlabel = 1. + 1.5*abs(np.tan(ele*deg2rad))
 
     # Axes and units (default R_E)
@@ -1272,11 +1272,10 @@ def plot_threeslice(filename=None,
     savefig_pad=0.01
     bbox_inches='tight'
 
-    print('Saving the figure, Time since start = {:.2f} s'.format(time.time()-t0))
+    print('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
 
     # Save output to file
     try:
         plt.savefig(outputfile,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
     except:
         print("Error with attempting to save figure.")
-    print(outputfile+"\n")
