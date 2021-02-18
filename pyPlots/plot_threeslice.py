@@ -24,12 +24,10 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, viewangle):
+def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, 
+           viewangle, halfaxes):
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
-
-    # Zooming in a little bit
-    #ax.dist = 9.
 
     # Dealing with the plot orientation
     azi,ele = viewangle
@@ -42,34 +40,39 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
 
     deg2rad = np.pi/180.
     # Adapting line styles for axes and near-Earth break distances to the viewing angle
+    frontaxisstyle = '-'
+    if not halfaxes:
+        backaxisstyle = '--'
+    else:
+        backaxisstyle = ''
     if ele >= 0.:
-        styleZp = '-'
-        styleZm = '--'
+        styleZp = frontaxisstyle
+        styleZm = backaxisstyle
         cZp = 1.
         cZm = 1. + abs(np.tan(ele*deg2rad))
     else:
-        styleZp = '--'
-        styleZm = '-'
+        styleZp = backaxisstyle
+        styleZm = frontaxisstyle
         cZp = 1. + abs(np.tan(ele*deg2rad))
         cZm = 1.
     if azi >= 0:
-        styleYp = '-'
-        styleYm = '--'
+        styleYp = frontaxisstyle
+        styleYm = backaxisstyle
         cYp = 1.
         cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
     else:
-        styleYp = '--'
-        styleYm = '-'
+        styleYp = backaxisstyle
+        styleYm = frontaxisstyle
         cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
         cYm = 1.
     if abs(azi) <= 90:
-        styleXp = '-'
-        styleXm = '--'
+        styleXp = frontaxisstyle
+        styleXm = backaxisstyle
         cXp = 1.
         cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
     else:
-        styleXp = '--'
-        styleXm = '-'
+        styleXp = backaxisstyle
+        styleXm = frontaxisstyle
         cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
         cXm = 1.
 
@@ -127,8 +130,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                       color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line) # this goes from the Earth or the cut point to the highest X
 
-    line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)/2*Re/axisunit, yr-Re/2/axisunit, zr), (axextents[1], yr, zr),
-                      (axextents[1]-np.sqrt(3)/2*Re/axisunit, yr+Re/2/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)*Re/axisunit, yr-Re/axisunit, zr), (axextents[1], yr, zr),
+                      (axextents[1]-np.sqrt(3)*Re/axisunit, yr+Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line) # this makes an arrow at the end of the axis
 
     # -- y-axis --
@@ -140,8 +143,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                       color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    line=art3d.Line3D(*zip((xr-Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr), (xr, axextents[3], zr),
-                      (xr+Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((xr-Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr), (xr, axextents[3], zr),
+                      (xr+Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
 
@@ -154,8 +157,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                       color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
-                      (xr+Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    line=art3d.Line3D(*zip((xr-Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit), (xr, yr, axextents[5]),
+                      (xr+Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
     if os.getenv('PTNOLATEX'):
@@ -209,10 +212,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         ticks_x = np.arange(boxcoords[0],boxcoords[1]+0.1,tickinterval/axisunit)
         ticks_y = np.arange(boxcoords[2],boxcoords[3]+0.1,tickinterval/axisunit)
         ticks_z = np.arange(boxcoords[4],boxcoords[5]+0.1,tickinterval/axisunit)
+    ticklength = Re/axisunit
 
     if xr < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
         ticks_x = ticks_x[abs(ticks_x) > Re/axisunit]
-    ticklength = Re/axisunit
+    if halfaxes: # do not create ticks if back axes are not shown
+        if styleXp == backaxisstyle:
+            ticks_x = ticks_x[ticks_x <= xr]
+        else:
+            ticks_x = ticks_x[ticks_x >= xr]
     for itick in range(0,len(ticks_x)):
         tick=art3d.Line3D(*zip((ticks_x[itick],yr-ticklength,zr),(ticks_x[itick],yr+ticklength,zr)),
                           color='black', linewidth=0.25, alpha=1, zorder=20)
@@ -224,7 +232,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
 
     if xr < Re/axisunit and abs(yr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
         ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
-    ticklength = Re/axisunit
+    if halfaxes: # do not create ticks if back axes are not shown
+        if styleYp == backaxisstyle:
+            ticks_y = ticks_y[ticks_y <= yr]
+        else:
+            ticks_y = ticks_y[ticks_y >= yr]
     for itick in range(0,len(ticks_y)):
         tick=art3d.Line3D(*zip((xr-ticklength,ticks_y[itick],zr),(xr+ticklength,ticks_y[itick],zr)),
                           color='black', linewidth=0.25, alpha=1, zorder=20)
@@ -236,7 +248,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
 
     if xr < Re/axisunit and abs(zr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
         ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
-    ticklength = Re/axisunit
+    if halfaxes: # do not create ticks if back axes are not shown
+        if styleZp == backaxisstyle:
+            ticks_z = ticks_z[ticks_z <= zr]
+        else:
+            ticks_z = ticks_z[ticks_z >= zr]
     for itick in range(0,len(ticks_z)):
         tick=art3d.Line3D(*zip((xr-ticklength,yr,ticks_z[itick]),(xr+ticklength,yr,ticks_z[itick])),
                           color='black', linewidth=0.25, alpha=1, zorder=20)
@@ -265,7 +281,7 @@ def plot_threeslice(filename=None,
                   colormap=None, vmin=None, vmax=None,
                   symmetric=False, absolute=None,
                   lin=None, symlog=None,
-                  cbtitle=None, title=None,
+                  cbtitle=None, title=None, halfaxes=False,
                   usesci=True, axisunit=None, shadings=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
@@ -316,8 +332,13 @@ def plot_threeslice(filename=None,
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
     :kword cbtitle:     string to use as colorbar title instead of map name
+    :kword halfaxes:    Flag to prevent plotting the hidden half of the axes, otherwise shown as dashed lines
+                        (default: False)
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+    :kword shadings:    Dimming values for the surfaces normal to the X, Y, Z directions, respectively,
+                        to better distinguish the slices, e.g. "(0.6,0.8,1.0). Default using the angles between
+                        the surface normal directions and the viewing angle.
     :kword tickinterval:Axis tick interval, expressed in 10^{axisunit} (default: 10 Earth radii)
     :kword fixedticks:  Set ticks at fixed locations instead of relative to the triple cut point (default: False)
 
@@ -513,7 +534,6 @@ def plot_threeslice(filename=None,
     # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
     if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
         plt.switch_backend(pt.backend_noninteractive)
-#    plt.switch_backend('TkAgg')
 
     Re = 6.371e+6 # Earth radius in m
     # read in mesh size and cells in ordinary space
@@ -697,8 +717,6 @@ def plot_threeslice(filename=None,
             datamap_z = np.squeeze(datamap_z)
             datamap_z = np.swapaxes(datamap_z, 0,1)
 
-            print('(FSgrid) Size(datamap_y=({:d},{:d})'.format(datamap_y.shape[0],datamap_y.shape[1]))
-
         else:
             # vlasov grid, AMR
             datamap = datamap[indexids]      # sort
@@ -775,7 +793,7 @@ def plot_threeslice(filename=None,
         # Here allow underscores for manual math mode
         cb_title_use = cbtitle
 
-    #If automatic range finding is required, find min and max of array
+    # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
     if vmin is not None:
         vminuse=vmin
@@ -852,7 +870,7 @@ def plot_threeslice(filename=None,
     ###############################################################################
     # Making the 12 meshes corresponding to the 12 elementary surfaces to plot #
     ###############################################################################
-    cutpointaxu = cutpoint/axisunit # TODO clean this!!!
+    cutpointaxu = cutpoint/axisunit
     # {X = x0 slice}
     [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
@@ -909,15 +927,15 @@ def plot_threeslice(filename=None,
     Ymesh_list = [YmeshYmZm,YmeshYpZm,YmeshYmZp,YmeshYpZp, YmeshXmZm,YmeshXpZm,YmeshXmZp,YmeshXpZp, YmeshXmYm,YmeshXpYm,YmeshXmYp,YmeshXpYp]
     Zmesh_list = [ZmeshYmZm,ZmeshYpZm,ZmeshYmZp,ZmeshYpZp, ZmeshXmZm,ZmeshXpZm,ZmeshXmZp,ZmeshXpZp, ZmeshXmYm,ZmeshXpYm,ZmeshXmYp,ZmeshXpYp]
 
-    # coordinates of the point where the all three 2d cut throughs cuts [TODO update this part]
-    xr = abs(xmin) + cutpoint[0]
-    yr = abs(ymin) + cutpoint[1]
-    zr = abs(zmin) + cutpoint[2]
+    # coordinates of the point where the all three 2d cut throughs cuts
+    xr_coord = abs(xmin) + cutpoint[0]
+    yr_coord = abs(ymin) + cutpoint[1]
+    zr_coord = abs(zmin) + cutpoint[2]
 
     # coordinates of the point where the all three 2d cut throughs cut in terms of cells
-    xr = int(round((xr/(xmax - xmin))*xsize*2**reflevel))
-    yr = int(round((yr/(ymax - ymin))*ysize*2**reflevel))
-    zr = int(round((zr/(zmax - zmin))*zsize*2**reflevel))
+    xr = int(round((xr_coord/(xmax - xmin))*xsize*2**reflevel))
+    yr = int(round((yr_coord/(ymax - ymin))*ysize*2**reflevel))
+    zr = int(round((zr_coord/(zmax - zmin))*zsize*2**reflevel))
 
     # Creating lists of datamap_i to be called in that same for loop
     datamap_x_list = [datamap_x[:zr,:yr],datamap_x[:zr,yr:],datamap_x[zr:,:yr],datamap_x[zr:,yr:]]
@@ -926,7 +944,8 @@ def plot_threeslice(filename=None,
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, viewangle)
+    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale,
+                 viewangle, halfaxes)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
@@ -991,12 +1010,6 @@ def plot_threeslice(filename=None,
             YmeshXYPass = YmeshXYPass[:,MaskXY_Y[0]:MaskXY_Y[-1]+2]
             ZmeshXYPass = ZmeshXY[MaskXY_X[0]:MaskXY_X[-1]+2,:]
             ZmeshXYPass = ZmeshXYPass[:,MaskXY_Y[0]:MaskXY_Y[-1]+2]
-#            XmeshXYCentres = XmeshXYCentres[MaskXY_X[0]:MaskXY_X[-1]+1,:]
-#            XmeshXYCentres = XmeshXYCentres[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
-#            YmeshXYCentres = YmeshXYCentres[MaskXY_X[0]:MaskXY_X[-1]+1,:]
-#            YmeshXYCentres = YmeshXYCentres[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
-#            ZmeshXYCentres = ZmeshXYCentres[MaskXY_X[0]:MaskXY_X[-1]+1,:]
-#            ZmeshXYCentres = ZmeshXYCentres[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
         else:
             XmeshXYPass = np.ma.array(XmeshXY)
             YmeshXYPass = np.ma.array(YmeshXY)
@@ -1012,12 +1025,6 @@ def plot_threeslice(filename=None,
             YmeshXZPass = YmeshXZPass[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+2]
             ZmeshXZPass = ZmeshXZ[MaskXZ_X[0]:MaskXZ_X[-1]+2,:]
             ZmeshXZPass = ZmeshXZPass[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+2]
-#            XmeshXZCentres = XmeshXZCentres[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
-#            XmeshXZCentres = XmeshXZCentres[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
-#            YmeshXZCentres = YmeshXZCentres[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
-#            YmeshXZCentres = YmeshXZCentres[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
-#            ZmeshXZCentres = ZmeshXZCentres[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
-#            ZmeshXZCentres = ZmeshXZCentres[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
         else:
             XmeshXZPass = np.ma.array(XmeshXZ)
             YmeshXZPass = np.ma.array(YmeshXZ)
@@ -1033,12 +1040,6 @@ def plot_threeslice(filename=None,
             YmeshYZPass = YmeshYZPass[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+2]
             ZmeshYZPass = ZmeshYZ[MaskYZ_Y[0]:MaskYZ_Y[-1]+2,:]
             ZmeshYZPass = ZmeshYZPass[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+2]
-#            XmeshYZCentres = XmeshYZCentres[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
-#            XmeshYZCentres = XmeshYZCentres[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
-#            YmeshYZCentres = YmeshYZCentres[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
-#            YmeshYZCentres = YmeshYZCentres[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
-#            ZmeshYZCentres = ZmeshYZCentres[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
-#            ZmeshYZCentres = ZmeshYZCentres[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
         else:
             XmeshYZPass = np.ma.array(XmeshYZ)
             YmeshYZPass = np.ma.array(YmeshYZ)
@@ -1141,30 +1142,26 @@ def plot_threeslice(filename=None,
             shady = shady / maxshad
             shadz = shadz / maxshad
 
-        print('Ready to plot a set of surface elements! Time since start = {:.2f} s'.format(time.time()-t0))
         # Plotting the partial {X = x0} cut
         ax1.plot_surface(XmeshYZPass, YmeshYZPass, ZmeshYZPass, rstride=1, cstride=1,
-#                    facecolors=shaded_surface_x, shade=False, antialiased=False)
                     facecolors=shadx*fcolor_x_i, shade=False, antialiased=False)
 
         # Plotting the partial {Y = y0} cut
         ax1.plot_surface(XmeshXZPass, YmeshXZPass, ZmeshXZPass, rstride=1, cstride=1,
-#                    facecolors=shaded_surface_y, shade=False, antialiased=False)
                     facecolors=shady*fcolor_y_i, shade=False, antialiased=False)
 
         # Plotting the partial {Z = z0} cut
         ax1.plot_surface(XmeshXYPass, YmeshXYPass, ZmeshXYPass, rstride=1, cstride=1,
-#                    facecolors=shaded_surface_z, shade=False, antialiased=False)
                     facecolors=shadz*fcolor_z_i, shade=False, antialiased=False)
 
 #******
 
     # Plot title - adding the cut point information and tick interval length
     if np.all(np.isclose(cutpoint/axisunit % 1,0.)):
-        plot_title = plot_title + ' -- origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
+        plot_title = plot_title + ' $-$ origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
                      cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
     else:
-        plot_title = plot_title + ' -- origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
+        plot_title = plot_title + ' $-$ origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
                      cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
     if not fixedticks:
         tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
@@ -1173,6 +1170,7 @@ def plot_threeslice(filename=None,
 
     if os.getenv('PTNOLATEX'):
         plot_title = r'' + plot_title + '\n' + tickinfostr
+        print(plot_title)
     else:
         plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
@@ -1181,16 +1179,18 @@ def plot_threeslice(filename=None,
     # Split existing axes to make room for colorbar
 #    divider = make_axes_locatable(ax1)                         # There seems to be issues with make_axes_locatable with 3d axes
 #    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cax = fig.add_axes([0.76,0.2,0.03,0.6])                     # TODO find a cleaner way to deal with this
+    cax = fig.add_axes([0.76,0.2,0.03,0.6])                     # TODO find a cleaner way to deal with this, if needed?
     cbdir="right"; horalign="left"
 
     # Colourbar title
     if len(cb_title_use)!=0:
         if os.getenv('PTNOLATEX'):
-            cb_title_use.replace('\textbf{','')
-            cb_title_use.replace('\mathrm{','')
-            cb_title_use.replace('}','')
-            cb_title_use.replace('\,',' ')
+            print(cb_title_use)
+            cb_title_use = cb_title_use.replace('\textbf{','')
+            cb_title_use = cb_title_use.replace('\mathrm{','')
+            cb_title_use = cb_title_use.replace('}','')
+            cb_title_use = cb_title_use.replace('\,',' ')
+            print(cb_title_use)
         else:
             cb_title_use = r"\textbf{"+cb_title_use+"}"   
 
@@ -1209,6 +1209,9 @@ def plot_threeslice(filename=None,
     cb.outline.set_linewidth(thick)
     cb.ax.yaxis.set_ticks_position(cbdir)
 
+    cbticks = cb.get_ticks()
+    cb.set_ticks(cbticks[(cbticks>=vmin)*(cbticks<=vmax)])
+
     cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
     cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
     cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
@@ -1217,7 +1220,6 @@ def plot_threeslice(filename=None,
 
     # Perform intermediate draw if necessary to gain access to ticks
     if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
-        print('Colorbar intermediate draw, Time since start = {:.2f} s'.format(time.time()-t0))
         fig.canvas.draw() # draw to get tick positions
 
     # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
@@ -1257,7 +1259,10 @@ def plot_threeslice(filename=None,
 
     # if too many subticks in logarithmic colorbar:
     if not lin and symlog is None:
-        nlabels = len(cb.ax.yaxis.get_ticklabels())
+        nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
+        print(nlabels)
+        for ilab in cb.ax.yaxis.get_ticklabels():
+            print(ilab)
         valids = ['1','2','3','4','5','6','7','8','9']
         if nlabels > 10:
             valids = ['1','2','3','4','5','6','8']
