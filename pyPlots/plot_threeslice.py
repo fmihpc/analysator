@@ -130,7 +130,6 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)/2*Re/axisunit, yr-Re/2/axisunit, zr), (axextents[1], yr, zr),
                       (axextents[1]-np.sqrt(3)/2*Re/axisunit, yr+Re/2/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line) # this makes an arrow at the end of the axis
-    ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',va='center',zorder=50)
 
     # -- y-axis --
     line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*junction_yz, zr)),
@@ -144,7 +143,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     line=art3d.Line3D(*zip((xr-Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr), (xr, axextents[3], zr),
                       (xr+Re/2/axisunit, axextents[3]-np.sqrt(3)/2*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
+
 
     # -- z-axis --
     line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*junction_yz)),
@@ -158,7 +157,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     line=art3d.Line3D(*zip((xr-Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit), (xr, yr, axextents[5]),
                       (xr+Re/2/axisunit, yr, axextents[5]-np.sqrt(3)/2*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
-    ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
+
+    if os.getenv('PTNOLATEX'):
+        ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,r'X ['+axisunitstr+']',fontsize=fontsize, ha='center',va='center',zorder=50, weight='black')
+        ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,r'Y ['+axisunitstr+']',fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+        ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,r'Z ['+axisunitstr+']',fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',va='center',zorder=50)
+        ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
+        ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
 
     
     # Addition of the Earth at the origin of the domain
@@ -179,7 +186,10 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     ax.set_ylim([boxcoords[2],boxcoords[3]])
     ax.set_zlim([boxcoords[4],boxcoords[5]])
 
-    ax.axis('equal')
+    try:
+        ax.axis('equal')
+    except:
+        print("WARNING: axis('equal') is not supported by this version of Matplotlib.")
 
 
     # Draw ticks
@@ -503,7 +513,7 @@ def plot_threeslice(filename=None,
     # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
     if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
         plt.switch_backend(pt.backend_noninteractive)
-    plt.switch_backend('TkAgg')
+#    plt.switch_backend('TkAgg')
 
     Re = 6.371e+6 # Earth radius in m
     # read in mesh size and cells in ordinary space
@@ -1160,8 +1170,12 @@ def plot_threeslice(filename=None,
         tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
     else:
         tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
-    plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
-    title_obj = ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
+
+    if os.getenv('PTNOLATEX'):
+        plot_title = r'' + plot_title + '\n' + tickinfostr
+    else:
+        plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
+    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
     
 
     # Split existing axes to make room for colorbar
@@ -1176,6 +1190,7 @@ def plot_threeslice(filename=None,
             cb_title_use.replace('\textbf{','')
             cb_title_use.replace('\mathrm{','')
             cb_title_use.replace('}','')
+            cb_title_use.replace('\,',' ')
         else:
             cb_title_use = r"\textbf{"+cb_title_use+"}"   
 
@@ -1201,9 +1216,9 @@ def plot_threeslice(filename=None,
 
 
     # Perform intermediate draw if necessary to gain access to ticks
-#    if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
-#        print('Colorbar intermediate draw, Time since start = {:.2f} s'.format(time.time()-t0))
-#        fig.canvas.draw() # draw to get tick positions
+    if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
+        print('Colorbar intermediate draw, Time since start = {:.2f} s'.format(time.time()-t0))
+        fig.canvas.draw() # draw to get tick positions
 
     # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
     if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
@@ -1242,7 +1257,7 @@ def plot_threeslice(filename=None,
 
     # if too many subticks in logarithmic colorbar:
     if not lin and symlog is None:
-        nlabels = len(cb.ax.yaxis.get_ticklabels()) #/ ratio # TODO ratio
+        nlabels = len(cb.ax.yaxis.get_ticklabels())
         valids = ['1','2','3','4','5','6','7','8','9']
         if nlabels > 10:
             valids = ['1','2','3','4','5','6','8']
@@ -1285,8 +1300,7 @@ def plot_threeslice(filename=None,
     
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-#    plt.tight_layout(pad=0.01)   # TODO check: a warning says tight_layout() might not be compatible with those axes. Seems to work though...
-#    ax1.axis('equal')
+    plt.tight_layout(pad=0.01)   # TODO check: a warning says tight_layout() might not be compatible with those axes. Seems to work though...
     savefig_pad=0.01
     bbox_inches='tight'
 
