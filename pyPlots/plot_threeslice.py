@@ -1161,9 +1161,9 @@ def plot_threeslice(filename=None,
         else:
             (azi,ele) = viewangle
             deg2rad = np.pi/180.
-            shadx = np.cos(ele*deg2rad) * np.cos(azi*deg2rad)
-            shady = np.cos(ele*deg2rad) * np.sin(azi*deg2rad)
-            shadz = np.sin(ele*deg2rad)
+            shadx = abs(np.cos(ele*deg2rad) * np.cos(azi*deg2rad))
+            shady = abs(np.cos(ele*deg2rad) * np.sin(azi*deg2rad))
+            shadz = abs(np.sin(ele*deg2rad))
             maxshad = max(shadx,shady,shadz)
             shadx = shadx / maxshad
             shady = shady / maxshad
