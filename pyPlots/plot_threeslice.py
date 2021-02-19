@@ -25,7 +25,7 @@ import time
 
 # Create the 3d axes and the coordinate axes for the 3d plot
 def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, 
-           viewangle, halfaxes):
+           viewangle, halfaxes, slices):
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
 
@@ -47,31 +47,49 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         backaxisstyle = ''
     if ele >= 0.:
         styleZp = frontaxisstyle
-        styleZm = backaxisstyle
+        if 'z' in slices:
+            styleZm = backaxisstyle
+        else:
+            styleZm = frontaxisstyle
         cZp = 1.
         cZm = 1. + abs(np.tan(ele*deg2rad))
     else:
-        styleZp = backaxisstyle
+        if 'z' in slices:
+            styleZp = backaxisstyle
+        else:
+            styleZp = frontaxisstyle
         styleZm = frontaxisstyle
         cZp = 1. + abs(np.tan(ele*deg2rad))
         cZm = 1.
     if azi >= 0:
         styleYp = frontaxisstyle
-        styleYm = backaxisstyle
+        if 'y' in slices:
+            styleYm = backaxisstyle
+        else:
+            styleYm = frontaxisstyle
         cYp = 1.
         cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
     else:
-        styleYp = backaxisstyle
+        if 'y' in slices:
+            styleYp = backaxisstyle
+        else:
+            styleYp = frontaxisstyle
         styleYm = frontaxisstyle
         cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
         cYm = 1.
     if abs(azi) <= 90:
         styleXp = frontaxisstyle
-        styleXm = backaxisstyle
+        if 'x' in slices:
+            styleXm = backaxisstyle
+        else:
+            styleXm = frontaxisstyle
         cXp = 1.
         cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
     else:
-        styleXp = backaxisstyle
+        if 'x' in slices:
+            styleXp = backaxisstyle
+        else:
+            styleXp = frontaxisstyle
         styleXm = frontaxisstyle
         cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
         cXm = 1.
@@ -954,7 +972,7 @@ def plot_threeslice(filename=None,
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
     ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale,
-                 viewangle, halfaxes)
+                 viewangle, halfaxes, slices)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
