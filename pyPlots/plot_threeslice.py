@@ -199,15 +199,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     if not fixedticks:
         txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunit)
         txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunit)
-        ticks_x = np.concatenate((np.flip(txm),txp[1:]))
+        ticks_x = np.concatenate((np.flip(txm,axis=0),txp[1:]))
 
         tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunit)
         typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunit)
-        ticks_y = np.concatenate((np.flip(tym),typ[1:]))
+        ticks_y = np.concatenate((np.flip(tym,axis=0),typ[1:]))
 
         tzm = np.arange(zr,boxcoords[4]-0.1,-tickinterval/axisunit)
         tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunit)
-        ticks_z = np.concatenate((np.flip(tzm),tzp[1:]))
+        ticks_z = np.concatenate((np.flip(tzm,axis=0),tzp[1:]))
     else:
         ticks_x = np.arange(boxcoords[0],boxcoords[1]+0.1,tickinterval/axisunit)
         ticks_y = np.arange(boxcoords[2],boxcoords[3]+0.1,tickinterval/axisunit)
@@ -672,6 +672,10 @@ def plot_threeslice(filename=None,
     rhomap_x0 = ids3d.idmesh3d(idlist_x, rhomap_x0, reflevel, xsize, ysize, zsize, 0, None)
     rhomap_y0 = ids3d.idmesh3d(idlist_y, rhomap_y0, reflevel, xsize, ysize, zsize, 1, None)
     rhomap_z0 = ids3d.idmesh3d(idlist_z, rhomap_z0, reflevel, xsize, ysize, zsize, 2, None)
+
+    rhomap_x = np.copy(rhomap_x0)
+    rhomap_y = np.copy(rhomap_y0)
+    rhomap_z = np.copy(rhomap_z0)
 
 
     ############################################
