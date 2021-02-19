@@ -683,17 +683,13 @@ def plot_threeslice(filename=None,
         quit
               
     rhomap = rhomap[indexids]  # sort
-    rhomap_x0 = rhomap[indexlist_x] # find required cells (X cut)
-    rhomap_y0 = rhomap[indexlist_y] # find required cells (Y cut)
-    rhomap_z0 = rhomap[indexlist_z] # find required cells (Z cut)
+    rhomap_x = rhomap[indexlist_x] # find required cells (X cut)
+    rhomap_y = rhomap[indexlist_y] # find required cells (Y cut)
+    rhomap_z = rhomap[indexlist_z] # find required cells (Z cut)
     # Create the plotting grid
-    rhomap_x0 = ids3d.idmesh3d(idlist_x, rhomap_x0, reflevel, xsize, ysize, zsize, 0, None)
-    rhomap_y0 = ids3d.idmesh3d(idlist_y, rhomap_y0, reflevel, xsize, ysize, zsize, 1, None)
-    rhomap_z0 = ids3d.idmesh3d(idlist_z, rhomap_z0, reflevel, xsize, ysize, zsize, 2, None)
-
-    rhomap_x = np.copy(rhomap_x0)
-    rhomap_y = np.copy(rhomap_y0)
-    rhomap_z = np.copy(rhomap_z0)
+    rhomap_x = ids3d.idmesh3d(idlist_x, rhomap_x, reflevel, xsize, ysize, zsize, 0, None)
+    rhomap_y = ids3d.idmesh3d(idlist_y, rhomap_y, reflevel, xsize, ysize, zsize, 1, None)
+    rhomap_z = ids3d.idmesh3d(idlist_z, rhomap_z, reflevel, xsize, ysize, zsize, 2, None)
 
 
     ############################################
@@ -1075,7 +1071,7 @@ def plot_threeslice(filename=None,
         # Crop both rhomap and datamap to view region
         if np.ma.is_masked(maskgrid_XY):
             # Strip away columns and rows which are outside the plot region
-            rhomap_z = rhomap_z0[MaskXY_X[0]:MaskXY_X[-1]+1,:]
+            rhomap_z = rhomap_z[MaskXY_X[0]:MaskXY_X[-1]+1,:]
             rhomap_z = rhomap_z[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
@@ -1084,7 +1080,7 @@ def plot_threeslice(filename=None,
 
         if np.ma.is_masked(maskgrid_XZ):
             # Strip away columns and rows which are outside the plot region
-            rhomap_y = rhomap_y0[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
+            rhomap_y = rhomap_y[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
             rhomap_y = rhomap_y[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
@@ -1093,7 +1089,7 @@ def plot_threeslice(filename=None,
 
         if np.ma.is_masked(maskgrid_YZ):
             # Strip away columns and rows which are outside the plot region
-            rhomap_x = rhomap_x0[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
+            rhomap_x = rhomap_x[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
             rhomap_x = rhomap_x[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
