@@ -289,7 +289,7 @@ def plot_threeslice(filename=None,
                   thick=1.0,scale=1.0,
                   expression=None,
                   vscale=1.0,viewangle=(-60.,30.),
-                  cutpoint=None,cutpointre=None
+                  cutpoint=None,cutpointre=None,slices=None
                   ):
 
     ''' Plots a 3d plot constructed of three 2d cut throughs.
@@ -370,6 +370,7 @@ def plot_threeslice(filename=None,
 
     :kword cutpoint:    Coordinates of the point through which all three 2D cuts must pass [m]
     :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
+    :kword slices:      Normal directions of the slices to plot, default='xyz'
 
     .. code-block:: python
 
@@ -584,6 +585,10 @@ def plot_threeslice(filename=None,
         else: # default to [0,0,0]
             print('No cut point coordinates given, defaulting to origin')
             cutpoint = np.asarray([0.,0.,0.])
+
+    # Slices to be plotted (defined by their normal direction)
+    if slices is None:
+        slices = 'xyz'
 
     ###################################################
     # Find the cellids corresponding to the 3 slices #
@@ -1143,16 +1148,19 @@ def plot_threeslice(filename=None,
             shadz = shadz / maxshad
 
         # Plotting the partial {X = x0} cut
-        ax1.plot_surface(XmeshYZPass, YmeshYZPass, ZmeshYZPass, rstride=1, cstride=1,
-                    facecolors=shadx*fcolor_x_i, shade=False, antialiased=False)
+        if 'x' in slices:
+            ax1.plot_surface(XmeshYZPass, YmeshYZPass, ZmeshYZPass, rstride=1, cstride=1,
+                        facecolors=shadx*fcolor_x_i, shade=False, antialiased=False)
 
         # Plotting the partial {Y = y0} cut
-        ax1.plot_surface(XmeshXZPass, YmeshXZPass, ZmeshXZPass, rstride=1, cstride=1,
-                    facecolors=shady*fcolor_y_i, shade=False, antialiased=False)
+        if 'y' in slices:
+            ax1.plot_surface(XmeshXZPass, YmeshXZPass, ZmeshXZPass, rstride=1, cstride=1,
+                        facecolors=shady*fcolor_y_i, shade=False, antialiased=False)
 
         # Plotting the partial {Z = z0} cut
-        ax1.plot_surface(XmeshXYPass, YmeshXYPass, ZmeshXYPass, rstride=1, cstride=1,
-                    facecolors=shadz*fcolor_z_i, shade=False, antialiased=False)
+        if 'z' in slices:
+            ax1.plot_surface(XmeshXYPass, YmeshXYPass, ZmeshXYPass, rstride=1, cstride=1,
+                        facecolors=shadz*fcolor_z_i, shade=False, antialiased=False)
 
 #******
 
