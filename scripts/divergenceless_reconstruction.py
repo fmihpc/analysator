@@ -65,7 +65,6 @@ def solve_coefficients(B_moments, xyz, order = 4):
             j = (i+1) % 3
             k = (i+2) % 3
             coords = (x if i else x + 1, y if k else y + 1, z if j else z + 1)
-            print(coords)
             a = abc[i]
             Bx = B_moments[i]
 
@@ -175,6 +174,133 @@ def solve_coefficients(B_moments, xyz, order = 4):
 
     return abc
 
+def neighboursum(a, idx):
+    second = a[1:, 1:, 1:]
+    if idx == 0:
+        first = a[:-1, 1:, 1:]
+    elif idx == 1:
+        first = a[1:, :-1, 1:]
+    elif idx == 2:
+        first = a[1:, 1:, :-1]
+    return first + second
+
+def neighbourdiff(a, idx):
+    second = a[1:, 1:, 1:]
+    if idx == 0:
+        first = a[:-1, 1:, 1:]
+    elif idx == 1:
+        first = a[1:, :-1, 1:]
+    elif idx == 2:
+        first = a[1:, 1:, :-1]
+    return first - second
+
+# Solves a, b, c components with a[x, y, z], b[y, z, x] and c[z, x, y] up to given order
+# Input B should be the output of solve_moments_from_B
+def solve_all_coefficients(B_moments, order = 4):
+    shp = np.shape(B_moments[0][0])
+    abc = np.zeros((3, 5, 4, 4, shp[0] - 1, shp[1] - 1, shp[2] - 1))
+
+    # 4th order
+    if (order > 3):
+        for i in range(3):
+            a = abc[i]
+            Bx = B_moments[i]
+
+            a[0][3][0] = 1/2 * neighboursum(Bx[6], i)
+            a[0][2][1] = 1/2 * neighboursum(Bx[7], i)
+            a[0][1][2] = 1/2 * neighboursum(Bx[8], i)
+            a[0][0][3] = 1/2 * neighboursum(Bx[9], i)
+
+            a[1][3][0] = neighbourdiff(Bx[6], i)
+            a[1][2][1] = neighbourdiff(Bx[7], i)
+            a[1][1][2] = neighbourdiff(Bx[8], i)
+            a[1][0][3] = neighbourdiff(Bx[9], i)
+
+        for i in range(3):
+            j = (i+1) % 3
+            k = (i+2) % 3
+            a = abc[i]
+            b = abc[j]
+            c = abc[k]
+            
+            # Should be correct, check later
+            a[4][0][0] = -1/4 * (b[1][0][3] + c[1][3][0])
+            a[3][1][0] = -7/30 * c[1][2][1]
+            a[3][0][1] = -7/30 * b[1][1][2]
+            a[2][2][0] = -3/20 * c[1][1][2]
+            a[2][0][2] = -3/20 * b[1][2][1]
+
+    # 3rd order
+    if (order > 2):
+        for i in range(3):
+            a = abc[i]
+            Bx = B_moments[i]
+
+            a[0][2][0] = 1/2 * neighboursum(Bx[3], i) - 1/6 * a[2][2][0]
+            a[0][1][1] = 1/2 * neighboursum(Bx[4], i)
+            a[0][0][2] = 1/2 * neighboursum(Bx[5], i) - 1/6 * a[2][0][2]
+
+            a[1][2][0] = neighbourdiff(Bx[3], i)
+            a[1][1][1] = neighbourdiff(Bx[4], i)
+            a[1][0][2] = neighbourdiff(Bx[5], i)
+        
+        for i in range(3):
+            j = (i+1) % 3
+            k = (i+2) % 3
+            a = abc[i]
+            b = abc[j]
+            c = abc[k]
+
+            # Should be correct, check later
+            a[3][0][0] = -1/3 * (b[1][0][2] + c[1][2][0])
+            a[2][1][0] = -1/4 * c[1][1][1]
+            a[2][0][1] = -1/4 * b[1][1][1]
+
+    # 2nd order
+    if (order > 1):
+        for i in range(3):
+            a = abc[i]
+            Bx = B_moments[i]
+
+            a[0][1][0] = 1/2 * neighboursum(Bx[1], i) - 1/6 * a[2][1][0]
+            a[0][0][1] = 1/2 * neighboursum(Bx[2], i) - 1/6 * a[2][0][1]
+
+            a[1][1][0] = neighbourdiff(Bx[1], i) - 1/10 * a[3][1][0]
+            a[1][0][1] = neighbourdiff(Bx[2], i) - 1/10 * a[3][0][1]
+        
+        for i in range(3):
+            j = (i+1) % 3
+            k = (i+2) % 3
+            a = abc[i]
+            b = abc[j]
+            c = abc[k]
+
+            # Should be correct, check later
+            a[2][0][0] = -1/2 * (b[1][0][1] + c[1][1][0]) - 3/35 * a[4][0][0] - 1/20 * (b[3][0][1] + c[3][1][0])
+
+    # 1st order
+    if (order > 0):
+        for i in range(3):
+            a = abc[i]
+            Bx = B_moments[i]
+
+            a[1][0][0] = neighbourdiff(Bx[0], i) - 1/10 * a[3][0][0]
+    
+    # 0th order
+    for i in range(3):
+        a = abc[i]
+        Bx = B_moments[i]
+
+        a[0][0][0] = 1/2 * neighboursum(Bx[0], i) - 1/6 * a[2][0][0] - 1/70 * a[4][0][0]
+
+    # Check constraint:
+    test = abc[0][1][0][0] + abc[1][1][0][0] + abc[2][1][0][0] + 1/10 * (abc[0][3][0][0] + abc[1][3][0][0] + abc[2][3][0][0])
+    print(np.amax(test))
+    #if abs(test) > 0:
+    #    print("Something went wrong, sum (17) is " + str(test))
+
+    return np.pad(abc, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 1), (0, 1), (0, 1)])
+
 def center_value(B_moments, xyz, order=4):
     abc = solve_coefficients(B_moments, xyz, order)
     x = xyz[0]
@@ -195,12 +321,19 @@ print(np.shape(fg_b))
 fg_b_vol = f.read_fsgrid_variable('fg_b_vol')
 print('File read!')
 t = perf_counter()
-B_moments = solve_moments_from_B(fg_b)
+B_moments = solve_moments_from_B(fg_b[0:100, 0:100, 0:100])
 print(f'B_moments solved in {perf_counter() - t} seconds!')
 for i in range(5):
     t = perf_counter()
+    coeffs = solve_coefficients(B_moments, (50, 50, 50), i)
+    print(f'Single coefficients up to order {i} solved in {perf_counter() - t} seconds!')
     print(center_value(B_moments, (50, 50, 50), i))
+
+    t = perf_counter()
+    all_coeffs = solve_all_coefficients(B_moments, i)
+    print(f'All coefficients up to order {i} solved in {perf_counter() - t} seconds!')
+
+    print(all_coeffs[:, :, :, :, 50, 50, 50] - coeffs)
     #abc = solve_coefficients(B_moments, 5, 5, 5, i)
     #print([interpolate_x(abc[0], 0.5, 0.5, 0.5), interpolate_y(abc[1], 0.5, 0.5, 0.5), interpolate_z(abc[2], 0.5, 0.5, 0.5)])
-    print(f'Coefficients up to order {i} solved in {perf_counter() - t} seconds!')
 print(fg_b_vol[50, 50, 50])
