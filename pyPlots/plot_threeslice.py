@@ -1081,7 +1081,7 @@ def plot_threeslice(filename=None,
         # Crop both rhomap and datamap to view region
         if np.ma.is_masked(maskgrid_XY):
             # Strip away columns and rows which are outside the plot region
-            rhomap_z_i = rhomap_z[MaskXY_X[0]:MaskXY_X[-1]+1,:]
+            rhomap_z_i = rhomap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
             rhomap_z_i = rhomap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
@@ -1090,7 +1090,7 @@ def plot_threeslice(filename=None,
 
         if np.ma.is_masked(maskgrid_XZ):
             # Strip away columns and rows which are outside the plot region
-            rhomap_y_i = rhomap_y[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
+            rhomap_y_i = rhomap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
             rhomap_y_i = rhomap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
@@ -1099,7 +1099,7 @@ def plot_threeslice(filename=None,
 
         if np.ma.is_masked(maskgrid_YZ):
             # Strip away columns and rows which are outside the plot region
-            rhomap_x_i = rhomap_x[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
+            rhomap_x_i = rhomap_x_i[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
             rhomap_x_i = rhomap_x_i[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
