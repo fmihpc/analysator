@@ -46,12 +46,19 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     ax.elev = ele
 
     # Near-Earth break distances if an axis line goes through the Earth
-    cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
-    cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
-    cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
-    cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
-    cZm = 1. + abs(np.tan(ele*deg2rad))
-    cZp = 1. + abs(np.tan(ele*deg2rad))
+    (cXm, cXp, cYm, cYp, cZm, cZp) = (1.,1.,1.,1.,1.,1.)
+    if abs(azi) < 90.:
+        cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+    else:
+        cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+    if azi > 0.:
+        cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+    else:
+        cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+    if ele > 0.:
+        cZm = 1.1/np.cos(ele*deg2rad)
+    else:
+        cZp = 1.1/np.cos(ele*deg2rad)
 
     # Earth-breaking conditions
     earthbreak_x = abs(yr) < Re/axisunit and abs(zr) < Re/axisunit and axextents[0]*axextents[1] < 0.
@@ -1529,9 +1536,6 @@ def plot_threeslice(filename=None,
     # if too many subticks in logarithmic colorbar:
     if not lin and symlog is None:
         nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
-        print(nlabels)
-        for ilab in cb.ax.yaxis.get_ticklabels():
-            print(ilab)
         valids = ['1','2','3','4','5','6','7','8','9']
         if nlabels > 10:
             valids = ['1','2','3','4','5','6','8']
