@@ -111,9 +111,10 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         styleXm = frontaxisstyle
 
     # Coefficients for axis label placement
-    cXlabel = 1. + (3.*abs(np.cos(azi*deg2rad))+3.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad))
-    cYlabel = 1. + (3.*abs(np.sin(azi*deg2rad))+3.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad))
-    cZlabel = 1. + 1.5*abs(np.tan(ele*deg2rad))
+    labposscale = (axextents[1]-axextents[0])/(60*Re/axisunit)
+    cXlabel = labposscale*(1. + (2.*abs(np.cos(azi*deg2rad))+2.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
+    cYlabel = labposscale*(1. + (2.*abs(np.sin(azi*deg2rad))+2.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
+    cZlabel = labposscale*(1. + 1.5*abs(np.tan(ele*deg2rad)))
 
     # Axes and units (default R_E)
     if np.isclose(axisunit,Re):
