@@ -175,23 +175,23 @@ def solve_coefficients(B_moments, xyz, order = 4):
     return abc
 
 def neighboursum(a, idx):
-    second = a[1:, 1:, 1:]
+    second = a[:-1, :-1, :-1]
     if idx == 0:
-        first = a[:-1, 1:, 1:]
+        first = a[1:, :-1, :-1]
     elif idx == 1:
-        first = a[1:, :-1, 1:]
+        first = a[:-1, 1:, :-1]
     elif idx == 2:
-        first = a[1:, 1:, :-1]
+        first = a[:-1, :-1, 1:]
     return first + second
 
 def neighbourdiff(a, idx):
-    second = a[1:, 1:, 1:]
+    second = a[:-1, :-1, :-1]
     if idx == 0:
-        first = a[:-1, 1:, 1:]
+        first = a[1:, :-1, :-1]
     elif idx == 1:
-        first = a[1:, :-1, 1:]
+        first = a[:-1, 1:, :-1]
     elif idx == 2:
-        first = a[1:, 1:, :-1]
+        first = a[:-1, :-1, 1:]
     return first - second
 
 # Solves a, b, c components with a[x, y, z], b[y, z, x] and c[z, x, y] up to given order
@@ -303,10 +303,18 @@ def solve_all_coefficients(B_moments, order = 4):
 
 def center_value(B_moments, xyz, order=4):
     abc = solve_coefficients(B_moments, xyz, order)
-    x = xyz[0]
-    y = xyz[1]
-    z = xyz[2]
-    return [interpolate_x(abc[0], 0.5, 0.5, 0.5), interpolate_y(abc[1], 0.5, 0.5, 0.5), interpolate_z(abc[2], 0.5, 0.5, 0.5)]
+    return [interpolate_x(abc[0], 0, 0, 0), interpolate_y(abc[1], 0, 0, 0), interpolate_z(abc[2], 0, 0, 0)]
+
+def ave_B(B_moments, xyz, order=4):
+    abc = solve_coefficients(B_moments, xyz, order)
+    a = abc[0]
+    b = abc[1]
+    c = abc[2]
+    return (
+        a[0][0][0] - 3/8 * (a[2][0][0] + a[0][2][0] + a[0][0][2]) + 9/64 * (a[2][2][0] + a[2][0][2]) + 15/128 * a[4][0][0],
+        b[0][0][0] - 3/8 * (b[2][0][0] + b[0][2][0] + b[0][0][2]) + 9/64 * (b[2][2][0] + b[2][0][2]) + 15/128 * b[4][0][0],
+        c[0][0][0] - 3/8 * (c[2][0][0] + c[0][2][0] + c[0][0][2]) + 9/64 * (c[2][2][0] + c[2][0][2]) + 15/128 * c[4][0][0]
+    )
 
 def center_values(B_moments, coords, order=4):
     return np.array(map(lambda xyz: center_value(B_moments, xyz, order), coords))
@@ -326,14 +334,16 @@ print(f'B_moments solved in {perf_counter() - t} seconds!')
 for i in range(5):
     t = perf_counter()
     coeffs = solve_coefficients(B_moments, (50, 50, 50), i)
+    #print(ave_B(B_moments, (50, 50, 50), i))
     print(f'Single coefficients up to order {i} solved in {perf_counter() - t} seconds!')
-    print(center_value(B_moments, (50, 50, 50), i))
+    print([interpolate_x(coeffs[0], 0, 0, 0), interpolate_y(coeffs[1], 0, 0, 0), interpolate_z(coeffs[2], 0, 0, 0)])
 
     t = perf_counter()
     all_coeffs = solve_all_coefficients(B_moments, i)
     print(f'All coefficients up to order {i} solved in {perf_counter() - t} seconds!')
+    print([interpolate_x(all_coeffs[0,:,:,:, 50, 50, 50], 0, 0, 0), interpolate_y(all_coeffs[1,:,:,:, 50, 50, 50], 0, 0, 0), interpolate_z(all_coeffs[2,:,:,:, 50, 50, 50], 0, 0, 0)])
 
-    print(all_coeffs[:, :, :, :, 50, 50, 50] - coeffs)
+    #print(all_coeffs[:, :, :, :, 50, 50, 50] - coeffs)
     #abc = solve_coefficients(B_moments, 5, 5, 5, i)
     #print([interpolate_x(abc[0], 0.5, 0.5, 0.5), interpolate_y(abc[1], 0.5, 0.5, 0.5), interpolate_z(abc[2], 0.5, 0.5, 0.5)])
 print(fg_b_vol[50, 50, 50])
