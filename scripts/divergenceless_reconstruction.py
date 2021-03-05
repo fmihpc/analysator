@@ -1,7 +1,6 @@
 import pytools as pt
 import numpy as np
 from scipy.special import legendre
-from time import perf_counter
 
 P = tuple(map(lambda n: legendre(n), (0, 1, 2, 3, 4)))
 
@@ -53,6 +52,7 @@ def solve_z_moments(B_z):
 
 # Solves a, b, c components with a[x, y, z], b[y, z, x] and c[z, x, y] up to given order
 # Input B should be the output of solve_moments_from_B
+# Might be deprecated. A lot faster than calculating all coefficients but that's only a few seconds anyway for a 100^3 array
 def solve_coefficients(B_moments, xyz, order = 4):
     abc = np.zeros((3, 5, 4, 4))
     x = xyz[0]
@@ -257,6 +257,7 @@ def solve_all_coefficients(B_moments, order = 4):
             a[2][0][1] = -1/4 * b[1][1][1]
 
     # 2nd order
+
     if (order > 1):
         for i in range(3):
             a = abc[i]
@@ -294,11 +295,12 @@ def solve_all_coefficients(B_moments, order = 4):
         a[0][0][0] = 1/2 * neighboursum(Bx[0], i) - 1/6 * a[2][0][0] - 1/70 * a[4][0][0]
 
     # Check constraint:
-    test = abc[0][1][0][0] + abc[1][1][0][0] + abc[2][1][0][0] + 1/10 * (abc[0][3][0][0] + abc[1][3][0][0] + abc[2][3][0][0])
-    print(np.amax(test))
+    #test = abc[0][1][0][0] + abc[1][1][0][0] + abc[2][1][0][0] + 1/10 * (abc[0][3][0][0] + abc[1][3][0][0] + abc[2][3][0][0])
+    #print(np.amax(test))
     #if abs(test) > 0:
     #    print("Something went wrong, sum (17) is " + str(test))
 
+    # return np.pad(np.transpose(abc, (4, 5, 6, 0, 1, 2, 3)), [(0, 1), (0, 1), (0, 1), (0, 0), (0, 0), (0, 0), (0, 0)])
     return np.pad(abc, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 1), (0, 1), (0, 1)])
 
 def center_value(B_moments, xyz, order=4):
@@ -316,34 +318,25 @@ def ave_B(B_moments, xyz, order=4):
         c[0][0][0] - 3/8 * (c[2][0][0] + c[0][2][0] + c[0][0][2]) + 9/64 * (c[2][2][0] + c[2][0][2]) + 15/128 * c[4][0][0]
     )
 
+def all_ave_Bs(B_moments, order=4):
+    abc = solve_all_coefficients(B_moments, order)
+    a = abc[0]
+    b = abc[1]
+    c = abc[2]
+    return np.transpose(np.array(
+        (
+            a[0][0][0] - 3/8 * (a[2][0][0] + a[0][2][0] + a[0][0][2]) + 9/64 * (a[2][2][0] + a[2][0][2]) + 15/128 * a[4][0][0],
+            b[0][0][0] - 3/8 * (b[2][0][0] + b[0][2][0] + b[0][0][2]) + 9/64 * (b[2][2][0] + b[2][0][2]) + 15/128 * b[4][0][0],
+            c[0][0][0] - 3/8 * (c[2][0][0] + c[0][2][0] + c[0][0][2]) + 9/64 * (c[2][2][0] + c[2][0][2]) + 15/128 * c[4][0][0]
+        )
+    ), [1, 2, 3, 0])
+
 def center_values(B_moments, coords, order=4):
-    return np.array(map(lambda xyz: center_value(B_moments, xyz, order), coords))
+    # Looks scuffed but is faster
+    abc = np.transpose(np.transpose(solve_all_coefficients(B_moments, order), (4, 5, 6, 0, 1, 2, 3))[coords[:, 0], coords[:, 1], coords[:, 2]], (1, 2, 3, 4, 0))
+    return np.transpose(np.array([interpolate_x(abc[0], 0, 0, 0), interpolate_y(abc[1], 0, 0, 0), interpolate_z(abc[2], 0, 0, 0)]))
+    #return all_center_values(B_moments, order)[coords[:, 0], coords[:, 1], coords[:, 2], :]
 
 def all_center_values(B_moments, order=4):
-    return
-
-# Code for testing
-f = pt.vlsvfile.VlsvReader('/wrk/users/lkotipal/TEST/bulk.0000057.vlsv')
-fg_b = f.read_fsgrid_variable('fg_b')
-print(np.shape(fg_b))
-fg_b_vol = f.read_fsgrid_variable('fg_b_vol')
-print('File read!')
-t = perf_counter()
-B_moments = solve_moments_from_B(fg_b[0:100, 0:100, 0:100])
-print(f'B_moments solved in {perf_counter() - t} seconds!')
-for i in range(5):
-    t = perf_counter()
-    coeffs = solve_coefficients(B_moments, (50, 50, 50), i)
-    #print(ave_B(B_moments, (50, 50, 50), i))
-    print(f'Single coefficients up to order {i} solved in {perf_counter() - t} seconds!')
-    print([interpolate_x(coeffs[0], 0, 0, 0), interpolate_y(coeffs[1], 0, 0, 0), interpolate_z(coeffs[2], 0, 0, 0)])
-
-    t = perf_counter()
-    all_coeffs = solve_all_coefficients(B_moments, i)
-    print(f'All coefficients up to order {i} solved in {perf_counter() - t} seconds!')
-    print([interpolate_x(all_coeffs[0,:,:,:, 50, 50, 50], 0, 0, 0), interpolate_y(all_coeffs[1,:,:,:, 50, 50, 50], 0, 0, 0), interpolate_z(all_coeffs[2,:,:,:, 50, 50, 50], 0, 0, 0)])
-
-    #print(all_coeffs[:, :, :, :, 50, 50, 50] - coeffs)
-    #abc = solve_coefficients(B_moments, 5, 5, 5, i)
-    #print([interpolate_x(abc[0], 0.5, 0.5, 0.5), interpolate_y(abc[1], 0.5, 0.5, 0.5), interpolate_z(abc[2], 0.5, 0.5, 0.5)])
-print(fg_b_vol[50, 50, 50])
+    abc = solve_all_coefficients(B_moments, order)
+    return np.transpose(np.array([interpolate_x(abc[0], 0, 0, 0), interpolate_y(abc[1], 0, 0, 0), interpolate_z(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
