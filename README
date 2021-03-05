@@ -49,4 +49,7 @@ export PTOUTPUTDIR=/proj/USERNAME/Plots/
 #################################################
 https://github.com/fmihpc/analysator/wiki
 
+# For citations, use the DOI
+#################################################
+https://doi.org/10.5281/zenodo.4462514
 
