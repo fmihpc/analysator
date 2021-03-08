@@ -288,18 +288,16 @@ def plot_isosurface(filename=None,
     # Axes and units (default R_E)
     if unit!=None: # Use m or km or other
         if unit==0:
-            unitstr = r'm'
+            unitstr = pt.plot.rmstring('m')
         if unit==3:
-            unitstr = r'km'
+            unitstr = pt.plot.rmstring('km')
         else:
-            unitstr = r'$10^{'+str(int(unit))+'}$ m'
+            unitstr = r'10^{'+str(int(unit))+'} '+pt.plot.rmstring('m')
         unit = np.power(10,int(unit))
     else:
-        if not os.getenv('PTNOLATEX'):
-            unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
-        else:
-            unitstr = r'$R_E$'
+        unitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         unit = Re
+    unitstr = pt.plot.mathmode(unitstr)
         
     # Scale data extent and plot box
     simext_org = simext
