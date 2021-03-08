@@ -174,9 +174,17 @@ def mathmode(string):
         result = string.replace('$','')
         if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
-            result = result.replace('\,',' ')            
+            result = result.replace('\,',' ').replace('\qquad','      ')            
         return r"$"+result+"$"
-    
+
+def textbfstring(string):
+    if not os.getenv('PTNOLATEX'):
+        if len(string)==0:
+            return ''
+        else:
+            return r'\textbf{'+string+'}'
+    # LaTex output off
+    return '{'+string+'}'    
     
 # Helper routine for allowing specialist units for known vscale and unit combinations
 def scaleunits(datamap_info, vscale):

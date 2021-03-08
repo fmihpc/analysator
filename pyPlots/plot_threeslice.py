@@ -125,9 +125,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         axisunitstr = pt.plot.rmstring('km')
     else:
         axisunitstr = r'10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
-    axisunitstr=''
-    # Create axis lines intersecting at (xr,yr,zr)
 
+    # Create axis lines intersecting at (xr,yr,zr)
     # -- x-axis --
     if not earthbreak_x:
         line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
@@ -397,14 +396,13 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                       (xr+Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
-    if os.getenv('PTNOLATEX'):
-        ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,r'X ['+axisunitstr+']',fontsize=fontsize, ha='center',va='center',zorder=50, weight='black')
-        ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,r'Y ['+axisunitstr+']',fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-        ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,r'Z ['+axisunitstr+']',fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-    else:
-        ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,r'\textbf{X ['+axisunitstr+']}',fontsize=fontsize, ha='center',va='center',zorder=50)
-        ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,r'\textbf{Y ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
-        ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,r'\textbf{Z ['+axisunitstr+']}',fontsize=fontsize,ha='center',va='center',zorder=50)
+    xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
+    ylabelstr = pt.plot.mathmode(pt.plot.bfstring('Y\,['+axisunitstr+']'))
+    zlabelstr = pt.plot.mathmode(pt.plot.bfstring('Z\,['+axisunitstr+']'))
+
+    ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
 
     
     # Addition of the Earth at the origin of the domain
@@ -700,7 +698,7 @@ def plot_threeslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+' s'
+            plot_title = "t="+timeformat.format(timeval)+' s '
     else:
         plot_title = title
 
@@ -889,14 +887,14 @@ def plot_threeslice(filename=None,
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
         if np.isclose(axisunit,0):
-            axisunitstr = r'm'
+            axisunitstr = pt.plot.rmstring('m')
         elif np.isclose(axisunit,3):
-            axisunitstr = r'km'
+            axisunitstr = pt.plot.rmstring('km')
         else:
-            axisunitstr = r'$10^{'+str(int(axisunit))+'}$ m'
+            axisunitstr = r'$10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
         axisunit = np.power(10,int(axisunit))
     else:
-        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         axisunit = Re
 
     # Scale data extent and plot box
@@ -1435,28 +1433,23 @@ def plot_threeslice(filename=None,
 
     # Plot title - adding the cut point information and tick interval length
     if np.all(np.isclose(cutpoint/axisunit % 1,0.)):
-        plot_title = plot_title + ' $-$ origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
+        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
+                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
     else:
-        plot_title = plot_title + ' $-$ origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,axisunitstr)
+        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
+                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
     if not fixedticks:
-        tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
+        tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
     else:
-        tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunit,axisunitstr)
+        tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
 
-    if os.getenv('PTNOLATEX'):
-        plot_title = r'' + plot_title + '\n' + tickinfostr
-        print(plot_title)
-    else:
-        plot_title = r'\textbf{' + plot_title + '}\n' + r'\textbf{' + tickinfostr + '}'
+#    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title)) + '\n' + pt.plot.mathmode(pt.plot.bfstring(tickinfostr))
+    plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
     
 
-    # Split existing axes to make room for colorbar
-#    divider = make_axes_locatable(ax1)                         # There seems to be issues with make_axes_locatable with 3d axes
-#    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cax = fig.add_axes([0.76,0.2,0.03,0.6])                     # TODO find a cleaner way to deal with this, if needed?
+    # Creating colorbar axes
+    cax = fig.add_axes([0.76,0.2,0.03,0.6])
     cbdir="right"; horalign="left"
 
     # Colourbar title

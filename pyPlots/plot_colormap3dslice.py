@@ -290,7 +290,7 @@ def plot_colormap3dslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+' s'
+            plot_title = "t="+timeformat.format(timeval)+'\,s'
     else:
         plot_title = title
 
@@ -467,7 +467,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 0
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
         axislabels = ['Y','Z']
-        slicelabel = r"X={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
+        slicelabel = r"X={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
         pt.plot.plot_helpers.PLANE = 'YZ'
     if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
         simext=[xmin,xmax,zmin,zmax]
@@ -477,7 +477,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 1
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
         axislabels = ['X','Z']
-        slicelabel = r"Y={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
+        slicelabel = r"Y={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
         pt.plot.plot_helpers.PLANE = 'XZ'
     if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
         simext=[xmin,xmax,ymin,ymax]
@@ -487,7 +487,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 2
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
         axislabels = ['X','Y']
-        slicelabel = r"Z={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
+        slicelabel = r"Z={:4.1f}\,".format(cutpoint/Re)+pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')+"$\qquad $"
         pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
@@ -508,14 +508,14 @@ def plot_colormap3dslice(filename=None,
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
         if np.isclose(axisunit,0):
-            axisunitstr = r'm'
+            axisunitstr = pt.plot.rmstring('m')
         elif np.isclose(axisunit,3):
-            axisunitstr = r'km'
+            axisunitstr = pt.plot.rmstring('km')
         else:
-            axisunitstr = r'$10^{'+str(int(axisunit))+'}$ m'
+            axisunitstr = r'$10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
         axisunit = np.power(10,int(axisunit))
     else:
-        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         axisunit = Re
 
     # Scale data extent and plot box
@@ -1135,20 +1135,14 @@ def plot_colormap3dslice(filename=None,
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if not noxlabels:
-        if not os.getenv('PTNOLATEX'):
-            xlabelstr = r'\textbf{'+axislabels[0]+' ['+axisunitstr+']}'
-        else:
-            xlabelstr = r''+axislabels[0]+' ['+axisunitstr+']'
+        xlabelstr = pt.plot.mathmode(pt.plot.bfstring(axislabels[0]+'\,['+axisunitstr+']'))
         ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
             item.set_fontweight('black')
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if not noylabels:
-        if not os.getenv('PTNOLATEX'):
-            ylabelstr = r'\textbf{'+axislabels[1]+' ['+axisunitstr+']}'
-        else:
-            ylabelstr = r''+axislabels[1]+' ['+axisunitstr+']'
+        ylabelstr = pt.plot.mathmode(pt.plot.bfstring(axislabels[1]+'\,['+axisunitstr+']'))
         ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
@@ -1325,12 +1319,7 @@ def plot_colormap3dslice(filename=None,
 
         # Colourbar title
         if len(cb_title_use)!=0:
-            if os.getenv('PTNOLATEX'):
-                cb_title_use.replace('\textbf{','')
-                cb_title_use.replace('\mathrm{','')
-                cb_title_use.replace('}','')
-            else:
-                cb_title_use = r"\textbf{"+cb_title_use+"}"   
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
         # Set flag which affects colorbar decimal precision
         if lin is None:
