@@ -235,17 +235,17 @@ def plot_colormap3dslice(filename=None,
         pass_vars=[]
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir is ''):
+    if (filedir == ''):
         filedir = './'
-    #if (fluxdir is ''):
+    #if (fluxdir == ''):
     #    fluxdir = './'
-    if (outputdir is ''):
+    if (outputdir == ''):
         outputdir = './'
 
     # Input file or object
@@ -318,7 +318,7 @@ def plot_colormap3dslice(filename=None,
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
-        if not operator in 'xyz' and operator is not 'magnitude' and not operator.isdigit():
+        if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
             print("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
@@ -467,7 +467,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 0
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
         axislabels = ['Y','Z']
-        slicelabel = r"X={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"X={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'YZ'
     if normal[1] != 0 and normal[0] == 0 and normal[2] == 0:
         simext=[xmin,xmax,zmin,zmax]
@@ -477,7 +477,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 1
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
         axislabels = ['X','Z']
-        slicelabel = r"Y={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"Y={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'XZ'
     if normal[2] != 0 and normal[0] == 0 and normal[1] == 0:
         simext=[xmin,xmax,ymin,ymax]
@@ -487,7 +487,7 @@ def plot_colormap3dslice(filename=None,
         xyz = 2
         idlist, indexlist = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
         axislabels = ['X','Y']
-        slicelabel = r"Z={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad$"
+        slicelabel = r"Z={:4.1f}".format(cutpoint/Re)+" $R_\mathrm{E}\qquad $"
         pt.plot.plot_helpers.PLANE = 'XY'
 
     # Select window to draw
@@ -675,9 +675,9 @@ def plot_colormap3dslice(filename=None,
     if reqvariables:
         try:
             for i in reqvariables:
-                if i is "3d":
+                if i == "3d":
                     pass3d = True
-                elif i is "noupscale":
+                elif i == "noupscale":
                     meshReflevel = 0
                 elif not (i in pass_vars): 
                     pass_vars.append(i)
@@ -744,15 +744,16 @@ def plot_colormap3dslice(filename=None,
                         else:
                             print("Error in reshaping pass_maps!")
                         pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
-                    
+                        
+                # At this point, the map has been ordered into a 2D or 3D image
                 if np.ma.is_masked(maskgrid) and not pass3d:
-                    if np.ndim(pass_map)==1:
+                    if np.ndim(pass_map)==2:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                    elif np.ndim(pass_map)==2: # vector variable
+                    elif np.ndim(pass_map)==3: # vector variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                    elif np.ndim(pass_map)==3:  # tensor variable
+                    elif np.ndim(pass_map)==4:  # tensor variable
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                 pass_maps[mapval] = pass_map # add to the dictionary
@@ -928,7 +929,7 @@ def plot_colormap3dslice(filename=None,
                     datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:,:]
         # Handle operators
 
-        if (operator and (operator is not 'pass') and (operator is not 'magnitude')):
+        if (operator and (operator != 'pass') and (operator != 'magnitude')):
             if operator=='x': 
                 operator = '0'
             if operator=='y': 
@@ -1065,10 +1066,10 @@ def plot_colormap3dslice(filename=None,
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes: # If axes are provided, leave backend as-is.
         if draw:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg': 
                 plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+            if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
                 plt.switch_backend(pt.backend_noninteractive)  
 
     # Select image shape to match plotted area
@@ -1287,7 +1288,7 @@ def plot_colormap3dslice(filename=None,
             U = slinemap[:,:,0]
             V = slinemap[:,:,1]
 
-        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor)
+        ax1.streamplot(XmeshCentres,YmeshCentres,U,V,linewidth=0.5*streamlinethick, density=streamlinedensity, color=streamlinecolor,arrowsize=0.3)
     
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions

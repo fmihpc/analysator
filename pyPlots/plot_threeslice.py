@@ -118,14 +118,14 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
 
     # Axes and units (default R_E)
     if np.isclose(axisunit,Re):
-        axisunitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
     elif np.isclose(axisunit,1):
-        axisunitstr = r'm'
+        axisunitstr = pt.plot.rmstring('m')
     elif np.isclose(axisunit,1000):
-        axisunitstr = r'km'
+        axisunitstr = pt.plot.rmstring('km')
     else:
-        axisunitstr = r'$10^{'+str(int(np.log10(axisunit)))+'}$ m'
-
+        axisunitstr = r'10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
+    axisunitstr=''
     # Create axis lines intersecting at (xr,yr,zr)
 
     # -- x-axis --
@@ -650,15 +650,15 @@ def plot_threeslice(filename=None,
 #        pass_vars=[]
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir is ''):
+    if (filedir == ''):
         filedir = './'
-    if (outputdir is ''):
+    if (outputdir == ''):
         outputdir = './'
 
     # Input file or object
@@ -728,7 +728,7 @@ def plot_threeslice(filename=None,
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
-        if not operator in 'xyz' and operator is not 'magnitude' and not operator.isdigit():
+        if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
             print("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
@@ -792,7 +792,7 @@ def plot_threeslice(filename=None,
             print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
-    if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+    if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
         plt.switch_backend(pt.backend_noninteractive)
 
     Re = 6.371e+6 # Earth radius in m
@@ -1461,15 +1461,7 @@ def plot_threeslice(filename=None,
 
     # Colourbar title
     if len(cb_title_use)!=0:
-        if os.getenv('PTNOLATEX'):
-            print(cb_title_use)
-            cb_title_use = cb_title_use.replace('\textbf{','')
-            cb_title_use = cb_title_use.replace('\mathrm{','')
-            cb_title_use = cb_title_use.replace('}','')
-            cb_title_use = cb_title_use.replace('\,',' ')
-            print(cb_title_use)
-        else:
-            cb_title_use = r"\textbf{"+cb_title_use+"}"   
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
     # Set flag which affects colorbar decimal precision
     if lin is None:
@@ -1487,7 +1479,7 @@ def plot_threeslice(filename=None,
     cb.ax.yaxis.set_ticks_position(cbdir)
 
     cbticks = cb.get_ticks()
-    cb.set_ticks(cbticks[(cbticks>=vmin)*(cbticks<=vmax)])
+    cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
     cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
     cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
