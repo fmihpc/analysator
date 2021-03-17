@@ -1146,6 +1146,18 @@ class VlsvReader(object):
          AMR_count += 1
       return AMR_count - 1 
 
+   def get_unique_cellids(self, pts):
+      ''' Returns a list of cellids containing all the points in pts, with no duplicate cellids.
+      :param points:         A list of points
+      :returns: a list of uniqeue cell ids
+      '''
+      cids = [int(self.get_cellid(pt)) for pt in pts]
+      cidsout = []
+      for cid in cids:
+        if cid not in cidsout:
+          cidsout.append(cid)
+      return cidsout
+
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
 
