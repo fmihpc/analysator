@@ -1008,10 +1008,11 @@ class VlsvReader(object):
            else:
                # Special case for scalar data
                thatTasksData = rawData[currentOffset:currentOffset+totalSize]
-               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
+               if (len(thatTasksData)>0):
+                  thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
 
-               # ... and put it into place 
-               orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
+                  # ... and put it into place 
+                  orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
            currentOffset += totalSize
 
