@@ -803,9 +803,15 @@ class VlsvReader(object):
                    0 if coordinates[1] > closest_cell_coordinates[1] else -1,\
                    0 if coordinates[2] > closest_cell_coordinates[2] else -1]
          lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+         if lower_cell_id <= 0:
+            print("Error: cannot interpolate outside simulation domain!")
+            return self.read_variable(name,closest_cell_id,operator)
          lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+         if upper_cell_id <= 0:
+            print("Error: cannot interpolate outside simulation domain!")
+            return self.read_variable(name,closest_cell_id,operator)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
          
          scaled_coordinates=np.zeros(3)
@@ -882,9 +888,15 @@ class VlsvReader(object):
                       0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
                       0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
             lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+            if lower_cell_id <= 0:
+               print("Error: cannot interpolate outside simulation domain!")
+               lower_cell_id = closest_cell_id
             lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
             offset = [1,1,1]
             upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+            if upper_cell_id <= 0:
+               print("Error: cannot interpolate outside simulation domain!")
+               upper_cell_id = closest_cell_id
             upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
             
             scaled_coordinates=np.zeros(3)
@@ -899,8 +911,11 @@ class VlsvReader(object):
                for y in [0,1]:
                   for z  in [0,1]:
                      id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
-                     ngbrvalues[x,y,z,:] = sorted_variable[id]
-            
+                     if id >= 0:
+                        ngbrvalues[x,y,z,:] = sorted_variable[id]
+                     else:
+                        ngbrvalues[x,y,z,:] = sorted_variable[closest_cell_id-1]
+                        
             c2d=np.zeros((2,2,value_length))
             for y in  [0,1]:
                for z in  [0,1]:
@@ -1241,7 +1256,7 @@ class VlsvReader(object):
       # Return the coordinates:
       return np.array(cellcoordinates)
 
-   def get_cell_indices(self, cellid, reflevel):
+   def get_cell_indices(self, cellid, reflevel=0):
       ''' Returns a given cell's indices as a numpy array
 
       :param cellid:            The cell's ID
