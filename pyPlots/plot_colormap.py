@@ -190,7 +190,7 @@ def plot_colormap(filename=None,
                         proportions may change if the box and axes size are not designed to match by the user
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
     :kword useimshow:   Use imshow for raster background instead (default: False)
-    :kowrd imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
 
     :returns:           Outputs an image to a file or to the screen.
 
