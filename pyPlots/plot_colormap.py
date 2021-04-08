@@ -67,7 +67,7 @@ def plot_colormap(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
-                  axes=None, cbaxes=None,
+                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none',
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -189,6 +189,8 @@ def plot_colormap(filename=None,
                         Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                         proportions may change if the box and axes size are not designed to match by the user
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword useimshow:   Use imshow for raster background instead (default: False)
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -892,7 +894,17 @@ def plot_colormap(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-    fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    if(not useimshow):
+        fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    else:
+        fig1 = ax1.imshow(datamap,
+                          cmap=colormap,
+                          norm=norm,
+                          interpolation=imshowinterp,
+                          origin='lower',
+                          extent=(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
+                         )
+    
 
     # Title and plot limits
     if len(plot_title)!=0:
