@@ -29,7 +29,7 @@ import os
 import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
-from collections import Iterable
+from collections import Iterable,OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 
@@ -1146,16 +1146,16 @@ class VlsvReader(object):
          AMR_count += 1
       return AMR_count - 1 
 
-   def get_unique_cellids(self, pts):
-      ''' Returns a list of cellids containing all the points in pts, with no duplicate cellids.
-      :param points:         A list of points
-      :returns: a list of uniqeue cell ids
+   def get_unique_cellids(self, coords):
+      ''' Returns a list of cellids containing all the coordinates in coords,
+          with no duplicate cellids. Relative order of elements is conserved.
+      :param coords:         A list of coordinates
+      :returns: a list of unique cell ids
       '''
-      cids = [int(self.get_cellid(pt)) for pt in pts]
-      cidsout = []
-      for cid in cids:
-        if cid not in cidsout:
-          cidsout.append(cid)
+      cids = [int(self.get_cellid(coord)) for coord in coords]
+
+      #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
+      cidsout = list(OrderedDict.fromkeys(cids))
       return cidsout
 
    def get_cellid(self, coordinates):

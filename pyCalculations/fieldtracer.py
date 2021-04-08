@@ -24,6 +24,7 @@
 import numpy as np
 import scipy as sp
 import pytools as pt
+import warnings
 from scipy import interpolate
 
 def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
@@ -54,8 +55,11 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
        :param dx:                 One iteration step length
        :param direction:          '+' or '-' or '+-' Follow field in the plus direction or minus direction
        :param bvar:               String, variable name to trace [default 'B']
-       :returns:                  Field points in array format [x0,x1,x2,x3]
+       :returns:                  List of coordinates
    '''
+
+   if(bvar is not 'B'):
+     warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
 
    if direction == '+-':
      backward = static_field_tracer(vlsvReader, x0, max_iterations, dx, direction='-', bvar=bvar)
