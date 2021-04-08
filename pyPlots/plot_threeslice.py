@@ -24,14 +24,14 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, 
+def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
            viewangle, halfaxes, slices):
 
     Re = 6371e3
     deg2rad = np.pi/180.
     fontsize = 8*scale
-    axextents = np.asarray(boxcoords) + 8*Re/axisunit*np.asarray([-1,1,-1,1,-1,1])
-    (xr,yr,zr) = [cutpoint[i]/axisunit for i in range(0,3)]
+    axextents = np.asarray(boxcoords) + 8*Re/axisunituse*np.asarray([-1,1,-1,1,-1,1])
+    (xr,yr,zr) = [cutpoint[i]/axisunituse for i in range(0,3)]
 
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
@@ -61,9 +61,9 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         cZp = 1.1/np.cos(ele*deg2rad)
 
     # Earth-breaking conditions
-    earthbreak_x = abs(yr) < Re/axisunit and abs(zr) < Re/axisunit and axextents[0]*axextents[1] < 0.
-    earthbreak_y = abs(xr) < Re/axisunit and abs(zr) < Re/axisunit and axextents[2]*axextents[3] < 0.
-    earthbreak_z = abs(xr) < Re/axisunit and abs(yr) < Re/axisunit and axextents[4]*axextents[5] < 0.
+    earthbreak_x = abs(yr) < Re/axisunituse and abs(zr) < Re/axisunituse and axextents[0]*axextents[1] < 0.
+    earthbreak_y = abs(xr) < Re/axisunituse and abs(zr) < Re/axisunituse and axextents[2]*axextents[3] < 0.
+    earthbreak_z = abs(xr) < Re/axisunituse and abs(yr) < Re/axisunituse and axextents[4]*axextents[5] < 0.
     earthvisible = True
 
     # Adapting line styles for axes and near-Earth break distances to the viewing angle
@@ -111,17 +111,17 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         styleXm = frontaxisstyle
 
     # Coefficients for axis label placement
-    labposscale = (axextents[1]-axextents[0])/(60*Re/axisunit)
+    labposscale = (axextents[1]-axextents[0])/(60*Re/axisunituse)
     cXlabel = labposscale*(1. + (2.*abs(np.cos(azi*deg2rad))+2.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cYlabel = labposscale*(1. + (2.*abs(np.sin(azi*deg2rad))+2.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cZlabel = labposscale*(1. + 1.5*abs(np.tan(ele*deg2rad)))
 
     # Axes and units (default R_E)
-    if np.isclose(axisunit,Re):
+    if np.isclose(axisunituse,Re):
         axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
-    elif np.isclose(axisunit,1):
+    elif np.isclose(axisunituse,1):
         axisunitstr = pt.plot.rmstring('m')
-    elif np.isclose(axisunit,1000):
+    elif np.isclose(axisunituse,1000):
         axisunitstr = pt.plot.rmstring('km')
     else:
         axisunitstr = r'10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
@@ -140,20 +140,20 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     else: # Special treatment of cases when the x-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if xr <= 0. and abs(azi) < 90.: # looking from the dayside, cut point on the nightside
-            line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunit), yr, zr)),
+            line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunituse), yr, zr)),
                               color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if xr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunit, yr, zr)),
+            if xr < -Re/axisunituse:
+                line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunituse, yr, zr)),
                                   color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (axextents[1], yr, zr)),
+            line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (axextents[1], yr, zr)),
                               color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
         elif xr > 0. and abs(azi) < 90.: # looking from the dayside, cut point also on the dayside
-            if 'x' in slices and xr > Re/axisunit: # Earth effectively hidden by the X slice, no need to break the axis
+            if 'x' in slices and xr > Re/axisunituse: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
                                   color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
@@ -163,20 +163,20 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunit, yr, zr)),
+                line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunituse, yr, zr)),
                                   color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if xr > Re/axisunit:
-                    line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (xr, yr, zr)),
+                if xr > Re/axisunituse:
+                    line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (xr, yr, zr)),
                                       color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunit), yr, zr), (axextents[1], yr, zr)),
+                line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunituse), yr, zr), (axextents[1], yr, zr)),
                                   color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         elif xr <= 0.: # looking from the nightside, cut point also on the nightside
-            if 'x' in slices and xr < -Re/axisunit: # Earth effectively hidden by the X slice, no need to break the axis
+            if 'x' in slices and xr < -Re/axisunituse: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
                                   color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
@@ -186,35 +186,39 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunit), yr, zr)),
+                line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunituse), yr, zr)),
                                   color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if xr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunit, yr, zr)),
+                if xr < -Re/axisunituse:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunituse, yr, zr)),
                                       color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (axextents[1], yr, zr)),
+                line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (axextents[1], yr, zr)),
                                   color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the nightside, cut point on the dayside
-            line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunit, yr, zr)),
+            line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunituse, yr, zr)),
                               color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if xr > Re/axisunit:
-                line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (xr, yr, zr)),
+            if xr > Re/axisunituse:
+                line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (xr, yr, zr)),
                                   color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunit), yr, zr), (axextents[1], yr, zr)),
+            line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunituse), yr, zr), (axextents[1], yr, zr)),
                               color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)*Re/axisunit, yr-Re/axisunit, zr), (axextents[1], yr, zr),
-                      (axextents[1]-np.sqrt(3)*Re/axisunit, yr+Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleXp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-np.sqrt(3)*Re/axisunituse, yr-Re/axisunituse, zr), (xr, yr, zr),
+                               (xr-np.sqrt(3)*Re/axisunituse, yr+Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)*Re/axisunituse, yr-Re/axisunituse, zr), (axextents[1], yr, zr),
+                               (axextents[1]-np.sqrt(3)*Re/axisunituse, yr+Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- y-axis --
@@ -230,19 +234,19 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     else: # Special treatment of cases when the y-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if yr <= 0. and azi > 0.: # looking from the dawnside, cut point on the duskside
-            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunit), zr)),
+            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunituse), zr)),
                               color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
-            if yr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunit, zr)),
+            if yr < -Re/axisunituse:
+                line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunituse, zr)),
                                   color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, axextents[3], zr)),
+            line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, axextents[3], zr)),
                               color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
         elif yr > 0. and azi > 0.: # looking from the dawnside, cut point also on the dawnside
-            if 'y' in slices and yr > Re/axisunit: # Earth effectively hidden by the Y slice, no need to break the axis
+            if 'y' in slices and yr > Re/axisunituse: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
                                   color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
@@ -252,20 +256,20 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunit, zr)),
+                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunituse, zr)),
                                   color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if yr > Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, yr, zr)),
+                if yr > Re/axisunituse:
+                    line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, yr, zr)),
                                       color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunit), zr), (xr, axextents[3], zr)),
+                line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunituse), zr), (xr, axextents[3], zr)),
                                   color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         elif yr <= 0.: # looking from the duskside, cut point also on the duskside
-            if 'y' in slices and yr < -Re/axisunit: # Earth effectively hidden by the Y slice, no need to break the axis
+            if 'y' in slices and yr < -Re/axisunituse: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
                                   color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
@@ -275,35 +279,39 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunit), zr)),
+                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunituse), zr)),
                                   color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if yr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunit, zr)),
+                if yr < -Re/axisunituse:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunituse, zr)),
                                       color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, axextents[3], zr)),
+                line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, axextents[3], zr)),
                                   color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the duskside, cut point on the dawnside
-            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunit, zr)),
+            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunituse, zr)),
                               color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if yr > Re/axisunit:
-                line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, yr, zr)),
+            if yr > Re/axisunituse:
+                line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, yr, zr)),
                                   color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunit), zr), (xr, axextents[3], zr)),
+            line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunituse), zr), (xr, axextents[3], zr)),
                               color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((xr-Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr), (xr, axextents[3], zr),
-                      (xr+Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleYp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr-np.sqrt(3)*Re/axisunituse, zr), (xr, yr, zr),
+                               (xr+Re/axisunituse, yr-np.sqrt(3)*Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((xr-Re/axisunituse, axextents[3]-np.sqrt(3)*Re/axisunituse, zr), (xr, axextents[3], zr),
+                               (xr+Re/axisunituse, axextents[3]-np.sqrt(3)*Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- z-axis --
@@ -319,20 +327,20 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     else: # Special treatment of cases when the z-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and ele
         if zr <= 0. and ele > 0.: # looking from the north, cut point south from the Earth
-            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunit))),
+            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunituse))),
                               color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if zr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunit)),
+            if zr < -Re/axisunituse:
+                line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunituse)),
                                   color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, axextents[5])),
+            line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, axextents[5])),
                               color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
         elif zr > 0. and ele > 0.: # looking from the north, cut point also north from the Earth
-            if 'z' in slices and zr > Re/axisunit: # Earth effectively hidden by the Z slice, no need to break the axis
+            if 'z' in slices and zr > Re/axisunituse: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
                                   color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
@@ -342,20 +350,20 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunit)),
+                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunituse)),
                                   color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if zr > Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, zr)),
+                if zr > Re/axisunituse:
+                    line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, zr)),
                                       color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunit)), (xr, yr, axextents[5])),
+                line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunituse)), (xr, yr, axextents[5])),
                                   color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         elif zr < 0.: # looking from the south, cut point also south from the Earth
-            if 'z' in slices and zr < -Re/axisunit: # Earth effectively hidden by the Z slice, no need to break the axis
+            if 'z' in slices and zr < -Re/axisunituse: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
                                   color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
@@ -365,51 +373,63 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                                   color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunit))),
+                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunituse))),
                                   color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if zr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunit)),
+                if zr < -Re/axisunituse:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunituse)),
                                       color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, axextents[5])),
+                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, axextents[5])),
                                   color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the south, cut point north from the Earth
-            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunit)),
+            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunituse)),
                               color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if zr > Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, zr)),
+            if zr > Re/axisunituse:
+                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, zr)),
                                   color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunit)), (xr, yr, axextents[5])),
+            line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunituse)), (xr, yr, axextents[5])),
                               color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
             ax.add_line(line)
 
  # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((xr-Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit), (xr, yr, axextents[5]),
-                      (xr+Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleZp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr, zr-np.sqrt(3)*Re/axisunituse), (xr, yr, zr),
+                               (xr+Re/axisunituse, yr, zr-np.sqrt(3)*Re/axisunituse)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr, axextents[5]-np.sqrt(3)*Re/axisunituse), (xr, yr, axextents[5]),
+                               (xr+Re/axisunituse, yr, axextents[5]-np.sqrt(3)*Re/axisunituse)), color='black', linewidth=0.5, alpha=1, zorder=20)
     ax.add_line(line)
 
     xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
     ylabelstr = pt.plot.mathmode(pt.plot.bfstring('Y\,['+axisunitstr+']'))
     zlabelstr = pt.plot.mathmode(pt.plot.bfstring('Z\,['+axisunitstr+']'))
 
-    ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-    ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-    ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleXp == backaxisstyle:
+        ax.text(axextents[0]-cXlabel*Re/axisunituse, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(axextents[1]+cXlabel*Re/axisunituse, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleYp == backaxisstyle:
+        ax.text(xr, axextents[2]-cYlabel*Re/axisunituse, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(xr, axextents[3]+cYlabel*Re/axisunituse, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleZp == backaxisstyle:
+        ax.text(xr, yr, axextents[4]-cZlabel*Re/axisunituse,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunituse,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
 
-    
     # Addition of the Earth at the origin of the domain
     u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
-    x = Re/axisunit * np.cos(u)*np.sin(v)
-    y = Re/axisunit * np.sin(u)*np.sin(v)
-    z = Re/axisunit * np.cos(v)
+    x = Re/axisunituse * np.cos(u)*np.sin(v)
+    y = Re/axisunituse * np.sin(u)*np.sin(v)
+    z = Re/axisunituse * np.cos(v)
     albedo = np.zeros(u.shape)
     albedo = np.arctan(-50.*x)/np.pi+0.5
     levels = MaxNLocator(nbins=255).tick_values(0,1)
@@ -423,46 +443,63 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     ax.set_ylim([boxcoords[2],boxcoords[3]])
     ax.set_zlim([boxcoords[4],boxcoords[5]])
 
+    # ex.axis('equal') is broken and either does not work at all or produces incorrect output.
+    # these are possible alternative approaches
+    # ax.auto_scale_xyz([minbound, maxbound], [minbound, maxbound], [minbound, maxbound])
+    #  or 
+    # limits = np.array([getattr(self.ax, f'get_{axis}lim')() for axis in 'xyz'])
+    # ax.set_box_aspect(np.ptp(limits, axis = 1))
+    
     try:
-        ax.axis('equal')
+        #ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
+        limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+        ax.set_box_aspect(np.ptp(limits, axis = 1))
+        #ax.axis('equal')
     except:
-        print("WARNING: axis('equal') is not supported by this version of Matplotlib.")
-
+        #print("WARNING: axis('equal') is not supported by this version of Matplotlib.")
+        #print("WARNING: ax.auto_scale_xyz() is not supported by this version of Matplotlib.")
+        print("WARNING: ax.set_box_aspect() is not supported by this version of Matplotlib.")
+        try:
+            ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
+            #limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+            #ax.set_box_aspect(np.ptp(limits, axis = 1))
+        except:
+            print("WARNING: both ax.auto_scale_xyz() and ax.set_box_aspect() failed.")
 
     # Draw ticks
     if not fixedticks: # Ticks are relative to the triple point
-        txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunit)
-        txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunit)
+        txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunituse)
+        txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunituse)
         ticks_x = np.concatenate((np.flip(txm,axis=0),txp[1:]))
 
-        tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunit)
-        typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunit)
+        tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunituse)
+        typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunituse)
         ticks_y = np.concatenate((np.flip(tym,axis=0),typ[1:]))
 
-        tzm = np.arange(zr,boxcoords[4]-0.1,-tickinterval/axisunit)
-        tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunit)
+        tzm = np.arange(zr,boxcoords[4]-0.1,-tickinterval/axisunituse)
+        tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunituse)
         ticks_z = np.concatenate((np.flip(tzm,axis=0),tzp[1:]))
     else: # Ticks are relative to (0,0,0)
-        txm = np.arange(0.,boxcoords[0]-0.1,-tickinterval/axisunit)
-        txp = np.arange(0.,boxcoords[1]+0.1,tickinterval/axisunit)
+        txm = np.arange(0.,boxcoords[0]-0.1,-tickinterval/axisunituse)
+        txp = np.arange(0.,boxcoords[1]+0.1,tickinterval/axisunituse)
         ticks_x = np.concatenate((np.flip(txm,axis=0),txp[1:]))
 
-        tym = np.arange(0.,boxcoords[2]-0.1,-tickinterval/axisunit)
-        typ = np.arange(0.,boxcoords[3]+0.1,tickinterval/axisunit)
+        tym = np.arange(0.,boxcoords[2]-0.1,-tickinterval/axisunituse)
+        typ = np.arange(0.,boxcoords[3]+0.1,tickinterval/axisunituse)
         ticks_y = np.concatenate((np.flip(tym,axis=0),typ[1:]))
 
-        tzm = np.arange(0.,boxcoords[4]-0.1,-tickinterval/axisunit)
-        tzp = np.arange(0.,boxcoords[5]+0.1,tickinterval/axisunit)
+        tzm = np.arange(0.,boxcoords[4]-0.1,-tickinterval/axisunituse)
+        tzp = np.arange(0.,boxcoords[5]+0.1,tickinterval/axisunituse)
         ticks_z = np.concatenate((np.flip(tzm,axis=0),tzp[1:]))
-    ticklength = Re/axisunit
+    ticklength = Re/axisunituse
 
     # Avoid placing a tick on the Earth if it is visible in the plot
     if earthbreak_x and earthvisible:
-        ticks_x = ticks_x[abs(ticks_x) > Re/axisunit]
+        ticks_x = ticks_x[abs(ticks_x) > Re/axisunituse]
     if earthbreak_y and earthvisible:
-        ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
+        ticks_y = ticks_y[abs(ticks_y) > Re/axisunituse]
     if earthbreak_z and earthvisible:
-        ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
+        ticks_z = ticks_z[abs(ticks_z) > Re/axisunituse]
 
     # Remove possible ticks outside of the specified box
     ticks_x = ticks_x[ticks_x >= axextents[0]]
@@ -487,8 +524,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                           color='black', linewidth=0.25, alpha=1, zorder=20)
         ax.add_line(tick)
 
-    if xr < Re/axisunit and abs(yr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
-        ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
+    if xr < Re/axisunituse and abs(yr) < Re/axisunituse: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_y = ticks_y[abs(ticks_y) > Re/axisunituse]
     if halfaxes: # do not create ticks if back axes are not shown
         if styleYp == backaxisstyle:
             ticks_y = ticks_y[ticks_y <= yr]
@@ -503,8 +540,8 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
                           color='black', linewidth=0.25, alpha=1, zorder=20)
         ax.add_line(tick)
 
-    if xr < Re/axisunit and abs(zr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
-        ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
+    if xr < Re/axisunituse and abs(zr) < Re/axisunituse: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_z = ticks_z[abs(ticks_z) > Re/axisunituse]
     if halfaxes: # do not create ticks if back axes are not shown
         if styleZp == backaxisstyle:
             ticks_z = ticks_z[ticks_z <= zr]
@@ -892,20 +929,20 @@ def plot_threeslice(filename=None,
             axisunitstr = pt.plot.rmstring('km')
         else:
             axisunitstr = r'$10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
-        axisunit = np.power(10,int(axisunit))
+        axisunituse = np.power(10,int(axisunit))
     else:
         axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
-        axisunit = Re
+        axisunituse = Re
 
     # Scale data extent and plot box
-    simext=[i/axisunit for i in simext]
-    boxcoords=[i/axisunit for i in boxcoords]
+    simext=[i/axisunituse for i in simext]
+    boxcoords=[i/axisunituse for i in boxcoords]
 
     # Axis tick interval (default 10 R_E)
     if tickinterval is None:
         tickinterval = 10.*Re
     else:
-        tickinterval = tickinterval * axisunit
+        tickinterval = tickinterval * axisunituse
 
 
     #################################################
@@ -1131,7 +1168,7 @@ def plot_threeslice(filename=None,
     ###############################################################################
     # Making the 12 meshes corresponding to the 12 elementary surfaces to plot #
     ###############################################################################
-    cutpointaxu = cutpoint/axisunit
+    cutpointaxu = cutpoint/axisunituse
     # {X = x0 slice}
     [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
@@ -1211,7 +1248,7 @@ def plot_threeslice(filename=None,
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale,
+    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
                  viewangle, halfaxes, slices)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
@@ -1256,7 +1293,7 @@ def plot_threeslice(filename=None,
         if not pass_full:
             # If zoomed-in using a defined box, and not specifically asking to pass all values:
             # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
-            maskboundarybuffer = 2.*cellsize/axisunit
+            maskboundarybuffer = 2.*cellsize/axisunituse
             maskgrid_XY = np.ma.masked_where(XmeshXYCentres<(boxcoords[0]-maskboundarybuffer), maskgrid_XY)
             maskgrid_XY = np.ma.masked_where(XmeshXYCentres>(boxcoords[1]+maskboundarybuffer), maskgrid_XY)
             maskgrid_XY = np.ma.masked_where(YmeshXYCentres<(boxcoords[2]-maskboundarybuffer), maskgrid_XY)
@@ -1432,20 +1469,22 @@ def plot_threeslice(filename=None,
 #******
 
     # Plot title - adding the cut point information and tick interval length
-    if np.all(np.isclose(cutpoint/axisunit % 1,0.)):
-        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    else:
-        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    if not fixedticks:
-        tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    else:
-        tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+    # unless title was set manually
+    if title is None or title=="msec" or title=="musec":        
+        if np.all(np.isclose(cutpoint/axisunituse % 1,0.)):
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
+                         cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        else:
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
+                         cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        if not fixedticks:
+            tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        else:
+            tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
 
-#    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title)) + '\n' + pt.plot.mathmode(pt.plot.bfstring(tickinfostr))
-    plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
-    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
+    #    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title)) + '\n' + pt.plot.mathmode(pt.plot.bfstring(tickinfostr))
+        plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
+    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.9))
     
 
     # Creating colorbar axes
