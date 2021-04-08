@@ -14,6 +14,7 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from distutils.version import LooseVersion, StrictVersion
 
 import ids3d
 #from mpl_toolkits.mplot3d import axes3d
@@ -1472,10 +1473,10 @@ def plot_threeslice(filename=None,
     # unless title was set manually
     if title is None or title=="msec" or title=="musec":        
         if np.all(np.isclose(cutpoint/axisunituse % 1,0.)):
-            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}, {:,.0f}, {:,.0f}) [{:s}]'.format(
                          cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
         else:
-            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}, {:,.1f}, {:,.1f}) [{:s}]'.format(
                          cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
         if not fixedticks:
             tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
