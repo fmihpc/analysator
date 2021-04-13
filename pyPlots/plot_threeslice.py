@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.colors import LightSource
@@ -450,22 +451,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
     #  or 
     # limits = np.array([getattr(self.ax, f'get_{axis}lim')() for axis in 'xyz'])
     # ax.set_box_aspect(np.ptp(limits, axis = 1))
-    
     try:
-        #ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
         limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
         ax.set_box_aspect(np.ptp(limits, axis = 1))
-        #ax.axis('equal')
     except:
-        #print("WARNING: axis('equal') is not supported by this version of Matplotlib.")
-        #print("WARNING: ax.auto_scale_xyz() is not supported by this version of Matplotlib.")
-        print("WARNING: ax.set_box_aspect() is not supported by this version of Matplotlib.")
+        print("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
         try:
             ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
-            #limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
-            #ax.set_box_aspect(np.ptp(limits, axis = 1))
         except:
-            print("WARNING: both ax.auto_scale_xyz() and ax.set_box_aspect() failed.")
+            print("WARNING: ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
 
     # Draw ticks
     if not fixedticks: # Ticks are relative to the triple point
@@ -584,7 +578,7 @@ def plot_threeslice(filename=None,
                   thick=1.0,scale=1.0,
                   expression=None,
                   vscale=1.0,viewangle=(-60.,30.),
-                  cutpoint=None,cutpointre=None,slices=None
+                  cutpointm=None,cutpointre=None,slices=None
                   ):
 
     ''' Plots a 3d plot constructed of three 2d cut throughs.
@@ -663,7 +657,7 @@ def plot_threeslice(filename=None,
     :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
                         (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
-    :kword cutpoint:    Coordinates of the point through which all three 2D cuts must pass [m]
+    :kword cutpointm:    Coordinates of the point through which all three 2D cuts must pass [m]
     :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
     :kword slices:      Normal directions of the slices to plot, default='xyz'
 
@@ -701,7 +695,7 @@ def plot_threeslice(filename=None,
     if filename!=None:
         f=pt.vlsvfile.VlsvReader(filename)
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
         f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj!=None:
         f=vlsvobj
@@ -738,7 +732,7 @@ def plot_threeslice(filename=None,
             if title=="musec": timeformat='{:4.6f}'
             plot_title = "t="+timeformat.format(timeval)+' s '
     else:
-        plot_title = title
+        plot_title = ''+title
 
     # step, used for file name
     if step is not None:
@@ -874,36 +868,17 @@ def plot_threeslice(filename=None,
     simext=[xmin,xmax,ymin,ymax,zmin,zmax]
 
     # Coordinates of the point through which the three slices pass
-    if not cutpoint:
+    if not cutpointm:
         if cutpointre:
             cutpoint = np.asarray(cutpointre) * Re
         else: # default to [0,0,0]
             print('No cut point coordinates given, defaulting to origin')
             cutpoint = np.asarray([0.,0.,0.])
-
+    else:
+        cutpoint = np.asarray(cutpointm)
     # Slices to be plotted (defined by their normal direction)
     if slices is None:
         slices = 'xyz'
-
-    ###################################################
-    # Find the cellids corresponding to the 3 slices #
-    ###################################################
-
-    # {X = x0} slice
-    sliceoffset = abs(xmin) + cutpoint[0]
-    fgslice_x = int(sliceoffset/cellsizefg)
-    idlist_x, indexlist_x = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
-
-    # {Y = y0} slice
-    sliceoffset = abs(ymin) + cutpoint[1]
-    fgslice_y = int(sliceoffset/cellsizefg)
-    idlist_y, indexlist_y = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
-
-    # {Z = z0} slice
-    sliceoffset = abs(zmin) + cutpoint[2]
-    fgslice_z = int(sliceoffset/cellsizefg)
-    idlist_z, indexlist_z = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
-
 
     # Select window to draw
     if len(boxm)==6:
@@ -921,6 +896,21 @@ def plot_threeslice(filename=None,
     boxcoords[3] = min(boxcoords[3],simext[3]-cellsize)
     boxcoords[4] = max(boxcoords[4],simext[4]+cellsize)
     boxcoords[5] = min(boxcoords[5],simext[5]-cellsize)
+
+    # Verify that the cutpoint is inside the box coordinates
+    if 'x' in slices:
+        cutpoint[0] = max(cutpoint[0],boxcoords[0])
+        cutpoint[0] = min(cutpoint[0],boxcoords[1])
+    if 'y' in slices:
+        cutpoint[1] = max(cutpoint[1],boxcoords[2])
+        cutpoint[1] = min(cutpoint[1],boxcoords[3])
+    if 'z' in slices:
+        cutpoint[2] = max(cutpoint[2],boxcoords[4])
+        cutpoint[2] = min(cutpoint[2],boxcoords[5])
+
+    if len(slices)==0:
+        print("Error: no active slices at cutpoint within box domain")
+        return -1
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
@@ -946,6 +936,25 @@ def plot_threeslice(filename=None,
         tickinterval = tickinterval * axisunituse
 
 
+    ###################################################
+    # Find the cellids corresponding to the 3 slices #
+    ###################################################
+
+    # {X = x0} slice
+    sliceoffset = abs(xmin) + cutpoint[0]
+    fgslice_x = int(sliceoffset/cellsizefg)
+    idlist_x, indexlist_x = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
+
+    # {Y = y0} slice
+    sliceoffset = abs(ymin) + cutpoint[1]
+    fgslice_y = int(sliceoffset/cellsizefg)
+    idlist_y, indexlist_y = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
+
+    # {Z = z0} slice
+    sliceoffset = abs(zmin) + cutpoint[2]
+    fgslice_z = int(sliceoffset/cellsizefg)
+    idlist_z, indexlist_z = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
+
     #################################################
     # Find rhom map for use in masking out ionosphere
     #################################################
@@ -953,10 +962,10 @@ def plot_threeslice(filename=None,
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    elif f.check_variable("proton/vg_rho"):
+    elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
-        print("error!")
+        print("Error reading masking map (density)")
         quit
               
     rhomap = rhomap[indexids]  # sort
@@ -1310,7 +1319,7 @@ def plot_threeslice(filename=None,
             maskgrid_YZ = np.ma.masked_where(ZmeshYZCentres<(boxcoords[4]-maskboundarybuffer), maskgrid_YZ)
             maskgrid_YZ = np.ma.masked_where(ZmeshYZCentres>(boxcoords[5]+maskboundarybuffer), maskgrid_YZ)
     
-        if np.ma.is_masked(maskgrid_XY):
+        if np.ma.is_masked(maskgrid_XY) and ('z' in slices):
             # Save lists for masking
             MaskXY_X = np.where(~np.all(maskgrid_XY.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskXY_Y = np.where(~np.all(maskgrid_XY.mask, axis=0))[0]
@@ -1325,7 +1334,7 @@ def plot_threeslice(filename=None,
             YmeshXYPass = np.ma.array(YmeshXY)
             ZmeshXYPass = np.ma.array(ZmeshXY)
 
-        if np.ma.is_masked(maskgrid_XZ):
+        if np.ma.is_masked(maskgrid_XZ) and ('y' in slices):
             # Save lists for masking
             MaskXZ_X = np.where(~np.all(maskgrid_XZ.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskXZ_Z = np.where(~np.all(maskgrid_XZ.mask, axis=0))[0]
@@ -1340,7 +1349,7 @@ def plot_threeslice(filename=None,
             YmeshXZPass = np.ma.array(YmeshXZ)
             ZmeshXZPass = np.ma.array(ZmeshXZ)
 
-        if np.ma.is_masked(maskgrid_YZ):
+        if np.ma.is_masked(maskgrid_YZ) and ('x' in slices):
             # Save lists for masking
             MaskYZ_Y = np.where(~np.all(maskgrid_YZ.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskYZ_Z = np.where(~np.all(maskgrid_YZ.mask, axis=0))[0]
