@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.colors import LightSource
@@ -14,6 +15,7 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from distutils.version import LooseVersion, StrictVersion
 
 import ids3d
 #from mpl_toolkits.mplot3d import axes3d
@@ -24,17 +26,26 @@ import time
 
 
 # Create the 3d axes and the coordinate axes for the 3d plot
-def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale, 
-           viewangle, halfaxes, slices):
+def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
+           thick, axiscolor, viewangle, halfaxes, slices, drawEarth):
 
     Re = 6371e3
     deg2rad = np.pi/180.
     fontsize = 8*scale
-    axextents = np.asarray(boxcoords) + 8*Re/axisunit*np.asarray([-1,1,-1,1,-1,1])
-    (xr,yr,zr) = [cutpoint[i]/axisunit for i in range(0,3)]
+    maxextent = np.amax([boxcoords[1]-boxcoords[0],boxcoords[3]-boxcoords[2],boxcoords[5]-boxcoords[4]])
+    axextents = np.asarray(boxcoords) + 0.1*maxextent*np.asarray([-1,1,-1,1,-1,1])
+    (xr,yr,zr) = [cutpoint[i]/axisunituse for i in range(0,3)]
 
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
+
+    # Thickness
+    linewidth3d=0.5*thick
+    tickwidth3d=0.25*thick
+    # Arrow size
+    axisarrowscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.015
+    # Tick size
+    ticklength = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.012
 
     # Dealing with the plot orientation
     azi,ele = viewangle
@@ -46,26 +57,26 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     ax.elev = ele
 
     # Near-Earth break distances if an axis line goes through the Earth
-    (cXm, cXp, cYm, cYp, cZm, cZp) = (1.,1.,1.,1.,1.,1.)
+    RePerAxUnit = Re/axisunituse
+    (cXm, cXp, cYm, cYp, cZm, cZp) = (RePerAxUnit,RePerAxUnit,RePerAxUnit,RePerAxUnit,RePerAxUnit,RePerAxUnit)
     if abs(azi) < 90.:
-        cXm = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+        cXm = (1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad)))*RePerAxUnit
     else:
-        cXp = 1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad))
+        cXp = (1. + abs(np.sin(ele*deg2rad)/np.tan(azi*deg2rad)))*RePerAxUnit
     if azi > 0.:
-        cYm = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+        cYm = (1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad)))*RePerAxUnit
     else:
-        cYp = 1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad))
+        cYp = (1. + abs(np.sin(ele*deg2rad)*np.tan(azi*deg2rad)))*RePerAxUnit
     if ele > 0.:
-        cZm = 1.1/np.cos(ele*deg2rad)
+        cZm = (1.1/np.cos(ele*deg2rad))*RePerAxUnit
     else:
-        cZp = 1.1/np.cos(ele*deg2rad)
+        cZp = (1.1/np.cos(ele*deg2rad))*RePerAxUnit
 
     # Earth-breaking conditions
-    earthbreak_x = abs(yr) < Re/axisunit and abs(zr) < Re/axisunit and axextents[0]*axextents[1] < 0.
-    earthbreak_y = abs(xr) < Re/axisunit and abs(zr) < Re/axisunit and axextents[2]*axextents[3] < 0.
-    earthbreak_z = abs(xr) < Re/axisunit and abs(yr) < Re/axisunit and axextents[4]*axextents[5] < 0.
-    earthvisible = True
-
+    earthbreak_x = abs(yr) < RePerAxUnit and abs(zr) < RePerAxUnit and axextents[0]*axextents[1] < 0.
+    earthbreak_y = abs(xr) < RePerAxUnit and abs(zr) < RePerAxUnit and axextents[2]*axextents[3] < 0.
+    earthbreak_z = abs(xr) < RePerAxUnit and abs(yr) < RePerAxUnit and axextents[4]*axextents[5] < 0.
+    earthvisible = drawEarth
     # Adapting line styles for axes and near-Earth break distances to the viewing angle
     frontaxisstyle = '-'
     if not halfaxes:
@@ -111,17 +122,17 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
         styleXm = frontaxisstyle
 
     # Coefficients for axis label placement
-    labposscale = (axextents[1]-axextents[0])/(60*Re/axisunit)
+    labposscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.02
     cXlabel = labposscale*(1. + (2.*abs(np.cos(azi*deg2rad))+2.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cYlabel = labposscale*(1. + (2.*abs(np.sin(azi*deg2rad))+2.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cZlabel = labposscale*(1. + 1.5*abs(np.tan(ele*deg2rad)))
 
     # Axes and units (default R_E)
-    if np.isclose(axisunit,Re):
+    if np.isclose(axisunituse,Re):
         axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
-    elif np.isclose(axisunit,1):
+    elif np.isclose(axisunituse,1):
         axisunitstr = pt.plot.rmstring('m')
-    elif np.isclose(axisunit,1000):
+    elif np.isclose(axisunituse,1000):
         axisunitstr = pt.plot.rmstring('km')
     else:
         axisunitstr = r'10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
@@ -130,339 +141,369 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
     # -- x-axis --
     if not earthbreak_x:
         line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                          color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest X to the Earth or the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                          color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the Earth or the cut point to the highest X
 
     else: # Special treatment of cases when the x-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if xr <= 0. and abs(azi) < 90.: # looking from the dayside, cut point on the nightside
-            line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunit), yr, zr)),
-                              color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm), yr, zr)),
+                              color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if xr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunit, yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+            if xr < -RePerAxUnit:
+                line=art3d.Line3D(*zip((xr, yr, zr), (-cXm, yr, zr)),
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (axextents[1], yr, zr)),
-                              color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((cXp, yr, zr), (axextents[1], yr, zr)),
+                              color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif xr > 0. and abs(azi) < 90.: # looking from the dayside, cut point also on the dayside
-            if 'x' in slices and xr > Re/axisunit: # Earth effectively hidden by the X slice, no need to break the axis
+            if 'x' in slices and xr > RePerAxUnit: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunit, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm, yr, zr)),
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if xr > Re/axisunit:
-                    line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (xr, yr, zr)),
-                                      color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                if xr > RePerAxUnit:
+                    line=art3d.Line3D(*zip((cXp, yr, zr), (xr, yr, zr)),
+                                      color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunit), yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((max(xr,cXp), yr, zr), (axextents[1], yr, zr)),
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif xr <= 0.: # looking from the nightside, cut point also on the nightside
-            if 'x' in slices and xr < -Re/axisunit: # Earth effectively hidden by the X slice, no need to break the axis
+            if 'x' in slices and xr < -RePerAxUnit: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunit), yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm), yr, zr)),
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if xr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunit, yr, zr)),
-                                      color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                if xr < -RePerAxUnit:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (-cXm, yr, zr)),
+                                      color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((cXp, yr, zr), (axextents[1], yr, zr)),
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the nightside, cut point on the dayside
-            line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunit, yr, zr)),
-                              color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm, yr, zr)),
+                              color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if xr > Re/axisunit:
-                line=art3d.Line3D(*zip((cXp*Re/axisunit, yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+            if xr > RePerAxUnit:
+                line=art3d.Line3D(*zip((cXp, yr, zr), (xr, yr, zr)),
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunit), yr, zr), (axextents[1], yr, zr)),
-                              color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((max(xr,cXp), yr, zr), (axextents[1], yr, zr)),
+                              color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)*Re/axisunit, yr-Re/axisunit, zr), (axextents[1], yr, zr),
-                      (axextents[1]-np.sqrt(3)*Re/axisunit, yr+Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleXp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-1.7*axisarrowscale, yr-axisarrowscale, zr), (xr, yr, zr),
+                               (xr-1.7*axisarrowscale, yr+axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((axextents[1]-1.7*axisarrowscale, yr-axisarrowscale, zr), (axextents[1], yr, zr),
+                               (axextents[1]-1.7*axisarrowscale, yr+axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- y-axis --
     if not earthbreak_y:
         line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                          color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest Y to the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                          color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the cut point to the highest Y
 
     else: # Special treatment of cases when the y-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if yr <= 0. and azi > 0.: # looking from the dawnside, cut point on the duskside
-            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunit), zr)),
-                              color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm), zr)),
+                              color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
-            if yr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunit, zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+            if yr < -RePerAxUnit:
+                line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm, zr)),
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, axextents[3], zr)),
-                              color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, cYp, zr), (xr, axextents[3], zr)),
+                              color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif yr > 0. and azi > 0.: # looking from the dawnside, cut point also on the dawnside
-            if 'y' in slices and yr > Re/axisunit: # Earth effectively hidden by the Y slice, no need to break the axis
+            if 'y' in slices and yr > RePerAxUnit: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunit, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm, zr)),
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if yr > Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, yr, zr)),
-                                      color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                if yr > RePerAxUnit:
+                    line=art3d.Line3D(*zip((xr, cYp, zr), (xr, yr, zr)),
+                                      color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunit), zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, max(yr,cYp), zr), (xr, axextents[3], zr)),
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif yr <= 0.: # looking from the duskside, cut point also on the duskside
-            if 'y' in slices and yr < -Re/axisunit: # Earth effectively hidden by the Y slice, no need to break the axis
+            if 'y' in slices and yr < -RePerAxUnit: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunit), zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm), zr)),
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if yr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunit, zr)),
-                                      color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                if yr < -RePerAxUnit:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm, zr)),
+                                      color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, cYp, zr), (xr, axextents[3], zr)),
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the duskside, cut point on the dawnside
-            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunit, zr)),
-                              color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm, zr)),
+                              color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if yr > Re/axisunit:
-                line=art3d.Line3D(*zip((xr, cYp*Re/axisunit, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+            if yr > RePerAxUnit:
+                line=art3d.Line3D(*zip((xr, cYp, zr), (xr, yr, zr)),
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunit), zr), (xr, axextents[3], zr)),
-                              color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, max(yr,cYp), zr), (xr, axextents[3], zr)),
+                              color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((xr-Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr), (xr, axextents[3], zr),
-                      (xr+Re/axisunit, axextents[3]-np.sqrt(3)*Re/axisunit, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleYp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr-1.7*axisarrowscale, zr), (xr, yr, zr),
+                               (xr+axisarrowscale, yr-1.7*axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((xr-axisarrowscale, axextents[3]-1.7*axisarrowscale, zr), (xr, axextents[3], zr),
+                               (xr+axisarrowscale, axextents[3]-1.7*axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- z-axis --
     if not earthbreak_z:
         line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                          color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest Z to the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                          color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the cut point to the highest Z
 
     else: # Special treatment of cases when the z-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and ele
         if zr <= 0. and ele > 0.: # looking from the north, cut point south from the Earth
-            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunit))),
-                              color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm))),
+                              color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if zr < -Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunit)),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+            if zr < -RePerAxUnit:
+                line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm)),
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, axextents[5])),
-                              color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, yr, cZp), (xr, yr, axextents[5])),
+                              color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif zr > 0. and ele > 0.: # looking from the north, cut point also north from the Earth
-            if 'z' in slices and zr > Re/axisunit: # Earth effectively hidden by the Z slice, no need to break the axis
+            if 'z' in slices and zr > RePerAxUnit: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunit)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm)),
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if zr > Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, zr)),
-                                      color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                if zr > RePerAxUnit:
+                    line=art3d.Line3D(*zip((xr, yr, cZp), (xr, yr, zr)),
+                                      color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunit)), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, yr, max(zr,cZp)), (xr, yr, axextents[5])),
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif zr < 0.: # looking from the south, cut point also south from the Earth
-            if 'z' in slices and zr < -Re/axisunit: # Earth effectively hidden by the Z slice, no need to break the axis
+            if 'z' in slices and zr < -RePerAxUnit: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
-                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunit))),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm))),
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-                if zr < -Re/axisunit:
-                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunit)),
-                                      color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                if zr < -RePerAxUnit:
+                    line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm)),
+                                      color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
-                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                line=art3d.Line3D(*zip((xr, yr, cZp), (xr, yr, axextents[5])),
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the south, cut point north from the Earth
-            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunit)),
-                              color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm)),
+                              color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
-            if zr > Re/axisunit:
-                line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunit), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+            if zr > RePerAxUnit:
+                line=art3d.Line3D(*zip((xr, yr, cZp), (xr, yr, zr)),
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
-            line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunit)), (xr, yr, axextents[5])),
-                              color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+            line=art3d.Line3D(*zip((xr, yr, max(zr,cZp)), (xr, yr, axextents[5])),
+                              color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
  # Make an arrow at the end of the axis
-    line=art3d.Line3D(*zip((xr-Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit), (xr, yr, axextents[5]),
-                      (xr+Re/axisunit, yr, axextents[5]-np.sqrt(3)*Re/axisunit)), color='black', linewidth=0.5, alpha=1, zorder=20)
+    if halfaxes and styleZp == backaxisstyle:
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr, zr-1.7*axisarrowscale), (xr, yr, zr),
+                               (xr+axisarrowscale, yr, zr-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
+    else:
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr, axextents[5]-1.7*axisarrowscale), (xr, yr, axextents[5]),
+                               (xr+axisarrowscale, yr, axextents[5]-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
     ylabelstr = pt.plot.mathmode(pt.plot.bfstring('Y\,['+axisunitstr+']'))
     zlabelstr = pt.plot.mathmode(pt.plot.bfstring('Z\,['+axisunitstr+']'))
 
-    ax.text(axextents[1]+cXlabel*Re/axisunit, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-    ax.text(xr, axextents[3]+cYlabel*Re/axisunit, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
-    ax.text(xr, yr, axextents[5]+cZlabel*Re/axisunit,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleXp == backaxisstyle:
+        ax.text(axextents[0]-cXlabel, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(axextents[1]+cXlabel, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleYp == backaxisstyle:
+        ax.text(xr, axextents[2]-cYlabel, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(xr, axextents[3]+cYlabel, zr,ylabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    if halfaxes and styleZp == backaxisstyle:
+        ax.text(xr, yr, axextents[4]-cZlabel,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
+    else:
+        ax.text(xr, yr, axextents[5]+cZlabel,zlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
 
-    
     # Addition of the Earth at the origin of the domain
-    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
-    x = Re/axisunit * np.cos(u)*np.sin(v)
-    y = Re/axisunit * np.sin(u)*np.sin(v)
-    z = Re/axisunit * np.cos(v)
-    albedo = np.zeros(u.shape)
-    albedo = np.arctan(-50.*x)/np.pi+0.5
-    levels = MaxNLocator(nbins=255).tick_values(0,1)
-    norm = BoundaryNorm(levels, ncolors=255, clip=True)
-    scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
-    scalarmap.set_array([])
+    if earthvisible:
+        u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
+        x = RePerAxUnit * np.cos(u)*np.sin(v)
+        y = RePerAxUnit * np.sin(u)*np.sin(v)
+        z = RePerAxUnit * np.cos(v)
+        albedo = np.zeros(u.shape)
+        albedo = np.arctan(-50.*x)/np.pi+0.5
+        levels = MaxNLocator(nbins=255).tick_values(0,1)
+        norm = BoundaryNorm(levels, ncolors=255, clip=True)
+        scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
+        scalarmap.set_array([])
 
-    ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
+        ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
 
     ax.set_xlim([boxcoords[0],boxcoords[1]])
     ax.set_ylim([boxcoords[2],boxcoords[3]])
     ax.set_zlim([boxcoords[4],boxcoords[5]])
 
+    # ex.axis('equal') is broken and either does not work at all or produces incorrect output.
+    # these are possible alternative approaches
+    # ax.auto_scale_xyz([minbound, maxbound], [minbound, maxbound], [minbound, maxbound])
+    #  or 
+    # limits = np.array([getattr(self.ax, f'get_{axis}lim')() for axis in 'xyz'])
+    # ax.set_box_aspect(np.ptp(limits, axis = 1))
     try:
-        ax.axis('equal')
+        limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+        ax.set_box_aspect(np.ptp(limits, axis = 1))
     except:
-        print("WARNING: axis('equal') is not supported by this version of Matplotlib.")
-
+        print("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
+        try:
+            ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
+        except:
+            print("WARNING: ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
 
     # Draw ticks
     if not fixedticks: # Ticks are relative to the triple point
-        txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunit)
-        txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunit)
+        txm = np.arange(xr,boxcoords[0]-0.1,-tickinterval/axisunituse)
+        txp = np.arange(xr,boxcoords[1]+0.1,tickinterval/axisunituse)
         ticks_x = np.concatenate((np.flip(txm,axis=0),txp[1:]))
 
-        tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunit)
-        typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunit)
+        tym = np.arange(yr,boxcoords[2]-0.1,-tickinterval/axisunituse)
+        typ = np.arange(yr,boxcoords[3]+0.1,tickinterval/axisunituse)
         ticks_y = np.concatenate((np.flip(tym,axis=0),typ[1:]))
 
-        tzm = np.arange(zr,boxcoords[4]-0.1,-tickinterval/axisunit)
-        tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunit)
+        tzm = np.arange(zr,boxcoords[4]-0.1,-tickinterval/axisunituse)
+        tzp = np.arange(zr,boxcoords[5]+0.1,tickinterval/axisunituse)
         ticks_z = np.concatenate((np.flip(tzm,axis=0),tzp[1:]))
     else: # Ticks are relative to (0,0,0)
-        txm = np.arange(0.,boxcoords[0]-0.1,-tickinterval/axisunit)
-        txp = np.arange(0.,boxcoords[1]+0.1,tickinterval/axisunit)
+        txm = np.arange(0.,boxcoords[0]-0.1,-tickinterval/axisunituse)
+        txp = np.arange(0.,boxcoords[1]+0.1,tickinterval/axisunituse)
         ticks_x = np.concatenate((np.flip(txm,axis=0),txp[1:]))
 
-        tym = np.arange(0.,boxcoords[2]-0.1,-tickinterval/axisunit)
-        typ = np.arange(0.,boxcoords[3]+0.1,tickinterval/axisunit)
+        tym = np.arange(0.,boxcoords[2]-0.1,-tickinterval/axisunituse)
+        typ = np.arange(0.,boxcoords[3]+0.1,tickinterval/axisunituse)
         ticks_y = np.concatenate((np.flip(tym,axis=0),typ[1:]))
 
-        tzm = np.arange(0.,boxcoords[4]-0.1,-tickinterval/axisunit)
-        tzp = np.arange(0.,boxcoords[5]+0.1,tickinterval/axisunit)
+        tzm = np.arange(0.,boxcoords[4]-0.1,-tickinterval/axisunituse)
+        tzp = np.arange(0.,boxcoords[5]+0.1,tickinterval/axisunituse)
         ticks_z = np.concatenate((np.flip(tzm,axis=0),tzp[1:]))
-    ticklength = Re/axisunit
 
     # Avoid placing a tick on the Earth if it is visible in the plot
     if earthbreak_x and earthvisible:
-        ticks_x = ticks_x[abs(ticks_x) > Re/axisunit]
+        ticks_x = ticks_x[abs(ticks_x) > RePerAxUnit]
     if earthbreak_y and earthvisible:
-        ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
+        ticks_y = ticks_y[abs(ticks_y) > RePerAxUnit]
     if earthbreak_z and earthvisible:
-        ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
+        ticks_z = ticks_z[abs(ticks_z) > RePerAxUnit]
 
     # Remove possible ticks outside of the specified box
     ticks_x = ticks_x[ticks_x >= axextents[0]]
@@ -480,15 +521,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
             ticks_x = ticks_x[ticks_x >= xr]
     for itick in range(0,len(ticks_x)):
         tick=art3d.Line3D(*zip((ticks_x[itick],yr-ticklength,zr),(ticks_x[itick],yr+ticklength,zr)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((ticks_x[itick],yr,zr-ticklength),(ticks_x[itick],yr,zr+ticklength)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
-    if xr < Re/axisunit and abs(yr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
-        ticks_y = ticks_y[abs(ticks_y) > Re/axisunit]
+    if xr < RePerAxUnit and abs(yr) < RePerAxUnit: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_y = ticks_y[abs(ticks_y) > RePerAxUnit]
     if halfaxes: # do not create ticks if back axes are not shown
         if styleYp == backaxisstyle:
             ticks_y = ticks_y[ticks_y <= yr]
@@ -496,15 +537,15 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
             ticks_y = ticks_y[ticks_y >= yr]
     for itick in range(0,len(ticks_y)):
         tick=art3d.Line3D(*zip((xr-ticklength,ticks_y[itick],zr),(xr+ticklength,ticks_y[itick],zr)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((xr,ticks_y[itick],zr-ticklength),(xr,ticks_y[itick],zr+ticklength)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
-    if xr < Re/axisunit and abs(zr) < Re/axisunit: # avoid placing a tick on the Earth if it is visible in the plot
-        ticks_z = ticks_z[abs(ticks_z) > Re/axisunit]
+    if xr < RePerAxUnit and abs(zr) < RePerAxUnit: # avoid placing a tick on the Earth if it is visible in the plot
+        ticks_z = ticks_z[abs(ticks_z) > RePerAxUnit]
     if halfaxes: # do not create ticks if back axes are not shown
         if styleZp == backaxisstyle:
             ticks_z = ticks_z[ticks_z <= zr]
@@ -512,11 +553,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedtick
             ticks_z = ticks_z[ticks_z >= zr]
     for itick in range(0,len(ticks_z)):
         tick=art3d.Line3D(*zip((xr-ticklength,yr,ticks_z[itick]),(xr+ticklength,yr,ticks_z[itick])),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((xr,yr-ticklength,ticks_z[itick]),(xr,yr+ticklength,ticks_z[itick])),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
     # set the basic 3d coordinate axes off
@@ -537,16 +578,18 @@ def plot_threeslice(filename=None,
                   boxm=None,boxre=None,
                   colormap=None, vmin=None, vmax=None,
                   symmetric=False, absolute=None,
-                  lin=None, symlog=None,
+                  lin=None, symlog=None, nocb=False,
                   cbtitle=None, title=None, halfaxes=False,
-                  usesci=True, axisunit=None, shadings=None,
+                  usesci=True, axisunit=None,axiscolor=None,
+                  shadings=None, draw=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
                   wmark=False,wmarkb=False,
+                  Earth=True,
                   thick=1.0,scale=1.0,
                   expression=None,
                   vscale=1.0,viewangle=(-60.,30.),
-                  cutpoint=None,cutpointre=None,slices=None
+                  cutpointm=None,cutpointre=None,slices=None
                   ):
 
     ''' Plots a 3d plot constructed of three 2d cut throughs.
@@ -560,6 +603,7 @@ def plot_threeslice(filename=None,
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final part will be used as a prefix for the files.
     :kword outputfile:  Singular output file name
+    :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
@@ -585,6 +629,7 @@ def plot_threeslice(filename=None,
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
+    :kword nocb:        Set to suppress drawing of colourbar
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -593,6 +638,7 @@ def plot_threeslice(filename=None,
                         (default: False)
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+    :kword axiscolor:   Color for drawing axes (default black)
     :kword shadings:    Dimming values for the surfaces normal to the X, Y, Z directions, respectively,
                         to better distinguish the slices, e.g. "(0.6,0.8,1.0). Default using the angles between
                         the surface normal directions and the viewing angle.
@@ -604,6 +650,7 @@ def plot_threeslice(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kword Earth:       Draw Earth at origin (default True)
 
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
@@ -625,7 +672,7 @@ def plot_threeslice(filename=None,
     :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
                         (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
-    :kword cutpoint:    Coordinates of the point through which all three 2D cuts must pass [m]
+    :kword cutpointm:    Coordinates of the point through which all three 2D cuts must pass [m]
     :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
     :kword slices:      Normal directions of the slices to plot, default='xyz'
 
@@ -663,7 +710,7 @@ def plot_threeslice(filename=None,
     if filename!=None:
         f=pt.vlsvfile.VlsvReader(filename)
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
         f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj!=None:
         f=vlsvobj
@@ -686,6 +733,9 @@ def plot_threeslice(filename=None,
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
 
+    if axiscolor is None:
+        axiscolor='black'
+
     # Plot title with time
     timeval=f.read_parameter("time")
 
@@ -700,7 +750,7 @@ def plot_threeslice(filename=None,
             if title=="musec": timeformat='{:4.6f}'
             plot_title = "t="+timeformat.format(timeval)+' s '
     else:
-        plot_title = title
+        plot_title = ''+title
 
     # step, used for file name
     if step is not None:
@@ -793,6 +843,14 @@ def plot_threeslice(filename=None,
     if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
         plt.switch_backend(pt.backend_noninteractive)
 
+    # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
+    if draw:
+        if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg': 
+            plt.switch_backend(pt.backend_interactive)
+    else:
+        if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
+            plt.switch_backend(pt.backend_noninteractive)  
+
     Re = 6.371e+6 # Earth radius in m
     # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
@@ -836,36 +894,17 @@ def plot_threeslice(filename=None,
     simext=[xmin,xmax,ymin,ymax,zmin,zmax]
 
     # Coordinates of the point through which the three slices pass
-    if not cutpoint:
+    if not cutpointm:
         if cutpointre:
             cutpoint = np.asarray(cutpointre) * Re
         else: # default to [0,0,0]
             print('No cut point coordinates given, defaulting to origin')
             cutpoint = np.asarray([0.,0.,0.])
-
+    else:
+        cutpoint = np.asarray(cutpointm)
     # Slices to be plotted (defined by their normal direction)
     if slices is None:
         slices = 'xyz'
-
-    ###################################################
-    # Find the cellids corresponding to the 3 slices #
-    ###################################################
-
-    # {X = x0} slice
-    sliceoffset = abs(xmin) + cutpoint[0]
-    fgslice_x = int(sliceoffset/cellsizefg)
-    idlist_x, indexlist_x = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
-
-    # {Y = y0} slice
-    sliceoffset = abs(ymin) + cutpoint[1]
-    fgslice_y = int(sliceoffset/cellsizefg)
-    idlist_y, indexlist_y = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
-
-    # {Z = z0} slice
-    sliceoffset = abs(zmin) + cutpoint[2]
-    fgslice_z = int(sliceoffset/cellsizefg)
-    idlist_z, indexlist_z = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
-
 
     # Select window to draw
     if len(boxm)==6:
@@ -875,14 +914,53 @@ def plot_threeslice(filename=None,
     else:
         boxcoords=list(simext)
 
-    # If box extents were provided manually, truncate to simulation extents
-    # Also subtract one reflevel0-cell in each direction to hide boundary cells
-    boxcoords[0] = max(boxcoords[0],simext[0]+cellsize)
-    boxcoords[1] = min(boxcoords[1],simext[1]-cellsize)
-    boxcoords[2] = max(boxcoords[2],simext[2]+cellsize)
-    boxcoords[3] = min(boxcoords[3],simext[3]-cellsize)
-    boxcoords[4] = max(boxcoords[4],simext[4]+cellsize)
-    boxcoords[5] = min(boxcoords[5],simext[5]-cellsize)
+    # Truncate to simulation extents
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
+    boxcoords[4] = max(boxcoords[4],simext[4])
+    boxcoords[5] = min(boxcoords[5],simext[5])
+
+    # If cutpoint is outside box coordinates, turn off that slice
+    if (cutpoint[0]<boxcoords[0]) or (cutpoint[0]>boxcoords[1]):
+        slices = slices.replace('x','')
+        print("Note: adjusting box extents to include cut point (x)")
+    if (cutpoint[1]<boxcoords[2]) or (cutpoint[1]>boxcoords[3]):
+        slices = slices.replace('y','')
+        print("Note: adjusting box extents to include cut point (y)")
+    if (cutpoint[2]<boxcoords[4]) or (cutpoint[2]>boxcoords[5]):
+        slices = slices.replace('z','')
+        print("Note: adjusting box extents to include cut point (z)")
+
+    if len(slices)==0:
+        print("Error: no active slices at cutpoint within box domain")
+        return -1
+
+    # Also, if necessary, adjust box coordinates to extend a bit beyond the cutpoint.
+    # This is preferable to moving the cutpoint, and required by the quadrant-drawing method.
+    boxcoords[0] = min(boxcoords[0],cutpoint[0]-2*cellsizefg)
+    boxcoords[1] = max(boxcoords[1],cutpoint[0]+2*cellsizefg)
+    boxcoords[2] = min(boxcoords[2],cutpoint[1]-2*cellsizefg)
+    boxcoords[3] = max(boxcoords[3],cutpoint[1]+2*cellsizefg)
+    boxcoords[4] = min(boxcoords[4],cutpoint[2]-2*cellsizefg)
+    boxcoords[5] = max(boxcoords[5],cutpoint[2]+2*cellsizefg)
+
+    # Re-truncate to simulation extents
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
+    boxcoords[4] = max(boxcoords[4],simext[4])
+    boxcoords[5] = min(boxcoords[5],simext[5])
+
+    # Move cutpoint inwards if it too close to simulation outer extent.
+    cutpoint[0] = max(cutpoint[0], simext[0]+2*cellsizefg)
+    cutpoint[0] = min(cutpoint[0], simext[1]-2*cellsizefg)
+    cutpoint[1] = max(cutpoint[1], simext[2]+2*cellsizefg)
+    cutpoint[1] = min(cutpoint[1], simext[3]-2*cellsizefg)
+    cutpoint[2] = max(cutpoint[2], simext[4]+2*cellsizefg)
+    cutpoint[2] = min(cutpoint[2], simext[5]-2*cellsizefg)
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
@@ -892,21 +970,40 @@ def plot_threeslice(filename=None,
             axisunitstr = pt.plot.rmstring('km')
         else:
             axisunitstr = r'$10^{'+str(int(axisunit))+'} '+pt.plot.rmstring('m')
-        axisunit = np.power(10,int(axisunit))
+        axisunituse = np.power(10,int(axisunit))
     else:
         axisunitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
-        axisunit = Re
+        axisunituse = Re
 
     # Scale data extent and plot box
-    simext=[i/axisunit for i in simext]
-    boxcoords=[i/axisunit for i in boxcoords]
+    simext=[i/axisunituse for i in simext]
+    boxcoords=[i/axisunituse for i in boxcoords]
 
     # Axis tick interval (default 10 R_E)
     if tickinterval is None:
         tickinterval = 10.*Re
     else:
-        tickinterval = tickinterval * axisunit
+        tickinterval = tickinterval * axisunituse
 
+
+    ###################################################
+    # Find the cellids corresponding to the 3 slices #
+    ###################################################
+
+    # {X = x0} slice
+    sliceoffset = abs(xmin) + cutpoint[0]
+    fgslice_x = int(sliceoffset/cellsizefg)
+    if 'x' in slices: idlist_x, indexlist_x = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, xmin=xmin, xmax=xmax)
+
+    # {Y = y0} slice
+    sliceoffset = abs(ymin) + cutpoint[1]
+    fgslice_y = int(sliceoffset/cellsizefg)
+    if 'y' in slices: idlist_y, indexlist_y = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, ymin=ymin, ymax=ymax)
+
+    # {Z = z0} slice
+    sliceoffset = abs(zmin) + cutpoint[2]
+    fgslice_z = int(sliceoffset/cellsizefg)
+    if 'z' in slices: idlist_z, indexlist_z = ids3d.ids3d(cellids, sliceoffset, reflevel, xsize, ysize, zsize, zmin=zmin, zmax=zmax)
 
     #################################################
     # Find rhom map for use in masking out ionosphere
@@ -915,20 +1012,22 @@ def plot_threeslice(filename=None,
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    elif f.check_variable("proton/vg_rho"):
+    elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
-        print("error!")
+        print("Error reading masking map (density)")
         quit
-              
+
     rhomap = rhomap[indexids]  # sort
-    rhomap_x = rhomap[indexlist_x] # find required cells (X cut)
-    rhomap_y = rhomap[indexlist_y] # find required cells (Y cut)
-    rhomap_z = rhomap[indexlist_z] # find required cells (Z cut)
-    # Create the plotting grid
-    rhomap_x = ids3d.idmesh3d(idlist_x, rhomap_x, reflevel, xsize, ysize, zsize, 0, None)
-    rhomap_y = ids3d.idmesh3d(idlist_y, rhomap_y, reflevel, xsize, ysize, zsize, 1, None)
-    rhomap_z = ids3d.idmesh3d(idlist_z, rhomap_z, reflevel, xsize, ysize, zsize, 2, None)
+    if 'x' in slices:
+        rhomap_x = rhomap[indexlist_x] # find required cells (X cut)
+        rhomap_x = ids3d.idmesh3d(idlist_x, rhomap_x, reflevel, xsize, ysize, zsize, 0, None)
+    if 'y' in slices:
+        rhomap_y = rhomap[indexlist_y] # find required cells (Y cut)
+        rhomap_y = ids3d.idmesh3d(idlist_y, rhomap_y, reflevel, xsize, ysize, zsize, 1, None)
+    if 'z' in slices:
+        rhomap_z = rhomap[indexlist_z] # find required cells (Z cut)
+        rhomap_z = ids3d.idmesh3d(idlist_z, rhomap_z, reflevel, xsize, ysize, zsize, 2, None)
 
     ############################################
     # Read data and calculate required variables
@@ -949,6 +1048,10 @@ def plot_threeslice(filename=None,
             cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
 
         datamap = datamap_info.data
+        # Dummy variables
+        datamap_x = []
+        datamap_y = []
+        datamap_z = []
 
         # Verify data shape
         if np.ndim(datamap)==0:
@@ -981,22 +1084,22 @@ def plot_threeslice(filename=None,
         else:
             # vlasov grid, AMR
             datamap = datamap[indexids]      # sort
-            datamap_x = datamap[indexlist_x] # find required cells (X cut)
-            datamap_y = datamap[indexlist_y] # find required cells (Y cut)
-            datamap_z = datamap[indexlist_z] # find required cells (Z cut)
+            if 'x' in slices: datamap_x = datamap[indexlist_x] # find required cells (X cut)
+            if 'y' in slices: datamap_y = datamap[indexlist_y] # find required cells (Y cut)
+            if 'z' in slices: datamap_z = datamap[indexlist_z] # find required cells (Z cut)
             # Create the plotting grid
             if np.ndim(datamap)==1:   # scalar variable
-                datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, None)
-                datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, None)
-                datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, None)
+                if 'x' in slices: datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, None)
+                if 'y' in slices: datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, None)
+                if 'z' in slices: datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, None)
             elif np.ndim(datamap)==2: # vector variable
-                datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, datamap.shape[1])
-                datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, datamap.shape[1])
-                datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, datamap.shape[1])
+                if 'x' in slices: datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, datamap.shape[1])
+                if 'y' in slices: datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, datamap.shape[1])
+                if 'z' in slices: datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, datamap.shape[1])
             elif np.ndim(datamap)==3: # tensor variable
-                datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, (datamap.shape[1],datamap.shape[2]))
-                datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, (datamap.shape[1],datamap.shape[2]))
-                datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, (datamap.shape[1],datamap.shape[2]))
+                if 'x' in slices: datamap_x = ids3d.idmesh3d(idlist_x, datamap_x, reflevel, xsize, ysize, zsize, 0, (datamap.shape[1],datamap.shape[2]))
+                if 'y' in slices: datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, (datamap.shape[1],datamap.shape[2]))
+                if 'z' in slices: datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, (datamap.shape[1],datamap.shape[2]))
             else:
                 print("Dimension error in constructing 2D AMR slice!")
                 return -1
@@ -1007,40 +1110,77 @@ def plot_threeslice(filename=None,
         print('WARNING: Expressions have not been implemented yet')
 
     # Now, if map is a vector or tensor, reduce it down
-    if np.ndim(datamap_x)==3: # vector
-        if datamap_x.shape[2]!=3:
-            print("Error, expected array of 3-element vectors, found array of shape ",datamap_x.shape)
+    if 'x' in slices:
+        if np.ndim(datamap_x)==3: # vector
+            if datamap_x.shape[2]!=3:
+                print("Error, expected array of 3-element vectors, found array of shape ",datamap_x.shape)
+                return -1
+            datamap_x = np.linalg.norm(datamap_x, axis=-1)
+        if np.ndim(datamap_x)==4: # tensor
+            if datamap_x.shape[2]!=3 or datamap_x.shape[3]!=3:
+                # This may also catch 3D simulation fsgrid variables
+                print("Error, expected array of 3x3 tensors, found array of shape ",datamap_x.shape)
+                return -1
+            datamap_x = datamap_x[:,:,0,0]+datamap_x[:,:,1,1]+datamap_x[:,:,2,2]
+        if np.ndim(datamap_x)>=5: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
             return -1
-        # take magnitude of three-element vectors
-        datamap_x = np.linalg.norm(datamap_x, axis=-1)
-        datamap_y = np.linalg.norm(datamap_y, axis=-1)
-        datamap_z = np.linalg.norm(datamap_z, axis=-1)
-    if np.ndim(datamap_x)==4: # tensor
-        if datamap_x.shape[2]!=3 or datamap_x.shape[3]!=3:
-            # This may also catch 3D simulation fsgrid variables
-            print("Error, expected array of 3x3 tensors, found array of shape ",datamap_x.shape)
+        if np.ndim(datamap_x)!=2: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
             return -1
-        # take trace
-        datamap_x = datamap_x[:,:,0,0]+datamap_x[:,:,1,1]+datamap_x[:,:,2,2]
-        datamap_y = datamap_y[:,:,0,0]+datamap_y[:,:,1,1]+datamap_y[:,:,2,2]
-        datamap_z = datamap_z[:,:,0,0]+datamap_z[:,:,1,1]+datamap_z[:,:,2,2]
-    if np.ndim(datamap_x)>=5: # Too many dimensions
-        print("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
-        return -1
-    if np.ndim(datamap_x)!=2: # Too many dimensions
-        print("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
-        return -1
-        
-    # Scale final generated datamap if requested
-    datamap_x = datamap_x * vscale
-    datamap_y = datamap_y * vscale
-    datamap_z = datamap_z * vscale
-    
-    # Take absolute
-    if (absolute):
-        datamap_x = abs(datamap_x)
-        datamap_y = abs(datamap_y)
-        datamap_z = abs(datamap_z)
+
+        # Scale final generated datamap if requested
+        datamap_x = datamap_x * vscale
+        if (absolute):
+            datamap_x = abs(datamap_x)
+
+    if 'y' in slices:
+        if np.ndim(datamap_y)==3: # vector
+            if datamap_y.shape[2]!=3:
+                print("Error, expected array of 3-element vectors, found array of shape ",datamap_y.shape)
+                return -1
+            datamap_y = np.linalg.norm(datamap_y, axis=-1)
+        if np.ndim(datamap_y)==4: # tensor
+            if datamap_y.shape[2]!=3 or datamap_y.shape[3]!=3:
+                # This may also catch 3D simulation fsgrid variables
+                print("Error, expected array of 3x3 tensors, found array of shape ",datamap_y.shape)
+                return -1
+            datamap_y = datamap_y[:,:,0,0]+datamap_y[:,:,1,1]+datamap_y[:,:,2,2]
+        if np.ndim(datamap_y)>=5: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
+            return -1
+        if np.ndim(datamap_y)!=2: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
+            return -1
+
+        # Scale final generated datamap if requested
+        datamap_y = datamap_y * vscale
+        if (absolute):
+            datamap_y = abs(datamap_y)
+
+    if 'z' in slices:
+        if np.ndim(datamap_z)==3: # vector
+            if datamap_z.shape[2]!=3:
+                print("Error, expected array of 3-element vectors, found array of shape ",datamap_z.shape)
+                return -1
+            datamap_z = np.linalg.norm(datamap_z, axis=-1)
+        if np.ndim(datamap_z)==4: # tensor
+            if datamap_z.shape[2]!=3 or datamap_z.shape[3]!=3:
+                # This may also catch 3D simulation fsgrid variables
+                print("Error, expected array of 3x3 tensors, found array of shape ",datamap_z.shape)
+                return -1
+            datamap_z = datamap_z[:,:,0,0]+datamap_z[:,:,1,1]+datamap_z[:,:,2,2]
+        if np.ndim(datamap_z)>=5: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
+            return -1
+        if np.ndim(datamap_z)!=2: # Too many dimensions
+            print("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
+            return -1
+
+        # Scale final generated datamap if requested
+        datamap_z = datamap_z * vscale
+        if (absolute):
+            datamap_z = abs(datamap_z)
 
     # scale the sizes to the heighest refinement level because
     # plotting is done at that level
@@ -1059,11 +1199,17 @@ def plot_threeslice(filename=None,
     if vmin is not None:
         vminuse=vmin
     else: 
-        vminuse=np.ma.amin([np.ma.amin(datamap_x),np.ma.amin(datamap_y),np.ma.amin(datamap_z)])
+        vminuse = np.amax(datamap)
+        if 'x' in slices: vminuse = min(vminuse,np.ma.amin(datamap_x))
+        if 'y' in slices: vminuse = min(vminuse,np.ma.amin(datamap_y))
+        if 'z' in slices: vminuse = min(vminuse,np.ma.amin(datamap_z))
     if vmax is not None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.ma.amax([np.ma.amax(datamap_x),np.ma.amax(datamap_y),np.ma.amax(datamap_z)])
+        vmaxuse = np.amin(datamap)
+        if 'x' in slices: vmaxuse = max(vmaxuse,np.ma.amax(datamap_x))
+        if 'y' in slices: vmaxuse = max(vmaxuse,np.ma.amax(datamap_y))
+        if 'z' in slices: vmaxuse = max(vmaxuse,np.ma.amax(datamap_z))
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
@@ -1081,7 +1227,10 @@ def plot_threeslice(filename=None,
     # Ensure that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
-        vminuse = np.ma.amin([np.ma.amin(np.ma.masked_less_equal(datamap_x,0)),np.ma.amin(np.ma.masked_less_equal(datamap_y,0)),np.ma.amin(np.ma.masked_less_equal(datamap_z,0))])
+        vminuse = np.amax(datamap)
+        if 'x' in slices: vminuse = min(vminuse,np.ma.amin(np.ma.masked_less_equal(datamap_x,0)))
+        if 'y' in slices: vminuse = min(vminuse,np.ma.amin(np.ma.masked_less_equal(datamap_y,0)))
+        if 'z' in slices: vminuse = min(vminuse,np.ma.amin(np.ma.masked_less_equal(datamap_z,0)))
 
     # Special case of very small vminuse values
     if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
@@ -1131,7 +1280,7 @@ def plot_threeslice(filename=None,
     ###############################################################################
     # Making the 12 meshes corresponding to the 12 elementary surfaces to plot #
     ###############################################################################
-    cutpointaxu = cutpoint/axisunit
+    cutpointaxu = cutpoint/axisunituse
     # {X = x0 slice}
     [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
@@ -1189,9 +1338,9 @@ def plot_threeslice(filename=None,
     Zmesh_list = [ZmeshYmZm,ZmeshYpZm,ZmeshYmZp,ZmeshYpZp, ZmeshXmZm,ZmeshXpZm,ZmeshXmZp,ZmeshXpZp, ZmeshXmYm,ZmeshXpYm,ZmeshXmYp,ZmeshXpYp]
 
     # coordinates of the point where the all three 2d cut throughs cuts
-    xr_coord = abs(xmin) + cutpoint[0]
-    yr_coord = abs(ymin) + cutpoint[1]
-    zr_coord = abs(zmin) + cutpoint[2]
+    xr_coord = -xmin + cutpoint[0]
+    yr_coord = -ymin + cutpoint[1]
+    zr_coord = -zmin + cutpoint[2]
 
     # coordinates of the point where the all three 2d cut throughs cut in terms of cells
     xr = int(round((xr_coord/(xmax - xmin))*xsize*2**reflevel))
@@ -1199,20 +1348,22 @@ def plot_threeslice(filename=None,
     zr = int(round((zr_coord/(zmax - zmin))*zsize*2**reflevel))
 
     # Creating lists of datamap_i to be called in that same for loop
-    datamap_x_list = [datamap_x[:zr,:yr],datamap_x[:zr,yr:],datamap_x[zr:,:yr],datamap_x[zr:,yr:]]
-    datamap_y_list = [datamap_y[:zr,:xr],datamap_y[:zr,xr:],datamap_y[zr:,:xr],datamap_y[zr:,xr:]]
-    datamap_z_list = [datamap_z[:yr,:xr],datamap_z[:yr,xr:],datamap_z[yr:,:xr],datamap_z[yr:,xr:]]
+    if 'x' in slices: datamap_x_list = [datamap_x[:zr,:yr],datamap_x[:zr,yr:],datamap_x[zr:,:yr],datamap_x[zr:,yr:]]
+    if 'y' in slices: datamap_y_list = [datamap_y[:zr,:xr],datamap_y[:zr,xr:],datamap_y[zr:,:xr],datamap_y[zr:,xr:]]
+    if 'z' in slices: datamap_z_list = [datamap_z[:yr,:xr],datamap_z[:yr,xr:],datamap_z[yr:,:xr],datamap_z[yr:,xr:]]
 
     # Creating lists of rhomap_i for the same purpose (especially in case the box does not extend to the full domain)
-    rhomap_x_list = [rhomap_x[:zr,:yr],rhomap_x[:zr,yr:],rhomap_x[zr:,:yr],rhomap_x[zr:,yr:]]
-    rhomap_y_list = [rhomap_y[:zr,:xr],rhomap_y[:zr,xr:],rhomap_y[zr:,:xr],rhomap_y[zr:,xr:]]
-    rhomap_z_list = [rhomap_z[:yr,:xr],rhomap_z[:yr,xr:],rhomap_z[yr:,:xr],rhomap_z[yr:,xr:]]
-
+    if 'x' in slices: rhomap_x_list = [rhomap_x[:zr,:yr],rhomap_x[:zr,yr:],rhomap_x[zr:,:yr],rhomap_x[zr:,yr:]]
+    if 'y' in slices: rhomap_y_list = [rhomap_y[:zr,:xr],rhomap_y[:zr,xr:],rhomap_y[zr:,:xr],rhomap_y[zr:,xr:]]
+    if 'z' in slices: rhomap_z_list = [rhomap_z[:yr,:xr],rhomap_z[:yr,xr:],rhomap_z[yr:,:xr],rhomap_z[yr:,xr:]]
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
-    fig = plt.figure(figsize=(6,5),dpi=300)
-    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, tickinterval, fixedticks, scale,
-                 viewangle, halfaxes, slices)
+    figsize = (6,5)
+    if nocb:
+        figsize = (5,5)
+    fig = plt.figure(figsize=figsize,dpi=150)
+    ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
+                 thick, axiscolor, viewangle, halfaxes, slices, Earth)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
@@ -1228,35 +1379,34 @@ def plot_threeslice(filename=None,
         YmeshXY = Ymesh_list[i+8]
         ZmeshXY = Zmesh_list[i+8]
 
-        datamap_x_i = datamap_x_list[i]
-        datamap_y_i = datamap_y_list[i]
-        datamap_z_i = datamap_z_list[i]
+        if 'x' in slices: datamap_x_i = datamap_x_list[i]
+        if 'y' in slices: datamap_y_i = datamap_y_list[i]
+        if 'z' in slices: datamap_z_i = datamap_z_list[i]
 
-        rhomap_x_i = rhomap_x_list[i]
-        rhomap_y_i = rhomap_y_list[i]
-        rhomap_z_i = rhomap_z_list[i]
-
+        if 'x' in slices: rhomap_x_i = rhomap_x_list[i]
+        if 'y' in slices: rhomap_y_i = rhomap_y_list[i]
+        if 'z' in slices: rhomap_z_i = rhomap_z_list[i]
 
         # The grid generated by meshgrid has all four corners for each cell.
         # We mask using only the centre values.
         # Calculate offsets for cell-centre coordinates
-        XmeshXYCentres = XmeshXY[:-1,:-1] + 0.5*(XmeshXY[0,1]-XmeshXY[0,0])
-        YmeshXYCentres = YmeshXY[:-1,:-1] + 0.5*(YmeshXY[1,0]-YmeshXY[0,0])
+        XmeshXYCentres = XmeshXY[:-1,:-1] + 0.5*finecellsize/axisunituse
+        YmeshXYCentres = YmeshXY[:-1,:-1] + 0.5*finecellsize/axisunituse
 
-        XmeshXZCentres = XmeshXZ[:-1,:-1] + 0.5*(XmeshXZ[0,1]-XmeshXZ[0,0])
-        ZmeshXZCentres = ZmeshXZ[:-1,:-1] + 0.5*(ZmeshXZ[1,0]-ZmeshXZ[0,0])
+        XmeshXZCentres = XmeshXZ[:-1,:-1] + 0.5*finecellsize/axisunituse
+        ZmeshXZCentres = ZmeshXZ[:-1,:-1] + 0.5*finecellsize/axisunituse
 
-        YmeshYZCentres = YmeshYZ[:-1,:-1] + 0.5*(YmeshYZ[0,1]-YmeshYZ[0,0])
-        ZmeshYZCentres = ZmeshYZ[:-1,:-1] + 0.5*(ZmeshYZ[1,0]-ZmeshYZ[0,0])
+        YmeshYZCentres = YmeshYZ[:-1,:-1] + 0.5*finecellsize/axisunituse
+        ZmeshYZCentres = ZmeshYZ[:-1,:-1] + 0.5*finecellsize/axisunituse
 
         maskgrid_XY = np.ma.array(XmeshXYCentres)
         maskgrid_XZ = np.ma.array(XmeshXZCentres)
         maskgrid_YZ = np.ma.array(YmeshYZCentres)
-
         if not pass_full:
             # If zoomed-in using a defined box, and not specifically asking to pass all values:
             # Generate mask for only visible section (with small buffer for e.g. gradient calculations)
-            maskboundarybuffer = 2.*cellsize/axisunit
+            maskboundarybuffer = 2.*finecellsize/axisunituse
+
             maskgrid_XY = np.ma.masked_where(XmeshXYCentres<(boxcoords[0]-maskboundarybuffer), maskgrid_XY)
             maskgrid_XY = np.ma.masked_where(XmeshXYCentres>(boxcoords[1]+maskboundarybuffer), maskgrid_XY)
             maskgrid_XY = np.ma.masked_where(YmeshXYCentres<(boxcoords[2]-maskboundarybuffer), maskgrid_XY)
@@ -1271,8 +1421,8 @@ def plot_threeslice(filename=None,
             maskgrid_YZ = np.ma.masked_where(YmeshYZCentres>(boxcoords[3]+maskboundarybuffer), maskgrid_YZ)
             maskgrid_YZ = np.ma.masked_where(ZmeshYZCentres<(boxcoords[4]-maskboundarybuffer), maskgrid_YZ)
             maskgrid_YZ = np.ma.masked_where(ZmeshYZCentres>(boxcoords[5]+maskboundarybuffer), maskgrid_YZ)
-    
-        if np.ma.is_masked(maskgrid_XY):
+
+        if np.ma.is_masked(maskgrid_XY) and ('z' in slices) and not np.all(maskgrid_XY.mask):
             # Save lists for masking
             MaskXY_X = np.where(~np.all(maskgrid_XY.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskXY_Y = np.where(~np.all(maskgrid_XY.mask, axis=0))[0]
@@ -1287,7 +1437,7 @@ def plot_threeslice(filename=None,
             YmeshXYPass = np.ma.array(YmeshXY)
             ZmeshXYPass = np.ma.array(ZmeshXY)
 
-        if np.ma.is_masked(maskgrid_XZ):
+        if np.ma.is_masked(maskgrid_XZ) and ('y' in slices) and not np.all(maskgrid_XZ.mask):
             # Save lists for masking
             MaskXZ_X = np.where(~np.all(maskgrid_XZ.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskXZ_Z = np.where(~np.all(maskgrid_XZ.mask, axis=0))[0]
@@ -1302,7 +1452,7 @@ def plot_threeslice(filename=None,
             YmeshXZPass = np.ma.array(YmeshXZ)
             ZmeshXZPass = np.ma.array(ZmeshXZ)
 
-        if np.ma.is_masked(maskgrid_YZ):
+        if np.ma.is_masked(maskgrid_YZ) and ('x' in slices) and not np.all(maskgrid_YZ.mask):
             # Save lists for masking
             MaskYZ_Y = np.where(~np.all(maskgrid_YZ.mask, axis=1))[0] # [0] takes the first element of a tuple
             MaskYZ_Z = np.where(~np.all(maskgrid_YZ.mask, axis=0))[0]
@@ -1316,9 +1466,9 @@ def plot_threeslice(filename=None,
             XmeshYZPass = np.ma.array(XmeshYZ)
             YmeshYZPass = np.ma.array(YmeshYZ)
             ZmeshYZPass = np.ma.array(ZmeshYZ)
-    
+
         # Crop both rhomap and datamap to view region
-        if np.ma.is_masked(maskgrid_XY):
+        if np.ma.is_masked(maskgrid_XY) and ('z' in slices) and not np.all(maskgrid_XY.mask):
             # Strip away columns and rows which are outside the plot region
             rhomap_z_i = rhomap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
             rhomap_z_i = rhomap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
@@ -1327,7 +1477,7 @@ def plot_threeslice(filename=None,
                 datamap_z_i = datamap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
                 datamap_z_i = datamap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
 
-        if np.ma.is_masked(maskgrid_XZ):
+        if np.ma.is_masked(maskgrid_XZ) and ('y' in slices) and not np.all(maskgrid_XZ.mask):
             # Strip away columns and rows which are outside the plot region
             rhomap_y_i = rhomap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
             rhomap_y_i = rhomap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
@@ -1336,7 +1486,7 @@ def plot_threeslice(filename=None,
                 datamap_y_i = datamap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
                 datamap_y_i = datamap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
 
-        if np.ma.is_masked(maskgrid_YZ):
+        if np.ma.is_masked(maskgrid_YZ) and ('x' in slices) and not np.all(maskgrid_YZ.mask):
             # Strip away columns and rows which are outside the plot region
             rhomap_x_i = rhomap_x_i[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
             rhomap_x_i = rhomap_x_i[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
@@ -1348,57 +1498,60 @@ def plot_threeslice(filename=None,
         # Mask region outside ionosphere. Note that for some boundary layer cells, 
         # a density is calculated, but e.g. pressure is not, and these cells aren't
         # excluded by this method. Also mask away regions where datamap is invalid
-        rhomap_z_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_z_i), 0)
-        rhomap_z_i = np.ma.masked_where(~np.isfinite(datamap_z_i), rhomap_z_i)
-        XYmask_z = rhomap_z_i.mask
-        if XYmask_z.any():
-            if XYmask_z.all():
-                # if everything was masked in rhomap, allow plotting
-                XYmask_z[:,:] = False
-            else:
-                # Mask datamap
-                datamap_z_i = np.ma.array(datamap_z_i, mask=XYmask_z)
-
-        rhomap_y_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_y_i), 0)
-        rhomap_y_i = np.ma.masked_where(~np.isfinite(datamap_y_i), rhomap_y_i)
-        XZmask_y = rhomap_y_i.mask
-        if XZmask_y.any():
-            if XZmask_y.all():
-                # if everything was masked in rhomap, allow plotting
-                XZmask_y[:,:] = False
-            else:
-                # Mask datamap
-                datamap_y_i = np.ma.array(datamap_y_i, mask=XZmask_y)
-
-        rhomap_x_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_x_i), 0)
-        rhomap_x_i = np.ma.masked_where(~np.isfinite(datamap_x_i), rhomap_x_i)
-        YZmask_x = rhomap_x_i.mask
-        if YZmask_x.any():
-            if YZmask_x.all():
-                # if everything was masked in rhomap, allow plotting
-                YZmask_x[:,:] = False
-            else:
-                # Mask datamap
-                datamap_x_i = np.ma.array(datamap_x_i, mask=YZmask_x)
-
-        # Building the face colour maps for plot_surface()
-        if np.ma.isMaskedArray(datamap_x_i):
-                fcolor_x_i = scamap.to_rgba(datamap_x_i.data)
-                fcolor_x_i[YZmask_x] = np.array([0,0,0,0])
-        else:
-                fcolor_x_i = scamap.to_rgba(datamap_x_i)
-
-        if np.ma.isMaskedArray(datamap_y_i):
-                fcolor_y_i = scamap.to_rgba(datamap_y_i.data)
-                fcolor_y_i[XZmask_y] = np.array([0,0,0,0])
-        else:
-                fcolor_y_i = scamap.to_rgba(datamap_y_i)
-
-        if np.ma.isMaskedArray(datamap_z_i):
+        if 'z' in slices:
+            rhomap_z_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_z_i), 0)
+            rhomap_z_i = np.ma.masked_where(~np.isfinite(datamap_z_i), rhomap_z_i)
+            XYmask_z = rhomap_z_i.mask
+            if XYmask_z.any():
+                if XYmask_z.all():
+                    # if everything was masked in rhomap, allow plotting
+                    XYmask_z[:,:] = False
+                else:
+                    # Mask datamap
+                    datamap_z_i = np.ma.array(datamap_z_i, mask=XYmask_z)
+            # Building the face colour maps for plot_surface()
+            if np.ma.isMaskedArray(datamap_z_i):
                 fcolor_z_i = scamap.to_rgba(datamap_z_i.data)
                 fcolor_z_i[XYmask_z] = np.array([0,0,0,0])
-        else:
+            else:
                 fcolor_z_i = scamap.to_rgba(datamap_z_i)
+
+        if 'y' in slices:
+            rhomap_y_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_y_i), 0)
+            rhomap_y_i = np.ma.masked_where(~np.isfinite(datamap_y_i), rhomap_y_i)
+            XZmask_y = rhomap_y_i.mask
+            if XZmask_y.any():
+                if XZmask_y.all():
+                    # if everything was masked in rhomap, allow plotting
+                    XZmask_y[:,:] = False
+                else:
+                    # Mask datamap
+                    datamap_y_i = np.ma.array(datamap_y_i, mask=XZmask_y)
+            # Building the face colour maps for plot_surface()
+            if np.ma.isMaskedArray(datamap_y_i):
+                fcolor_y_i = scamap.to_rgba(datamap_y_i.data)
+                fcolor_y_i[XZmask_y] = np.array([0,0,0,0])
+            else:
+                fcolor_y_i = scamap.to_rgba(datamap_y_i)
+
+        if 'x' in slices:
+            rhomap_x_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_x_i), 0)
+            rhomap_x_i = np.ma.masked_where(~np.isfinite(datamap_x_i), rhomap_x_i)
+            YZmask_x = rhomap_x_i.mask
+            if YZmask_x.any():
+                if YZmask_x.all():
+                    # if everything was masked in rhomap, allow plotting
+                    YZmask_x[:,:] = False
+                else:
+                    # Mask datamap
+                    datamap_x_i = np.ma.array(datamap_x_i, mask=YZmask_x)
+
+            # Building the face colour maps for plot_surface()
+            if np.ma.isMaskedArray(datamap_x_i):
+                fcolor_x_i = scamap.to_rgba(datamap_x_i.data)
+                fcolor_x_i[YZmask_x] = np.array([0,0,0,0])
+            else:
+                fcolor_x_i = scamap.to_rgba(datamap_x_i)
 
         # Introducing a slight shading to better distiguish the planes
         if shadings is not None:
@@ -1432,25 +1585,22 @@ def plot_threeslice(filename=None,
 #******
 
     # Plot title - adding the cut point information and tick interval length
-    if np.all(np.isclose(cutpoint/axisunit % 1,0.)):
-        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}; {:,.0f}; {:,.0f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    else:
-        plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}; {:,.1f}; {:,.1f}) [{:s}]'.format(
-                     cutpoint[0]/axisunit,cutpoint[1]/axisunit,cutpoint[2]/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    if not fixedticks:
-        tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
-    else:
-        tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunit,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+    # unless title was set manually
+    if title is None or title=="msec" or title=="musec":        
+        if np.all(np.isclose(cutpoint/axisunituse % 1,0.)):
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.0f}, {:,.0f}, {:,.0f}) [{:s}]'.format(
+                         cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        else:
+            plot_title = plot_title + pt.plot.mathmode('-') + ' origin at ({:,.1f}, {:,.1f}, {:,.1f}) [{:s}]'.format(
+                         cutpoint[0]/axisunituse,cutpoint[1]/axisunituse,cutpoint[2]/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        if not fixedticks:
+            tickinfostr = 'Tick every {:,.0f} {:s}'.format(tickinterval/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
+        else:
+            tickinfostr = 'Ticks at multiples of {:,.0f} {:s}'.format(tickinterval/axisunituse,pt.plot.mathmode(pt.plot.bfstring(axisunitstr)))
 
-#    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title)) + '\n' + pt.plot.mathmode(pt.plot.bfstring(tickinfostr))
-    plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
-    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.95))
-    
-
-    # Creating colorbar axes
-    cax = fig.add_axes([0.76,0.2,0.03,0.6])
-    cbdir="right"; horalign="left"
+    #    plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title)) + '\n' + pt.plot.mathmode(pt.plot.bfstring(tickinfostr))
+        plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
+    ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.85))
 
     # Colourbar title
     if len(cb_title_use)!=0:
@@ -1462,81 +1612,81 @@ def plot_threeslice(filename=None,
     else:
         pt.plot.cb_linear = True
 
+    # Creating colorbar axes
+    if not nocb:
+        cax = fig.add_axes([0.76,0.2,0.03,0.6])
+        cbdir="right"; horalign="left"
 
-    # First draw colorbar
-    if usesci:
-        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
-    else:
-        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
-    cb.outline.set_linewidth(thick)
-    cb.ax.yaxis.set_ticks_position(cbdir)
+        # First draw colorbar
+        if usesci:
+            cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+        else:
+            cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+        cb.outline.set_linewidth(thick)
+        cb.ax.yaxis.set_ticks_position(cbdir)
+ 
+        cbticks = cb.get_ticks()
+        cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-    cbticks = cb.get_ticks()
-    cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
+        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
+        cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+        cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
-    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
-    cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+        # Perform intermediate draw if necessary to gain access to ticks
+        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
+            fig.canvas.draw() # draw to get tick positions
 
+        # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+            cbt=cb.ax.yaxis.get_ticklabels()
+            (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2+1].set_va("bottom")
+            if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
+                (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2+2].set_va("bottom")
 
+        # Adjust precision for colorbar ticks
+        thesetickvalues = cb.locator()
+        if len(thesetickvalues)<2:
+            precision_b=1
+        else:
+            mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
+            # find smallest interval
+            for ticki in range(len(thesetickvalues)-1):
+                mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
+            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+            # e.g. 9.0e-1 means we need precision 1
+            # e.g. 1.33e-1 means we need precision 3?
+        pt.plot.decimalprecision_cblin = 1
+        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+        cb.update_ticks()
 
-    # Perform intermediate draw if necessary to gain access to ticks
-    if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
-        fig.canvas.draw() # draw to get tick positions
-
-    # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
-    if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
-        cbt=cb.ax.yaxis.get_ticklabels()
-        (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
-        if abs(0.5-cbty)/scale < 0.1:
-            cbt[len(cbt)//2-1].set_va("top")
-        (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
-        if abs(0.5-cbty)/scale < 0.1:
-            cbt[len(cbt)//2+1].set_va("bottom")
-        if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
-            (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
-            if abs(0.5-cbty)/scale < 0.15:
-                cbt[len(cbt)//2-2].set_va("top")
-            (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
-            if abs(0.5-cbty)/scale < 0.15:
-                cbt[len(cbt)//2+2].set_va("bottom")
-
-
-    # Adjust precision for colorbar ticks
-    thesetickvalues = cb.locator()
-    if len(thesetickvalues)<2:
-        precision_b=1
-    else:
-        mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
-        # find smallest interval
-        for ticki in range(len(thesetickvalues)-1):
-            mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
-        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-        # e.g. 9.0e-1 means we need precision 1
-        # e.g. 1.33e-1 means we need precision 3?
-    pt.plot.decimalprecision_cblin = 1
-    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
-    cb.update_ticks()
-
-
-    # if too many subticks in logarithmic colorbar:
-    if not lin and symlog is None:
-        nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
-        valids = ['1','2','3','4','5','6','7','8','9']
-        if nlabels > 10:
-            valids = ['1','2','3','4','5','6','8']
-        if nlabels > 19:
-            valids = ['1','2','5']
-        if nlabels > 28:
-            valids = ['1']
-        # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-        for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-            labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
-            if not labeltext:
-                continue
-            firstdigit = labeltext[0]
-            if not firstdigit in valids: 
-                label.set_visible(False)
+        # if too many subticks in logarithmic colorbar:
+        if not lin and symlog is None:
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
+            valids = ['1','2','3','4','5','6','7','8','9']
+            if nlabels > 10:
+                valids = ['1','2','3','4','5','6','8']
+            if nlabels > 19:
+                valids = ['1','2','5']
+            if nlabels > 28:
+                valids = ['1']
+            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+            for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                if not labeltext:
+                    continue
+                firstdigit = labeltext[0]
+                if not firstdigit in valids: 
+                    label.set_visible(False)
 
 
     # Add Vlasiator watermark
@@ -1564,14 +1714,21 @@ def plot_threeslice(filename=None,
     
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    plt.tight_layout(pad=0.01)   # TODO check: a warning says tight_layout() might not be compatible with those axes. Seems to work though...
+    plt.tight_layout(pad=0.01) 
+    # TODO check: a warning says tight_layout() might not be compatible with those axes. Seems to work though...
     savefig_pad=0.01
     bbox_inches='tight'
 
-    print('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
-
-    # Save output to file
-    try:
-        plt.savefig(outputfile,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-    except:
-        print("Error with attempting to save figure.")
+    # Save output or draw on-screen
+    if not draw:
+        print('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
+        try:
+            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        except:
+            print("Error with attempting to save figure.")
+            print('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+    else:
+        # Draw on-screen
+        plt.draw()
+        plt.show()
+        print('Draw complete! Time since start = {:.2f} s'.format(time.time()-t0))

@@ -155,17 +155,14 @@ def bfstring(string):
         else:
             return r'\mathbf{'+string+'}'
     # LaTeX output off
-    return '{'+string+'}'
+    return string
 
 def rmstring(string):
-    if not os.getenv('PTNOLATEX'):
-        if len(string)==0:
-            return ''
-        else:
-            return r'\mathrm{'+string+'}'
-    # LaTeX output off
-    return '{'+string+'}'
-    
+    if len(string)==0:
+        return ''
+    else:
+        return r'\mathrm{'+string+'}'
+
 def mathmode(string):
     if len(string)==0:
         return ''
@@ -174,7 +171,7 @@ def mathmode(string):
         result = string.replace('$','')
         if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
-            result = result.replace('\,',' ').replace('\qquad','      ')            
+            result = result.replace('\,','~').replace('\qquad','~~~~~~')
         return r"$"+result+"$"
 
 def textbfstring(string):
@@ -184,8 +181,8 @@ def textbfstring(string):
         else:
             return r'\textbf{'+string+'}'
     # LaTex output off
-    return '{'+string+'}'    
-    
+    return string
+
 # Helper routine for allowing specialist units for known vscale and unit combinations
 def scaleunits(datamap_info, vscale):
     # Check if vscale is in use?
@@ -204,11 +201,15 @@ def scaleunits(datamap_info, vscale):
         return rmstring("nPa")
     if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
         return rmstring("cm")+"^{-3}"
+    if datamap_info.units=="1/m^3" and np.isclose(vscale,1.e-6):
+        return rmstring("cm")+"^{-3}"
     if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
         return rmstring("km")+"\,"+rmstring("s")+"^{-1}"
     if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
         return rmstring("mV")+"\,"+rmstring("m")+"^{-1}"            
     if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
         return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"            
+    if datamap_info.units=="eV/cm^3" and np.isclose(vscale,1.e-3):
+        return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"
     # fallthrough
     return datamap_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)

@@ -673,7 +673,7 @@ class VlsvReader(object):
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
-       
+
          # Return the output of the datareducer
          if reducer.useVspace:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
@@ -698,29 +698,39 @@ class VlsvReader(object):
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
-      # Check if the name is in multidatareducers
+      # Check if the name is in multipop datareducers
       if 'pop/'+varname in reducer_multipop:
+
          reducer = reducer_multipop['pop/'+varname]
-         vlsvvariables.activepopulation = popname
-         
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
 
-         # Read the necessary variables:
          if reducer.useVspace:
             print("Error: useVspace flag is not implemented for multipop datareducers!") 
-            return 
-         else:
+            return
+
+         # sum over populations
+         if popname=='pop':
+            # Read the necessary variables:
             tmp_vars = []
-            for i in np.atleast_1d(reducer.variables):
-               if '/' not in i:
-                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
-               else:
-                  tvar = i.split('/')[1]
-                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
-            return data_operators[operator](reducer.operation( tmp_vars ))
+            for pname in self.active_populations:
+               vlsvvariables.activepopulation = pname
+               tmp_vars.append( self.read( pname+'/'+varname, tag, mesh, "pass", cellids ) )
+            return data_operators[operator](data_operators["sum"](tmp_vars))
+         else:
+            vlsvvariables.activepopulation = popname
+
+         # Read the necessary variables:
+         tmp_vars = []
+         for i in np.atleast_1d(reducer.variables):
+            if '/' not in i:
+               tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
+            else:
+               tvar = i.split('/')[1]
+               tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
+         return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
          print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
@@ -1124,7 +1134,7 @@ class VlsvReader(object):
       if self.__max_spatial_amr_level < 0:
          # Read the file index for cellid
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         maxcellid = max(cellids)
+         maxcellid = np.amax([cellids])
 
          AMR_count = 0
          while (maxcellid > 0):
