@@ -578,7 +578,7 @@ def plot_threeslice(filename=None,
                   symmetric=False, absolute=None,
                   lin=None, symlog=None, nocb=False,
                   cbtitle=None, title=None, halfaxes=False,
-                  usesci=True, axisunit=None,axiscolor=None,xs
+                  usesci=True, axisunit=None,axiscolor=None,
                   shadings=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
