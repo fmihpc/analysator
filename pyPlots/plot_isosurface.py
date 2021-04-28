@@ -32,6 +32,7 @@ from skimage import measure
 
 import scipy
 import os, sys
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -160,7 +161,8 @@ def plot_isosurface(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
@@ -288,18 +290,16 @@ def plot_isosurface(filename=None,
     # Axes and units (default R_E)
     if unit!=None: # Use m or km or other
         if unit==0:
-            unitstr = r'm'
+            unitstr = pt.plot.rmstring('m')
         if unit==3:
-            unitstr = r'km'
+            unitstr = pt.plot.rmstring('km')
         else:
-            unitstr = r'$10^{'+str(int(unit))+'}$ m'
+            unitstr = r'10^{'+str(int(unit))+'} '+pt.plot.rmstring('m')
         unit = np.power(10,int(unit))
     else:
-        if not os.getenv('PTNOLATEX'):
-            unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
-        else:
-            unitstr = r'$R_E$'
+        unitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         unit = Re
+    unitstr = pt.plot.mathmode(unitstr)
         
     # Scale data extent and plot box
     simext_org = simext

@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -119,7 +120,7 @@ def plot_colormap(filename=None,
     :kword Earth:       If set, draws an earth at (0,0)
     :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
 
-    :kword draw:        Set to anything but None in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -231,24 +232,25 @@ def plot_colormap(filename=None,
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir is ''):
+    if (filedir != ''):
         filedir = './'
-    if (fluxdir is ''):
+    if (fluxdir != ''):
         fluxdir = './'
-    if (outputdir is ''):
+    if (outputdir != ''):
         outputdir = './'
 
     # Input file or object
     if filename:
         f=pt.vlsvfile.VlsvReader(filename)
     elif (filedir and step is not None):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj:
         f=vlsvobj
@@ -690,7 +692,7 @@ def plot_colormap(filename=None,
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
         # Handle operators
-        if (operator and (operator is not 'pass') and (operator is not 'magnitude')):
+        if (operator and (operator != 'pass') and (operator != 'magnitude')):
             if operator=='x': operator = '0'
             if operator=='y': operator = '1'
             if operator=='z': operator = '2'
@@ -846,10 +848,10 @@ def plot_colormap(filename=None,
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes: # If axes are provided, leave backend as-is.
         if draw:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg':
                 plt.switch_backend(pt.backend_interactive)
         else:
-            if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+            if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
                 plt.switch_backend(pt.backend_noninteractive)  
 
     # Select image shape to match plotted area

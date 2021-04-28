@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys, math
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -433,7 +434,8 @@ def plot_vdf(filename=None,
     elif vlsvobj is not None:
         vlsvReader=vlsvobj
     elif ((filedir is not None) and (step is not None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
@@ -568,7 +570,7 @@ def plot_vdf(filename=None,
         else:
             velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m s$^{-1}$]'
 
-    # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
+    # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
             if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
@@ -891,9 +893,8 @@ def plot_vdf(filename=None,
             pltystr = temp
             binsXY = binsXY.T
         # Boldface axis labels
-        if not os.getenv('PTNOLATEX'):
-            pltxstr = r'\textbf{'+pltxstr+'}'
-            pltystr = r'\textbf{'+pltystr+'}'
+        pltxstr = pt.plot.textbfstring(pltxstr)
+        pltystr = pt.plot.textbfstring(pltystr)
 
         # If no other plotting fmin fmax values are given, take min and max of array
         if fmin is not None:
@@ -999,8 +1000,7 @@ def plot_vdf(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            if not os.getenv('PTNOLATEX'):
-                plot_title = r"\textbf{"+plot_title+"}"            
+            plot_title = pt.plot.textbfstring(plot_title)            
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         #fig.canvas.draw() # draw to get tick positions
@@ -1094,9 +1094,9 @@ def plot_vdf(filename=None,
                     cb_title_use = cbtitle
             if cb_title_use is None:
                 if wflux is None:
-                    cb_title_use=r"$f(v)\,[\mathrm{m}^{-6} \,\mathrm{s}^{3}]$"
+                    cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
                 else:
-                    cb_title_use=r"flux $F\,[\mathrm{m}^{-2} \,\mathrm{s}^{-1} \,\mathrm{sr}^{-1}]$"
+                    cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
@@ -1131,12 +1131,7 @@ def plot_vdf(filename=None,
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
             # Colourbar title             
-            if os.getenv('PTNOLATEX'):
-                cb_title_use.replace('\textbf{','')
-                cb_title_use.replace('\mathrm{','')
-                cb_title_use.replace('}','')
-            else:
-                cb_title_use = r"\textbf{"+cb_title_use+"}"        
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
             cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
