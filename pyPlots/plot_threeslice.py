@@ -43,7 +43,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
     linewidth3d=0.5*thick
     tickwidth3d=0.25*thick
     # Arrow size
-    axisarrowscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.05
+    axisarrowscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.015
 
     # Dealing with the plot orientation
     azi,ele = viewangle
@@ -1330,7 +1330,7 @@ def plot_threeslice(filename=None,
         figsize = (5,5)
     fig = plt.figure(figsize=figsize,dpi=150)
     ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
-                 thick, viewangle, halfaxes, slices, Earth)
+                 thick, axiscolor, viewangle, halfaxes, slices, Earth)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
