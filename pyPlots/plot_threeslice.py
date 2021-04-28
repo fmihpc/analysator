@@ -914,7 +914,7 @@ def plot_threeslice(filename=None,
     else:
         boxcoords=list(simext)
 
-    # If box extents were provided manually, truncate to simulation extents
+    # Truncate to simulation extents
     boxcoords[0] = max(boxcoords[0],simext[0])
     boxcoords[1] = min(boxcoords[1],simext[1])
     boxcoords[2] = max(boxcoords[2],simext[2])
@@ -923,22 +923,44 @@ def plot_threeslice(filename=None,
     boxcoords[5] = min(boxcoords[5],simext[5])
 
     # If cutpoint is outside box coordinates, turn off that slice
-    if (cutpoint[0]<boxcoords[0]+2*cellsizefg) or (cutpoint[0]>boxcoords[1]-2*cellsizefg):
+    if (cutpoint[0]<boxcoords[0]) or (cutpoint[0]>boxcoords[1]):
         slices = slices.replace('x','')
-        cutpoint[0] = max(cutpoint[0],boxcoords[0]+2*cellsizefg)
-        cutpoint[0] = min(cutpoint[0],boxcoords[1]-2*cellsizefg)
-    if (cutpoint[1]<boxcoords[2]+2*cellsizefg) or (cutpoint[1]>boxcoords[3]-2*cellsizefg):
+        print("Note: adjusting box extents to include cut point (x)")
+    if (cutpoint[1]<boxcoords[2]) or (cutpoint[1]>boxcoords[3]):
         slices = slices.replace('y','')
-        cutpoint[1] = max(cutpoint[1],boxcoords[2]+2*cellsizefg)
-        cutpoint[1] = min(cutpoint[1],boxcoords[3]-2*cellsizefg)
-    if (cutpoint[2]<boxcoords[4]+2*cellsizefg) or (cutpoint[2]>boxcoords[5]-2*cellsizefg):
+        print("Note: adjusting box extents to include cut point (y)")
+    if (cutpoint[2]<boxcoords[4]) or (cutpoint[2]>boxcoords[5]):
         slices = slices.replace('z','')
-        cutpoint[2] = max(cutpoint[2],boxcoords[4]+2*cellsizefg)
-        cutpoint[2] = min(cutpoint[2],boxcoords[5]-2*cellsizefg)
+        print("Note: adjusting box extents to include cut point (z)")
 
     if len(slices)==0:
         print("Error: no active slices at cutpoint within box domain")
         return -1
+
+    # Also, if necessary, adjust box coordinates to extend a bit beyond the cutpoint.
+    # This is preferable to moving the cutpoint, and required by the quadrant-drawing method.
+    boxcoords[0] = min(boxcoords[0],cutpoint[0]-2*cellsizefg)
+    boxcoords[1] = max(boxcoords[1],cutpoint[0]+2*cellsizefg)
+    boxcoords[2] = min(boxcoords[2],cutpoint[1]-2*cellsizefg)
+    boxcoords[3] = max(boxcoords[3],cutpoint[1]+2*cellsizefg)
+    boxcoords[4] = min(boxcoords[4],cutpoint[2]-2*cellsizefg)
+    boxcoords[5] = max(boxcoords[5],cutpoint[2]+2*cellsizefg)
+
+    # Re-truncate to simulation extents
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
+    boxcoords[4] = max(boxcoords[4],simext[4])
+    boxcoords[5] = min(boxcoords[5],simext[5])
+
+    # Move cutpoint inwards if it too close to simulation outer extent.
+    cutpoint[0] = max(cutpoint[0], simext[0]+2*cellsizefg)
+    cutpoint[0] = min(cutpoint[0], simext[1]-2*cellsizefg)
+    cutpoint[1] = max(cutpoint[1], simext[2]+2*cellsizefg)
+    cutpoint[1] = min(cutpoint[1], simext[3]-2*cellsizefg)
+    cutpoint[2] = max(cutpoint[2], simext[4]+2*cellsizefg)
+    cutpoint[2] = min(cutpoint[2], simext[5]-2*cellsizefg)
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
