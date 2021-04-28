@@ -201,11 +201,15 @@ def scaleunits(datamap_info, vscale):
         return rmstring("nPa")
     if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
         return rmstring("cm")+"^{-3}"
+    if datamap_info.units=="1/m^3" and np.isclose(vscale,1.e-6):
+        return rmstring("cm")+"^{-3}"
     if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
         return rmstring("km")+"\,"+rmstring("s")+"^{-1}"
     if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
         return rmstring("mV")+"\,"+rmstring("m")+"^{-1}"            
     if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
         return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"            
+    if datamap_info.units=="eV/cm^3" and np.isclose(vscale,1.e-3):
+        return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"
     # fallthrough
     return datamap_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)

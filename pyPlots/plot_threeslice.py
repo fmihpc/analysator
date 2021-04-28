@@ -27,7 +27,7 @@ import time
 
 # Create the 3d axes and the coordinate axes for the 3d plot
 def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
-           viewangle, halfaxes, slices,drawEarth):
+           thick, axiscolor, viewangle, halfaxes, slices, drawEarth):
 
     Re = 6371e3
     deg2rad = np.pi/180.
@@ -38,6 +38,12 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
 
     # Create 3d axes
     ax = fig.add_axes([.1,.1,.64,.8],projection='3d')
+
+    # Thickness
+    linewidth3d=0.5*thick
+    tickwidth3d=0.25*thick
+    # Arrow size
+    axisarrowscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.05
 
     # Dealing with the plot orientation
     azi,ele = viewangle
@@ -113,7 +119,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         styleXm = frontaxisstyle
 
     # Coefficients for axis label placement
-    labposscale = (axextents[1]-axextents[0])/(60*Re/axisunituse)
+    labposscale = np.cbrt((axextents[1]-axextents[0])*(axextents[3]-axextents[2])*(axextents[5]-axextents[4]))*0.02
     cXlabel = labposscale*(1. + (2.*abs(np.cos(azi*deg2rad))+2.*abs(np.sin(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cYlabel = labposscale*(1. + (2.*abs(np.sin(azi*deg2rad))+2.*abs(np.cos(azi*deg2rad)))/abs(np.sin(ele*deg2rad)))
     cZlabel = labposscale*(1. + 1.5*abs(np.tan(ele*deg2rad)))
@@ -132,282 +138,282 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
     # -- x-axis --
     if not earthbreak_x:
         line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                          color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest X to the Earth or the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                          color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the Earth or the cut point to the highest X
 
     else: # Special treatment of cases when the x-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if xr <= 0. and abs(azi) < 90.: # looking from the dayside, cut point on the nightside
             line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunituse), yr, zr)),
-                              color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
             if xr < -Re/axisunituse:
                 line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunituse, yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (axextents[1], yr, zr)),
-                              color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif xr > 0. and abs(azi) < 90.: # looking from the dayside, cut point also on the dayside
             if 'x' in slices and xr > Re/axisunituse: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunituse, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if xr > Re/axisunituse:
                     line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (xr, yr, zr)),
-                                      color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunituse), yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif xr <= 0.: # looking from the nightside, cut point also on the nightside
             if 'x' in slices and xr < -Re/axisunituse: # Earth effectively hidden by the X slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((axextents[0], yr, zr), (min(xr,-cXm*Re/axisunituse), yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if xr < -Re/axisunituse:
                     line=art3d.Line3D(*zip((xr, yr, zr), (-cXm*Re/axisunituse, yr, zr)),
-                                      color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (axextents[1], yr, zr)),
-                                  color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the nightside, cut point on the dayside
             line=art3d.Line3D(*zip((axextents[0], yr, zr), (-cXm*Re/axisunituse, yr, zr)),
-                              color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
             if xr > Re/axisunituse:
                 line=art3d.Line3D(*zip((cXp*Re/axisunituse, yr, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleXm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleXm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((max(xr,cXp*Re/axisunituse), yr, zr), (axextents[1], yr, zr)),
-                              color='black', linestyle=styleXp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleXp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
     if halfaxes and styleXp == backaxisstyle:
-        line=art3d.Line3D(*zip((xr-np.sqrt(3)*Re/axisunituse, yr-Re/axisunituse, zr), (xr, yr, zr),
-                               (xr-np.sqrt(3)*Re/axisunituse, yr+Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((xr-1.7*axisarrowscale, yr-axisarrowscale, zr), (xr, yr, zr),
+                               (xr-1.7*axisarrowscale, yr+axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     else:
-        line=art3d.Line3D(*zip((axextents[1]-np.sqrt(3)*Re/axisunituse, yr-Re/axisunituse, zr), (axextents[1], yr, zr),
-                               (axextents[1]-np.sqrt(3)*Re/axisunituse, yr+Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((axextents[1]-1.7*axisarrowscale, yr-axisarrowscale, zr), (axextents[1], yr, zr),
+                               (axextents[1]-1.7*axisarrowscale, yr+axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- y-axis --
     if not earthbreak_y:
         line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                          color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest Y to the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                          color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the cut point to the highest Y
 
     else: # Special treatment of cases when the y-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and azi
         if yr <= 0. and azi > 0.: # looking from the dawnside, cut point on the duskside
             line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunituse), zr)),
-                              color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
             if yr < -Re/axisunituse:
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunituse, zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, axextents[3], zr)),
-                              color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif yr > 0. and azi > 0.: # looking from the dawnside, cut point also on the dawnside
             if 'y' in slices and yr > Re/axisunituse: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunituse, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if yr > Re/axisunituse:
                     line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, yr, zr)),
-                                      color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunituse), zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif yr <= 0.: # looking from the duskside, cut point also on the duskside
             if 'y' in slices and yr < -Re/axisunituse: # Earth effectively hidden by the Y slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, min(yr,-cYm*Re/axisunituse), zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if yr < -Re/axisunituse:
                     line=art3d.Line3D(*zip((xr, yr, zr), (xr, -cYm*Re/axisunituse, zr)),
-                                      color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, axextents[3], zr)),
-                                  color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the duskside, cut point on the dawnside
             line=art3d.Line3D(*zip((xr, axextents[2], zr), (xr, -cYm*Re/axisunituse, zr)),
-                              color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
             if yr > Re/axisunituse:
                 line=art3d.Line3D(*zip((xr, cYp*Re/axisunituse, zr), (xr, yr, zr)),
-                                  color='black', linestyle=styleYm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleYm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((xr, max(yr,cYp*Re/axisunituse), zr), (xr, axextents[3], zr)),
-                              color='black', linestyle=styleYp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleYp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
     # Make an arrow at the end of the axis
     if halfaxes and styleYp == backaxisstyle:
-        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr-np.sqrt(3)*Re/axisunituse, zr), (xr, yr, zr),
-                               (xr+Re/axisunituse, yr-np.sqrt(3)*Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr-1.7*axisarrowscale, zr), (xr, yr, zr),
+                               (xr+axisarrowscale, yr-1.7*axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     else:
-        line=art3d.Line3D(*zip((xr-Re/axisunituse, axextents[3]-np.sqrt(3)*Re/axisunituse, zr), (xr, axextents[3], zr),
-                               (xr+Re/axisunituse, axextents[3]-np.sqrt(3)*Re/axisunituse, zr)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((xr-axisarrowscale, axextents[3]-1.7*axisarrowscale, zr), (xr, axextents[3], zr),
+                               (xr+axisarrowscale, axextents[3]-1.7*axisarrowscale, zr)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     # -- z-axis --
     if not earthbreak_z:
         line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                          color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the lowest Z to the cut point
 
         line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                          color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                          color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
         ax.add_line(line) # this goes from the cut point to the highest Z
 
     else: # Special treatment of cases when the z-axis goes through the Earth
         # Distinguish four cases to avoid overlaying the Earth, based on the earthbreak condition and ele
         if zr <= 0. and ele > 0.: # looking from the north, cut point south from the Earth
             line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunituse))),
-                              color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
             if zr < -Re/axisunituse:
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunituse)),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, axextents[5])),
-                              color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
         elif zr > 0. and ele > 0.: # looking from the north, cut point also north from the Earth
             if 'z' in slices and zr > Re/axisunituse: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunituse)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if zr > Re/axisunituse:
                     line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, zr)),
-                                      color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunituse)), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         elif zr < 0.: # looking from the south, cut point also south from the Earth
             if 'z' in slices and zr < -Re/axisunituse: # Earth effectively hidden by the Z slice, no need to break the axis
                 earthvisible = False
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
             else:
                 line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, min(zr,-cZm*Re/axisunituse))),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
                 if zr < -Re/axisunituse:
                     line=art3d.Line3D(*zip((xr, yr, zr), (xr, yr, -cZm*Re/axisunituse)),
-                                      color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                      color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                     ax.add_line(line)
 
                 line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, axextents[5])),
-                                  color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
         else: # looking from the south, cut point north from the Earth
             line=art3d.Line3D(*zip((xr, yr, axextents[4]), (xr, yr, -cZm*Re/axisunituse)),
-                              color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
             if zr > Re/axisunituse:
                 line=art3d.Line3D(*zip((xr, yr, cZp*Re/axisunituse), (xr, yr, zr)),
-                                  color='black', linestyle=styleZm, linewidth=0.5, alpha=1, zorder=20)
+                                  color=axiscolor, linestyle=styleZm, linewidth=linewidth3d, alpha=1, zorder=20)
                 ax.add_line(line)
 
             line=art3d.Line3D(*zip((xr, yr, max(zr,cZp*Re/axisunituse)), (xr, yr, axextents[5])),
-                              color='black', linestyle=styleZp, linewidth=0.5, alpha=1, zorder=20)
+                              color=axiscolor, linestyle=styleZp, linewidth=linewidth3d, alpha=1, zorder=20)
             ax.add_line(line)
 
  # Make an arrow at the end of the axis
     if halfaxes and styleZp == backaxisstyle:
-        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr, zr-np.sqrt(3)*Re/axisunituse), (xr, yr, zr),
-                               (xr+Re/axisunituse, yr, zr-np.sqrt(3)*Re/axisunituse)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr, zr-1.7*axisarrowscale), (xr, yr, zr),
+                               (xr+axisarrowscale, yr, zr-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     else:
-        line=art3d.Line3D(*zip((xr-Re/axisunituse, yr, axextents[5]-np.sqrt(3)*Re/axisunituse), (xr, yr, axextents[5]),
-                               (xr+Re/axisunituse, yr, axextents[5]-np.sqrt(3)*Re/axisunituse)), color='black', linewidth=0.5, alpha=1, zorder=20)
+        line=art3d.Line3D(*zip((xr-axisarrowscale, yr, axextents[5]-1.7*axisarrowscale), (xr, yr, axextents[5]),
+                               (xr+axisarrowscale, yr, axextents[5]-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
     xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
@@ -513,11 +519,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
             ticks_x = ticks_x[ticks_x >= xr]
     for itick in range(0,len(ticks_x)):
         tick=art3d.Line3D(*zip((ticks_x[itick],yr-ticklength,zr),(ticks_x[itick],yr+ticklength,zr)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((ticks_x[itick],yr,zr-ticklength),(ticks_x[itick],yr,zr+ticklength)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
     if xr < Re/axisunituse and abs(yr) < Re/axisunituse: # avoid placing a tick on the Earth if it is visible in the plot
@@ -529,11 +535,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
             ticks_y = ticks_y[ticks_y >= yr]
     for itick in range(0,len(ticks_y)):
         tick=art3d.Line3D(*zip((xr-ticklength,ticks_y[itick],zr),(xr+ticklength,ticks_y[itick],zr)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((xr,ticks_y[itick],zr-ticklength),(xr,ticks_y[itick],zr+ticklength)),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
     if xr < Re/axisunituse and abs(zr) < Re/axisunituse: # avoid placing a tick on the Earth if it is visible in the plot
@@ -545,11 +551,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
             ticks_z = ticks_z[ticks_z >= zr]
     for itick in range(0,len(ticks_z)):
         tick=art3d.Line3D(*zip((xr-ticklength,yr,ticks_z[itick]),(xr+ticklength,yr,ticks_z[itick])),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
         tick=art3d.Line3D(*zip((xr,yr-ticklength,ticks_z[itick]),(xr,yr+ticklength,ticks_z[itick])),
-                          color='black', linewidth=0.25, alpha=1, zorder=20)
+                          color=axiscolor, linewidth=tickwidth3d, alpha=1, zorder=20)
         ax.add_line(tick)
 
     # set the basic 3d coordinate axes off
@@ -570,9 +576,10 @@ def plot_threeslice(filename=None,
                   boxm=None,boxre=None,
                   colormap=None, vmin=None, vmax=None,
                   symmetric=False, absolute=None,
-                  lin=None, symlog=None,
+                  lin=None, symlog=None, nocb=False,
                   cbtitle=None, title=None, halfaxes=False,
-                  usesci=True, axisunit=None, shadings=None,
+                  usesci=True, axisunit=None,axiscolor=None,xs
+                  shadings=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
                   wmark=False,wmarkb=False,
@@ -619,6 +626,7 @@ def plot_threeslice(filename=None,
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
+    :kword nocb:        Set to suppress drawing of colourbar
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -627,6 +635,7 @@ def plot_threeslice(filename=None,
                         (default: False)
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
     :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+    :kword axiscolor:   Color for drawing axes (default black)
     :kword shadings:    Dimming values for the surfaces normal to the X, Y, Z directions, respectively,
                         to better distinguish the slices, e.g. "(0.6,0.8,1.0). Default using the angles between
                         the surface normal directions and the viewing angle.
@@ -720,6 +729,9 @@ def plot_threeslice(filename=None,
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
+
+    if axiscolor is None:
+        axiscolor='black'
 
     # Plot title with time
     timeval=f.read_parameter("time")
@@ -1313,9 +1325,12 @@ def plot_threeslice(filename=None,
     if 'z' in slices: rhomap_z_list = [rhomap_z[:yr,:xr],rhomap_z[:yr,xr:],rhomap_z[yr:,:xr],rhomap_z[yr:,xr:]]
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
-    fig = plt.figure(figsize=(6,5),dpi=300)
+    figsize = (6,5)
+    if nocb:
+        figsize = (5,5)
+    fig = plt.figure(figsize=figsize,dpi=150)
     ax1 = axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterval, fixedticks, scale,
-                 viewangle, halfaxes, slices, Earth)
+                 thick, viewangle, halfaxes, slices, Earth)
 
     # Masking and plotting the elementary surfaces one by one (actually three by three)
     for i in range(0,4):
@@ -1554,10 +1569,6 @@ def plot_threeslice(filename=None,
         plot_title = pt.plot.textbfstring(plot_title) + '\n' + pt.plot.textbfstring(tickinfostr)
     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold',position=(0.5,0.85))
 
-    # Creating colorbar axes
-    cax = fig.add_axes([0.76,0.2,0.03,0.6])
-    cbdir="right"; horalign="left"
-
     # Colourbar title
     if len(cb_title_use)!=0:
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
@@ -1568,78 +1579,81 @@ def plot_threeslice(filename=None,
     else:
         pt.plot.cb_linear = True
 
-    # First draw colorbar
-    if usesci:
-        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
-    else:
-        cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
-    cb.outline.set_linewidth(thick)
-    cb.ax.yaxis.set_ticks_position(cbdir)
+    # Creating colorbar axes
+    if not nocb:
+        cax = fig.add_axes([0.76,0.2,0.03,0.6])
+        cbdir="right"; horalign="left"
 
-    cbticks = cb.get_ticks()
-    cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
+        # First draw colorbar
+        if usesci:
+            cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+        else:
+            cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+        cb.outline.set_linewidth(thick)
+        cb.ax.yaxis.set_ticks_position(cbdir)
+ 
+        cbticks = cb.get_ticks()
+        cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
-    cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
+        cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+        cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
-    # Perform intermediate draw if necessary to gain access to ticks
-    if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
-        fig.canvas.draw() # draw to get tick positions
+        # Perform intermediate draw if necessary to gain access to ticks
+        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
+            fig.canvas.draw() # draw to get tick positions
 
-    # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
-    if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
-        cbt=cb.ax.yaxis.get_ticklabels()
-        (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
-        if abs(0.5-cbty)/scale < 0.1:
-            cbt[len(cbt)//2-1].set_va("top")
-        (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
-        if abs(0.5-cbty)/scale < 0.1:
-            cbt[len(cbt)//2+1].set_va("bottom")
-        if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
-            (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
-            if abs(0.5-cbty)/scale < 0.15:
-                cbt[len(cbt)//2-2].set_va("top")
-            (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
-            if abs(0.5-cbty)/scale < 0.15:
-                cbt[len(cbt)//2+2].set_va("bottom")
+        # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+            cbt=cb.ax.yaxis.get_ticklabels()
+            (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2+1].set_va("bottom")
+            if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
+                (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2+2].set_va("bottom")
 
+        # Adjust precision for colorbar ticks
+        thesetickvalues = cb.locator()
+        if len(thesetickvalues)<2:
+            precision_b=1
+        else:
+            mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
+            # find smallest interval
+            for ticki in range(len(thesetickvalues)-1):
+                mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
+            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+            # e.g. 9.0e-1 means we need precision 1
+            # e.g. 1.33e-1 means we need precision 3?
+        pt.plot.decimalprecision_cblin = 1
+        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+        cb.update_ticks()
 
-    # Adjust precision for colorbar ticks
-    thesetickvalues = cb.locator()
-    if len(thesetickvalues)<2:
-        precision_b=1
-    else:
-        mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
-        # find smallest interval
-        for ticki in range(len(thesetickvalues)-1):
-            mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
-        precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
-        # e.g. 9.0e-1 means we need precision 1
-        # e.g. 1.33e-1 means we need precision 3?
-    pt.plot.decimalprecision_cblin = 1
-    if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
-    cb.update_ticks()
-
-
-    # if too many subticks in logarithmic colorbar:
-    if not lin and symlog is None:
-        nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
-        valids = ['1','2','3','4','5','6','7','8','9']
-        if nlabels > 10:
-            valids = ['1','2','3','4','5','6','8']
-        if nlabels > 19:
-            valids = ['1','2','5']
-        if nlabels > 28:
-            valids = ['1']
-        # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-        for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-            labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
-            if not labeltext:
-                continue
-            firstdigit = labeltext[0]
-            if not firstdigit in valids: 
-                label.set_visible(False)
+        # if too many subticks in logarithmic colorbar:
+        if not lin and symlog is None:
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
+            valids = ['1','2','3','4','5','6','7','8','9']
+            if nlabels > 10:
+                valids = ['1','2','3','4','5','6','8']
+            if nlabels > 19:
+                valids = ['1','2','5']
+            if nlabels > 28:
+                valids = ['1']
+            # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
+            for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                if not labeltext:
+                    continue
+                firstdigit = labeltext[0]
+                if not firstdigit in valids: 
+                    label.set_visible(False)
 
 
     # Add Vlasiator watermark

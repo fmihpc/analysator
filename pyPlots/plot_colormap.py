@@ -230,17 +230,17 @@ def plot_colormap(filename=None,
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
     # Change certain falsy values:
-    if not lin and lin is not 0:
+    if not lin and lin != 0:
         lin = None
-    if not symlog and symlog is not 0:
+    if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir is ''):
+    if (filedir != ''):
         filedir = './'
-    if (fluxdir is ''):
+    if (fluxdir != ''):
         fluxdir = './'
-    if (outputdir is ''):
+    if (outputdir != ''):
         outputdir = './'
 
     # Input file or object
@@ -690,7 +690,7 @@ def plot_colormap(filename=None,
         # Here pass_maps is already the cropped-via-mask data array
         datamap = expression(pass_maps)
         # Handle operators
-        if (operator and (operator is not 'pass') and (operator is not 'magnitude')):
+        if (operator and (operator != 'pass') and (operator != 'magnitude')):
             if operator=='x': operator = '0'
             if operator=='y': operator = '1'
             if operator=='z': operator = '2'
