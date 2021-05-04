@@ -1732,5 +1732,3 @@ def plot_threeslice(filename=None,
         plt.draw()
         plt.show()
         print('Draw complete! Time since start = {:.2f} s'.format(time.time()-t0))
-    print('returning',fig)
-    return fig
