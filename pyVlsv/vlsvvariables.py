@@ -45,6 +45,13 @@ speciescharge ={
     'oxygen': 1,
     'electron': -1,
 }
+speciesprecipitationenergybins ={ # values updated when opening the vlsvreader object
+    'avgs': -1,
+    'proton': -1,
+    'helium': -1,
+    'oxygen': -1,
+    'electron': -1,
+}
 
 # Define some units for intrinsic values
 unitsdict = {
@@ -97,7 +104,9 @@ unitsdict = {
     'effectivesparsitythreshold': 's3/m6',
     'rho_loss_adjust': '1/m3',
     'energydensity': 'eV/cm3',
-    'precipitationdiffflux': '1/(cm2 sr s eV)'
+    'precipitationdiffflux': '1/(cm2 sr s eV)',
+    'precipitationintegralenergyflux': 'keV/(cm2 sr s)',
+    'precipitationmeanenergy': 'keV'
     }
 
 # Define some LaTeX markup names for intrinsic values
@@ -176,7 +185,9 @@ latexdictmultipop = {
     'minvalue': r'$f_\mathrm{REPLACEPOP,Min}}$',
     'effectivesparsitythreshold': r'$f_\mathrm{REPLACEPOP,Min}$',
     'energydensity': r'$U_\mathrm{REPLACEPOP}$',
-    'precipitationdiffflux': r'$\mathcal{F}_\mathrm{REPLACEPOP}$'
+    'precipitationdiffflux': r'$\mathcal{F}_{\mathrm{prec},\mathrm{REPLACEPOP}}$',
+    'precipitationintegralenergyflux': r'$\int \mathcal{F}_{\mathrm{prec},\mathrm{REPLACEPOP}}$',
+    'precipitationmeanenergy': r'$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$'
     }
 
 # Define some LaTeX markup units for intrinsic values
@@ -230,6 +241,8 @@ latexunitsdict = {
     'effectivesparsitythreshold': r'$\mathrm{m}^{-6}\,\mathrm{s}^{3}$',
     'rho_loss_adjust': r'$\mathrm{m}^{-3}$',
     'energydensity': r'$\mathrm{eV}\,\mathrm{cm}^{-3}$',
-    'precipitationdiffflux': r'$\mathrm{cm}^{-2} \,\mathrm{sr}^{-1}\,\mathrm{s}^{-1}\,\mathrm{eV}^{-1}$'
+    'precipitationdiffflux': r'$\mathrm{cm}^{-2} \,\mathrm{sr}^{-1}\,\mathrm{s}^{-1}\,\mathrm{eV}^{-1}$',
+    'precipitationintegralenergyflux': r'$\mathrm{keV} \, \mathrm{cm}^{-2} \, \mathrm{sr}^{-1} \, \mathrm{s}^{-1}$',
+    'precipitationmeanenergy': r'keV'
     }
 
