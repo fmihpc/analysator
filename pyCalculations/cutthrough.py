@@ -59,8 +59,8 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
       # Check which boundary we hit first when we move in the unit_vector direction:
 
-      coefficients_min = np.divide((min_bounds - iterator), unit_vector)
-      coefficients_max = np.divide((max_bounds - iterator) , unit_vector)
+      coefficients_min = np.divide((min_bounds - iterator), unit_vector, where=np.logical_not(unit_vector==0.0))
+      coefficients_max = np.divide((max_bounds - iterator), unit_vector, where=np.logical_not(unit_vector==0.0))
       # Remove negative coefficients:
       for i in range(3):
          if coefficients_min[i] <= 0:
