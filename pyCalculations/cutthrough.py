@@ -47,6 +47,13 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
    epsilon = sys.float_info.epsilon*2
 
    iterator = point1
+
+   # Special case: both points in the same cell. 
+   #if(vlsvReader.get_cellid(point1) == vlsvReader.get_cellid(point2)):
+   #   cellids.append(vlsvReader.get_cellid(point2))
+      
+    
+
    unit_vector = (point2 - point1) / np.linalg.norm(point2 - point1 + epsilon)
    while True:
       # Get the cell id
@@ -228,4 +235,55 @@ def cut_through_step( vlsvReader, point1, point2 ):
    # Return the coordinates, cellids and distances for processing
    from output import output_1d
    return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
-      
+     
+
+# Take a curve (list of 3-coords), return cells and distances along curve as with cut_through.
+# NB: calls get_cells_coordinates_distances for each curve segment. Feel free to optimize your curves beforehand.
+def cut_through_curve(vlsvReader, curve):
+
+   # init cut_through static values, then do what cut_through does for each segment
+   # Get parameters from the file to determine a good length between points (step length):
+   # Get xmax, xmin and xcells_ini
+   mesh_limits = vlsvReader.get_spatial_mesh_extent()
+   mesh_size = vlsvReader.get_spatial_mesh_size()
+   xmax = mesh_limits[3]
+   xmin = mesh_limits[0]
+   xcells = mesh_size[0]
+   # Do the same for y
+   ymax = mesh_limits[4]
+   ymin = mesh_limits[1]
+   ycells = mesh_size[1]
+   # And for z
+   zmax = mesh_limits[5]
+   zmin = mesh_limits[2]
+   zcells = mesh_size[2]
+
+   # Make sure point1 and point2 are inside bounds
+   if vlsvReader.get_cellid(point1) == 0:
+      print("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
+   if vlsvReader.get_cellid(point2) == 0:
+      print("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
+
+   #Calculate cell lengths:
+   cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
+
+
+   cellIds = []
+   edges = [0]
+   coords = []
+   if(len(curve) < 2):
+      print("ERROR, less than 2 points in a curve")
+      return None
+   point1 = np.array(curve[0])
+   point2 = np.array(curve[1])
+   cut = get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 )
+   cellIds.append(cut[0].data[0])
+   if(False):
+      edges.append()
+  
+
+   for i in range(start = 1, stop=len(curve)-1):
+      cut = cut_through(vlsvreader, curve[i], curve[i+1])
+      if(isempty(cellIds) ):
+          pass
+

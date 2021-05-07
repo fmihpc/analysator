@@ -41,6 +41,7 @@ from intpol_file import vlsv_intpol_file
 from intpol_points import vlsv_intpol_points
 from cutthrough import cut_through, cut_through_step
 from fourier import fourier
+from spectra import get_spectrum_energy
 from variable import VariableInfo
 from timeevolution import cell_time_evolution
 from pitchangle import pitch_angles
