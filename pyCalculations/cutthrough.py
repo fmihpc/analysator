@@ -244,7 +244,23 @@ def cut_through_step( vlsvReader, point1, point2 ):
 # Take a curve (list of 3-coords), return cells and distances along curve as with cut_through.
 # NB: calls get_cells_coordinates_distances for each curve segment. Feel free to optimize your curves beforehand.
 def cut_through_curve(vlsvReader, curve):
+   ''' Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2
 
+       :param vlsvReader:       Some open VlsvReader
+       :type vlsvReader:        :class:`vlsvfile.VlsvReader`
+       :param point1:           The starting point of a cut-through line
+       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]. NB. Last cellid is a duplicate.
+
+       .. code-block:: python
+
+          Example:
+          vlsvReader = VlsvReader(\"testfile.vlsv\")
+          cut_through = cut_through(vlsvReader, [0,0,0], [2,5e6,0])
+          cellids = cut_through[0]
+          distances = cut_through[1]
+          print \"Cell ids: \" + str(cellids)
+          print \"Distance from point 1 for every cell: \" + str(distances)
+   '''
    # init cut_through static values, then do what cut_through does for each segment
    # Get parameters from the file to determine a good length between points (step length):
    # Get xmax, xmin and xcells_ini
