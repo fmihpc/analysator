@@ -82,8 +82,6 @@ def get_spectrum_modvelocity(vlsvReader,
                   VMin=100,
                   VMax=2e6,
                   nBins=66,
-                  mass=1.6726219e-27, # default: mp
-                  q=1.60217662e-19,   # default: qe
                   frame=None,
                   restart=True):
    import numpy as np
