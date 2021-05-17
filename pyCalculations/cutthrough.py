@@ -249,13 +249,13 @@ def cut_through_curve(vlsvReader, curve):
        :param vlsvReader:       Some open VlsvReader
        :type vlsvReader:        :class:`vlsvfile.VlsvReader`
        :param point1:           The starting point of a cut-through line
-       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]. NB. Last cellid is a duplicate.
+       :returns: an array containing cell ids, edge distances, and the coordinates of edges in the following format: [cell ids, distances, coordinates]. NB. Last cellid is a duplicate.
 
        .. code-block:: python
 
           Example:
           vlsvReader = VlsvReader(\"testfile.vlsv\")
-          cut_through = cut_through(vlsvReader, [0,0,0], [2,5e6,0])
+          cut_through_curve = cut_through(vlsvReader, [[0,0,0], [2,5e6,0]])
           cellids = cut_through[0]
           distances = cut_through[1]
           print \"Cell ids: \" + str(cellids)

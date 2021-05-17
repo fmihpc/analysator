@@ -95,8 +95,8 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    if zsize <= 1:
       indices = [1,0]
 
-   if 'vol' in bvar and centering=='default':
-      print("Found 'vol' in variable name, assuming volumetric variable and adjusting centering")
+   if 'vol' in bvar and centering == 'default':
+      warnings.warn("Found 'vol' in variable name, assuming volumetric variable and adjusting centering")
       centering = 'volume'
 
    # Read face_B:
@@ -163,7 +163,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    else:
       multiplier = 1
 
-   points = [x0]
+   points = [np.array(x0)]
    for i in range(max_iterations):
       previous_point = points[-1]
       B_unit = np.zeros(3)
