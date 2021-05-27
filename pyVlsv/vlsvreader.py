@@ -197,14 +197,16 @@ class VlsvReader(object):
               # Precipitation energy bins
               i = 0
               energybins = []
-              binexists = -1
-              while binexists is not None:
-                 binexists = self.read_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
-                 i = i+1
-                 energybins.append(binexists)
-              print("Therefore, {} energy bins were detected for {} precipitation".format(i-1,popname))
-              pop.__precipitation_centre_energy = np.asarray(energybins[:-1])
-              vlsvvariables.speciesprecipitationenergybins[popname] = energybins[:-1]
+              binexists = True
+              while binexists:
+                 binexists = self.check_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                 if binexists:
+                    binvalue = self.read_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                    energybins.append(binvalue)
+                 i = i + 1
+              if i > 1:
+                 pop.__precipitation_centre_energy = np.asarray(energybins)
+                 vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
       self.__fptr.close()
 
