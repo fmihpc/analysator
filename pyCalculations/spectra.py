@@ -42,7 +42,7 @@ def get_spectrum_energy(vlsvReader,
       return (False,np.zeros(nBins), EkinBinEdges)
    if vlsvReader.check_variable('MinValue') == True:
       fMin = vlsvReader.read_variable('MinValue',cid)
-   print('Cell ' + str(cid).zfill(9))
+   #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
    V2 = np.sum(np.square(V),1)
@@ -93,7 +93,7 @@ def get_spectrum_modvelocity(vlsvReader,
       return (False,np.zeros(nBins), VBinEdges)
    if vlsvReader.check_variable('MinValue') == True:
       fMin = vlsvReader.read_variable('MinValue',cid)
-   print('Cell ' + str(cid).zfill(9))
+   #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
    V2 = np.sum(np.square(V),1)
