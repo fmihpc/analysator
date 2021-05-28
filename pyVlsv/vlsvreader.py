@@ -1027,6 +1027,38 @@ class VlsvReader(object):
 
        return np.squeeze(orderedData)
 
+   def read_fg_variable_as_volumetric(self, name, centering="default", operator="pass"):
+      fgdata = self.read_fsgrid_variable(name, operator)
+
+      fssize=list(self.get_fsgrid_mesh_size())
+      fgdata=np.expand_dims(fgdata, fssize.index(1)) #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
+      print('read in fgdata with shape', fgdata.shape, name)
+      celldata = np.zeros_like(fgdata)
+      known_centerings = {"fg_b":"face", "fg_e":"edge"}
+      if name.casefold() in known_centerings.keys() and centering == "default":
+         centering = known_centerings[name.casefold()]
+      else:
+         print("A variable with unknown centering! Aborting.")
+         return False
+      print('fgdata.shape', fgdata.shape)
+      #vector variable
+      if fgdata.shape[-1] == 3:
+         if centering=="face":
+            celldata[:,:,:,0] = (fgdata[:,:,:,0] + np.roll(fgdata[:,:,:,0],-1, 0))/2.0
+            celldata[:,:,:,1] = (fgdata[:,:,:,1] + np.roll(fgdata[:,:,:,1],-1, 1))/2.0
+            celldata[:,:,:,2] = (fgdata[:,:,:,2] + np.roll(fgdata[:,:,:,2],-1, 2))/2.0
+         elif centering=="edge":
+            celldata[:,:,:,0] = (fgdata[:,:,:,0] + np.roll(fgdata[:,:,:,0],-1, 1) + np.roll(fgdata[:,:,:,0],-1, 2) + np.roll(fgdata[:,:,:,0],-1, (1,2)))/4.0
+            celldata[:,:,:,1] = (fgdata[:,:,:,1] + np.roll(fgdata[:,:,:,1],-1, 0) + np.roll(fgdata[:,:,:,1],-1, 2) + np.roll(fgdata[:,:,:,1],-1, (0,2)))/4.0
+            celldata[:,:,:,2] = (fgdata[:,:,:,2] + np.roll(fgdata[:,:,:,2],-1, 0) + np.roll(fgdata[:,:,:,2],-1, 1) + np.roll(fgdata[:,:,:,2],-1, (0,1)))/4.0
+         else:
+            print("Unknown centering ('" +centering+ "')! Aborting.")
+            return False
+      else:
+         print("A scalar variable! I don't know what to do with this! Aborting.")
+         return False
+      return celldata
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:

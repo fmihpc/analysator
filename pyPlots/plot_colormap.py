@@ -816,7 +816,7 @@ def plot_colormap(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
