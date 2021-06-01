@@ -1031,7 +1031,8 @@ class VlsvReader(object):
       fgdata = self.read_fsgrid_variable(name, operator)
 
       fssize=list(self.get_fsgrid_mesh_size())
-      fgdata=np.expand_dims(fgdata, fssize.index(1)) #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
+      if 1 in fssize:
+         fgdata=np.expand_dims(fgdata, fssize.index(1)) #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
       print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
