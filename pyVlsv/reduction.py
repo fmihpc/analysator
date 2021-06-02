@@ -264,7 +264,7 @@ def precipitationintegralenergyflux( variables ):
    # Calculating the quantity of energy in each bin and summing, masking too low values
    energyPerBin = diffflux*deltaE*energybins
    integralenergyflux = np.ma.masked_less_equal(energyPerBin.sum(axis=1),0.)
-   integralenergyflux[integralenergyflux<1e7] = np.nan
+   integralenergyflux[integralenergyflux<1] = 1. # to avoid having zeros create "holes" in log scale
    # Result in eV/(cm2 s sr), convert in more usual unit of keV/(cm2 s sr) when returning
    return integralenergyflux/1e3
 
@@ -286,10 +286,9 @@ def precipitationmeanenergy( variables ):
    # Calculating the number flux and so on, masking too low values
    particlesPerBin = diffflux*deltaE
    integralnumberflux = np.ma.masked_less_equal(particlesPerBin.sum(axis=1),0.)
-   integralnumberflux[integralnumberflux<100.] = np.nan
+   integralnumberflux[integralnumberflux<1.] = 1. # to avoid divide by zero below
    energyPerBin = particlesPerBin*energybins
    integralenergyflux = np.ma.masked_less_equal(energyPerBin.sum(axis=1),0.)
-   integralenergyflux[integralenergyflux<1e7] = np.nan
    meanenergy = integralenergyflux / integralnumberflux
    # Result in eV, convert in more usual unit of keV when returning
    return meanenergy/1e3
