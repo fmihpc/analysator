@@ -498,11 +498,10 @@ def plot_colormap3dslice(filename=None,
         boxcoords=list(simext)
 
     # If box extents were provided manually, truncate to simulation extents
-    # Also subtract one reflevel0-cell in each direction to hide boundary cells
-    boxcoords[0] = max(boxcoords[0],simext[0]+cellsize)
-    boxcoords[1] = min(boxcoords[1],simext[1]-cellsize)
-    boxcoords[2] = max(boxcoords[2],simext[2]+cellsize)
-    boxcoords[3] = min(boxcoords[3],simext[3]-cellsize)
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
