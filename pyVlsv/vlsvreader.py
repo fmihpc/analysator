@@ -817,7 +817,10 @@ class VlsvReader(object):
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         
+         if (lower_cell_id<1 or upper_cell_id<1):
+            print("Error: requested cell id for interpolation outside simulation domain")
+            return -1
+
          scaled_coordinates=np.zeros(3)
          for i in range(3):
             if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
@@ -1320,10 +1323,10 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            #out of bounds
+            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             return 0
 
-      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + ngbr_indices * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
+      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
       cellid_neighbour = self.get_cellid(coord_neighbour)
       return cellid_neighbour
 

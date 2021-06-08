@@ -238,11 +238,11 @@ def plot_colormap(filename=None,
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir != ''):
+    if (filedir == ''):
         filedir = './'
-    if (fluxdir != ''):
+    if (fluxdir == ''):
         fluxdir = './'
-    if (outputdir != ''):
+    if (outputdir == ''):
         outputdir = './'
 
     # Input file or object
@@ -952,12 +952,23 @@ def plot_colormap(filename=None,
         flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
 
         # Find inflow position values
-        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_b = f.read_variable("B", cellids=cid)       
-        if f.check_variable("moments"): # restart file
-            ff_v = f.read_variable("restart_V", cellids=cid)            
+        if f.check_variable("B"):
+            # Old data format
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_variable("B", cellids=cid)
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("restart_V", cellids=cid)
+            else:
+                ff_v = f.read_variable("V", cellids=cid)
         else:
-            ff_v = f.read_variable("V", cellids=cid)            
+            # v5 Vlasiator data
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_fsgrid_variable("fg_b")[-2, 0,0]
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("vg_restart_v", cellids=cid)
+            else:
+                ff_v = f.read_variable("vg_v", cellids=cid)
+
         # Account for movement
         outofplane = [0,-1,0] # For polar runs
         if zsize==1: outofplane = [0,0,1] # For ecliptic runs
