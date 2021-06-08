@@ -317,7 +317,7 @@ def plot_vdf(filename=None,
              contours=None
              ):
 
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots a coloured 2D plot of a VDF (a slice of given thickness or fully projected) with axes and a colour bar.
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead

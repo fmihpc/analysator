@@ -275,7 +275,7 @@ def plot_vdf_profiles(filename=None,
              axes=None
              ):
 
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots vdf values along axis-aligned lines (see axis definitions).
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead

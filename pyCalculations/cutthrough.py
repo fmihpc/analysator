@@ -309,7 +309,7 @@ def cut_through_curve(vlsvReader, curve):
        edges.append(edgestart+cedges[ci])
        coords.append(cut[2].data[ci])
 
-   print('sum of diffs', np.sum(np.diff(edges)))
+   #print('sum of diffs', np.sum(np.diff(edges)))
    #reduce the cellIDs and edges
    reduct = True
    if reduct:
@@ -329,7 +329,7 @@ def cut_through_curve(vlsvReader, curve):
        cid0 = c1
      rEdges.append(edges[-1])
      rCoords.append(coords[-1])
-     print('sum of r-diffs', np.sum(np.diff(rEdges)))
+     #print('sum of r-diffs', np.sum(np.diff(rEdges)))
    else:
      rCellIds = cellIds
      rEdges = edges

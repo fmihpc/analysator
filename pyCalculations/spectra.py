@@ -22,6 +22,7 @@
 # 
 
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
+# Weighted by particle flux
 def get_spectrum_energy(vlsvReader,
                   cid,
                   population="proton",
@@ -32,6 +33,7 @@ def get_spectrum_energy(vlsvReader,
                   mass=1.6726219e-27, # default: mp
                   q=1.60217662e-19,   # default: qe
                   frame=None,
+                  weight='flux',
                   restart=True):
    import numpy as np
    import pytools as pt
@@ -44,7 +46,7 @@ def get_spectrum_energy(vlsvReader,
       fMin = vlsvReader.read_variable('MinValue',cid)
    #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
-   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
+   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
    Ekin = 0.5*mass*V2/q
    f = list(zip(*velcells.items()))
@@ -65,9 +67,12 @@ def get_spectrum_energy(vlsvReader,
    Ekin[Ekin < min(EkinBinEdges)] = min(EkinBinEdges)
    Ekin[Ekin > max(EkinBinEdges)] = max(EkinBinEdges)
    # normalization
-   fv = f*np.sqrt(V2) # use particle flux as weighting
+   if(weight == 'flux'):
+      fw = f*np.sqrt(V2) # use particle flux as weighting
+   else:
+      fw = f
    # compute histogram
-   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fv,normed=0)
+   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw,normed=0)
    # normalization
    dE = EkinBinEdges[1:] - EkinBinEdges[0:-1]
    nhist = np.divide(nhist,(dE*4*np.pi))
@@ -83,6 +88,7 @@ def get_spectrum_modvelocity(vlsvReader,
                   VMax=2e6,
                   nBins=66,
                   frame=None,
+                  weight='flux',
                   restart=True):
    import numpy as np
    import pytools as pt
@@ -95,7 +101,7 @@ def get_spectrum_modvelocity(vlsvReader,
       fMin = vlsvReader.read_variable('MinValue',cid)
    #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
-   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
+   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
    Vmod = np.sqrt(V2)
    f = list(zip(*velcells.items()))
@@ -116,9 +122,12 @@ def get_spectrum_modvelocity(vlsvReader,
    Vmod[Vmod < min(VBinEdges)] = min(VBinEdges)
    Vmod[Vmod > max(VBinEdges)] = max(VBinEdges)
    # normalization
-   fv = f*np.sqrt(V2) # use particle flux as weighting
+   if(weight == 'flux'):
+      fw = f*np.sqrt(V2) # use particle flux as weighting
+   else:
+      fw = f
    # compute histogram
-   (nhist,edges) = np.histogram(Vmod,bins=VBinEdges,weights=fv,normed=0)
+   (nhist,edges) = np.histogram(Vmod,bins=VBinEdges,weights=fw,normed=0)
    # normalization
    dV = VBinEdges[1:] - VBinEdges[0:-1]
    nhist = np.divide(nhist,(dV*4*np.pi))
@@ -135,6 +144,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                   VMax=2e6,
                   nBins=200,
                   frame=None,
+                  weight='flux',
                   restart=True):
    import numpy as np
    import pytools as pt
@@ -151,30 +161,37 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       fMin = vlsvReader.read_variable('MinValue',cid)
    #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
-   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()))
+   V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
    Vproj = np.dot(V,vector)
-   f = list(zip(*velcells.items()))
-
+   f = list(velcells.values())
+   
 
    # check that velocity space has cells - still return a zero histogram in the same shape
    if(len(f) > 0):
-      f = np.asarray(f[1])
+      f = np.asarray(f)
    else:
       return (False,np.zeros(nBins), VBinEdges)
    ii_f = np.where(f >= fMin)
+   #ii_f = np.where(f >= fMin or True)
    if len(ii_f) < 1:
       return (False,np.zeros(nBins), VBinEdges)
-   f = f[ii_f]
-   Vproj = Vproj[ii_f]
-   V2 = V2[ii_f]
+   #f = f[ii_f]
+   #Vproj = Vproj[ii_f]
+   #V2 = V2[ii_f]
 
    Vproj[Vproj < min(VBinEdges)] = min(VBinEdges)
    Vproj[Vproj > max(VBinEdges)] = max(VBinEdges)
    # normalization
-   fv = f*np.sqrt(V2) # use particle flux as weighting
+   # normalization
+   if(weight == 'flux'):
+      fw = f*np.sqrt(V2) # use particle flux as weighting
+   else:
+      fw = f
    # compute histogram
-   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fv,normed=0)
+   print(fw)
+   print(len(Vproj), len(fw))
+   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
    # normalization
    dV = VBinEdges[1:] - VBinEdges[0:-1]
    nhist = np.divide(nhist,(dV*4*np.pi))
