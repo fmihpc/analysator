@@ -53,7 +53,7 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 if not os.getenv('PTNOLATEX'):
    matplotlib.rc('text', usetex=True)
-   matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
+   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
    matplotlib.rcParams['mathtext.fontset'] = 'stix'
    matplotlib.rcParams['font.family'] = 'STIXGeneral'
    print("Using LaTeX formatting")

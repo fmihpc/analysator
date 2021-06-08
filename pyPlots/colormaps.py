@@ -1108,8 +1108,6 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
                 [0.9763, 0.9831, 0.0538]]
 
 from matplotlib.colors import ListedColormap
-
-
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('inferno', _inferno_data),
@@ -1118,7 +1116,7 @@ for (name, data) in (('magma', _magma_data),
                      ('parula', _parula_data)):
 
     cmaps[name] = ListedColormap(data, name=name)
-
+# Some of these are already included in newer versions of matplotlib
 magma = cmaps['magma']
 inferno = cmaps['inferno']
 plasma = cmaps['plasma']

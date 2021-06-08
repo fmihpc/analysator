@@ -62,8 +62,6 @@ def plot_colormap3dslice(filename=None,
                   absolute=False,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
-                  # fluxfile=None, fluxdir=None,
-                  # fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
                   highres=None,
@@ -171,10 +169,6 @@ def plot_colormap3dslice(filename=None,
                         the regular source file and the file given by this keyword. This overides external
                         and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
-    :kword fluxfile:    Filename to plot fluxfunction from
-    :kword fluxdir:     Directory in which fluxfunction files can be found
-    :kword fluxthick:   Scale fluxfunction line thickness
-    :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
@@ -244,8 +238,6 @@ def plot_colormap3dslice(filename=None,
         symlog = 0
     if (filedir == ''):
         filedir = './'
-    #if (fluxdir == ''):
-    #    fluxdir = './'
     if (outputdir == ''):
         outputdir = './'
 
@@ -501,11 +493,10 @@ def plot_colormap3dslice(filename=None,
         boxcoords=list(simext)
 
     # If box extents were provided manually, truncate to simulation extents
-    # Also subtract one reflevel0-cell in each direction to hide boundary cells
-    boxcoords[0] = max(boxcoords[0],simext[0]+cellsize)
-    boxcoords[1] = min(boxcoords[1],simext[1]-cellsize)
-    boxcoords[2] = max(boxcoords[2],simext[2]+cellsize)
-    boxcoords[3] = min(boxcoords[3],simext[3]-cellsize)
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
@@ -1042,7 +1033,7 @@ def plot_colormap3dslice(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -1103,7 +1094,6 @@ def plot_colormap3dslice(filename=None,
         fontsize3=fontsize3*highresscale
         scale=scale*highresscale
         thick=thick*highresscale
-        fluxthick=fluxthick*highresscale
         streamlinethick=streamlinethick*highresscale
         vectorsize=vectorsize*highresscale
 
