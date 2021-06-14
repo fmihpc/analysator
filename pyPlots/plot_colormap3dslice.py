@@ -254,14 +254,14 @@ def plot_colormap3dslice(filename=None,
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
     
-    if not operator:
-        if op:
+    if operator is None:
+        if op is not None:
             operator=op
 
     if not colormap:
         # Default values
         colormap="hot_desaturated"
-        if operator and operator in 'xyz':
+        if operator is not None and operator in 'xyz':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -308,7 +308,7 @@ def plot_colormap3dslice(filename=None,
     # Verify validity of operator
     operatorstr=''
     operatorfilestr=''
-    if operator:
+    if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
@@ -538,7 +538,7 @@ def plot_colormap3dslice(filename=None,
     ############################################
     if not expression:        
         # Read data from file
-        if not operator:
+        if operator is None:
             operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
