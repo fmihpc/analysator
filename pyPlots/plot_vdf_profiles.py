@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import scipy
 import os, sys, math
 import re
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -38,22 +39,6 @@ from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
-
-# Register custom colourmaps
-plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
-plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
-plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
-plt.register_cmap(name='magma', cmap=cmaps.magma)
-plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
-# plt.register_cmap(name='cork',cmap=cork_map)
-# plt.register_cmap(name='davos_r',cmap=davos_r_map)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
@@ -367,7 +352,8 @@ def plot_vdf_profiles(filename=None,
     elif vlsvobj!=None:
         vlsvReader=vlsvobj
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")

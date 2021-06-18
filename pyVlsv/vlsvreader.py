@@ -29,7 +29,7 @@ import os
 import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
-from collections import Iterable
+from collections import Iterable,OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 
@@ -367,34 +367,49 @@ class VlsvReader(object):
       for index,cellid in enumerate(self.__cells_with_blocks[pop]):
          self.__order_for_cellid_blocks[pop][cellid]=index
 
-   def list(self):
+   def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
       ''' Print out a description of the content of the file. Useful
-         for interactive usage
+         for interactive usage. Default is to list parameters and variables, query selection can be adjusted with keywords:
+
+         Default and supported keywords:
+
+         parameter=True 
+         variable=True
+         mesh=False
+         datareducer=False 
+         operator=False 
+         other=False
       '''
-      print("tag = PARAMETER")
-      for child in self.__xml_root:
-         if child.tag == "PARAMETER" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("tag = VARIABLE")
-      for child in self.__xml_root:
-         if child.tag == "VARIABLE" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("tag = MESH")
-      for child in self.__xml_root:
-         if child.tag == "MESH" and "name" in child.attrib:
-            print("   ", child.attrib["name"])
-      print("Datareducers:")
-      for name in datareducers:
-         print("   ",name, " based on ", datareducers[name].variables)
-      print("Data operators:")
-      for name in data_operators:
-         if type(name) is str:
-            if not name.isdigit():
-               print("   ",name)
-      print("Other:")
-      for child in self.__xml_root:
-         if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
-            print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
+      if parameter:
+         print("tag = PARAMETER")
+         for child in self.__xml_root:
+            if child.tag == "PARAMETER" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if variable:
+         print("tag = VARIABLE")
+         for child in self.__xml_root:
+            if child.tag == "VARIABLE" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if mesh:
+         print("tag = MESH")
+         for child in self.__xml_root:
+            if child.tag == "MESH" and "name" in child.attrib:
+               print("   ", child.attrib["name"])
+      if datareducer:
+         print("Datareducers:")
+         for name in datareducers:
+            print("   ",name, " based on ", datareducers[name].variables)
+      if operator:
+         print("Data operators:")
+         for name in data_operators:
+            if type(name) is str:
+               if not name.isdigit():
+                  print("   ",name)
+      if other:
+         print("Other:")
+         for child in self.__xml_root:
+            if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
+               print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
 
    def check_parameter( self, name ):
       ''' Checks if a given parameter is in the vlsv reader
@@ -658,7 +673,7 @@ class VlsvReader(object):
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
-       
+
          # Return the output of the datareducer
          if reducer.useVspace:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
@@ -683,29 +698,39 @@ class VlsvReader(object):
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
             return data_operators[operator](reducer.operation( tmp_vars ))
 
-      # Check if the name is in multidatareducers
+      # Check if the name is in multipop datareducers
       if 'pop/'+varname in reducer_multipop:
+
          reducer = reducer_multipop['pop/'+varname]
-         vlsvvariables.activepopulation = popname
-         
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
             print("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
 
-         # Read the necessary variables:
          if reducer.useVspace:
             print("Error: useVspace flag is not implemented for multipop datareducers!") 
-            return 
-         else:
+            return
+
+         # sum over populations
+         if popname=='pop':
+            # Read the necessary variables:
             tmp_vars = []
-            for i in np.atleast_1d(reducer.variables):
-               if '/' not in i:
-                  tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
-               else:
-                  tvar = i.split('/')[1]
-                  tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
-            return data_operators[operator](reducer.operation( tmp_vars ))
+            for pname in self.active_populations:
+               vlsvvariables.activepopulation = pname
+               tmp_vars.append( self.read( pname+'/'+varname, tag, mesh, "pass", cellids ) )
+            return data_operators[operator](data_operators["sum"](tmp_vars))
+         else:
+            vlsvvariables.activepopulation = popname
+
+         # Read the necessary variables:
+         tmp_vars = []
+         for i in np.atleast_1d(reducer.variables):
+            if '/' not in i:
+               tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
+            else:
+               tvar = i.split('/')[1]
+               tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
+         return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
          print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
@@ -792,7 +817,10 @@ class VlsvReader(object):
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         
+         if (lower_cell_id<1 or upper_cell_id<1):
+            print("Error: requested cell id for interpolation outside simulation domain")
+            return -1
+
          scaled_coordinates=np.zeros(3)
          for i in range(3):
             if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
@@ -1015,6 +1043,14 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
+
+      # Wrapper, check if requesting an fsgrid variable
+      if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
+         if not cellids == -1:
+            print("Warning, CellID requests not supported for FSgrid variables! Aborting.")
+            return False
+         return self.read_fsgrid_variable(name=name, operator=operator)
+
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
 
@@ -1103,7 +1139,7 @@ class VlsvReader(object):
       if self.__max_spatial_amr_level < 0:
          # Read the file index for cellid
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         maxcellid = max(cellids)
+         maxcellid = np.amax([cellids])
 
          AMR_count = 0
          while (maxcellid > 0):
@@ -1124,6 +1160,18 @@ class VlsvReader(object):
          cellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
          AMR_count += 1
       return AMR_count - 1 
+
+   def get_unique_cellids(self, coords):
+      ''' Returns a list of cellids containing all the coordinates in coords,
+          with no duplicate cellids. Relative order of elements is conserved.
+      :param coords:         A list of coordinates
+      :returns: a list of unique cell ids
+      '''
+      cids = [int(self.get_cellid(coord)) for coord in coords]
+
+      #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
+      cidsout = list(OrderedDict.fromkeys(cids))
+      return cidsout
 
    def get_cellid(self, coordinates):
       ''' Returns the cell id at given coordinates
@@ -1277,10 +1325,10 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            #out of bounds
+            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             return 0
 
-      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + ngbr_indices * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
+      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
       cellid_neighbour = self.get_cellid(coord_neighbour)
       return cellid_neighbour
 

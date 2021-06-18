@@ -41,6 +41,8 @@ export PTNOLATEX=1
 #################################################
 export PTOUTPUTDIR=/proj/USERNAME/Plots/
 
+# If using a jupyter notebook on the UH hub system, you can activate interactive plot windows with
+# %matplotlib ipympl or %matplotlib notebook before importing pytools
 
 # Examples and instructions for batch scripting (on CSC's system) are found in
 # examples/generate_panel.py and examples/generate_movie.sh
@@ -49,4 +51,7 @@ export PTOUTPUTDIR=/proj/USERNAME/Plots/
 #################################################
 https://github.com/fmihpc/analysator/wiki
 
+# For citations, use the DOI
+#################################################
+https://doi.org/10.5281/zenodo.4462514
 

@@ -53,14 +53,18 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 if not os.getenv('PTNOLATEX'):
    matplotlib.rc('text', usetex=True)
-   matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
+   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
    matplotlib.rcParams['mathtext.fontset'] = 'stix'
    matplotlib.rcParams['font.family'] = 'STIXGeneral'
    print("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
 # Set backends
-if not os.getenv('PTBACKEND'):
+if matplotlib.get_backend()[:9] == 'module://':
+   print("Using backend "+matplotlib.get_backend())
+   backend_interactive = matplotlib.get_backend()
+   backend_noninteractive = matplotlib.get_backend()
+elif not os.getenv('PTBACKEND'):
    backend_interactive = 'TkAgg'
    backend_noninteractive = 'Agg'
 else:
