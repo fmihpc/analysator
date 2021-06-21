@@ -1062,7 +1062,7 @@ multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_
 multipopv5reducers["pop/vg_gyroperiod"] =    DataReducerVariable(["vg_b_vol","pop/vg_rho"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
 multipopv5reducers["pop/vg_plasmaperiod"] =    DataReducerVariable(["pop/vg_rho"], plasmaperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{p},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
 multipopv5reducers["pop/vg_precipitationintegralenergyflux"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationintegralenergyflux, "keV/(cm2 s sr)", 1, latex=r"$\int \mathcal{F}_{\mathrm{prec},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{keV}\,\mathrm{cm}^{-2}\,\mathrm{s}^{-1}\,\mathrm{sr}^{-1}$")
-multipopv5reducers["pop/vg_precipitationmeanenergy"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationmeanenergy, "keV", 1, latex=r"$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$",latexunits=r"keV")
+multipopv5reducers["pop/vg_precipitationmeanenergy"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationmeanenergy, "keV", 1, latex=r"$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$",latexunits=r"\mathrm{keV}")
 
 # Do these betas make sense per-population?
 multipopv5reducers["pop/vg_beta"] =                   DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
