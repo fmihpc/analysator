@@ -193,6 +193,20 @@ class VlsvReader(object):
               self.__meshes[popname]=pop
               if os.getenv('PTNONINTERACTIVE') == None:
                  print("Found population " + popname)
+              
+              # Precipitation energy bins
+              i = 0
+              energybins = []
+              binexists = True
+              while binexists:
+                 binexists = self.check_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                 if binexists:
+                    binvalue = self.read_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                    energybins.append(binvalue)
+                 i = i + 1
+              if i > 1:
+                 pop.__precipitation_centre_energy = np.asarray(energybins)
+                 vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
       self.__fptr.close()
 
@@ -538,7 +552,7 @@ class VlsvReader(object):
          else: # list of cellids
             self.__read_fileindex_for_cellid()
                
-      if tag == "" and name == "" and tag == "":
+      if tag == "" and name == "":
          print("Bad arguments at read")
 
       if self.__fptr.closed:
@@ -1818,6 +1832,13 @@ class VlsvReader(object):
       return self.__read_blocks(cellid,pop)
 
       return []
+
+   def get_precipitation_centre_energy(self, pop="proton"):
+      ''' Read precipitation energy bins
+
+      :returns: Array of centre energies
+      '''
+      return self.__meshes[pop].__precipitation_centre_energy
 
    def optimize_open_file(self):
       '''Opens the vlsv file for reading

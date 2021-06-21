@@ -246,6 +246,51 @@ def rhoq( variables ):
    charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
    return rho*charge
 
+def precipitationintegralenergyflux( variables ):
+   ''' Data reducer function for calculating the integral energy flux from differential
+       energy fluxes of precipitating particles
+       input: precipitationdiffflux
+   '''
+   diffflux = variables[0]
+   energybins = np.asarray(vlsvvariables.speciesprecipitationenergybins[vlsvvariables.activepopulation]) # in eV
+   # Building the energy bin widths
+   dlogener = np.log(energybins[1]) - np.log(energybins[0])
+   Ebinedges = np.zeros(len(energybins)+1)
+   Ebinedges[1:-1] = np.sqrt(energybins[1:]*energybins[:-1])
+   Ebinedges[0] = np.exp(np.log(energybins[0])-dlogener)
+   Ebinedges[-1] = np.exp(np.log(energybins[-1])+dlogener)
+   deltaE = Ebinedges[1:]-Ebinedges[:-1] # in eV
+
+   # Calculating the quantity of energy in each bin and summing, masking too low values
+   energyPerBin = diffflux*deltaE*energybins
+   integralenergyflux = np.ma.masked_less_equal(energyPerBin.sum(axis=1),0.)
+   # Result in eV/(cm2 s sr), convert in more usual unit of keV/(cm2 s sr) when returning
+   return integralenergyflux/1e3
+
+def precipitationmeanenergy( variables ):
+   ''' Data reducer function for calculating the mean particle energy from differential
+       energy fluxes of precipitating particles
+       input: precipitationdiffflux
+   '''
+   diffflux = variables[0]
+   energybins = np.asarray(vlsvvariables.speciesprecipitationenergybins[vlsvvariables.activepopulation]) # in eV
+   # Building the energy bin widths
+   dlogener = np.log(energybins[1]) - np.log(energybins[0])
+   Ebinedges = np.zeros(len(energybins)+1)
+   Ebinedges[1:-1] = np.sqrt(energybins[1:]*energybins[:-1])
+   Ebinedges[0] = np.exp(np.log(energybins[0])-dlogener)
+   Ebinedges[-1] = np.exp(np.log(energybins[-1])+dlogener)
+   deltaE = Ebinedges[1:]-Ebinedges[:-1] # in eV
+
+   # Calculating the number flux and so on, masking too low values
+   particlesPerBin = diffflux*deltaE
+   integralnumberflux = np.ma.masked_less_equal(particlesPerBin.sum(axis=1),0.)
+   energyPerBin = particlesPerBin*energybins
+   integralenergyflux = np.ma.masked_less_equal(energyPerBin.sum(axis=1),0.)
+   meanenergy = np.ma.divide(integralenergyflux,integralnumberflux)
+   # Result in eV, convert in more usual unit of keV when returning
+   return meanenergy/1e3
+
 def v( variables ):
    ''' Data reducer function for getting velocity from rho and rho_v
        variables[0] = rho_v and variables[1] = rho
@@ -1016,6 +1061,8 @@ multipopv5reducers["pop/vg_larmor"] =                        DataReducerVariable
 multipopv5reducers["pop/vg_firstadiabatic"] =    DataReducerVariable(["pop/vg_t_perpendicular","vg_b_vol"], firstadiabatic, "K/T", 1, latex=r"$T_{\perp,\mathrm{REPLACEPOP}} B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 multipopv5reducers["pop/vg_gyroperiod"] =    DataReducerVariable(["vg_b_vol","pop/vg_rho"], gyroperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{c},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
 multipopv5reducers["pop/vg_plasmaperiod"] =    DataReducerVariable(["pop/vg_rho"], plasmaperiod, "s", 1, latex=r"$2\pi \Omega_{\mathrm{p},\mathrm{REPLACEPOP}}^{-1}$",latexunits=r"$\mathrm{s}$")
+multipopv5reducers["pop/vg_precipitationintegralenergyflux"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationintegralenergyflux, "keV/(cm2 s sr)", 1, latex=r"$\int \mathcal{F}_{\mathrm{prec},\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{keV}\,\mathrm{cm}^{-2}\,\mathrm{s}^{-1}\,\mathrm{sr}^{-1}$")
+multipopv5reducers["pop/vg_precipitationmeanenergy"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationmeanenergy, "keV", 1, latex=r"$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$",latexunits=r"$\mathrm{keV}$")
 
 # Do these betas make sense per-population?
 multipopv5reducers["pop/vg_beta"] =                   DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
