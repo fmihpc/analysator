@@ -820,8 +820,7 @@ class VlsvReader(object):
 
       # First test whether the requested variable is on the FSgrid, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
-         self.read_interpolated_fsgrid_variable(name, coordinates, operator, periodic)
-         return -1
+         return self.read_interpolated_fsgrid_variable(name, coordinates, operator, periodic)
 
       coordinates = get_data(coordinates)
       
