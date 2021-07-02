@@ -61,7 +61,7 @@ def plot_colormap(filename=None,
                   absolute=False,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
-                  fluxfile=None, fluxdir=None,
+                  fluxfile=None, fluxdir=None, flux_levels=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
@@ -169,6 +169,7 @@ def plot_colormap(filename=None,
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
     :kword fluxfile:    Filename to plot fluxfunction from
+    :kword flux_levels:  A list of flux function values to plot as the contours (default: some set)
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
@@ -971,7 +972,10 @@ def plot_colormap(filename=None,
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
-        flux_levels = np.linspace(-10,10,fluxlines*60)        
+        if flux_levels is None:
+            flux_levels = np.linspace(-10,10,fluxlines*60)
+        else:
+            pass #This was given, do nothing
         fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
