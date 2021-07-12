@@ -522,7 +522,7 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    elif f.check_variable("proton/vg_rho"):
+    elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
         print("error!")
