@@ -819,6 +819,20 @@ class VlsvReader(object):
       print('Interpolation of FSgrid variables has not yet been implemented; exiting.')
       return -1
 
+   def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass"):
+      ''' Read a linearly interpolated ionosphere variable value from the open vlsv file.
+      Arguments:
+      :param name: Name of the (ionosphere) variable
+      :param coords: Coordinates (x,y,z) from which to read data 
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read` :func:`read_variable_info`
+      '''
+
+      # At this stage, this function has not yet been implemented -- print a warning and exit
+      print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
+      return -1
 
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
@@ -832,9 +846,12 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
-      # First test whether the requested variable is on the FSgrid, and redirect to the dedicated function if needed
+      # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
          return self.read_interpolated_fsgrid_variable(name, coordinates, operator, periodic)
+      if name[0:3] == 'ig_':
+         return self.read_interpolated_ionosphere_variable(name, coordinates, operator, periodic)
+
 
       coordinates = get_data(coordinates)
       
@@ -1073,6 +1090,20 @@ class VlsvReader(object):
 
        return np.squeeze(orderedData)
 
+   def read_ionosphere_variable(self, name, operator="pass"):
+       ''' Reads fsgrid variables from the open vlsv file.
+       Arguments:
+       :param name: Name of the variable
+       :param operator: Datareduction operator. "pass" does no operation on data
+       :returns: numpy array with the data in node order
+
+       ... seealso:: :func:`read_variable`
+       '''
+       # Read the raw array data
+       rawData = self.read(mesh='ionosphere', name=name, tag="VARIABLE", operator=operator)
+
+       return rawData
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:
@@ -1091,6 +1122,12 @@ class VlsvReader(object):
             print("Warning, CellID requests not supported for FSgrid variables! Aborting.")
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
+
+      if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
+         if not cellids == -1:
+            print("Warning, CellID requests not supported for ionosphere variables! Aborting.")
+            return False
+         return self.read_ionosphere_variable(name=name, operator=operator)
 
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
@@ -1126,7 +1163,7 @@ class VlsvReader(object):
          reducer_reg = datareducers
          reducer_multipop = multipopdatareducers
 
-      if (self.check_variable(name) and (varname[0:3]=="vg_" or varname[0:3]=="fg_")):
+      if (self.check_variable(name) and (varname[0:3]=="vg_" or varname[0:3]=="fg_" or varname[0:3]=="ig_")):
          # For Vlasiator 5 vlsv files, metadata is included
          units, latexunits, latex, conversion = self.read_metadata(name=name)
          # Correction for early version incorrect number density (extra backslash)
@@ -1161,6 +1198,8 @@ class VlsvReader(object):
 
       if name.startswith('fg_'):
           data = self.read_fsgrid_variable(name=name, operator=operator)
+      elif name.startswith('ig_'):
+          data = self.read_ionosphere_variable(name=name, operator=operator)
       else:
           data = self.read_variable(name=name, operator=operator, cellids=cellids)
 
@@ -1819,6 +1858,38 @@ class VlsvReader(object):
       :returns: Maximum and minimum coordinates of the mesh, [vxmin, vymin, vzmin, vxmax, vymax, vzmax]
       '''
       return np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin, self.__meshes[pop].__vxmax, self.__meshes[pop].__vymax, self.__meshes[pop].__vzmax])
+
+   def get_ionosphere_mesh_size(self):
+      ''' Read size of the ionosphere mesh, if there is one.
+
+      :returns: Size of the mesh in number of nodes and elements, array with two elements
+      '''
+      domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
+      #TODO: Fail gracefully if there is no ionosphere mesh
+      return [domainsizes[0], domainsizes[2]]
+
+   def get_ionosphere_node_coords(self):
+      ''' Read ionosphere node coordinates.
+
+      :returns: [x,y,z] array of ionosphere node coordinates (in meters)
+      '''
+      coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
+      return coords
+
+   def get_ionosphere_element_corners(self):
+      ''' Read ionosphere mesh element corners
+
+      :returns: [c1,c2,c3] array of ionosphere mesh node indices (starting from 0)
+      '''
+      meshdata = np.array(self.read(tag="MESH", name="ionosphere")).reshape([-1,5])
+      # Elements in meshdata are:
+      # - vlsv::celltype::TRIANGLE ("this is a triangle")
+      # - 3                        ("it has three corners")
+      # - Corner index 1
+      # - Corner index 2
+      # - Corner index 3
+      return meshdata[:,2:5]
+
 
    def read_blocks(self, cellid, pop="proton"):
       ''' Read raw block data from the open file and return the data along with block ids
