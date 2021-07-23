@@ -1869,12 +1869,23 @@ class VlsvReader(object):
       return [domainsizes[0], domainsizes[2]]
 
    def get_ionosphere_node_coords(self):
-      ''' Read ionosphere node coordinates.
+      ''' Read ionosphere node coordinates (in cartesian GSM coordinate system).
 
       :returns: [x,y,z] array of ionosphere node coordinates (in meters)
       '''
       coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
       return coords
+
+   def get_ionosphere_latlon_coords(self):
+      ''' Read ionosphere nore coordinates (in magnetic longitude / latitude)
+
+      :returns: [lat,lon] array of ionosphere node coordinates
+      '''
+      coords = self.get_ionosphere_node_coords()
+      latlon = np.zeros([coords.shape[0], 2])
+      latlon[:,0] = np.arccos(coords[:,2]/6471e3)   # Note, ionosphere height is R_E + 100km
+      latlon[:,1] = np.arctan2(coords[:,1],coords[:,0])
+      return latlon
 
    def get_ionosphere_element_corners(self):
       ''' Read ionosphere mesh element corners

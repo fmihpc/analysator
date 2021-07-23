@@ -20,6 +20,7 @@ def plot_ionosphere(filename=None,
                   symmetric=False, absolute=None,
                   usesci=True,
                   lin=True, symlog=None, nocb=False,
+                  minlatitude=50,
                   cbtitle=None, title=None,
                   thick=1.0,scale=1.0,vscale=1.0,
                   viewdir=1.0,draw=None
@@ -57,6 +58,7 @@ def plot_ionosphere(filename=None,
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
     :kword nocb:        Set to suppress drawing of colourbar
+    :kword minlatitude: Minimum plot latitude (default=50 degrees)
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -74,6 +76,7 @@ def plot_ionosphere(filename=None,
 
     '''
 
+    IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
     # TODO: Implement vlasiator logo watermarking
 
     # Change certain falsy values:
@@ -247,18 +250,20 @@ def plot_ionosphere(filename=None,
     if viewdir > 0:
       for e in elements:
          if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0:
-            mask+=[True]
-         else:
             mask+=[False]
+         else:
+            mask+=[True]
     else:
       for e in elements:
          if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0:
-            mask+=[True]
-         else:
             mask+=[False]
+         else:
+            mask+=[True]
 
     # Build mesh triangulation
-    tri = matplotlib.tri.Triangulation(coords[:,0], coords[:,1], elements, mask)
+    r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+    theta=np.arctan2(coords[:,1],coords[:,0])
+    tri = matplotlib.tri.Triangulation(r*np.cos(theta), r*np.sin(theta), elements, mask)
 
     # Allow title override
     if cbtitle is not None:
@@ -331,24 +336,25 @@ def plot_ionosphere(filename=None,
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=20)
+        ticks = np.linspace(vminuse,vmaxuse,num=11)
 
     # Creating a new figure and axes 
     figsize = (6,5)
     if nocb:
         figsize = (5,5)
     fig = plt.figure(figsize=figsize,dpi=150)
-    ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-6371e3,6371e3), ylim=(-6371e3,6371e3), aspect='equal')
+    ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
     ax_cartesian.set_xticklabels([])
     ax_cartesian.set_yticklabels([])
+    ax_cartesian.axis('off')
 
-    ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False)
-    ax_polar.set_yticklabels([]) #no radial ticks
+    ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, minlatitude))
 
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, vmin=vmin, vmax=vmax, levels=ticks)
+    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, vmin=vmin, vmax=vmax, levels=64)
     ax_polar.grid(True)
+    ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=310)
 
 
     # Colourbar title
