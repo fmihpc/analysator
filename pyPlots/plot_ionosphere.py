@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import glob
 import os, sys
 import time
+import re
 import matplotlib.ticker as mtick
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
@@ -233,8 +234,8 @@ def plot_ionosphere(filename=None,
        operator="pass"
     datamap_info= f.read_variable_info(var, operator=operator)
     # Correction for broken ionosphere units
-    if datamap_info.latex=='$I_\\text{FAC}$':
-       datamap_info.latex  = '$I_\\mathrm{FAC}$'
+    datamap_info.latex = re.sub("\\\\text","\\\\mathrm", datamap_info.latex)
+    datamap_info.latexunits = re.sub("\\\\mho","\\\\Omega^{-1}", datamap_info.latexunits)
     cb_title_use = datamap_info.latex
     datamap_unit = datamap_info.latexunits
     # Check if vscale results in standard unit
