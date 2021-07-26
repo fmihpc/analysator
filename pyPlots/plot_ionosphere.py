@@ -10,6 +10,7 @@ import matplotlib.ticker as mtick
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
+from distutils.version import LooseVersion, StrictVersion
 
 def plot_ionosphere(filename=None,
                   vlsvobj=None,
