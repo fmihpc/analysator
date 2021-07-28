@@ -1864,8 +1864,11 @@ class VlsvReader(object):
 
       :returns: Size of the mesh in number of nodes and elements, array with two elements
       '''
-      domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
-      #TODO: Fail gracefully if there is no ionosphere mesh
+      try:
+         domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
+      except:
+         print("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
+         return [0,0]
       return [domainsizes[0], domainsizes[2]]
 
    def get_ionosphere_node_coords(self):
@@ -1873,7 +1876,11 @@ class VlsvReader(object):
 
       :returns: [x,y,z] array of ionosphere node coordinates (in meters)
       '''
-      coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
+      try:
+         coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
+      except:
+         print("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
+         return []
       return coords
 
    def get_ionosphere_latlon_coords(self):
@@ -1892,7 +1899,12 @@ class VlsvReader(object):
 
       :returns: [c1,c2,c3] array of ionosphere mesh node indices (starting from 0)
       '''
-      meshdata = np.array(self.read(tag="MESH", name="ionosphere")).reshape([-1,5])
+      try:
+         meshdata = np.array(self.read(tag="MESH", name="ionosphere")).reshape([-1,5])
+      except:
+         print("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
+         return []
+
       # Elements in meshdata are:
       # - vlsv::celltype::TRIANGLE ("this is a triangle")
       # - 3                        ("it has three corners")
