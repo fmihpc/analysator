@@ -247,24 +247,25 @@ def plot_ionosphere(filename=None,
     if datamap_unit:
        cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
 
+    r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+    theta=np.arctan2(coords[:,1],coords[:,0])
+
     # Project nodes and elements into view plane
     mask = []
     if viewdir > 0:
       for e in elements:
-         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0:
+         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0 and r[e[0]] < 90-minlatitude and r[e[1]] < minlatitude and r[e[2]] < minlatitude:
             mask+=[False]
          else:
             mask+=[True]
     else:
       for e in elements:
-         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0:
+         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0 and r[e[0]] < 90-minlatitude and r[e[1]] < 90-minlatitude and r[e[2]] < 90-minlatitude:
             mask+=[False]
          else:
             mask+=[True]
 
     # Build mesh triangulation
-    r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
-    theta=np.arctan2(coords[:,1],coords[:,0])
     tri = matplotlib.tri.Triangulation(r*np.cos(theta), r*np.sin(theta), elements, mask)
 
     # Allow title override
@@ -354,10 +355,17 @@ def plot_ionosphere(filename=None,
 
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, vmin=vmin, vmax=vmax, levels=64)
+    print("Vminuse = " + str(vminuse))
+    print("Vmaxuse = " + str(vmaxuse))
+    print("Values min = " + str(min(values)) + ", max = " + str(max(values)))
+    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, levels=64)
     ax_polar.grid(True)
     ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=310)
 
+    # Title and plot limits
+    if len(plot_title)!=0:
+        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
+        ax_polar.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     # Colourbar title
     if len(cb_title_use)!=0:
