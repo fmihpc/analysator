@@ -378,9 +378,9 @@ def plot_ionosphere(filename=None,
 
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, levels=64)
+    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64)
     ax_polar.grid(True)
-    ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=310)
+    ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=225)
 
     # Title and plot limits
     if len(plot_title)!=0:
