@@ -363,32 +363,6 @@ def plot_ionosphere(filename=None,
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
         ticks = np.linspace(vminuse,vmaxuse,num=linticks)
-    ## Lin or log colour scaling, defaults to log
-    #if lin is None:
-    #    # Special SymLogNorm case
-    #    if symlog is not None:
-    #        if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
-    #            norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-    #            print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
-    #            #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
-    #        else:
-    #            norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-    #        maxlog=int(np.ceil(np.log10(vmaxuse)))
-    #        minlog=int(np.ceil(np.log10(-vminuse)))
-    #        logthresh=int(np.floor(np.log10(linthresh)))
-    #        logstep=1
-    #        ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
-    #                +[0.0]
-    #                +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
-    #    else:
-    #        # Logarithmic plot
-    #        norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-    #        ticks = LogLocator(base=10,subs=range(10)) # where to show labels
-    #else:
-    #    # Linear
-    #    levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
-    #    norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-    #    ticks = np.linspace(vminuse,vmaxuse,num=11)
 
     # Creating a new figure and axes 
     figsize = (6,5)
@@ -404,9 +378,6 @@ def plot_ionosphere(filename=None,
 
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    print("Vminuse = " + str(vminuse))
-    print("Vmaxuse = " + str(vmaxuse))
-    print("Values min = " + str(min(values)) + ", max = " + str(max(values)))
     contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, vmin=vminuse, vmax=vmaxuse, levels=64)
     ax_polar.grid(True)
     ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=310)
