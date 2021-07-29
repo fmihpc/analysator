@@ -7,6 +7,7 @@ import os, sys
 import time
 import re
 import matplotlib.ticker as mtick
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
@@ -22,9 +23,9 @@ def plot_ionosphere(filename=None,
                   colormap=None, vmin=None, vmax=None,
                   symmetric=False, absolute=None,
                   usesci=True,
-                  lin=True, symlog=None, nocb=False,
+                  lin=True, symlog=None, nocb=False, internalcb=False,
                   minlatitude=50,
-                  cbtitle=None, title=None,
+                  cbtitle=None, title=None, cbaxes=None,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None
@@ -62,6 +63,8 @@ def plot_ionosphere(filename=None,
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
     :kword nocb:        Set to suppress drawing of colourbar
+    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword minlatitude: Minimum plot latitude (default=50 degrees)
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
@@ -72,6 +75,7 @@ def plot_ionosphere(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
@@ -327,11 +331,11 @@ def plot_ionosphere(filename=None,
         else:
             linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
 
-    # Lin or log colour scaling, defaults to log
+    # Lin or log colour scaling, defaults to lin
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -347,12 +351,44 @@ def plot_ionosphere(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
     else:
         # Linear
+        linticks = 7
+        if isinstance(lin, int):
+            linticks = abs(lin)
+            if linticks==1: # old default was to set lin=1 for seven linear ticks
+                linticks = 7
+                
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=11)
+        ticks = np.linspace(vminuse,vmaxuse,num=linticks)
+    ## Lin or log colour scaling, defaults to log
+    #if lin is None:
+    #    # Special SymLogNorm case
+    #    if symlog is not None:
+    #        if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+    #            norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+    #            print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+    #            #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+    #        else:
+    #            norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+    #        maxlog=int(np.ceil(np.log10(vmaxuse)))
+    #        minlog=int(np.ceil(np.log10(-vminuse)))
+    #        logthresh=int(np.floor(np.log10(linthresh)))
+    #        logstep=1
+    #        ticks=([-(10**x) for x in range(logthresh, minlog+1, logstep)][::-1]
+    #                +[0.0]
+    #                +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
+    #    else:
+    #        # Logarithmic plot
+    #        norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
+    #        ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+    #else:
+    #    # Linear
+    #    levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
+    #    norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
+    #    ticks = np.linspace(vminuse,vmaxuse,num=11)
 
     # Creating a new figure and axes 
     figsize = (6,5)
@@ -392,23 +428,52 @@ def plot_ionosphere(filename=None,
 
     # Creating colorbar axes
     if not nocb:
-        cax = fig.add_axes([0.76,0.2,0.03,0.6])
-        cbdir="right"; horalign="left"
+        if cbaxes: 
+            # Colorbar axes are provided
+            cax = cbaxes
+            cbdir="right"; horalign="left"
+        elif internalcb:
+            # Colorbar within plot area
+            cbloc=1; cbdir="left"; horalign="right"
+            if type(internalcb) is str:
+                if internalcb=="NE":
+                    cbloc=1; cbdir="left"; horalign="right"
+                if internalcb=="NW":
+                    cbloc=2; cbdir="right"; horalign="left"
+                if internalcb=="SW": 
+                    cbloc=3; cbdir="right"; horalign="left"
+                if internalcb=="SE": 
+                    cbloc=4; cbdir="left";  horalign="right"
+            # borderpad default value is 0.5, need to increase it to make room for colorbar title
+            cax = inset_axes(ax_polar, width="5%", height="35%", loc=cbloc, borderpad=1.0,
+                             bbox_transform=ax_polar.transAxes, bbox_to_anchor=(0.15,0,0.85,0.92))
+        else:
+            # Split existing axes to make room for colorbar
+            cax = fig.add_axes([0.9,0.2,0.03,0.6])
+            cbdir="right"; horalign="left"
+
+        # Set flag which affects colorbar decimal precision
+        if lin is None:
+            pt.plot.cb_linear = False
+        else:
+            pt.plot.cb_linear = True
 
         # First draw colorbar
         if usesci:
             cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
         else:
+            #cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
             cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
- 
-        cbticks = cb.get_ticks()
-        cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
-        cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
-        cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+        if not cbaxes:
+            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+        else:
+            cb.ax.tick_params(labelsize=fontsize)
+            cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
@@ -449,7 +514,10 @@ def plot_ionosphere(filename=None,
 
         # if too many subticks in logarithmic colorbar:
         if not lin and symlog is None:
-            nlabels = len(cb.ax.yaxis.get_ticklabels()) # TODO implement some kind of ratio like in other scripts, if needed?
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            # Force less ticks for internal colorbars
+            if internalcb: 
+                nlabels = nlabels * 1.5
             valids = ['1','2','3','4','5','6','7','8','9']
             if nlabels > 10:
                 valids = ['1','2','3','4','5','6','8']
@@ -490,7 +558,7 @@ def plot_ionosphere(filename=None,
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    #plt.tight_layout(pad=0.01)
+    plt.tight_layout(pad=0.01)
     savefig_pad=0.01
     bbox_inches='tight'
 
