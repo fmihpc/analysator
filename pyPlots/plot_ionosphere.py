@@ -10,6 +10,7 @@ import matplotlib.ticker as mtick
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
+from matplotlib.cbook import get_sample_data
 from distutils.version import LooseVersion, StrictVersion
 
 def plot_ionosphere(filename=None,
@@ -25,6 +26,7 @@ def plot_ionosphere(filename=None,
                   minlatitude=50,
                   cbtitle=None, title=None,
                   thick=1.0,scale=1.0,vscale=1.0,
+                  wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None
       ):
 
@@ -72,6 +74,9 @@ def plot_ionosphere(filename=None,
                         variables.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
+    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
  
     .. code-block:: python
@@ -79,7 +84,10 @@ def plot_ionosphere(filename=None,
     '''
 
     IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
-    # TODO: Implement vlasiator logo watermarking
+    # Verify the location of this watermark image
+    watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
+    watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
+
 
     # Change certain falsy values:
     if not lin and lin != 0:
@@ -453,7 +461,31 @@ def plot_ionosphere(filename=None,
                 if not firstdigit in valids: 
                     label.set_visible(False)
 
-    plt.tight_layout(pad=0.01) 
+    # Add Vlasiator watermark
+    if (wmark or wmarkb):
+        if wmark:
+            wm = plt.imread(get_sample_data(watermarkimage))
+        else:
+            wmark=wmarkb # for checking for placement
+            wm = plt.imread(get_sample_data(watermarkimageblack))
+        if type(wmark) is str:
+            anchor = wmark
+        else:
+            anchor="NW"
+        # Allowed region and anchor used in tandem for desired effect
+        if anchor=="NW" or anchor=="W" or anchor=="SW":
+            rect = [0.01, 0.01, 0.3, 0.98]
+        elif anchor=="NE" or anchor=="E" or anchor=="SE":
+            rect = [0.69, 0.01, 0.3, 0.98]
+        elif anchor=="N" or anchor=="C" or anchor=="S":
+            rect = [0.35, 0.01, 0.3, 0.98]
+        newax = fig.add_axes(rect, anchor=anchor, zorder=1)
+        newax.imshow(wm)
+        newax.axis('off')
+
+    # Adjust layout. Uses tight_layout() but in fact this ensures 
+    # that long titles and tick labels are still within the plot area.
+    #plt.tight_layout(pad=0.01)
     savefig_pad=0.01
     bbox_inches='tight'
 
