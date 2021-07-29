@@ -149,7 +149,7 @@ def plot_ionosphere(filename=None,
     if viewdir > 0:
         plot_title = "Northern\\; hemisphere, " + plot_title
     else:
-        plot_title = "Southren\\; hemisphere, " + plot_title
+        plot_title = "Southern\\; hemisphere, " + plot_title
 
     # step, used for file name
     if step is not None:
