@@ -142,6 +142,11 @@ def plot_ionosphere(filename=None,
     else:
         plot_title = ''+title
 
+    if viewdir > 0:
+        plot_title = "Northern\\; hemisphere, " + plot_title
+    else:
+        plot_title = "Southren\\; hemisphere, " + plot_title
+
     # step, used for file name
     if step is not None:
         stepstr = '_'+str(step).rjust(7,'0')
