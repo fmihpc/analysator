@@ -90,10 +90,15 @@ class VlsvWriter(object):
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 
-   def copy_variables( self, vlsvReader ):
-      ''' Copies all variables from vlsv reader to the file
-
+   def copy_variables( self, vlsvReader, varlist=None ):
+      ''' Copies variables from vlsv reader to the file.
+           varlist = None: list of variables to copy; 
       '''
+
+      # Delegate to the variable list handler
+      if (varlist is not None):
+         self.copy_variables_list(vlsvReader, varlist)
+
       # Get the xml sheet:
       xml_root = vlsvReader._VlsvReader__xml_root
 
@@ -108,6 +113,41 @@ class VlsvWriter(object):
                 name = child.attrib['name']
             else:
                 name = ''
+            if 'mesh' in child.attrib:
+                mesh = child.attrib['mesh']
+            else:
+                mesh = ''
+            tag = child.tag
+            # Copy extra attributes:
+            extra_attribs = {}
+            for i in child.attrib.items():
+               if i[0] != 'name' and i[0] != 'mesh':
+                  extra_attribs[i[0]] = i[1]
+            data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
+            # Write the data:
+            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      return
+
+   def copy_variables_list( self, vlsvReader, vars ):
+      ''' Copies variables in the list vars from vlsv reader to the file
+
+      '''
+      # Get the xml sheet:
+      xml_root = vlsvReader._VlsvReader__xml_root
+
+      # Get list of tags to write:
+      tags = {}
+      tags['VARIABLE'] = ''
+
+      # Copy the xml root and write variables
+      for child in xml_root:
+         if child.tag in tags:
+            if 'name' in child.attrib:
+                name = child.attrib['name']
+                if not name in vars:
+                   continue
+            else:
+                continue
             if 'mesh' in child.attrib:
                 mesh = child.attrib['mesh']
             else:
@@ -162,7 +202,8 @@ class VlsvWriter(object):
       datatype = ''
 
       # Add the data into the xml data:
-      child = ET.SubElement(parent=self.__xml_root, tag=tag)
+      print(self.__xml_root, tag)
+      child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
       child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
