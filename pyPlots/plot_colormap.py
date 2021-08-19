@@ -238,11 +238,11 @@ def plot_colormap(filename=None,
         symlog = None
     if symlog is True:
         symlog = 0
-    if (filedir != ''):
+    if (filedir == ''):
         filedir = './'
-    if (fluxdir != ''):
+    if (fluxdir == ''):
         fluxdir = './'
-    if (outputdir != ''):
+    if (outputdir == ''):
         outputdir = './'
 
     # Input file or object
@@ -278,14 +278,14 @@ def plot_colormap(filename=None,
             print("Error locating flux function file!")
             fluxfile=None
                 
-    if not operator:
-        if op:
+    if operator is None:
+        if op is not None:
             operator=op
 
     if not colormap:
         # Default values
         colormap="hot_desaturated"
-        if operator and operator in 'xyz':
+        if operator is not None and operator in 'xyz':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -329,7 +329,7 @@ def plot_colormap(filename=None,
     # Verify validity of operator
     operatorstr=''
     operatorfilestr=''
-    if operator:
+    if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
@@ -471,7 +471,7 @@ def plot_colormap(filename=None,
     ##########
     if not expression:        
         # Read data from file
-        if not operator:
+        if operator is None:
             operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
@@ -952,12 +952,23 @@ def plot_colormap(filename=None,
         flux_function = np.fromfile(fluxfile,dtype='double').reshape(sizes[1],sizes[0])
 
         # Find inflow position values
-        cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-        ff_b = f.read_variable("B", cellids=cid)       
-        if f.check_variable("moments"): # restart file
-            ff_v = f.read_variable("restart_V", cellids=cid)            
+        if f.check_variable("B"):
+            # Old data format
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_variable("B", cellids=cid)
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("restart_V", cellids=cid)
+            else:
+                ff_v = f.read_variable("V", cellids=cid)
         else:
-            ff_v = f.read_variable("V", cellids=cid)            
+            # v5 Vlasiator data
+            cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
+            ff_b = f.read_fsgrid_variable("fg_b")[-2, 0,0]
+            if f.check_variable("moments"): # restart file
+                ff_v = f.read_variable("vg_restart_v", cellids=cid)
+            else:
+                ff_v = f.read_variable("vg_v", cellids=cid)
+
         # Account for movement
         outofplane = [0,-1,0] # For polar runs
         if zsize==1: outofplane = [0,0,1] # For ecliptic runs
