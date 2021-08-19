@@ -462,7 +462,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
     # limits = np.array([getattr(self.ax, f'get_{axis}lim')() for axis in 'xyz'])
     # ax.set_box_aspect(np.ptp(limits, axis = 1))
     try:
-        limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+        limits = np.array([getattr(ax, 'get_{}lim'.format(axis))() for axis in 'xyz'])
         ax.set_box_aspect(np.ptp(limits, axis = 1))
     except:
         print("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
