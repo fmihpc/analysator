@@ -1278,7 +1278,6 @@ class VlsvReader(object):
 
    def downsample_fsgrid_subarray(self, cellid, array):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
-      [untested]
       '''
       fsarr = self.get_fsgrid_subarray(cellid, array)
       n = fsarr.size
@@ -1294,13 +1293,31 @@ class VlsvReader(object):
       cellid. Mutator.
       [untested]
       '''
-      lowi, upi = self.get_fsgrid_slicemap(cellid)
+      lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
+      #print(lowi,upi)
       value = self.read_variable(var, cellids=[cellid])
       if array.ndim == 4:
+         #print(value)
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
+         #print(array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:])
       else:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
+
+   def read_variable_as_fg(self, var):
+      cellids = self.read_variable('CellID')
+      sz = self.get_fsgrid_mesh_size()
+      testvar = self.read_variable(var, [cellids[0]])
+      varsize = testvar.size
+      if(varsize > 1):
+         fgarr = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=testvar.dtype)
+      else:
+         fgarr = np.zeros(sz, dtype=testvar.dtype)
+      for c in cellids:
+         self.upsample_fsgrid_subarray(c, var, fgarr)
+         #print
+      return fgarr
+
 
    def get_cell_fsgrid(self, cellid):
       '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid

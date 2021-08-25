@@ -202,7 +202,6 @@ class VlsvWriter(object):
       datatype = ''
 
       # Add the data into the xml data:
-      print(self.__xml_root, tag)
       child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
       child.attrib["mesh"] = mesh
@@ -247,6 +246,16 @@ class VlsvWriter(object):
 
       # write the xml footer:
       self.__write_xml_footer()
+
+   def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):
+      # get a reader for the target file
+      #print(data.shape[0:3], reader.get_fsgrid_mesh_size(), (data.shape[0:3] == reader.get_fsgrid_mesh_size()))
+      if not (data.shape[0:3] == reader.get_fsgrid_mesh_size()).all():
+         print("Data shape does not match target fsgrid mesh")
+         return
+      cids = reader.read_variable("CellID")
+      vgdata = [reader.downsample_fsgrid_subarray(cid, data) for cid in cids]
+      self.write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)
 
    def __write_xml_footer( self ):
       # Write the xml footer:
