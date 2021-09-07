@@ -1082,8 +1082,8 @@ class VlsvReader(object):
       print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
-      if name.casefold() in known_centerings.keys() and centering == "default":
-         centering = known_centerings[name.casefold()]
+      if name.lower() in known_centerings.keys() and centering == "default":
+         centering = known_centerings[name.lower()]
       else:
          print("A variable with unknown centering! Aborting.")
          return False
@@ -1264,7 +1264,13 @@ class VlsvReader(object):
       lowi, upi = self.get_fsgrid_slice_indices(low, up)
       return lowi, upi
 
-   def get_fsgrid_subarray(self, cellid, array):
+   def get_bbox_fsgrid_slicemap(self, low, up):
+      '''Returns a slice tuple of fsgrid indices that are contained in the (low, up) bounding box.
+      '''
+      lowi, upi = self.get_fsgrid_slice_indices(low, up)
+      return lowi, upi
+
+   def get_cell_fsgrid_subarray(self, cellid, array):
       '''Returns a subarray of the fsgrid array, corresponding to the fsgrid
       covered by the SpatialGrid cellid. [untested]
       '''
@@ -1275,11 +1281,21 @@ class VlsvReader(object):
       else:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
 
+   def get_bbox_fsgrid_subarray(self, low, up, array):
+      '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
+      '''
+      lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
+      #print('subarray:',lowi, upi)
+      if array.ndim == 4:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+      else:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+
 
    def downsample_fsgrid_subarray(self, cellid, array):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
       '''
-      fsarr = self.get_fsgrid_subarray(cellid, array)
+      fsarr = self.get_cell_fsgrid_subarray(cellid, array)
       n = fsarr.size
       if fsarr.ndim == 4:
          n = n/3
@@ -1290,8 +1306,7 @@ class VlsvReader(object):
 
    def upsample_fsgrid_subarray(self, cellid, var, array):
       '''Set the elements of the fsgrid array to the value of corresponding SpatialGrid
-      cellid. Mutator.
-      [untested]
+      cellid. Mutator for array.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
       #print(lowi,upi)

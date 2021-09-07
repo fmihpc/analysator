@@ -56,4 +56,5 @@ from lineout import lineout
 import fit
 from fieldtracer import static_field_tracer
 from fieldtracer import dynamic_field_tracer
+from derivatives import fg_divPoynting, fg_PoyntingFlux, fg_vol_curl
 

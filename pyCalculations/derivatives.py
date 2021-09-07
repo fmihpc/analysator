@@ -27,7 +27,7 @@ import pytools as pt
 import warnings
 from scipy import interpolate
 
-def get_fg_divPoynting:
+def fg_PoyntingFlux(bulkReader):
    b = bulkReader.read_fg_variable_as_volumetric('fg_b')
    print('b.shape=',b.shape)
    e = bulkReader.read_fg_variable_as_volumetric('fg_e')
@@ -35,18 +35,34 @@ def get_fg_divPoynting:
 
    mu_0 = 1.25663706144e-6
    S = np.cross(e,b)/mu_0
-   print('S.shape', S.shape)
+   return S
+
+
+def fg_divPoynting(bulkReader, dx=1e6):
+   S = fg_PoyntingFlux(bulkReader)
 
    #divS = pt.plot.plot_helpers.numdiv(pt.plot.plot_helpers.TransposeVectorArray(np.squeeze(S))).T
    divS = (np.roll(S[:,:,:,0],-1, 0) - np.roll(S[:,:,:,0], 1, 0) +
          np.roll(S[:,:,:,1],-1, 1) - np.roll(S[:,:,:,1], 1, 1) +
-         np.roll(S[:,:,:,2],-1, 2) - np.roll(S[:,:,:,2], 1, 2))/(2*1e6)
+         np.roll(S[:,:,:,2],-1, 2) - np.roll(S[:,:,:,2], 1, 2))/(2*dx)
    print('divS.shape', divS.shape)
    #divS = np.div
 
-   fig=plt.pyplot.figure()
-   ax=plt.pyplot.axes()
-   im=ax.imshow(divS[:,int(divS.shape[1]/2),:], origin='lower', norm=plt.colors.SymLogNorm(base=10, linthresh=1e-12, linscale = 1.0, vmin=-1e-7, vmax=1e-7, clip=True), cmap='vik')
-   plt.pyplot.colorbar(im, ax=ax)
-   plt.pyplot.savefig('./divS_centered.png')
-   print(divS)
+#   print(divS)
+   return divS
+
+def fg_vol_jacobian(array, dx=1e6):
+   dFx_dx, dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], dx)
+   dFy_dx, dFy_dy, dFy_dz = np.gradient(array[:,:,:,1], dx)
+   dFz_dx, dFz_dy, dFz_dz = np.gradient(array[:,:,:,2], dx)
+
+def fg_vol_curl(array, dx=1e6):
+   dummy,  dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], dx)
+   dFy_dx, dummy,  dFy_dz = np.gradient(array[:,:,:,1], dx)
+   dFz_dx, dFz_dy, dummy  = np.gradient(array[:,:,:,2], dx)
+
+   rotx = dFz_dy - dFy_dz
+   roty = dFx_dz - dFz_dx
+   rotz = dFy_dx - dFx_dy
+
+   return np.stack([rotx, roty, rotz], axis=-1)
