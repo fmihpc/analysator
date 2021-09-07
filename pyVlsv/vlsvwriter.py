@@ -69,6 +69,8 @@ class VlsvWriter(object):
       tags['MESH_NODE_CRDS_Z'] = ''
       tags['MESH'] = ''
       tags['MESH_DOMAIN_SIZES'] = ''
+      tags['MESH_GHOST_DOMAINS'] = ''
+      tags['MESH_GHOST_LOCALIDS'] = ''
       tags['CellID'] = ''
       tags['MESH_BBOX'] = ''
       tags['COORDS'] = ''
@@ -79,7 +81,7 @@ class VlsvWriter(object):
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
-            else: mesh = ''
+            else: mesh = None
             tag = child.tag
             extra_attribs = {}
             for i in child.attrib.items():
@@ -87,6 +89,7 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
+            print('Writing tag', tag)
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 
@@ -151,7 +154,10 @@ class VlsvWriter(object):
             if 'mesh' in child.attrib:
                 mesh = child.attrib['mesh']
             else:
-                mesh = ''
+               if tag in ['VARIABLE']:
+                  print('MESH required')
+                  return
+               mesh = None
             tag = child.tag
             # Copy extra attributes:
             extra_attribs = {}
@@ -204,7 +210,8 @@ class VlsvWriter(object):
       # Add the data into the xml data:
       child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
-      child.attrib["mesh"] = mesh
+      if mesh is not None:
+         child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
       if extra_attribs != '':
          for i in extra_attribs.items():
@@ -217,7 +224,14 @@ class VlsvWriter(object):
          return False
       else:
          child.attrib["vectorsize"] = 1
-         datatype = str(type(data[0]))
+         if(len(data) == 0):
+            if tag=="MESH_GHOST_DOMAINS" or tag=="MESH_GHOST_LOCALIDS":
+               datatype="int32"
+            else:
+               print("Trying to extract datatype from an empty array. I will fail as usual, since this is not the special case that is guarded against!")
+               datatype = str(type(data[0]))
+         else:
+            datatype = str(type(data[0]))
 
       # Parse the data types:
       if 'uint' in datatype:
@@ -271,6 +285,7 @@ class VlsvWriter(object):
          for i in child.attrib.items():
             child.attrib[i[0]] = str(child.attrib[i[0]])
       tree = ET.ElementTree( self.__xml_root)
+      xml_footer_indent( self.__xml_root)
       tree.write(fptr)
       # Write the offset (first 8 bytes = endianness):
       offset_endianness = 8
@@ -284,3 +299,17 @@ class VlsvWriter(object):
       self.__write_xml_footer()
       self.__fptr.close()
 
+def xml_footer_indent(elem, level=0):
+   i = "\n" + level*"   "
+   if len(elem):
+      if not elem.text or not elem.text.strip():
+            elem.text = i + "   "
+      if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+      for elem in elem:
+            xml_footer_indent(elem, level+1)
+      if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+   else:
+      if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
