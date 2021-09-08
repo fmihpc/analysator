@@ -51,6 +51,7 @@ class VariableInfo:
       self.units = units
       self.latex = latex
       self.latexunits = latexunits
+      self.scaleDict = {}
 
    def __repr__(self):
       return "VariableInfo(Name: \'" + str(self.name) + "\' Units: \'" + str(self.units) + "\')"
@@ -76,6 +77,51 @@ class VariableInfo:
          print("BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!")
          return []
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
+
+
+   def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None):
+      if data is None:
+         data = self.data
+      else:
+         self.data = data
+
+      if env=='EarthSpace':
+         self.scaleDict = {
+            'T': {'scaledUnits':'nT', 'unitScale':1e-9, 'scaledLatexUnit':'$\mathrm{nT}$'},
+            'K': {'scaledUnits':'MK', 'unitScale':1e6, 'scaledLatexUnit':'$\mathrm{MK}$'},
+            'V/m': {'scaledUnits':'mV/m', 'unitScale':1e-3, 'scaledLatexUnit':'$\mathrm{mV}\,\mathrm{m}^{-1}$'},
+            '1/m^3': {'scaledUnits':'1/cm^3', 'unitScale':1e-6, 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+         }
+      else:
+         self.scaleDict = {}
+      if manualDict is not None:
+         self.scaleDict.update(manualDict)
+      if self.units is not '':
+         dictKey = self.units
+         try:
+            scaledUnits = self.scaleDict[dictKey]['scaledUnits']
+         except KeyError:
+            print('Missing unit scaling info')
+            return self
+         try:
+            unitScale = self.scaleDict[dictKey]['unitScale']
+         except:
+            print('Missing unit scaling info')
+            return self
+         try:
+            scaledLatexUnits = self.scaleDict[dictKey]['scaledLatexUnit']
+         except:
+            print('Missing unit scaling info')
+            return self
+      else:
+         print('Missing unit scaling info')
+         return self
+      return VariableInfo(data/unitScale, name = self.name, units = scaledUnits, latex=self.latex, latexunits=scaledLatexUnits)
+
+
+
+
+
 
 
 
