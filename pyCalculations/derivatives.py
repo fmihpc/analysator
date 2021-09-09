@@ -76,11 +76,12 @@ def fg_vol_div(array, dx=1e6):
 def vfield3_dot(a, b):
     """Calculates dot product of vectors a and b in 3D vector field"""
 
-    return (
-        a[:, :, :, 0] * b[:, :, :, 0]
-        + a[:, :, :, 1] * b[:, :, :, 1]
-        + a[:, :, :, 2] * b[:, :, :, 2]
-    )
+    return np.sum(np.multiply(a,b), axis=-1)
+    #return (
+    #    a[:, :, :, 0] * b[:, :, :, 0]
+    #    + a[:, :, :, 1] * b[:, :, :, 1]
+    #    + a[:, :, :, 2] * b[:, :, :, 2]
+    #)
 
 def vfield3_matder(a, b, dr):
     """Calculates material derivative of 3D vector fields a and b"""
@@ -103,19 +104,21 @@ def vfield3_normalise(a):
 
     amag = np.linalg.norm(a, axis=-1)
 
-    resx = a[:, :, :, 0] / amag
-    resy = a[:, :, :, 1] / amag
-    resz = a[:, :, :, 2] / amag
+    res=a/amag
+    return res
+    #resx = a[:, :, :, 0] / amag
+    #resy = a[:, :, :, 1] / amag
+    #resz = a[:, :, :, 2] / amag
 
-    return np.stack((resx, resy, resz), axis=-1)
+    #return np.stack((resx, resy, resz), axis=-1)
+
+def vfield3_curvature(a, dr=1000e3):
+   a = vfield3_normalise(a)
+   return vfield3_matder(a, a, dr)
 
 def ballooning_crit(B, P, beta, dr=1000e3):
 
-    # Bmag = np.linalg.norm(B, axis=-1)
-
-    b = vfield3_normalise(B)
-
-    n = vfield3_matder(b, b, dr)
+    n = vfield3_curvature(B, dr)
 
     nnorm = vfield3_normalise(n)
 
@@ -127,4 +130,4 @@ def ballooning_crit(B, P, beta, dr=1000e3):
 
     balloon = (2 + beta) / 4.0 * kappaP / (kappaC + 1e-27)
 
-    return (balloon, nnorm, kappaC, gradP)
+    return (balloon, kappaC, gradP)
