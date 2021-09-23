@@ -22,7 +22,7 @@
 # 
 
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
-# Weighted by particle flux
+# Weighted by particle flux/none
 def get_spectrum_energy(vlsvReader,
                   cid,
                   population="proton",
@@ -50,7 +50,7 @@ def get_spectrum_energy(vlsvReader,
    V2 = np.sum(np.square(V),1)
    Ekin = 0.5*mass*V2/q
    f = list(zip(*velcells.items()))
-
+   
 
    # check that velocity space has cells - still return a zero histogram in the same shape
    if(len(f) > 0):
@@ -69,17 +69,32 @@ def get_spectrum_energy(vlsvReader,
    # normalization
    if(weight == 'flux'):
       fw = f*np.sqrt(V2) # use particle flux as weighting
+      units = "s/(m^2 4pi eV)"
+      latexunits = '$\mathrm{s}\,\mathrm{m}^{-2}\,(4\pi\,\mathrm{eV})^{-1}$'
+      latex='$f(\vec{r})v\,\DeltaE\,sr^-1$'
    else:
       fw = f
+      units = "1/(m^3 4pi eV)"
+      latexunits = '$\mathrm{m}^{-3}\,(4\pi\,\mathrm{eV})^{-1}$'
+      latex='$f(\vec{r})\,\DeltaE^-1\,sr^-1$'
+      weight = 'particles'
+   dV = np.prod(vlsvReader.get_velocity_mesh_dv(population))
    # compute histogram
-   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw,normed=0)
+   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw*dV,normed=0)
    # normalization
+   ftotal = np.sum(f)*dV
+   #print('ftotal', ftotal, 'sum hist', np.sum(nhist))
    dE = EkinBinEdges[1:] - EkinBinEdges[0:-1]
    nhist = np.divide(nhist,(dE*4*np.pi))
-   return (True,nhist,edges)
+   vari = pt.calculations.VariableInfo(nhist,
+                                       name="Omnidirectional energy spectrum "+population+' ('+weight+')',
+                                       units=units,
+                                       latex=latex,
+                                       latexunits=latexunits)
+   return (True,vari,edges)
 
 
-# Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
+# Function to reduce the velocity space in a spatial cell to an omnidirectional speed spectrum
 def get_spectrum_modvelocity(vlsvReader,
                   cid,
                   population="proton",
@@ -129,11 +144,11 @@ def get_spectrum_modvelocity(vlsvReader,
    # compute histogram
    (nhist,edges) = np.histogram(Vmod,bins=VBinEdges,weights=fw,normed=0)
    # normalization
-   dV = VBinEdges[1:] - VBinEdges[0:-1]
-   nhist = np.divide(nhist,(dV*4*np.pi))
+   dv = VBinEdges[1:] - VBinEdges[0:-1]
+   nhist = np.divide(nhist,(dv*4*np.pi))
    return (True,nhist,edges)
 
-# Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
+# Function to reduce the velocity space in a spatial cell to an spectrum in velocity along a vector
 def get_spectrum_alongaxis_vel(vlsvReader,
                   cid,
                   population="proton",
@@ -186,14 +201,30 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    # normalization
    if(weight == 'flux'):
       fw = f*np.sqrt(V2) # use particle flux as weighting
+      units = "s^2/(m^3 4pi)"
+      latexunits = '$\mathrm{s}\,\mathrm{m}^{-4}\,(4\pi)^{-1}$'
+      latex='$f(\vec{r})\,\Deltav^-1\,sr^-1$'
    else:
+      units = "s/(m^4 4pi)"
+      latexunits = '$\mathrm{s}\mathrm{m}^{-4}\,(4\pi)^{-1}$'
+      latex='$f(\vec{r})\,\Deltav^-1\,sr^-1$'
+      weight = 'particles'
       fw = f
+   
    # compute histogram
-   print(fw)
-   print(len(Vproj), len(fw))
-   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
+   #print(fw)
+   #print(len(Vproj), len(fw))
+   dV = np.prod(vlsvReader.get_velocity_mesh_dv(population))
+   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw*dV,normed=0)
    # normalization
-   dV = VBinEdges[1:] - VBinEdges[0:-1]
-   nhist = np.divide(nhist,(dV*4*np.pi))
-   return (True,nhist,edges)
+   dv = VBinEdges[1:] - VBinEdges[0:-1]
+   nhist = np.divide(nhist,(dv*4*np.pi))
+   
+   vari = pt.calculations.VariableInfo(nhist,
+                                    name="Omnidirectional energy spectrum "+population+' ('+weight+')',
+                                    units=units,
+                                    latex=latex,
+                                    latexunits=latexunits)
+
+   return (True,vari,edges)
 

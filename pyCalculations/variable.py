@@ -79,7 +79,20 @@ class VariableInfo:
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
 
+   # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
+   # necessary, for default/other environments.
    def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None):
+      ''' Creates a new variableinfo with scale data.
+
+          :param data:         in case you wish to provide new data array (why, though?)
+          :param env:          A string to choose the scaling dictionary [default: EarthSpace]
+          :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
+          :returns: a scaled version of the variable, with pre-formatted units included in the varinfo.
+
+          .. note::
+
+      '''
+
       if data is None:
          data = self.data
       else:
@@ -90,7 +103,7 @@ class VariableInfo:
             'T': {'scaledUnits':'nT', 'unitScale':1e-9, 'scaledLatexUnit':'$\mathrm{nT}$'},
             'K': {'scaledUnits':'MK', 'unitScale':1e6, 'scaledLatexUnit':'$\mathrm{MK}$'},
             'V/m': {'scaledUnits':'mV/m', 'unitScale':1e-3, 'scaledLatexUnit':'$\mathrm{mV}\,\mathrm{m}^{-1}$'},
-            '1/m^3': {'scaledUnits':'1/cm^3', 'unitScale':1e-6, 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+            '1/m^3': {'scaledUnits':'1/cm^3', 'unitScale':1e6, 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
          }
       else:
          self.scaleDict = {}
