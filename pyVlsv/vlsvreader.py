@@ -1003,13 +1003,13 @@ class VlsvReader(object):
            processDomainDecomposition = [1,1,1]
            processBox = [0,0,0]
            optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0]+1)):
+           for i in range(1,min(ntasks,globalsize[0])+1):
                processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1]+1)):
+               for j in range(1,min(ntasks,globalsize[1])+1):
                    if(i * j > ntasks):
                        break
                    processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2]+1)):
+                   for k in range(1,min(ntasks,globalsize[2])+1):
                        if(i * j * k > ntasks):
                            continue
                        processBox[2] = max(1.*globalsize[2]/k,1)
@@ -1021,6 +1021,9 @@ class VlsvReader(object):
                            if value < optimValue:
                               optimValue = value
                               processDomainDecomposition=[i,j,k]
+           if (np.prod(processDomainDecomposition) != ntasks):
+              print("Mismatch in FSgrid rank decomposition")
+              return -1
            return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
