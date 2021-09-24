@@ -230,9 +230,9 @@ def insetVDF(ax, XmeshXY,YmeshXY, pass_maps):
    
 
 # Define where our files are
-fileLocation="/proj/vlasov/2D/BCQ/bulk/"
-fluxLocation="/proj/vlasov/2D/BCQ/flux/"
-outputLocation=outputdir=os.path.expandvars('$HOME/Plots/')
+fileLocation="/wrk/group/spacephysics/vlasiator/2D/BCQ/bulk/"
+fluxLocation="/wrkx/group/spacephysics/vlasiator/2D/BCQ/flux/"
+outputLocation=os.path.expandvars('/wrk/$USER/Plots/')
 
 
 # Frame extent for this job given as command-line arguments
