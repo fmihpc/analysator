@@ -62,8 +62,6 @@ def plot_colormap3dslice(filename=None,
                   absolute=False,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
-                  # fluxfile=None, fluxdir=None,
-                  # fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
                   highres=None,
@@ -171,10 +169,6 @@ def plot_colormap3dslice(filename=None,
                         the regular source file and the file given by this keyword. This overides external
                         and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
-    :kword fluxfile:    Filename to plot fluxfunction from
-    :kword fluxdir:     Directory in which fluxfunction files can be found
-    :kword fluxthick:   Scale fluxfunction line thickness
-    :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
@@ -244,8 +238,6 @@ def plot_colormap3dslice(filename=None,
         symlog = 0
     if (filedir == ''):
         filedir = './'
-    #if (fluxdir == ''):
-    #    fluxdir = './'
     if (outputdir == ''):
         outputdir = './'
 
@@ -262,14 +254,14 @@ def plot_colormap3dslice(filename=None,
         print("Error, needs a .vlsv file name, python object, or directory and step")
         return
     
-    if not operator:
-        if op:
+    if operator is None:
+        if op is not None:
             operator=op
 
     if not colormap:
         # Default values
         colormap="hot_desaturated"
-        if operator and operator in 'xyz':
+        if operator is not None and operator in 'xyz':
             colormap="bwr"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
@@ -316,7 +308,7 @@ def plot_colormap3dslice(filename=None,
     # Verify validity of operator
     operatorstr=''
     operatorfilestr=''
-    if operator:
+    if operator is not None:
         # .isdigit checks if the operator is an integer (for taking an element from a vector)
         if type(operator) is int:
             operator = str(operator)
@@ -501,11 +493,10 @@ def plot_colormap3dslice(filename=None,
         boxcoords=list(simext)
 
     # If box extents were provided manually, truncate to simulation extents
-    # Also subtract one reflevel0-cell in each direction to hide boundary cells
-    boxcoords[0] = max(boxcoords[0],simext[0]+cellsize)
-    boxcoords[1] = min(boxcoords[1],simext[1]-cellsize)
-    boxcoords[2] = max(boxcoords[2],simext[2]+cellsize)
-    boxcoords[3] = min(boxcoords[3],simext[3]-cellsize)
+    boxcoords[0] = max(boxcoords[0],simext[0])
+    boxcoords[1] = min(boxcoords[1],simext[1])
+    boxcoords[2] = max(boxcoords[2],simext[2])
+    boxcoords[3] = min(boxcoords[3],simext[3])
 
     # Axes and units (default R_E)
     if axisunit is not None: # Use m or km or other
@@ -531,7 +522,7 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("vg_restart_rhom")
     elif f.check_variable("proton/vg_rho"):
         rhomap = f.read_variable("proton/vg_rho")
-    elif f.check_variable("proton/vg_rho"):
+    elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
         print("error!")
@@ -547,7 +538,7 @@ def plot_colormap3dslice(filename=None,
     ############################################
     if not expression:        
         # Read data from file
-        if not operator:
+        if operator is None:
             operator="pass"
         datamap_info = f.read_variable_info(var, operator=operator)
 
@@ -1042,7 +1033,7 @@ def plot_colormap3dslice(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -1103,7 +1094,6 @@ def plot_colormap3dslice(filename=None,
         fontsize3=fontsize3*highresscale
         scale=scale*highresscale
         thick=thick*highresscale
-        fluxthick=fluxthick*highresscale
         streamlinethick=streamlinethick*highresscale
         vectorsize=vectorsize*highresscale
 

@@ -193,6 +193,20 @@ class VlsvReader(object):
               self.__meshes[popname]=pop
               if os.getenv('PTNONINTERACTIVE') == None:
                  print("Found population " + popname)
+              
+              # Precipitation energy bins
+              i = 0
+              energybins = []
+              binexists = True
+              while binexists:
+                 binexists = self.check_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                 if binexists:
+                    binvalue = self.read_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+                    energybins.append(binvalue)
+                 i = i + 1
+              if i > 1:
+                 pop.__precipitation_centre_energy = np.asarray(energybins)
+                 vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
       self.__fptr.close()
 
@@ -538,7 +552,7 @@ class VlsvReader(object):
          else: # list of cellids
             self.__read_fileindex_for_cellid()
                
-      if tag == "" and name == "" and tag == "":
+      if tag == "" and name == "":
          print("Bad arguments at read")
 
       if self.__fptr.closed:
@@ -788,6 +802,24 @@ class VlsvReader(object):
          fptr.close()
       return -1
          
+
+   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+      ''' Read a linearly interpolated FSgrid variable value from the open vlsv file.
+      Arguments:
+      :param name: Name of the (FSgrid) variable
+      :param coords: Coordinates from which to read data 
+      :param periodic: Periodicity of the system. Default is periodic in all dimension
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read` :func:`read_variable_info`
+      '''
+
+      # At this stage, this function has not yet been implemented -- print a warning and exit
+      print('Interpolation of FSgrid variables has not yet been implemented; exiting.')
+      return -1
+
+
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
@@ -799,16 +831,21 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+
+      # First test whether the requested variable is on the FSgrid, and redirect to the dedicated function if needed
+      if name[0:3] == 'fg_':
+         return self.read_interpolated_fsgrid_variable(name, coordinates, operator, periodic)
+
       coordinates = get_data(coordinates)
       
       if len(np.shape(coordinates)) == 1:
-         #get closest id
+         # Get closest id
          closest_cell_id=self.get_cellid(coordinates)
          if closest_cell_id == 0:
             return None
          closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
 
-         #now identify the lower one of the 8 neighbor cells
+         # Now identify the lower one of the 8 neighbor cells
          offset = [0 if coordinates[0] > closest_cell_coordinates[0] else -1,\
                    0 if coordinates[1] > closest_cell_coordinates[1] else -1,\
                    0 if coordinates[2] > closest_cell_coordinates[2] else -1]
@@ -817,13 +854,19 @@ class VlsvReader(object):
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         
+         if (lower_cell_id<1 or upper_cell_id<1):
+            print("Error: requested cell id for interpolation outside simulation domain")
+            return -1
+         # If the interpolation is done across two different refinement levels, issue a warning
+         if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
+            print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
+
          scaled_coordinates=np.zeros(3)
          for i in range(3):
             if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
                scaled_coordinates[i]=(coordinates[i] - lower_cell_coordinates[i])/(upper_cell_coordinates[i] - lower_cell_coordinates[i])
             else:
-               scaled_coordinates[i] = 0.0 #Special case for periodic systems with one cell in a dimension
+               scaled_coordinates[i] = 0.0 # Special case for periodic systems with one cell in a dimension
 
          test_val=self.read_variable(name,lower_cell_id,operator)
          if isinstance(test_val, Iterable):
@@ -835,7 +878,7 @@ class VlsvReader(object):
          else:
             value_length=1
          
-         #now identify 8 cells, starting from the lower one
+         # Now identify 8 cells, starting from the lower one
          ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
             for y in [0,1]:
@@ -860,19 +903,19 @@ class VlsvReader(object):
             return final_value
 
       else:
-         #multiple coordinates
+         # Multiple coordinates
          
-         # read all cells as we're anyway going to need this
+         # Read all cells as we're anyway going to need this
          whole_cellids  = self.read_variable("CellID")
-         sorted_variable = self.read_variable(name,operator=operator)[whole_cellids.argsort()]
-         
+         whole_variable = self.read_variable(name,operator=operator)
+
          # Check one value for the length
-         if isinstance(sorted_variable[0], Iterable):
-            value_length=len(sorted_variable[0])
+         if isinstance(whole_variable[0], Iterable):
+            value_length=len(whole_variable[0])
          else:
             value_length=1
          
-         # start iteration
+         # Start iteration
          if value_length == 1:
             ret_array = np.zeros(len(coordinates))
          else:
@@ -887,7 +930,7 @@ class VlsvReader(object):
                continue
             closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
             
-            #now identify the lower one of the 8 neighbor cells
+            # Now identify the lower one of the 8 neighbor cells
             offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
                       0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
                       0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
@@ -896,20 +939,23 @@ class VlsvReader(object):
             offset = [1,1,1]
             upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
             upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-            
+           
+            if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
+               print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
+ 
             scaled_coordinates=np.zeros(3)
             for j in range(3):
                if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
                   scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
                else:
-                  scaled_coordinates[j] = 0.0 #Special case for periodic systems with one cell in a dimension
+                  scaled_coordinates[j] = 0.0 # Special case for periodic systems with one cell in a dimension
             
             ngbrvalues=np.zeros((2,2,2,value_length))
             for x in [0,1]:
                for y in [0,1]:
                   for z  in [0,1]:
-                     id=int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic) - 1) # Mind the -1 offset to access the array!
-                     ngbrvalues[x,y,z,:] = sorted_variable[id]
+                     cellid_neighbor = int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic))
+                     ngbrvalues[x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
             
             c2d=np.zeros((2,2,value_length))
             for y in  [0,1]:
@@ -957,13 +1003,13 @@ class VlsvReader(object):
            processDomainDecomposition = [1,1,1]
            processBox = [0,0,0]
            optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0]+1)):
+           for i in range(1,min(ntasks,globalsize[0])+1):
                processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1]+1)):
+               for j in range(1,min(ntasks,globalsize[1])+1):
                    if(i * j > ntasks):
                        break
                    processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2]+1)):
+                   for k in range(1,min(ntasks,globalsize[2])+1):
                        if(i * j * k > ntasks):
                            continue
                        processBox[2] = max(1.*globalsize[2]/k,1)
@@ -975,6 +1021,9 @@ class VlsvReader(object):
                            if value < optimValue:
                               optimValue = value
                               processDomainDecomposition=[i,j,k]
+           if (np.prod(processDomainDecomposition) != ntasks):
+              print("Mismatch in FSgrid rank decomposition")
+              return -1
            return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
@@ -1320,10 +1369,10 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            #out of bounds
+            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             return 0
 
-      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + ngbr_indices * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
+      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
       cellid_neighbour = self.get_cellid(coord_neighbour)
       return cellid_neighbour
 
@@ -1793,6 +1842,13 @@ class VlsvReader(object):
       return self.__read_blocks(cellid,pop)
 
       return []
+
+   def get_precipitation_centre_energy(self, pop="proton"):
+      ''' Read precipitation energy bins
+
+      :returns: Array of centre energies
+      '''
+      return self.__meshes[pop].__precipitation_centre_energy
 
    def optimize_open_file(self):
       '''Opens the vlsv file for reading
