@@ -23,12 +23,18 @@
 
 import pytools as pt
 import numpy as np
+import sys
 from rotation import rotateTensorToVector
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
 CELLSIZE = 300000.0 # cell size
 DT = 0.5 # time step
+
+kb = 1.38065e-23
+elementalcharge = 1.6021773e-19
+mu_0 = 1.25663706144e-6
+
 
 def inplane(inputarray):
     # Assumes input array is of format [nx,ny,3]
@@ -75,7 +81,7 @@ def numjacobian(inputarray):
 def numgradscalar(inputarray):
     # Assumes input array is of format [nx,ny]
     nx,ny = inputarray.shape
-    grad = np.zeros([nx,ny,3])
+    grad = np.ma.zeros([nx,ny,3])
     if PLANE=='XY':
         grad[:,:,0],grad[:,:,1] = np.gradient(inputarray, CELLSIZE)
     elif PLANE=='XZ':
@@ -85,6 +91,26 @@ def numgradscalar(inputarray):
         return -1
     # Output array is of format [nx,ny,3]
     return grad
+
+def expandMask(inputarray):
+    mask = 1.*inputarray.mask
+    if np.ndim(mask) == 3:
+        mask = 1.*mask.any(axis=2)
+    newmask = 1.*mask
+    newmask = np.logical_or(np.roll(mask,1,axis=0),newmask)
+    newmask = np.logical_or(np.roll(mask,-1,axis=0),newmask)
+    newmask = np.logical_or(np.roll(mask,1,axis=1),newmask)
+    newmask = np.logical_or(np.roll(mask,-1,axis=1),newmask)
+    newmask = np.logical_or(np.roll(mask,(1,1),axis=(0,1)),newmask)
+    newmask = np.logical_or(np.roll(mask,(1,-1),axis=(0,1)),newmask)
+    newmask = np.logical_or(np.roll(mask,(-1,1),axis=(0,1)),newmask)
+    newmask = np.logical_or(np.roll(mask,(-1,-1),axis=(0,1)),newmask)
+    if np.ndim(inputarray) == 2:
+        inputarray.mask = 1.*newmask 
+    else:
+        for i in range(3):
+            inputarray.mask[:,:,i] = 1.*newmask
+    return inputarray
 
 def numdiv(inputarray):
     # Assumes input array is of format [nx,ny,3]
@@ -408,6 +434,21 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
+def expr_Diff(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return []
+    # Assumes two "time steps" i.e. files to diff
+    listofkeys = iter(pass_maps[0])
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+    map0=pass_maps[0][var]
+    map1=pass_maps[1][var]
+    if (map0.shape != map1.shape):
+        print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
+        sys.exit(-1)
+    return (map0-map1) # use keyword absolute to get abs diff
+
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B','rho']
@@ -1139,3 +1180,208 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
                                linewidths=1.2, colors=color_BS,label='Bow shock')
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
+
+def expr_numberdensitycheck(pass_maps, requestvariables=False):
+    # Calculates the required current density to support the observed magnetic field.
+    # Then calculates the required electron flow velocity to support that current.
+    # Then compares the current electron flow to that required.
+    if requestvariables==True:
+        return ['electron/vg_rho','proton/vg_rho']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    return pass_maps['electron/vg_rho']-pass_maps['proton/vg_rho']
+
+def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho','temperature']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronpressure_isothermal expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    #rho_e = pass_maps['electron/rho'].T
+    rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
+    temp_p = pass_maps['temperature'].T
+
+    # This version assumes isothermal electrons with upstream beta_i = beta_p 
+    # i.e. pressure_i = pressure_p, scalar pressure
+    # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
+    # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
+    # temperature = pressure/(rho * kb)
+    nx,ny = rho_p.shape
+
+    # electron pressure gradient contribution to electric field:
+    # E = - nabla dot P_e / (n_e e)
+    # pressure = temperature*(rho*kb) = T_0 * n_e * kb
+    upstream_x = nx-2
+    upstream_y = ny//2
+    T_0 = temp_p[upstream_x,upstream_y]
+    print("upstream temperature ",T_0)
+    # E = - (T_0 * kb)/(n_e * e) * nabla dot n_e
+    mult = - T_0 * kb / elementalcharge
+    gradrho = numgradscalar(rho_p)
+    result = mult * np.ma.divide(gradrho, rho_p[:,:,np.newaxis])
+    for i in range(3):
+        result.mask[:,:,i] = 1.*rho_p.mask
+    # expand mask twice to get rid of ionospheric values
+    for i in range(2):
+        result = expandMask(result)
+    result = np.ma.filled(result, 0)
+    return np.ma.swapaxes(result,0,1)
+
+def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho','pressure']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronpressure_polytropic expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    #index (5/3 is adiabatic), 1 is isothermal
+    index=5./3.
+    #index=1
+    # pn^-index = const
+    
+    #rho_e = pass_maps['electron/rho'].T
+    rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
+    pres_p = pass_maps['pressure'].T
+
+    # This version assumes polytropic electrons with upstream beta_i = beta_p 
+    # i.e. pressure_i = pressure_p, scalar pressure
+    # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
+    # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
+    # temperature = pressure/(rho * kb)
+    # i.e. upstream T_0 is the same
+    nx,ny = rho_p.shape
+
+    # electron pressure gradient contribution to electric field:
+    # E = - nabla dot P_e / (n_e e)
+    # pressure = temperature*(rho*kb) = T_0 * n_e * kb
+    upstream_x = nx-2
+    upstream_y = ny//2
+    P_0 = pres_p[upstream_x,upstream_y]
+    n_0 = rho_p[upstream_x,upstream_y]
+    print("upstream pressure ",P_0," upstream density ",n_0)
+    # find the constant using upstream values
+    const = P_0 * np.power(n_0, -index)
+    # Now the electron pressure is const*n^index
+    pres_e = const * np.power(rho_p, index)
+    gradpres = numgradscalar(pres_e)
+    result = - np.ma.divide(gradpres,rho_p[:,:,np.newaxis])/elementalcharge
+    for i in range(3):
+        result.mask[:,:,i] = 1.*rho_p.mask
+    # expand mask twice to get rid of ionospheric values
+    for i in range(2):
+        result = expandMask(result)
+    result = np.ma.filled(result, 0)
+    return np.ma.swapaxes(result,0,1)
+
+def expr_electronpressure_ratio(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho','temperature','e']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    egradpe = expr_electronpressure_isothermal(pass_maps)
+    egradpe = np.ma.masked_less_equal(np.linalg.norm(egradpe,axis=-1),0)
+    e = np.linalg.norm(pass_maps['e'], axis=-1)
+    e = np.ma.masked_less_equal(e,0)
+    for i in range(2):
+        e = expandMask(e)
+    return np.ma.divide(egradpe, e)
+
+def expr_electronpressure_ratioHall(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho','temperature','e','b','v']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    egradpe = expr_electronpressure_isothermal(pass_maps)
+    egradpe = np.ma.masked_less_equal(np.linalg.norm(egradpe,axis=-1),0)
+    e = pass_maps['e']
+    b = pass_maps['b']
+    v = pass_maps['v']
+    emot=-np.cross(b,v)
+    ehall = e - emot
+    emag= np.linalg.norm(ehall, axis=-1)
+    emag = np.ma.masked_less_equal(emag,0)
+
+    for i in range(2):
+        emag = expandMask(emag)
+    return np.ma.divide(egradpe, emag)
+
+def expr_electronpressure_check(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['rho','temperature','pressure']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    egradpe = expr_electronpressure_isothermal(pass_maps)
+    egradpe2 = expr_electronpressure_polytropic(pass_maps)
+    egradpe = np.ma.masked_less_equal(np.linalg.norm(egradpe,axis=-1),0)
+    egradpe2 = np.ma.masked_less_equal(np.linalg.norm(egradpe2,axis=-1),0)
+    for i in range(2):
+        egradpe = expandMask(egradpe)
+    return np.ma.divide(egradpe, egradpe2)
+
+
+def expr_fgvgbvol(pass_maps, requestvariables=False):
+    # expression for verifying gridglue: downsamples (aggregates) fsgrid values to dccrg-grid resolution
+    if requestvariables==True:
+        return ['vg_b_vol','fg_b_vol','fg_boundarytype','3d']
+
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expression expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    fg = np.ma.masked_invalid(pass_maps['fg_b_vol'])
+    # use boundarytype to mask which cells participate in aggregation
+    fg_boundarytype = np.ma.masked_values(pass_maps['fg_boundarytype'], 0)
+    fg.mask[:,:,:,0] = fg_boundarytype.mask[:,:,:]
+    fg.mask[:,:,:,1] = fg_boundarytype.mask[:,:,:]
+    fg.mask[:,:,:,2] = fg_boundarytype.mask[:,:,:]
+    # generate unity array for counting aggregation source cells
+    sums = np.ma.masked_invalid(np.zeros_like(fg)+1)
+    sums.mask[:,:,:,0] = fg_boundarytype.mask[:,:,:]
+    sums.mask[:,:,:,1] = fg_boundarytype.mask[:,:,:]
+    sums.mask[:,:,:,2] = fg_boundarytype.mask[:,:,:]
+
+    vg = pass_maps['vg_b_vol']
+    bin_size=2
+    (dim1,dim2,dim3,vect1)=fg.shape
+    (out1,out2,out3,vect2)=vg.shape
+    # reshape, then sum over the new mini-dimensions
+    fgavg = fg.reshape((out1//bin_size, bin_size,
+                        out2//bin_size, bin_size,
+                        out3//bin_size, bin_size, 3))
+    fgavg = np.ma.sum(fgavg, axis=1)
+    fgavg = np.ma.sum(fgavg, axis=2)
+    fgavg = np.ma.sum(fgavg, axis=3)
+    # reshape, then sum over the new mini-dimensions
+    summs = sums.reshape((out1//bin_size, bin_size,
+                        out2//bin_size, bin_size,
+                        out3//bin_size, bin_size, 3))
+    summs = np.ma.sum(summs, axis=1)
+    summs = np.ma.sum(summs, axis=2)
+    summs = np.ma.sum(summs, axis=3)
+    # divide by sum count to get average
+    summs = np.ma.masked_values(summs,0)
+    fgavg = np.ma.divide(fgavg,summs)
+    # resample back up for plotting
+    fgreturn = np.repeat(np.repeat(np.repeat(fgavg, 2, axis=0), 2, axis=1), 2, axis=2)
+    return np.abs(fgreturn-vg)

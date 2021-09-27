@@ -32,6 +32,7 @@ from skimage import measure
 
 import scipy
 import os, sys
+import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator
@@ -69,12 +70,6 @@ plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_
 plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
 plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 
-# Different style scientific format for colour bar ticks
-def fmt(x, pos):
-    a, b = '{:.1e}'.format(x).split('e')
-    b = int(b)
-    return r'${}\times10^{{{}}}$'.format(a, b)
-
 
 def plot_isosurface(filename=None,
                     vlsvobj=None,
@@ -102,7 +97,7 @@ def plot_isosurface(filename=None,
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/)
+    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
@@ -152,7 +147,7 @@ def plot_isosurface(filename=None,
 
     outputprefix = ''
     if outputdir==None:
-        outputdir=os.path.expandvars('$HOME/Plots/')
+        outputdir=pt.plot.defaultoutputdir
     outputprefixind = outputdir.rfind('/')
     if outputprefixind >= 0:
         outputprefix = outputdir[outputprefixind+1:]
@@ -166,7 +161,8 @@ def plot_isosurface(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     elif ((filedir!=None) and (step!=None)):
-        filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     else:
         print("Error, needs a .vlsv file name, python object, or directory and step")
@@ -294,15 +290,16 @@ def plot_isosurface(filename=None,
     # Axes and units (default R_E)
     if unit!=None: # Use m or km or other
         if unit==0:
-            unitstr = r'm'
+            unitstr = pt.plot.rmstring('m')
         if unit==3:
-            unitstr = r'km'
+            unitstr = pt.plot.rmstring('km')
         else:
-            unitstr = r'$10^{'+str(int(unit))+'}$ m'
+            unitstr = r'10^{'+str(int(unit))+'} '+pt.plot.rmstring('m')
         unit = np.power(10,int(unit))
     else:
-        unitstr = r'$\mathrm{R}_{\mathrm{E}}$'
+        unitstr = pt.plot.rmstring('R')+'_'+pt.plot.rmstring('E')
         unit = Re
+    unitstr = pt.plot.mathmode(unitstr)
         
     # Scale data extent and plot box
     simext_org = simext
@@ -348,10 +345,12 @@ def plot_isosurface(filename=None,
     print("Minimum found surface value "+str(np.amin(surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(surf_data)))
 
     # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw!=None:
-        plt.switch_backend('TkAgg')
+    if draw is not None:
+        if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            plt.switch_backend(pt.backend_interactive)
     else:
-        plt.switch_backend('Agg')  
+        if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
+            plt.switch_backend(pt.backend_noninteractive)  
 
     # skimage.measure.marching_cubes_lewiner(volume, level=None, spacing=(1.0, 1.0, 1.0), 
     #                                        gradient_direction='descent', step_size=1, 
@@ -571,7 +570,7 @@ def plot_isosurface(filename=None,
         if usesci==0:        
             cb = fig.colorbar(generatedsurface,ticks=ticks, drawedges=False, fraction=0.023, pad=0.02)
         else:
-            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(fmt),drawedges=False, fraction=0.046, pad=0.04)
+            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),drawedges=False, fraction=0.046, pad=0.04)
 
         if len(cb_title_use)!=0:
             cb.ax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')

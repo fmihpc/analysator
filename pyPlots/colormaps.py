@@ -1108,7 +1108,6 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
                 [0.9763, 0.9831, 0.0538]]
 
 from matplotlib.colors import ListedColormap
-
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('inferno', _inferno_data),
@@ -1117,7 +1116,7 @@ for (name, data) in (('magma', _magma_data),
                      ('parula', _parula_data)):
 
     cmaps[name] = ListedColormap(data, name=name)
-
+# Some of these are already included in newer versions of matplotlib
 magma = cmaps['magma']
 inferno = cmaps['inferno']
 plasma = cmaps['plasma']
@@ -1135,10 +1134,27 @@ pale_desaturated_colors=[[0.5 + j * 0.5 for j in i] for i in hot_desaturated_col
 pale_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated",pale_desaturated_colors)
 pale_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated_r",pale_desaturated_colors[::-1])
 
-# Warhol
+# Warhol, by Otto Hannuksela
 warhol_cdict = {'red':   [(0,1,1), (0.111111,0,0), (0.222222,64./255.,64./255.), (0.333333,0,0), (0.444444,79./255.,79./255.),(0.555556,70./255.,70./255.), (0.666667,1,1), (0.777778,1,1), (0.888889,81./255.,81./255.), (1,1,1)],
          'green': [(0,1,1), (0.111111,66./255.,66./255.), (0.222222,1,1), (0.333333,0,0), (0.444444,1,1), (0.555556,16./255.,16./255.), (0.666667,1,1), (0.777778,57./255.,57./255.), (0.888889,0,0), (1,150./255.,150./255.)],
          'blue':  [(0,1,1), (0.111111,0,0), (0.222222,81./255.,81./255.), (0.333333,55./255.,55./255.), (0.444444,1,1), (0.555556,70./255.,70./255.), (0.666667,0,0), (0.777778,0,0), (0.888889,0,0), (1,150./255.,150./255.)] }
 warhol_colormap = matplotlib.colors.LinearSegmentedColormap("warhol",warhol_cdict)
 #>0 255 255 255 255 0.111111 0 66 0 255 0.222222 64 255 81 255 0.333333 0 0 55 255 0.444444 79 255 255 255 0.555556 70 16 70 255 0.666667 255 255 0 255 0.777778 255 57 0 255 0.888889 81 0 0 255 1 255 150 150 255 <
 #matplotlib.colors.LinearSegmentedColormap(name, segmentdata, N=256, gamma=1.0)[source]
+
+
+#Read in Scientific Colormaps 7 from subdirectory
+import glob,os
+import numpy as np
+import matplotlib.pyplot as plt
+(_fpath, _thisfile) = os.path.split(os.path.abspath(__file__))
+
+_SCMfiles = glob.glob(_fpath+"/SCM7/*.txt")
+for _f in _SCMfiles:
+    (_dummypath, _cm_name) = os.path.split(_f)
+    _cm_name = _cm_name[:-4]
+    _cm_data = np.loadtxt(_f)
+    _cm = matplotlib.colors.LinearSegmentedColormap.from_list(_cm_name, _cm_data)
+    plt.register_cmap(cmap=_cm)
+    plt.register_cmap(cmap=_cm.reversed())
+

@@ -51,12 +51,25 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
+if not os.getenv('PTNOLATEX'):
+   matplotlib.rc('text', usetex=True)
+   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
+   matplotlib.rcParams['mathtext.fontset'] = 'stix'
+   matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   print("Using LaTeX formatting")
+   # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
+# Set backends
+if matplotlib.get_backend()[:9] == 'module://':
+   print("Using backend "+matplotlib.get_backend())
+   backend_interactive = matplotlib.get_backend()
+   backend_noninteractive = matplotlib.get_backend()
+elif not os.getenv('PTBACKEND'):
+   backend_interactive = 'TkAgg'
+   backend_noninteractive = 'Agg'
+else:
+   backend_interactive = os.getenv('PTBACKEND')
+   backend_noninteractive = os.getenv('PTBACKEND')
 
 # Import modules
 try:
@@ -75,20 +88,20 @@ import matplotlib.pyplot as plt
 if os.getenv('PTNONINTERACTIVE') != None:
    # Non-interactive plotting mode
    try:
-      plt.switch_backend('Agg')
+      plt.switch_backend(backend_noninteractive)
    except:
-      print("Note: Unable to switch to Agg backend")
+      print("Note: Unable to switch to "+backend_noninteractive+" backend")
 else:
    # Interactive plotting mode
    plt.ion()
    try:
       import grid
    except ImportError as e:
-      print("Note: Did not import grid module: ", e)
+      print("Note: Did not import (outdated MayaVi2) grid module: ", e)
    try:
-      plt.switch_backend('TkAgg')
+      plt.switch_backend(backend_interactive)
    except:
-      print("Note: Unable to switch to TkAgg backend")
+      print("Note: Unable to switch to "+backend_interactive+" backend")
 
 try:
    import plot

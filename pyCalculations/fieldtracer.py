@@ -24,6 +24,7 @@
 import numpy as np
 import scipy as sp
 import pytools as pt
+import warnings
 from scipy import interpolate
 
 def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
@@ -45,16 +46,27 @@ def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
       x0 = x0 + v*dt
       iterations = iterations + 1
 
-def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
+def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar='B' ):
    ''' Field tracer in a static frame
 
        :param vlsvReader:         An open vlsv file
        :param x:                  Starting point for the field trace
        :param max_iterations:     The maximum amount of iteractions before the algorithm stops
        :param dx:                 One iteration step length
-       :param direction:          '+' or '-' Follow field in the plus direction or minus direction
-       :returns:                  Field points in array format [x0,x1,x2,x3]
+       :param direction:          '+' or '-' or '+-' Follow field in the plus direction or minus direction
+       :param bvar:               String, variable name to trace [default 'B']
+       :returns:                  List of coordinates
    '''
+
+   if(bvar is not 'B'):
+     warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
+
+   if direction == '+-':
+     backward = static_field_tracer(vlsvReader, x0, max_iterations, dx, direction='-', bvar=bvar)
+     backward.reverse()
+     forward = static_field_tracer(vlsvReader, x0, max_iterations, dx, direction='+', bvar=bvar)
+     return backward + forward
+
    f = vlsvReader
    # Read cellids in order to sort variables
    cellids = vlsvReader.read_variable("CellID")
@@ -82,7 +94,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+' ):
       indices = [1,0]
 
    # Read face_B:
-   face_B = f.read_variable("B")
+   face_B = f.read_variable(bvar)
    face_Bx = face_B[:,0]
    face_By = face_B[:,1]
    face_Bz = face_B[:,2]
