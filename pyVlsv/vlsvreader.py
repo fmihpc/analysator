@@ -975,6 +975,22 @@ class VlsvReader(object):
          # Done.
          return ret_array
 
+   def read_fsgrid_variable_cellid(self, name, cellids=-1, operator="pass"):
+      ''' Reads fsgrid variables from the open vlsv file.
+       Arguments:
+       :param name:     Name of the variable
+       :param cellids:  SpatialGrid cellids for which to fetch data. Default: return full data
+       :param operator: Datareduction operator. "pass" does no operation on data
+       :returns: *ordered* list of numpy arrays with the data
+
+       ... seealso:: :func:`read_fsgrid_variable`
+       '''
+      var = self.read_fsgrid_variable(name, operator=operator)
+      if cellids == -1:
+         return var
+      else:
+         return [self.downsample_fsgrid_subarray(cid, var) for cid in cellids]
+
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
@@ -1276,7 +1292,7 @@ class VlsvReader(object):
 
    def get_cell_fsgrid_subarray(self, cellid, array):
       '''Returns a subarray of the fsgrid array, corresponding to the fsgrid
-      covered by the SpatialGrid cellid. [untested]
+      covered by the SpatialGrid cellid.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
       #print('subarray:',lowi, upi)
@@ -1307,6 +1323,10 @@ class VlsvReader(object):
       if(n != ncells):
          print("Warning: weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
       return np.mean(fsarr,axis=(0,1,2))
+
+   def get_cellid_at_fsgrid_index(i,j,k):
+      coords = self.get_fsgrid_coordinates([i,j,k])
+      return self.get_cellid(coord)
 
    def upsample_fsgrid_subarray(self, cellid, var, array):
       '''Set the elements of the fsgrid array to the value of corresponding SpatialGrid
