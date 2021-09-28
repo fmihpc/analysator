@@ -26,7 +26,7 @@ import numpy as np
 import sys
 from rotation import rotateTensorToVector
 
-PLANE = 'XZ'
+PLANE = 'XY'
 # or alternatively, 'XZ'
 CELLSIZE = 300000.0 # cell size
 DT = 0.5 # time step
