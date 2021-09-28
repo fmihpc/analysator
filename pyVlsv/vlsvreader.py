@@ -1073,7 +1073,7 @@ class VlsvReader(object):
 
        return np.squeeze(orderedData)
 
-   def read_fg_variable_as_volumetric(self, name, centering="default", operator="pass"):
+   def read_fg_variable_as_volumetric(self, name, centering=None, operator="pass"):
       fgdata = self.read_fsgrid_variable(name, operator)
 
       fssize=list(self.get_fsgrid_mesh_size())
@@ -1085,11 +1085,13 @@ class VlsvReader(object):
       #print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
-      if name.lower() in known_centerings.keys() and centering == "default":
-         centering = known_centerings[name.lower()]
-      else:
-         print("A variable ("+name+") with unknown centering! Aborting.")
-         return False
+      if centering is None:
+         try:
+            centering = known_centerings[name.lower()]
+         except KeyError:
+            print("A variable ("+name+") with unknown centering! Aborting.")
+            return False
+         
       #vector variable
       if fgdata.shape[-1] == 3:
          if centering=="face":
