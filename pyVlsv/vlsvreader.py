@@ -1078,16 +1078,18 @@ class VlsvReader(object):
 
       fssize=list(self.get_fsgrid_mesh_size())
       if 1 in fssize:
-         fgdata=np.expand_dims(fgdata, fssize.index(1)) #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
-      print('read in fgdata with shape', fgdata.shape, name)
+         #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            fgdata=np.expand_dims(fgdata, dim)
+      #print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if name.lower() in known_centerings.keys() and centering == "default":
          centering = known_centerings[name.lower()]
       else:
-         print("A variable with unknown centering! Aborting.")
+         print("A variable ("+name+") with unknown centering! Aborting.")
          return False
-      print('fgdata.shape', fgdata.shape)
       #vector variable
       if fgdata.shape[-1] == 3:
          if centering=="face":
@@ -1346,10 +1348,7 @@ class VlsvReader(object):
       '''Returns real-space center coordinates of the fsgrid 3-index.
       '''
       lowerlimit = self.get_fsgrid_mesh_extent()[0:3]
-      upperlimit = self.get_fsgrid_mesh_extent()[3:6]
-      delta = upperlimit-lowerlimit
-      sz=self.get_fsgrid_mesh_size()
-      dxs = delta/sz
+      dxs = self.get_fsgrid_cell_size()
 
       return lowerlimit+dxs*(np.array(ri)+0.5)
 
@@ -1950,6 +1949,16 @@ class VlsvReader(object):
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
+   def get_fsgrid_cell_size(self):
+      ''' Read fsgrid cell size
+      
+      :returns: Maximum and minimum coordinates of the mesh, [dx, dy, dz]
+      '''
+      size = self.get_fsgrid_mesh_size()
+      ext = self.get_fsgrid_mesh_extent()
+      ext = ext[3:6]-ext[0:3]
+      return ext/size
+
    def get_fsgrid_indices(self, coords):
       ''' Convert spatial coordinates coords to an index array [xi, yi, zi] for fsgrid
 
@@ -1959,10 +1968,7 @@ class VlsvReader(object):
       fsvar_at_coords = fsvar_array.item(ii)
       '''
       lower = self.get_fsgrid_mesh_extent()[0:3]
-      upper = self.get_fsgrid_mesh_extent()[3:6]
-      delta = upper-lower
-      sz=self.get_fsgrid_mesh_size()
-      dx = delta/sz
+      dx = self.get_fsgrid_cell_size()
       r0 = coords-lower
       ri = np.floor(r0/dx).astype(int)
       if (ri < 0).any() or (ri>sz-1).any():
@@ -1982,11 +1988,7 @@ class VlsvReader(object):
       ii = f.get_fsgrid_mesh_extent(coords)
       fsvar_at_coords = fsvar_array.item(ii)
       '''
-      lowerlimit = self.get_fsgrid_mesh_extent()[0:3]
-      upperlimit = self.get_fsgrid_mesh_extent()[3:6]
-      delta = upperlimit-lowerlimit
-      sz=self.get_fsgrid_mesh_size()
-      dx = delta/sz
+      dx = self.get_fsgrid_cell_size()
       eps = dx*eps
       loweri = self.get_fsgrid_indices(lower+eps)
       upperi = self.get_fsgrid_indices(upper-eps)

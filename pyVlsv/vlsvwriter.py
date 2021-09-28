@@ -89,7 +89,6 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            print('Writing tag', tag)
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 

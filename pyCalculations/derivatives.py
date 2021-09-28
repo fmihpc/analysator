@@ -27,10 +27,10 @@ import pytools as pt
 import warnings
 from scipy import interpolate
 
-def fg_PoyntingFlux(bulkReader):
-   b = bulkReader.read_fg_variable_as_volumetric('fg_b')
+def fg_PoyntingFlux(reader):
+   b = reader.read_fg_variable_as_volumetric('fg_b')
    print('b.shape=',b.shape)
-   e = bulkReader.read_fg_variable_as_volumetric('fg_e')
+   e = reader.read_fg_variable_as_volumetric('fg_e')
    print('e.shape=',e.shape)
 
    mu_0 = 1.25663706144e-6
@@ -38,24 +38,35 @@ def fg_PoyntingFlux(bulkReader):
    return S
 
 
-def fg_divPoynting(bulkReader, dx=1e6):
-   S = fg_PoyntingFlux(bulkReader)
-
-   divS = (np.roll(S[:,:,:,0],-1, 0) - np.roll(S[:,:,:,0], 1, 0) +
-         np.roll(S[:,:,:,1],-1, 1) - np.roll(S[:,:,:,1], 1, 1) +
-         np.roll(S[:,:,:,2],-1, 2) - np.roll(S[:,:,:,2], 1, 2))/(2*dx)
+def fg_divPoynting(reader):
+   S = fg_PoyntingFlux(reader)
+   dx = reader.get_fsgrid_cell_size()
+   divS = ((np.roll(S[:,:,:,0],-1, 0) - np.roll(S[:,:,:,0], 1, 0))/(2*dx[0]) +
+           (np.roll(S[:,:,:,1],-1, 1) - np.roll(S[:,:,:,1], 1, 1))/(2*dx[1]) +
+           (np.roll(S[:,:,:,2],-1, 2) - np.roll(S[:,:,:,2], 1, 2))/(2*dx[2])
+          )
    print('divS.shape', divS.shape)
 
    return divS
 
-def fg_vol_jacobian(b, dx=1e6):
-   dFx_dx, dFx_dy, dFx_dz = np.gradient(b[:,:,:,0], dx)
-   dFy_dx, dFy_dy, dFy_dz = np.gradient(b[:,:,:,1], dx)
-   dFz_dx, dFz_dy, dFz_dz = np.gradient(b[:,:,:,2], dx)
+def fg_vol_jacobian(reader, b):
+   # Return the jacobian of an fsgrid volumetric variable
+   # result is a 3x3 array for each cell
+   # Last index of output gives the vector component,
+   # second-to-last the direction of derivative
+   dx = reader.get_fsgrid_cell_size()
+   dFx_dx, dFx_dy, dFx_dz = np.gradient(b[:,:,:,0], dx[0])
+   dFy_dx, dFy_dy, dFy_dz = np.gradient(b[:,:,:,1], dx[1])
+   dFz_dx, dFz_dy, dFz_dz = np.gradient(b[:,:,:,2], dx[2])
 
-   return np.stack()
+   dFx = np.stack([dFx_dx, dFx_dy, dFx_dz], axis=-1)
+   dFy = np.stack([dFy_dx, dFy_dy, dFy_dz], axis=-1)
+   dFz = np.stack([dFz_dx, dFz_dy, dFz_dz], axis=-1)
+   
+   return np.stack([dFx,dFy,dFz], axis=-1)
 
-def fg_vol_curl(array, dx=1e6):
+def fg_vol_curl(reader, array):
+   dx = reader.get_fsgrid_cell_size()
    dummy,  dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], dx)
    dFy_dx, dummy,  dFy_dz = np.gradient(array[:,:,:,1], dx)
    dFz_dx, dFz_dy, dummy  = np.gradient(array[:,:,:,2], dx)
@@ -66,33 +77,34 @@ def fg_vol_curl(array, dx=1e6):
 
    return np.stack([rotx, roty, rotz], axis=-1)
 
-def fg_vol_div(array, dx=1e6):
-   dFx_dx, dummy, dummy = np.gradient(array[:,:,:,0], dx)
-   dummy, dFy_dy, dummy = np.gradient(array[:,:,:,1], dx)
-   dummy, dummy, dFz_dz = np.gradient(array[:,:,:,2], dx)
+def fg_vol_div(reader, array):
+   dx = reader.get_fsgrid_cell_size()
+   dFx_dx = np.gradient(array[:,:,:,0], dx[0], axis=0)
+   dFy_dy = np.gradient(array[:,:,:,1], dx[1], axis=1)
+   dFz_dz = np.gradient(array[:,:,:,2], dx[2], axis=2)
 
    return dFx_dx+dFy_dy+dFz_dz
 
 def vfield3_dot(a, b):
     """Calculates dot product of vectors a and b in 3D vector field"""
 
-    return np.sum(np.multiply(a,b), axis=-1)
+    return (a*b).sum(-1)
     #return (
     #    a[:, :, :, 0] * b[:, :, :, 0]
     #    + a[:, :, :, 1] * b[:, :, :, 1]
     #    + a[:, :, :, 2] * b[:, :, :, 2]
     #)
 
-def vfield3_matder(a, b, dr):
+def vfield3_matder(reader, a, b):
     """Calculates material derivative of 3D vector fields a and b"""
-
+    dr = reader.get_fsgrid_cell_size()
     bx = b[:, :, :, 0]
     by = b[:, :, :, 1]
     bz = b[:, :, :, 2]
 
-    grad_bx = np.gradient(bx, dr)
-    grad_by = np.gradient(by, dr)
-    grad_bz = np.gradient(bz, dr)
+    grad_bx = np.gradient(bx, dr[0])
+    grad_by = np.gradient(by, dr[1])
+    grad_bz = np.gradient(bz, dr[2])
 
     resx = vfield3_dot(a, grad_bx)
     resy = vfield3_dot(a, grad_by)
@@ -112,12 +124,13 @@ def vfield3_normalise(a):
 
     #return np.stack((resx, resy, resz), axis=-1)
 
-def vfield3_curvature(a, dr=1000e3):
+def vfield3_curvature(reader, a):
+   dr = reader.get_fsgrid_cell_size()
    a = vfield3_normalise(a)
    return vfield3_matder(a, a, dr)
 
-def ballooning_crit(B, P, beta, dr=1000e3):
-
+def ballooning_crit(reader, B, P, beta):
+    dr = reader.get_fsgrid_cell_size()
     n = vfield3_curvature(B, dr)
 
     nnorm = vfield3_normalise(n)
