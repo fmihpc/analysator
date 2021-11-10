@@ -897,6 +897,11 @@ def plot_colormap(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
+    #print('XmeshPass and YmeshPass')
+    #print(XmeshPass, YmeshPass)
+    #print('vs boxcoords imshow extents')
+    #print((boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]))
+    #print('prop. change:', (np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass)))
     if(not useimshow):
         fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
     else:
@@ -905,7 +910,7 @@ def plot_colormap(filename=None,
                           norm=norm,
                           interpolation=imshowinterp,
                           origin='lower',
-                          extent=(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))#(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
                          )
     
 

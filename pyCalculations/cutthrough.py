@@ -162,7 +162,29 @@ def cut_through( vlsvReader, point1, point2 ):
    return get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 )
 
 
+def cut_through_swath(vlsvReader, point1, point2, width, normal):
 
+   init_cut = cut_through(vlsvReader, point1, point2)
+   init_cids = init_cut[0].data
+
+   print('swath initial CellIds', init_cids)
+
+   #find the other vector spanning the swath
+   s = np.array(point2)-np.array(point1)
+   w = np.cross(s, np.array(normal))
+   w = width*w/np.linalg.norm(w)
+
+   out_cids = []
+   for cid in init_cids:
+      mid = vlsvReader.get_cell_coordinates(cid)
+      p1 = mid - w/2
+      p2 = mid + w/2
+      temp_cut = cut_through_step(vlsvReader, p1, p2)
+      out_cids.append(temp_cut[0].data)
+
+   init_cut[0] = np.array(out_cids)
+   print(init_cut[0])
+   return init_cut
 
 def cut_through_step( vlsvReader, point1, point2 ):
    ''' Returns cell ids and distances from point 1 to point 2, returning not every cell in a line

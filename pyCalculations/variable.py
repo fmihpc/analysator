@@ -81,13 +81,13 @@ class VariableInfo:
 
    # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
    # necessary, for default/other environments.
-   def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None):
-      ''' Creates a new variableinfo with scale data.
+   def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None, vscale=None):
+      ''' Creates a new variableinfo with scale data - returns self if no scaling!
 
           :param data:         in case you wish to provide new data array (why, though?)
           :param env:          A string to choose the scaling dictionary [default: EarthSpace]
           :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
-          :returns: a scaled version of the variable, with pre-formatted units included in the varinfo.
+          :returns: self, with scaled units with pre-formatted units included in the varinfo.
 
           .. note::
 
@@ -109,32 +109,33 @@ class VariableInfo:
          self.scaleDict = {}
       if manualDict is not None:
          self.scaleDict.update(manualDict)
-      if self.units is not '':
+      if self.units != '':
          dictKey = self.units
+         if vscale is None:
+            try:
+               unitScale = self.scaleDict[dictKey]['unitScale']
+            except:
+               print('Missing unitScale in specialist dict for' + self.units)
+               return self
+            vscale = unitScale
+         if not np.isclose(vscale, unitScale):
+            return self
          try:
             scaledUnits = self.scaleDict[dictKey]['scaledUnits']
          except KeyError:
-            print('Missing unit scaling info')
-            return self
-         try:
-            unitScale = self.scaleDict[dictKey]['unitScale']
-         except:
-            print('Missing unit scaling info')
+            print('Missing scaledUnits in specialist dict for' + self.units)
             return self
          try:
             scaledLatexUnits = self.scaleDict[dictKey]['scaledLatexUnit']
          except:
-            print('Missing unit scaling info')
+            print('Missing scaledLatexUnits in specialist dict for ' + self.units)
             return self
       else:
-         print('Missing unit scaling info')
-         return self
-      return VariableInfo(data/unitScale, name = self.name, units = scaledUnits, latex=self.latex, latexunits=scaledLatexUnits)
-
-
-
-
-
+            return self
+      self.data = data/unitScale
+      self.units = scaledUnits
+      self.latexunits = scaledLatexUnits
+      return self
 
 
 
