@@ -23,6 +23,8 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
+import pytools as pt
+from numbers import Number
 
 class VariableInfo:
    ''' A class/struct for holding variable info. This includes the variable data in array form, the name and the units.
@@ -79,6 +81,99 @@ class VariableInfo:
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
 
+   def get_scaling_metadata(self, env='EarthSpace', manualDict=None, vscale=None):
+      ''' Return scaling metadata
+
+          :param env:          A string to choose the scaling dictionary [default: EarthSpace]
+          :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
+          :param vscale:       float, factor to scale the variable with
+          :returns: (norming factor, scaledUnits, scaledLatexUnits)
+
+          .. note::
+
+      '''
+
+     #
+      if env=='EarthSpace':
+         self.scaleDict = {
+                 's'      : {'defaultScale':1,
+                             1e6: {'scaledUnits':'mus', 'scaledLatexUnit':'$\mu\mathrm{s}$'},
+                             1e3: {'scaledUnits':'ms', 'scaledLatexUnit':'$\mathrm{ms}$'}
+                            },
+                 'T'      : {'defaultScale':1e9,
+                             1e9: {'scaledUnits':'nT', 'scaledLatexUnit':'$\mathrm{nT}$'}
+                            },
+                 'K'      : {'defaultScale':1e-6,
+                             1e-6:{'scaledUnits':'MK', 'scaledLatexUnit':'$\mathrm{MK}$'}
+                            },
+                 'Pa'     : {'defaultScale':1e9,
+                             1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':'$\mathrm{nPa}$'}
+                            },
+                 '1/m^3'  : {'defaultScale':1e-6,
+                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+                            },
+                 '1/m3'   : {'defaultScale':1e-6,
+                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+                            },
+                 'm/s'    : {'defaultScale':1e-3,
+                             1e-3:{'scaledUnits':'km/s', 'scaledLatexUnit':'$\mathrm{km}\,\mathrm{s}^{-1}$'}
+                            },
+                 'V/m'    : {'defaultScale':1e3,
+                             1e3:{'scaledUnits':'mV/m', 'scaledLatexUnit':'$\mathrm{mV}\,\mathrm{m}^{-1}$'}
+                            },
+                 'eV/cm3' : {'defaultScale':1e-3,
+                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':'$\mathrm{keV}\,\mathrm{cm}^{-3}'}
+                            },
+                 'eV/cm^3': {'defaultScale':1e-3,
+                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':'$\mathrm{keV}\,\mathrm{cm}^{-3}'}
+                            },
+         }
+
+      else:
+         self.scaleDict = {}
+      if manualDict is not None:
+         self.scaleDict.update(manualDict)
+      unitScale = 1.0
+      scaledUnits = self.units
+      scaledLatexUnits = self.latexunits
+
+      if self.units != '':
+         dictKey = self.units
+         udict = self.scaleDict[dictKey]
+         if vscale is None:
+            try:
+               unitScale = udict['defaultScale']
+            except:
+               print('No vscale or defaultScale in specialist dict for' + self.units)
+               return 1.0, self.units, self.latexunits
+         elif np.isclose(vscale, 1.0):
+               return 1.0, self.units, self.latexunits
+         else:
+             unitScale = vscale
+
+         if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
+             #
+             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pt.plot.cbfmtsci(vscale,None)
+         try:
+            #above guarantees the list comprehension does not give an empty list
+            unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
+            scaledUnits = udict[unitScale]['scaledUnits']
+         except KeyError:
+            print('Missing scaledUnits in specialist dict for' + self.units + ' for unitScale='+str(unitScale))
+            return 1.0, self.units, self.latexunits
+         try:
+            scaledLatexUnits = udict[unitScale]['scaledLatexUnit']
+         except:
+            print('Missing scaledLatexUnits in specialist dict for ' + self.units+ ' for unitScale='+str(unitScale))
+            return 1.0, self.units, self.latexunits
+      else:
+          if vscale is None or np.isclose(vscale, 1.0):
+            return 1.0, self.units, self.latexunits
+          else:
+            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pt.plot.cbfmtsci(vscale,None)
+
+      return unitScale, scaledUnits, scaledLatexUnits
+
    # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
    # necessary, for default/other environments.
    def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None, vscale=None):
@@ -98,41 +193,11 @@ class VariableInfo:
       else:
          self.data = data
 
-      if env=='EarthSpace':
-         self.scaleDict = {
-            'T': {'scaledUnits':'nT', 'unitScale':1e-9, 'scaledLatexUnit':'$\mathrm{nT}$'},
-            'K': {'scaledUnits':'MK', 'unitScale':1e6, 'scaledLatexUnit':'$\mathrm{MK}$'},
-            'V/m': {'scaledUnits':'mV/m', 'unitScale':1e-3, 'scaledLatexUnit':'$\mathrm{mV}\,\mathrm{m}^{-1}$'},
-            '1/m^3': {'scaledUnits':'1/cm^3', 'unitScale':1e6, 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
-         }
-      else:
-         self.scaleDict = {}
-      if manualDict is not None:
-         self.scaleDict.update(manualDict)
-      if self.units != '':
-         dictKey = self.units
-         if vscale is None:
-            try:
-               unitScale = self.scaleDict[dictKey]['unitScale']
-            except:
-               print('Missing unitScale in specialist dict for' + self.units)
-               return self
-            vscale = unitScale
-         if not np.isclose(vscale, unitScale):
-            return self
-         try:
-            scaledUnits = self.scaleDict[dictKey]['scaledUnits']
-         except KeyError:
-            print('Missing scaledUnits in specialist dict for' + self.units)
-            return self
-         try:
-            scaledLatexUnits = self.scaleDict[dictKey]['scaledLatexUnit']
-         except:
-            print('Missing scaledLatexUnits in specialist dict for ' + self.units)
-            return self
-      else:
-            return self
-      self.data = data/unitScale
+      unitScale, scaledUnits, scaledLatexUnits = self.get_scaling_metadata(env, manualDict, vscale)
+      if unitScale == 1: # no change, optimize out the calculation
+          return self
+
+      self.data = data*unitScale
       self.units = scaledUnits
       self.latexunits = scaledLatexUnits
       return self

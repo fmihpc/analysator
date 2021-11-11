@@ -151,7 +151,7 @@ def plot_colormap(filename=None,
 
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
-                        variables.
+                        variables. Set to None to search for a default scaling settings.
     :kword absolute:    Plot the absolute of the evaluated variable
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
@@ -479,7 +479,7 @@ def plot_colormap(filename=None,
         cb_title_use = datamap_info.latex
         datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
+        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
         
         # Add unit to colorbar title
         if datamap_unit:
