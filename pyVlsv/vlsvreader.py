@@ -1029,6 +1029,9 @@ class VlsvReader(object):
 
       import ctypes,sys,os
       filepath=os.path.dirname(__file__)
+      libpath=filepath+'/../pyFsGrid/libFsGrid.so'
+      if (not os.path.isfile(libpath)):
+         print("You have not compiled libFsGrid...Reverting to old method..")
       fname=self.file_name
       vectorize=self.getVectorSize( name, tag="VARIABLE", mesh="fsgrid")
       
@@ -1048,7 +1051,7 @@ class VlsvReader(object):
       #Prepare external lib 
       filename=ctypes.create_string_buffer(self.file_name.encode('UTF-8'))
       var=ctypes.create_string_buffer(name.encode('UTF-8'))
-      lib = ctypes.CDLL(filepath+'/../pyFsGrid/libFsGrid.so')
+      lib = ctypes.CDLL(libpath)
       lib.read.argtypes=(ctypes.c_char_p,ctypes.c_char_p,ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_int))
       lib.read.restypes=ctypes.c_bool
 
