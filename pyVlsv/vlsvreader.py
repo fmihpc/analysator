@@ -802,6 +802,50 @@ class VlsvReader(object):
          fptr.close()
       return -1
          
+   def getVectorSize(self, name="", tag="", mesh=""):
+      ''' Read variable vectorsize from the open vlsv file. 
+          Needed for libReadFsGrid
+      
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :returns: four strings:
+                the vectorsize of the variable                   
+      '''
+
+      if tag == "" and name == "":
+         print("Bad arguments at read")
+
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+
+      # Force lowercase name for internal checks
+      name = name.lower()
+      
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:         
+         if tag != "":
+            if child.tag != tag:
+               continue
+         if name != "":
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
+               continue
+         if not "name" in child.attrib:
+            continue
+         # Found the requested data entry in the file
+         vectorsize = child.attrib["vectorsize"]
+         return vectorsize
+            
+      if name!="":
+         print("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
+      if self.__fptr.closed:
+         fptr.close()
+      return -1
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file.
@@ -975,6 +1019,72 @@ class VlsvReader(object):
          # Done.
          return ret_array
 
+   def lib_read_fsgrid_variable(self,name,operator="pass"):
+      ''' Reads fsgrid variables from the open vlsv file using a c++ dll .
+      Arguments:
+      :param name: Name of the variable
+      :param operator: Datareduction operator. "pass" does no operation on data
+      :returns: *ordered* numpy array with the data
+      '''
+
+      import ctypes,sys,os
+      filepath=os.path.dirname(__file__)
+      fname=self.file_name
+      vectorize=self.getVectorSize( name, tag="VARIABLE", mesh="fsgrid")
+      
+      #Filter scalar variables first
+      if (int(vectorize)==1):
+         print("Changing operator for scalar variable ",name," to absolute")
+         operator="absolute"
+      
+      # Get fsgrid domain size (this can differ from vlasov grid size if refined)
+      bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+      
+      # Here we will only read one component 
+      read_vectorsize=1
+      storageSize=read_vectorsize*bbox[0]*bbox[1]*bbox[2]     
+      shape=(ctypes.c_int*3)() 
+
+      #Prepare external lib 
+      filename=ctypes.create_string_buffer(self.file_name.encode('UTF-8'))
+      var=ctypes.create_string_buffer(name.encode('UTF-8'))
+      lib = ctypes.CDLL(filepath+'/../pyFsGrid/libFsGrid.so')
+      lib.read.argtypes=(ctypes.c_char_p,ctypes.c_char_p,ctypes.c_int,ctypes.POINTER(ctypes.c_double),ctypes.POINTER(ctypes.c_int))
+      lib.read.restypes=ctypes.c_bool
+
+
+      #Read variable
+      if (operator=="x" or operator=="absolute"):
+         vec=(ctypes.c_double *storageSize)() 
+         res=lib.read(filename,var,ctypes.c_int(0),vec,shape)
+         if (not res):raise ValueError("libFsGrid failed")
+         rawData = np.ctypeslib.as_array(vec)
+      elif (operator=="y"):
+         vec=(ctypes.c_double *storageSize)() 
+         res=lib.read(filename,var,ctypes.c_int(1),vec,shape)
+         if (not res):raise ValueError("libFsGrid failed")
+         rawData = np.ctypeslib.as_array(vec)
+      elif (operator=="z"):
+         vec=(ctypes.c_double *storageSize)() 
+         res=lib.read(filename,var,ctypes.c_int(2),vec,shape)
+         if (not res):raise ValueError("libFsGrid failed")
+         rawData = np.ctypeslib.as_array(vec)
+      elif (operator=="magnitude"):
+         vec_x=(ctypes.c_double *storageSize)() 
+         vec_y=(ctypes.c_double *storageSize)() 
+         vec_z=(ctypes.c_double *storageSize)() 
+         res=lib.read(filename,var,ctypes.c_int(0),vec_x,shape)  #read x
+         res= res and (lib.read(filename,var,ctypes.c_int(1),vec_y,shape)) #read y
+         res =res and (lib.read(filename,var,ctypes.c_int(2),vec_z,shape)) #read z
+         if (not res):raise ValueError("libFsGrid failed")
+         rawData = np.ctypeslib.as_array([vec_x,vec_y,vec_z]).T
+         rawData=data_operators[operator](rawData)
+      dataShape = np.ctypeslib.as_array(shape)
+      rawData=np.reshape(rawData,(dataShape),order='F')
+      return np.squeeze(rawData) 
+
+
+
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
@@ -984,6 +1094,14 @@ class VlsvReader(object):
 
        ... seealso:: :func:`read_variable`
        '''
+       return self.lib_read_fsgrid_variable(name,operator)
+
+       #First let's try to use libReadFsGrid for faster data parsing
+       try:
+         return self.lib_read_fsgrid_variable(name,operator)
+       except:
+          print("libReadFsGrid failed. Continuing with pyVlsv")
+          pass  
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
        bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
