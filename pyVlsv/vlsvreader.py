@@ -1031,7 +1031,7 @@ class VlsvReader(object):
       filepath=os.path.dirname(__file__)
       libpath=filepath+'/../pyFsGrid/libFsGrid.so'
       if (not os.path.isfile(libpath)):
-         print("You have not compiled libFsGrid...Reverting to old method..")
+         raise ValueError("\n***You have not compiled libFsGrid! Reverting to old method.***\n")
       fname=self.file_name
       vectorize=self.getVectorSize( name, tag="VARIABLE", mesh="fsgrid")
       
@@ -1060,17 +1060,17 @@ class VlsvReader(object):
       if (operator=="x" or operator=="absolute"):
          vec=(ctypes.c_double *storageSize)() 
          res=lib.read(filename,var,ctypes.c_int(0),vec,shape)
-         if (not res):raise ValueError("libFsGrid failed")
+         if (not res):raise ValueError("libFsGrid failed while reading data")
          rawData = np.ctypeslib.as_array(vec)
       elif (operator=="y"):
          vec=(ctypes.c_double *storageSize)() 
          res=lib.read(filename,var,ctypes.c_int(1),vec,shape)
-         if (not res):raise ValueError("libFsGrid failed")
+         if (not res):raise ValueError("libFsGrid failed while reading data")
          rawData = np.ctypeslib.as_array(vec)
       elif (operator=="z"):
          vec=(ctypes.c_double *storageSize)() 
          res=lib.read(filename,var,ctypes.c_int(2),vec,shape)
-         if (not res):raise ValueError("libFsGrid failed")
+         if (not res):raise ValueError("libFsGrid failed while reading data")
          rawData = np.ctypeslib.as_array(vec)
       elif (operator=="magnitude"):
          vec_x=(ctypes.c_double *storageSize)() 
@@ -1079,7 +1079,7 @@ class VlsvReader(object):
          res=lib.read(filename,var,ctypes.c_int(0),vec_x,shape)  #read x
          res= res and (lib.read(filename,var,ctypes.c_int(1),vec_y,shape)) #read y
          res =res and (lib.read(filename,var,ctypes.c_int(2),vec_z,shape)) #read z
-         if (not res):raise ValueError("libFsGrid failed")
+         if (not res):raise ValueError("libFsGrid failed while reading data")
          rawData = np.ctypeslib.as_array([vec_x,vec_y,vec_z]).T
          rawData=data_operators[operator](rawData)
       dataShape = np.ctypeslib.as_array(shape)
@@ -1101,9 +1101,9 @@ class VlsvReader(object):
        #First let's try to use libReadFsGrid for faster data parsing
        try:
          return self.lib_read_fsgrid_variable(name,operator)
-       except:
-          print("libReadFsGrid failed. Continuing with pyVlsv")
-          pass  
+       except Exception as e:
+         print(e)
+         pass
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
        bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
