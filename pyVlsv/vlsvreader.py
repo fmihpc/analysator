@@ -1094,7 +1094,6 @@ class VlsvReader(object):
 
        ... seealso:: :func:`read_variable`
        '''
-       return self.lib_read_fsgrid_variable(name,operator)
 
        #First let's try to use libReadFsGrid for faster data parsing
        try:
