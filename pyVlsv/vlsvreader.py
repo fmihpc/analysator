@@ -1033,10 +1033,10 @@ class VlsvReader(object):
       if (not os.path.isfile(libpath)):
          raise ValueError("\n***You have not compiled libFsGrid! Reverting to old method.***\n")
       fname=self.file_name
-      vectorize=self.getVectorSize( name, tag="VARIABLE", mesh="fsgrid")
+      vectorSize=self.getVectorSize( name, tag="VARIABLE", mesh="fsgrid")
       
       #Filter scalar variables first
-      if (int(vectorize)==1):
+      if (int(vectorSize)==1):
          print("Changing operator for scalar variable ",name," to absolute")
          operator="absolute"
       
@@ -1056,7 +1056,7 @@ class VlsvReader(object):
       lib.read.restypes=ctypes.c_bool
 
 
-      #Read variable
+      #Read variable  components
       if (operator=="x" or operator=="absolute"):
          vec=(ctypes.c_double *storageSize)() 
          res=lib.read(filename,var,ctypes.c_int(0),vec,shape)
@@ -1099,11 +1099,12 @@ class VlsvReader(object):
        '''
 
        #First let's try to use libReadFsGrid for faster data parsing
-       try:
-         return self.lib_read_fsgrid_variable(name,operator)
-       except Exception as e:
-         print(e)
-         pass
+       if (not (os.getenv("PTNOCPP"))):
+           try:
+             return self.lib_read_fsgrid_variable(name,operator)
+           except Exception as e:
+             print(e)
+             pass
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
        bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
