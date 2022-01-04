@@ -128,10 +128,16 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     vxsize = int(vxsize)
     vysize = int(vysize)
     vzsize = int(vzsize)
-    # Account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+        vxsize = widval*vxsize
+        vysize = widval*vysize
+        vzsize = widval*vzsize
+    else: # default WID=4
+        vxsize = 4*vxsize
+        vysize = 4*vysize
+        vzsize = 4*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
     print("Input velocity grid cell size "+str(inputcellsize))
