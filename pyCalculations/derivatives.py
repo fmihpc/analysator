@@ -67,9 +67,9 @@ def fg_vol_jacobian(reader, b):
 
 def fg_vol_curl(reader, array):
    dx = reader.get_fsgrid_cell_size()
-   dummy,  dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], dx)
-   dFy_dx, dummy,  dFy_dz = np.gradient(array[:,:,:,1], dx)
-   dFz_dx, dFz_dy, dummy  = np.gradient(array[:,:,:,2], dx)
+   dummy,  dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], *dx)
+   dFy_dx, dummy,  dFy_dz = np.gradient(array[:,:,:,1], *dx)
+   dFz_dx, dFz_dy, dummy  = np.gradient(array[:,:,:,2], *dx)
 
    rotx = dFz_dy - dFy_dz
    roty = dFx_dz - dFz_dx

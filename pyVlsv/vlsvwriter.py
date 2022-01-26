@@ -240,7 +240,7 @@ class VlsvWriter(object):
       elif 'float' in datatype:
          child.attrib["datatype"] = "float"
       else:
-         print("BAD DATATYPE")
+         print("BAD DATATYPE: " + datatype)
          return False
 
       if '64' in datatype:
@@ -275,7 +275,7 @@ class VlsvWriter(object):
 
       '''
 
-      return self.write(data, name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':variableLaTex, 'unit':unit, 'unitLaTeX':unitLaTeX, 'unitConversion':unitConversion}.update(extra_attribs))
+      return self.write(data, name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':variableLaTex, 'unit':unit, 'unitLaTeX':unitLaTeX, 'unitConversion':unitConversion})
 
 
    def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):

@@ -979,7 +979,7 @@ class VlsvReader(object):
       ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
        :param name:     Name of the variable
-       :param cellids:  SpatialGrid cellids for which to fetch data. Default: return full data
+       :param cellids:  SpatialGrid cellids for which to fetch data. Default: return full fsgrid data
        :param operator: Datareduction operator. "pass" does no operation on data
        :returns: *ordered* list of numpy arrays with the data
 
@@ -1324,9 +1324,27 @@ class VlsvReader(object):
          print("Warning: weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
       return np.mean(fsarr,axis=(0,1,2))
 
-   def get_cellid_at_fsgrid_index(i,j,k):
+   def fsgrid_array_to_vg(self, array):
+      cellIds=self.read_variable("CellID")
+
+      #if not hasattr(self, 'fsCellIdTargets'):
+      #   self.fsCellIdTargets = np.zeros(self.get_fsgrid_mesh_size())
+      #   for cid in cellIds:
+      #      lowi, upi = self.get_cell_fsgrid_slicemap(cid)
+      #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
+      
+      vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
+      return vgarr
+
+   def vg_uniform_grid_process(self, variable, expr, exprtuple):
+      cellIds=self.read_variable("CellID")
+      array = self.read_variable_as_fg(variable)
+      array = expr(*exprtuple)
+      return self.fsgrid_array_to_vg(array)
+
+   def get_cellid_at_fsgrid_index(self, i,j,k):
       coords = self.get_fsgrid_coordinates([i,j,k])
-      return self.get_cellid(coord)
+      return self.get_cellid(coords)
 
    def upsample_fsgrid_subarray(self, cellid, var, array):
       '''Set the elements of the fsgrid array to the value of corresponding SpatialGrid
@@ -1993,6 +2011,7 @@ class VlsvReader(object):
       dx = self.get_fsgrid_cell_size()
       r0 = coords-lower
       ri = np.floor(r0/dx).astype(int)
+      sz = self.get_fsgrid_mesh_size()
       if (ri < 0).any() or (ri>sz-1).any():
          print("get_fsgrid_indices: Resulting index out of bounds, returning None")
          return None

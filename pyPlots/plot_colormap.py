@@ -249,7 +249,11 @@ def plot_colormap(filename=None,
     if filename:
         f=pt.vlsvfile.VlsvReader(filename)
     elif (filedir and step is not None):
-        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        try:
+            filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        except IndexError as err:
+            print("IndexError for filedir =", filedir, ", step = ", step)
+            return
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj:
