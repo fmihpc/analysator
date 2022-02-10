@@ -530,6 +530,41 @@ class VlsvReader(object):
          self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
+   def print_version(self):
+      '''
+      Prints version information from VLSV file.
+      TAG is hardcoded to VERSION
+
+      :returns True if version is found otherwise returns False
+      '''
+      import sys
+      tag="VERSION"
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if child.tag != tag:
+            continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            array_size = ast.literal_eval(child.attrib["arraysize"])
+            variable_offset = ast.literal_eval(child.text)
+
+            if self.__fptr.closed:
+               fptr = open(self.file_name,"rb")
+            else:
+               fptr = self.__fptr
+         
+            fptr.seek(variable_offset)
+            info = fptr.read(array_size).decode("utf-8")
+
+            # info=data.decode("utf-8")
+            print("Version and Config Info for ",self.file_name,file=sys.stdout)
+            print(info,file=sys.stdout)
+            return True
+
+      #if we end up here the file does not contain any version info
+      print("File ",self.file_name," contains no version information",file=sys.stderr)
+      return False
+
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
       
