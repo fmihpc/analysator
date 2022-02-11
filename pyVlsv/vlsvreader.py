@@ -594,7 +594,7 @@ class VlsvReader(object):
             print(info,file=sys.stdout)
             return True
 
-      #if we end up here the file does not contain any version info
+      #if we end up here the file does not contain any config info
       print("File ",self.file_name," contains no config information",file=sys.stderr)
       return False
 
