@@ -33,6 +33,85 @@ from collections import Iterable,OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 
+class Interpolator:
+      
+      def __init__(self,nx,ny,nz,extents,data):
+         self.nx=nx
+         self.ny=ny
+         self.nz=nz
+         self.xmin=extents[0]
+         self.ymin=extents[1]
+         self.zmin=extents[2]
+         self.xmax=extents[3]
+         self.ymax=extents[4]
+         self.zmax=extents[5]
+         self.data=data
+         self.dx=abs((self.xmax-self.xmin)/nx)
+         self.dy=abs((self.ymax-self.ymin)/ny)
+         self.dz=abs((self.zmax-self.zmin)/nz)
+
+      def interpolateBatch(self,coords):
+         
+         from multiprocessing import Pool
+         
+         p=Pool()
+         retvals=p.map(self.interpolateSingle,coords)
+         p.close()
+         p.join()
+         
+         return retvals 
+      
+      def interpolateSingle(self,r):
+         #Find last spatial neighbor
+         '''
+            +-----------+
+           /           /|
+          /           / |
+         +----------+/  |
+         |           |  |
+         |           |  +
+         |           | /
+         |   *       |/
+         X-----------+
+         '''
+         x,y,z=r
+         xl=int(np.floor((x-self.xmin)/self.dx))
+         yl=int(np.floor((y-self.ymin)/self.dy))
+         zl=int(np.floor((z-self.zmin)/self.dz))
+
+         #Normalize distances in a unit cube 
+         xd=(x-(xl*self.dx-abs(self.xmin)))/self.dx
+         yd=(y-(yl*self.dy-abs(self.ymin)))/self.dy
+         zd=(z-(zl*self.dz-abs(self.zmin)))/self.dz
+
+         # Calculate Neighbors' Weights
+         w0 = (1.0-xd)*(1.0-yd)*(1.0-zd);
+         w1 = (1.0-xd)*(yd)*(1.0-zd);
+         w2 = (xd)*(1.0-yd)*(1.0-zd);
+         w3 = (xd)*(yd)*(1.0-zd);
+         w4 = (1.0-xd)*(1.0-yd)*(zd);
+         w5 = (1.0-xd)*(yd)*(zd);
+         w6 = (xd)*(1.0-yd)*(zd);
+         w7 = (xd)*(yd)*(zd);
+
+   
+         #Accumulate from neighbors based on weights
+         retval=0.0
+         retval+= w0 * self.data[xl,yl,zl]
+         retval+= w1 * self.data[xl,yl+1,zl]
+         retval+= w2 * self.data[xl+1,yl,zl]
+         retval+= w3 * self.data[xl+1,yl+1,zl]
+         retval+= w4 * self.data[xl,yl,zl+1]
+         retval+= w5 * self.data[xl,yl+1,zl+1]
+         retval+= w6 * self.data[xl+1,yl,zl+1]
+         retval+= w7 * self.data[xl+1,yl+1,zl+1]
+
+         return retval
+
+
+
+
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -814,10 +893,21 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+ 
+      if name[0:3] != 'fg_':
+         print('Interpolation of FsGrid called on non-FsGrid data; exiting.')
+         return -1;
 
-      # At this stage, this function has not yet been implemented -- print a warning and exit
-      print('Interpolation of FSgrid variables has not yet been implemented; exiting.')
-      return -1
+      #First off let's fetch the data and some meta
+      fg_data=self.read_fsgrid_variable( name,operator=operator)
+      nx,ny,nz=self.get_fsgrid_mesh_size()
+      extents=self.get_fsgrid_mesh_extent()
+
+
+      # Instantiate interplator
+      fsGridInterpolator=Interpolator(nx, ny, nz, extents, fg_data)
+      return fsGridInterpolator.interpolateBatch(coordinates)
+
 
 
    def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
