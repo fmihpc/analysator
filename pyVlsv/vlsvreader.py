@@ -839,8 +839,10 @@ class VlsvReader(object):
 
       print(extents)
 
-      def getFsGridIndex(indices):
-         
+      def getFsGridIndices(indices):
+         ''' 
+         Returns indices based on boundary conditions
+         '''
          ind=-1*np.ones((3))
          for c,index in enumerate(indices):
             #Non periodic case
@@ -862,11 +864,15 @@ class VlsvReader(object):
 
 
       def interpolateSingle(r):
-         import  sys
-
-         #First off let's handle boundaries
-         x,y,z=r
-
+         ''' 
+         Simple trilinear routine for interpolating fsGrid quantities 
+         at arbitrary coordinates r.
+         Inputs:
+             r: array of coordinates at which to perform the interpolation. 
+                Example: r=[x,y,z]
+         Outputs:
+             interpolated data at r. Can be scalar or variable.
+         '''
 
          #Find last spatial neighbor
          '''
@@ -880,6 +886,7 @@ class VlsvReader(object):
          |   *       |/
          X-----------+
          '''
+         x,y,z=r
          xl=int(np.floor((x-xmin)/dx))
          yl=int(np.floor((y-ymin)/dy))
          zl=int(np.floor((z-zmin)/dz))
@@ -891,7 +898,7 @@ class VlsvReader(object):
          zd=(z-(zl*dz-abs(zmin)))/dz
 
          # Calculate Neighbors' Weights
-         w=np.zeros((8))
+         w=np.zeros(8)
          w[0] = (1.0-xd)*(1.0-yd)*(1.0-zd)
          w[1] = (1.0-xd)*(yd)*(1.0-zd)
          w[2] = (xd)*(1.0-yd)*(1.0-zd)
@@ -909,7 +916,7 @@ class VlsvReader(object):
          for a in [0,1]:
             for b in [0,1]:
                for c  in [0,1]:
-                  ind=getFsGridIndex([xl+b,yl+c,zl+a])
+                  ind=getFsGridIndices([xl+b,yl+c,zl+a])
                   if (not ind): return np.nan
                   retval += w[cnt] * fg_data[ind]
                   cnt+=1
@@ -919,7 +926,6 @@ class VlsvReader(object):
       ret=[]
       for r in coordinates:
          ret.append(interpolateSingle(r))
-
       return ret
 
 
