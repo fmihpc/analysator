@@ -1479,7 +1479,7 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            # print("Error in Vlsvreader get_cell_neighbor: out of bounds")
+            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             return 0
 
       coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
