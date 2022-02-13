@@ -33,85 +33,6 @@ from collections import Iterable,OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 
-class Interpolator:
-      
-      def __init__(self,nx,ny,nz,extents,data):
-         self.nx=nx
-         self.ny=ny
-         self.nz=nz
-         self.xmin=extents[0]
-         self.ymin=extents[1]
-         self.zmin=extents[2]
-         self.xmax=extents[3]
-         self.ymax=extents[4]
-         self.zmax=extents[5]
-         self.data=data
-         self.dx=abs((self.xmax-self.xmin)/nx)
-         self.dy=abs((self.ymax-self.ymin)/ny)
-         self.dz=abs((self.zmax-self.zmin)/nz)
-
-      def interpolateBatch(self,coords):
-         
-         from multiprocessing import Pool
-         
-         p=Pool()
-         retvals=p.map(self.interpolateSingle,coords)
-         p.close()
-         p.join()
-         
-         return retvals 
-      
-      def interpolateSingle(self,r):
-         #Find last spatial neighbor
-         '''
-            +-----------+
-           /           /|
-          /           / |
-         +----------+/  |
-         |           |  |
-         |           |  +
-         |           | /
-         |   *       |/
-         X-----------+
-         '''
-         x,y,z=r
-         xl=int(np.floor((x-self.xmin)/self.dx))
-         yl=int(np.floor((y-self.ymin)/self.dy))
-         zl=int(np.floor((z-self.zmin)/self.dz))
-
-         #Normalize distances in a unit cube 
-         xd=(x-(xl*self.dx-abs(self.xmin)))/self.dx
-         yd=(y-(yl*self.dy-abs(self.ymin)))/self.dy
-         zd=(z-(zl*self.dz-abs(self.zmin)))/self.dz
-
-         # Calculate Neighbors' Weights
-         w0 = (1.0-xd)*(1.0-yd)*(1.0-zd);
-         w1 = (1.0-xd)*(yd)*(1.0-zd);
-         w2 = (xd)*(1.0-yd)*(1.0-zd);
-         w3 = (xd)*(yd)*(1.0-zd);
-         w4 = (1.0-xd)*(1.0-yd)*(zd);
-         w5 = (1.0-xd)*(yd)*(zd);
-         w6 = (xd)*(1.0-yd)*(zd);
-         w7 = (xd)*(yd)*(zd);
-
-   
-         #Accumulate from neighbors based on weights
-         retval=0.0
-         retval+= w0 * self.data[xl,yl,zl]
-         retval+= w1 * self.data[xl,yl+1,zl]
-         retval+= w2 * self.data[xl+1,yl,zl]
-         retval+= w3 * self.data[xl+1,yl+1,zl]
-         retval+= w4 * self.data[xl,yl,zl+1]
-         retval+= w5 * self.data[xl,yl+1,zl+1]
-         retval+= w6 * self.data[xl+1,yl,zl+1]
-         retval+= w7 * self.data[xl+1,yl+1,zl+1]
-
-         return retval
-
-
-
-
-
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -895,18 +816,111 @@ class VlsvReader(object):
       '''
  
       if name[0:3] != 'fg_':
-         print('Interpolation of FsGrid called on non-FsGrid data; exiting.')
-         return -1;
+         raise ValueError("Interpolation of FsGrid called on non-FsGrid data; exiting.")
 
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
-      nx,ny,nz=self.get_fsgrid_mesh_size()
+      fg_size=self.get_fsgrid_mesh_size()
+      nx,ny,nz=fg_size
       extents=self.get_fsgrid_mesh_extent()
+      xmin=extents[0]
+      ymin=extents[1]
+      zmin=extents[2]
+      xmax=extents[3]
+      ymax=extents[4]
+      zmax=extents[5]
+      dx=abs((xmax-xmin)/nx)
+      dy=abs((ymax-ymin)/ny)
+      dz=abs((zmax-zmin)/nz)
+      periodicity=np.ones(3,dtype=bool)
+      periodicity[0]=True if periodic[0] =="True" else False
+      periodicity[1]=True if periodic[1] =="True" else False
+      periodicity[2]=True if periodic[2] =="True" else False
+
+      print(extents)
+
+      def getFsGridIndex(indices):
+         
+         ind=-1*np.ones((3))
+         for c,index in enumerate(indices):
+            #Non periodic case
+            if ((index<0 or index>fg_size[c]-1) and not periodicity[c]):
+               #out of bounds return NaN
+               return False
+
+            #Periodic case
+            if (index==-1):
+               ind[c]=fg_size[c]-1  
+            elif (index == fg_size[c]):
+               ind[c]=0  
+            elif (index>=0 and index<=fg_size[c]-1):
+               ind[c]=index
+            else:
+               return False
+         return int(ind[0]),int(ind[1]),int(ind[2]) 
 
 
-      # Instantiate interplator
-      fsGridInterpolator=Interpolator(nx, ny, nz, extents, fg_data)
-      return fsGridInterpolator.interpolateBatch(coordinates)
+
+      def interpolateSingle(r):
+         import  sys
+
+         #First off let's handle boundaries
+         x,y,z=r
+
+
+         #Find last spatial neighbor
+         '''
+            +-----------+
+           /           /|
+          /           / |
+         +----------+/  |
+         |           |  |
+         |           |  +
+         |           | /
+         |   *       |/
+         X-----------+
+         '''
+         xl=int(np.floor((x-xmin)/dx))
+         yl=int(np.floor((y-ymin)/dy))
+         zl=int(np.floor((z-zmin)/dz))
+    
+
+         #Normalize distances in a unit cube 
+         xd=(x-(xl*dx-abs(xmin)))/dx
+         yd=(y-(yl*dy-abs(ymin)))/dy
+         zd=(z-(zl*dz-abs(zmin)))/dz
+
+         # Calculate Neighbors' Weights
+         w=np.zeros((8))
+         w[0] = (1.0-xd)*(1.0-yd)*(1.0-zd)
+         w[1] = (1.0-xd)*(yd)*(1.0-zd)
+         w[2] = (xd)*(1.0-yd)*(1.0-zd)
+         w[3] = (xd)*(yd)*(1.0-zd)
+         w[4] = (1.0-xd)*(1.0-yd)*(zd)
+         w[5] = (1.0-xd)*(yd)*(zd)
+         w[6] = (xd)*(1.0-yd)*(zd)
+         w[7] = (xd)*(yd)*(zd)
+
+   
+         #Accumulate from neighbors based on weights
+         # *respecting periodicity*
+         retval=0.0
+         cnt=0
+         for a in [0,1]:
+            for b in [0,1]:
+               for c  in [0,1]:
+                  ind=getFsGridIndex([xl+b,yl+c,zl+a])
+                  if (not ind): return np.nan
+                  retval += w[cnt] * fg_data[ind]
+                  cnt+=1
+
+         return retval
+
+      ret=[]
+      for r in coordinates:
+         ret.append(interpolateSingle(r))
+
+      return ret
 
 
 
@@ -1459,7 +1473,7 @@ class VlsvReader(object):
                   ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
+            # print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             return 0
 
       coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
