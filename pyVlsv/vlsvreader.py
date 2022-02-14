@@ -837,7 +837,6 @@ class VlsvReader(object):
       periodicity[1]=True if periodic[1] =="True" else False
       periodicity[2]=True if periodic[2] =="True" else False
 
-      print(extents)
 
       def getFsGridIndices(indices):
          ''' 
