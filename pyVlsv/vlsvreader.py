@@ -821,14 +821,10 @@ class VlsvReader(object):
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
       fg_size=self.get_fsgrid_mesh_size()
+      fg_data=np.reshape(fg_data,fg_size)
       nx,ny,nz=fg_size
       extents=self.get_fsgrid_mesh_extent()
-      xmin=extents[0]
-      ymin=extents[1]
-      zmin=extents[2]
-      xmax=extents[3]
-      ymax=extents[4]
-      zmax=extents[5]
+      xmin,ymin,zmin,xmax,ymax,zmax=extents
       dx=abs((xmax-xmin)/nx)
       dy=abs((ymax-ymin)/ny)
       dz=abs((zmax-zmin)/nz)
@@ -849,15 +845,15 @@ class VlsvReader(object):
                #out of bounds return NaN
                return False
 
-            #Periodic case
-            if (index==-1):
-               ind[c]=fg_size[c]-1  
-            elif (index == fg_size[c]):
-               ind[c]=0  
+             # Here we are either periodic or (not periodic and inside the domain)
+            if (index >= fg_size[c] or index <0):
+                ind[c] = index%fg_size[c]
             elif (index>=0 and index<=fg_size[c]-1):
-               ind[c]=index
+                ind[c]=index
             else:
-               return False
+                #If we end up here then something is wrong
+                return -1
+
          return int(ind[0]),int(ind[1]),int(ind[2]) 
 
 
@@ -870,7 +866,7 @@ class VlsvReader(object):
              r: array of coordinates at which to perform the interpolation. 
                 Example: r=[x,y,z]
          Outputs:
-             interpolated data at r. Can be scalar or variable.
+             Numpy array with interpolated data at r. Can be scalar or vector.
          '''
 
          #Find last spatial neighbor
@@ -885,6 +881,12 @@ class VlsvReader(object):
          |   *       |/
          X-----------+
          '''
+         import sys
+         if (len(r) !=3 ):
+            print("Interpolation input data should be in the form X,Y,Z coordinates. Input now is r=",r,file=sys.stderr)
+            raise ValueError("Interpolation cannot be performed. Exiting")
+
+
          x,y,z=r
          xl=int(np.floor((x-xmin)/dx))
          yl=int(np.floor((y-ymin)/dy))
@@ -892,32 +894,31 @@ class VlsvReader(object):
     
 
          #Normalize distances in a unit cube 
-         xd=(x-(xl*dx-abs(xmin)))/dx
-         yd=(y-(yl*dy-abs(ymin)))/dy
-         zd=(z-(zl*dz-abs(zmin)))/dz
+         xd=(x-xmin)/dx - xl
+         yd=(y-ymin)/dy - yl
+         zd=(z-zmin)/dz - zl
 
+       
          # Calculate Neighbors' Weights
          w=np.zeros(8)
          w[0] = (1.0-xd)*(1.0-yd)*(1.0-zd)
-         w[1] = (1.0-xd)*(yd)*(1.0-zd)
-         w[2] = (xd)*(1.0-yd)*(1.0-zd)
+         w[1] = (xd)*(1.0-yd)*(1.0-zd)
+         w[2] = (1.0-xd)*(yd)*(1.0-zd)
          w[3] = (xd)*(yd)*(1.0-zd)
          w[4] = (1.0-xd)*(1.0-yd)*(zd)
-         w[5] = (1.0-xd)*(yd)*(zd)
-         w[6] = (xd)*(1.0-yd)*(zd)
+         w[5] = (xd)*(1.0-yd)*(zd)
+         w[6] = (1.0-xd)*(yd)*(zd)
          w[7] = (xd)*(yd)*(zd)
 
-   
-         #Accumulate from neighbors based on weights
-         # *respecting periodicity*
-         retval=0.0
+         retval = np.zeros_like(fg_data[0,0,0])
          cnt=0
-         for a in [0,1]:
-            for b in [0,1]:
-               for c  in [0,1]:
-                  ind=getFsGridIndices([xl+b,yl+c,zl+a])
-                  if (not ind): return np.nan
-                  retval += w[cnt] * fg_data[ind]
+         for k in [0,1]:
+            for j in [0,1]:
+               for i in [0,1]:
+                  retind=getFsGridIndices([xl+i,yl+j,zl+k])
+                  if (not retind): return None
+                  if  (retind == -1 ): return np.NaN
+                  retval += w[cnt] * fg_data [retind]
                   cnt+=1
 
          return retval
@@ -925,7 +926,7 @@ class VlsvReader(object):
       ret=[]
       for r in coordinates:
          ret.append(interpolateSingle(r))
-      return ret
+      return np.asarray(ret)
 
 
 
