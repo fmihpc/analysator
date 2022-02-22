@@ -864,7 +864,7 @@ class VlsvReader(object):
          at arbitrary coordinates r.
          Inputs:
              r: array of coordinates at which to perform the interpolation. 
-                Example: r=[x,y,z]
+                Example: r=[x,y,z] in meters
          Outputs:
              Numpy array with interpolated data at r. Can be scalar or vector.
          '''
