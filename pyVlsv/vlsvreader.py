@@ -556,13 +556,12 @@ class VlsvReader(object):
             fptr.seek(variable_offset)
             info = fptr.read(array_size).decode("utf-8")
 
-            # info=data.decode("utf-8")
-            print("Version Info for ",self.file_name,file=sys.stdout)
-            print(info,file=sys.stdout)
+            print("Version Info for ",self.file_name)
+            print(info)
             return True
 
       #if we end up here the file does not contain any version info
-      print("File ",self.file_name," contains no version information",file=sys.stderr)
+      print("File ",self.file_name," contains no version information")
       return False
   
    def print_config(self):
@@ -589,13 +588,14 @@ class VlsvReader(object):
                fptr = self.__fptr
          
             fptr.seek(variable_offset)
-            info = fptr.read(array_size).decode("utf-8")
+            configuration = fptr.read(array_size).decode("utf-8")
 
-            print(info,file=sys.stdout)
+            print("Configuration file for ",self.file_name)
+            print(configuration)
             return True
 
       #if we end up here the file does not contain any config info
-      print("File ",self.file_name," contains no config information",file=sys.stderr)
+      print("File ",self.file_name," contains no config information")
       return False
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
