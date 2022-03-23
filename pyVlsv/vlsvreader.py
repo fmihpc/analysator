@@ -530,6 +530,74 @@ class VlsvReader(object):
          self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
+   def print_version(self):
+      '''
+      Prints version information from VLSV file.
+      TAG is hardcoded to VERSION
+
+      :returns True if version is found otherwise returns False
+      '''
+      import sys
+      tag="VERSION"
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if child.tag != tag:
+            continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            array_size = ast.literal_eval(child.attrib["arraysize"])
+            variable_offset = ast.literal_eval(child.text)
+
+            if self.__fptr.closed:
+               fptr = open(self.file_name,"rb")
+            else:
+               fptr = self.__fptr
+         
+            fptr.seek(variable_offset)
+            info = fptr.read(array_size).decode("utf-8")
+
+            print("Version Info for ",self.file_name)
+            print(info)
+            return True
+
+      #if we end up here the file does not contain any version info
+      print("File ",self.file_name," contains no version information")
+      return False
+  
+   def print_config(self):
+      '''
+      Prints config information from VLSV file.
+      TAG is hardcoded to CONFIG
+
+      :returns True if config is found otherwise returns False
+      '''
+      import sys
+      tag="CONFIG"
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if child.tag != tag:
+            continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            array_size = ast.literal_eval(child.attrib["arraysize"])
+            variable_offset = ast.literal_eval(child.text)
+
+            if self.__fptr.closed:
+               fptr = open(self.file_name,"rb")
+            else:
+               fptr = self.__fptr
+         
+            fptr.seek(variable_offset)
+            configuration = fptr.read(array_size).decode("utf-8")
+
+            print("Configuration file for ",self.file_name)
+            print(configuration)
+            return True
+
+      #if we end up here the file does not contain any config info
+      print("File ",self.file_name," contains no config information")
+      return False
+
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
       
@@ -1020,13 +1088,13 @@ class VlsvReader(object):
            processDomainDecomposition = [1,1,1]
            processBox = [0,0,0]
            optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0]+1)):
+           for i in range(1,min(ntasks,globalsize[0])+1):
                processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1]+1)):
+               for j in range(1,min(ntasks,globalsize[1])+1):
                    if(i * j > ntasks):
                        break
                    processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2]+1)):
+                   for k in range(1,min(ntasks,globalsize[2])+1):
                        if(i * j * k > ntasks):
                            continue
                        processBox[2] = max(1.*globalsize[2]/k,1)
@@ -1038,6 +1106,9 @@ class VlsvReader(object):
                            if value < optimValue:
                               optimValue = value
                               processDomainDecomposition=[i,j,k]
+           if (np.prod(processDomainDecomposition) != ntasks):
+              print("Mismatch in FSgrid rank decomposition")
+              return -1
            return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):

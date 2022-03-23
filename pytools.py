@@ -97,7 +97,7 @@ else:
    try:
       import grid
    except ImportError as e:
-      print("Note: Did not import grid module: ", e)
+      print("Note: Did not import (outdated MayaVi2) grid module: ", e)
    try:
       plt.switch_backend(backend_interactive)
    except:
