@@ -7,6 +7,8 @@ import os, sys
 import time
 import re
 import matplotlib.ticker as mtick
+import matplotlib.path as mpath
+import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
@@ -271,13 +273,13 @@ def plot_ionosphere(filename=None,
     mask = []
     if viewdir > 0:
       for e in elements:
-         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0 and r[e[0]] < 90-minlatitude and r[e[1]] < minlatitude and r[e[2]] < minlatitude:
+         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0:# and r[e[0]] < 90-minlatitude and r[e[1]] < minlatitude and r[e[2]] < minlatitude:
             mask+=[False]
          else:
             mask+=[True]
     else:
       for e in elements:
-         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0 and r[e[0]] < 90-minlatitude and r[e[1]] < 90-minlatitude and r[e[2]] < 90-minlatitude:
+         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0:# and r[e[0]] < 90-minlatitude and r[e[1]] < 90-minlatitude and r[e[2]] < 90-minlatitude:
             mask+=[False]
          else:
             mask+=[True]
@@ -376,11 +378,29 @@ def plot_ionosphere(filename=None,
 
     ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, minlatitude))
 
+    ## Build a circle to map away the regions we're not interested in
+    def make_circle(r):
+        t = np.arange(0, np.pi * 2.0, 0.01)
+        t = t.reshape((len(t), 1))
+        x = r * np.cos(t)
+        y = r * np.sin(t)
+        return np.hstack((x, y))
+    path = mpath.Path
+    inside_vertices = make_circle(90-minlatitude)
+    outside_vertices = make_circle(1000)
+    pathCodes = np.ones(len(inside_vertices), dtype=mpath.Path.code_type) * mpath.Path.LINETO
+    pathCodes[0] = mpath.Path.MOVETO
+    path = mpath.Path(np.concatenate((inside_vertices[::-1],outside_vertices)), np.concatenate((pathCodes,pathCodes)))
+    clippingcircle= patches.PathPatch(path, facecolor="#ffffff", edgecolor=None)
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
     contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64)
+    ax_cartesian.add_patch(clippingcircle)
+
+    # Draw polar grid over it
     ax_polar.grid(True)
-    ax_polar.set_rgrids(range(0,minlatitude,10), map(lambda x: str(90-x)+"°", range(0,minlatitude,10)),angle=225)
+    ax_polar.set_rgrids(range(0,90-minlatitude,10), map(lambda x: str(90-x)+"°", range(0,90-minlatitude,10)),angle=225)
+    ax_polar.set_theta_zero_location('N', offset=0)
 
     # Title and plot limits
     if len(plot_title)!=0:
