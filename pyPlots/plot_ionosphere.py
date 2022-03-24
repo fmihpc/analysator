@@ -26,7 +26,7 @@ def plot_ionosphere(filename=None,
                   symmetric=False, absolute=None,
                   usesci=True,
                   lin=True, symlog=None, nocb=False, internalcb=False,
-                  minlatitude=50,
+                  minlatitude=60,
                   cbtitle=None, title=None, cbaxes=None,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
@@ -67,7 +67,7 @@ def plot_ionosphere(filename=None,
     :kword nocb:        Set to suppress drawing of colourbar
     :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword minlatitude: Minimum plot latitude (default=50 degrees)
+    :kword minlatitude: Minimum plot latitude (default=60 degrees)
     :kword title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
@@ -273,13 +273,13 @@ def plot_ionosphere(filename=None,
     mask = []
     if viewdir > 0:
       for e in elements:
-         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0:# and r[e[0]] < 90-minlatitude and r[e[1]] < minlatitude and r[e[2]] < minlatitude:
+         if coords[e[0],2] > 0 and coords[e[1],2] > 0 and coords[e[2],2] > 0:
             mask+=[False]
          else:
             mask+=[True]
     else:
       for e in elements:
-         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0:# and r[e[0]] < 90-minlatitude and r[e[1]] < 90-minlatitude and r[e[2]] < 90-minlatitude:
+         if coords[e[0],2] < 0 and coords[e[1],2] < 0 and coords[e[2],2] < 0:
             mask+=[False]
          else:
             mask+=[True]
@@ -376,7 +376,7 @@ def plot_ionosphere(filename=None,
     ax_cartesian.set_yticklabels([])
     ax_cartesian.axis('off')
 
-    ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, minlatitude))
+    ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
 
     ## Build a circle to map away the regions we're not interested in
     def make_circle(r):
@@ -399,7 +399,9 @@ def plot_ionosphere(filename=None,
 
     # Draw polar grid over it
     ax_polar.grid(True)
-    ax_polar.set_rgrids(range(0,90-minlatitude,10), map(lambda x: str(90-x)+"°", range(0,90-minlatitude,10)),angle=225)
+    gridlatitudes = np.arange(0., 90.-minlatitude,10.)
+    ax_polar.set_rmax(90.-minlatitude);
+    ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=225)
     ax_polar.set_theta_zero_location('N', offset=0)
 
     # Title and plot limits
