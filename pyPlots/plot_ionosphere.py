@@ -285,7 +285,7 @@ def plot_ionosphere(filename=None,
             mask+=[True]
 
     # Build mesh triangulation
-    tri = matplotlib.tri.Triangulation(r*np.cos(theta), r*np.sin(theta), elements, mask)
+    tri = matplotlib.tri.Triangulation(r*np.sin(theta), r*np.cos(theta), elements, mask)
 
     # Allow title override
     if cbtitle is not None:
