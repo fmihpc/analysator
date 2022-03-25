@@ -1955,10 +1955,10 @@ class VlsvReader(object):
       '''
       try:
          domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
+         return [domainsizes[0], domainsizes[2]]
       except:
          print("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
          return [0,0]
-      return [domainsizes[0], domainsizes[2]]
 
    def get_ionosphere_node_coords(self):
       ''' Read ionosphere node coordinates (in cartesian GSM coordinate system).
@@ -1967,10 +1967,10 @@ class VlsvReader(object):
       '''
       try:
          coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
+         return coords
       except:
          print("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
          return []
-      return coords
 
    def get_ionosphere_latlon_coords(self):
       ''' Read ionosphere nore coordinates (in magnetic longitude / latitude)
@@ -1990,17 +1990,17 @@ class VlsvReader(object):
       '''
       try:
          meshdata = np.array(self.read(tag="MESH", name="ionosphere")).reshape([-1,5])
+         # Elements in meshdata are:
+         # - vlsv::celltype::TRIANGLE ("this is a triangle")
+         # - 3                        ("it has three corners")
+         # - Corner index 1
+         # - Corner index 2
+         # - Corner index 3
+         return meshdata[:,2:5]
       except:
          print("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
          return []
 
-      # Elements in meshdata are:
-      # - vlsv::celltype::TRIANGLE ("this is a triangle")
-      # - 3                        ("it has three corners")
-      # - Corner index 1
-      # - Corner index 2
-      # - Corner index 3
-      return meshdata[:,2:5]
 
 
    def read_blocks(self, cellid, pop="proton"):
