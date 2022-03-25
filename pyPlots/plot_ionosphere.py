@@ -263,6 +263,9 @@ def plot_ionosphere(filename=None,
     # Check if vscale results in standard unit
     datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
     values = datamap_info.data
+    if np.ndim(values) == 0:
+        print("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
+        return -1
 
     # Add unit to colorbar title
     if datamap_unit:
@@ -320,7 +323,7 @@ def plot_ionosphere(filename=None,
     # Ensure that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
-        vminuse = min(np.ma.amin(datamap), 0)
+        vminuse = min(np.ma.amin(values), 0)
 
     # Special case of very small vminuse values
     if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
