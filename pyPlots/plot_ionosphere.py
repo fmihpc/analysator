@@ -24,8 +24,8 @@ def plot_ionosphere(filename=None,
                   var=None, op=None, operator=None,
                   colormap=None, vmin=None, vmax=None,
                   symmetric=False, absolute=None,
-                  usesci=True,
-                  lin=True, symlog=None, nocb=False, internalcb=False,
+                  usesci=True, log=None,
+                  lin=None, symlog=None, nocb=False, internalcb=False,
                   minlatitude=60,
                   cbtitle=None, title=None, cbaxes=None,
                   thick=1.0,scale=1.0,vscale=1.0,
@@ -97,6 +97,8 @@ def plot_ionosphere(filename=None,
 
     # Change certain falsy values:
     if not lin and lin != 0:
+        lin = None
+    if not (log is None):
         lin = None
     if not symlog and symlog != 0:
         symlog = None
@@ -474,7 +476,7 @@ def plot_ionosphere(filename=None,
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
-        if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+        if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) and len(cb.ax.yaxis.get_ticklabels()) > 2:
             cbt=cb.ax.yaxis.get_ticklabels()
             (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
             if abs(0.5-cbty)/scale < 0.1:
