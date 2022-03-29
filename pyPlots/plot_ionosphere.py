@@ -514,7 +514,7 @@ def plot_ionosphere(filename=None,
 
         # if too many subticks in logarithmic colorbar:
         if not lin and symlog is None:
-            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+            nlabels = len(cb.ax.yaxis.get_ticklabels())
             # Force less ticks for internal colorbars
             if internalcb: 
                 nlabels = nlabels * 1.5
