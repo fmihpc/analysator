@@ -399,7 +399,8 @@ def plot_ionosphere(filename=None,
     clippingcircle= patches.PathPatch(path, facecolor="#ffffff", edgecolor=None)
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64)
+    #contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)
+    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading='gouraud')
     ax_cartesian.add_patch(clippingcircle)
 
     # Draw polar grid over it
