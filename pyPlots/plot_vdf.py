@@ -65,7 +65,7 @@ def verifyCellWithVspace(vlsvReader,cid):
     return found
 
 # create a 2-dimensional histogram
-def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
+def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="average", wflux=None, initial_dV=1.0):
     # Flux weighting?
     if wflux is not None:
         fw = f*np.linalg.norm([VX,VY,Voutofslice]) # use particle flux as weighting in the histogram
@@ -85,12 +85,20 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
     (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],normed=0)
     # Gather histogram of how many cells were summed for the histogram
     (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
-    # Correct for summing multiple cells into one histogram output cell
-    nonzero = np.where(Chist != 0)
-    nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
 
+    # Correct for summing multiple cells into one histogram output cell with the averaging reducer
+    if reducer == "average":
+        print("averaging for sampling errors")
+        nonzero = np.where(Chist != 0)
+        print(Chist[nonzero])
+        nonzero = Chist > 0
+        print(Chist[nonzero])
+        nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
+
+    dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
+    
     if vthick==0:
-        # slickethick=0, perform a projection. This is done by taking averages for each sampled stack of cells
+        # slickethick=0, perform a projection. This is done by taking averages for each sampled stack of cells (above)
         # (in order to deal with rotated sampling issues) and then rescaling the resultant 2D VDF with the unsampled
         # VDF in order to get the particle counts to agree. Here we gather the total particle counts for the
         # unprojected VDF.
@@ -98,23 +106,30 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,wflux=None):
         weights_total_proj = nVhist.sum()
         # Now rescale the projection back up in order to retain particle counts.
         nVhist = nVhist * weights_total_all/weights_total_proj
+    else:
+        pass
 
     # Please note that the histogram does not follow the Cartesian convention where x values are on the abscissa
     # and y values on the ordinate axis. Rather, x is histogrammed along the first dimension of the array (vertical),
     # and y along the second dimension of the array (horizontal). This ensures compatibility with histogramdd.
     nVhist = nVhist.transpose()
+    
 
     # Flux weighting
     if wflux is not None:
-        dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
         nVhist = np.divide(nVhist,(dV*4*np.pi)) # normalization
+
+    # Rotation contributions are already normalized, this is just to rescaling to correct units
+    # nb: maybe not great for finite slices...?
+    if reducer == "integrate":
+        nVhist = nVhist*initial_dV**3/dV**2 # normalization
 
     return (nVhist,VXEdges,VYEdges)
   
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, wflux=None, center=None, setThreshold=None,normvectX=None):
+                  slicethick=None, reducer="average", resampler=None, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value        
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -231,47 +246,137 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
-        # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-        Vrot = rotateVectorToVector(V,N) # transforms V to frame where z is aligned with N=B
-        NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
-        Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
-        # Choose the correct components for this plot
-        if slicetype=="Bperp":
-            VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
-            VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
-            Voutofslice = Vrot2[:,2] # the Z axis of the slice is B
-        elif slicetype=="Bpara":
-            VX = Vrot2[:,2] # the X axis of the slice is B
-            VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
-            Voutofslice = Vrot2[:,0] # the Z axis of the slice is -BcrossV=perp1
-            # intuition says this should be -Vrot2[:,0], but testing of profiles across the VDF prove otherwise
-        elif slicetype=="Bpara1":
-            VX = Vrot2[:,2] # the X axis of the slice is B
-            VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
-            Voutofslice = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
+         if resampler is None:
+            # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
+            N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+            NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+            Vrot = rotateVectorToVector(V,N) # transforms V to frame where z is aligned with N=B
+            NXrot = rotateVectorToVector(NX,N) # transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)
+            Vrot2 = rotateVectorToVector_X(Vrot,NXrot) # transforms Vrot to frame where x is aligned with NXrot (hence preserves z)
+            # Choose the correct components for this plot
+            if slicetype=="Bperp":
+                  VX = Vrot2[:,0] # the X axis of the slice is BcrossV=perp1
+                  VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+                  Voutofslice = Vrot2[:,2] # the Z axis of the slice is B
+            elif slicetype=="Bpara":
+                  VX = Vrot2[:,2] # the X axis of the slice is B
+                  VY = Vrot2[:,1] # the Y axis of the slice is Bcross(BcrossV)=perp2
+                  Voutofslice = Vrot2[:,0] # the Z axis of the slice is -BcrossV=perp1
+                  # intuition says this should be -Vrot2[:,0], but testing of profiles across the VDF prove otherwise
+            elif slicetype=="Bpara1":
+                  VX = Vrot2[:,2] # the X axis of the slice is B
+                  VY = Vrot2[:,0] # the Y axis of the slice is BcrossV=perp1
+                  Voutofslice = Vrot2[:,1] # the Z axis of the slice is Bcross(BcrossV)=perp2
 
-        # Calculations for verification of rotation:
-        testvectors = np.array([N,NX,np.cross(N,NX)]) # verifies B, BcrossV, and Bcross(BcrossV)
-        testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
-        testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
-        if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
-            print("Error in rotation: NXrot not a unit vector")
-        if abs(NXrot[2]) > 1.e-3:
-            print("Error in rotation: NXrot not in x-y-plane")
-        for count,testvect in enumerate(testrot2):
-            if abs(1.0-np.linalg.norm(testvect))>1.e-3:
-                print("Error in rotation: testvector ",count,testvect," not a unit vector")
-            if abs(1.0-np.amax(testvect))>1.e-3:
-                print("Error in rotation: testvector ",count,testvect," largest component is not unity")
+            # Calculations for verification of rotation:
+            testvectors = np.array([N,NX,np.cross(N,NX)]) # verifies B, BcrossV, and Bcross(BcrossV)
+            testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
+            testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
+            if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
+                  print("Error in rotation: NXrot not a unit vector")
+            if abs(NXrot[2]) > 1.e-3:
+                  print("Error in rotation: NXrot not in x-y-plane")
+            for count,testvect in enumerate(testrot2):
+                  if abs(1.0-np.linalg.norm(testvect))>1.e-3:
+                     print("Error in rotation: testvector ",count,testvect," not a unit vector")
+                  if abs(1.0-np.amax(testvect))>1.e-3:
+                     print("Error in rotation: testvector ",count,testvect," largest component is not unity")
+         else:
+            # Generate a regular ndarray from the distribution function
+            NX = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+            NY = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+            NZ = np.cross(NX,NY)
+            NY = np.array(NY)/np.sqrt(NY[0]**2 + NY[1]**2 + NY[2]**2)
+            R = np.stack((NX, NY, NZ)).T
+            #R = np.stack(([np.cos(0.1),-np.sin(0.1),0],[np.sin(0.1),np.cos(0.1),0],[0,0,1]))
+            #R = np.stack(([1,0,0],[0,1,0],[0,0,1]))
+            print(R)
+            vmins = np.amin(V,axis=0)
+            vmaxs = np.amax(V,axis=0)
 
+            # let's see where the bounding box corners end up and pad the array accordingly
+            vexts =[[vmins[0], vmins[1], vmins[2]],
+                    [vmins[0], vmins[1], vmaxs[2]],
+                    [vmins[0], vmaxs[1], vmaxs[2]],
+                    [vmaxs[0], vmaxs[1], vmaxs[2]],
+                    [vmaxs[0], vmaxs[1], vmins[2]],
+                    [vmaxs[0], vmins[1], vmins[2]]]
+
+            #print("vs",vmins, vmaxs)
+            #print("vexts",vexts)
+
+            vminsR = np.matmul(R, vmins)
+            vmaxsR = np.matmul(R, vmaxs)
+            vextsR = np.array([np.matmul(R, v) for v in vexts])
+            vexts = np.array(vexts) # also needs the initial extent, so a thin box isn't rotated out of the initial box
+            #print("vsR",vminsR, vmaxsR)
+            #print("vextsR",vextsR)
+
+            vminsR,vmaxsR = np.minimum(vminsR,vmaxsR), np.maximum(vminsR,vmaxsR)
+            vminsR,vmaxsR = np.minimum(np.amin(vextsR, axis=0),np.amin(vexts, axis=0)), np.maximum(np.amax(vextsR, axis=0),np.amax(vexts, axis=0))
+            #print("vextsR organized",vminsR, vmaxsR)
+
+            leftpads = (np.abs(vmins/inputcellsize - vminsR/inputcellsize)).astype(int)
+            rightpads = (np.abs(vmaxs/inputcellsize - vmaxsR/inputcellsize)).astype(int)
+
+            #print("pads", leftpads, rightpads)
+            szs = np.trunc((vmaxs-vmins)/inputcellsize+1).astype(int)
+            #print("unpadded szs", szs)
+#            szs = np.trunc((vmaxs-vmins)/inputcellsize+2+leftpads+rightpads).astype(int)
+            #print("padded szs", szs)
+
+            pivot = -vmins/inputcellsize+leftpads #assumes a previously centered V-space wrt. rotations, just need this in cellwidth units
+            #print(szs, pivot, -vmins/inputcellsize)
+            basearray, edges = np.histogramdd(V, bins=tuple(szs),
+             range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
+             density=False,weights=f*inputcellsize**3)
+            
+
+            #print(basearray.shape,basearray.dtype, edges[0].size,edges[1].size,edges[2].size)
+            #return (True, basearray.sum(axis=2).T, edges[0],edges[1])
+            newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
+            #print(newedges)
+            
+            
+            #need to expand the array a bit to not chop off anything
+            #basearray = np.pad(basearray,((szs[0],szs[0]),(szs[1],szs[1]),(szs[2],szs[2])))
+            basearray = np.pad(basearray,tuple(zip(leftpads,rightpads)))
+            
+            
+            nonzero = basearray > 0
+            newarray = np.ones_like(basearray)
+            newarray = newarray*np.log(sys.float_info.min)
+            #newarray = newarray*setThreshold/10
+            #print("edge sample", newarray[0,0,0])
+            np.log(basearray, where=nonzero, out=newarray)
+            newarray = scipy.ndimage.affine_transform(newarray,R,
+                                                    mode='constant',cval=np.log(setThreshold/10),
+                                                    order=1,
+                                                    offset=pivot-np.matmul(R,pivot),
+                                                    )
+            #print("edge sample", newarray[0,0,0])
+            #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
+            #print("edge sample", newarray[0,0,0], np.exp(newarray[0,0,0]))
+            newarray = np.exp(newarray)
+            newarray[newarray<setThreshold*inputcellsize**3] = 0
+            newarray[np.logical_not(np.isfinite(newarray))] = 0
+            newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
+            #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
+            #print("edge sample", newarray[0,0,0])
+            #sys.exit()
+            #newarray = newarray[szs[0]:-szs[0],szs[1]:-szs[1],szs[2]:-szs[2]]
+            #print("chopped size", newarray.shape, newarray.sum())
+            #sys.exit()
+            return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
+                    newedges[0],newedges[2])
+            #return (True, newarray.sum(axis=0).T/((edges[1][0]-edges[1][1])*(edges[2][0]-edges[2][1])),
+                    #edges[1],edges[2])
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
 
     # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
-    (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Voutofslice,VXBins,VYBins, slicethick, wflux=wflux)
+    (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Voutofslice,VXBins,VYBins, slicethick, reducer=reducer, wflux=wflux, initial_dV=inputcellsize)
     return (True,binsXY,edgesX,edgesY)
 
 
@@ -287,14 +392,15 @@ def plot_vdf(filename=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
-             fmin=None, fmax=None, slicethick=None, cellsize=None,
+             fmin=None, fmax=None, slicethick=None, reducer='average', resampler=None,
+             cellsize=None,
              xy=None, xz=None, yz=None,
              normal=None, normalx=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,
              cbulk=None, center=None, wflux=None, setThreshold=None,
-             noborder=None, scale=1.0,
+             noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
              axes=None, cbaxes=None,
@@ -356,6 +462,8 @@ def plot_vdf(filename=None,
     :kword wflux:       Plot flux instead of distribution function
     :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
                         This can be set to zero in order to project the whole VDF to a plane.
+    :kword reducer:     How to reduce to 2D - default 'average' for standard behaviour, 'integrate' for LOS integration
+                        and reduced units.
     :kword cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
     :kword setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
                         Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
@@ -379,7 +487,11 @@ def plot_vdf(filename=None,
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
     :kword noylabels:   Suppress y-axis labels and title
-    :kword scale:       Scale text size (default=1.0)
+    :kword scale:       Scale text size everywhere (default=1.0)
+    :kword scale_text:  Most text additional scale factor (default=8.0)
+    :kword scale_title: Title additional scale factor (default=10.0)
+    :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
+    :kword scale_label: Big label text additional scale factor (default=12.0)
     :kword thick:       line and axis thickness, default=1.0
     
 
@@ -429,10 +541,10 @@ def plot_vdf(filename=None,
         colormap="hot_desaturated"
     cmapuse=matplotlib.cm.get_cmap(name=colormap)
 
-    fontsize=8*scale # Most text
-    fontsize2=10*scale # Time title
-    fontsize3=5*scale # Colour bar ticks
-    fontsize4=12*scale # Big label
+    fontsize=scale_text*scale # Most text
+    fontsize2=scale_title*scale # Time title
+    fontsize3=scale_cb*scale # Colour bar ticks
+    fontsize4=scale_label*scale # Big label
 
     # Plot title with time
     timeval=vlsvReader.read_parameter("time")
@@ -449,6 +561,15 @@ def plot_vdf(filename=None,
             plot_title = "t="+timeformat.format(timeval)+' s'
     else:
         plot_title = title
+
+    if reducer == "average":
+        print("V-space reduction via averages")
+        pass
+    elif reducer == "integrate":
+        print("V-space reduction via integration")
+        pass
+    else:
+        raise ValueError("Unknown reducer ("+reducer+'), accepted values are "average", "integrate"')
 
     if draw is None and axes is None:
         # step, used for file name
@@ -859,7 +980,7 @@ def plot_vdf(filename=None,
         
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
-                                                       slicethick=slicethick, wflux=wflux,
+                                                       slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
                                                        center=center,setThreshold=setThreshold,normvectX=normvectX)
 
         # Check that data is ok and not empty
@@ -900,9 +1021,12 @@ def plot_vdf(filename=None,
                 fmaxuse = 1e-10 # No valid values! use extreme default.
 
         print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
-
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
-        ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+
+        ticks = LogLocator(base=10,subs=list(range(0,10)))#,
+        print(max(2,np.rint(np.log10(fmaxuse/fminuse))))
+                           #numticks=max(2,np.rint(np.log10(fmaxuse/fminuse))) ) # where to show labels
+                                                                                # tries to force at least 2 labels
 
         if box is not None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]
@@ -1078,9 +1202,15 @@ def plot_vdf(filename=None,
                     cb_title_use = cbtitle
             if cb_title_use is None:
                 if wflux is None:
-                    cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                    if reducer == 'average':
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                    elif reducer == 'integrate':
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-5} \,"+pt.plot.rmstring('s')+"^{2}]$"
                 else:
-                    cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                    if reducer == 'average':
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                    elif reducer == 'integrate':
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}\,"+pt.plot.rmstring('m')+"\,"+pt.plot.rmstring('s')+"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
@@ -1178,6 +1308,7 @@ def plot_vdf(filename=None,
         if draw is None and axes is None:
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                plt.close()
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")

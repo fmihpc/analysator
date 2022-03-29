@@ -139,12 +139,16 @@ class VariableInfo:
 
       if self.units != '':
          dictKey = self.units
-         udict = self.scaleDict[dictKey]
+         try:
+            udict = self.scaleDict[dictKey]
+         except:
+            print('No entry in specialist dict for unit "' + self.units+ '"')
+            return 1.0, self.units, self.latexunits
          if vscale is None:
             try:
                unitScale = udict['defaultScale']
             except:
-               print('No vscale or defaultScale in specialist dict for' + self.units)
+               print('No vscale or defaultScale in specialist dict for unit "' + self.units +'"')
                return 1.0, self.units, self.latexunits
          elif np.isclose(vscale, 1.0):
                return 1.0, self.units, self.latexunits
@@ -207,8 +211,8 @@ class VariableInfo:
 def get_data( variable ):
    ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
 
-       :param variable:           The variable as a VariableInfo instance or a list
-       :returns: data of the variable
+      :param variable:           The variable as a VariableInfo instance or a list
+      :returns: data of the variable
    '''
    if isinstance(variable, VariableInfo):
       return variable.data
@@ -218,8 +222,8 @@ def get_data( variable ):
 def get_name( variable ):
    ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
 
-       :param variable:           The variable as a VariableInfo instance or a list
-       :returns: the name of the variable or \"\" if not a VariableInfo instance
+      :param variable:           The variable as a VariableInfo instance or a list
+      :returns: the name of the variable or \"\" if not a VariableInfo instance
    '''
    if isinstance(variable, VariableInfo):
       return variable.name
@@ -229,8 +233,8 @@ def get_name( variable ):
 def get_units( variable ):
    ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
 
-       :param variable:           The variable as a VariableInfo instance or a list
-       :returns: the units of the variable or \"\" if not a VariableInfo instance
+      :param variable:           The variable as a VariableInfo instance or a list
+      :returns: the units of the variable or \"\" if not a VariableInfo instance
    '''
    if isinstance(variable, VariableInfo):
       return variable.units
@@ -240,8 +244,8 @@ def get_units( variable ):
 def get_latex( variable ):
    ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
 
-       :param variable:           The variable as a VariableInfo instance or a list
-       :returns: the variable in LaTeX format or \"\" if not a VariableInfo instance
+      :param variable:           The variable as a VariableInfo instance or a list
+      :returns: the variable in LaTeX format or \"\" if not a VariableInfo instance
    '''
    if isinstance(variable, VariableInfo):
       return variable.latex
@@ -251,8 +255,8 @@ def get_latex( variable ):
 def get_latexunits( variable ):
    ''' Function to use when not sure if variable is in raw form ( simply a list with data ), or a VariableInfo instance
 
-       :param variable:           The variable as a VariableInfo instance or a list
-       :returns: the units of the variable in LaTeX format or \"\" if not a VariableInfo instance
+      :param variable:           The variable as a VariableInfo instance or a list
+      :returns: the units of the variable in LaTeX format or \"\" if not a VariableInfo instance
    '''
    if isinstance(variable, VariableInfo):
       return variable.latexunits
