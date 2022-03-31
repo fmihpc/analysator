@@ -275,7 +275,10 @@ def plot_ionosphere(filename=None,
     if datamap_unit:
        cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
 
-    r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+    if viewdir > 0:
+        r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+    else:
+        r=np.degrees(np.arccos(-coords[:,2]/IONOSPHERE_RADIUS))
     theta=np.arctan2(coords[:,1],coords[:,0])
 
     # Project nodes and elements into view plane
