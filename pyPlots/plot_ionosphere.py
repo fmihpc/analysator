@@ -206,7 +206,11 @@ def plot_ionosphere(filename=None,
         if not outputdir: # default initial path
             outputdir=pt.plot.defaultoutputdir
         # Sub-directories can still be defined in the "run" variable
-        outputfile = outputdir+run+"_ionosphere_"+varstr+operatorfilestr+stepstr+".png"
+        if viewdir > 0:
+            outputpole = "_north"
+        else:
+            outputpole = "_south"
+        outputfile = outputdir+run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
     else: 
         if outputdir:
             outputfile = outputdir+outputfile
