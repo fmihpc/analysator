@@ -391,9 +391,16 @@ def plot_ionosphere(filename=None,
     if axes is None:
         fig = plt.figure(figsize=figsize,dpi=150)
         ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
-        ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
+        #ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
+        ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
+        ax_polar.set_frame_on(False)
+        ax_polar.set_aspect('equal')
     else:
-        ax_cartesian = axes.inset_axes([0.1,0.1,.9,.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        axes.set_xticklabels([])
+        axes.set_yticklabels([])
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center')
+        ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
+        ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
@@ -416,7 +423,7 @@ def plot_ionosphere(filename=None,
     pathCodes = np.ones(len(inside_vertices), dtype=mpath.Path.code_type) * mpath.Path.LINETO
     pathCodes[0] = mpath.Path.MOVETO
     path = mpath.Path(np.concatenate((inside_vertices[::-1],outside_vertices)), np.concatenate((pathCodes,pathCodes)))
-    clippingcircle= patches.PathPatch(path, facecolor="#ffffff", edgecolor=None)
+    clippingcircle= patches.PathPatch(path, facecolor="#ffffff", edgecolor='grey', linewidth=1)
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
     #contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)
@@ -432,7 +439,7 @@ def plot_ionosphere(filename=None,
     ax_polar.set_theta_zero_location('S', offset=0)
 
     # Title and plot limits
-    if len(plot_title)!=0:
+    if len(plot_title)!=0 and axes is None:
         plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
         ax_polar.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
