@@ -9,6 +9,8 @@ import re
 import matplotlib.ticker as mtick
 import matplotlib.path as mpath
 import matplotlib.patches as patches
+import matplotlib.projections as projections
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
@@ -30,7 +32,8 @@ def plot_ionosphere(filename=None,
                   cbtitle=None, title=None, cbaxes=None,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
-                  viewdir=1.0,draw=None
+                  viewdir=1.0,draw=None,
+                  axes=None
       ):
 
     ''' Plots a 2d projection of an ionosphere variable
@@ -77,6 +80,7 @@ def plot_ionosphere(filename=None,
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
+    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
@@ -221,33 +225,34 @@ def plot_ionosphere(filename=None,
         outputdir = outputfile[:outputprefixind+1]
 
     # Ensure output directory exists
-    if not os.path.exists(outputdir):
+    if axes is None and not os.path.exists(outputdir):
         try:
             os.makedirs(outputdir)
         except:
             pass
 
-    if not os.access(outputdir, os.W_OK):
+    if axes is None and not os.access(outputdir, os.W_OK):
         print(("No write access for directory "+outputdir+"! Exiting."))
         return
 
     # Check if target file already exists and overwriting is disabled
-    if (nooverwrite and os.path.exists(outputfile)):            
+    if axes is None and (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
             print(("Found existing file "+outputfile+". Skipping."))
             return
         else:
             print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
-    # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
-    if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
+    # The plot will be saved in a new figure 
+    if axes is None and str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
         plt.switch_backend(pt.backend_noninteractive)
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
-    if draw:
+    # If axes are provided, leave backend as-is.
+    if axes is None and draw is not None:
         if str(matplotlib.get_backend()) != pt.backend_interactive: #'TkAgg': 
             plt.switch_backend(pt.backend_interactive)
-    else:
+    elif axes is None:
         if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
             plt.switch_backend(pt.backend_noninteractive)  
 
@@ -382,13 +387,22 @@ def plot_ionosphere(filename=None,
     figsize = (6,5)
     if nocb:
         figsize = (5,5)
-    fig = plt.figure(figsize=figsize,dpi=150)
-    ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+
+    if axes is None:
+        fig = plt.figure(figsize=figsize,dpi=150)
+        ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
+    else:
+        ax_cartesian = axes.inset_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        #ax_cartesian = inset_axes(parent_axes=axes, width="100%", height="100%",  bbox_to_anchor=(0,0,1,1))
+        #ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), bbox_transform=axes.transData, bbox_to_anchor=(0,0,1,1))
+        ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'))
+        ax_polar.set_frame_on(False)
+        ax_polar.set_aspect('equal')
     ax_cartesian.set_xticklabels([])
     ax_cartesian.set_yticklabels([])
     ax_cartesian.axis('off')
 
-    ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
 
     ## Build a circle to map away the regions we're not interested in
     def make_circle(r):
@@ -456,7 +470,10 @@ def plot_ionosphere(filename=None,
                              bbox_transform=ax_polar.transAxes, bbox_to_anchor=(0.15,0,0.85,0.92))
         else:
             # Split existing axes to make room for colorbar
-            cax = fig.add_axes([0.9,0.2,0.03,0.6])
+            if axes is None:
+                cax = fig.add_axes([0.9,0.2,0.03,0.6])
+            else:
+                cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
 
         # Set flag which affects colorbar decimal precision
@@ -483,7 +500,7 @@ def plot_ionosphere(filename=None,
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks
-        if (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
+        if (axes is None) and (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
@@ -542,7 +559,7 @@ def plot_ionosphere(filename=None,
                     label.set_visible(False)
 
     # Add Vlasiator watermark
-    if (wmark or wmarkb):
+    if (wmark or wmarkb) and (axes is None):
         if wmark:
             wm = plt.imread(get_sample_data(watermarkimage))
         else:
@@ -565,18 +582,19 @@ def plot_ionosphere(filename=None,
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    plt.tight_layout(pad=0.01)
+    if axes is None:
+        plt.tight_layout(pad=0.01)
     savefig_pad=0.01
     bbox_inches='tight'
 
     # Save output or draw on-screen
-    if not draw:
+    if not draw and axes is None:
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             print("Error attempting to save figure: ", sys.exc_info())
         print('...Done!') 
-    else:
+    elif draw is not None and axes is None:
         # Draw on-screen
         plt.draw()
         plt.show()
