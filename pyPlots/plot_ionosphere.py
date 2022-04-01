@@ -393,7 +393,8 @@ def plot_ionosphere(filename=None,
         ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
         ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
     else:
-        ax_cartesian = axes.inset_axes([0.,0.,1,1], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_cartesian = axes.inset_axes([0.1,0.1,.9,.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_cartesian.set_aspect('equal')
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
