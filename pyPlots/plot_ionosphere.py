@@ -398,7 +398,7 @@ def plot_ionosphere(filename=None,
     else:
         axes.set_xticklabels([])
         axes.set_yticklabels([])
-        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center')
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
@@ -437,6 +437,7 @@ def plot_ionosphere(filename=None,
     ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=225)
     ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
     ax_polar.set_theta_zero_location('S', offset=0)
+    ax_polar.tick_params(labelsize=fontsize2, pad=0.1)
 
     # Title and plot limits
     if len(plot_title)!=0 and axes is None:
