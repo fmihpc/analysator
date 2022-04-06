@@ -1107,7 +1107,7 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
                 [0.9661, 0.9514428571, 0.0755333333], 
                 [0.9763, 0.9831, 0.0538]]
 
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import LinearSegmentedColormap
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('inferno', _inferno_data),
@@ -1115,7 +1115,7 @@ for (name, data) in (('magma', _magma_data),
                      ('viridis', _viridis_data),
                      ('parula', _parula_data)):
 
-    cmaps[name] = ListedColormap(data, name=name)
+    cmaps[name] = LinearSegmentedColormap.from_list(name, data)
 # Some of these are already included in newer versions of matplotlib
 magma = cmaps['magma']
 inferno = cmaps['inferno']
