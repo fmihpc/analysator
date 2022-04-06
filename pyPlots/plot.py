@@ -62,7 +62,7 @@ if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
 
 # Register custom colourmaps
 plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=cmaps.parula.reversed())
+plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
 plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
 plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
 plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
