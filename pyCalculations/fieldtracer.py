@@ -60,7 +60,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
        :returns:                  List of coordinates
    '''
 
-   if(bvar is not 'B'):
+   if(bvar != 'B'):
      warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
 
    if direction == '+-':

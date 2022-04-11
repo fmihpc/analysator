@@ -459,7 +459,7 @@ def plot_vdf(filename=None,
 
     :kword coordswap:   Swap the parallel and perpendicular coordinates
     :kword bvector:     Plot a magnetic field vector projection in-plane
-    :kword bvectorscale: Scale of bvector (default: 0.2)
+    :kword bvectorscale: Scale of bvector (default: 0.2 in units of axis lengths)
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
