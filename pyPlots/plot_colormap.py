@@ -169,7 +169,7 @@ def plot_colormap(filename=None,
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
     :kword fluxfile:    Filename to plot fluxfunction from
-    :kword flux_levels:  A list of flux function values to plot as the contours (default: some set)
+    :kword flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant intervals)
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
@@ -897,11 +897,6 @@ def plot_colormap(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-    #print('XmeshPass and YmeshPass')
-    #print(XmeshPass, YmeshPass)
-    #print('vs boxcoords imshow extents')
-    #print((boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]))
-    #print('prop. change:', (np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass)))
     if(not useimshow):
         fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
     else:
@@ -910,7 +905,7 @@ def plot_colormap(filename=None,
                           norm=norm,
                           interpolation=imshowinterp,
                           origin='lower',
-                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))#(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
                          )
     
 

@@ -36,9 +36,9 @@ def get_spectrum_energy(vlsvReader,
                   weight='flux',
                   restart=True):
    import numpy as np
-   import pytools as pt
+   import pytools
    EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins)
-   vlsvReader = pt.vlsvfile.VlsvReader(vlsvReader)
+   vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
    if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
       return (False,np.zeros(nBins), EkinBinEdges)
@@ -86,7 +86,7 @@ def get_spectrum_energy(vlsvReader,
    #print('ftotal', ftotal, 'sum hist', np.sum(nhist))
    dE = EkinBinEdges[1:] - EkinBinEdges[0:-1]
    nhist = np.divide(nhist,(dE*4*np.pi))
-   vari = pt.calculations.VariableInfo(nhist,
+   vari = pytools.calculations.VariableInfo(nhist,
                                        name="Omnidirectional energy spectrum "+population+' ('+weight+')',
                                        units=units,
                                        latex=latex,
@@ -108,7 +108,7 @@ def get_spectrum_modvelocity(vlsvReader,
    import numpy as np
    import pytools as pt
    VBinEdges = np.logspace(np.log10(VMin),np.log10(VMax),nBins)
-   vlsvReader = pt.vlsvfile.VlsvReader(vlsvReader)
+   vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
    if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
       return (False,np.zeros(nBins), VBinEdges)
@@ -163,7 +163,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                   restart=True):
    import numpy as np
    import pytools as pt
-   vlsvReader = pt.vlsvfile.VlsvReader(vlsvReader)
+   vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
 
    if vectorVar is not None and vector is None:
       vector=vlsvReader.read_variable(vectorVar, cid)
@@ -220,7 +220,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    dv = VBinEdges[1:] - VBinEdges[0:-1]
    nhist = np.divide(nhist,(dv*4*np.pi))
    
-   vari = pt.calculations.VariableInfo(nhist,
+   vari = pytools.calculations.VariableInfo(nhist,
                                     name="Omnidirectional energy spectrum "+population+' ('+weight+')',
                                     units=units,
                                     latex=latex,

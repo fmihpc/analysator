@@ -364,6 +364,8 @@ def ParallelVectorComponent( variables ):
    ''' Data reducer function for vector component parallel to the magnetic field (or another vector)
    '''
    inputvector = variables[0]
+   if inputvector is None:
+      raise ValueError("Missing inputvector")
    bgvector = variables[1]
    if( np.ndim(inputvector)==1 ):
       bgnorm = bgvector/np.linalg.norm(bgvector)
@@ -376,6 +378,8 @@ def PerpendicularVectorComponent( variables ):
    ''' Data reducer function for vector component perpendicular to the magnetic field (or another vector)
    '''
    inputvector = variables[0]
+   if inputvector is None:
+      raise ValueError("Missing inputvector")
    bgvector = variables[1]
    if( np.ndim(inputvector)==1 ):
       bgnorm = bgvector / np.linalg.norm(bgvector)

@@ -23,7 +23,7 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
-import pytools as pt
+#import pytools
 from numbers import Number
 
 class VariableInfo:
@@ -71,7 +71,6 @@ class VariableInfo:
 
              E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
       '''
-      import numpy as np
       if len(self.data) <= 0:
          print("BAD DATA LENGTH")
          return []
@@ -97,35 +96,35 @@ class VariableInfo:
       if env=='EarthSpace':
          self.scaleDict = {
                  's'      : {'defaultScale':1,
-                             1e6: {'scaledUnits':'mus', 'scaledLatexUnit':'$\mu\mathrm{s}$'},
-                             1e3: {'scaledUnits':'ms', 'scaledLatexUnit':'$\mathrm{ms}$'}
+                             1e6: {'scaledUnits':'us', 'scaledLatexUnit':r'$\mu\mathrm{s}$'},
+                             1e3: {'scaledUnits':'ms', 'scaledLatexUnit':r'$\mathrm{ms}$'}
                             },
                  'T'      : {'defaultScale':1e9,
-                             1e9: {'scaledUnits':'nT', 'scaledLatexUnit':'$\mathrm{nT}$'}
+                             1e9: {'scaledUnits':'nT', 'scaledLatexUnit':r'$\mathrm{nT}$'}
                             },
                  'K'      : {'defaultScale':1e-6,
-                             1e-6:{'scaledUnits':'MK', 'scaledLatexUnit':'$\mathrm{MK}$'}
+                             1e-6:{'scaledUnits':'MK', 'scaledLatexUnit':r'$\mathrm{MK}$'}
                             },
                  'Pa'     : {'defaultScale':1e9,
-                             1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':'$\mathrm{nPa}$'}
+                             1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':r'$\mathrm{nPa}$'}
                             },
                  '1/m^3'  : {'defaultScale':1e-6,
-                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
                             },
                  '1/m3'   : {'defaultScale':1e-6,
-                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':'$\mathrm{cm}^{-3}$'}
+                             1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
                             },
                  'm/s'    : {'defaultScale':1e-3,
-                             1e-3:{'scaledUnits':'km/s', 'scaledLatexUnit':'$\mathrm{km}\,\mathrm{s}^{-1}$'}
+                             1e-3:{'scaledUnits':'km/s', 'scaledLatexUnit':r'$\mathrm{km}\,\mathrm{s}^{-1}$'}
                             },
                  'V/m'    : {'defaultScale':1e3,
-                             1e3:{'scaledUnits':'mV/m', 'scaledLatexUnit':'$\mathrm{mV}\,\mathrm{m}^{-1}$'}
+                             1e3:{'scaledUnits':'mV/m', 'scaledLatexUnit':r'$\mathrm{mV}\,\mathrm{m}^{-1}$'}
                             },
                  'eV/cm3' : {'defaultScale':1e-3,
-                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':'$\mathrm{keV}\,\mathrm{cm}^{-3}'}
+                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
                             },
                  'eV/cm^3': {'defaultScale':1e-3,
-                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':'$\mathrm{keV}\,\mathrm{cm}^{-3}'}
+                             1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
                             },
          }
 
@@ -157,7 +156,7 @@ class VariableInfo:
 
          if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
              #
-             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pt.plot.cbfmtsci(vscale,None)
+             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
          try:
             #above guarantees the list comprehension does not give an empty list
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
@@ -174,14 +173,15 @@ class VariableInfo:
           if vscale is None or np.isclose(vscale, 1.0):
             return 1.0, self.units, self.latexunits
           else:
-            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pt.plot.cbfmtsci(vscale,None)
+            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
 
       return unitScale, scaledUnits, scaledLatexUnits
 
    # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
    # necessary, for default/other environments.
    def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None, vscale=None):
-      ''' Creates a new variableinfo with scale data - returns self if no scaling!
+      ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
+          default dictionaries.
 
           :param data:         in case you wish to provide new data array (why, though?)
           :param env:          A string to choose the scaling dictionary [default: EarthSpace]

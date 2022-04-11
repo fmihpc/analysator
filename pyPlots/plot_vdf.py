@@ -287,7 +287,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             NY = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
             NZ = np.cross(NX,NY)
             NY = np.array(NY)/np.sqrt(NY[0]**2 + NY[1]**2 + NY[2]**2)
-            R = np.stack((NX, NY, NZ)).T
+            if slicetype=="Bpara":
+               R = np.stack((NX, NY, NZ)).T
+            elif slicetype=="Bpara1":
+               R = np.stack((NX, NZ, NY)).T
+            elif slicetype=="Bperp":
+               R = np.stack((NY, NX, NZ)).T
             #R = np.stack(([np.cos(0.1),-np.sin(0.1),0],[np.sin(0.1),np.cos(0.1),0],[0,0,1]))
             #R = np.stack(([1,0,0],[0,1,0],[0,0,1]))
             print(R)
@@ -387,7 +392,7 @@ def plot_vdf(filename=None,
              coordinates=None, coordre=None, 
              outputdir=None, outputfile=None,
              nooverwrite=None,
-             draw=None,axisunit=None,title=None, cbtitle=None,
+             draw=None,axisunit=None,axiskmps=None,title=None, cbtitle=None,
              tickinterval=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
@@ -398,7 +403,7 @@ def plot_vdf(filename=None,
              normal=None, normalx=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
-             bvector=None,
+             bvector=None,bvectorscale=0.2,
              cbulk=None, center=None, wflux=None, setThreshold=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
@@ -438,6 +443,7 @@ def plot_vdf(filename=None,
 
     :kword box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
+    :kword axiskmps:    Plot v-axes using 10^{axisunit} km/s (default: m/s)
     :kword tickinterval: Interval at which to have ticks on axes
    
     :kword xy:          Perform slice in x-y-direction
@@ -453,6 +459,7 @@ def plot_vdf(filename=None,
 
     :kword coordswap:   Swap the parallel and perpendicular coordinates
     :kword bvector:     Plot a magnetic field vector projection in-plane
+    :kword bvectorscale: Scale of bvector (default: 0.2)
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
@@ -674,6 +681,12 @@ def plot_vdf(filename=None,
             velUnitStr = r'[m s$^{-1}$]'
         else:
             velUnitStr = r'[$10^{'+str(int(axisunit))+'}$ m s$^{-1}$]'
+    if axiskmps is not None:
+        velUnit = np.power(10,int(axiskmps)+3)
+        if np.isclose(axiskmps,0):
+            velUnitStr = r'[km s$^{-1}$]'
+        else:
+            velUnitStr = r'[$10^{'+str(int(axiskmps))+'}$ km s$^{-1}$]'
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
@@ -1024,7 +1037,6 @@ def plot_vdf(filename=None,
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
 
         ticks = LogLocator(base=10,subs=list(range(0,10)))#,
-        print(max(2,np.rint(np.log10(fmaxuse/fminuse))))
                            #numticks=max(2,np.rint(np.log10(fmaxuse/fminuse))) ) # where to show labels
                                                                                 # tries to force at least 2 labels
 
@@ -1187,8 +1199,8 @@ def plot_vdf(filename=None,
             # normalize
             bvector = binplane/np.linalg.norm(binplane)
             # Length default is 1/5 of axis length
-            bvectormultiplier = np.amin([yvalsrange[1]-yvalsrange[0],xvalsrange[1]-xvalsrange[0]])/(velUnit*5.)
-            bvector *= bvectormultiplier
+            bvectormultiplier = np.amin([yvalsrange[1]-yvalsrange[0],xvalsrange[1]-xvalsrange[0]])/(velUnit)
+            bvector *= bvectormultiplier*bvectorscale
 #            ax1.arrow(0,0,bvector[0],bvector[1],width=0.02*thick,head_width=0.1*thick,
 #                      head_length=0.2*thick,zorder=10,color='k')
             #ax1.arrow(origin[0],origin[1],bvector[0],bvector[1],zorder=10,color='k')
