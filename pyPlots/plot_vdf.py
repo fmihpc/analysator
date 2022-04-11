@@ -22,7 +22,7 @@
 # 
 
 import matplotlib
-from yaml import warnings
+import warnings
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
