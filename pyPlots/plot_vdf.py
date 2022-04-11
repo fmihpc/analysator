@@ -22,6 +22,7 @@
 # 
 
 import matplotlib
+from yaml import warnings
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -571,6 +572,7 @@ def plot_vdf(filename=None,
 
     if reducer == "average":
         print("V-space reduction via averages")
+        warnings.warn('Average-reduction is kept for backward-compatibility for now; consider using "integrate"!')
         pass
     elif reducer == "integrate":
         print("V-space reduction via integration")

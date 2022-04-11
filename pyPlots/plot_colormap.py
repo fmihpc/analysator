@@ -169,7 +169,8 @@ def plot_colormap(filename=None,
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
     :kword fluxfile:    Filename to plot fluxfunction from
-    :kword flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant intervals)
+    :kword flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant 
+                        intervals: np.linspace(-10,10,fluxlines*60))
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
@@ -922,8 +923,6 @@ def plot_colormap(filename=None,
         ax1.spines[axis].set_linewidth(thick)
     ax1.xaxis.set_tick_params(width=thick,length=3)
     ax1.yaxis.set_tick_params(width=thick,length=3)
-    #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
-    #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if not noxlabels:
         xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x\,['+axisunitstr+']'))
