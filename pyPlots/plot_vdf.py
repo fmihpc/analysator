@@ -373,7 +373,28 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             #newarray = newarray[szs[0]:-szs[0],szs[1]:-szs[1],szs[2]:-szs[2]]
             #print("chopped size", newarray.shape, newarray.sum())
             #sys.exit()
-            return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
+
+            #find the indices within slice thickness - direction 1 is the reduced dimension
+            #indexes = [(abs(Voutofslice) <= 0.5*vthick) in doHistogram
+            if slicethick!=0:
+                dnew = newedges[1][1]-newedges[1][0]
+                zeroInd = int(-newedges[1][0]/dnew)
+                zeroIndLow = int((-newedges[1][0]-slicethick/2)/dnew)
+                zeroIndHi = int((-newedges[1][0]+slicethick/2)/dnew)
+                if zeroIndHi <= zeroIndLow:
+                    zeroIndHi = zeroIndLow+1
+                dind = zeroIndHi-zeroIndLow
+                print("slicethick", slicethick, "dind", dind, "zeroIndLow", zeroIndLow, "dnew", dnew)
+                result = newarray[:,zeroIndLow:zeroIndHi].sum(axis=1).T
+                if reducer == "average":
+                    result = np.divide(result,dind*inputcellsize**3)
+                else: #integrate
+                    result = np.divide(result,(newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1]))
+                    pass
+                return (True, result,
+                    newedges[0],newedges[2])
+            else:
+                return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
                     newedges[0],newedges[2])
             #return (True, newarray.sum(axis=0).T/((edges[1][0]-edges[1][1])*(edges[2][0]-edges[2][1])),
                     #edges[1],edges[2])
