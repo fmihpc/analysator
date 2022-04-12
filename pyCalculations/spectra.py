@@ -201,13 +201,13 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    # normalization
    if(weight == 'flux'):
       fw = f*np.sqrt(V2) # use particle flux as weighting
-      units = "s^2/(m^3 4pi)"
-      latexunits = '$\mathrm{s}\,\mathrm{m}^{-4}\,(4\pi)^{-1}$'
-      latex='$f(\vec{r})\,\Deltav^-1\,sr^-1$'
+      units = "s^2/(m^3)"
+      latexunits = '$\mathrm{s}\,\mathrm{m}^{-4}$'
+      latex='$f(\vec{r})\,\Deltav^-1$'
    else:
       units = "s/(m^4 4pi)"
-      latexunits = '$\mathrm{s}\mathrm{m}^{-4}\,(4\pi)^{-1}$'
-      latex='$f(\vec{r})\,\Deltav^-1\,sr^-1$'
+      latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
+      latex='$f(\vec{r})\,\Deltav^-1\$'
       weight = 'particles'
       fw = f
    
@@ -218,10 +218,10 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw*dV,normed=0)
    # normalization
    dv = VBinEdges[1:] - VBinEdges[0:-1]
-   nhist = np.divide(nhist,(dv*4*np.pi))
+   nhist = np.divide(nhist,dv)
    
    vari = pytools.calculations.VariableInfo(nhist,
-                                    name="Omnidirectional energy spectrum "+population+' ('+weight+')',
+                                    name="Parallel spectrum of "+population+' ('+weight+')',
                                     units=units,
                                     latex=latex,
                                     latexunits=latexunits)
