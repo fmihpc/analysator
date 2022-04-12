@@ -127,6 +127,10 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="averag
 
     return (nVhist,VXEdges,VYEdges)
   
+def resampleReducer(V, inputcellsize, reducer="integrate",):
+
+    print("resampleReducer failure")
+    return (False,0,0,0)
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
@@ -155,6 +159,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     velcellslist = list(zip(*velcells.items()))
     
+    if slicethick is not None and slicethick !=0:
+        if slicethick < 0:
+            warnings.warn("Slicethick < 0. This may cause bad behaviour.")
+        if slicethick > 0.1*min(min(vxsize,vysize),vzsize):
+            warnings.warn("You seem to be analysing a thick slice of the VDF.\nPlease check this is your intent - slicethick is amount of cells, not SI velocity space length!")
+
     # check that velocity space has cells
     if(len(velcellslist) <= 0):
         return (False,0,0,0)
