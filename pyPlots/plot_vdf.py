@@ -127,7 +127,123 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="averag
 
     return (nVhist,VXEdges,VYEdges)
   
-def resampleReducer(V, inputcellsize, reducer="integrate",):
+def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate"):
+    NX = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+    NY = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+    NZ = np.cross(NX,NY)
+    NY = np.array(NY)/np.sqrt(NY[0]**2 + NY[1]**2 + NY[2]**2)
+    if slicetype=="Bpara":
+        R = np.stack((NX, NY, NZ)).T
+    elif slicetype=="Bpara1":
+        R = np.stack((NX, NZ, NY)).T
+    elif slicetype=="Bperp":
+        R = np.stack((NY, NX, NZ)).T
+    elif slicetype=="vecperp":
+        R = np.stack((NY, NX, NZ)).T
+    #R = np.stack(([np.cos(0.1),-np.sin(0.1),0],[np.sin(0.1),np.cos(0.1),0],[0,0,1]))
+    #R = np.stack(([1,0,0],[0,1,0],[0,0,1]))
+    print(R)
+    vmins = np.amin(V,axis=0)
+    vmaxs = np.amax(V,axis=0)
+
+    # let's see where the bounding box corners end up and pad the array accordingly
+    vexts =[[vmins[0], vmins[1], vmins[2]],
+            [vmins[0], vmins[1], vmaxs[2]],
+            [vmins[0], vmaxs[1], vmaxs[2]],
+            [vmaxs[0], vmaxs[1], vmaxs[2]],
+            [vmaxs[0], vmaxs[1], vmins[2]],
+            [vmaxs[0], vmins[1], vmins[2]]]
+
+    #print("vs",vmins, vmaxs)
+    #print("vexts",vexts)
+
+    vminsR = np.matmul(R, vmins)
+    vmaxsR = np.matmul(R, vmaxs)
+    vextsR = np.array([np.matmul(R, v) for v in vexts])
+    vexts = np.array(vexts) # also needs the initial extent, so a thin box isn't rotated out of the initial box
+    #print("vsR",vminsR, vmaxsR)
+    #print("vextsR",vextsR)
+
+    vminsR,vmaxsR = np.minimum(vminsR,vmaxsR), np.maximum(vminsR,vmaxsR)
+    vminsR,vmaxsR = np.minimum(np.amin(vextsR, axis=0),np.amin(vexts, axis=0)), np.maximum(np.amax(vextsR, axis=0),np.amax(vexts, axis=0))
+    #print("vextsR organized",vminsR, vmaxsR)
+
+    leftpads = (np.abs(vmins/inputcellsize - vminsR/inputcellsize)).astype(int)
+    rightpads = (np.abs(vmaxs/inputcellsize - vmaxsR/inputcellsize)).astype(int)
+
+    #print("pads", leftpads, rightpads)
+    szs = np.trunc((vmaxs-vmins)/inputcellsize+1).astype(int)
+    #print("unpadded szs", szs)
+#            szs = np.trunc((vmaxs-vmins)/inputcellsize+2+leftpads+rightpads).astype(int)
+    #print("padded szs", szs)
+
+    pivot = -vmins/inputcellsize+leftpads #assumes a previously centered V-space wrt. rotations, just need this in cellwidth units
+    #print(szs, pivot, -vmins/inputcellsize)
+    basearray, edges = np.histogramdd(V, bins=tuple(szs),
+        range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
+        density=False,weights=f*inputcellsize**3)
+    
+
+    #print(basearray.shape,basearray.dtype, edges[0].size,edges[1].size,edges[2].size)
+    #return (True, basearray.sum(axis=2).T, edges[0],edges[1])
+    newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
+    #print(newedges)
+    
+    
+    #need to expand the array a bit to not chop off anything
+    #basearray = np.pad(basearray,((szs[0],szs[0]),(szs[1],szs[1]),(szs[2],szs[2])))
+    basearray = np.pad(basearray,tuple(zip(leftpads,rightpads)))
+    
+    
+    nonzero = basearray > 0
+    newarray = np.ones_like(basearray)
+    newarray = newarray*np.log(sys.float_info.min)
+    #newarray = newarray*setThreshold/10
+    #print("edge sample", newarray[0,0,0])
+    np.log(basearray, where=nonzero, out=newarray)
+    newarray = scipy.ndimage.affine_transform(newarray,R,
+                                            mode='constant',cval=np.log(setThreshold/10),
+                                            order=1,
+                                            offset=pivot-np.matmul(R,pivot),
+                                            )
+    #print("edge sample", newarray[0,0,0])
+    #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
+    #print("edge sample", newarray[0,0,0], np.exp(newarray[0,0,0]))
+    newarray = np.exp(newarray)
+    newarray[newarray<setThreshold*inputcellsize**3] = 0
+    newarray[np.logical_not(np.isfinite(newarray))] = 0
+    newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
+    #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
+    #print("edge sample", newarray[0,0,0])
+    #sys.exit()
+    #newarray = newarray[szs[0]:-szs[0],szs[1]:-szs[1],szs[2]:-szs[2]]
+    #print("chopped size", newarray.shape, newarray.sum())
+    #sys.exit()
+
+    #find the indices within slice thickness - direction 1 is the reduced dimension
+    #indexes = [(abs(Voutofslice) <= 0.5*vthick) in doHistogram
+    if slicethick!=0:
+        dnew = newedges[1][1]-newedges[1][0]
+        zeroInd = int(-newedges[1][0]/dnew)
+        zeroIndLow = int((-newedges[1][0]-slicethick/2)/dnew)
+        zeroIndHi = int((-newedges[1][0]+slicethick/2)/dnew)
+        if zeroIndHi <= zeroIndLow:
+            zeroIndHi = zeroIndLow+1
+        dind = zeroIndHi-zeroIndLow
+        print("slicethick", slicethick, "dind", dind, "zeroIndLow", zeroIndLow, "dnew", dnew)
+        result = newarray[:,zeroIndLow:zeroIndHi].sum(axis=1).T
+        if reducer == "average":
+            result = np.divide(result,dind*inputcellsize**3)
+        else: #integrate
+            result = np.divide(result,(newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1]))
+            pass
+        return (True, result,
+            newedges[0],newedges[2])
+    else:
+        return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
+            newedges[0],newedges[2])
+    #return (True, newarray.sum(axis=0).T/((edges[1][0]-edges[1][1])*(edges[2][0]-edges[2][1])),
+            #edges[1],edges[2])
 
     print("resampleReducer failure")
     return (False,0,0,0)
@@ -256,6 +372,12 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
+        if resampler is not None:
+            if normvectX is None:
+                warnings.warn("Please provide a normvectX for the resampler!")
+                return(False,0,0,0)
+            return resampleReducer(V,f, inputcellsize,setThreshold, normvect, normvectX, slicetype, slicethick, reducer)
+        
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
          if resampler is None:
             # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
@@ -293,121 +415,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
                   if abs(1.0-np.amax(testvect))>1.e-3:
                      print("Error in rotation: testvector ",count,testvect," largest component is not unity")
          else:
-            # Generate a regular ndarray from the distribution function
-            NX = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-            NY = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-            NZ = np.cross(NX,NY)
-            NY = np.array(NY)/np.sqrt(NY[0]**2 + NY[1]**2 + NY[2]**2)
-            if slicetype=="Bpara":
-               R = np.stack((NX, NY, NZ)).T
-            elif slicetype=="Bpara1":
-               R = np.stack((NX, NZ, NY)).T
-            elif slicetype=="Bperp":
-               R = np.stack((NY, NX, NZ)).T
-            #R = np.stack(([np.cos(0.1),-np.sin(0.1),0],[np.sin(0.1),np.cos(0.1),0],[0,0,1]))
-            #R = np.stack(([1,0,0],[0,1,0],[0,0,1]))
-            print(R)
-            vmins = np.amin(V,axis=0)
-            vmaxs = np.amax(V,axis=0)
-
-            # let's see where the bounding box corners end up and pad the array accordingly
-            vexts =[[vmins[0], vmins[1], vmins[2]],
-                    [vmins[0], vmins[1], vmaxs[2]],
-                    [vmins[0], vmaxs[1], vmaxs[2]],
-                    [vmaxs[0], vmaxs[1], vmaxs[2]],
-                    [vmaxs[0], vmaxs[1], vmins[2]],
-                    [vmaxs[0], vmins[1], vmins[2]]]
-
-            #print("vs",vmins, vmaxs)
-            #print("vexts",vexts)
-
-            vminsR = np.matmul(R, vmins)
-            vmaxsR = np.matmul(R, vmaxs)
-            vextsR = np.array([np.matmul(R, v) for v in vexts])
-            vexts = np.array(vexts) # also needs the initial extent, so a thin box isn't rotated out of the initial box
-            #print("vsR",vminsR, vmaxsR)
-            #print("vextsR",vextsR)
-
-            vminsR,vmaxsR = np.minimum(vminsR,vmaxsR), np.maximum(vminsR,vmaxsR)
-            vminsR,vmaxsR = np.minimum(np.amin(vextsR, axis=0),np.amin(vexts, axis=0)), np.maximum(np.amax(vextsR, axis=0),np.amax(vexts, axis=0))
-            #print("vextsR organized",vminsR, vmaxsR)
-
-            leftpads = (np.abs(vmins/inputcellsize - vminsR/inputcellsize)).astype(int)
-            rightpads = (np.abs(vmaxs/inputcellsize - vmaxsR/inputcellsize)).astype(int)
-
-            #print("pads", leftpads, rightpads)
-            szs = np.trunc((vmaxs-vmins)/inputcellsize+1).astype(int)
-            #print("unpadded szs", szs)
-#            szs = np.trunc((vmaxs-vmins)/inputcellsize+2+leftpads+rightpads).astype(int)
-            #print("padded szs", szs)
-
-            pivot = -vmins/inputcellsize+leftpads #assumes a previously centered V-space wrt. rotations, just need this in cellwidth units
-            #print(szs, pivot, -vmins/inputcellsize)
-            basearray, edges = np.histogramdd(V, bins=tuple(szs),
-             range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
-             density=False,weights=f*inputcellsize**3)
-            
-
-            #print(basearray.shape,basearray.dtype, edges[0].size,edges[1].size,edges[2].size)
-            #return (True, basearray.sum(axis=2).T, edges[0],edges[1])
-            newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
-            #print(newedges)
-            
-            
-            #need to expand the array a bit to not chop off anything
-            #basearray = np.pad(basearray,((szs[0],szs[0]),(szs[1],szs[1]),(szs[2],szs[2])))
-            basearray = np.pad(basearray,tuple(zip(leftpads,rightpads)))
-            
-            
-            nonzero = basearray > 0
-            newarray = np.ones_like(basearray)
-            newarray = newarray*np.log(sys.float_info.min)
-            #newarray = newarray*setThreshold/10
-            #print("edge sample", newarray[0,0,0])
-            np.log(basearray, where=nonzero, out=newarray)
-            newarray = scipy.ndimage.affine_transform(newarray,R,
-                                                    mode='constant',cval=np.log(setThreshold/10),
-                                                    order=1,
-                                                    offset=pivot-np.matmul(R,pivot),
-                                                    )
-            #print("edge sample", newarray[0,0,0])
-            #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
-            #print("edge sample", newarray[0,0,0], np.exp(newarray[0,0,0]))
-            newarray = np.exp(newarray)
-            newarray[newarray<setThreshold*inputcellsize**3] = 0
-            newarray[np.logical_not(np.isfinite(newarray))] = 0
-            newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
-            #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
-            #print("edge sample", newarray[0,0,0])
-            #sys.exit()
-            #newarray = newarray[szs[0]:-szs[0],szs[1]:-szs[1],szs[2]:-szs[2]]
-            #print("chopped size", newarray.shape, newarray.sum())
-            #sys.exit()
-
-            #find the indices within slice thickness - direction 1 is the reduced dimension
-            #indexes = [(abs(Voutofslice) <= 0.5*vthick) in doHistogram
-            if slicethick!=0:
-                dnew = newedges[1][1]-newedges[1][0]
-                zeroInd = int(-newedges[1][0]/dnew)
-                zeroIndLow = int((-newedges[1][0]-slicethick/2)/dnew)
-                zeroIndHi = int((-newedges[1][0]+slicethick/2)/dnew)
-                if zeroIndHi <= zeroIndLow:
-                    zeroIndHi = zeroIndLow+1
-                dind = zeroIndHi-zeroIndLow
-                print("slicethick", slicethick, "dind", dind, "zeroIndLow", zeroIndLow, "dnew", dnew)
-                result = newarray[:,zeroIndLow:zeroIndHi].sum(axis=1).T
-                if reducer == "average":
-                    result = np.divide(result,dind*inputcellsize**3)
-                else: #integrate
-                    result = np.divide(result,(newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1]))
-                    pass
-                return (True, result,
-                    newedges[0],newedges[2])
-            else:
-                return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
-                    newedges[0],newedges[2])
-            #return (True, newarray.sum(axis=0).T/((edges[1][0]-edges[1][1])*(edges[2][0]-edges[2][1])),
-                    #edges[1],edges[2])
+            return resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer)
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
