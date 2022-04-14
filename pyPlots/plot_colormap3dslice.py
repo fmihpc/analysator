@@ -861,13 +861,13 @@ def plot_colormap3dslice(filename=None,
                             pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
-                        if np.ndim(pass_map)==1:
+                        if np.ndim(pass_map)==2:
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                        elif np.ndim(pass_map)==2: # vector variable
+                        elif np.ndim(pass_map)==3: # vector variable
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                        elif np.ndim(pass_map)==3:  # tensor variable
+                        elif np.ndim(pass_map)==4:  # tensor variable
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
