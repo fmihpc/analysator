@@ -41,6 +41,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
+# Resample reducer flag - set to True to perform resampling in log-scaled values
+# Retained for reference, if the large differences in VDF values come back to haunt
+logspaceResample = False
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
@@ -140,9 +143,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         R = np.stack((NY, NX, NZ)).T
     elif slicetype=="vecperp":
         R = np.stack((NY, NX, NZ)).T
-    #R = np.stack(([np.cos(0.1),-np.sin(0.1),0],[np.sin(0.1),np.cos(0.1),0],[0,0,1]))
-    #R = np.stack(([1,0,0],[0,1,0],[0,0,1]))
-    print(R)
+    #print(R)
     vmins = np.amin(V,axis=0)
     vmaxs = np.amax(V,axis=0)
 
@@ -154,71 +155,51 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
             [vmaxs[0], vmaxs[1], vmins[2]],
             [vmaxs[0], vmins[1], vmins[2]]]
 
-    #print("vs",vmins, vmaxs)
-    #print("vexts",vexts)
-
-    vminsR = np.matmul(R, vmins)
-    vmaxsR = np.matmul(R, vmaxs)
     vextsR = np.array([np.matmul(R, v) for v in vexts])
     vexts = np.array(vexts) # also needs the initial extent, so a thin box isn't rotated out of the initial box
-    #print("vsR",vminsR, vmaxsR)
-    #print("vextsR",vextsR)
 
-    vminsR,vmaxsR = np.minimum(vminsR,vmaxsR), np.maximum(vminsR,vmaxsR)
     vminsR,vmaxsR = np.minimum(np.amin(vextsR, axis=0),np.amin(vexts, axis=0)), np.maximum(np.amax(vextsR, axis=0),np.amax(vexts, axis=0))
-    #print("vextsR organized",vminsR, vmaxsR)
 
     leftpads = (np.abs(vmins/inputcellsize - vminsR/inputcellsize)).astype(int)
     rightpads = (np.abs(vmaxs/inputcellsize - vmaxsR/inputcellsize)).astype(int)
 
-    #print("pads", leftpads, rightpads)
     szs = np.trunc((vmaxs-vmins)/inputcellsize+1).astype(int)
-    #print("unpadded szs", szs)
-#            szs = np.trunc((vmaxs-vmins)/inputcellsize+2+leftpads+rightpads).astype(int)
-    #print("padded szs", szs)
 
     pivot = -vmins/inputcellsize+leftpads #assumes a previously centered V-space wrt. rotations, just need this in cellwidth units
-    #print(szs, pivot, -vmins/inputcellsize)
+    
+    #Form a dense array of the initial data
     basearray, edges = np.histogramdd(V, bins=tuple(szs),
         range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
         density=False,weights=f*inputcellsize**3)
     
-
-    #print(basearray.shape,basearray.dtype, edges[0].size,edges[1].size,edges[2].size)
-    #return (True, basearray.sum(axis=2).T, edges[0],edges[1])
     newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
-    #print(newedges)
-    
-    
     #need to expand the array a bit to not chop off anything
-    #basearray = np.pad(basearray,((szs[0],szs[0]),(szs[1],szs[1]),(szs[2],szs[2])))
     basearray = np.pad(basearray,tuple(zip(leftpads,rightpads)))
     
     
     nonzero = basearray > 0
-    newarray = np.ones_like(basearray)
-    newarray = newarray*np.log(sys.float_info.min)
-    #newarray = newarray*setThreshold/10
-    #print("edge sample", newarray[0,0,0])
-    np.log(basearray, where=nonzero, out=newarray)
+
+
+    if logspaceResample:
+        newarray = np.ones_like(basearray)
+        newarray = newarray*np.log(sys.float_info.min)
+        np.log(basearray, where=nonzero, out=newarray)
+    else:
+        newarray = np.zeros_like(basearray)
+        newarray[nonzero] = basearray[nonzero]
+    
     newarray = scipy.ndimage.affine_transform(newarray,R,
                                             mode='constant',cval=np.log(setThreshold/10),
                                             order=1,
                                             offset=pivot-np.matmul(R,pivot),
                                             )
-    #print("edge sample", newarray[0,0,0])
-    #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
-    #print("edge sample", newarray[0,0,0], np.exp(newarray[0,0,0]))
-    newarray = np.exp(newarray)
-    newarray[newarray<setThreshold*inputcellsize**3] = 0
-    newarray[np.logical_not(np.isfinite(newarray))] = 0
-    newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
-    #print(newarray.shape, "Total", newarray.sum(), "vs base total", basearray.sum(), "min newarray", np.min(newarray))
-    #print("edge sample", newarray[0,0,0])
-    #sys.exit()
-    #newarray = newarray[szs[0]:-szs[0],szs[1]:-szs[1],szs[2]:-szs[2]]
-    #print("chopped size", newarray.shape, newarray.sum())
-    #sys.exit()
+    if logspaceResample:
+        newarray = np.exp(newarray)
+        newarray[np.logical_not(np.isfinite(newarray))] = 0
+
+    newarray[newarray<setThreshold*inputcellsize**3] = 0    
+    #better not to force conservation - values under threshold get folded into the distribution!
+    #newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
 
     #find the indices within slice thickness - direction 1 is the reduced dimension
     #indexes = [(abs(Voutofslice) <= 0.5*vthick) in doHistogram
@@ -242,8 +223,6 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     else:
         return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
             newedges[0],newedges[2])
-    #return (True, newarray.sum(axis=0).T/((edges[1][0]-edges[1][1])*(edges[2][0]-edges[2][1])),
-            #edges[1],edges[2])
 
     print("resampleReducer failure")
     return (False,0,0,0)
