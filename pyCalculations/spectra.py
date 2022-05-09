@@ -20,7 +20,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
-
+import numpy as np
+import pytools
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
 # Weighted by particle flux/none
 def get_spectrum_energy(vlsvReader,
@@ -35,8 +36,7 @@ def get_spectrum_energy(vlsvReader,
                   frame=None,
                   weight='flux',
                   restart=True):
-   import numpy as np
-   import pytools
+
    EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins)
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
@@ -105,8 +105,7 @@ def get_spectrum_modvelocity(vlsvReader,
                   frame=None,
                   weight='flux',
                   restart=True):
-   import numpy as np
-   import pytools as pt
+
    VBinEdges = np.logspace(np.log10(VMin),np.log10(VMax),nBins)
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
@@ -161,8 +160,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                   frame=None,
                   weight='flux',
                   restart=True):
-   import numpy as np
-   import pytools as pt
+
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
 
    if vectorVar is not None and vector is None:
@@ -205,7 +203,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       latexunits = '$\mathrm{s}\,\mathrm{m}^{-4}$'
       latex='$f(\vec{r})\,\Deltav^-1$'
    else:
-      units = "s/(m^4 4pi)"
+      units = "s/m^4"
       latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
       latex='$f(\vec{r})\,\Deltav^-1\$'
       weight = 'particles'

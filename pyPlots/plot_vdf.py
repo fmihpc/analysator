@@ -259,6 +259,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             warnings.warn("Slicethick < 0. This may cause bad behaviour.")
         if slicethick > 0.1*min(min(vxsize,vysize),vzsize):
             warnings.warn("You seem to be analysing a thick slice of the VDF.\nPlease check this is your intent - slicethick is amount of cells, not SI velocity space length!")
+        if slicethick > 0 and reducer=="average":
+            warnings.warn("You seem to be averaging across some width of the VDF. Are you sure you don't want to integrate instead?")
 
     # check that velocity space has cells
     if(len(velcellslist) <= 0):
