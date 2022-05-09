@@ -69,7 +69,7 @@ def verifyCellWithVspace(vlsvReader,cid):
     return found
 
 # create a 2-dimensional histogram
-def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="average", wflux=None, initial_dV=1.0):
+def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integrate", wflux=None, initial_dV=1.0):
     # Flux weighting?
     if wflux is not None:
         fw = f*np.linalg.norm([VX,VY,Voutofslice]) # use particle flux as weighting in the histogram
@@ -229,7 +229,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
-                  slicethick=None, reducer="average", resampler=None, wflux=None, center=None, setThreshold=None,normvectX=None):
+                  slicethick=None, reducer="integrate", resampler=True, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
     if vlsvReader.check_variable('fSaved'): #restart files will not have this value        
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -353,14 +353,14 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
         VX = Vrot[:,0]
         VY = Vrot[:,1]
         Voutofslice = Vrot[:,2]
-        if resampler is not None:
+        if resampler is not False:
             if normvectX is None:
                 warnings.warn("Please provide a normvectX for the resampler!")
                 return(False,0,0,0)
             return resampleReducer(V,f, inputcellsize,setThreshold, normvect, normvectX, slicetype, slicethick, reducer)
         
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
-         if resampler is None:
+         if resampler is False:
             # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
             N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
             NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
@@ -418,7 +418,7 @@ def plot_vdf(filename=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None, 
-             fmin=None, fmax=None, slicethick=None, reducer='average', resampler=None,
+             fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=True,
              cellsize=None,
              xy=None, xz=None, yz=None,
              normal=None, normalx=None,
@@ -490,8 +490,9 @@ def plot_vdf(filename=None,
     :kword wflux:       Plot flux instead of distribution function
     :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
                         This can be set to zero in order to project the whole VDF to a plane.
-    :kword reducer:     How to reduce to 2D - default 'average' for standard behaviour, 'integrate' for LOS integration
-                        and reduced units.
+    :kword reducer:     How to reduce to 2D - default 'integrate' for LOS integration
+                        and reduced units, 'average' for old (slightly questionable) behaviour
+    :kword resampler:   Resample onto a regular grid? Default: yes, use False to disable.
     :kword cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
     :kword setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
                         Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
