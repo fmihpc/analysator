@@ -692,9 +692,8 @@ def plot_colormap(filename=None,
         t0 = tvf.read_parameter('time')
         tvf1=pt.vlsvfile.VlsvReader(diff)
         t1 = tvf1.read_parameter('time')
-        #print("times ",t0,t1)
         if (not np.isclose(t1-t0, 0.0, rtol=1e-6)):
-            title = title + "dt=" + (t1-t0)
+            plot_title = plot_title + "~dt=" + str(t1-t0)
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
