@@ -72,7 +72,7 @@ def verifyCellWithVspace(vlsvReader,cid):
 def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integrate", wflux=None, initial_dV=1.0):
     # Flux weighting?
     if wflux is not None:
-        fw = f*np.linalg.norm([VX,VY,Voutofslice]) # use particle flux as weighting in the histogram
+        fw = f*np.linalg.norm([VX,VY,Voutofslice])/(4*np.pi) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
 
@@ -87,16 +87,13 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
 
     # Gather histogram of values
     (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],normed=0)
-    # Gather histogram of how many cells were summed for the histogram
-    (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
 
     # Correct for summing multiple cells into one histogram output cell with the averaging reducer
     if reducer == "average":
-        print("averaging for sampling errors")
+        # Gather histogram of how many cells were summed for the histogram
+        (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
         nonzero = np.where(Chist != 0)
-        print(Chist[nonzero])
         nonzero = Chist > 0
-        print(Chist[nonzero])
         nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
 
     dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
@@ -118,11 +115,6 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     # and y along the second dimension of the array (horizontal). This ensures compatibility with histogramdd.
     nVhist = nVhist.transpose()
     
-
-    # Flux weighting
-    if wflux is not None:
-        nVhist = np.divide(nVhist,(dV*4*np.pi)) # normalization
-
     # Rotation contributions are already normalized, this is just to rescaling to correct units
     # nb: maybe not great for finite slices...?
     if reducer == "integrate":
@@ -131,10 +123,10 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     return (nVhist,VXEdges,VYEdges)
   
 def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate"):
-    NX = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-    NY = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+    NX = np.array(normvect)/np.linalg.norm(normvect)
+    NY = np.array(normvectX)/np.linalg.norm(normvectX)
     NZ = np.cross(NX,NY)
-    NY = np.array(NY)/np.sqrt(NY[0]**2 + NY[1]**2 + NY[2]**2)
+    NY = np.array(NY)
     if slicetype=="Bpara":
         R = np.stack((NX, NY, NZ)).T
     elif slicetype=="Bpara1":
@@ -464,7 +456,7 @@ def plot_vdf(filename=None,
 
     :kword box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
-    :kword axiskmps:    Plot v-axes using 10^{axisunit} km/s (default: m/s)
+    :kword axiskmps:    Plot v-axes using 10^{axiskmps} km/s (default: km/s, when the kword has a value)
     :kword tickinterval: Interval at which to have ticks on axes
    
     :kword xy:          Perform slice in x-y-direction
@@ -1245,7 +1237,7 @@ def plot_vdf(filename=None,
                     if reducer == 'average':
                         cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}\,"+pt.plot.rmstring('m')+"\,"+pt.plot.rmstring('s')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-1} \,"+pt.plot.rmstring('s')+"^{-2} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
