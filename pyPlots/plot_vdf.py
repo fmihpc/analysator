@@ -122,7 +122,13 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
 
     return (nVhist,VXEdges,VYEdges)
   
-def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate"):
+def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate", wflux=None):
+
+    if wflux is not None:
+        fw = f*np.linalg.norm(V)/(4*np.pi) # use particle flux as weighting in the histogram
+    else:
+        fw = f # use particle phase-space density as weighting in the histogram
+
     NX = np.array(normvect)/np.linalg.norm(normvect)
     NY = np.array(normvectX)/np.linalg.norm(normvectX)
     NZ = np.cross(NX,NY)
@@ -162,7 +168,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     #Form a dense array of the initial data
     basearray, edges = np.histogramdd(V, bins=tuple(szs),
         range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
-        density=False,weights=f*inputcellsize**3)
+        density=False,weights=fw*inputcellsize**3)
     
     newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
     #need to expand the array a bit to not chop off anything
@@ -349,7 +355,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             if normvectX is None:
                 warnings.warn("Please provide a normvectX for the resampler!")
                 return(False,0,0,0)
-            return resampleReducer(V,f, inputcellsize,setThreshold, normvect, normvectX, slicetype, slicethick, reducer)
+            return resampleReducer(V,f, inputcellsize,setThreshold, normvect, normvectX, slicetype, slicethick, reducer=reducer, wflux=wflux)
         
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
          if resampler is False:
@@ -388,7 +394,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
                   if abs(1.0-np.amax(testvect))>1.e-3:
                      print("Error in rotation: testvector ",count,testvect," largest component is not unity")
          else:
-            return resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer)
+            return resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer=reducer, wflux=wflux)
     else:
         print("Error finding rotation of v-space!")
         return (False,0,0,0)
@@ -592,6 +598,9 @@ def plot_vdf(filename=None,
         pass
     else:
         raise ValueError("Unknown reducer ("+reducer+'), accepted values are "average", "integrate"')
+
+    if wflux is not None:
+        warnings.warn("Does flux weighting make sense? Tread carefully.")
 
     if draw is None and axes is None:
         # step, used for file name
