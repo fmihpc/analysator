@@ -25,7 +25,7 @@ import numpy as np
 import scipy as sp
 import pytools as pt
 import warnings
-from scipy import interpolate
+#from scipy import interpolate
 
 def fg_PoyntingFlux(reader):
    b = reader.read_fg_variable_as_volumetric('fg_b')
