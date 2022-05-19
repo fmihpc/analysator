@@ -41,8 +41,11 @@ class VlsvWriter(object):
           :param file_name:     Name of the vlsv file where to input data
       '''
       self.file_name = os.path.abspath(file_name)
-      self.__fptr = open(self.file_name,"wb")
-
+      try:
+         self.__fptr = open(self.file_name,"wb")
+      except FileNotFoundError as e:
+         print("No such path: ", self.file_name)
+         raise e
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 

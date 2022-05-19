@@ -25,7 +25,7 @@ import struct
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
-import os
+import os,sys
 import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
@@ -54,7 +54,11 @@ class VlsvReader(object):
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
-      self.__fptr = open(self.file_name,"rb")
+      try:
+         self.__fptr = open(self.file_name,"rb")
+      except FileNotFoundError as e:
+         print("File not found: ", self.file_name)
+         raise e
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__max_spatial_amr_level = -1
