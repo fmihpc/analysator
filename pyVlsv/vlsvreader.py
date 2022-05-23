@@ -1909,6 +1909,13 @@ class VlsvReader(object):
       '''
       return np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin, self.__meshes[pop].__vxmax, self.__meshes[pop].__vymax, self.__meshes[pop].__vzmax])
 
+   def get_velocity_mesh_dv(self, pop="proton"):
+      ''' Read velocity mesh extent
+      
+      :returns: Velocity mesh grid size, array with three elements [dvx, dvy, dvz]
+      '''
+      return np.array([self.__meshes[pop].__dvx, self.__meshes[pop].__dvy, self.__meshes[pop].__dvz])
+
    def read_blocks(self, cellid, pop="proton"):
       ''' Read raw block data from the open file and return the data along with block ids
       
