@@ -32,8 +32,6 @@ def get_spectrum_energy(vlsvReader,
                   EMax=80e3,
                   nBins=66,
                   mass=1.6726219e-27, # default: mp
-                  q=1.60217662e-19,   # default: qe
-                  frame=None,
                   weight='flux',
                   restart=True):
 
@@ -48,7 +46,8 @@ def get_spectrum_energy(vlsvReader,
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
-   Ekin = 0.5*mass*V2/q
+   JtoeV = 1/1.60217662e-19
+   Ekin = 0.5*mass*V2*JtoeV
    f = list(zip(*velcells.items()))
    
 
@@ -104,7 +103,6 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                   VMin=-2e6,
                   VMax=2e6,
                   nBins=200,
-                  frame=None,
                   restart=True):
 
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)

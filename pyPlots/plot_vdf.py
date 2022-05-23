@@ -72,7 +72,7 @@ def verifyCellWithVspace(vlsvReader,cid):
 def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integrate", wflux=None, initial_dV=1.0):
     # Flux weighting?
     if wflux is not None:
-        fw = f*np.linalg.norm([VX,VY,Voutofslice])/(4*np.pi) # use particle flux as weighting in the histogram
+        fw = f*np.linalg.norm([VX,VY,Voutofslice], axis=0)/(4*np.pi) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
 
@@ -125,14 +125,13 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
 def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate", wflux=None):
 
     if wflux is not None:
-        fw = f*np.linalg.norm(V)/(4*np.pi) # use particle flux as weighting in the histogram
+        fw = f*np.linalg.norm(V, axis=-1)/(4*np.pi) # use particle flux as weighting in the histogram
     else:
         fw = f # use particle phase-space density as weighting in the histogram
 
     NX = np.array(normvect)/np.linalg.norm(normvect)
     NY = np.array(normvectX)/np.linalg.norm(normvectX)
     NZ = np.cross(NX,NY)
-    NY = np.array(NY)
     if slicetype=="Bpara":
         R = np.stack((NX, NY, NZ)).T
     elif slicetype=="Bpara1":
