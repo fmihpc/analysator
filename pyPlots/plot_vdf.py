@@ -340,17 +340,18 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     elif slicetype=="vecperp":
         # Find velocity components in rotated frame where normavect is outofslice and optional
         # normvectX is in VX direction
-        N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
-        Vrot = rotateVectorToVector(V,N)
-        if normvectX is not None:
-            NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
-            NXrot = rotateVectorToVector(NX,N)
-            Vrot2 = rotateVectorToVector_X(Vrot,NXrot)
-            Vrot = Vrot2
-        VX = Vrot[:,0]
-        VY = Vrot[:,1]
-        Voutofslice = Vrot[:,2]
-        if resampler is not False:
+        if resampler is False:
+            N = np.array(normvect)/np.sqrt(normvect[0]**2 + normvect[1]**2 + normvect[2]**2)
+            Vrot = rotateVectorToVector(V,N)
+            if normvectX is not None:
+                NX = np.array(normvectX)/np.sqrt(normvectX[0]**2 + normvectX[1]**2 + normvectX[2]**2)
+                NXrot = rotateVectorToVector(NX,N)
+                Vrot2 = rotateVectorToVector_X(Vrot,NXrot)
+                Vrot = Vrot2
+            VX = Vrot[:,0]
+            VY = Vrot[:,1]
+            Voutofslice = Vrot[:,2]
+        else:
             if normvectX is None:
                 warnings.warn("Please provide a normvectX for the resampler!")
                 return(False,0,0,0)
