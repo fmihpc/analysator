@@ -63,6 +63,7 @@ def plot_colormap3dslice(filename=None,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fsaved=None,
+                  nomask=None,
                   Earth=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
@@ -170,6 +171,7 @@ def plot_colormap3dslice(filename=None,
                         and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+    :kword nomask:      Do not mask plotting based on proton density
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
     :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
@@ -861,13 +863,13 @@ def plot_colormap3dslice(filename=None,
                             pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
-                        if np.ndim(pass_map)==1:
+                        if np.ndim(pass_map)==2:
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                        elif np.ndim(pass_map)==2: # vector variable
+                        elif np.ndim(pass_map)==3: # vector variable
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                        elif np.ndim(pass_map)==3:  # tensor variable
+                        elif np.ndim(pass_map)==4:  # tensor variable
                             pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                             pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
@@ -885,9 +887,8 @@ def plot_colormap3dslice(filename=None,
         t0 = tvf.read_parameter('time')
         tvf1=pt.vlsvfile.VlsvReader(diff)
         t1 = tvf1.read_parameter('time')
-        #print("times ",t0,t1)
         if (not np.isclose(t1-t0, 0.0, rtol=1e-6)):
-            title = title + "dt=" + (t1-t0)
+            plot_title = plot_title + "~dt=" + str(t1-t0)
 
     #Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
@@ -985,16 +986,17 @@ def plot_colormap3dslice(filename=None,
     # Mask region outside ionosphere. Note that for some boundary layer cells, 
     # a density is calculated, but e.g. pressure is not, and these cells aren't
     # excluded by this method. Also mask away regions where datamap is invalid
-    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
-    rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    XYmask = rhomap.mask
-    if XYmask.any():
-        if XYmask.all():
-            # if everything was masked in rhomap, allow plotting
-            XYmask[:,:] = False
-        else:
-            # Mask datamap
-            datamap = np.ma.array(datamap, mask=XYmask)
+    if not nomask:
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
+        rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
+        XYmask = rhomap.mask
+        if XYmask.any():
+            if XYmask.all():
+                # if everything was masked in rhomap, allow plotting
+                XYmask[:,:] = False
+            else:
+                # Mask datamap
+                datamap = np.ma.array(datamap, mask=XYmask)
 
     #If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values

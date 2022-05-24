@@ -692,9 +692,8 @@ def plot_colormap(filename=None,
         t0 = tvf.read_parameter('time')
         tvf1=pt.vlsvfile.VlsvReader(diff)
         t1 = tvf1.read_parameter('time')
-        #print("times ",t0,t1)
         if (not np.isclose(t1-t0, 0.0, rtol=1e-6)):
-            title = title + "dt=" + (t1-t0)
+            plot_title = plot_title + "~dt=" + str(t1-t0)
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
@@ -972,7 +971,10 @@ def plot_colormap(filename=None,
         else:
             # v5 Vlasiator data
             cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-            ff_b = f.read_fsgrid_variable("fg_b")[-2, 0,0]
+            #ff_b = f.read_variable("vg_b_vol", cellids=cid)
+            ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            if (ff_b.size!=3):
+                print("Error reading fg_b data for fluxfunction normalization!")
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
             else:

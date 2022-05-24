@@ -74,19 +74,37 @@ class VlsvReader(object):
       meshName="SpatialGrid"
       bbox = self.read(tag="MESH_BBOX", mesh=meshName)
       if bbox is None:
-         #read in older vlsv files where the mesh is defined with parameters
-         self.__xcells = (int)(self.read_parameter("xcells_ini"))
-         self.__ycells = (int)(self.read_parameter("ycells_ini"))
-         self.__zcells = (int)(self.read_parameter("zcells_ini"))
-         self.__xblock_size = 1
-         self.__yblock_size = 1
-         self.__zblock_size = 1
-         self.__xmin = self.read_parameter("xmin")
-         self.__ymin = self.read_parameter("ymin")
-         self.__zmin = self.read_parameter("zmin")
-         self.__xmax = self.read_parameter("xmax")
-         self.__ymax = self.read_parameter("ymax")
-         self.__zmax = self.read_parameter("zmax")
+          try:
+              #read in older vlsv files where the mesh is defined with parameters
+              self.__xcells = (int)(self.read_parameter("xcells_ini"))
+              self.__ycells = (int)(self.read_parameter("ycells_ini"))
+              self.__zcells = (int)(self.read_parameter("zcells_ini"))
+              self.__xblock_size = 1
+              self.__yblock_size = 1
+              self.__zblock_size = 1
+              self.__xmin = self.read_parameter("xmin")
+              self.__ymin = self.read_parameter("ymin")
+              self.__zmin = self.read_parameter("zmin")
+              self.__xmax = self.read_parameter("xmax")
+              self.__ymax = self.read_parameter("ymax")
+              self.__zmax = self.read_parameter("zmax")
+          except:
+              # Apparently, SpatialGrid doesn't even exist in this file (because it is, for example an ionosphere test output)
+              # Fill in dummy values.
+              self.__xcells = 1
+              self.__ycells = 1
+              self.__zcells = 1
+              self.__xblock_size = 1
+              self.__yblock_size = 1
+              self.__zblock_size = 1
+              self.__xmin = 0
+              self.__ymin = 0
+              self.__zmin = 0
+              self.__xmax = 1
+              self.__ymax = 1
+              self.__zmax = 1
+
+
       else:
          #new style vlsv file with 
          nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
@@ -556,13 +574,12 @@ class VlsvReader(object):
             fptr.seek(variable_offset)
             info = fptr.read(array_size).decode("utf-8")
 
-            # info=data.decode("utf-8")
-            print("Version Info for ",self.file_name,file=sys.stdout)
-            print(info,file=sys.stdout)
+            print("Version Info for ",self.file_name)
+            print(info)
             return True
 
       #if we end up here the file does not contain any version info
-      print("File ",self.file_name," contains no version information",file=sys.stderr)
+      print("File ",self.file_name," contains no version information")
       return False
   
    def print_config(self):
@@ -589,13 +606,14 @@ class VlsvReader(object):
                fptr = self.__fptr
          
             fptr.seek(variable_offset)
-            info = fptr.read(array_size).decode("utf-8")
+            configuration = fptr.read(array_size).decode("utf-8")
 
-            print(info,file=sys.stdout)
+            print("Configuration file for ",self.file_name)
+            print(configuration)
             return True
 
       #if we end up here the file does not contain any config info
-      print("File ",self.file_name," contains no config information",file=sys.stderr)
+      print("File ",self.file_name," contains no config information")
       return False
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
@@ -739,7 +757,7 @@ class VlsvReader(object):
          reducer_multipop = multipopdatareducers
             
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      if self.check_variable(self.active_populations[0]+'/'+name): 
+      if hasattr(self, 'active_populations') and len(self.active_populations) > 0 and self.check_variable(self.active_populations[0]+'/'+name):
          tmp_vars = []
          for pname in self.active_populations:
             vlsvvariables.activepopulation = pname
