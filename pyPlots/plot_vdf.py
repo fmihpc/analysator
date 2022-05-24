@@ -240,10 +240,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     vxsize = int(vxsize)
     vysize = int(vysize)
     vzsize = int(vzsize)
-    # Account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
     print("Input velocity grid cell size "+str(inputcellsize))
@@ -686,14 +689,16 @@ def plot_vdf(filename=None,
     vxsize = int(vxsize)
     vysize = int(vysize)
     vzsize = int(vzsize)
-
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
-    # account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
 
     Re = 6.371e+6 # Earth radius in m
     # unit of velocity
@@ -1081,10 +1086,10 @@ def plot_vdf(filename=None,
                         yindexrange[1] = np.amax([yindexrange[1],yi])
 
             # leave some buffer
-            xindexrange[0] =  np.max([0, 4 * int(np.floor((xindexrange[0]-2.)/4.)) ])
-            xindexrange[1] =  np.min([len(edgesX)-1, 4 * int(np.ceil((xindexrange[1]+2.)/4.)) ])
-            yindexrange[0] =  np.max([0, 4 * int((np.floor(yindexrange[0]-2.)/4.)) ])
-            yindexrange[1] =  np.min([len(edgesY)-1, 4 * int(np.ceil((yindexrange[1]+2.)/4.)) ])
+            xindexrange[0] =  np.max([0, widval * int(np.floor((xindexrange[0]-0.5*widval)/widval)) ])
+            xindexrange[1] =  np.min([len(edgesX)-1, widval * int(np.ceil((xindexrange[1]+0.5*widval)/widval)) ])
+            yindexrange[0] =  np.max([0, widval * int((np.floor(yindexrange[0]-0.5*widval)/widval)) ])
+            yindexrange[1] =  np.min([len(edgesY)-1, widval * int(np.ceil((yindexrange[1]+0.5*widval)/widval)) ])
 
             # If empty VDF: plot whole v-space
             if ((xindexrange==[vxsize,0]) and (yindexrange==[vysize,0])):
