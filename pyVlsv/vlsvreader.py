@@ -1366,19 +1366,31 @@ class VlsvReader(object):
       return
 
    def read_variable_as_fg(self, var):
-      cellids = self.read_variable('CellID')
+      vg_cellids = self.read_variable('CellID')
       sz = self.get_fsgrid_mesh_size()
-      testvar = self.read_variable(var, [cellids[0]])
-      varsize = testvar.size
+      sz_amr = self.get_spatial_mesh_size()
+      vg_var = self.read_variable(var)
+      varsize = vg_var[0].size
       if(varsize > 1):
-         fgarr = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=testvar.dtype)
+         fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
       else:
-         fgarr = np.zeros(sz, dtype=testvar.dtype)
-      for c in cellids:
-         self.upsample_fsgrid_subarray(c, var, fgarr)
-         #print
-      return fgarr
-
+         fg_var = np.zeros(sz, dtype=vg_var.dtype)
+      vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+      current_amr_level = self.get_amr_level(np.min(vg_cellids))
+      max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
+      current_max_cellid = 0
+      for level in range(current_amr_level+1):
+         current_max_cellid += 2**(3*(level))*(self.__xcells*self.__ycells*self.__zcells)
+      for id in np.argsort(vg_cellids):
+         if vg_cellids[id] > current_max_cellid:
+            current_amr_level += 1
+            current_max_cellid += 2**(3*(current_amr_level))*(self.__xcells*self.__ycells*self.__zcells)
+         this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
+         refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
+         refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
+         vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_e>
+      fg_var = vg_var[vg_cellids_on_fg]
+      return fg_var
 
    def get_cell_fsgrid(self, cellid):
       '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
