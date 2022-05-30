@@ -1388,7 +1388,7 @@ class VlsvReader(object):
          this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
          refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
          refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
-         vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_e>
+         vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
       fg_var = vg_var[vg_cellids_on_fg]
       return fg_var
 
