@@ -1110,20 +1110,28 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
 from matplotlib.colors import LinearSegmentedColormap
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
+                     ('magma_r', _magma_data[::-1]),
                      ('inferno', _inferno_data),
+                     ('inferno_r', _inferno_data[::-1]),
                      ('plasma', _plasma_data),
+                     ('plasma_r', _plasma_data[::-1]),
                      ('viridis', _viridis_data),
+                     ('viridis_r', _viridis_data[::-1]),
                      ('parula', _parula_data),
                      ('parula_r', _parula_data[::-1])):
 
     cmaps[name] = LinearSegmentedColormap.from_list(name, data)
 # Some of these are already included in newer versions of matplotlib
-magma = cmaps['magma']
-inferno = cmaps['inferno']
-plasma = cmaps['plasma']
-viridis = cmaps['viridis']
-parula = cmaps['parula']
-parula_r = cmaps['parula_r']
+magma     = cmaps['magma']
+magma_r   = cmaps['magma_r']
+inferno   = cmaps['inferno']
+inferno_r = cmaps['inferno_r']
+plasma    = cmaps['plasma']
+plasma_r  = cmaps['plasma_r']
+viridis   = cmaps['viridis']
+viridis_r = cmaps['viridis_r']
+parula    = cmaps['parula']
+parula_r  = cmaps['parula_r']
 
 # Themis colormap, as extracted from the themis tools' IDL file
 hot_desaturated_colors=[(71./255.,71./255.,219./255.),(0,0,91./255.),(0,1,1),(0,.5,0),(1,1,0),(1,96./255,0),(107./255,0,0),(224./255,76./255,76./255)]
