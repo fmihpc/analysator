@@ -182,34 +182,3 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
-
-# Helper routine for allowing specialist units for known vscale and unit combinations
-def scaleunits(datamap_info, vscale):
-    # Check if vscale is in use?
-    if np.isclose(vscale,1.):
-        return datamap_info.latexunits
-    # Check for known variables?
-    if datamap_info.units=="s" and np.isclose(vscale,1.e6):
-        return r"\mu"+rmstring("s")
-    if datamap_info.units=="s" and np.isclose(vscale,1.e3):
-        return rmstring("ms")
-    if datamap_info.units=="T" and np.isclose(vscale,1.e9):
-        return rmstring("nT")
-    if datamap_info.units=="K" and np.isclose(vscale,1.e-6):
-        return rmstring("MK")
-    if datamap_info.units=="Pa" and np.isclose(vscale,1.e9):
-        return rmstring("nPa")
-    if datamap_info.units=="1/m3" and np.isclose(vscale,1.e-6):
-        return rmstring("cm")+"^{-3}"
-    if datamap_info.units=="1/m^3" and np.isclose(vscale,1.e-6):
-        return rmstring("cm")+"^{-3}"
-    if datamap_info.units=="m/s" and np.isclose(vscale,1.e-3):
-        return rmstring("km")+"\,"+rmstring("s")+"^{-1}"
-    if datamap_info.units=="V/m" and np.isclose(vscale,1.e3):
-        return rmstring("mV")+"\,"+rmstring("m")+"^{-1}"            
-    if datamap_info.units=="eV/cm3" and np.isclose(vscale,1.e-3):
-        return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"            
-    if datamap_info.units=="eV/cm^3" and np.isclose(vscale,1.e-3):
-        return rmstring("keV")+"\,"+rmstring("cm")+"^{-3}"
-    # fallthrough
-    return datamap_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)
