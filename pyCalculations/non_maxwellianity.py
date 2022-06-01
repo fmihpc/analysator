@@ -10,15 +10,7 @@ import random
 # population mass
 m = 10*m_e
 
-# names of velocity moments in the bulk file
-n_name = 'electron/vg_rho'         
-v_name = 'electron/vg_v'
-v_para_name = 'electron/vg_v_parallel'
-v_perp_name = 'electron/vg_v_perpendicular'
-T_name = 'electron/vg_temperature'
-T_perp_name = 'electron/vg_t_perpendicular'
-T_para_name = 'electron/vg_t_parallel'
-bulkfile_for_moments = "/home/mjalho/tempo-vakka-1925/bulk/bulk002.0000050.vlsv"
+
 
 def epsilon_M(f,cell,pop="proton", bulk=None, B=None,
                 model="bimaxwellian",
@@ -71,7 +63,15 @@ def epsilon_M(f,cell,pop="proton", bulk=None, B=None,
         return -1
      # calculate non-maxwellianity
 
-    
+    # names of velocity moments in the bulk file
+    n_name = pop+'/vg_rho'         
+    v_name = pop+'/vg_v'
+    v_para_name = pop+'/vg_v_parallel'
+    v_perp_name = pop+'/vg_v_perpendicular'
+    T_name = pop+'/vg_temperature'
+    T_perp_name = pop+'/vg_t_perpendicular'
+    T_para_name = pop+'/vg_t_parallel'
+
     extent = f.get_velocity_mesh_extent(pop)
     print(extent)
     dvx = (extent[3] - extent[0]) / (4 * size[0])
