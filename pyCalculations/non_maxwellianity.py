@@ -110,15 +110,16 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         R = np.array([bhat, vperp1hat, vperp2hat])
         vb = np.matmul(R,vs.T).T
         vb_mean = np.matmul(R,v0.T).T
+        v0_para = vb_mean[0]
         v0_perp = vb_mean[1]
         cov = np.zeros((3,3))
         for i,vv in enumerate(vb):
             ov = np.outer(vv-vb_mean,vv-vb_mean)
             cov = cov + ov*D_vals[i]*dV
         P = cov*m
-        T = np.trace(P)/(3*n)
-        T_para = P[0,0]/n
-        T_perp = (P[1,1]+P[2,2])/(2*n)
+        T = np.trace(P)/(3*n*k)
+        T_para = P[0,0]/(n*k)
+        T_perp = (P[1,1]+P[2,2])/(2*n*k)
         print("Pb", P)
         Pperp = 0.5*(P[1,1]+P[2,2])
         Ag = (P[0,1]**2+P[0,2]**2+P[1,2]**2)/(Pperp**2+2*Pperp*P[0,0])
