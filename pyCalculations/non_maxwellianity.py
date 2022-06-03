@@ -67,7 +67,6 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     T_para_name = pop+'/vg_t_parallel'
 
     extent = f.get_velocity_mesh_extent(pop)
-    print(extent)
     dvx = (extent[3] - extent[0]) / (4 * size[0])
     dvy = (extent[4] - extent[1]) / (4 * size[1])
     dvz = (extent[5] - extent[2]) / (4 * size[2])
@@ -75,8 +74,6 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     # generate a velocity space 
     vids = np.arange(4 * 4 * 4 * int(size[0]) * int(size[1]) * int(size[2]))
     v = f.get_velocity_cell_coordinates(vids, pop)
-    #print(v)
-    #sys.exit()
     vs = f.get_velocity_cell_coordinates(vids[D_keys],pop)
 
     if B is None:
@@ -121,7 +118,6 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     else:
         # get velocity moments from bulk file
         bulkfile_for_moments_reader=pt.vlsvfile.VlsvReader(bulk)
-        print(bulkfile_for_moments_reader.read_parameter("time"))
         n = bulkfile_for_moments_reader.read_variable(n_name,cellids=cell)
         v0 = bulkfile_for_moments_reader.read_variable(v_name,cellids=cell)
         v0_para = bulkfile_for_moments_reader.read_variable(v_para_name,cellids=cell)
@@ -139,22 +135,8 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     vb_mean = np.matmul(R,v0.T).T
     vb = np.matmul(R,v.T).T
     
-
-
     vT_para = np.sqrt(2 * k * T_para / m)
-    print("v0_para", v0_para, "v0_perp", v0_perp)
-    print("T", T, "T_para", T_para, "T_perp", T_perp, "vT_para", vT_para, "vT_perp", vT_para*T_perp/T_para)
-
-    print("v0",v0,"vb_mean",vb_mean, "v0_para",v0_para, "v0_perp",v0_perp)
-
-    #print("v0", v0, "v_mean", v_mean, "v_mean_manual", v_mean_manual,"v_mean_manual2", v_mean_manual2, "in bcoords", np.matmul(R, v_mean.T).T)
-
-
-      
-    #print(cov, np.sqrt(np.trace(cov)))
-    #cov = cov*m
-    #print(cov)
-    #print(np.trace(cov)/rho_manual2)
+     
     # generate a maxwellian distribution
     if model == "maxwellian":
         v_sq = np.sum((v - v0) * (v - v0), axis=-1)
@@ -167,11 +149,8 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     else:
         raise NameError("Unknown VDF model '"+model+"', aborting")
 
-   
-
-    #epsilon = np.sum(np.abs(distribution - model_f))
     epsilon = np.linalg.norm(distribution - model_f, ord=normorder)
     epsilon *= dV / (norm * n)
-    print("epsilons", epsilon)
+
     return epsilon
 
