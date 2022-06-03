@@ -108,13 +108,13 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         vperp1hat = np.cross(vperp2hat, bhat)/np.linalg.norm(np.cross(vperp2hat,bhat))
         
         R = np.array([bhat, vperp1hat, vperp2hat])
-        vb = np.matmul(R,vs.T).T
-        vb_mean = np.matmul(R,v0.T).T
-        v0_para = vb_mean[0]
-        v0_perp = vb_mean[1]
+        vsb = np.matmul(R,vs.T).T
+        vsb_mean = np.matmul(R,v0.T).T
+        v0_para = vsb_mean[0]
+        v0_perp = vsb_mean[1]
         cov = np.zeros((3,3))
-        for i,vv in enumerate(vb):
-            ov = np.outer(vv-vb_mean,vv-vb_mean)
+        for i,vv in enumerate(vsb):
+            ov = np.outer(vv-vsb_mean,vv-vsb_mean)
             cov = cov + ov*D_vals[i]*dV
         P = cov*m
         T = np.trace(P)/(3*n*k)
@@ -142,9 +142,9 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         vperp2hat = np.cross(bhat,v0)/np.linalg.norm(np.cross(bhat,v0))
         vperp1hat = np.cross(vperp2hat, bhat)/np.linalg.norm(np.cross(vperp2hat,bhat))
         
-        R = np.array([bhat, vperp1hat, vperp2hat])
-        vb_mean = np.matmul(R,v0.T).T
-        vb = np.matmul(R,v.T).T
+    R = np.array([bhat, vperp1hat, vperp2hat])
+    vb_mean = np.matmul(R,v0.T).T
+    vb = np.matmul(R,v.T).T
     
 
 
