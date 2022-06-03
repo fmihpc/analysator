@@ -112,18 +112,11 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         vsb_mean = np.matmul(R,v0.T).T
         v0_para = vsb_mean[0]
         v0_perp = vsb_mean[1]
-        cov = np.zeros((3,3))
-        for i,vv in enumerate(vsb):
-            ov = np.outer(vv-vsb_mean,vv-vsb_mean)
-            cov = cov + ov*D_vals[i]*dV
-        P = cov*m
-        T = np.trace(P)/(3*n*k)
-        T_para = P[0,0]/(n*k)
-        T_perp = (P[1,1]+P[2,2])/(2*n*k)
-        print("Pb", P)
-        Pperp = 0.5*(P[1,1]+P[2,2])
-        Ag = (P[0,1]**2+P[0,2]**2+P[1,2]**2)/(Pperp**2+2*Pperp*P[0,0])
-        print("Ag", Ag)
+
+        P_diag = m * np.sum((vsb - vsb_mean) * (vsb - vsb_mean) * np.array(D_vals)[:,np.newaxis],axis=0) * dV
+        T = np.sum(P_diag) / (3.0 * n * k)
+        T_para = P_diag[0] / (n * k)
+        T_perp = (P_diag[1] + P_diag[2]) / (2.0 * n * k)
         
     else:
         # get velocity moments from bulk file
