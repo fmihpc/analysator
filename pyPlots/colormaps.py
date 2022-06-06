@@ -1107,40 +1107,49 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
                 [0.9661, 0.9514428571, 0.0755333333], 
                 [0.9763, 0.9831, 0.0538]]
 
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import LinearSegmentedColormap
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
+                     ('magma_r', _magma_data[::-1]),
                      ('inferno', _inferno_data),
+                     ('inferno_r', _inferno_data[::-1]),
                      ('plasma', _plasma_data),
+                     ('plasma_r', _plasma_data[::-1]),
                      ('viridis', _viridis_data),
-                     ('parula', _parula_data)):
+                     ('viridis_r', _viridis_data[::-1]),
+                     ('parula', _parula_data),
+                     ('parula_r', _parula_data[::-1])):
 
-    cmaps[name] = ListedColormap(data, name=name)
+    cmaps[name] = LinearSegmentedColormap.from_list(name, data)
 # Some of these are already included in newer versions of matplotlib
-magma = cmaps['magma']
-inferno = cmaps['inferno']
-plasma = cmaps['plasma']
-viridis = cmaps['viridis']
-parula = cmaps['parula']
+magma     = cmaps['magma']
+magma_r   = cmaps['magma_r']
+inferno   = cmaps['inferno']
+inferno_r = cmaps['inferno_r']
+plasma    = cmaps['plasma']
+plasma_r  = cmaps['plasma_r']
+viridis   = cmaps['viridis']
+viridis_r = cmaps['viridis_r']
+parula    = cmaps['parula']
+parula_r  = cmaps['parula_r']
 
 # Themis colormap, as extracted from the themis tools' IDL file
-import matplotlib
 hot_desaturated_colors=[(71./255.,71./255.,219./255.),(0,0,91./255.),(0,1,1),(0,.5,0),(1,1,0),(1,96./255,0),(107./255,0,0),(224./255,76./255,76./255)]
-hot_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated",hot_desaturated_colors)
-hot_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("hot_desaturated_r",hot_desaturated_colors[::-1])
+hot_desaturated_colormap = LinearSegmentedColormap.from_list("hot_desaturated",hot_desaturated_colors)
+hot_desaturated_colormap_r = LinearSegmentedColormap.from_list("hot_desaturated_r",hot_desaturated_colors[::-1])
 
 # Pale version of hot_desaturated
 pale_desaturated_colors=[[0.5 + j * 0.5 for j in i] for i in hot_desaturated_colors]
-pale_desaturated_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated",pale_desaturated_colors)
-pale_desaturated_colormap_r = matplotlib.colors.LinearSegmentedColormap.from_list("pale_desaturated_r",pale_desaturated_colors[::-1])
+pale_desaturated_colormap = LinearSegmentedColormap.from_list("pale_desaturated",pale_desaturated_colors)
+pale_desaturated_colormap_r = LinearSegmentedColormap.from_list("pale_desaturated_r",pale_desaturated_colors[::-1])
 
 # Warhol, by Otto Hannuksela
 warhol_cdict = {'red':   [(0,1,1), (0.111111,0,0), (0.222222,64./255.,64./255.), (0.333333,0,0), (0.444444,79./255.,79./255.),(0.555556,70./255.,70./255.), (0.666667,1,1), (0.777778,1,1), (0.888889,81./255.,81./255.), (1,1,1)],
          'green': [(0,1,1), (0.111111,66./255.,66./255.), (0.222222,1,1), (0.333333,0,0), (0.444444,1,1), (0.555556,16./255.,16./255.), (0.666667,1,1), (0.777778,57./255.,57./255.), (0.888889,0,0), (1,150./255.,150./255.)],
          'blue':  [(0,1,1), (0.111111,0,0), (0.222222,81./255.,81./255.), (0.333333,55./255.,55./255.), (0.444444,1,1), (0.555556,70./255.,70./255.), (0.666667,0,0), (0.777778,0,0), (0.888889,0,0), (1,150./255.,150./255.)] }
-warhol_colormap = matplotlib.colors.LinearSegmentedColormap("warhol",warhol_cdict)
+warhol_colormap = LinearSegmentedColormap("warhol",warhol_cdict)
 #>0 255 255 255 255 0.111111 0 66 0 255 0.222222 64 255 81 255 0.333333 0 0 55 255 0.444444 79 255 255 255 0.555556 70 16 70 255 0.666667 255 255 0 255 0.777778 255 57 0 255 0.888889 81 0 0 255 1 255 150 150 255 <
-#matplotlib.colors.LinearSegmentedColormap(name, segmentdata, N=256, gamma=1.0)[source]
+#LinearSegmentedColormap(name, segmentdata, N=256, gamma=1.0)[source]
 
 
 #Read in Scientific Colormaps 7 from subdirectory
@@ -1154,7 +1163,7 @@ for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
     _cm_data = np.loadtxt(_f)
-    _cm = matplotlib.colors.LinearSegmentedColormap.from_list(_cm_name, _cm_data)
+    _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
     plt.register_cmap(cmap=_cm)
     plt.register_cmap(cmap=_cm.reversed())
 

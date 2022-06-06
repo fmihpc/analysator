@@ -462,7 +462,7 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
     # limits = np.array([getattr(self.ax, f'get_{axis}lim')() for axis in 'xyz'])
     # ax.set_box_aspect(np.ptp(limits, axis = 1))
     try:
-        limits = np.array([getattr(ax, f'get_{axis}lim')() for axis in 'xyz'])
+        limits = np.array([getattr(ax, 'get_{}lim'.format(axis))() for axis in 'xyz'])
         ax.set_box_aspect(np.ptp(limits, axis = 1))
     except:
         print("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
@@ -668,7 +668,7 @@ def plot_threeslice(filename=None,
 
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
-                        variables.
+                        variables. Set to None to search for a default scaling.
     :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
                         (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
@@ -1041,7 +1041,7 @@ def plot_threeslice(filename=None,
         cb_title_use = datamap_info.latex
         datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
+        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
 
         # Add unit to colorbar title
         if datamap_unit:

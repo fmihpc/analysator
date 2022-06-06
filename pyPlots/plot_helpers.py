@@ -78,6 +78,19 @@ def numjacobian(inputarray):
     #    DAy/dz = :,:,1,2
     return jac
 
+def numjacobian3d(inputarray):
+    # Assumes input array is of format [nx,ny,nz,3]
+    nx,ny,nz = inputarray[:,:,:,0].shape
+    jac = np.zeros([nx,ny,nz,3,3])
+    jac[:,:,:,0,0], jac[:,:,:,0,1], jac[:,:,:,0,2] = np.gradient(inputarray[:,:,:,0], CELLSIZE)
+    jac[:,:,:,1,0], jac[:,:,:,1,1], jac[:,:,:,1,2] = np.gradient(inputarray[:,:,:,1], CELLSIZE)
+    jac[:,:,:,2,0], jac[:,:,:,2,1], jac[:,:,:,2,2] = np.gradient(inputarray[:,:,:,2], CELLSIZE)
+    # Output array is of format [nx,ny,nz,3,3]
+    #  :,:,component, derivativedirection
+    # so for example: dAx/dx = :,:,:,0,0
+    #                 DAy/dz = :,:,:,1,2
+    return jac
+
 def numgradscalar(inputarray):
     # Assumes input array is of format [nx,ny]
     nx,ny = inputarray.shape
@@ -142,6 +155,15 @@ def numcurl(inputarray):
     curl[:,:,2] = jac[:,:,1,0]-jac[:,:,0,1]
     return curl
 
+def numcurl3d(inputarray):
+    # Assumes input array is of format [nx,ny,nz,3]
+    jac = numjacobian3d(inputarray)
+    # Output array is of format [nx,ny,nz,3]
+    curl = np.zeros(inputarray.shape)
+    curl[:,:,:,0] = jac[:,:,:,2,1]-jac[:,:,:,1,2]
+    curl[:,:,:,1] = jac[:,:,:,0,2]-jac[:,:,:,2,0]
+    curl[:,:,:,2] = jac[:,:,:,1,0]-jac[:,:,:,0,1]
+    return curl
 
 def vanleer(left, cent, right):
     # "vanLeer" limiter as in Vlasiator
@@ -405,6 +427,12 @@ def vec_currentdensity(inputarray):
     # Output array is of format [nx,ny,3]
     return numcurl(inputarray) / mu0
 
+def vec_currentdensity3d(inputarray):
+    # Assumes input array is of format [nx,ny,nz,3] with content B
+    mu0 = 1.25663706144e-6
+    # Output array is of format [nx,ny,3]
+    return numcurl3d(inputarray) / mu0
+
 def vec_currentdensity_lim(inputarray):
     # Assumes input array is of format [nx,ny,3] with content B or perb
     mu0 = 1.25663706144e-6
@@ -474,6 +502,14 @@ def expr_J(pass_maps, requestvariables=False):
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
+
+def expr_J3d(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['fg_b','3d']
+
+    Bmap = pass_maps['fg_b'] # Magnetic field
+    Jmap3d = vec_currentdensity3d(Bmap)
+    return Jmap3d
 
 def expr_J_limited_mag(pass_maps, requestvariables=False):
     # Slope-limited J = rot(B)
@@ -897,6 +933,66 @@ def expr_jg(pass_maps, requestvariables=False):
     BxgradB = numcrossproduct(Bmap, gradB)
     result = BxgradB * (Pperp*upBmag3)[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
+
+def expr_jgyr(pass_maps, requestvariables=False):
+    # current from gyration effects (Daglis 1999) doi.org/10.1029/1999RG900009
+    if requestvariables==True:
+        return ['B','PPerpendicular']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_jgyr expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
+    gradPperp = numgradscalar(Pperp)
+    term1 = gradPperp
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Bmag = np.linalg.norm(Bmap,axis=-1)
+    gradB = numgradscalar(Bmag)
+    B2 = Bmag*Bmag
+    BpB2 = np.divide(Bmap,B2[:,:,np.newaxis])
+
+    PperpGradBpB = Pperp[:,:,np.newaxis]*np.divide(gradB,Bmag[:,:,np.newaxis])
+    term2 = PperpGradBpB
+
+    # (B dot Del)B
+    BdotDelB = numvecdotdelvec(Bmap,Bmap)
+    PperppB2BdotDelB = np.divide(Pperp,B2)[:,:,np.newaxis] *BdotDelB
+    term3 = PperppB2BdotDelB
+    terms = term1-term2-term3
+    jgyr = numcrossproduct(BpB2,terms)
+    return np.swapaxes(jgyr, 0,1)
+
+def expr_jring(pass_maps, requestvariables=False):
+    # sum current (eq 4 Daglis 1999) doi.org/10.1029/1999RG900009
+    if requestvariables==True:
+        return ['B','PParallel','PPerpendicular']
+    # Verify that time averaging wasn't used
+    if type(pass_maps) is list:
+        print("expr_jring expected a single timestep, but got multiple. Exiting.")
+        quit()
+
+    Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
+    Ppara = pass_maps['PParallel'].T #Pressure (scalar)
+    gradPperp = numgradscalar(Pperp)
+    term1 = gradPperp
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Bmag = np.linalg.norm(Bmap,axis=-1)
+    gradB = numgradscalar(Bmag)
+    B2 = Bmag*Bmag
+    BpB2 = np.divide(Bmap,B2[:,:,np.newaxis])
+
+    diffP = Ppara-Pperp
+    diffPpB2 = np.divide(diffP,B2)
+    # (B dot Del)B
+    BdotDelB = numvecdotdelvec(Bmap,Bmap)
+    PperppB2BdotDelB = diffPpB2[:,:,np.newaxis] *BdotDelB
+    term2 = PperppB2BdotDelB
+    terms = term1+term2
+    jring = numcrossproduct(BpB2,terms)
+    return np.swapaxes(jring, 0,1)
 
 def expr_jp(pass_maps, requestvariables=False):
     # current from polarization drift

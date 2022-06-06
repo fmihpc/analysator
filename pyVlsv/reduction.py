@@ -364,30 +364,45 @@ def ParallelVectorComponent( variables ):
    ''' Data reducer function for vector component parallel to the magnetic field (or another vector)
    '''
    inputvector = variables[0]
+   if inputvector is None:
+      raise ValueError("Missing inputvector")
    bgvector = variables[1]
    if( np.ndim(inputvector)==1 ):
-      bgnorm = bgvector/np.linalg.norm(bgvector)
-      return (inputvector*bgnorm).sum()
+      if( np.linalg.norm(bgvector) != 0):
+         bgnorm = bgvector/np.linalg.norm(bgvector)
+         return (inputvector*bgnorm).sum()
+      else:
+         return 0
    else:
-      bgnorm = np.ma.divide(bgvector, np.linalg.norm(bgvector, axis=-1)[:,np.newaxis])
+      bgnorm = np.ma.divide(bgvector, np.ma.masked_equal(np.linalg.norm(bgvector, axis=-1),0)[:,np.newaxis])
       return (inputvector*bgnorm).sum(-1)
 
 def PerpendicularVectorComponent( variables ):
    ''' Data reducer function for vector component perpendicular to the magnetic field (or another vector)
    '''
    inputvector = variables[0]
+   if inputvector is None:
+      raise ValueError("Missing inputvector")
    bgvector = variables[1]
    if( np.ndim(inputvector)==1 ):
-      bgnorm = bgvector / np.linalg.norm(bgvector)
-      vpara = (inputvector*bgnorm).sum()
-      vmag = np.linalg.norm(inputvector)
-      return np.sqrt(vmag*vmag - vpara*vpara)
+      if( np.linalg.norm(bgvector) != 0):
+         bgnorm = bgvector / np.linalg.norm(bgvector)
+         vpara = (inputvector*bgnorm).sum()
+         vmag = np.linalg.norm(inputvector)
+         presqrt = vmag*vmag - vpara*vpara
+         if (presqrt>=0):
+            return sqrt(presqrt)
+         else:
+            return 0
+      else:
+         return 0
    else:
-      bgnorm = np.ma.divide(bgvector, np.linalg.norm(bgvector, axis=-1)[:,np.newaxis])
+      bgnorm = np.ma.divide(bgvector, np.ma.masked_equal(np.linalg.norm(bgvector, axis=-1),0)[:,np.newaxis])
       vpara = (inputvector*bgnorm).sum(-1)
       vmag = np.linalg.norm(inputvector, axis=-1)
-      return np.sqrt(vmag*vmag - vpara*vpara)
-   
+      presqrt = np.sqrt(vmag*vmag - vpara*vpara)
+      return sqrt(np.ma.masked_less(presqrt,0))
+
 def FullTensor( variables ):
    ''' Data reducer function to reconstruct a full tensor from diagonal and off-diagonal
        components (e.g. the pressure tensor)
@@ -922,8 +937,6 @@ v5reducers["vg_mms"] =                    DataReducerVariable(["vg_v", "vg_vms"]
 v5reducers["vg_v_parallel"] =              DataReducerVariable(["vg_v", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_\parallel$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_v_perpendicular"] =         DataReducerVariable(["vg_v", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_\perp$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 
-
-# vvv KH uncommented these 3 lines 13.03.22 vvv
 v5reducers["vg_e_parallel"] =              DataReducerVariable(["vg_e_vol", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_e_perpendicular"] =         DataReducerVariable(["vg_e_vol", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_poynting"] = DataReducerVariable(["vg_e_vol", "vg_b_vol"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")

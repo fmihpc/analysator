@@ -61,7 +61,7 @@ def plot_colormap(filename=None,
                   absolute=False,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
-                  fluxfile=None, fluxdir=None,
+                  fluxfile=None, fluxdir=None, flux_levels=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
                   Earth=None,
@@ -151,7 +151,7 @@ def plot_colormap(filename=None,
 
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
-                        variables.
+                        variables. Set to None to search for a default scaling settings.
     :kword absolute:    Plot the absolute of the evaluated variable
 
     :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
@@ -169,6 +169,8 @@ def plot_colormap(filename=None,
     :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
     :kword fluxfile:    Filename to plot fluxfunction from
+    :kword flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant 
+                        intervals: np.linspace(-10,10,fluxlines*60))
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
@@ -478,7 +480,7 @@ def plot_colormap(filename=None,
         cb_title_use = datamap_info.latex
         datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
+        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
         
         # Add unit to colorbar title
         if datamap_unit:
@@ -686,6 +688,14 @@ def plot_colormap(filename=None,
             if diffvar!="dstep": break
         if not cbtitle:
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring("DIFF0~"+diffvar.replace("_","\_"))))
+    # Evaluate time difference
+    if diff:
+        tvf=pt.vlsvfile.VlsvReader(filename)
+        t0 = tvf.read_parameter('time')
+        tvf1=pt.vlsvfile.VlsvReader(diff)
+        t1 = tvf1.read_parameter('time')
+        if (not np.isclose(t1-t0, 0.0, rtol=1e-6)):
+            plot_title = plot_title + "~dt=" + str(t1-t0)
 
     # Optional user-defined expression used for color panel instead of a single pre-existing var
     if expression:
@@ -904,7 +914,7 @@ def plot_colormap(filename=None,
                           norm=norm,
                           interpolation=imshowinterp,
                           origin='lower',
-                          extent=(boxcoords[0], boxcoords[1], boxcoords[2], boxcoords[3]),
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
                          )
     
 
@@ -921,8 +931,6 @@ def plot_colormap(filename=None,
         ax1.spines[axis].set_linewidth(thick)
     ax1.xaxis.set_tick_params(width=thick,length=3)
     ax1.yaxis.set_tick_params(width=thick,length=3)
-    #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
-    #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
     if not noxlabels:
         xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x\,['+axisunitstr+']'))
@@ -963,7 +971,10 @@ def plot_colormap(filename=None,
         else:
             # v5 Vlasiator data
             cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-            ff_b = f.read_fsgrid_variable("fg_b")[-2, 0,0]
+            #ff_b = f.read_variable("vg_b_vol", cellids=cid)
+            ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            if (ff_b.size!=3):
+                print("Error reading fg_b data for fluxfunction normalization!")
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
             else:
@@ -982,7 +993,10 @@ def plot_colormap(filename=None,
             flux_function = np.ma.array(flux_function, mask=XYmask)
         # The flux level contours must be fixed instead of scaled based on min/max values in order
         # to properly account for flux freeze-in and advection with plasma
-        flux_levels = np.linspace(-10,10,fluxlines*60)        
+        if flux_levels is None:
+            flux_levels = np.linspace(-10,10,fluxlines*60)
+        else:
+            pass #This was given, do nothing
         fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
