@@ -24,6 +24,7 @@
 import numpy as np
 import sys, os
 from output import output_1d
+import pytools as pt
 
 def pitch_angles( vlsvReader, 
                      cellid, 
@@ -91,12 +92,12 @@ def pitch_angles( vlsvReader,
          if vlsvReader.check_variable("moments"): # restart
             frame = vlsvReader.read_variable('restart_V', cellid)
          else:
-            frame = vlsvReader.read_variable('V', cellid)
+            frame = vlsvReader.read_variable('vg_V', cellid)
       elif len(plasmaframe)==3: # Assume it's a vector
          frame = plasmaframe
          
    # Find the magnetic field direction
-   B = vlsvReader.read_variable("B", cellid)
+   B = vlsvReader.read_variable("vg_b_vol", cellid)
    Bmag = np.linalg.norm(B)
    B_unit = B / Bmag
 
