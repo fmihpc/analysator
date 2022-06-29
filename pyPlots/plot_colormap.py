@@ -251,7 +251,11 @@ def plot_colormap(filename=None,
     if filename:
         f=pt.vlsvfile.VlsvReader(filename)
     elif (filedir and step is not None):
-        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        try:
+            filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        except IndexError as err:
+            print("IndexError for filedir =", filedir, ", step = ", step)
+            return
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     elif vlsvobj:
@@ -826,7 +830,7 @@ def plot_colormap(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator

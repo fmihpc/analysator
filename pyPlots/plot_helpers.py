@@ -697,6 +697,12 @@ def expr_flowcompression(pass_maps, requestvariables=False):
         return ['V']
     Vmap = TransposeVectorArray(pass_maps['V']) # Bulk flow
     return numdiv(Vmap).T
+    
+def expr_divPoynting(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['poynting']
+    dSmap = TransposeVectorArray(pass_maps['poynting']) # Bulk flow
+    return numdiv(dSmap).T
 
 # def expr_gradB_aniso(pass_maps):
 #     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
