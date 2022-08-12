@@ -46,7 +46,7 @@ def exprMA_cust(exprmaps, requestvariables=False):
     # here the function returns the M_A with a preset bulk velocity
 
     # Verify that time averaging wasn't used
-    if type(pass_maps) is list:
+    if type(exprmaps) is list:
         print("exprMA_cust expected a single timestep, but got multiple. Exiting.")
         quit()
 
@@ -137,8 +137,8 @@ def cavitoncontours(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
         return ['rho', 'B', 'beta']
 
     # Check if pass_maps has multiple time steps or just one
-    if type(pass_maps) is list:
-        dsteps = [x['dstep'] for x in pass_maps]
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
         curri = dsteps.index(0)
         rho = extmaps[curri]['rho']
         beta = extmaps[curri]['beta']
