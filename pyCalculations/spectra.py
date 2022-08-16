@@ -25,17 +25,20 @@ import pytools
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
 # Weighted by particle flux/none
 def get_spectrum_energy(vlsvReader,
-                  cid,
-                  population="proton",
-                  fMin = 1e-21,
-                  EMin=100,
-                  EMax=80e3,
-                  nBins=66,
-                  mass=1.6726219e-27, # default: mp
-                  weight='flux',
-                  restart=True):
+                        cid,
+                        population="proton",
+                        fMin = 1e-21,
+                        EMin=100,
+                        EMax=80e3,
+                        nBins=66,
+                        mass=1.6726219e-27, # default: mp
+                        weight='flux',
+                        differential=True, # weigh by eV
+                        bindifferential=False, # weigh by d(eV)
+                        restart=True):
 
-   EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins)
+   EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins+1, endpoint=True)
+   dE = EkinBinEdges[1:] - EkinBinEdges[:-1]
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
    if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
@@ -65,26 +68,52 @@ def get_spectrum_energy(vlsvReader,
 
    dV3 = np.prod(vlsvReader.get_velocity_mesh_dv(population))
    # normalization
-   if(weight == 'flux'):
-      fw = f * np.sqrt(V2) * dV3 / (4*np.pi * Ekin) # use particle flux as weighting
-      units = "1/(s m^2 sr eV)"
-      latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\mathrm{eV}^{-1}$'
-      latex='$\mathcal{F}(\vec{r},E)$'
+   if (differential): # differential flux per eV
+      if(weight == 'flux'):
+         fw = f * np.sqrt(V2) * dV3 / (4*np.pi * Ekin) # use particle flux as weighting
+         units = "1/(s m^2 sr eV)"
+         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\mathrm{eV}^{-1}$'
+         latex='$\mathcal{F}(\vec{r},E)\,E^{-1}$'
+      else:
+         fw = f * dV3 / Ekin
+         units = "1/(m^3 eV)"
+         latexunits = '$\mathrm{m}^{-3}\,\mathrm{eV}^{-1}$'
+         latex='$f(\vec{r},E)\,E^{-1}$'
+         weight = 'particles'
+   elif (bindifferential): # differential flux per d(eV)
+      if(weight == 'flux'):
+         fw = f * np.sqrt(V2) * dV3 / (4*np.pi) # use particle flux as weighting
+         units = "1/(s m^2 sr eV)"
+         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\delta\mathrm{eV}^{-1}$'
+         latex='$\mathcal{F}(\vec{r},E)\,\Delta{E^{-1}}$'
+      else:
+         fw = f * dV3
+         units = "1/(m^3 eV)"
+         latexunits = '$\mathrm{m}^{-3}\,\delta\mathrm{eV}^{-1}$'
+         latex='$f(\vec{r},E)\,\Delta{E^{-1}}$'
+         weight = 'particles'
    else:
-      fw = f * dV3 / Ekin
-      units = "1/(m^3 eV)"
-      latexunits = '$\mathrm{m}^{-3}\,\mathrm{eV}^{-1}$'
-      latex='$f(\vec{r},E)$'
-      weight = 'particles'
-
+      if(weight == 'flux'):
+         fw = f * np.sqrt(V2) * dV3 / (4*np.pi) # use particle flux as weighting
+         units = "1/(s m^2 sr)"
+         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}$'
+         latex='$\mathcal{F}(\vec{r},E)$'
+      else:
+         fw = f * dV3
+         units = "1/(m^3)"
+         latexunits = '$\mathrm{m}^{-3}$'
+         latex='$f(\vec{r},E)$'
+         weight = 'particles'
+      
    #Ekin[Ekin < min(EkinBinEdges)] = min(EkinBinEdges)
    #Ekin[Ekin > max(EkinBinEdges)] = max(EkinBinEdges)
 
    # compute histogram
    (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw,normed=0)
 
-   dE = EkinBinEdges[1:] - EkinBinEdges[0:-1]
-   #nhist = np.divide(nhist,dE)
+   if (bindifferential): # finish differential flux per d(eV)
+      nhist = np.divide(nhist,dE)
+
    vari = pytools.calculations.VariableInfo(nhist,
                                        name="Omnidirectional differential energy spectrum "+population+' ('+weight+')',
                                        units=units,
@@ -95,22 +124,24 @@ def get_spectrum_energy(vlsvReader,
 
 # Function to reduce the velocity space in a spatial cell to a distribution in velocity along a vector
 def get_spectrum_alongaxis_vel(vlsvReader,
-                  cid,
-                  population="proton",
-                  vector=None,
-                  vectorVar="vg_b_vol",
-                  fMin=1e-21,
-                  VMin=-2e6,
-                  VMax=2e6,
-                  nBins=200,
-                  restart=True):
+                               cid,
+                               population="proton",
+                               vector=None,
+                               vectorVar="vg_b_vol",
+                               fMin=1e-21,
+                               VMin=-2e6,
+                               VMax=2e6,
+                               nBins=200,
+                               differential=True, # weigh by velocity
+                               bindifferential=False, # weigh by d(velocity)
+                               restart=True):
 
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
 
    if vectorVar is not None and vector is None:
       vector=vlsvReader.read_variable(vectorVar, cid)
    vector = vector/np.linalg.norm(vector)
-   VBinEdges = np.linspace(VMin,VMax,nBins)
+   VBinEdges = np.linspace(VMin, VMax, nBins+1, endpoint=True)
    # check if velocity space exists in this cell
    if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
       return (False,np.zeros(nBins), VBinEdges)
@@ -120,9 +151,8 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
-   Vproj = np.dot(V,vector)
+   Vproj = np.dot(V,vector) # safe because "vector" is a 1-D array
    f = list(velcells.values())
-   
 
    # check that velocity space has cells - still return a zero histogram in the same shape
    if(len(f) > 0):
@@ -137,20 +167,36 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    #Vproj = Vproj[ii_f]
    #V2 = V2[ii_f]
 
+   # truncate
    Vproj[Vproj < min(VBinEdges)] = min(VBinEdges)
    Vproj[Vproj > max(VBinEdges)] = max(VBinEdges)
+
    dV3 = np.prod(vlsvReader.get_velocity_mesh_dv(population))
    # normalization
-   units = "s/m^4"
-   latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
-   latex='$f(\vec{r})\,\Deltav^-1\$'
-   weight = 'particles'
-   fw = f*dV3
+   if (differential): # differential flux per [m/s]
+      units = "s/m^4"
+      latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
+      latex='$f(\vec{r},v)\,v^{-1}$'
+      weight = 'particles'
+      fw = f*dV3 / Vproj
+   elif (bindifferential): # differential flux per d[m/s]
+      units = "s/m^4"
+      latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
+      latex='$f(\vec{r},v)\,\Delta{v^{-1}}$'
+      weight = 'particles'
+      fw = f*dV3
+   else:
+      units = "1/m^3"
+      latexunits = '$\mathrm{m}^{-3}$'
+      latex='$f(\vec{r},v)$'
+      weight = 'particles'
+      fw = f*dV3
    
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
    # normalization
-   dv = VBinEdges[1:] - VBinEdges[0:-1]
-   nhist = np.divide(nhist,dv)
+   if (differential): # differential flux per [m/s]
+      dv = VBinEdges[1:] - VBinEdges[:-1]
+      nhist = np.divide(nhist,dv)
    
    vari = pytools.calculations.VariableInfo(nhist,
                                     name="Parallel distribution of "+population+' ('+weight+')',
