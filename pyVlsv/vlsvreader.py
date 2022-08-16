@@ -2045,3 +2045,102 @@ class VlsvReader(object):
       self.__fileindex_for_cellid = {}
 
 
+   def get_fsgrid_cell_index(self,coordinates):
+      ''' Returns the FSGrid cell index at given coordinates
+
+      :param coordinates:        The cell's coordinates
+      :returns: the cell index
+
+      .. note:: Returns 0 if the index is out of bounds!
+      '''
+    
+      # Check that the coordinates are not out of bounds:
+      if (self.__fs_xmax < coordinates[0]) or (self.__fs_xmin >= coordinates[0]):
+         return 0
+      if (self.__fs_ymax < coordinates[1]) or (self.__fs_ymin >= coordinates[1]):
+         return 0
+      if (self.__fs_zmax < coordinates[2]) or (self.__fs_zmin >= coordinates[2]):
+         return 0
+      # Get cell lengths:
+      cell_lengths = np.array([self.__fs_dx, self.__fs_dy, self.__fs_dz])
+      # Get cell indices:
+      cellindices = np.array([(int)((coordinates[0] - self.__fs_xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__fs_ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__fs_zmin)/(float)(cell_lengths[2]))])
+      # Get the cell id:
+      index = cellindices[0] * self.__fs_ycells + cellindices[1] + cellindices[2] * self.__fs_xcells * self.__fs_ycells + 1
+    
+      return index   
+
+   def get_fsgrid_cell_coordinates(self, index):
+      ''' Returns a given cell's coordinates as a numpy array
+
+      :param index:            The cell's index
+      :returns: a numpy array with the coordinates
+
+      .. seealso:: :func:`get_fsgrid_cell_index`
+
+      .. note:: The cell ids go from 1 .. max not from 0
+      '''
+      # Get cell lengths:
+      xcells = self.__fs_xcells
+      ycells = self.__fs_ycells
+      zcells = self.__fs_zcells
+      index = (int)(index - 1)
+      # Get cell indices:
+      cellindices = np.zeros(3)
+      cellindices[0] = (index//(int)(self.__fs_ycells))%(int)(self.__fs_xcells)
+      cellindices[1] = (index)%(int)(self.__fs_ycells)
+      cellindices[2] = (index)//(int)(self.__fs_xcells*self.__fs_ycells)
+
+   
+      # Get cell coordinates:
+      cell_lengths = np.array([(self.__fs_xmax - self.__fs_xmin)/(float)(xcells), (self.__fs_ymax - self.__fs_ymin)/(float)(ycells), (self.__fs_zmax - self.__fs_zmin)/(float)(zcells)])
+      cellcoordinates = np.zeros(3)
+      cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
+      cellcoordinates[1] = self.__ymin + (cellindices[1] + 0.5) * cell_lengths[1]
+      cellcoordinates[2] = self.__zmin + (cellindices[2] + 0.5) * cell_lengths[2]
+      # Return the coordinates:
+      return np.array(cellcoordinates)
+
+   def cellid_index_conversion(self, cells, grid):
+      ''' Converts SpatialGrid's CellIDs to FSGrid's indices and vice versa
+      :param cells:         convertable CellIDs or indices, a single value or an array
+      :param grid:            name of the output grid, case insensitive
+      .. code-block:: python
+
+          Example: 
+          vlsvReader = VlsvReader(\"testfile.vlsv\")
+          coordinatesInSpatialGrid = [130000,1670000,0]
+          coordinatesInFSGrid = vlsvReader.cellid_index_conversion(coordinatesInSpatialGrid, "fsgrid")
+
+      .. Note: Returns 0 if "grid" isn't FSGrid or SpatialGrid
+      '''
+
+      grid=grid.lower()
+      if grid=='fsgrid':
+
+         if isinstance(cells, numbers.Number): # single or multiple cells
+            if cells >= 0: # single cell
+               coordinates=self.get_cell_coordinates(cells)
+               return self.get_fsgrid_cell_index(coordinates)
+         else: # list of cellids
+            outp=[]
+            for i in range(len(cells)):
+               coordinates=self.get_cell_coordinates(cells[i])
+               outp.append(self.get_fsgrid_cell_index(coordinates))
+            return np.array(outp)
+      
+      elif grid=='spatialgrid':
+         if isinstance(cells, numbers.Number): # single or multiple cells
+            if cells >= 0: # single cell
+               coordinates=self.get_fsgrid_cell_coordinates(cells)
+               return self.get_cellid(coordinates)
+         else: # list of cellids
+            outp=[]
+            for i in range(len(cells)):
+               coordinates=self.get_fsgrid_cell_coordinates(cells[i])
+               outp.append(self.get_cellid(coordinates))
+            return np.array(outp)
+
+      else:
+         print("Error: Choose the grid of the output CellIDs or indices (SpatialGrid or fsgrid)")
+         return 0
