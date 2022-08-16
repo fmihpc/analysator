@@ -21,6 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+import pytools as pt
 import numpy as np
 import sys, os
 from output import output_1d
@@ -34,6 +35,7 @@ def pitch_angles( vlsvReader,
                      cosine=False, 
                      plasmaframe=False, 
                      vcut=None,
+                     vcutmax=None,
                      pop="proton"):
 
    ''' Calculates the pitch angle distribution for a given cell
@@ -56,6 +58,8 @@ def pitch_angles( vlsvReader,
                              If set to a 3-element vector, will use that frame instead.
 
    :kword vcut:              Set to True to ignore velocity cells below 2x the thermal speed.
+                             If set to a number, will use that velocity in m/s instead.
+   :kword vcutmax:           Set to True to ignore velocity cells above 2x the thermal speed.
                              If set to a number, will use that velocity in m/s instead.
 
    :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
@@ -90,13 +94,22 @@ def pitch_angles( vlsvReader,
       elif plasmaframe is True:
          if vlsvReader.check_variable("moments"): # restart
             frame = vlsvReader.read_variable('restart_V', cellid)
-         else:
+         elif vlsvReader.check_variable("V"):
             frame = vlsvReader.read_variable('V', cellid)
+         elif vlsvReader.check_variable("vg_V"):
+            frame = vlsvReader.read_variable('vg_V', cellid)
+         else:
+            print("Error extracting plasma frame velocity!")
       elif len(plasmaframe)==3: # Assume it's a vector
          frame = plasmaframe
          
    # Find the magnetic field direction
-   B = vlsvReader.read_variable("B", cellid)
+   if vlsvReader.check_variable("B"):
+      B = vlsvReader.read_variable('B', cellid)
+   elif vlsvReader.check_variable("vg_b_vol"):
+      B = vlsvReader.read_variable('vg_b_vol', cellid)
+   elif vlsvReader.check_variable("fg_b"):
+      B = vlsvReader.read_variable('fg_b', cellid)
    Bmag = np.linalg.norm(B)
    B_unit = B / Bmag
 
@@ -115,20 +128,33 @@ def pitch_angles( vlsvReader,
          sys.exit()       
 
    # Read temperature for thermal speed
-   if vcut is True:
+   if (vcut is True or vcutmax is True):
       if vlsvReader.check_variable("moments"): # restart, use overall rho/rhom and pressure
          rhom = vlsvReader.read_variable("restart_rhom", cellid)
          PDiagonal = vlsvReader.read_variable("pressure", cellid)
          Pressure = (PDiagonal[0] + PDiagonal[1] + PDiagonal[2])*(1./3.)
          vth = np.sqrt(Pressure*8./(rhom*np.pi))
       else:
-         if vlsvReader.check_variable("rhom"): # multipop
+         if vlsvReader.check_variable("vg_rhom"): # v5
+            vth = vlsvReader.read_variable(pop+"/vg_v_thermal", cellid)
+         elif vlsvReader.check_variable("rhom"): # multipop
             vth = vlsvReader.read_variable(pop+"/vThermal", cellid)
          else:
             vth = vlsvReader.read_variable("vThermal", cellid)
+
+   if vcut is True:
       vcutoff=2*vth
-   else: # assume it's a number to use as the speed in m/s
-      vcutoff=vcut      
+   elif vcut is not None: # assume it's a number to use as the speed in m/s
+      vcutoff=vcut
+   else:
+      vcutoff=0
+
+   if vcutmax is True:
+      vcutoffmax=2*vth
+   elif vcutmax is not None: # assume it's a number to use as the speed in m/s
+      vcutoffmax=vcutmax
+   else:
+      vcutoffmax = np.inf
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid, pop=pop)
@@ -163,7 +189,10 @@ def pitch_angles( vlsvReader,
    avgs = np.array(avgs).clip(min=0) * dv3
 
    # Mask off cells below threshold
-   condition = (v_norms > vcutoff)
+   cond1 = (v_norms > vcutoff)
+   cond2 = (v_norms < vcutoffmax)
+   condition = np.logical_and(cond1,cond2)
+   print(cond1.shape,cond2.shape,condition.shape)
    # Get the velocity cells above cutoff speed
    #vcellids_nonsphere = np.extract(condition, vcellids)
    # Get the avgs
