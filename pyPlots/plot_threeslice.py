@@ -447,7 +447,6 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         levels = MaxNLocator(nbins=255).tick_values(0,1)
         norm = BoundaryNorm(levels, ncolors=255, clip=True)
         scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
-        scalarmap.set_array([])
 
         ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
 
@@ -1274,7 +1273,6 @@ def plot_threeslice(filename=None,
 
     # Create the scalar mappable to define the face colouring of the surface elements
     scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
-    scamap.set_array([])
 
 
     ###############################################################################
