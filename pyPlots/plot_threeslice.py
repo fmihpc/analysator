@@ -1274,7 +1274,8 @@ def plot_threeslice(filename=None,
 
     # Create the scalar mappable to define the face colouring of the surface elements
     scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
-    scamap.set_array([])
+    #scamap.set_array([])
+    scamap.set_array(np.array([]))
 
 
     ###############################################################################

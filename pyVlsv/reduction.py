@@ -692,6 +692,19 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def PhiGradPe( variables ):
+   n = variables[0]       #n=np.array(variables[0])?
+   gamma = 5./3.
+   n0 = 4e6                    #EGL driving density [m^-3]
+   kB = 1.380649e-23     
+   T0 = kB * 5e5                #EGL driving temperature [Joules]
+   C = T0 * n0**(1 - gamma)     # PV^gamma = const. --> T*n^(1-gamma)=const.
+   q = -1.60217663e-19
+   phi0 = (n0**(gamma-1)) * (-C * gamma) / ( q * (gamma -1) )
+   phi = (n**(gamma-1)) * (-C * gamma) / ( q * (gamma -1) )
+   return phi-phi0
+
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -945,6 +958,8 @@ v5reducers["vg_eje_parallel"] =              DataReducerVariable(["vg_eje", "vg_
 v5reducers["vg_eje_perpendicular"] =         DataReducerVariable(["vg_eje", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$EJE_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_egradpe_parallel"] =              DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\parallel}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_egradpe_perpendicular"] =         DataReducerVariable(["vg_e_gradpe", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_{\nabla Pe,\perp}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
+
+v5reducers["vg_potential_gradpe"] =         DataReducerVariable(["vg_rho"], PhiGradPe, "V", 1, latex=r"$\Phi_{\nabla Pe}$",latexunits=r"$\mathrm{V}$")
 
 v5reducers["vg_pdyn"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdyn, "\mathrm{Pa}", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"$\mathrm{Pa}$")
 v5reducers["vg_pdynx"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdynx, "\mathrm{Pa}", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"$\mathrm{Pa}$")
