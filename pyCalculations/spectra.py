@@ -199,32 +199,33 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    Vproj[Vproj > max(VBinEdges)] = max(VBinEdges)
 
    dV3 = np.prod(vlsvReader.get_velocity_mesh_dv(population))
+   fw = f*dV3
    # normalization
    if (differential): # differential flux per [m/s]
       units = "s/m^4"
       latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
       latex='$f(\vec{r},v)\,v^{-1}$'
       weight = 'particles'
-      fw = f*dV3 / abs(Vproj)
    elif (bindifferential): # differential flux per d[m/s]
       units = "s/m^4"
       latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
       latex='$f(\vec{r},v)\,\Delta{v^{-1}}$'
       weight = 'particles'
-      fw = f*dV3
    else:
       units = "1/m^3"
       latexunits = '$\mathrm{m}^{-3}$'
       latex='$f(\vec{r},v)$'
       weight = 'particles'
-      fw = f*dV3
    
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
    # normalization
-   if (bindifferential): # differential flux per d[m/s]
-      dv = abs(VBinEdges[1:] - VBinEdges[:-1])
+   dv = abs(VBinEdges[1:] - VBinEdges[:-1])
+   if (differential): # differential flux per [m/s]
+      midv = VBinEdges[1:] + 0.5 * dv
+      nhist = np.divide(nhist,midv)
+   elif (bindifferential): # differential flux per d[m/s]
       nhist = np.divide(nhist,dv)
-   
+
    vari = pytools.calculations.VariableInfo(nhist,
                                     name="Parallel distribution of "+population+' ('+weight+')',
                                     units=units,
