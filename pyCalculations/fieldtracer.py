@@ -46,7 +46,7 @@ def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
       x0 = x0 + v*dt
       iterations = iterations + 1
 
-def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar='B' ):
+def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar='B', centering='default', boundary_inner=-1):
    ''' Field tracer in a static frame
 
        :param vlsvReader:         An open vlsv file
@@ -55,10 +55,12 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
        :param dx:                 One iteration step length
        :param direction:          '+' or '-' or '+-' Follow field in the plus direction or minus direction
        :param bvar:               String, variable name to trace [default 'B']
+       :param centering:          String, variable centering: 'face', 'volume', 'node' [defaults to 'face']
+       :param boundary_inner:     Float, stop propagation if closer to origin than this value [default -1]
        :returns:                  List of coordinates
    '''
 
-   if(bvar is not 'B'):
+   if(bvar != 'B'):
      warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
 
    if direction == '+-':
@@ -93,31 +95,67 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    if zsize <= 1:
       indices = [1,0]
 
+   if 'vol' in bvar and centering == 'default':
+      warnings.warn("Found 'vol' in variable name, assuming volumetric variable and adjusting centering")
+      centering = 'volume'
+
    # Read face_B:
-   face_B = f.read_variable(bvar)
-   face_Bx = face_B[:,0]
-   face_By = face_B[:,1]
-   face_Bz = face_B[:,2]
+   if centering == 'face' or centering == 'default':
+      face_B = f.read_variable(bvar)
+      face_Bx = face_B[:,0]
+      face_By = face_B[:,1]
+      face_Bz = face_B[:,2]
 
-   face_Bx = face_Bx[cellids.argsort()].reshape(sizes[indices])
-   face_By = face_By[cellids.argsort()].reshape(sizes[indices])
-   face_Bz = face_Bz[cellids.argsort()].reshape(sizes[indices])
+      face_Bx = face_Bx[cellids.argsort()].reshape(sizes[indices])
+      face_By = face_By[cellids.argsort()].reshape(sizes[indices])
+      face_Bz = face_Bz[cellids.argsort()].reshape(sizes[indices])
 
-   face_B = np.array([face_Bx, face_By, face_Bz])
+      face_B = np.array([face_Bx, face_By, face_Bz])
 
-   # Create x, y, and z coordinates:
-   x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
-   y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
-   z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-   coordinates = np.array([x,y,z])
-   # Debug:
-   if( len(x) != sizes[0] ):
-      print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
+      # Create x, y, and z coordinates:
+      x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
+      y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
+      z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
+      coordinates = np.array([x,y,z])
+      # Debug:
+      if( len(x) != sizes[0] ):
+         print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
 
-   # Create grid interpolation
-   interpolator_face_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]] - 0.5*dcell[indices[0]], coordinates[indices[1]], face_B[indices[0]], kx=2, ky=2, s=0)
-   interpolator_face_B_1 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]] - 0.5*dcell[indices[1]], face_B[indices[1]], kx=2, ky=2, s=0)
-   interpolators = [interpolator_face_B_0, interpolator_face_B_1]#, interpolator_face_B_2]
+      # Create grid interpolation
+      interpolator_face_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]] - 0.5*dcell[indices[0]], coordinates[indices[1]], face_B[indices[0]], kx=2, ky=2, s=0)
+      interpolator_face_B_1 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]] - 0.5*dcell[indices[1]], face_B[indices[1]], kx=2, ky=2, s=0)
+      interpolators = [interpolator_face_B_0, interpolator_face_B_1]#, interpolator_face_B_2]
+   elif centering == 'volume':
+      vol_B = f.read_variable(bvar)
+      vol_Bx = vol_B[:,0]
+      vol_By = vol_B[:,1]
+      vol_Bz = vol_B[:,2]
+
+      vol_Bx = vol_Bx[cellids.argsort()].reshape(sizes[indices])
+      vol_By = vol_By[cellids.argsort()].reshape(sizes[indices])
+      vol_Bz = vol_Bz[cellids.argsort()].reshape(sizes[indices])
+
+      vol_B = np.array([vol_Bx, vol_By, vol_Bz])
+
+      # Create x, y, and z coordinates:
+      x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
+      y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
+      z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
+      coordinates = np.array([x,y,z])
+      # Debug:
+      if( len(x) != sizes[0] ):
+         print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
+
+      # Create grid interpolation
+      interpolator_vol_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]], vol_B[indices[0]], kx=2, ky=2, s=0)
+      interpolator_vol_B_1 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]], vol_B[indices[1]], kx=2, ky=2, s=0)
+      interpolators = [interpolator_vol_B_0, interpolator_vol_B_1]#, interpolator_face_B_2]
+   elif centering == 'node':
+      print("Nodal variables not implemented")
+      return
+   else:
+      print("Unrecognized centering:", centering)
+      return
 
    #######################################################
    if direction == '-':
@@ -125,14 +163,17 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    else:
       multiplier = 1
 
-   points = [x0]
+   points = [np.array(x0)]
    for i in range(max_iterations):
-      previous_point = points[len(points)-2]
+      previous_point = points[-1]
       B_unit = np.zeros(3)
       B_unit[indices[0]] = interpolators[0](previous_point[indices[0]], previous_point[indices[1]])
       B_unit[indices[1]] = interpolators[1](previous_point[indices[0]], previous_point[indices[1]])
       B_unit = B_unit / float(np.linalg.norm(B_unit))
-      points.append( previous_point + multiplier*B_unit * dx )
+      next_point = previous_point + multiplier*B_unit * dx
+      if(np.linalg.norm(next_point) < boundary_inner):
+         break
+      points.append(next_point)
    #######################################################
 
    return points
