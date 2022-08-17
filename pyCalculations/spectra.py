@@ -41,10 +41,23 @@ def get_spectrum_energy(vlsvReader,
    dE = EkinBinEdges[1:] - EkinBinEdges[:-1]
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
-   if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
-      return (False,np.zeros(nBins), EkinBinEdges)
-   if vlsvReader.check_variable('MinValue') == True:
+   if not vlsvReader.check_variable("moments"): # restart files have VDFs everywhere
+      if vlsvReader.check_variable("fSaved"):
+         if not vlsvReader.read_variable('fSaved',cid):
+            return (False,np.zeros(nBins), EkinBinEdges)
+      elif vlsvReader.check_variable("vg_f_saved"):
+         if not vlsvReader.read_variable('vg_f_saved',cid):
+            return (False,np.zeros(nBins), EkinBinEdges)
+      else:
+         print("Error finding cells with VDFs!")
+
+   if vlsvReader.check_variable('MinValue'):
       fMin = vlsvReader.read_variable('MinValue',cid)
+   elif vlsvReader.check_variable(population+'/effectivesparsitythreshold'):
+      fMin = vlsvReader.read_variable(population+'/effectivesparsitythreshold',cid)
+   elif vlsvReader.check_variable(population+'/vg_effectivesparsitythreshold'):
+      fMin = vlsvReader.read_variable(population+'/vg_effectivesparsitythreshold',cid)
+
    #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
@@ -142,11 +155,25 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       vector=vlsvReader.read_variable(vectorVar, cid)
    vector = vector/np.linalg.norm(vector)
    VBinEdges = np.linspace(VMin, VMax, nBins+1, endpoint=True)
+
    # check if velocity space exists in this cell
-   if not restart and vlsvReader.read_variable('fSaved',cid) != 1.0:
-      return (False,np.zeros(nBins), VBinEdges)
-   if vlsvReader.check_variable('MinValue') == True:
+   if not vlsvReader.check_variable("moments"): # restart files have VDFs everywhere
+      if vlsvReader.check_variable("fSaved"):
+         if not vlsvReader.read_variable('fSaved',cid):
+            return (False,np.zeros(nBins), VBinEdges)
+      elif vlsvReader.check_variable("vg_f_saved"):
+         if not vlsvReader.read_variable('vg_f_saved',cid):
+            return (False,np.zeros(nBins), VBinEdges)
+      else:
+         print("Error finding cells with VDFs!")
+   
+   if vlsvReader.check_variable('MinValue'):
       fMin = vlsvReader.read_variable('MinValue',cid)
+   elif vlsvReader.check_variable(population+'/effectivesparsitythreshold'):
+      fMin = vlsvReader.read_variable(population+'/effectivesparsitythreshold',cid)
+   elif vlsvReader.check_variable(population+'/vg_effectivesparsitythreshold'):
+      fMin = vlsvReader.read_variable(population+'/vg_effectivesparsitythreshold',cid)
+
    #print('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
@@ -178,7 +205,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
       latex='$f(\vec{r},v)\,v^{-1}$'
       weight = 'particles'
-      fw = f*dV3 / Vproj
+      fw = f*dV3 / abs(Vproj)
    elif (bindifferential): # differential flux per d[m/s]
       units = "s/m^4"
       latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
@@ -194,8 +221,8 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
    # normalization
-   if (differential): # differential flux per [m/s]
-      dv = VBinEdges[1:] - VBinEdges[:-1]
+   if (bindifferential): # differential flux per d[m/s]
+      dv = abs(VBinEdges[1:] - VBinEdges[:-1])
       nhist = np.divide(nhist,dv)
    
    vari = pytools.calculations.VariableInfo(nhist,

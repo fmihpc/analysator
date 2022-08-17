@@ -135,12 +135,12 @@ def pitch_angles( vlsvReader,
          Pressure = (PDiagonal[0] + PDiagonal[1] + PDiagonal[2])*(1./3.)
          vth = np.sqrt(Pressure*8./(rhom*np.pi))
       else:
-         if vlsvReader.check_variable("vg_rhom"): # v5
-            vth = vlsvReader.read_variable(pop+"/vg_v_thermal", cellid)
-         elif vlsvReader.check_variable("rhom"): # multipop
-            vth = vlsvReader.read_variable(pop+"/vThermal", cellid)
+         if vlsvReader.check_variable(pop+"/vg_rho"): # v5
+            vth = vlsvReader.read_variable(pop+"/vg_thermalvelocity", cellid)
+         elif vlsvReader.check_variable(pop+"/rho"): # multipop
+            vth = vlsvReader.read_variable(pop+"/thermalvelocity", cellid)
          else:
-            vth = vlsvReader.read_variable("vThermal", cellid)
+            vth = vlsvReader.read_variable("thermalvelocity", cellid)
 
    if vcut is True:
       vcutoff=2*vth
