@@ -127,6 +127,46 @@ class VlsvReader(object):
       self.__dy = (self.__ymax - self.__ymin) / (float)(self.__ycells)
       self.__dz = (self.__zmax - self.__zmin) / (float)(self.__zcells)
 
+
+
+      self.__fs_fileindex_for_cell_index={}
+      meshName='fsgrid'
+      fs_bbox = self.read(tag="MESH_BBOX", mesh=meshName)
+      if fs_bbox is None:
+         #read in older vlsv files where the mesh is defined with parameters
+         self.__fs_xcells = (int)(self.read_parameter("xcells_ini"))
+         self.__fs_ycells = (int)(self.read_parameter("ycells_ini"))
+         self.__fs_zcells = (int)(self.read_parameter("zcells_ini"))
+         self.__fs_xblock_size = 1
+         self.__fs_yblock_size = 1
+         self.__fs_zblock_size = 1
+         self.__fs_xmin = self.read_parameter("xmin")
+         self.__fs_ymin = self.read_parameter("ymin")
+         self.__fs_zmin = self.read_parameter("zmin")
+         self.__fs_xmax = self.read_parameter("xmax")
+         self.__fs_ymax = self.read_parameter("ymax")
+         self.__fs_zmax = self.read_parameter("zmax")
+      else:
+         #new style vlsv file with 
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+         self.__fs_xcells = fs_bbox[0]
+         self.__fs_ycells = fs_bbox[1]
+         self.__fs_zcells = fs_bbox[2]
+         self.__fs_xblock_size = fs_bbox[3]
+         self.__fs_yblock_size = fs_bbox[4]
+         self.__fs_zblock_size = fs_bbox[5]
+         self.__fs_xmin = nodeCoordinatesX[0]
+         self.__fs_ymin = nodeCoordinatesY[0]
+         self.__fs_zmin = nodeCoordinatesZ[0]
+         self.__fs_xmax = nodeCoordinatesX[-1]
+         self.__fs_ymax = nodeCoordinatesY[-1]
+         self.__fs_zmax = nodeCoordinatesZ[-1]
+
+      self.__fs_dx = (self.__fs_xmax - self.__fs_xmin) / (float)(self.__fs_xcells)
+      self.__fs_dy = (self.__fs_ymax - self.__fs_ymin) / (float)(self.__fs_ycells)
+      self.__fs_dz = (self.__fs_zmax - self.__fs_zmin) / (float)(self.__fs_zcells)
       self.__meshes = {}
 
       # Iterate through the XML tree, find all populations
