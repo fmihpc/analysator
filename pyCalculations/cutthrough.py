@@ -370,7 +370,6 @@ def get_fsgrid_indices_coordinates_distances( vlsvReader, xmax, xmin, xcells, ym
        :param point2:           The ending point of a cut-through line
        :returns: Coordinates of for the cell cut-through as well as cell indices and distances
    '''
-   from output import output_1d
 
    point1 = np.array(point1, copy=False)
    point2 = np.array(point2, copy=False)
@@ -380,10 +379,6 @@ def get_fsgrid_indices_coordinates_distances( vlsvReader, xmax, xmin, xcells, ym
    indices = [vlsvReader.get_fsgrid_cell_index(point1)]
 
    coordinates = [point1]
-
-   if np.array_equal(point1,point2):
-      
-      return output_1d( [np.array(indices, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["fsgrid_cell_index", "distances", "coordinates"], ["", "m", "m"] )
 
    epsilon = sys.float_info.epsilon*2
 
@@ -436,6 +431,7 @@ def get_fsgrid_indices_coordinates_distances( vlsvReader, xmax, xmin, xcells, ym
       if min((point2 - iterator)* unit_vector) < 0:
          break
    # Return the coordinates, cellids and distances for processing
+   from output import output_1d
    return output_1d( [np.array(indices, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["fsgrid_cell_index", "distances", "coordinates"], ["", "m", "m"] )
 
 
