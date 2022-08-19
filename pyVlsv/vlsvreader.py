@@ -821,6 +821,8 @@ class VlsvReader(object):
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
       fg_size=self.get_fsgrid_mesh_size()
+      print(fg_size)
+      print(np.shape(fg_data))
       fg_data=np.reshape(fg_data,fg_size)
       nx,ny,nz=fg_size
       extents=self.get_fsgrid_mesh_extent()
@@ -844,7 +846,6 @@ class VlsvReader(object):
             if ((index<0 or index>fg_size[c]-1) and not periodicity[c]):
                #out of bounds return NaN
                return False
-
              # Here we are either periodic or (not periodic and inside the domain)
             if (index >= fg_size[c] or index <0):
                 ind[c] = index%fg_size[c]
@@ -883,7 +884,7 @@ class VlsvReader(object):
          '''
          import sys
          if (len(r) !=3 ):
-            print("Interpolation input data should be in the form X,Y,Z coordinates. Input now is r=",r,file=sys.stderr)
+            # print("Interpolation input data should be in the form X,Y,Z coordinates. Input now is r=",r,file=sys.stderr)
             raise ValueError("Interpolation cannot be performed. Exiting")
 
 
@@ -911,15 +912,13 @@ class VlsvReader(object):
          w[7] = (xd)*(yd)*(zd)
 
          retval = np.zeros_like(fg_data[0,0,0])
-         cnt=0
          for k in [0,1]:
             for j in [0,1]:
                for i in [0,1]:
                   retind=getFsGridIndices([xl+i,yl+j,zl+k])
                   if (not retind): return None
                   if  (retind == -1 ): return np.NaN
-                  retval += w[cnt] * fg_data [retind]
-                  cnt+=1
+                  retval += w[4*k+2*j+i]*fg_data[retind]
 
          return retval
 
