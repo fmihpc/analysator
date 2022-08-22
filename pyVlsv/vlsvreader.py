@@ -889,7 +889,7 @@ class VlsvReader(object):
       return -1
          
 
-   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True]):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file.
       Arguments:
       :param name: Name of the (FSgrid) variable
@@ -901,9 +901,99 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
-      # At this stage, this function has not yet been implemented -- print a warning and exit
-      print('Interpolation of FSgrid variables has not yet been implemented; exiting.')
-      return -1
+      if name[0:3] != 'fg_':
+         raise ValueError("Interpolation of FsGrid called on non-FsGrid data; exiting.")
+      
+      if (len(periodic)!=3):
+         raise ValueError("Periodic must be a list of 3 booleans.")
+
+      #First off let's fetch the data and some meta
+      fg_data=self.read_fsgrid_variable( name,operator=operator)
+      fg_size=self.get_fsgrid_mesh_size()
+      fg_data=np.reshape(fg_data,fg_size)
+      nx,ny,nz=fg_size
+      extents=self.get_fsgrid_mesh_extent()
+      xmin,ymin,zmin,xmax,ymax,zmax=extents
+      dx=abs((xmax-xmin)/nx)
+      dy=abs((ymax-ymin)/ny)
+      dz=abs((zmax-zmin)/nz)
+
+      def getFsGridIndices(indices):
+         ''' 
+         Returns indices based on boundary conditions
+         '''
+         ind=-1*np.ones((3))
+         for c,index in enumerate(indices):
+            #Non periodic case
+            if ((index<0 or index>fg_size[c]-1) and not periodic[c]):
+               #out of bounds return NaN
+               return False
+             # Here we are either periodic or (not periodic and inside the domain)
+            if (index >= fg_size[c] or index <0):
+                ind[c] = index%fg_size[c]
+            elif (index>=0 and index<=fg_size[c]-1):
+                ind[c]=index
+            else:
+                #If we end up here then something is really wrong
+                raise ValueError("FsGrid interpolation ran into a failure and could not locate all neighbors.","Indices in question= ",indices)
+
+         return int(ind[0]),int(ind[1]),int(ind[2]) 
+
+
+
+      def interpolateSingle(r):
+         ''' 
+         Simple trilinear routine for interpolating fsGrid quantities 
+         at arbitrary coordinates r.
+         Inputs:
+             r: array of coordinates at which to perform the interpolation. 
+                Example: r=[x,y,z] in meters
+         Outputs:
+             Numpy array with interpolated data at r. Can be scalar or vector.
+         '''
+         import sys
+         if (len(r) !=3 ):
+            raise ValueError("Interpolation cannot be performed. Exiting")
+
+         x,y,z=r
+         xl=int(np.floor((x-xmin)/dx))
+         yl=int(np.floor((y-ymin)/dy))
+         zl=int(np.floor((z-zmin)/dz))
+    
+         #Normalize distances in a unit cube 
+         xd=(x-xmin)/dx - xl
+         yd=(y-ymin)/dy - yl
+         zd=(z-zmin)/dz - zl
+       
+         # Calculate Neighbors' Weights
+         w=np.zeros(8)
+         w[0] = (1.0-xd)*(1.0-yd)*(1.0-zd)
+         w[1] = (xd)*(1.0-yd)*(1.0-zd)
+         w[2] = (1.0-xd)*(yd)*(1.0-zd)
+         w[3] = (xd)*(yd)*(1.0-zd)
+         w[4] = (1.0-xd)*(1.0-yd)*(zd)
+         w[5] = (xd)*(1.0-yd)*(zd)
+         w[6] = (1.0-xd)*(yd)*(zd)
+         w[7] = (xd)*(yd)*(zd)
+
+         retval = np.zeros_like(fg_data[0,0,0])
+         for k in [0,1]:
+            for j in [0,1]:
+               for i in [0,1]:
+                  try:
+                      retind=getFsGridIndices([xl+i,yl+j,zl+k])
+                      if (not retind): return None #outside of a non periodic domain
+                  except ValueError as error:
+                      print(error,file=sys.stderr)
+                      return np.NaN  #one of the neighbors cannot be located
+                  retval += w[4*k+2*j+i]*fg_data[retind]
+
+         return retval
+
+      ret=[]
+      for r in coordinates:
+         ret.append(interpolateSingle(r))
+      return np.asarray(ret)
 
    def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass"):
       ''' Read a linearly interpolated ionosphere variable value from the open vlsv file.
@@ -920,7 +1010,7 @@ class VlsvReader(object):
       print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
-   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=[True, True, True]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
@@ -931,6 +1021,9 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+
+      if (len(periodic)!=3):
+            raise ValueError("Periodic must be a list of 3 booleans.")
 
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
