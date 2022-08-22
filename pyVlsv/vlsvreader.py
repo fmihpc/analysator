@@ -821,8 +821,6 @@ class VlsvReader(object):
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
       fg_size=self.get_fsgrid_mesh_size()
-      print(fg_size)
-      print(np.shape(fg_data))
       fg_data=np.reshape(fg_data,fg_size)
       nx,ny,nz=fg_size
       extents=self.get_fsgrid_mesh_extent()
@@ -852,8 +850,8 @@ class VlsvReader(object):
             elif (index>=0 and index<=fg_size[c]-1):
                 ind[c]=index
             else:
-                #If we end up here then something is wrong
-                return -1
+                #If we end up here then something is really wrong
+                raise ValueError("FsGrid interpolation ran into a failure and could not locate all neighbors.","Indices in question= ",indices)
 
          return int(ind[0]),int(ind[1]),int(ind[2]) 
 
@@ -869,36 +867,20 @@ class VlsvReader(object):
          Outputs:
              Numpy array with interpolated data at r. Can be scalar or vector.
          '''
-
-         #Find last spatial neighbor
-         '''
-            +-----------+
-           /           /|
-          /           / |
-         +----------+/  |
-         |           |  |
-         |           |  +
-         |           | /
-         |   *       |/
-         X-----------+
-         '''
          import sys
          if (len(r) !=3 ):
             # print("Interpolation input data should be in the form X,Y,Z coordinates. Input now is r=",r,file=sys.stderr)
             raise ValueError("Interpolation cannot be performed. Exiting")
-
 
          x,y,z=r
          xl=int(np.floor((x-xmin)/dx))
          yl=int(np.floor((y-ymin)/dy))
          zl=int(np.floor((z-zmin)/dz))
     
-
          #Normalize distances in a unit cube 
          xd=(x-xmin)/dx - xl
          yd=(y-ymin)/dy - yl
          zd=(z-zmin)/dz - zl
-
        
          # Calculate Neighbors' Weights
          w=np.zeros(8)
@@ -915,9 +897,12 @@ class VlsvReader(object):
          for k in [0,1]:
             for j in [0,1]:
                for i in [0,1]:
-                  retind=getFsGridIndices([xl+i,yl+j,zl+k])
-                  if (not retind): return None
-                  if  (retind == -1 ): return np.NaN
+                  try:
+                      retind=getFsGridIndices([xl+i,yl+j,zl+k])
+                      if (not retind): return None #outside of a non periodic domain
+                  except ValueError as error:
+                      print(error,file=sys.stderr)
+                      return np.NaN  #one of the neighbors cannot be located
                   retval += w[4*k+2*j+i]*fg_data[retind]
 
          return retval
