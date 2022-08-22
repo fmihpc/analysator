@@ -803,7 +803,7 @@ class VlsvReader(object):
       return -1
          
 
-   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True]):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file.
       Arguments:
       :param name: Name of the (FSgrid) variable
@@ -828,11 +828,6 @@ class VlsvReader(object):
       dx=abs((xmax-xmin)/nx)
       dy=abs((ymax-ymin)/ny)
       dz=abs((zmax-zmin)/nz)
-      periodicity=np.ones(3,dtype=bool)
-      periodicity[0]=True if periodic[0] =="True" else False
-      periodicity[1]=True if periodic[1] =="True" else False
-      periodicity[2]=True if periodic[2] =="True" else False
-
 
       def getFsGridIndices(indices):
          ''' 
@@ -841,7 +836,7 @@ class VlsvReader(object):
          ind=-1*np.ones((3))
          for c,index in enumerate(indices):
             #Non periodic case
-            if ((index<0 or index>fg_size[c]-1) and not periodicity[c]):
+            if ((index<0 or index>fg_size[c]-1) and not periodic[c]):
                #out of bounds return NaN
                return False
              # Here we are either periodic or (not periodic and inside the domain)
@@ -869,7 +864,6 @@ class VlsvReader(object):
          '''
          import sys
          if (len(r) !=3 ):
-            # print("Interpolation input data should be in the form X,Y,Z coordinates. Input now is r=",r,file=sys.stderr)
             raise ValueError("Interpolation cannot be performed. Exiting")
 
          x,y,z=r
@@ -914,7 +908,7 @@ class VlsvReader(object):
 
 
 
-   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=["True", "True", "True"]):
+   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=[True,True,True]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
@@ -925,6 +919,9 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+
+      if (len(periodic)!=3):
+            raise ValueError("Periodic must be a list of 3 booleans.")
 
       # First test whether the requested variable is on the FSgrid, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
