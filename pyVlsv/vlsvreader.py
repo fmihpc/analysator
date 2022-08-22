@@ -817,6 +817,9 @@ class VlsvReader(object):
  
       if name[0:3] != 'fg_':
          raise ValueError("Interpolation of FsGrid called on non-FsGrid data; exiting.")
+      
+      if (len(periodic)!=3):
+         raise ValueError("Periodic must be a list of 3 booleans.")
 
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
