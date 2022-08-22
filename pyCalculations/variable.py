@@ -108,6 +108,9 @@ class VariableInfo:
                  'Pa'     : {'defaultScale':1e9,
                              1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':r'$\mathrm{nPa}$'}
                             },
+                 '1/m'  :   {'defaultScale':1e3,
+                             1e3:{'scaledUnits':'1/km', 'scaledLatexUnit':r'$\mathrm{km}^{-1}$'}
+                            },
                  '1/m^3'  : {'defaultScale':1e-6,
                              1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
                             },
