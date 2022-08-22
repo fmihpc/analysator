@@ -822,7 +822,7 @@ for i,run in enumerate(runs):
                 callrunindex.append(callindex)
                 callindex += 1
             for pop in run['pops']:
-                if pop is not 'avgs':
+                if pop != 'avgs':
                     for call in v5multipopcalls:
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:
@@ -854,7 +854,7 @@ for i,run in enumerate(runs):
                 callrunindex.append(callindex)
                 callindex += 1
             for pop in run['pops']:
-                if pop is not 'avgs':
+                if pop != 'avgs':
                     for call in multipopcalls:
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:

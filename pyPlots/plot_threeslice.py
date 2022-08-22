@@ -447,7 +447,6 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         levels = MaxNLocator(nbins=255).tick_values(0,1)
         norm = BoundaryNorm(levels, ncolors=255, clip=True)
         scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
-        scalarmap.set_array([])
 
         ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
 
@@ -668,7 +667,7 @@ def plot_threeslice(filename=None,
 
     :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
-                        variables.
+                        variables. Set to None to search for a default scaling.
     :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
                         (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
@@ -1041,7 +1040,7 @@ def plot_threeslice(filename=None,
         cb_title_use = datamap_info.latex
         datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
+        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
 
         # Add unit to colorbar title
         if datamap_unit:
@@ -1274,7 +1273,6 @@ def plot_threeslice(filename=None,
 
     # Create the scalar mappable to define the face colouring of the surface elements
     scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
-    scamap.set_array([])
 
 
     ###############################################################################
