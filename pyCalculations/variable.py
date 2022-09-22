@@ -142,7 +142,10 @@ class VariableInfo:
             udict = self.scaleDict[dictKey]
          except:
             print('No entry in specialist dict for unit "' + self.units+ '"')
-            return 1.0, self.units, self.latexunits
+            if vscale is None:
+               return 1.0, self.units, self.latexunits
+            else:
+               return vscale, self.units, self.latexunits
          if vscale is None:
             try:
                unitScale = udict['defaultScale']
