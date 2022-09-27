@@ -675,7 +675,7 @@ class VlsvReader(object):
          reducer_multipop = multipopdatareducers
             
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
-      if self.check_variable(self.active_populations[0]+'/'+name): 
+      if len(self.active_populations) > 0 and self.check_variable(self.active_populations[0]+'/'+name): 
          tmp_vars = []
          for pname in self.active_populations:
             vlsvvariables.activepopulation = pname
