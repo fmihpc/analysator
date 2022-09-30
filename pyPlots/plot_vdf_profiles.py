@@ -66,30 +66,42 @@ def verifyCellWithVspace(vlsvReader,cid):
 # create three 1-dimensional profiles
 def doProfiles(f,VX,VY,Voutofslice,slicethick):
     # Select cells which are within slice area
-    indexes1 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
-    indexes2 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VX) <= 0.5*slicethick)])[0]
-    indexes3 = np.array([(abs(VX) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
+    indexes1 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
+    indexes2 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VX < 0.5*slicethick) & (VX >= -0.5*slicethick)])[0]
+    indexes3 = np.array([(VX < 0.5*slicethick) & (VX >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
     
     bins1=bins2=bins3=axis1=axis2=axis3=[]
     if np.any(indexes1):
-        axis1 = VX[indexes1]
-        order1 = axis1.argsort()
-        bins1 = f[indexes1][order1]
-        axis1 = axis1[order1]
+        inax1 = VX[indexes1]
+        range1a = np.amin(inax1)
+        range1b = np.amax(inax1)+slicethick
+        nbins1 = int((range1b-range1a)/slicethick)
+        bins1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b], weights=f[indexes1])
+        nums1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b])
+        nonzero = np.where(nums1 != 0)
+        bins1[nonzero] = np.divide(bins1[nonzero],nums1[nonzero])
 
     if np.any(indexes2):
-        axis2 = VY[indexes2]
-        order2 = axis2.argsort()
-        bins2 = f[indexes2][order2]
-        axis2 = axis2[order2]
+        inax2 = VY[indexes2]
+        range2a = np.amin(inax2)
+        range2b = np.amax(inax2)+slicethick
+        nbins2 = int((range2b-range2a)/slicethick)
+        bins2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b], weights=f[indexes2])
+        nums2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b])
+        nonzero = np.where(nums2 != 0)
+        bins2[nonzero] = np.divide(bins2[nonzero],nums2[nonzero])
 
     if np.any(indexes3):
-        axis3 = Voutofslice[indexes3]
-        order3 = axis3.argsort()
-        bins3 = f[indexes3][order3]
-        axis3 = axis3[order3]
+        inax3 = Voutofslice[indexes3]
+        range3a = np.amin(inax3)
+        range3b = np.amax(inax3)+slicethick
+        nbins3 = int((range3b-range3a)/slicethick)
+        bins3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b], weights=f[indexes3])
+        nums3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b])
+        nonzero = np.where(nums3 != 0)
+        bins3[nonzero] = np.divide(bins3[nonzero],nums3[nonzero])
 
-    return (bins1,bins2,bins3,axis1,axis2,axis3)
+    return (bins1,bins2,bins3,axis1[:-1],axis2[:-1],axis3[:-1])
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton", 
@@ -107,10 +119,13 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     vxsize = int(vxsize)
     vysize = int(vysize)
     vzsize = int(vzsize)
-    # Account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
     print("Input velocity grid cell size "+str(inputcellsize))
@@ -173,8 +188,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     rotminz=np.amin(sbrot[:,2])
     rotmaxz=np.amax(sbrot[:,2])
     gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-#    if gridratio > 1.0:  # adds a 5% margin to slice thickness
-    gridratio = 1.05*gridratio
+    if gridratio > 1.0:  # adds a 5% margin to slice thickness
+        gridratio = 1.05*gridratio
     slicethick=inputcellsize*gridratio
 
     if slicetype=="xy":
@@ -259,7 +274,7 @@ def plot_vdf_profiles(filename=None,
              axes=None
              ):
 
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots vdf values along axis-aligned lines (see axis definitions).
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
@@ -463,10 +478,13 @@ def plot_vdf_profiles(filename=None,
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
 
-    # account for 4x4x4 cells per block
-    vxsize = 4*vxsize
-    vysize = 4*vysize
-    vzsize = 4*vzsize
+    # Account for WID3 cells per block
+    widval=4 #default WID=4
+    if vlsvReader.check_parameter("velocity_block_width"):
+        widval = vlsvReader.read_parameter("velocity_block_width")
+    vxsize = widval*vxsize
+    vysize = widval*vysize
+    vzsize = widval*vzsize
 
     Re = 6.371e+6 # Earth radius in m
     # unit of velocity
