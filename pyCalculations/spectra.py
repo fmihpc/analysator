@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2021 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 import numpy as np
 import pytools
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
@@ -65,7 +65,7 @@ def get_spectrum_energy(vlsvReader,
    JtoeV = 1/1.60217662e-19
    Ekin = 0.5*mass*V2*JtoeV
    f = list(zip(*velcells.items()))
-   
+
 
    # check that velocity space has cells - still return a zero histogram in the same shape
    if(len(f) > 0):
@@ -117,7 +117,7 @@ def get_spectrum_energy(vlsvReader,
          latexunits = '$\mathrm{m}^{-3}$'
          latex='$f(\vec{r},E)$'
          weight = 'particles'
-      
+
    #Ekin[Ekin < min(EkinBinEdges)] = min(EkinBinEdges)
    #Ekin[Ekin > max(EkinBinEdges)] = max(EkinBinEdges)
 
@@ -152,7 +152,18 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
 
    if vectorVar is not None and vector is None:
-      vector=vlsvReader.read_variable(vectorVar, cid)
+      if vlsvReader.check_variable(vectorVar):
+         vector=vlsvReader.read_variable(vectorVar, cid)
+      else:
+         # failsafe
+         if vlsvReader.check_variable("B"):
+            vector = vlsvReader.read_variable('B', cid)
+         elif vlsvReader.check_variable("vg_b_vol"):
+            vector = vlsvReader.read_variable('vg_b_vol', cid)
+         elif vlsvReader.check_variable("fg_b"):
+            coordinates = vlsvReader.get_cell_coordinates(cid)
+            vector = vlsvReader.read_interpolated_fsgrid_variable('fg_b', coordinates)
+
    vector = vector/np.linalg.norm(vector)
    VBinEdges = np.linspace(VMin, VMax, nBins+1, endpoint=True)
 
@@ -166,7 +177,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
             return (False,np.zeros(nBins), VBinEdges)
       else:
          print("Error finding cells with VDFs!")
-   
+
    if vlsvReader.check_variable('MinValue'):
       fMin = vlsvReader.read_variable('MinValue',cid)
    elif vlsvReader.check_variable(population+'/effectivesparsitythreshold'):
@@ -216,7 +227,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       latexunits = '$\mathrm{m}^{-3}$'
       latex='$f(\vec{r},v)$'
       weight = 'particles'
-   
+
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
    # normalization
    dv = abs(VBinEdges[1:] - VBinEdges[:-1])
@@ -233,4 +244,3 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                                     latexunits=latexunits)
 
    return (True,vari,edges)
-

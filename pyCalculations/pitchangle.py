@@ -1,39 +1,39 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2019 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import pytools as pt
 import numpy as np
 import sys, os
 from output import output_1d
 
-def pitch_angles( vlsvReader, 
-                     cellid, 
+def pitch_angles( vlsvReader,
+                     cellid,
                      nbins=10,
                      filename=None,
                      filedir=None, step=None,
                      outputdir=None, outputfile=None,
-                     cosine=False, 
-                     plasmaframe=False, 
+                     cosine=False,
+                     plasmaframe=False,
                      vcut=None,
                      vcutmax=None,
                      pop="proton"):
@@ -41,7 +41,7 @@ def pitch_angles( vlsvReader,
    ''' Calculates the pitch angle distribution for a given cell
 
    :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.
-   :param cellid:            The cell id whose pitch angle the user wants 
+   :param cellid:            The cell id whose pitch angle the user wants
                              NOTE: The cell id must have a velocity distribution!
    :kword filename:          path to .vlsv file to use for input.
    :kword filedir:           Optionally provide directory where files are located and use step for bulk file name
@@ -68,14 +68,14 @@ def pitch_angles( vlsvReader,
    :kword outputfile:        Provide exact output file name (including complete path)
 
    :kword pop:               Active population, defaults to proton (avgs)
-                                      
+
    :returns: pitch angles and avgs [pitch_angles, avgs]
 
        .. code-block:: python
 
           # Example usage:
           vlsvReader = VlsvReader("restart.0000798.vlsv")
-          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True, 
+          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True,
                                  plasmaframe=True, outputdir="/wrk/username/pitchangledirectory/" )
    '''
 
@@ -98,18 +98,21 @@ def pitch_angles( vlsvReader,
             frame = vlsvReader.read_variable('V', cellid)
          elif vlsvReader.check_variable("vg_V"):
             frame = vlsvReader.read_variable('vg_V', cellid)
+         elif vlsvReader.check_variable(pop+"/vg_V"):
+            frame = vlsvReader.read_variable(pop+'/vg_V', cellid)
          else:
             print("Error extracting plasma frame velocity!")
       elif len(plasmaframe)==3: # Assume it's a vector
          frame = plasmaframe
-         
+
    # Find the magnetic field direction
    if vlsvReader.check_variable("B"):
       B = vlsvReader.read_variable('B', cellid)
    elif vlsvReader.check_variable("vg_b_vol"):
       B = vlsvReader.read_variable('vg_b_vol', cellid)
    elif vlsvReader.check_variable("fg_b"):
-      B = vlsvReader.read_variable('fg_b', cellid)
+      coordinates = vlsvReader.get_cell_coordinates(cellid)
+      B = vlsvReader.read_interpolated_fsgrid_variable('fg_b', coordinates)
    Bmag = np.linalg.norm(B)
    B_unit = B / Bmag
 
@@ -125,7 +128,7 @@ def pitch_angles( vlsvReader,
    else:
       if not vlsvReader.check_population(pop):
          print("Unable to detect population "+pop+" in .vlsv file!")
-         sys.exit()       
+         sys.exit()
 
    # Read temperature for thermal speed
    if (vcut is True or vcutmax is True):
@@ -178,13 +181,13 @@ def pitch_angles( vlsvReader,
 
    # Calculate velocity cell sizes
    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
-   [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)      
+   [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
    dvx=(vxmax-vxmin)/(4*vxsize)
    dvy=(vymax-vymin)/(4*vysize)
    dvz=(vzmax-vzmin)/(4*vzsize)
    dv3=dvx*dvy*dvz
 
-   # Clip negative avgs to zero 
+   # Clip negative avgs to zero
    # (Some elements may be negative due to ghost cell propagation effects)
    avgs = np.array(avgs).clip(min=0) * dv3
 
@@ -211,16 +214,16 @@ def pitch_angles( vlsvReader,
    print("rho",rho_summed, rho_nonsphere)
 
    if outputfile!=None or outputdir!=None: # Save output to file
-      # Generate filename 
+      # Generate filename
       timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
-      if outputfile==None: 
+      if outputfile==None:
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
       if outputfile!=None and outputdir!=None:
          print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory
       outputprefixind = outputfile.rfind('/')
-      if outputprefixind >= 0:            
+      if outputprefixind >= 0:
          outputdir = outputfile[:outputprefixind+1]
       # Ensure output directory exists and is writeable
       if not os.path.exists(outputdir):
