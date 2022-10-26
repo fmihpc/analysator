@@ -69,7 +69,8 @@ def plot_colormap3dslice(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
-                  normal='y', cutpoint=0., cutpointre=None
+                  normal='y', cutpoint=0., cutpointre=None,
+                  useimshow=False, imshowinterp='none',
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -192,6 +193,9 @@ def plot_colormap3dslice(filename=None,
     :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
     :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
     :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
+    :kword useimshow:   Use imshow for raster background instead (default: False)
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+
 
     :returns:           Outputs an image to a file or to the screen.
 
