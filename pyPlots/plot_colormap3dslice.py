@@ -1121,7 +1121,18 @@ def plot_colormap3dslice(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-    fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+   #  fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+       # Plot the actual mesh
+    if(not useimshow):
+        fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    else:
+        fig1 = ax1.imshow(datamap,
+                          cmap=colormap,
+                          norm=norm,
+                          interpolation=imshowinterp,
+                          origin='lower',
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
+                         )
 
     # Title and plot limits
     if len(plot_title)!=0:
