@@ -23,7 +23,7 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
-#import pytools
+from plot import cbfmtsci
 from numbers import Number
 
 class VariableInfo:
@@ -159,7 +159,7 @@ class VariableInfo:
 
          if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
              #
-             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
+             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+cbfmtsci(vscale,None)
          try:
             #above guarantees the list comprehension does not give an empty list
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
@@ -176,7 +176,7 @@ class VariableInfo:
           if vscale is None or np.isclose(vscale, 1.0):
             return 1.0, self.units, self.latexunits
           else:
-            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
+            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+cbfmtsci(vscale,None)
 
       return unitScale, scaledUnits, scaledLatexUnits
 

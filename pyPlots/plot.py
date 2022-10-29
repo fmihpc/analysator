@@ -183,3 +183,7 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
+
+def scaleunits(datamap_info, vscale, env='EarthSpace', manualDict=None):
+   unitScale, scaledUnits, scaledLatexUnits = datamap_info.get_scaling_metadata(env='EarthSpace', manualDict=None, vscale=vscale)
+   return scaledLatexUnits
