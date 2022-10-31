@@ -270,7 +270,7 @@ def plot_ionosphere(filename=None,
     cb_title_use = datamap_info.latex
     datamap_unit = datamap_info.latexunits
     # Check if vscale results in standard unit
-    datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
+    #datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
     values = datamap_info.data
     if np.ndim(values) == 0:
         print("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
