@@ -27,8 +27,6 @@ import ast
 import numpy as np
 import os
 from reduction import datareducers,data_operators
-from collections import Iterable
-
 
 class VlsvWriter(object):
    ''' Class for reading VLSV files
