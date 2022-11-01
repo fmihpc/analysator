@@ -1542,17 +1542,21 @@ class VlsvReader(object):
       # Return the coordinates:
       return np.array(cellcoordinates)
 
-   def get_cell_indices(self, cellid, reflevel=0):
+   def get_cell_indices(self, cellid, reflevel=None):
       ''' Returns a given cell's indices as a numpy array
 
       :param cellid:            The cell's ID
-      :param reflevel:          The cell's refinement level in the AMR
+      :param reflevel:          The cell's refinement level in the AMR (optional)
       :returns: a numpy array with the coordinates
 
       .. seealso:: :func:`get_cellid`
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
+      # find reflevel if not given
+      if (reflevel is None):
+         reflevel = self.get_amr_level(cellid):
+
       # Calculating the index of the first cell at this reflevel
       index_at_reflevel = 0
       for i in range(0,reflevel):
