@@ -80,7 +80,7 @@ class VariableInfo:
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
 
-   def get_scaling_metadata(self, env='EarthSpace', manualDict=None, vscale=None):
+   def get_scaled_units(self, vscale=None, env='EarthSpace', manualDict=None):
       ''' Return scaling metadata
 
           :param env:          A string to choose the scaling dictionary [default: EarthSpace]
@@ -182,7 +182,7 @@ class VariableInfo:
 
    # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
    # necessary, for default/other environments.
-   def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None, vscale=None):
+   def get_scaled_var(self, vscale=None, data=None, env='EarthSpace', manualDict=None):
       ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
           default dictionaries.
 
@@ -200,7 +200,7 @@ class VariableInfo:
       else:
          self.data = data
 
-      unitScale, scaledUnits, scaledLatexUnits = self.get_scaling_metadata(env, manualDict, vscale)
+      unitScale, scaledUnits, scaledLatexUnits = self.get_scaled_units(vscale=vscale, env=env, manualDict=manualDict)
       if unitScale == 1: # no change, optimize out the calculation
           return self
 

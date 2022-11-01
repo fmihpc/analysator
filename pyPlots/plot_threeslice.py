@@ -1040,7 +1040,7 @@ def plot_threeslice(filename=None,
         cb_title_use = datamap_info.latex
         datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaled_units(vscale=vscale)
 
         # Add unit to colorbar title
         if datamap_unit:
