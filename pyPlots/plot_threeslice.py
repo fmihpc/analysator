@@ -1038,7 +1038,6 @@ def plot_threeslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
         vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaled_units(vscale=vscale)
 
