@@ -1121,8 +1121,6 @@ def plot_colormap3dslice(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-   #  fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
-       # Plot the actual mesh
     if(not useimshow):
         fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
     else:
