@@ -73,6 +73,7 @@ class VlsvReader(object):
       self.__blocks_per_cell = {} # per-pop
       self.__blocks_per_cell_offsets = {} # per-pop
       self.__order_for_cellid_blocks = {} # per-pop
+      self.__vg_cellids_on_fg = np.array([])
       
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
@@ -1561,8 +1562,19 @@ class VlsvReader(object):
       #   for cid in cellIds:
       #      lowi, upi = self.get_cell_fsgrid_slicemap(cid)
       #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
-      
-      vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
+      self.map_vg_onto_fg()
+      #vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
+      counts = np.bincount(self.__vg_cellids_on_fg)
+      if array.ndim == 4:
+         numel = array.shape[3]
+         vgarr = np.zeros(len(cellIds,numel))
+         for i in range(numel):
+            print("vector variable", i)
+            sums = np.bincount(self.__vg_cellids_on_fg, weights=array[:,:,:,i])
+            vgarr[:,i] = np.divide(sums,counts)
+      else:
+         sums = np.bincount(self.__vg_cellids_on_fg, weights=array)
+         vgarr = np.divide(sums,counts)
       return vgarr
 
    def vg_uniform_grid_process(self, variable, expr, exprtuple):
@@ -1600,7 +1612,7 @@ class VlsvReader(object):
          fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
       else:
          fg_var = np.zeros(sz, dtype=vg_var.dtype)
-      vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+      self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
       current_amr_level = self.get_amr_level(np.min(vg_cellids))
       max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
       current_max_cellid = 0
@@ -1613,9 +1625,31 @@ class VlsvReader(object):
          this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
          refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
          refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
-         vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
-      fg_var = vg_var[vg_cellids_on_fg]
+         self.__vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
+      fg_var = vg_var[self.__vg_cellids_on_fg]
       return fg_var
+
+   def map_vg_onto_fg(self):
+      if(len(self.__vg_cellids_on_fg)==0):
+         vg_cellids = self.read_variable('CellID')
+         sz = self.get_fsgrid_mesh_size()
+         sz_amr = self.get_spatial_mesh_size()
+         self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+         current_amr_level = self.get_amr_level(np.min(vg_cellids))
+         max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
+         current_max_cellid = 0
+         for level in range(current_amr_level+1):
+            current_max_cellid += 2**(3*(level))*(self.__xcells*self.__ycells*self.__zcells)
+         for id in np.argsort(vg_cellids):
+            if vg_cellids[id] > current_max_cellid:
+               current_amr_level += 1
+               current_max_cellid += 2**(3*(current_amr_level))*(self.__xcells*self.__ycells*self.__zcells)
+            this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
+            refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
+            refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
+            self.__vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
+
+
 
    def get_cell_fsgrid(self, cellid):
       '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
