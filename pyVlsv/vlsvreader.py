@@ -1564,16 +1564,17 @@ class VlsvReader(object):
       #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
       self.map_vg_onto_fg()
       #vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
-      counts = np.bincount(self.__vg_cellids_on_fg)
+      counts = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size))
       if array.ndim == 4:
          numel = array.shape[3]
-         vgarr = np.zeros(len(cellIds,numel))
+         vgarr = np.zeros((len(cellIds),numel))
          for i in range(numel):
             print("vector variable", i)
-            sums = np.bincount(self.__vg_cellids_on_fg, weights=array[:,:,:,i])
+            sums = np.bincount(np.reshape(self.__vg_cellids_on_fg,self.__vg_cellids_on_fg.size),
+                                  weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
             vgarr[:,i] = np.divide(sums,counts)
       else:
-         sums = np.bincount(self.__vg_cellids_on_fg, weights=array)
+         sums = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size), weights=np.reshape(array,array.size))
          vgarr = np.divide(sums,counts)
       return vgarr
 
@@ -1612,20 +1613,7 @@ class VlsvReader(object):
          fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
       else:
          fg_var = np.zeros(sz, dtype=vg_var.dtype)
-      self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
-      current_amr_level = self.get_amr_level(np.min(vg_cellids))
-      max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
-      current_max_cellid = 0
-      for level in range(current_amr_level+1):
-         current_max_cellid += 2**(3*(level))*(self.__xcells*self.__ycells*self.__zcells)
-      for id in np.argsort(vg_cellids):
-         if vg_cellids[id] > current_max_cellid:
-            current_amr_level += 1
-            current_max_cellid += 2**(3*(current_amr_level))*(self.__xcells*self.__ycells*self.__zcells)
-         this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
-         refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
-         refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
-         self.__vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
+      self.map_vg_onto_fg()
       fg_var = vg_var[self.__vg_cellids_on_fg]
       return fg_var
 
