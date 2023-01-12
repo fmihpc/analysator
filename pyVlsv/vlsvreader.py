@@ -58,7 +58,11 @@ class VlsvReader(object):
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
-      self.__fptr = open(self.file_name,"rb")
+      try:
+         self.__fptr = open(self.file_name,"rb")
+      except FileNotFoundError as e:
+         print("File not found: ", self.file_name)
+         raise e
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__max_spatial_amr_level = -1
@@ -1175,6 +1179,22 @@ class VlsvReader(object):
          # Done.
          return ret_array
 
+   def read_fsgrid_variable_cellid(self, name, cellids=-1, operator="pass"):
+      ''' Reads fsgrid variables from the open vlsv file.
+       Arguments:
+       :param name:     Name of the variable
+       :param cellids:  SpatialGrid cellids for which to fetch data. Default: return full fsgrid data
+       :param operator: Datareduction operator. "pass" does no operation on data
+       :returns: *ordered* list of numpy arrays with the data
+
+       ... seealso:: :func:`read_fsgrid_variable`
+       '''
+      var = self.read_fsgrid_variable(name, operator=operator)
+      if cellids == -1:
+         return var
+      else:
+         return [self.downsample_fsgrid_subarray(cid, var) for cid in cellids]
+
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
@@ -1275,6 +1295,44 @@ class VlsvReader(object):
            currentOffset += totalSize
 
        return np.squeeze(orderedData)
+
+   def read_fg_variable_as_volumetric(self, name, centering=None, operator="pass"):
+      fgdata = self.read_fsgrid_variable(name, operator)
+
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets roll happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            fgdata=np.expand_dims(fgdata, dim)
+      #print('read in fgdata with shape', fgdata.shape, name)
+      celldata = np.zeros_like(fgdata)
+      known_centerings = {"fg_b":"face", "fg_e":"edge"}
+      if centering is None:
+         try:
+            centering = known_centerings[name.lower()]
+         except KeyError:
+            print("A variable ("+name+") with unknown centering! Aborting.")
+            return False
+         
+      #vector variable
+      if fgdata.shape[-1] == 3:
+         if centering=="face":
+            celldata[:,:,:,0] = (fgdata[:,:,:,0] + np.roll(fgdata[:,:,:,0],-1, 0))/2.0
+            celldata[:,:,:,1] = (fgdata[:,:,:,1] + np.roll(fgdata[:,:,:,1],-1, 1))/2.0
+            celldata[:,:,:,2] = (fgdata[:,:,:,2] + np.roll(fgdata[:,:,:,2],-1, 2))/2.0
+            # Use Leo's reconstuction for fg_b instead
+         elif centering=="edge":
+            celldata[:,:,:,0] = (fgdata[:,:,:,0] + np.roll(fgdata[:,:,:,0],-1, 1) + np.roll(fgdata[:,:,:,0],-1, 2) + np.roll(fgdata[:,:,:,0],-1, (1,2)))/4.0
+            celldata[:,:,:,1] = (fgdata[:,:,:,1] + np.roll(fgdata[:,:,:,1],-1, 0) + np.roll(fgdata[:,:,:,1],-1, 2) + np.roll(fgdata[:,:,:,1],-1, (0,2)))/4.0
+            celldata[:,:,:,2] = (fgdata[:,:,:,2] + np.roll(fgdata[:,:,:,2],-1, 0) + np.roll(fgdata[:,:,:,2],-1, 1) + np.roll(fgdata[:,:,:,2],-1, (0,1)))/4.0
+         else:
+            print("Unknown centering ('" +centering+ "')! Aborting.")
+            return False
+      else:
+         print("A scalar variable! I don't know what to do with this! Aborting.")
+         return False
+      return celldata
 
    def read_ionosphere_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
@@ -1426,6 +1484,142 @@ class VlsvReader(object):
          cellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
          AMR_count += 1
       return AMR_count - 1 
+
+   def get_cell_dx(self, cellid):
+      '''Returns the dx of a given cell defined by its cellid
+      
+      :param cellid:        The cell's cellid
+      :returns:             The cell's size [dx, dy, dz]
+      '''
+      return np.array([self.__dx,self.__dy,self.__dz])/2**self.get_amr_level(cellid)
+
+   def get_cell_bbox(self, cellid):
+      '''Returns the bounding box of a given cell defined by its cellid
+      
+      :param cellid:        The cell's cellid
+      :returns:             The cell's bbox [xmin,ymin,zmin],[xmax,ymax,zmax]
+      '''
+      
+      hdx = self.get_cell_dx(cellid)*0.5
+      mid = self.get_cell_coordinates(cellid)
+      #print('halfdx:', hdx, 'mid:', mid, 'low:', mid-hdx, 'hi:', mid+hdx)
+      return mid-hdx, mid+hdx
+
+   def get_cell_fsgrid_slicemap(self, cellid):
+      '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
+      cell.
+      '''
+      low, up = self.get_cell_bbox(cellid)
+      lowi, upi = self.get_fsgrid_slice_indices(low, up)
+      return lowi, upi
+
+   def get_bbox_fsgrid_slicemap(self, low, up):
+      '''Returns a slice tuple of fsgrid indices that are contained in the (low, up) bounding box.
+      '''
+      lowi, upi = self.get_fsgrid_slice_indices(low, up)
+      return lowi, upi
+
+   def get_cell_fsgrid_subarray(self, cellid, array):
+      '''Returns a subarray of the fsgrid array, corresponding to the fsgrid
+      covered by the SpatialGrid cellid.
+      '''
+      lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
+      #print('subarray:',lowi, upi)
+      if array.ndim == 4:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+      else:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+
+   def get_bbox_fsgrid_subarray(self, low, up, array):
+      '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
+      '''
+      lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
+      #print('subarray:',lowi, upi)
+      if array.ndim == 4:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+      else:
+         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+
+
+   def downsample_fsgrid_subarray(self, cellid, array):
+      '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
+      '''
+      fsarr = self.get_cell_fsgrid_subarray(cellid, array)
+      n = fsarr.size
+      if fsarr.ndim == 4:
+         n = n/3
+      ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
+      if(n != ncells):
+         print("Warning: weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
+      return np.mean(fsarr,axis=(0,1,2))
+
+   def fsgrid_array_to_vg(self, array):
+      cellIds=self.read_variable("CellID")
+
+      #if not hasattr(self, 'fsCellIdTargets'):
+      #   self.fsCellIdTargets = np.zeros(self.get_fsgrid_mesh_size())
+      #   for cid in cellIds:
+      #      lowi, upi = self.get_cell_fsgrid_slicemap(cid)
+      #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
+      
+      vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
+      return vgarr
+
+   def vg_uniform_grid_process(self, variable, expr, exprtuple):
+      cellIds=self.read_variable("CellID")
+      array = self.read_variable_as_fg(variable)
+      array = expr(*exprtuple)
+      return self.fsgrid_array_to_vg(array)
+
+   def get_cellid_at_fsgrid_index(self, i,j,k):
+      coords = self.get_fsgrid_coordinates([i,j,k])
+      return self.get_cellid(coords)
+
+   def upsample_fsgrid_subarray(self, cellid, var, array):
+      '''Set the elements of the fsgrid array to the value of corresponding SpatialGrid
+      cellid. Mutator for array.
+      '''
+      lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
+      #print(lowi,upi)
+      value = self.read_variable(var, cellids=[cellid])
+      if array.ndim == 4:
+         #print(value)
+         array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
+         #print(array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:])
+      else:
+         array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
+      return
+
+   def read_variable_as_fg(self, var):
+      cellids = self.read_variable('CellID')
+      sz = self.get_fsgrid_mesh_size()
+      testvar = self.read_variable(var, [cellids[0]])
+      varsize = testvar.size
+      if(varsize > 1):
+         fgarr = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=testvar.dtype)
+      else:
+         fgarr = np.zeros(sz, dtype=testvar.dtype)
+      for c in cellids:
+         self.upsample_fsgrid_subarray(c, var, fgarr)
+         #print
+      return fgarr
+
+
+   def get_cell_fsgrid(self, cellid):
+      '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
+      cell.
+      '''
+      low, up = self.get_cell_bbox(cellid)
+      lowi, upi = self.get_fsgrid_slice_indices(low, up)
+      return lowi, upi
+
+   def get_fsgrid_coordinates(self, ri):
+      '''Returns real-space center coordinates of the fsgrid 3-index.
+      '''
+      lowerlimit = self.get_fsgrid_mesh_extent()[0:3]
+      dxs = self.get_fsgrid_cell_size()
+
+      return lowerlimit+dxs*(np.array(ri)+0.5)
 
    def get_unique_cellids(self, coords):
       ''' Returns a list of cellids containing all the coordinates in coords,
@@ -2046,6 +2240,53 @@ class VlsvReader(object):
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
+
+   def get_fsgrid_cell_size(self):
+      ''' Read fsgrid cell size
+      
+      :returns: Maximum and minimum coordinates of the mesh, [dx, dy, dz]
+      '''
+      size = self.get_fsgrid_mesh_size()
+      ext = self.get_fsgrid_mesh_extent()
+      ext = ext[3:6]-ext[0:3]
+      return ext/size
+
+   def get_fsgrid_indices(self, coords):
+      ''' Convert spatial coordinates coords to an index array [xi, yi, zi] for fsgrid
+
+      :returns 3-tuple of integers [xi, yi, zi] corresponding to fsgrid cell containing coords (low-inclusive)
+      Example:
+      ii = f.get_fsgrid_mesh_extent(coords)
+      fsvar_at_coords = fsvar_array.item(ii)
+      '''
+      lower = self.get_fsgrid_mesh_extent()[0:3]
+      dx = self.get_fsgrid_cell_size()
+      r0 = coords-lower
+      ri = np.floor(r0/dx).astype(int)
+      sz = self.get_fsgrid_mesh_size()
+      if (ri < 0).any() or (ri>sz-1).any():
+         print("get_fsgrid_indices: Resulting index out of bounds, returning None")
+         return None
+      return tuple(ri)
+
+   def get_fsgrid_slice_indices(self, lower, upper, eps=1e-3):
+      ''' Get indices for a subarray of an fsgrid variable, in the cuboid from lower to upper.
+      This is meant for mapping a set of fsgrid cells to a given SpatialGrid cell.
+      Shifts the corners (lower, upper) by dx_fsgrid*eps inward, if direct low-inclusive behaviour
+      is required, set kword eps = 0.
+
+
+      :returns two 3-tuples of integers.
+      Example:
+      ii = f.get_fsgrid_mesh_extent(coords)
+      fsvar_at_coords = fsvar_array.item(ii)
+      '''
+      dx = self.get_fsgrid_cell_size()
+      eps = dx*eps
+      loweri = self.get_fsgrid_indices(lower+eps)
+      upperi = self.get_fsgrid_indices(upper-eps)
+      return loweri, upperi
+      
 
    def get_velocity_mesh_size(self, pop="proton"):
       ''' Read velocity mesh size
