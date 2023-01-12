@@ -48,7 +48,7 @@ eps0 = 8.854e-12
 import time
 
 # Change filenames and paths to your liking
-fn = 'bulk1.0001450.vlsv'
+fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk/dense_cold_hall1e5_afterRestart374/bulk1.0001450.vlsv'
 f = pt.vlsvfile.VlsvReader(fn)
 writer = pt.vlsvfile.VlsvWriter(f, 'pysidecar_bulk1.0001450.vlsv')
 

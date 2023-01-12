@@ -208,7 +208,7 @@ class VlsvWriter(object):
       datatype = ''
 
       # Add the data into the xml data:
-      child = ET.SubElement(parent=self.__xml_root, tag=tag)
+      child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
       if mesh is not None:
          child.attrib["mesh"] = mesh
