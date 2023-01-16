@@ -285,8 +285,7 @@ class VlsvWriter(object):
       if not (data.shape[0:3] == reader.get_fsgrid_mesh_size()).all():
          print("Data shape does not match target fsgrid mesh")
          return
-      cids = reader.read_variable("CellID")
-      vgdata = [reader.downsample_fsgrid_subarray(cid, data) for cid in cids]
+      vgdata = reader.fsgrid_array_to_vg(data)
       self.write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)
 
    def __write_xml_footer( self ):
