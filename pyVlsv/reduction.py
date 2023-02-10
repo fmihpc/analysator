@@ -692,6 +692,79 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+
+def GGT( variables ):
+   ''' Data reducer for MDD, or if you want to multiply a tensor with its transpose
+   '''
+   if(variables[0].shape == (9,)):
+      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
+   jacobian = variables[0].reshape((variables[0].shape[0],3,3))
+   jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
+   GGT = np.matmul(jacobian, jacobian.transpose((0,2,1)))
+   return GGT
+
+   print("Error in GGT")
+   return -1
+
+def GTG( variables ):
+   ''' Data reducer for MGA, or if you want to multiply a tensor's transpose with the tensor
+   '''
+   if(variables[0].shape == (9,)):
+      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
+   jacobian = variables[0].reshape((variables[0].shape[0],3,3))
+   jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
+   GTG = np.matmul(jacobian.transpose((0,2,1)), jacobian)
+   return GTG
+
+   print("Error in GGT")
+   return -1
+
+def MGA( variables ):
+   ''' Data reducer for obtaining the MGA eigensystem
+   '''
+   GTG = variables[0] # This needs to be a stack of tensors (GTG does this)
+   MGA_eigenvalues, MGA_eigenvectors = np.linalg.eigh(GTG)
+   inds = np.argsort(MGA_eigenvalues,axis=-1)
+   
+   MGA_eigenvalues = np.take_along_axis(MGA_eigenvalues, inds, axis=-1)[:,::-1]
+   ninds =np.broadcast_to(inds,MGA_eigenvectors.shape)
+
+   MGA_eigenvectors = np.take_along_axis(MGA_eigenvectors,ninds, axis=-1)[:,:,::-1]
+
+   return MGA_eigenvectors
+
+   print("Error in MGA")
+   return -1
+
+def MDD( variables ):
+   ''' Data reducer for obtaining the MGA eigensystem
+   '''
+   GGT = variables[0] # either a tensor, vector, array, or value
+   MDD_eigenvalues, MDD_eigenvectors = np.linalg.eigh(GGT)
+   inds = np.argsort(MDD_eigenvalues,axis=-1)
+   ninds =np.broadcast_to(inds,MDD_eigenvectors.shape)
+
+   MDD_eigenvectors = np.take_along_axis(MDD_eigenvectors,ninds,axis=-1)[:,:,::-1]
+   MDD_eigenvalues = np.take_along_axis(MDD_eigenvalues, inds, axis=-1)[:,::-1]
+
+   return MDD_eigenvectors
+
+   print("Error in MGA")
+   return -1
+
+def MDD_dimensionality( variables ):
+   ''' Data reducer for obtaining the MGA eigensystem
+   '''
+   GGT = variables[0] # either a tensor, vector, array, or value
+   MDD_eigenvalues = np.linalg.eigvalsh(GGT)
+   inds = np.argsort(MDD_eigenvalues,axis=-1)
+   MDD_eigenvalues = np.take_along_axis(MDD_eigenvalues, inds, axis=-1)[:,::-1]
+
+   return MDD_eigenvalues
+
+   print("Error in MGA")
+   return -1
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -1003,6 +1076,13 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
+
+v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_B"], GTG, "nT^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_B"], GGT, "nT^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{nT^2}\,\mathrm{m}^{-2}$")
+v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn"] =                    DataReducerVariable(["MGA","MDD"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 
 
 #multipopv5reducers
