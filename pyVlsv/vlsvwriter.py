@@ -101,6 +101,7 @@ class VlsvWriter(object):
       # Delegate to the variable list handler
       if (varlist is not None):
          self.copy_variables_list(vlsvReader, varlist)
+         return
 
       # Get the xml sheet:
       xml_root = vlsvReader._VlsvReader__xml_root
