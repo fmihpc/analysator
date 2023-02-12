@@ -61,7 +61,7 @@ print("lmn output",f.read_variable("vg_dxs",cid))
 # print("Ds",f.read_variable("vg_mdd_dimensionality",cid))
 print("XO_d",f.read_variable("vg_lmn_neutral_line_distance",cid))
 
-sys.exit()
+#sys.exit()
 
 
 

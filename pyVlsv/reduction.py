@@ -973,6 +973,7 @@ def LMN_xoline_distance( variables ):
    nn = n_line_intercept[:,np.newaxis,:]
    # print("nn", nn)
    n_line_intercept = np.matmul(nn, LMNs).squeeze() # inverse of rotation for row vectors
+   n_line = np.matmul(n_line[:,np.newaxis,:], LMNs).squeeze()
    # print("nl",n_line_intercept)
    s_line = np.linalg.norm(n_line_intercept,axis=-1)
    # Bl = np.repeat(np.array([BL]),3,axis=0).transpose()*Ls
@@ -985,7 +986,8 @@ def LMN_xoline_distance( variables ):
    # print("rotd",np.matmul(Bm[:,np.newaxis,:], LMNs))
 
 # This is horrible, I sort of wish we had spherical shells
-   # mirror across the origin on all axes - easier to check for intersection
+   # mirror across the origin on all axes if on negative hemisphere -
+   # easier to check for intersection only with xyz = 0.5 planes
    flip_coords = np.ones_like(n_line_intercept)
    lineintercept = n_line_intercept
    linevec = n_line
@@ -994,6 +996,7 @@ def LMN_xoline_distance( variables ):
    np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
    np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
    
+   # find distances to the 
    d_planes = np.divide(0.5-lineintercept,linevec)
    d_planesi = np.divide(0.5-lineintercept,-linevec)
    # print("dp",d_planes)
@@ -1001,6 +1004,8 @@ def LMN_xoline_distance( variables ):
 
    hits = np.all(np.abs(n_line_intercept) < 0.5, axis=-1) # these are certain
    eps = 1e-12
+
+   
    for d in [0,1,2]:
       ds = (np.repeat(np.array([d_planes[:,d]]).transpose(),3,axis=1))
       
@@ -1017,6 +1022,13 @@ def LMN_xoline_distance( variables ):
    np.divide(-1, s_line,out=s_line, where=hits)
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
+
+   tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
+   a = n_line_intercept-0.5*n_line
+   b = n_line_intercept+0.5*n_line
+   print("a",a)
+   print("b",b)
+   print("hcat", np.hstack(a,b))
 
    return s_line
 
