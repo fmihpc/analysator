@@ -638,6 +638,24 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
+      if tag == "" and name == "":
+         print("Bad arguments at read")
+
+      # Force lowercase name for internal checks
+      name = name.lower()
+
+      # Special handling for dxs: need reader object to call get_cell_dx
+      if name == "vg_dxs":
+         if isinstance(cellids, numbers.Number): # single or all cells
+            if cellids >= 0: # single cell
+               return self.get_cell_dx(cellids)
+            else:
+               return self.get_cell_dx(self.read("CellID"))
+         else: # list of cellids
+            dxs = np.zeros((len(cellids),3))
+            for i, cid in enumerate(cellids):
+               dxs[i,:]= self.get_cell_dx(cid)
+            return dxs
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
@@ -647,17 +665,14 @@ class VlsvReader(object):
          else: # list of cellids
             self.__read_fileindex_for_cellid()
                
-      if tag == "" and name == "":
-         print("Bad arguments at read")
-
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
-      # Force lowercase name for internal checks
-      name = name.lower()
+
          
+
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -1360,7 +1375,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
-
+      global VLSV_reducer_reader
+      VLSV_reducer_reader = self
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
          if not cellids == -1:

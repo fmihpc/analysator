@@ -126,6 +126,9 @@ class VariableInfo:
                  'eV/cm^3': {'defaultScale':1e-3,
                              1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
                             },
+                  'T/m': {'defaultScale':1e-9,
+                             1e-9:{'scaledUnits':'nT/m', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{m}^{-1}$'}
+                            },
          }
 
       else:

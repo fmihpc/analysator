@@ -32,6 +32,8 @@ import vlsvvariables
 import sys
 import math
 
+global __reducer_reader
+
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
 kb = 1.38065e-23
@@ -692,16 +694,47 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def J( variables ):
+   ''' Data reducer taking a jacobian (assume 9-component vector) and extracting the current
+   via curl from the components of the jacobian (background or perturbed, as long as it has 9
+    components)
+
+   '''
+   stack = True
+   if(variables[0].shape == (9,)):
+      stack = False
+      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
+   jacobian = variables[0]#.reshape((variables[0].shape[0],3,3))
+   # jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
+   J = np.zeros((jacobian.shape[0],3))
+
+   J[:,0] = (jacobian[:,7]-jacobian[:,5])/mu_0
+   J[:,1] = (jacobian[:,2]-jacobian[:,6])/mu_0
+   J[:,2] = (jacobian[:,3]-jacobian[:,1])/mu_0
+   if stack:
+      return J
+   else:
+      return J[0,:]
+
+
+   print("Error in GGT")
+   return -1
+
 
 def GGT( variables ):
    ''' Data reducer for MDD, or if you want to multiply a tensor with its transpose
    '''
+   stack = True
    if(variables[0].shape == (9,)):
+      stack = False
       variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
    jacobian = variables[0].reshape((variables[0].shape[0],3,3))
    jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
    GGT = np.matmul(jacobian, jacobian.transpose((0,2,1)))
-   return GGT
+   if stack:
+      return GGT
+   else:
+      return GGT[0,:,:]
 
    print("Error in GGT")
    return -1
@@ -709,12 +742,17 @@ def GGT( variables ):
 def GTG( variables ):
    ''' Data reducer for MGA, or if you want to multiply a tensor's transpose with the tensor
    '''
+   stack = True
    if(variables[0].shape == (9,)):
+      stack = False
       variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
    jacobian = variables[0].reshape((variables[0].shape[0],3,3))
    jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
    GTG = np.matmul(jacobian.transpose((0,2,1)), jacobian)
-   return GTG
+   if stack:
+      return GTG
+   else:
+      return GTG[0,:,:]
 
    print("Error in GGT")
    return -1
@@ -722,48 +760,335 @@ def GTG( variables ):
 def MGA( variables ):
    ''' Data reducer for obtaining the MGA eigensystem
    '''
+   stack = True
    GTG = variables[0] # This needs to be a stack of tensors (GTG does this)
+   if(GTG.shape == (3,3,)):
+      stack = False
+      GTG = np.array([GTG]) # I want this to be a stack of tensors
+
    MGA_eigenvalues, MGA_eigenvectors = np.linalg.eigh(GTG)
    inds = np.argsort(MGA_eigenvalues,axis=-1)
-   
    MGA_eigenvalues = np.take_along_axis(MGA_eigenvalues, inds, axis=-1)[:,::-1]
-   ninds =np.broadcast_to(inds,MGA_eigenvectors.shape)
+   ninds = np.repeat(inds[:,:,np.newaxis],3,2).transpose((0,2,1))
 
    MGA_eigenvectors = np.take_along_axis(MGA_eigenvectors,ninds, axis=-1)[:,:,::-1]
-
-   return MGA_eigenvectors
-
+   if stack:
+      return MGA_eigenvectors
+   else:
+      return MGA_eigenvectors[0,:,:]
    print("Error in MGA")
    return -1
 
 def MDD( variables ):
    ''' Data reducer for obtaining the MGA eigensystem
    '''
+   stack = True
    GGT = variables[0] # either a tensor, vector, array, or value
+
+   if(GGT.shape == (3,3,)):
+      stack = False
+      GGT = np.array([GGT]) # I want this to be a stack of tensors
+
    MDD_eigenvalues, MDD_eigenvectors = np.linalg.eigh(GGT)
    inds = np.argsort(MDD_eigenvalues,axis=-1)
-   ninds =np.broadcast_to(inds,MDD_eigenvectors.shape)
+
+   ninds = np.repeat(inds[:,:,np.newaxis],3,2).transpose((0,2,1))
 
    MDD_eigenvectors = np.take_along_axis(MDD_eigenvectors,ninds,axis=-1)[:,:,::-1]
    MDD_eigenvalues = np.take_along_axis(MDD_eigenvalues, inds, axis=-1)[:,::-1]
 
-   return MDD_eigenvectors
+   if stack:
+      return MDD_eigenvectors
+   else:
+      return MDD_eigenvectors[0,:,:]
 
    print("Error in MGA")
    return -1
 
 def MDD_dimensionality( variables ):
    ''' Data reducer for obtaining the MGA eigensystem
+        Rezeau+2018, doi:10.1002/2017JA024526
+        Returns a vector with values (D1,D2,D3), with
+        each Di | 0 < Di < 1 and D1+D2+D3 = 1;
+        good for e.g. ternary plotting or "Truecolor" plots.
+        Uses the square roots of MDD eigenvalues to handle 
+        the dimensionality in units of T/m; eigenvalue scaling
+        is pretty harsh when in T^2/m^2 and T/m is more
+        natural to consider as spatial variation of B.
    '''
+   stack = True
    GGT = variables[0] # either a tensor, vector, array, or value
-   MDD_eigenvalues = np.linalg.eigvalsh(GGT)
-   inds = np.argsort(MDD_eigenvalues,axis=-1)
-   MDD_eigenvalues = np.take_along_axis(MDD_eigenvalues, inds, axis=-1)[:,::-1]
 
-   return MDD_eigenvalues
+   if(variables[0].shape == (3,3,)):
+      stack = False
+      GGT = np.array([GGT]) # I want this to be a stack of tensors
+
+   MDD_eigenvalues = np.linalg.eigvalsh(GGT)
+   MDD_eigenvalues = MDD_eigenvalues[:,::-1]
+
+   MDD_eigenvalues = np.sqrt(MDD_eigenvalues) # to (n)T/m
+
+   Ds = np.zeros_like(MDD_eigenvalues)
+   Ds[:,0] = (MDD_eigenvalues[:,0] - MDD_eigenvalues[:,1])/MDD_eigenvalues[:,0]
+   Ds[:,1] = (MDD_eigenvalues[:,1] - MDD_eigenvalues[:,2])/MDD_eigenvalues[:,0]
+   Ds[:,2] = MDD_eigenvalues[:,2]/MDD_eigenvalues[:,0]
+
+   if stack:
+      return Ds
+   else:
+      return Ds[0,:]
 
    print("Error in MGA")
    return -1
+
+def DXs ( variables ):
+   stack = True
+   cids = variables[0]
+   global VLSV_reducer_reader
+   
+   if(np.isscalar(cids)):
+      cids = np.array([variables[0]])
+      stack=False
+   #print(globals(),locals())
+   dxs = np.zeros((cids.shape[0],3))
+   for i, cid in enumerate(cids):
+      dxs[i] = VLSV_reducer_reader.get_cell_dx(cid)
+
+   if stack:
+      return dxs
+   else:
+      return dxs[0,:]
+
+def LMN( variables ):
+   ''' Data reducer to calculate the LMN basis vectors
+        using the full B jacobian
+        Returns a stack of LMN unit vectors
+   '''
+
+   stack = True
+   MGA_vecs = variables[0]
+   MDD_vecs = variables[1]
+   Js = variables[2]
+   if(Js.shape == (3,)):
+      stack = False
+      MGA_vecs = np.array([MGA_vecs])
+      MDD_vecs = np.array([MDD_vecs])
+      Js = np.array([Js]) # I want this to be a stack of vectors
+
+   Ls = MGA_vecs[:,:,0]
+   Ns = MDD_vecs[:,:,0]
+
+   LxJ = np.cross(Ls,Js,axis=-1)
+   
+   mask = np.array([np.sum(Ns*LxJ,axis=-1) < 0])
+   mrep =  np.repeat(mask,(3,),axis=0).transpose()
+
+   np.multiply(Ns, -1, out=Ns, where=mrep)
+
+   projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
+   Ns = Ns - Ls*projs
+   norms = np.repeat(np.array([np.linalg.norm(Ns,axis=-1)]),(3,),axis=0).transpose()
+   Ns = Ns/norms
+   
+   Ms = np.cross(Ns,Ls,axis=-1) # Y = Z x X
+   
+   norms = np.repeat(np.array([np.linalg.norm(Ms,axis=-1)]),(3,),axis=0).transpose()
+   Ms = Ms/norms
+
+   if stack:
+      return np.stack((Ls,Ms,Ns),axis=-1)
+   else:
+      return np.stack((Ls,Ms,Ns),axis=-1)[0,:,:]
+
+   print("Error in LMN")
+   return -1
+
+def LMN_xoline_distance( variables ):
+   ''' Datareducer that uses a linear approximation of B from B and its Jacobian
+   in the LMN coordinates to get an approximate distance to the neutral line.
+   inputs:
+   * LMN basis vectors stack
+   * Jacobian of B in 9-element vector stack
+   * vg_b_vol
+
+   return a measure for closeness to the cell center for a neutral line. For 
+   the point d closest to the cell center on the line:
+      case a: d within the cube, return -1/d
+      case b: d outside the cube, return d
+      This keeps a monotonous measure with return values < 0 having certainly the line within 
+      the cells, while values > 0 showing how far off a linear model places the line.
+      Todo:
+      Split b into cases where the line intersects with the cell or does not, and return -1/d for the case
+      where the line intersect a cell corner - in the meantime, return value > 0.5*sqrt(3) = are certainly
+      outside of the cell.
+   '''
+
+   LMNs = variables[0]
+   jacobs = variables[1]
+   Bs = variables[2]
+   dxs = variables[3]
+   stack = True
+   if(Bs.shape == (3,)):  # I want these to be stacks
+      stack = False
+      LMNs = np.array([LMNs])
+      jacobs = np.array([jacobs])
+      dxs = np.array(dxs)
+      Bs = np.array([Bs])
+
+   jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
+   Ls = LMNs[:,:,0]
+   Ns = LMNs[:,:,2]
+   n_cells = Bs.shape[0]
+   #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
+   #so basically just LMN
+   # rotate the jacobians
+   jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
+
+   BL = np.sum(Ls*Bs, axis=-1)
+   #BM = np.sum(Ms*Bs, axis=-1)
+   BN = np.sum(Ns*Bs, axis=-1)
+   gradBL = jacobs[:, 0,:]
+   #gradBM = jacobs[1,:]
+   gradBN = jacobs[:, 2,:]
+
+   gradBLn = np.linalg.norm(gradBL,axis=-1)
+   gradBNn = np.linalg.norm(gradBN,axis=-1)
+
+   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
+   sL = BL/(gradBLn*1e-9)
+   #sM = BM/(gradBMn*1e-9)
+   sN = BN/(gradBNn*1e-9)
+   L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
+   L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
+
+   N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
+   N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+
+   n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
+   #Find a line intercept point and its norm
+   n_line_intercept = (L_zero_intercept + N_zero_intercept)
+   s_line = np.linalg.norm(n_line_intercept,axis=-1)
+
+# This is horrible, I sort of wish we had spherical shells
+   # mirror across the origin on all axes - easier to check for intersection
+   # flip_coords = np.ones_like(n_line_intercept)
+   # lineintercept = n_line_intercept
+   # linevec = n_line
+   # np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
+   # np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
+   
+   # d_planes = np.divide(1-lineintercept,linevec)
+   # print(d_planes)
+
+
+   # d_planes = np.divide(1-lineintercept,-linevec)
+   # print(d_planes)
+
+   np.divide(-1, s_line, where=np.any(np.abs(n_line_intercept) < 0.5, axis=-1))
+
+   return s_line
+
+def L_flip_distance( variables ):
+   ''' Datareducer that uses a linear approximation of B from B and its Jacobian
+   in the LMN coordinates to get an approximate distance to the neutral plane.
+   inputs:
+   * LMN basis vectors stack
+   * Jacobian of B in 9-element vector stack
+   * vg_b_vol
+
+   Returns distance from cell center to the plane where BL = 0, units of dx.
+   '''
+
+   LMNs = variables[0]
+   jacobs = variables[1]
+   Bs = variables[2]
+   dxs = variables[3]
+   stack = True
+   if(Bs.shape == (3,)):  # I want these to be stacks
+      stack = False
+      LMNs = np.array([LMNs])
+      jacobs = np.array([jacobs])
+      dxs = np.array(dxs)
+      Bs = np.array([Bs])
+
+   jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
+   Ls = LMNs[:,:,0]
+   #Ns = LMNs[:,:,2]
+   n_cells = Bs.shape[0]
+   #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
+   #so basically just LMN
+   # rotate the jacobians
+   jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
+
+   BL = np.sum(Ls*Bs, axis=-1)
+   #BM = np.sum(Ms*Bs, axis=-1)
+   #BN = np.sum(Ns*Bs, axis=-1)
+   gradBL = -1*jacobs[:, 0,:]
+   #gradBM = jacobs[1,:]
+   #gradBN = -1*jacobs[:, 2,:]
+
+   gradBLn = np.linalg.norm(gradBL,axis=-1)
+   #gradBNn = np.linalg.norm(gradBN,axis=-1)
+
+   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
+   sL = BL/(gradBLn*1e-9)
+   #sM = BM/(gradBMn*1e-9)
+   #sN = BN/(gradBNn*1e-9)
+   L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
+   L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
+
+   return L_zero_intercept
+
+def N_flip_distance( variables ):
+   ''' Datareducer that uses a linear approximation of B from B and its Jacobian
+   in the LMN coordinates to get an approximate distance to the neutral plane.
+   inputs:
+   * LMN basis vectors stack
+   * Jacobian of B in 9-element vector stack
+   * vg_b_vol
+
+   Returns distance from cell center to the plane where BL = 0, units of dx.
+   '''
+
+   LMNs = variables[0]
+   jacobs = variables[1]
+   Bs = variables[2]
+   dxs = variables[3]
+   stack = True
+   if(Bs.shape == (3,)):  # I want these to be stacks
+      stack = False
+      LMNs = np.array([LMNs])
+      jacobs = np.array([jacobs])
+      dxs = np.array(dxs)
+      Bs = np.array([Bs])
+
+   jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
+   #Ls = LMNs[:,:,0]
+   Ns = LMNs[:,:,2]
+   n_cells = Bs.shape[0]
+   #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
+   #so basically just LMN
+   # rotate the jacobians
+   jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
+
+   #BL = np.sum(Ls*Bs, axis=-1)
+   #BM = np.sum(Ms*Bs, axis=-1)
+   BN = np.sum(Ns*Bs, axis=-1)
+   #gradBL = -1*jacobs[:, 0,:]
+   #gradBM = jacobs[1,:]
+   gradBN = -1*jacobs[:, 2,:]
+
+   #gradBLn = np.linalg.norm(gradBL,axis=-1)
+   gradBNn = np.linalg.norm(gradBN,axis=-1)
+
+   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
+   #sL = BL/(gradBLn*1e-9)
+   #sM = BM/(gradBMn*1e-9)
+   sN = BN/(gradBNn*1e-9)
+   N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
+   N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+
+   return N_zero_intercept
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
@@ -1077,12 +1402,18 @@ v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 
+v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_B"], J, "nA/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{nA}\,\mathrm{m}^{-2}$")
 v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_B"], GTG, "nT^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_B"], GGT, "nT^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{nT^2}\,\mathrm{m}^{-2}$")
 v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn"] =                    DataReducerVariable(["MGA","MDD"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_L_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_M_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+
+#v5reducers["vg_dxs"] =                   DataReducerVariable(["CellID"], DXs, "m", 1, latex=r"$\delta\vec{x}$",latexunits=r"$\mathrm{m}$")
 
 
 #multipopv5reducers
