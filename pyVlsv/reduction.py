@@ -937,6 +937,7 @@ def LMN_xoline_distance( variables ):
 
    jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
    Ls = LMNs[:,:,0]
+   Ms = LMNs[:,:,1]
    Ns = LMNs[:,:,2]
    n_cells = Bs.shape[0]
    #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
@@ -945,7 +946,7 @@ def LMN_xoline_distance( variables ):
    jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
 
    BL = np.sum(Ls*Bs, axis=-1)
-   #BM = np.sum(Ms*Bs, axis=-1)
+   BM = np.sum(Ms*Bs, axis=-1)
    BN = np.sum(Ns*Bs, axis=-1)
    gradBL = jacobs[:, 0,:]
    #gradBM = jacobs[1,:]
@@ -967,24 +968,55 @@ def LMN_xoline_distance( variables ):
    n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
    #Find a line intercept point and its norm
    n_line_intercept = (L_zero_intercept + N_zero_intercept)
+
+   #rotate the n_line_intercept to xyz instead of LMN
+   nn = n_line_intercept[:,np.newaxis,:]
+   # print("nn", nn)
+   n_line_intercept = np.matmul(nn, LMNs).squeeze() # inverse of rotation for row vectors
+   # print("nl",n_line_intercept)
    s_line = np.linalg.norm(n_line_intercept,axis=-1)
+   # Bl = np.repeat(np.array([BL]),3,axis=0).transpose()*Ls
+   # Bm = np.repeat(np.array([BN]),3,axis=0).transpose()*Ns
+   # Bn = np.repeat(np.array([BM]),3,axis=0).transpose()*Ms
+   # print("Bl",Bl[:,np.newaxis,:])
+   # #print(np.stack((Bl,Bm,Bn),axis=-1))
+   # print("rotd",np.matmul(Bl[:,np.newaxis,:], LMNs))
+   # print("rotd",np.matmul(Bn[:,np.newaxis,:], LMNs))
+   # print("rotd",np.matmul(Bm[:,np.newaxis,:], LMNs))
 
 # This is horrible, I sort of wish we had spherical shells
    # mirror across the origin on all axes - easier to check for intersection
-   # flip_coords = np.ones_like(n_line_intercept)
-   # lineintercept = n_line_intercept
-   # linevec = n_line
-   # np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
-   # np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
+   flip_coords = np.ones_like(n_line_intercept)
+   lineintercept = n_line_intercept
+   linevec = n_line
+   # print("linevec",linevec)
+   # print("n_line", n_line)
+   np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
+   np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
    
-   # d_planes = np.divide(1-lineintercept,linevec)
-   # print(d_planes)
+   d_planes = np.divide(0.5-lineintercept,linevec)
+   d_planesi = np.divide(0.5-lineintercept,-linevec)
+   # print("dp",d_planes)
+   # print(d_planesi)
 
-
-   # d_planes = np.divide(1-lineintercept,-linevec)
-   # print(d_planes)
-
-   np.divide(-1, s_line, where=np.any(np.abs(n_line_intercept) < 0.5, axis=-1))
+   hits = np.all(np.abs(n_line_intercept) < 0.5, axis=-1) # these are certain
+   eps = 1e-12
+   for d in [0,1,2]:
+      ds = (np.repeat(np.array([d_planes[:,d]]).transpose(),3,axis=1))
+      
+      new_intercepts = lineintercept
+      ds = linevec*ds
+      
+      new_intercepts +=  ds
+      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      ds = (np.repeat(np.array([d_planesi[:,d]]).transpose(),3,axis=1))
+      ds = linevec*ds
+      new_intercepts = lineintercept + ds
+      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+   
+   np.divide(-1, s_line,out=s_line, where=hits)
+   # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
+   # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
 
    return s_line
 
@@ -1410,8 +1442,8 @@ v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "
 v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_L_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_M_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 
 #v5reducers["vg_dxs"] =                   DataReducerVariable(["CellID"], DXs, "m", 1, latex=r"$\delta\vec{x}$",latexunits=r"$\mathrm{m}$")
 

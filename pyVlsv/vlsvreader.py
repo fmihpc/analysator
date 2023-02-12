@@ -650,12 +650,20 @@ class VlsvReader(object):
             if cellids >= 0: # single cell
                return self.get_cell_dx(cellids)
             else:
-               return self.get_cell_dx(self.read("CellID"))
+               cellids = self.read_variable("CellID")
+               return self.get_cell_dxs(cellids)
+
+               # dxs = np.zeros((len(cellids),3)) #this is bad
+               # for i, cid in enumerate(cellids):
+               #    dxs[i,:]= self.get_cell_dx(cid)
+               # return dxs
+               
          else: # list of cellids
-            dxs = np.zeros((len(cellids),3))
-            for i, cid in enumerate(cellids):
-               dxs[i,:]= self.get_cell_dx(cid)
-            return dxs
+            # dxs = np.zeros((len(cellids),3))
+            # for i, cid in enumerate(cellids):
+            #    dxs[i,:]= self.get_cell_dx(cid)
+            # return dxs
+            return self.get_cell_dxs(cellids)
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
@@ -1502,6 +1510,19 @@ class VlsvReader(object):
          AMR_count += 1
       return AMR_count - 1 
 
+   def get_amr_levels(self,cellid):
+      '''Returns the AMR level of a given cell defined by its cellid
+      
+      :param cellid:        The cell's cellid
+      :returns:             The cell's refinement level in the AMR
+      '''
+      AMR_count = np.zeros(np.array(cellid).shape, dtype=np.int64)
+      while np.any(cellid > 0):
+         mask = cellid > 0
+         np.subtract(cellid, 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells), out = cellid, where = mask)
+         np.add(AMR_count, 1, out = AMR_count, where = mask)
+      return AMR_count - 1 
+
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
       
@@ -1509,6 +1530,24 @@ class VlsvReader(object):
       :returns:             The cell's size [dx, dy, dz]
       '''
       return np.array([self.__dx,self.__dy,self.__dz])/2**self.get_amr_level(cellid)
+
+   def get_cell_dxs(self, cellid):
+      '''Returns the dx of a given cell defined by its cellid
+      
+      :param cellid:        The cell's cellid
+      :returns:             The cell's size [dx, dy, dz]
+      '''
+      cellid = np.array(cellid, dtype=np.int64)
+
+      dxs = np.array([[self.__dx,self.__dy,self.__dz]])
+
+      dxs = dxs.repeat(cellid.shape[0], axis=0)
+
+      amrs = np.array([self.get_amr_levels(cellid)]).transpose()
+      amrs = amrs.repeat(3,axis=1)
+
+
+      return dxs/2**amrs
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
