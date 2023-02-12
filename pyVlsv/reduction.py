@@ -1023,12 +1023,12 @@ def LMN_xoline_distance( variables ):
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
 
-   tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
-   a = n_line_intercept-0.5*n_line
-   b = n_line_intercept+0.5*n_line
-   print("a",a)
-   print("b",b)
-   print("hcat", np.hstack(a,b))
+   # tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
+   # a = n_line_intercept-0.5*n_line
+   # b = n_line_intercept+0.5*n_line
+   # print("a",a)
+   # print("b",b)
+   # print("hcat", np.hstack(a,b))
 
    return s_line
 
