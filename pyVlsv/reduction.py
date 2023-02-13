@@ -927,6 +927,7 @@ def LMN_xoline_distance( variables ):
    jacobs = variables[1]
    Bs = variables[2]
    dxs = variables[3]
+   coords = variables[4]
    stack = True
    if(Bs.shape == (3,)):  # I want these to be stacks
       stack = False
@@ -959,15 +960,34 @@ def LMN_xoline_distance( variables ):
    sL = BL/(gradBLn*1e-9)
    #sM = BM/(gradBMn*1e-9)
    sN = BN/(gradBNn*1e-9)
-   L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
+   L_zero_intercept = -gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
    L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
 
-   N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
+   N_zero_intercept = -gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
    N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
 
    n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
    #Find a line intercept point and its norm
-   n_line_intercept = (L_zero_intercept + N_zero_intercept)
+   n_line_intercept = (L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp
+
+   #Let's do it the Krumm way
+
+   for i in range(dxs.shape[0]):
+      try:
+         M =np.array([
+            [2,             0,           0,            -gradBL[i,0], -gradBN[i,0]],
+            [0,             2,           0,            -gradBL[i,1], -gradBN[i,1]],
+            [0,             0,           2,            -gradBL[i,2], -gradBN[i,2]],
+            [-gradBL[i,0], -gradBL[i,1], -gradBL[i,2],            0,            0],
+            [-gradBN[i,0], -gradBN[i,1], -gradBN[i,2],            0,            0]
+         ])
+         #print(M)
+         rvec = np.array([[0, 0, 0, np.dot(-gradBL[i,:],L_zero_intercept[i,:]), np.dot(-gradBN[i,:],N_zero_intercept[i,:])]]).transpose()
+         #print(rvec)
+         intercept = (np.linalg.inv(M) @ rvec).flatten()
+         n_line_intercept[i,:] = intercept[0:3]
+      except:
+         n_line_intercept[i,:] = [np.nan,np.nan,np.nan]
 
    #rotate the n_line_intercept to xyz instead of LMN
    nn = n_line_intercept[:,np.newaxis,:]
@@ -990,7 +1010,7 @@ def LMN_xoline_distance( variables ):
    # easier to check for intersection only with xyz = 0.5 planes
    flip_coords = np.ones_like(n_line_intercept)
    lineintercept = n_line_intercept
-   linevec = n_line
+   linevec = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
    # print("linevec",linevec)
    # print("n_line", n_line)
    np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
@@ -1023,12 +1043,143 @@ def LMN_xoline_distance( variables ):
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
 
-   # tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
-   # a = n_line_intercept-0.5*n_line
-   # b = n_line_intercept+0.5*n_line
+# these are a bit fiddly yet?
+   tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
+   a = coords+(n_line_intercept)*dxs
+   b = n_line
    # print("a",a)
    # print("b",b)
-   # print("hcat", np.hstack(a,b))
+   # print(s_line)
+   stck = np.hstack((a,b,s_line[:,np.newaxis]))
+
+   np.save(tmpout, stck[np.all(np.isfinite(stck),axis=1) & (s_line < 1),:]) # get close hits
+
+   return s_line
+
+# not finished
+def LMN_nullpoint_distance( variables ):
+   ''' Datareducer that uses a linear approximation of B from B and its Jacobian
+   in the LMN coordinates to get an approximate distance to the neutral line.
+   inputs:
+   * LMN basis vectors stack
+   * Jacobian of B in 9-element vector stack
+   * vg_b_vol
+
+   return a measure for closeness to the cell center for a neutral line. For 
+   the point d closest to the cell center on the line:
+      case a: d within the cube, return -1/d
+      case b: d outside the cube, return d
+      This keeps a monotonous measure with return values < 0 having certainly the line within 
+      the cells, while values > 0 showing how far off a linear model places the line.
+      Todo:
+      Split b into cases where the line intersects with the cell or does not, and return -1/d for the case
+      where the line intersect a cell corner - in the meantime, return value > 0.5*sqrt(3) = are certainly
+      outside of the cell.
+   '''
+
+   LMNs = variables[0]
+   jacobs = variables[1]
+   Bs = variables[2]
+   dxs = variables[3]
+   coords = variables[4]
+   stack = True
+   if(Bs.shape == (3,)):  # I want these to be stacks
+      stack = False
+      LMNs = np.array([LMNs])
+      jacobs = np.array([jacobs])
+      dxs = np.array(dxs)
+      Bs = np.array([Bs])
+
+   jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
+   Ls = LMNs[:,:,0]
+   Ms = LMNs[:,:,1]
+   Ns = LMNs[:,:,2]
+   n_cells = Bs.shape[0]
+   #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
+   #so basically just LMN
+   # rotate the jacobians
+   jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
+
+   BL = np.sum(Ls*Bs, axis=-1)
+   BM = np.sum(Ms*Bs, axis=-1)
+   BN = np.sum(Ns*Bs, axis=-1)
+   gradBL = jacobs[:, 0,:]
+   gradBM = jacobs[:, 1,:]
+   gradBN = jacobs[:, 2,:]
+
+   gradBLn = np.linalg.norm(gradBL,axis=-1)
+   gradBMn = np.linalg.norm(gradBN,axis=-1)
+   gradBNn = np.linalg.norm(gradBN,axis=-1)
+
+   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
+   sL = BL/(gradBLn*1e-9)
+   sM = BM/(gradBMn*1e-9)
+   sN = BN/(gradBNn*1e-9)
+   L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
+   L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
+   M_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
+   M_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+   N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
+   N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+
+   n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
+   #Find a line intercept point and its norm
+   n_line_intercept = (L_zero_intercept + N_zero_intercept)
+
+
+   #rotate the n_line_intercept to xyz instead of LMN
+   nn = n_line_intercept[:,np.newaxis,:]
+   # print("nn", nn)
+   n_line_intercept = np.matmul(nn, LMNs).squeeze() # inverse of rotation for row vectors
+   n_line = np.matmul(n_line[:,np.newaxis,:], LMNs).squeeze()
+   # print("nl",n_line_intercept)
+   s_line = np.linalg.norm(n_line_intercept,axis=-1)
+   # Bl = np.repeat(np.array([BL]),3,axis=0).transpose()*Ls
+   # Bm = np.repeat(np.array([BN]),3,axis=0).transpose()*Ns
+   # Bn = np.repeat(np.array([BM]),3,axis=0).transpose()*Ms
+   # print("Bl",Bl[:,np.newaxis,:])
+   # #print(np.stack((Bl,Bm,Bn),axis=-1))
+   # print("rotd",np.matmul(Bl[:,np.newaxis,:], LMNs))
+   # print("rotd",np.matmul(Bn[:,np.newaxis,:], LMNs))
+   # print("rotd",np.matmul(Bm[:,np.newaxis,:], LMNs))
+
+# This is horrible, I sort of wish we had spherical shells
+   # mirror across the origin on all axes if on negative hemisphere -
+   # easier to check for intersection only with xyz = 0.5 planes
+   flip_coords = np.ones_like(n_line_intercept)
+   lineintercept = n_line_intercept
+   linevec = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
+   # print("linevec",linevec)
+   # print("n_line", n_line)
+   np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
+   np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
+   
+   # find distances to the 
+   d_planes = np.divide(0.5-lineintercept,linevec)
+   d_planesi = np.divide(0.5-lineintercept,-linevec)
+   # print("dp",d_planes)
+   # print(d_planesi)
+
+   hits = np.all(np.abs(n_line_intercept) < 0.5, axis=-1) # these are certain
+   eps = 1e-12
+
+   
+   for d in [0,1,2]:
+      ds = (np.repeat(np.array([d_planes[:,d]]).transpose(),3,axis=1))
+      
+      new_intercepts = lineintercept
+      ds = linevec*ds
+      
+      new_intercepts +=  ds
+      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      ds = (np.repeat(np.array([d_planesi[:,d]]).transpose(),3,axis=1))
+      ds = linevec*ds
+      new_intercepts = lineintercept + ds
+      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+   
+   np.divide(-1, s_line,out=s_line, where=hits)
+   # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
+   # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
 
    return s_line
 
@@ -1453,7 +1604,7 @@ v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "
 v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs", "vg_coordinates"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_B", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 
