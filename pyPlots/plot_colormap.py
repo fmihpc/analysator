@@ -970,10 +970,13 @@ def plot_colormap(filename=None,
         else:
             # v5 Vlasiator data
             cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-            #ff_b = f.read_variable("vg_b_vol", cellids=cid)
-            ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            try:
+               ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            except:
+               ff_b = f.read_variable("vg_b_vol", cellids=cid)
             if (ff_b.size!=3):
-                print("Error reading fg_b data for fluxfunction normalization!")
+               print("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
+
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
             else:
