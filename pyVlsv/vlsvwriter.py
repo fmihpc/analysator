@@ -37,6 +37,8 @@ class VlsvWriter(object):
 
           :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
           :param file_name:     Name of the vlsv file where to input data
+          :param copy_meshes:   list of mesh names to copy, default all
+          
       '''
       self.file_name = os.path.abspath(file_name)
       try:
