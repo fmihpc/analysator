@@ -39,6 +39,7 @@
 
 import pytools as pt
 import numpy as np
+import sys
 
 q = 1.60217662e-19
 me = 9.10938356e-31
@@ -46,11 +47,12 @@ mp = 1.6726219e-27
 eps0 = 8.854e-12 
 
 import time
-
+file_id = int(sys.argv[1])
 # Change filenames and paths to your liking
-fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk/dense_cold_hall1e5_afterRestart374/bulk1.0001450.vlsv'
+#fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk/dense_cold_hall1e5_afterRestart374/bulk1.0001450.vlsv'
+fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.{:07d}.vlsv'.format(file_id)
 f = pt.vlsvfile.VlsvReader(fn)
-writer = pt.vlsvfile.VlsvWriter(f, 'pysidecar_bulk1.0001450.vlsv')
+writer = pt.vlsvfile.VlsvWriter(f, '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv'.format(file_id))
 
 print(f.get_all_variables())
 print(f)
@@ -62,7 +64,7 @@ fgsize=f.get_fsgrid_mesh_size()
 fgext=f.get_fsgrid_mesh_extent()
 t = time.time()
 print("copy_var_list")
-writer.copy_variables_list(f, ["CellID"])
+writer.copy_variables_list(f, ["CellID","vg_b_vol"])
 print('writer init and var copy, elapsed:', time.time()-t)
 
 
@@ -78,18 +80,34 @@ def fg_vol_curl(reader, array):
 
    return np.stack([rotx, roty, rotz], axis=-1)
 
-print('Processing for J, elapsed', time.time()-t)
-fg_b_vol=f.read_fg_variable_as_volumetric('fg_b')
-print('fgbvol read, shape ', fg_b_vol.shape, 'elapsed:', time.time()-t)
+def fg_vol_jacobian(reader, array):
+   dx = reader.get_fsgrid_cell_size()
+   dFx_dx, dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], *dx)
+   dFy_dx, dFy_dy, dFy_dz = np.gradient(array[:,:,:,1], *dx)
+   dFz_dx, dFz_dy, dFz_dz  = np.gradient(array[:,:,:,2], *dx)
 
-fg_J = fg_vol_curl(f, fg_b_vol)/1.25663706144e-6
-print('fgbvol curled, elapsed:', time.time()-t)
+   return np.stack(np.array(
+                    [dFx_dx, dFx_dy, dFx_dz,
+                     dFy_dx, dFy_dy, dFy_dz,
+                     dFz_dx, dFz_dy, dFz_dz]
+                   ),
+                   axis=-1)
+
+# print('Processing for J, elapsed', time.time()-t)
+# fg_b_vol=f.read_fg_variable_as_volumetric('fg_b')
+# print('fgbvol read, shape ', fg_b_vol.shape, 'elapsed:', time.time()-t)
+
+# fg_J = fg_vol_curl(f, fg_b_vol)/1.25663706144e-6
+# print('fgbvol curled, elapsed:', time.time()-t)
 
 f.map_vg_onto_fg()
 print('vg mapped to fg, elapsed:', time.time()-t)
 
-vg_J = f.fsgrid_array_to_vg(fg_J)
+fg_b_vol = f.read_variable_as_fg("vg_b_vol")
+fg_b_jacob = fg_vol_jacobian(f, fg_b_vol)
+
+vg_J = f.fsgrid_array_to_vg(fg_b_jacob)
 print('fg_J mapped to vg, elapsed:', time.time()-t)
 
-writer.write(vg_J,'vg_J','VARIABLE','SpatialGrid')
+writer.write(vg_J,'vg_jacobian_B','VARIABLE','SpatialGrid')
 print('J written, elapsed:', time.time()-t)

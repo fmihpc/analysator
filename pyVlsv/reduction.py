@@ -403,7 +403,7 @@ def PerpendicularVectorComponent( variables ):
       vpara = (inputvector*bgnorm).sum(-1)
       vmag = np.linalg.norm(inputvector, axis=-1)
       presqrt = np.sqrt(vmag*vmag - vpara*vpara)
-      return sqrt(np.ma.masked_less(presqrt,0))
+      return np.sqrt(np.ma.masked_less(presqrt,0))
 
 def FullTensor( variables ):
    ''' Data reducer function to reconstruct a full tensor from diagonal and off-diagonal
@@ -957,9 +957,9 @@ def LMN_xoline_distance( variables ):
    gradBNn = np.linalg.norm(gradBN,axis=-1)
 
    # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
-   sL = BL/(gradBLn*1e-9)
+   sL = BL/(gradBLn)
    #sM = BM/(gradBMn*1e-9)
-   sN = BN/(gradBNn*1e-9)
+   sN = BN/(gradBNn)
    L_zero_intercept = -gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
    L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
 
@@ -968,9 +968,12 @@ def LMN_xoline_distance( variables ):
 
    n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
    #Find a line intercept point and its norm
-   n_line_intercept = (L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp
+   n_line_intercept = np.zeros_like(L_zero_intercept)#(L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp
+   n_line_intercept.fill(np.nan)
 
-   #Let's do it the Krumm way
+   M = np.stack(-gradBLn,-gradBNn,n_line,axis=-1)
+
+   #Let's do it the Krumm way - slow though
 
    for i in range(dxs.shape[0]):
       try:
@@ -994,6 +997,8 @@ def LMN_xoline_distance( variables ):
    # print("nn", nn)
    n_line_intercept = np.matmul(nn, LMNs).squeeze() # inverse of rotation for row vectors
    n_line = np.matmul(n_line[:,np.newaxis,:], LMNs).squeeze()
+   n_line = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
+   n_line_intercept = n_line_intercept - np.broadcast_to(np.sum(n_line_intercept*n_line, axis=-1),(3,n_cells)).transpose() # is it not nearest to 0 already?
    # print("nl",n_line_intercept)
    s_line = np.linalg.norm(n_line_intercept,axis=-1)
    # Bl = np.repeat(np.array([BL]),3,axis=0).transpose()*Ls
@@ -1008,37 +1013,70 @@ def LMN_xoline_distance( variables ):
 # This is horrible, I sort of wish we had spherical shells
    # mirror across the origin on all axes if on negative hemisphere -
    # easier to check for intersection only with xyz = 0.5 planes
-   flip_coords = np.ones_like(n_line_intercept)
+   nsz = (3, n_line_intercept.shape[0],n_line_intercept.shape[1])
+   positive_intercepts_0 = np.ones(nsz)
+   positive_intercepts_1 = np.ones(nsz)
+   negative_intercepts_0 = np.ones(nsz)
+   negative_intercepts_1 = np.ones(nsz)
+   positive_intercepts_0.fill(np.nan)
+   positive_intercepts_1.fill(np.nan)
+   negative_intercepts_0.fill(np.nan)
+   negative_intercepts_1.fill(np.nan)
    lineintercept = n_line_intercept
    linevec = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
    # print("linevec",linevec)
    # print("n_line", n_line)
-   np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
-   np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
+   # np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
+   # np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
    
-   # find distances to the 
-   d_planes = np.divide(0.5-lineintercept,linevec)
-   d_planesi = np.divide(0.5-lineintercept,-linevec)
-   # print("dp",d_planes)
-   # print(d_planesi)
+   # find distances to the planes delimiting the cell along the line
+   
+   d_fw_planes_0 = np.divide(-0.5-lineintercept,linevec)
+   d_fw_planes_1 = np.divide(0.5-lineintercept,linevec)
+   d_bw_planes_0 = np.divide(-0.5-lineintercept,-linevec)
+   d_bw_planes_1 = np.divide(0.5-lineintercept,-linevec)
 
    hits = np.all(np.abs(n_line_intercept) < 0.5, axis=-1) # these are certain
    eps = 1e-12
 
-   
+   # fw intercepts
    for d in [0,1,2]:
-      ds = (np.repeat(np.array([d_planes[:,d]]).transpose(),3,axis=1))
+      ds = (np.repeat(np.array([d_fw_planes_0[:,d]]).transpose(),3,axis=1))
       
       new_intercepts = lineintercept
       ds = linevec*ds
       
       new_intercepts +=  ds
-      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
-      ds = (np.repeat(np.array([d_planesi[:,d]]).transpose(),3,axis=1))
+      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      positive_intercepts_0[d,mask,:] = new_intercepts[mask,:]
+      hits = hits | mask
+
+      ds = (np.repeat(np.array([d_fw_planes_1[:,d]]).transpose(),3,axis=1))
       ds = linevec*ds
       new_intercepts = lineintercept + ds
-      hits = hits | np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      positive_intercepts_1[d,mask,:] = new_intercepts[mask,:]
+      hits = hits | mask
    
+   # bw intercepts
+   for d in [0,1,2]:
+      ds = (np.repeat(np.array([d_bw_planes_0[:,d]]).transpose(),3,axis=1))
+      
+      new_intercepts = lineintercept
+      ds = -linevec*ds
+      
+      new_intercepts +=  ds
+      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      negative_intercepts_0[d,mask,:] = new_intercepts[mask,:]
+      hits = hits | mask
+
+      ds = (np.repeat(np.array([d_bw_planes_1[:,d]]).transpose(),3,axis=1))
+      ds = -linevec*ds
+      new_intercepts = lineintercept + ds
+      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
+      negative_intercepts_1[d,mask,:] = new_intercepts[mask,:]
+      hits = hits | mask
+
    np.divide(-1, s_line,out=s_line, where=hits)
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
@@ -1050,11 +1088,13 @@ def LMN_xoline_distance( variables ):
    # print("a",a)
    # print("b",b)
    # print(s_line)
-   stck = np.hstack((a,b,s_line[:,np.newaxis]))
+   stck = np.hstack((a,b,s_line[:,np.newaxis],coords,(n_line_intercept)*dxs))
 
    np.save(tmpout, stck[np.all(np.isfinite(stck),axis=1) & (s_line < 1),:]) # get close hits
-
-   return s_line
+   if stack:
+      return s_line
+   else:
+      return s_line[0]
 
 # not finished
 def LMN_nullpoint_distance( variables ):
@@ -1180,8 +1220,10 @@ def LMN_nullpoint_distance( variables ):
    np.divide(-1, s_line,out=s_line, where=hits)
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
-
-   return s_line
+   if stack:
+      return s_line
+   else:
+      return s_line[0]
 
 def L_flip_distance( variables ):
    ''' Datareducer that uses a linear approximation of B from B and its Jacobian

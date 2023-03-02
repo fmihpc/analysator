@@ -1609,9 +1609,9 @@ class VlsvReader(object):
       '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
-      #print('subarray:',lowi, upi)
+      print('subarray:',lowi, upi)
       if array.ndim == 4:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+         return array[lowi[0]:upi[0]+int(1), lowi[1]:upi[1]+int(1), lowi[2]:upi[2]+int(1), :]
       else:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
 
@@ -2339,8 +2339,12 @@ class VlsvReader(object):
       :returns: Size of mesh in number of cells, array with three elements
       '''
       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
-      bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
-      return np.array(bbox[0:3])
+      try:
+         bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+         return np.array(bbox[0:3])
+      except:
+         bbox = self.read(tag="MESH_BBOX", mesh="SpatialGrid")
+         return np.array(bbox[0:3]) * 2**self.get_max_refinement_level()
 
    def get_fsgrid_mesh_extent(self):
       ''' Read fsgrid mesh extent

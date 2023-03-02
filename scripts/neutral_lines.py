@@ -23,21 +23,28 @@
 
 import pytools as pt
 import numpy as np
-import sys
+import sys,time
 
 file_id = int(sys.argv[1])
 
 
 
 path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
-fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
-f = pt.vlsvfile.VlsvReader(path+fn)
+#fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+#f = pt.vlsvfile.VlsvReader(path+fn)
 
+fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv".format(file_id)
+fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.{:07d}.vlsv".format(file_id)
 
-cids = f.read_variable("CellID")
-ci = np.argwhere(cids==355282689)
+f = pt.vlsvfile.VlsvReader(fn)
+#fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO2/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
-cid = [355282688,355282689]
+fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pyiono_bulk1.{:07d}.vlsv".format(file_id)
+# cids = f.read_variable("CellID")
+# ci = np.argwhere(cids==355282689)
+
+# cid = [355282688,355282689]
 #cid = 355282689
 # print(f.read_variable_info("vg_jacobian_B",cid))
 # print(f.read_variable("vg_gtg",cid))
@@ -54,31 +61,43 @@ cid = [355282688,355282689]
 # print(f.read_variable("LMN_magnetopause/vg_L",cid[1]))
 
 
-print("lmn output",f.read_variable("vg_dxs",cid))
-# print("vg_L",f.read_variable("LMN_magnetopause/vg_L",cid))
-# print("vg_M",f.read_variable("LMN_magnetopause/vg_M",cid))
-# print("vg_N",f.read_variable("LMN_magnetopause/vg_N",cid))
-# print("Ds",f.read_variable("vg_mdd_dimensionality",cid))
-print("XO_d",f.read_variable("vg_lmn_neutral_line_distance",cid))
+# print("lmn output",f.read_variable("vg_dxs",cid))
+# # print("vg_L",f.read_variable("LMN_magnetopause/vg_L",cid))
+# # print("vg_M",f.read_variable("LMN_magnetopause/vg_M",cid))
+# # print("vg_N",f.read_variable("LMN_magnetopause/vg_N",cid))
+# # print("Ds",f.read_variable("vg_mdd_dimensionality",cid))
+# print("XO_d",f.read_variable("vg_lmn_neutral_line_distance",cid))
 
 #sys.exit()
 
 
+t = time.time()
 
-fw = pt.vlsvfile.VlsvWriter(f, "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id))
-fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
+fw = pt.vlsvfile.VlsvWriter(f, fnout, copy_meshes="ionosphere")
+fw.copy_variables(f,["ig_latitude","ig_cellarea"])
+sys.exit()
+#fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
+fw.copy_variables(f,["CellID","vg_b_vol"])
 
 fw.write(f.read_variable("vg_dxs"), "vg_dxs", "VARIABLE", "SpatialGrid")
+LMNs = f.read_variable("vg_lmn")
+fw.write(LMNs.reshape((-1,9)), "vg_LMN", "VARIABLE","SpatialGrid")
+fw.write(f.read_variable("vg_mdd_dimensionality"), "vg_MDD_dimensionality", "VARIABLE", "SpatialGrid")
+fw.write(f.read_variable("vg_lmn_neutral_line_distance"), "vg_LN_null_line_distance", "VARIABLE", "SpatialGrid")
+fw.write(f.read_variable("vg_lmn_L_flip_distance"), "vg_L_flip_distance", "VARIABLE", "SpatialGrid")
 
-fw.write(f.read_variable("vg_mdd_dimensionality"), "MDD_dimensionality", "VARIABLE", "SpatialGrid")
-fw.write(f.read_variable("vg_lmn_neutral_line_distance"), "LN_null_line_distance", "VARIABLE", "SpatialGrid")
-fw.write(f.read_variable("vg_lmn_L_flip_distance"), "L_flip_distance", "VARIABLE", "SpatialGrid")
 
-LMN_jacob = f.read_variable("LMN_magnetopause/vg_jacobian")
+LMN_jacob = f.read_variable("vg_jacobian_B")
+LMN_jacob = np.reshape(LMN_jacob,(LMN_jacob.shape[0],3,3))
+LMN_jacob = np.transpose(LMNs,(0, 2, 1)) @ LMN_jacob @ LMNs
 
-dBNdL = LMN_jacob[:,6]
+dBNdL = LMN_jacob[:,2,0]
+dBLdN = LMN_jacob[:,0,2]
 
-fw.write(dBNdL, "dBNdL", "VARIABLE", "SpatialGrid")
+fw.write(dBNdL, "vg_dBNdL", "VARIABLE", "SpatialGrid")
+
+fw.write(dBLdN, "vg_dBLdN", "VARIABLE", "SpatialGrid")
+print('things written, elapsed:', time.time()-t)
 
 sys.exit()
 
