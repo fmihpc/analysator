@@ -32,11 +32,13 @@ class VlsvWriter(object):
    ''' Class for reading VLSV files
    '''
    file_name = ""
-   def __init__(self, vlsvReader, file_name ):
+   def __init__(self, vlsvReader, file_name, copy_meshes=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
           :param file_name:     Name of the vlsv file where to input data
+          :param copy_meshes:   list of mesh names to copy, default all
+          
       '''
       self.file_name = os.path.abspath(file_name)
       try:
@@ -53,9 +55,9 @@ class VlsvWriter(object):
       # Write xml_offset, for now put this to zero:
       np.array(0, dtype=np.uint64).tofile(self.__fptr)
 
-      self.__initialize( vlsvReader )
+      self.__initialize( vlsvReader, copy_meshes )
 
-   def __initialize( self, vlsvReader ):
+   def __initialize( self, vlsvReader, copy_meshes=None ):
       ''' Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid
       '''
       # Get the xml sheet:
@@ -65,9 +67,11 @@ class VlsvWriter(object):
       tags = {}
       tags['PARAMETER'] = ''
       tags['PARAMETERS'] = ''
+      tags['MESH_NODE_CRDS'] = ''
       tags['MESH_NODE_CRDS_X'] = ''
       tags['MESH_NODE_CRDS_Y'] = ''
       tags['MESH_NODE_CRDS_Z'] = ''
+      tags['MESH_OFFSETS'] = ''
       tags['MESH'] = ''
       tags['MESH_DOMAIN_SIZES'] = ''
       tags['MESH_GHOST_DOMAINS'] = ''
@@ -84,6 +88,13 @@ class VlsvWriter(object):
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
             else: mesh = None
             tag = child.tag
+
+            if copy_meshes is not None:
+               if mesh is not None and not mesh in copy_meshes:
+                  continue
+               if tag == "MESH" and not name in copy_meshes:
+                  continue
+
             extra_attribs = {}
             for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
@@ -214,9 +225,7 @@ class VlsvWriter(object):
       if mesh is not None:
          child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
-      if extra_attribs != '':
-         for i in extra_attribs.items():
-            child.attrib[i[0]] = i[1]
+
       if len(np.shape(data)) == 2:
          child.attrib["vectorsize"] = np.shape(data)[1]
          datatype = str(type(data[0][0]))
@@ -252,6 +261,10 @@ class VlsvWriter(object):
       else:
          print("BAD DATASIZE")
          return False
+      
+      if extra_attribs != '':
+         for i in extra_attribs.items():
+            child.attrib[i[0]] = i[1]
 
       current_offset = fptr.tell()
       # Info the xml about the file offset for the data:
