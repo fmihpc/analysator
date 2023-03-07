@@ -918,9 +918,7 @@ def LMN_xoline_distance( variables ):
       This keeps a monotonous measure with return values < 0 having certainly the line within 
       the cells, while values > 0 showing how far off a linear model places the line.
       Todo:
-      Split b into cases where the line intersects with the cell or does not, and return -1/d for the case
-      where the line intersect a cell corner - in the meantime, return value > 0.5*sqrt(3) = are certainly
-      outside of the cell.
+      Proper Ursian SDF/SDB
    '''
 
    LMNs = variables[0]
@@ -949,9 +947,10 @@ def LMN_xoline_distance( variables ):
    BL = np.sum(Ls*Bs, axis=-1)
    BM = np.sum(Ms*Bs, axis=-1)
    BN = np.sum(Ns*Bs, axis=-1)
-   gradBL = jacobs[:, 0,:]
+   unit = 1e-9
+   gradBL = jacobs[:, 0,:]*unit
    #gradBM = jacobs[1,:]
-   gradBN = jacobs[:, 2,:]
+   gradBN = jacobs[:, 2,:]*unit
 
    gradBLn = np.linalg.norm(gradBL,axis=-1)
    gradBNn = np.linalg.norm(gradBN,axis=-1)
@@ -964,9 +963,6 @@ def LMN_xoline_distance( variables ):
    #sM = BM/(gradBMn*1e-9)
    sN = -BN/(gradBNn)
 
-   # L_zero_intercept = gradBL*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
-   # N_zero_intercept = gradBN*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
-
    n_line = np.cross(gradBL,gradBN, axis=-1)
    n_line = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
 
@@ -974,53 +970,22 @@ def LMN_xoline_distance( variables ):
    n_line_intercept = np.zeros_like(gradBLn)#(L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp
    n_line_intercept.fill(np.nan)
 
-   if True:
-      # M = np.stack([ -gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose(),-gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose(),n_line],axis=-1)
-      # x = np.stack([sL,sN,np.zeros_like(sL)],axis=-1)
-      dots = np.sum(gradBL*gradBN, axis=-1)
-      c1 = sL - sN*(dots)/(1 - dots**2)
-      c2 = sN - sL*(dots)/(1 - dots**2)
-      n_line_intercept = (gradBL*np.broadcast_to(c1,(3,n_cells)).transpose() + gradBN*np.broadcast_to(c2,(3,n_cells)).transpose())/dxs
-   else:
-      #Let's do it the Krumm way - slow though
-      for i in range(dxs.shape[0]):
-         try:
-            M =np.array([
-               [2,             0,           0,            -gradBL[i,0], -gradBN[i,0]],
-               [0,             2,           0,            -gradBL[i,1], -gradBN[i,1]],
-               [0,             0,           2,            -gradBL[i,2], -gradBN[i,2]],
-               [-gradBL[i,0], -gradBL[i,1], -gradBL[i,2],            0,            0],
-               [-gradBN[i,0], -gradBN[i,1], -gradBN[i,2],            0,            0]
-            ])
-            #print(M)
-            rvec = np.array([[0, 0, 0, np.dot(-gradBL[i,:],L_zero_intercept[i,:]), np.dot(-gradBN[i,:],N_zero_intercept[i,:])]]).transpose()
-            #print(rvec)
-            intercept = (np.linalg.inv(M) @ rvec).flatten()
-            n_line_intercept[i,:] = intercept[0:3]
-         except:
-            n_line_intercept[i,:] = [np.nan,np.nan,np.nan]
+   dots = np.sum(gradBL*gradBN, axis=-1)
+   c1 = sL - sN*(dots)/(1 - dots**2)
+   c2 = sN - sL*(dots)/(1 - dots**2)
+   n_line_intercept = (gradBL*np.broadcast_to(c1,(3,n_cells)).transpose() + gradBN*np.broadcast_to(c2,(3,n_cells)).transpose())/dxs
 
    #rotate the n_line_intercept to xyz instead of LMN
    nn = n_line_intercept[:,np.newaxis,:]
-   # print("nn", nn)
+
    n_line_intercept = np.matmul(nn, LMNs).squeeze() # inverse of rotation for row vectors
    n_line = np.matmul(n_line[:,np.newaxis,:], LMNs).squeeze()
-   # print(n_line_intercept)
+
+   # Make certain that we have a point along the line that is closest to the cell center
    par_dist = np.sum(n_line_intercept*n_line, axis=-1)[:,np.newaxis]
-   # print(par_dist)
    n_line_intercept = n_line_intercept - n_line*np.broadcast_to(np.sum(n_line_intercept*n_line, axis=-1),(3,n_cells)).transpose() # is it not nearest to 0 already?
-   # print(n_line_intercept)
-   # print("nl",n_line_intercept)
    s_line = np.linalg.norm(n_line_intercept,axis=-1)
-   # print(s_line)
-   # Bl = np.repeat(np.array([BL]),3,axis=0).transpose()*Ls
-   # Bm = np.repeat(np.array([BN]),3,axis=0).transpose()*Ns
-   # Bn = np.repeat(np.array([BM]),3,axis=0).transpose()*Ms
-   # print("Bl",Bl[:,np.newaxis,:])
-   # #print(np.stack((Bl,Bm,Bn),axis=-1))
-   # print("rotd",np.matmul(Bl[:,np.newaxis,:], LMNs))
-   # print("rotd",np.matmul(Bn[:,np.newaxis,:], LMNs))
-   # print("rotd",np.matmul(Bm[:,np.newaxis,:], LMNs))
+
 
 # This is horrible, I sort of wish we had spherical shells
    # mirror across the origin on all axes if on negative hemisphere -

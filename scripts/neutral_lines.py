@@ -30,14 +30,15 @@ file_id = int(sys.argv[1])
 
 
 path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
-#fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
-#f = pt.vlsvfile.VlsvReader(path+fn)
+fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+f = pt.vlsvfile.VlsvReader(path+fn)
 
-fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv".format(file_id)
+#FHA
+#fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv".format(file_id)
+#f = pt.vlsvfile.VlsvReader(fn)
 
-f = pt.vlsvfile.VlsvReader(fn)
-#fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id)
-fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+#fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
 # cids = f.read_variable("CellID")
 # ci = np.argwhere(cids==355282689)
@@ -74,12 +75,12 @@ t = time.time()
 
 fw = pt.vlsvfile.VlsvWriter(f, fnout, copy_meshes="SpatialGrid")
 
-#fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
-fw.copy_variables(f,["CellID","vg_b_vol"])
+fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
+#fw.copy_variables(f,["CellID","vg_b_vol"])
 
-# fw.write(f.read_variable("vg_dxs"), "vg_dxs", "VARIABLE", "SpatialGrid")
+fw.write(f.read_variable("vg_dxs"), "vg_dxs", "VARIABLE", "SpatialGrid")
 LMNs = f.read_variable("vg_lmn",cids)
-# fw.write(LMNs.reshape((-1,9)), "vg_LMN", "VARIABLE","SpatialGrid")
+fw.write(LMNs.reshape((-1,9)), "vg_LMN", "VARIABLE","SpatialGrid")
 fw.write(f.read_variable("vg_mdd_dimensionality"), "vg_MDD_dimensionality", "VARIABLE", "SpatialGrid")
 fw.write(f.read_variable("vg_lmn_neutral_line_distance"), "vg_LN_null_line_distance", "VARIABLE", "SpatialGrid")
 fw.write(f.read_variable("vg_lmn_L_flip_distance"), "vg_L_flip_distance", "VARIABLE", "SpatialGrid")
