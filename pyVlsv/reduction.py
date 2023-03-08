@@ -31,6 +31,7 @@ from gyrophaseangle import gyrophase_angles
 import vlsvvariables
 import sys
 import math
+from null_lines import LMN_null_lines_FOTE
 
 global __reducer_reader
 
@@ -929,6 +930,15 @@ def LMN_xoline_distance( variables ):
    stack = True
    if(Bs.shape == (3,)):  # I want these to be stacks
       stack = False
+
+   # deferring the actual calculations under pyCalculations - enables more outputs
+   # from the FOTE function.
+   s_line, _ = LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords)
+   if stack:
+      return s_line
+   else:
+      return s_line[0]
+#//////////////////////////////////
       LMNs = np.array([LMNs])
       jacobs = np.array([jacobs])
       dxs = np.array(dxs)
@@ -986,6 +996,9 @@ def LMN_xoline_distance( variables ):
    n_line_intercept = n_line_intercept - n_line*np.broadcast_to(np.sum(n_line_intercept*n_line, axis=-1),(3,n_cells)).transpose() # is it not nearest to 0 already?
    s_line = np.linalg.norm(n_line_intercept,axis=-1)
 
+   #Let's go back a dx or two so we need only to look at positive intercepts
+   n_line_intercept = n_line_intercept - n_line*2*dxs
+
 
 # This is horrible, I sort of wish we had spherical shells
    # mirror across the origin on all axes if on negative hemisphere -
@@ -993,25 +1006,15 @@ def LMN_xoline_distance( variables ):
    nsz = (3, n_line_intercept.shape[0],n_line_intercept.shape[1])
    positive_intercepts_0 = np.ones(nsz)
    positive_intercepts_1 = np.ones(nsz)
-   negative_intercepts_0 = np.ones(nsz)
-   negative_intercepts_1 = np.ones(nsz)
    positive_intercepts_0.fill(np.nan)
    positive_intercepts_1.fill(np.nan)
-   negative_intercepts_0.fill(np.nan)
-   negative_intercepts_1.fill(np.nan)
    lineintercept = n_line_intercept.copy()
    linevec = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
-   # print("linevec",linevec)
-   # print("n_line", n_line)
-   # np.multiply(n_line_intercept, -1, out=lineintercept, where= n_line_intercept < 0)
-   # np.multiply(n_line, -1, out=linevec, where= n_line_intercept < 0)
    
    # find distances to the planes delimiting the cell along the line
    
    d_fw_planes_0 = np.divide(-0.5-lineintercept,linevec)
    d_fw_planes_1 = np.divide(0.5-lineintercept,linevec)
-   d_bw_planes_0 = np.divide(-0.5-lineintercept,-linevec)
-   d_bw_planes_1 = np.divide(0.5-lineintercept,-linevec)
 
    hits = np.all(np.abs(n_line_intercept) < 0.5, axis=-1) # these are certain, also init hits array
    eps = 1e-12
@@ -1034,24 +1037,6 @@ def LMN_xoline_distance( variables ):
       positive_intercepts_1[d,mask,:] = new_intercepts[mask,:]
       hits = hits | mask
    
-   # bw intercepts
-   for d in [0,1,2]:
-      ds = (np.repeat(np.array([d_bw_planes_0[:,d]]).transpose(),3,axis=1))
-      
-      ds = -linevec*ds
-      
-      new_intercepts = lineintercept + ds
-      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
-      negative_intercepts_0[d,mask,:] = new_intercepts[mask,:]
-      hits = hits | mask
-
-      ds = (np.repeat(np.array([d_bw_planes_1[:,d]]).transpose(),3,axis=1))
-      ds = -linevec*ds
-      new_intercepts = lineintercept + ds
-      mask = np.all(np.abs(new_intercepts) <= 0.5+eps, axis=-1)
-      negative_intercepts_1[d,mask,:] = new_intercepts[mask,:]
-      hits = hits | mask
-
    np.divide(-1, s_line,out=s_line, where=hits)
    # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
    # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+

@@ -37,7 +37,7 @@ f = pt.vlsvfile.VlsvReader(path+fn)
 #fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv".format(file_id)
 #f = pt.vlsvfile.VlsvReader(fn)
 
-fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO4/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 #fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
 # cids = f.read_variable("CellID")
