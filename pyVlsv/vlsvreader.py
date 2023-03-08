@@ -1306,7 +1306,6 @@ class VlsvReader(object):
          singletons = [i for i, sz in enumerate(fssize) if sz == 1]
          for dim in singletons:
             fgdata=np.expand_dims(fgdata, dim)
-      #print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if centering is None:
@@ -1503,7 +1502,6 @@ class VlsvReader(object):
       
       hdx = self.get_cell_dx(cellid)*0.5
       mid = self.get_cell_coordinates(cellid)
-      #print('halfdx:', hdx, 'mid:', mid, 'low:', mid-hdx, 'hi:', mid+hdx)
       return mid-hdx, mid+hdx
 
    def get_cell_fsgrid_slicemap(self, cellid):
@@ -1525,7 +1523,6 @@ class VlsvReader(object):
       covered by the SpatialGrid cellid.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
-      #print('subarray:',lowi, upi)
       if array.ndim == 4:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
       else:
@@ -1535,7 +1532,6 @@ class VlsvReader(object):
       '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
-      #print('subarray:',lowi, upi)
       if array.ndim == 4:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
       else:
@@ -1593,12 +1589,9 @@ class VlsvReader(object):
       cellid. Mutator for array.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
-      #print(lowi,upi)
       value = self.read_variable(var, cellids=[cellid])
       if array.ndim == 4:
-         #print(value)
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
-         #print(array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:])
       else:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
