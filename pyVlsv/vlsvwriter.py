@@ -276,7 +276,7 @@ class VlsvWriter(object):
       # write the xml footer:
       self.__write_xml_footer()
 
-   def write_variable(self, varinfo, mesh, unitConversion, extra_attribs={}):
+   def write_variable_info(self, varinfo, mesh, unitConversion, extra_attribs={}):
       ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
       :param varinfo: VariableInfo object containing
          -name: Name of the data array
