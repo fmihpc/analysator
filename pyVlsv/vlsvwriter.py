@@ -282,10 +282,10 @@ class VlsvWriter(object):
          -data: The variable data (array)
          -name: Name of the data array
          -latex: LaTeX string representation of the variable name
-         -units: plaintext string represenation of the unit
-         -latexunits: LaTeX string represenation of the unit
+         -units: plaintext string representation of the unit
+         -latexunits: LaTeX string representation of the unit
       :param mesh: Mesh for the data array
-      :param unitConversion: string represenation of the unit conversion to get to SI
+      :param unitConversion: string representation of the unit conversion to get to SI
       :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh,
         or contained in varinfo. Can be used to overwrite varinfo values besids name.
 
