@@ -30,7 +30,9 @@ file_id = int(sys.argv[1])
 
 
 path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
+path = "/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/"
 fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+fn = "jacobs.vlsv"
 f = pt.vlsvfile.VlsvReader(path+fn)
 
 #FHA
@@ -38,6 +40,7 @@ f = pt.vlsvfile.VlsvReader(path+fn)
 #f = pt.vlsvfile.VlsvReader(fn)
 
 fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO4/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+fnout = path+"xo.vlsv"
 #fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
 # cids = f.read_variable("CellID")
@@ -75,9 +78,9 @@ t = time.time()
 
 fw = pt.vlsvfile.VlsvWriter(f, fnout, copy_meshes="SpatialGrid")
 
-fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
-#fw.copy_variables(f,["CellID","vg_b_vol"])
-
+#fw.copy_variables(f,["CellID","vg_b_vol","LMN_magnetopause/vg_L","LMN_magnetopause/vg_N","LMN_magnetopause/vg_jacobian"])
+fw.copy_variables(f,["CellID","vg_b_vol"])
+fw.write(f.read_variable("vg_j"),"vg_j","VARIABLE", "SpatialGrid")
 fw.write(f.read_variable("vg_dxs"), "vg_dxs", "VARIABLE", "SpatialGrid")
 LMNs = f.read_variable("vg_lmn",cids)
 fw.write(LMNs.reshape((-1,9)), "vg_LMN", "VARIABLE","SpatialGrid")

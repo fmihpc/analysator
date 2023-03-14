@@ -876,8 +876,13 @@ def LMN( variables ):
       MDD_vecs = np.array([MDD_vecs])
       Js = np.array([Js]) # I want this to be a stack of vectors
 
-   Ls = MGA_vecs[:,:,0]
+   zeroJs = np.linalg.norm(Js, axis=-1) == 0
+   Js[zeroJs,:] = np.array([[0,1,0]]) # Choosing positive Y for dummy data
+
+   #Ls = MGA_vecs[:,:,0]
+   Ls = MDD_vecs[:,:,1]
    Ns = MDD_vecs[:,:,0]
+   #Ns = MGA_vecs[:,:,2]
 
    LxJ = np.cross(Ls,Js,axis=-1)
    
@@ -886,6 +891,7 @@ def LMN( variables ):
 
    np.multiply(Ns, -1, out=Ns, where=mrep)
 
+   print("same same", np.sum(np.all(Ls == Ns, axis=-1)))
    projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
    Ns = Ns - Ls*projs
    norms = np.repeat(np.array([np.linalg.norm(Ns,axis=-1)]),(3,),axis=0).transpose()
