@@ -1848,11 +1848,7 @@ class VlsvReader(object):
          zcells[r] = self.__zcells*2**(r)
 
       # Handle AMR
-      #reflevels=self.get_amr_levels(cellids)
-      # reflevels2 = np.array([self.get_amr_level(c) for c in cellids])
-      # print(np.all(reflevels == reflevels2)) # this is true.
       cellid = np.array(cellids - 1, dtype=np.int64)
-
       reflevels = np.zeros(np.array(cellid).shape, dtype=np.int64)
       sub = np.ones(np.array(cellid).shape, dtype=np.int64)*(self.__xcells*self.__ycells*self.__zcells)
       iters = 0
@@ -1873,20 +1869,13 @@ class VlsvReader(object):
       cellindices[:,0] = cellid%xcells[reflevels]
       cellindices[:,1] = (cellid//xcells[reflevels])%ycells[reflevels]
       cellindices[:,2] = cellid//(xcells[reflevels]*ycells[reflevels])
-      # cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      # cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
-      # cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cell_lengths = np.array([(self.__xmax - self.__xmin)/(xcells[reflevels]),
                                (self.__ymax - self.__ymin)/(ycells[reflevels]),
                                (self.__zmax - self.__zmin)/(zcells[reflevels])]).T
-      #cellcoordinates = np.zeros((len(cellids),3))
       mins = np.array([self.__xmin,self.__ymin,self.__zmin])
       cellcoordinates = mins + (cellindices + 0.5)*cell_lengths
-      # cellcoordinates[:,0] = self.__xmin + (cellindices[:,0] + 0.5) * cell_lengths[:,0]
-      # cellcoordinates[:,1] = self.__ymin + (cellindices[:,1] + 0.5) * cell_lengths[:,1]
-      # cellcoordinates[:,2] = self.__zmin + (cellindices[:,2] + 0.5) * cell_lengths[:,2]
       # Return the coordinates:
       return np.array(cellcoordinates)
 
