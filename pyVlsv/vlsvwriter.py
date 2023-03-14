@@ -109,7 +109,8 @@ class VlsvWriter(object):
 
    def copy_variables( self, vlsvReader, varlist=None ):
       ''' Copies variables from vlsv reader to the file.
-           varlist = None: list of variables to copy; 
+           varlist = None: list of variables to copy; if no
+           varlist is provided, copy all variables (default)
       '''
 
       # Delegate to the variable list handler
@@ -134,7 +135,7 @@ class VlsvWriter(object):
             if 'mesh' in child.attrib:
                 mesh = child.attrib['mesh']
             else:
-                mesh = ''
+                mesh = None
             tag = child.tag
             # Copy extra attributes:
             extra_attribs = {}
@@ -278,22 +279,24 @@ class VlsvWriter(object):
       # write the xml footer:
       self.__write_xml_footer()
 
-   def write_variable(self, data, name, mesh, variableLaTex, unit, unitLaTeX, unitConversion, extra_attribs={}):
+   def write_variable_info(self, varinfo, mesh, unitConversion, extra_attribs={}):
       ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
-
-      :param name: Name of the data array
+      :param varinfo: VariableInfo object containing
+         -data: The variable data (array)
+         -name: Name of the data array
+         -latex: LaTeX string representation of the variable name
+         -units: plaintext string representation of the unit
+         -latexunits: LaTeX string representation of the unit
       :param mesh: Mesh for the data array
-      :param variableLaTeX: LaTeX string representation of variable
-      :param unit: plaintext string represenation of the unit
-      :param unitLaTeX: LaTeX string represenation of the unit
-      :param unitConversion: string represenation of the unit conversion to get to SI
-      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh
+      :param unitConversion: string representation of the unit conversion to get to SI
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh,
+        or contained in varinfo. Can be used to overwrite varinfo values besids name.
 
       :returns: True if the data was written successfully
 
       '''
 
-      return self.write(data, name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':variableLaTex, 'unit':unit, 'unitLaTeX':unitLaTeX, 'unitConversion':unitConversion})
+      return self.write(varinfo.data, varinfo.name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':varinfo.latex, 'unit':varinfo.units, 'unitLaTeX':varinfo.latexunits, 'unitConversion':unitConversion}.update(extra_attribs))
 
 
    def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):

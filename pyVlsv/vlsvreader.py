@@ -1341,7 +1341,6 @@ class VlsvReader(object):
          singletons = [i for i, sz in enumerate(fssize) if sz == 1]
          for dim in singletons:
             fgdata=np.expand_dims(fgdata, dim)
-      #print('read in fgdata with shape', fgdata.shape, name)
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if centering is None:
@@ -1576,7 +1575,6 @@ class VlsvReader(object):
       
       hdx = self.get_cell_dx(cellid)*0.5
       mid = self.get_cell_coordinates(cellid)
-      #print('halfdx:', hdx, 'mid:', mid, 'low:', mid-hdx, 'hi:', mid+hdx)
       return mid-hdx, mid+hdx
 
    def get_cell_fsgrid_slicemap(self, cellid):
@@ -1598,7 +1596,6 @@ class VlsvReader(object):
       covered by the SpatialGrid cellid.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
-      #print('subarray:',lowi, upi)
       if array.ndim == 4:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
       else:
@@ -1666,12 +1663,9 @@ class VlsvReader(object):
       cellid. Mutator for array.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
-      #print(lowi,upi)
       value = self.read_variable(var, cellids=[cellid])
       if array.ndim == 4:
-         #print(value)
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
-         #print(array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:])
       else:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
@@ -1854,11 +1848,7 @@ class VlsvReader(object):
          zcells[r] = self.__zcells*2**(r)
 
       # Handle AMR
-      #reflevels=self.get_amr_levels(cellids)
-      # reflevels2 = np.array([self.get_amr_level(c) for c in cellids])
-      # print(np.all(reflevels == reflevels2)) # this is true.
       cellid = np.array(cellids - 1, dtype=np.int64)
-
       reflevels = np.zeros(np.array(cellid).shape, dtype=np.int64)
       sub = np.ones(np.array(cellid).shape, dtype=np.int64)*(self.__xcells*self.__ycells*self.__zcells)
       iters = 0
@@ -1879,20 +1869,13 @@ class VlsvReader(object):
       cellindices[:,0] = cellid%xcells[reflevels]
       cellindices[:,1] = (cellid//xcells[reflevels])%ycells[reflevels]
       cellindices[:,2] = cellid//(xcells[reflevels]*ycells[reflevels])
-      # cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      # cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
-      # cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
    
       # Get cell coordinates:
       cell_lengths = np.array([(self.__xmax - self.__xmin)/(xcells[reflevels]),
                                (self.__ymax - self.__ymin)/(ycells[reflevels]),
                                (self.__zmax - self.__zmin)/(zcells[reflevels])]).T
-      #cellcoordinates = np.zeros((len(cellids),3))
       mins = np.array([self.__xmin,self.__ymin,self.__zmin])
       cellcoordinates = mins + (cellindices + 0.5)*cell_lengths
-      # cellcoordinates[:,0] = self.__xmin + (cellindices[:,0] + 0.5) * cell_lengths[:,0]
-      # cellcoordinates[:,1] = self.__ymin + (cellindices[:,1] + 0.5) * cell_lengths[:,1]
-      # cellcoordinates[:,2] = self.__zmin + (cellindices[:,2] + 0.5) * cell_lengths[:,2]
       # Return the coordinates:
       return np.array(cellcoordinates)
 
