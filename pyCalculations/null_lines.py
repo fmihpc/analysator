@@ -66,7 +66,7 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
    BL = np.sum(Ls*Bs, axis=-1)
    BM = np.sum(Ms*Bs, axis=-1)
    BN = np.sum(Ns*Bs, axis=-1)
-   unit = 1 #1e-9
+   unit = 1#1e-9
    gradBL = jacobs[:, 0,:]*unit
    #gradBM = jacobs[1,:]
    gradBN = jacobs[:, 2,:]*unit

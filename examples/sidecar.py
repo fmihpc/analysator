@@ -54,6 +54,7 @@ path = '/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/'
 #fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.{:07d}.vlsv'.format(file_id)
 fn=path+"bgb.0000000.vlsv"
 f = pt.vlsvfile.VlsvReader(fn)
+fperb = pt.vlsvfile.VlsvReader(path+"bulk.0000001.vlsv")
 #outfn = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv'.format(file_id)
 outpath = path
 outfn = "jacobs.vlsv"
@@ -87,24 +88,24 @@ def fg_vol_curl(reader, array):
    return np.stack([rotx, roty, rotz], axis=-1)
 
 def fg_vol_jacobian(reader):
-   if ("fg_dbgbxvoldy" in f.get_all_variables()):
+   if ("fg_dbgbxvoldy" in reader.get_all_variables()):
       dx = reader.get_fsgrid_cell_size() # these are stored as differences for now
-      dFx_dx = f.read_fsgrid_variable("fg_dbgbxvoldx")/dx[0]
-      dFx_dy = f.read_fsgrid_variable("fg_dbgbxvoldy")/dx[1]
-      dFx_dz = f.read_fsgrid_variable("fg_dbgbxvoldz")/dx[2]
-      dFy_dx = f.read_fsgrid_variable("fg_dbgbyvoldx")/dx[0]
-      dFy_dy = f.read_fsgrid_variable("fg_dbgbyvoldy")/dx[1]
-      dFy_dz = f.read_fsgrid_variable("fg_dbgbyvoldz")/dx[2]
-      dFz_dx = f.read_fsgrid_variable("fg_dbgbzvoldx")/dx[0]
-      dFz_dy = f.read_fsgrid_variable("fg_dbgbzvoldy")/dx[1]
-      dFz_dz = f.read_fsgrid_variable("fg_dbgbzvoldz")/dx[2]
+      dFx_dx = reader.read_fsgrid_variable("fg_dbgbxvoldx")/dx[0]
+      dFx_dy = reader.read_fsgrid_variable("fg_dbgbxvoldy")/dx[1]
+      dFx_dz = reader.read_fsgrid_variable("fg_dbgbxvoldz")/dx[2]
+      dFy_dx = reader.read_fsgrid_variable("fg_dbgbyvoldx")/dx[0]
+      dFy_dy = reader.read_fsgrid_variable("fg_dbgbyvoldy")/dx[1]
+      dFy_dz = reader.read_fsgrid_variable("fg_dbgbyvoldz")/dx[2]
+      dFz_dx = reader.read_fsgrid_variable("fg_dbgbzvoldx")/dx[0]
+      dFz_dy = reader.read_fsgrid_variable("fg_dbgbzvoldy")/dx[1]
+      dFz_dz = reader.read_fsgrid_variable("fg_dbgbzvoldz")/dx[2]
    else:
       dx = reader.get_fsgrid_cell_size()
-      array = f.read_variable_as_fg("vg_b_vol")
+      array = reader.read_variable_as_fg("vg_b_vol")
 
       dFx_dx, dFx_dy, dFx_dz = np.gradient(array[:,:,:,0], *dx)
       dFy_dx, dFy_dy, dFy_dz = np.gradient(array[:,:,:,1], *dx)
-      dFz_dx, dFz_dy, dFz_dz  = np.gradient(array[:,:,:,2], *dx)
+      dFz_dx, dFz_dy, dFz_dz = np.gradient(array[:,:,:,2], *dx)
 
    return np.stack(np.array(
                     [dFx_dx, dFx_dy, dFx_dz,
@@ -113,6 +114,25 @@ def fg_vol_jacobian(reader):
                    ),
                    axis=-1)
 
+def vg_vol_perb_jacobian(reader):
+   if ("vg_dperbxvoldy" in reader.get_all_variables()):
+      dx = reader.get_fsgrid_cell_size() # these are stored as differences for now
+      dFx_dx = reader.read_variable("vg_dperbxvoldx")
+      dFx_dy = reader.read_variable("vg_dperbxvoldy")
+      dFx_dz = reader.read_variable("vg_dperbxvoldz")
+      dFy_dx = reader.read_variable("vg_dperbyvoldx")
+      dFy_dy = reader.read_variable("vg_dperbyvoldy")
+      dFy_dz = reader.read_variable("vg_dperbyvoldz")
+      dFz_dx = reader.read_variable("vg_dperbzvoldx")
+      dFz_dy = reader.read_variable("vg_dperbzvoldy")
+      dFz_dz = reader.read_variable("vg_dperbzvoldz")
+
+   return np.stack(np.array(
+                    [dFx_dx, dFx_dy, dFx_dz,
+                     dFy_dx, dFy_dy, dFy_dz,
+                     dFz_dx, dFz_dy, dFz_dz]
+                   ),
+                   axis=-1)
 # print('Processing for J, elapsed', time.time()-t)
 # fg_b_vol=f.read_fg_variable_as_volumetric('fg_b')
 # print('fgbvol read, shape ', fg_b_vol.shape, 'elapsed:', time.time()-t)
@@ -126,10 +146,12 @@ print('vg mapped to fg, elapsed:', time.time()-t)
 fg_b_jacob = fg_vol_jacobian(f)
 fg_b_vol = f.read_fsgrid_variable("fg_b_background_vol")
 
-vg_J = f.fsgrid_array_to_vg(fg_b_jacob)
+vg_bgb_jacobian = f.fsgrid_array_to_vg(fg_b_jacob)
 print('fg_J mapped to vg, elapsed:', time.time()-t)
 
-writer.write(vg_J,'vg_jacobian_B','VARIABLE','SpatialGrid')
+vg_perb_jacobian = vg_vol_perb_jacobian(fperb)
+
+writer.write(vg_bgb_jacobian+vg_perb_jacobian,'vg_jacobian_B','VARIABLE','SpatialGrid')
 
 vg_b_vol = f.fsgrid_array_to_vg(fg_b_vol)
 writer.write(vg_b_vol,'vg_b_vol','VARIABLE','SpatialGrid')

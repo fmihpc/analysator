@@ -30,9 +30,9 @@ file_id = int(sys.argv[1])
 
 
 path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
-path = "/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/"
+# path = "/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/"
 fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
-fn = "jacobs.vlsv"
+# fn = "jacobs.vlsv"
 f = pt.vlsvfile.VlsvReader(path+fn)
 
 #FHA
@@ -40,7 +40,9 @@ f = pt.vlsvfile.VlsvReader(path+fn)
 #f = pt.vlsvfile.VlsvReader(fn)
 
 fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO4/pyXO_bulk1.{:07d}.vlsv".format(file_id)
-fnout = path+"xo.vlsv"
+# fnout = path+"xo_mdd.vlsv"
+# fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO5/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+
 #fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
 # cids = f.read_variable("CellID")
@@ -94,10 +96,9 @@ LMN_jacob = np.reshape(LMN_jacob,(LMN_jacob.shape[0],3,3))
 LMN_jacob = np.transpose(LMNs,(0, 2, 1)) @ LMN_jacob @ LMNs
 
 dBNdL = LMN_jacob[:,2,0]
-dBLdN = LMN_jacob[:,0,2]
-
 fw.write(dBNdL, "vg_dBNdL", "VARIABLE", "SpatialGrid")
 
+dBLdN = LMN_jacob[:,0,2]
 fw.write(dBLdN, "vg_dBLdN", "VARIABLE", "SpatialGrid")
 print('things written, elapsed:', time.time()-t)
 

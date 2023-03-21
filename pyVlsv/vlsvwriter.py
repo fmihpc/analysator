@@ -82,7 +82,6 @@ class VlsvWriter(object):
 
       # Copy the xml root
       for child in xml_root:
-         print(child.tag)
          if child.tag in tags:
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
@@ -102,7 +101,7 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            print("writing",name, tag)
+            #print("writing",name, tag)
 
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
