@@ -1627,19 +1627,12 @@ class VlsvReader(object):
    def fsgrid_array_to_vg(self, array):
       cellIds=self.read_variable("CellID")
 
-      #if not hasattr(self, 'fsCellIdTargets'):
-      #   self.fsCellIdTargets = np.zeros(self.get_fsgrid_mesh_size())
-      #   for cid in cellIds:
-      #      lowi, upi = self.get_cell_fsgrid_slicemap(cid)
-      #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
       self.map_vg_onto_fg()
-      #vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
       counts = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size))
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
          for i in range(numel):
-            print("vector variable", i)
             sums = np.bincount(np.reshape(self.__vg_cellids_on_fg,self.__vg_cellids_on_fg.size),
                                   weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
             vgarr[:,i] = np.divide(sums,counts)
@@ -1689,20 +1682,19 @@ class VlsvReader(object):
          vg_cellids = self.read_variable('CellID')
          sz = self.get_fsgrid_mesh_size()
          sz_amr = self.get_spatial_mesh_size()
-         self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
-         current_amr_level = self.get_amr_level(np.min(vg_cellids))
          max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
-         current_max_cellid = 0
-         for level in range(current_amr_level+1):
-            current_max_cellid += 2**(3*(level))*(self.__xcells*self.__ycells*self.__zcells)
-         for id in np.argsort(vg_cellids):
-            if vg_cellids[id] > current_max_cellid:
-               current_amr_level += 1
-               current_max_cellid += 2**(3*(current_amr_level))*(self.__xcells*self.__ycells*self.__zcells)
-            this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
-            refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
-            refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
-            self.__vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
+         self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+         amr_levels = self.get_amr_levels(vg_cellids)
+         cell_indices = np.array(self.get_cells_indices(vg_cellids,amr_levels),dtype=np.int64)
+         refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
+         refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
+            
+         for i in range(vg_cellids.shape[0]):
+            self.__vg_cellids_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
+                                    refined_ids_start[i,1]:refined_ids_end[i,1],
+                                    refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+
+      return self.__vg_cellids_on_fg
 
 
 
@@ -1901,6 +1893,35 @@ class VlsvReader(object):
       cellindices[0] = (int)(cellid)%(int)(2**reflevel*self.__xcells)
       cellindices[1] = ((int)(cellid)//(int)(2**reflevel*self.__xcells))%(int)(2**reflevel*self.__ycells)
       cellindices[2] = (int)(cellid)//(int)(4**reflevel*self.__xcells*self.__ycells)
+
+      # Return the indices:
+      return np.array(cellindices)
+
+   def get_cells_indices(self, cellid, reflevel):
+      ''' Returns a given cell's indices as a numpy array
+
+      :param cellid:            The cell's ID, numpy array
+      :param reflevel:          The cell's refinement level in the AMR
+      :returns: a numpy array with the coordinates
+
+      .. seealso:: :func:`get_cellid`
+
+      .. note:: The cell ids go from 1 .. max not from 0
+      '''
+      # Calculating the index of the first cell at this reflevel
+      index_at_reflevel = np.zeros(self.get_max_refinement_level()+1, dtype=np.int64)
+      isum = 0
+      for i in range(0,self.get_max_refinement_level()):
+         isum = isum + 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
+         index_at_reflevel[i+1] = isum
+
+
+      # Get cell indices:
+      cellid = np.array(cellid - 1 - index_at_reflevel[reflevel], dtype=np.int64).copy()
+      cellindices = np.zeros((len(cellid),3))
+      cellindices[:,0] = (cellid)%(np.power(2,reflevel)*self.__xcells)
+      cellindices[:,1] = ((cellid)//(np.power(2,reflevel)*self.__xcells))%(np.power(2,reflevel)*self.__ycells)
+      cellindices[:,2] = (cellid)//(np.power(4,reflevel)*self.__xcells*self.__ycells)
 
       # Return the indices:
       return np.array(cellindices)
