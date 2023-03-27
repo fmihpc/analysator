@@ -436,6 +436,9 @@ def plot_colormap(filename=None,
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
         pt.plot.plot_helpers.PLANE = 'XY'
+    if ysize!=1 and zsize!=1 and xsize!=1:
+        print("Mesh is not 2-D: Use plot_colormap3Dslice instead!")
+        return
 
     # Select window to draw
     if len(boxm)==4:
@@ -770,7 +773,7 @@ def plot_colormap(filename=None,
     rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
     XYmask = rhomap.mask
-    if XYmask.any():
+    if XYmask.any() and not pass_full:
         if XYmask.all():
             # if everything was masked in rhomap, allow plotting
             XYmask[:,:] = False
