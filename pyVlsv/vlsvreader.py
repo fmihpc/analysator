@@ -591,12 +591,12 @@ class VlsvReader(object):
       print("File ",self.file_name," contains no version information")
       return False
   
-   def print_config(self):
+   def get_config_string(self):
       '''
-      Prints config information from VLSV file.
+      Gets config information from VLSV file.
       TAG is hardcoded to CONFIG
 
-      :returns True if config is found otherwise returns False
+      :returns configuration file string if config is found otherwise returns None
       '''
       import sys
       tag="CONFIG"
@@ -613,17 +613,67 @@ class VlsvReader(object):
                fptr = open(self.file_name,"rb")
             else:
                fptr = self.__fptr
-         
+
             fptr.seek(variable_offset)
             configuration = fptr.read(array_size).decode("utf-8")
 
-            print("Configuration file for ",self.file_name)
-            print(configuration)
-            return True
+            return configuration
 
       #if we end up here the file does not contain any config info
-      print("File ",self.file_name," contains no config information")
-      return False
+      return None
+
+   def get_config(self):
+      '''
+      Gets config information from VLSV file
+
+      :returns a nested dictionary of dictionaries,
+        where keys (str) are config file group headings (appearing in '[]')
+        and values are dictionaries containing parameter 
+
+      If the same heading/parameter pair appears >once in the config file,
+      the parameter is set to 'MULTIPLY-DEFINED'. Consult print_config().
+
+      EXAMPLE:
+      if the config contains these lines:
+         [proton_precipitation]
+         nChannels = 9
+      then the following returns '9':
+      vlsvReader.get_config()['proton_precipitation']['nChannels']
+      '''
+      import re
+      fa = re.findall(r'\[\w+\]|\w+ = \S+', self.get_config_string())
+      heading = ''
+      output = {heading:{}}
+
+      for i, sfa in enumerate(fa):
+         if (sfa[0] == '[') and (sfa[-1] == ']'):
+            heading = sfa[1:-1]
+            output[heading] = {}
+         else:
+            var_name = sfa.split('=')[0].strip()
+            var_value = sfa.split(' = ')[1].strip()
+            if var_name in output[heading]:
+               output[heading][var_name] = 'MULTIPLY-DEFINED'
+            else:
+               output[heading][var_name] = var_value
+
+      return output
+
+   def print_config(self):
+      '''
+      Prints config information from VLSV file.
+      TAG is hardcoded to CONFIG
+
+      :returns True if config is found otherwise returns False
+      '''
+      config_string = self.get_config_string()
+      if config_string is not None:
+         print(config_string)
+         return True
+      else:
+         #if we end up here the file does not contain any config info
+         print("File ",self.file_name," contains no config information")
+         return False
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
