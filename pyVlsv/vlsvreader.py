@@ -26,6 +26,8 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import sys
+import re
 import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
@@ -598,7 +600,6 @@ class VlsvReader(object):
 
       :returns configuration file string if config is found otherwise returns None
       '''
-      import sys
       tag="CONFIG"
       # Seek for requested data in VLSV file
       for child in self.__xml_root:
@@ -628,19 +629,18 @@ class VlsvReader(object):
 
       :returns a nested dictionary of dictionaries,
         where keys (str) are config file group headings (appearing in '[]')
-        and values are dictionaries containing parameter 
+        and values are dictionaries which contains (lists of) strings 
 
       If the same heading/parameter pair appears >once in the config file,
-      the parameter is set to 'MULTIPLY-DEFINED'. Consult print_config().
+      the different values are appended to the list .
 
       EXAMPLE:
       if the config contains these lines:
          [proton_precipitation]
          nChannels = 9
-      then the following returns '9':
+      then the following returns ['9']:
       vlsvReader.get_config()['proton_precipitation']['nChannels']
       '''
-      import re
       fa = re.findall(r'\[\w+\]|\w+ = \S+', self.get_config_string())
       heading = ''
       output = {heading:{}}
@@ -651,18 +651,18 @@ class VlsvReader(object):
             output[heading] = {}
          else:
             var_name = sfa.split('=')[0].strip()
-            var_value = sfa.split(' = ')[1].strip()
+            var_value = sfa.split('=')[1].strip()
             if var_name in output[heading]:
-               output[heading][var_name] = 'MULTIPLY-DEFINED'
+               # when the same parameter is assigned a value multiple times
+               output[heading][var_name].append(var_value)
             else:
-               output[heading][var_name] = var_value
+               output[heading][var_name] = [var_value]
 
       return output
 
    def print_config(self):
       '''
       Prints config information from VLSV file.
-      TAG is hardcoded to CONFIG
 
       :returns True if config is found otherwise returns False
       '''
