@@ -629,7 +629,7 @@ class VlsvReader(object):
 
       :returns a nested dictionary of dictionaries,
         where keys (str) are config file group headings (appearing in '[]')
-        and values are dictionaries which contains (lists of) strings 
+        and values are dictionaries which contain (lists of) strings 
 
       If the same heading/parameter pair appears >once in the config file,
       the different values are appended to the list .
