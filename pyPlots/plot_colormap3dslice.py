@@ -438,7 +438,7 @@ def plot_colormap3dslice(filename=None,
     except:
         if xsize!=1 and ysize!=1 and zsize!=1:
             print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
-            [xsizefg, ysizefg, zsizefg] = [xsize, ysize, zsize]
+            [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
             [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
