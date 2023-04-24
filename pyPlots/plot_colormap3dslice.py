@@ -234,6 +234,8 @@ def plot_colormap3dslice(filename=None,
     # Change certain falsy values:
     if not lin and lin != 0:
         lin = None
+    if lin is True:
+        lin = 7
     if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
@@ -1065,7 +1067,7 @@ def plot_colormap3dslice(filename=None,
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=7)            
+        ticks = np.linspace(vminuse,vmaxuse,num=lin)            
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes: # If axes are provided, leave backend as-is.
