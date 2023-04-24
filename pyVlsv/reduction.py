@@ -654,7 +654,7 @@ def ion_inertial( variables ):
    rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
-   omegapi = np.sqrt(rho/(mass*epsilon_0))*charge
+   omegapi = np.sqrt(rho * charge * charge / (mass*epsilon_0))
    di = np.ma.divide(speedoflight,omegapi)
    return di
 
@@ -692,10 +692,10 @@ def firstadiabatic( variables ):
    return np.ma.divide(Tperp,B)
 
 def JPerB_criteria( variables ):
-   ''' Data reducer function for calculating rhoq from restart file
+   ''' Data reducer function for calculating J/B refinement criterion as it is done in Vlasiator
    '''
    J_per_B = variables[0]
-   return np.log2(J_per_B * vlsvvariables.cellsize) + vlsvvariables.J_per_B_modifier
+   return np.log2(J_per_B * vlsvvariables.cellsize + 1E-30)# + vlsvvariables.J_per_B_modifier
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
