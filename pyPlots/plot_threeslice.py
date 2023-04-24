@@ -447,7 +447,6 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         levels = MaxNLocator(nbins=255).tick_values(0,1)
         norm = BoundaryNorm(levels, ncolors=255, clip=True)
         scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
-        scalarmap.set_array([])
 
         ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
 
@@ -1039,13 +1038,12 @@ def plot_threeslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
 
         # Add unit to colorbar title
-        if datamap_unit:
-            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
         # Dummy variables
@@ -1274,7 +1272,6 @@ def plot_threeslice(filename=None,
 
     # Create the scalar mappable to define the face colouring of the surface elements
     scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
-    scamap.set_array([])
 
 
     ###############################################################################

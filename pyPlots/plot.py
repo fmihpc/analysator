@@ -45,6 +45,7 @@ from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
+from plot_ionosphere import plot_ionosphere
 
 from distutils.version import LooseVersion, StrictVersion
 import numpy as np, os
@@ -182,3 +183,4 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
+

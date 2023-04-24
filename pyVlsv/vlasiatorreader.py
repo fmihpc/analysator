@@ -27,7 +27,6 @@ import ast
 import numpy as np
 import os
 from reduction import datareducers,data_operators
-from collections import Iterable
 from vlsvwriter import VlsvWriter
 from variable import get_data
 from operator import itemgetter

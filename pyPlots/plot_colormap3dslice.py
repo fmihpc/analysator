@@ -69,7 +69,8 @@ def plot_colormap3dslice(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
-                  normal='y', cutpoint=0., cutpointre=None
+                  normal='y', cutpoint=0., cutpointre=None,
+                  useimshow=False, imshowinterp='none',
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -192,6 +193,9 @@ def plot_colormap3dslice(filename=None,
     :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
     :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
     :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
+    :kword useimshow:   Use imshow for raster background instead (default: False)
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -344,6 +348,8 @@ def plot_colormap3dslice(filename=None,
                 var = 'proton/vg_rho'
             elif f.check_variable("moments"): # restart
                 var = 'vg_restart_rhom'
+            elif f.check_variable("rho"): # old pre-v5 data (no fsgrid or AMR)
+                var = 'rho'
         varstr=var.replace("/","_")
 
     # Activate diff mode?
@@ -423,14 +429,25 @@ def plot_colormap3dslice(filename=None,
     cellids = f.read_variable("CellID")
 
     # Read the FSgrid mesh
-    [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
-    xsizefg = int(xsizefg)
-    ysizefg = int(ysizefg)
-    zsizefg = int(zsizefg)
-    [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
-    cellsizefg = (xmaxfg-xminfg)/xsizefg
-    pt.plot.plot_helpers.CELLSIZE = cellsizefg
-    
+    try:
+        [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
+        xsizefg = int(xsizefg)
+        ysizefg = int(ysizefg)
+        zsizefg = int(zsizefg)
+        [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
+        cellsizefg = (xmaxfg-xminfg)/xsizefg
+        pt.plot.plot_helpers.CELLSIZE = cellsizefg
+    except:
+        if xsize!=1 and ysize!=1 and zsize!=1:
+            print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
+            [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
+            cellsizefg = cellsize
+            pt.plot.plot_helpers.CELLSIZE = cellsize
+        else:
+            print("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            return -1
+
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
     cellids = cellids[indexids]
@@ -528,6 +545,8 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("proton/vg_rho")
     elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
+    elif f.check_variable("rho"): #old non-AMR data, can still be 3D
+        rhomap = f.read_variable("rho")
     else:
         print("error!")
         quit
@@ -547,13 +566,12 @@ def plot_colormap3dslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
 
         # Add unit to colorbar title
-        if datamap_unit:
-            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
 
@@ -1119,7 +1137,16 @@ def plot_colormap3dslice(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-    fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    if(not useimshow):
+        fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    else:
+        fig1 = ax1.imshow(datamap,
+                          cmap=colormap,
+                          norm=norm,
+                          interpolation=imshowinterp,
+                          origin='lower',
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
+                         )
 
     # Title and plot limits
     if len(plot_title)!=0:
