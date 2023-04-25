@@ -460,6 +460,44 @@ def PerpendicularTensorComponent( variables ):
    else:
       return 0.5*(RotatedTensor[:,0,0] + RotatedTensor[:,1,1])
 
+def J( variables ):
+   ''' Data reducer taking a jacobian (assume 9-component vector) and extracting the current
+   via curl from the components of the jacobian (background or perturbed, as long as it has 9
+    components)
+
+   '''
+   stack = True
+   if(variables[0].shape == (9,)):
+      stack = False
+      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
+   jacobian = variables[0]#.reshape((variables[0].shape[0],3,3))
+   # jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
+   J = np.zeros((jacobian.shape[0],3))
+
+   J[:,0] = (jacobian[:,7]-jacobian[:,5])/mu_0
+   J[:,1] = (jacobian[:,2]-jacobian[:,6])/mu_0
+   J[:,2] = (jacobian[:,3]-jacobian[:,1])/mu_0
+   if stack:
+      return J
+   else:
+      return J[0,:]
+
+
+   print("Error in J")
+   return -1
+
+def TensorFromScalars(variables):
+   '''Construct a 9-element vector ("tensor") from nine scalar fields.
+   '''
+
+   return np.stack(np.array(
+                    [variables[0], variables[1], variables[2],
+                     variables[3], variables[4], variables[5],
+                     variables[6], variables[7], variables[8]]
+                   ),
+                   axis=-1)
+
+
 def Anisotropy( variables ):
    ''' Data reducer for finding the ratio of perpendicular to parallel components of a tensor
    '''
@@ -1003,6 +1041,11 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
+
+
+v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 
 
 #multipopv5reducers
