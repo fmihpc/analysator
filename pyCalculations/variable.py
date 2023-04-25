@@ -129,6 +129,10 @@ class VariableInfo:
                   'T/m': {'defaultScale':1e-12,
                              1e-9:{'scaledUnits':'nT/m', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{m}^{-1}$'},
                              1e-12:{'scaledUnits':'nT/km', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{km}^{-1}$'}
+                           },
+                 'kg/m3'  : {'defaultScale':5.97863741e26,
+                             5.97863741e26:{'scaledUnits':'amu/m^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{m}^{-3}$'},
+                             5.97863741e20:{'scaledUnits':'amu/cm^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{cm}^{-3}$'}
                             },
          }
 

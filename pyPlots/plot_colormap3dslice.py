@@ -346,6 +346,8 @@ def plot_colormap3dslice(filename=None,
                 var = 'proton/vg_rho'
             elif f.check_variable("moments"): # restart
                 var = 'vg_restart_rhom'
+            elif f.check_variable("rho"): # old pre-v5 data (no fsgrid or AMR)
+                var = 'rho'
         varstr=var.replace("/","_")
 
     # Activate diff mode?
@@ -425,14 +427,25 @@ def plot_colormap3dslice(filename=None,
     cellids = f.read_variable("CellID")
 
     # Read the FSgrid mesh
-    [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
-    xsizefg = int(xsizefg)
-    ysizefg = int(ysizefg)
-    zsizefg = int(zsizefg)
-    [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
-    cellsizefg = (xmaxfg-xminfg)/xsizefg
-    pt.plot.plot_helpers.CELLSIZE = cellsizefg
-    
+    try:
+        [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
+        xsizefg = int(xsizefg)
+        ysizefg = int(ysizefg)
+        zsizefg = int(zsizefg)
+        [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
+        cellsizefg = (xmaxfg-xminfg)/xsizefg
+        pt.plot.plot_helpers.CELLSIZE = cellsizefg
+    except:
+        if xsize!=1 and ysize!=1 and zsize!=1:
+            print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
+            [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
+            cellsizefg = cellsize
+            pt.plot.plot_helpers.CELLSIZE = cellsize
+        else:
+            print("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            return -1
+
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
     cellids = cellids[indexids]
@@ -530,6 +543,8 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("proton/vg_rho")
     elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
+    elif f.check_variable("rho"): #old non-AMR data, can still be 3D
+        rhomap = f.read_variable("rho")
     else:
         print("error!")
         quit
