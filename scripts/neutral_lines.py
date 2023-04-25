@@ -29,27 +29,27 @@ file_id = int(sys.argv[1])
 
 
 
-path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
-# path = "/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/"
-fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
-# fn = "jacobs.vlsv"
+#path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
+path = "/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/"
+#fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+fn = "jacobs.vlsv"
 f = pt.vlsvfile.VlsvReader(path+fn)
 
 #FHA
 #fn = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv".format(file_id)
 #f = pt.vlsvfile.VlsvReader(fn)
 
-fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO4/pyXO_bulk1.{:07d}.vlsv".format(file_id)
-# fnout = path+"xo_mdd.vlsv"
+#fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO4/pyXO_bulk1.{:07d}.vlsv".format(file_id)
+fnout = path+"xo.vlsv"
 # fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/pyXO5/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
 #fnout = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/XO/pyXO_bulk1.{:07d}.vlsv".format(file_id)
 
-# cids = f.read_variable("CellID")
+cids = f.read_variable("CellID")
 # ci = np.argwhere(cids==355282689)
 
-cids = [355282688,355282689,355282690,355282691]
-cids =-1
+#cids = [355282688,355282689,355282690,355282691]
+#cids =-1
 #cid = 355282689
 # print(f.read_variable_info("vg_jacobian_B",cid))
 # print(f.read_variable("vg_gtg",cid))

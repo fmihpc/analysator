@@ -1160,6 +1160,8 @@ class VlsvReader(object):
             ret_array = np.zeros(len(coordinates))
          else:
             ret_array = np.zeros((len(coordinates), value_length))
+
+         cells_coors = self.get_cells
          for i,cell_coords in enumerate(coordinates):
             closest_cell_id=self.get_cellid(cell_coords)
             if closest_cell_id == 0:
@@ -1775,6 +1777,7 @@ class VlsvReader(object):
 
           if AMR_count == refmax + 1:
               raise Exception('CellID does not exist in any AMR level')
+      
 
    def get_cell_coordinates(self, cellid):
       ''' Returns a given cell's coordinates as a numpy array

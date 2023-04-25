@@ -63,7 +63,6 @@ writer = pt.vlsvfile.VlsvWriter(f, outpath+outfn)
 print(f.get_all_variables())
 print(f)
 cellIds=f.read_variable("CellID")
-argsorti=f.read_variable("CellID").argsort()
 
 
 fgsize=f.get_fsgrid_mesh_size()
@@ -142,14 +141,23 @@ def vg_vol_perb_jacobian(reader):
 
 f.map_vg_onto_fg()
 print('vg mapped to fg, elapsed:', time.time()-t)
+argsorti=f.read_variable("CellID").argsort()
+rev_argosorti=argsorti.argsort()
 
 fg_b_jacob = fg_vol_jacobian(f)
 fg_b_vol = f.read_fsgrid_variable("fg_b_background_vol")
 
 vg_bgb_jacobian = f.fsgrid_array_to_vg(fg_b_jacob)
+vg_bgb_jacobian = np.reshape(vg_bgb_jacobian, (vg_bgb_jacobian.shape[0],9))
+fooids = fperb.read_variable("CellID")
+# vg_bgb_jacobian = vg_bgb_jacobian[fooids.argsort()]
+# vg_bgb_jacobian = vg_bgb_jacobian[rev_argosorti]
 print('fg_J mapped to vg, elapsed:', time.time()-t)
 
 vg_perb_jacobian = vg_vol_perb_jacobian(fperb)
+vg_perb_jacobian = np.reshape(vg_perb_jacobian, (vg_perb_jacobian.shape[0],9))
+vg_perb_jacobian = vg_perb_jacobian[fooids.argsort()]
+vg_perb_jacobian = vg_perb_jacobian[rev_argosorti]
 
 writer.write(vg_bgb_jacobian+vg_perb_jacobian,'vg_jacobian_B','VARIABLE','SpatialGrid')
 

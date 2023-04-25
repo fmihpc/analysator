@@ -718,7 +718,7 @@ def J( variables ):
       return J[0,:]
 
 
-   print("Error in GGT")
+   print("Error in J")
    return -1
 
 
@@ -803,6 +803,7 @@ def MDD( variables ):
    if stack:
       return MDD_eigenvectors
    else:
+      GGT = GGT[0,:,:]
       return MDD_eigenvectors[0,:,:]
 
    print("Error in MGA")
@@ -839,6 +840,7 @@ def MDD_dimensionality( variables ):
    if stack:
       return Ds
    else:
+      GGT = GGT[0,:,:]
       return Ds[0,:]
 
    print("Error in MGA")
@@ -879,11 +881,12 @@ def LMN( variables ):
       Js = np.array([Js]) # I want this to be a stack of vectors
 
    zeroJs = np.linalg.norm(Js, axis=-1) == 0
-   Js[zeroJs,:] = np.array([[0,1,0]]) # Choosing positive Y for dummy data
+   Js[zeroJs,:] = MGA_vecs[zeroJs,:,2] # MGA N for dummy data
 
    Ls = MGA_vecs[:,:,0]
    # Ls = MDD_vecs[:,:,1]
    Ns = MDD_vecs[:,:,0]
+   Ns[zeroJs, :] = MGA_vecs[zeroJs,:,1]
    #Ns = MGA_vecs[:,:,2]
 
    LxJ = np.cross(Ls,Js,axis=-1)
@@ -894,15 +897,18 @@ def LMN( variables ):
    np.multiply(Ns, -1, out=Ns, where=mrep)
 
    print("same same", np.sum(np.all(Ls == Ns, axis=-1)))
-   projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
+   #projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
+   projs = np.sum(Ns*Ls,axis=-1)[:,np.newaxis]
    Ns = Ns - Ls*projs
-   norms = np.repeat(np.array([np.linalg.norm(Ns,axis=-1)]),(3,),axis=0).transpose()
-   Ns = Ns/norms
+   norms = np.linalg.norm(Ns,axis=-1)
+   np.divide(Ns, norms[:,np.newaxis], out = Ns, where = (norms != 0)[:,np.newaxis])
+   Ns[norms==0,:] = np.nan
    
    Ms = np.cross(Ns,Ls,axis=-1) # Y = Z x X
    
-   norms = np.repeat(np.array([np.linalg.norm(Ms,axis=-1)]),(3,),axis=0).transpose()
-   Ms = Ms/norms
+   norms = np.linalg.norm(Ms,axis=-1)
+   np.divide(Ms, norms[:,np.newaxis], out=Ms, where = (norms!=0)[:,np.newaxis])
+   Ms[norms==0,:] = np.nan
 
    if stack:
       return np.stack((Ls,Ms,Ns),axis=-1)
