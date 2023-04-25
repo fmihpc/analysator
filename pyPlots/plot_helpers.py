@@ -1486,15 +1486,15 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
 # Contour plot refinement levels
 def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     if requestvariables==True:
-        return ['vg_amr_reflevel']
+        return ['vg_reflevel']
 
     # Check if pass_maps has multiple time steps or just one
     if type(extmaps) is list:
         dsteps = [x['dstep'] for x in extmaps]
         curri = dsteps.index(0)
-        ref = extmaps[curri]['vg_amr_reflevel']
+        ref = extmaps[curri]['vg_reflevel']
     else:
-        ref = extmaps['vg_amr_reflevel']
+        ref = extmaps['vg_reflevel']
 
     ax.contour(XmeshXY, YmeshXY, ref, antialiased=False, linewidths=0.1, cmap='viridis')
 

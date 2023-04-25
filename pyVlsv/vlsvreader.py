@@ -719,6 +719,27 @@ class VlsvReader(object):
             #    dxs[i,:]= self.get_cell_dx(cid)
             # return dxs
             return self.get_cell_dxs(cellids)
+
+      if name == "vg_reflevel":
+         if isinstance(cellids, numbers.Number): # single or all cells
+            if cellids >= 0: # single cell
+               return self.get_amr_level(cellids)
+            else:
+               cellids = self.read_variable("CellID")
+               return self.get_amr_levels(cellids)
+
+               # dxs = np.zeros((len(cellids),3)) #this is bad
+               # for i, cid in enumerate(cellids):
+               #    dxs[i,:]= self.get_cell_dx(cid)
+               # return dxs
+               
+         else: # list of cellids
+            # dxs = np.zeros((len(cellids),3))
+            # for i, cid in enumerate(cellids):
+            #    dxs[i,:]= self.get_cell_dx(cid)
+            # return dxs
+            return self.get_amr_levels(cellids)
+
       if name == "vg_coordinates":
          if isinstance(cellids, numbers.Number): # single or all cells
             if cellids >= 0: # single cell
