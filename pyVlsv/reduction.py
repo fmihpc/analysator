@@ -721,6 +721,16 @@ def J( variables ):
    print("Error in J")
    return -1
 
+def vg_tensor_fromscalars(variables):
+   '''Construct a 9-element vector ("tensor") from nine scalar fields.
+   '''
+
+   return np.stack(np.array(
+                    [variables[0], variables[1], variables[2],
+                     variables[3], variables[4], variables[5],
+                     variables[6], variables[7], variables[8]]
+                   ),
+                   axis=-1)
 
 def GGT( variables ):
    ''' Data reducer for MDD, or if you want to multiply a tensor with its transpose
@@ -1624,13 +1634,16 @@ v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 
-v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_b"], J, "nA/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{nA}\,\mathrm{m}^{-2}$")
-v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "nT^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "nT^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{nT^2}\,\mathrm{m}^{-2}$")
-v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], vg_tensor_fromscalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], vg_tensor_fromscalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+
+v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "T^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "T^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{T^2}\,\mathrm{m}^{-2}$")
+v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs", "vg_coordinates"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
