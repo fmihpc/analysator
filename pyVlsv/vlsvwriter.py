@@ -163,7 +163,10 @@ class VlsvWriter(object):
             if 'name' in child.attrib:
                 name = child.attrib['name']
                 if not name in vars:
-                   continue
+                  continue
+                  #  varinfo = vlsvReader.read_variable_info(name)
+                  #  self.write_variable_info(varinfo, mesh, unitConversion, extra_attribs={}))
+                  #  continue
             else:
                 continue
             if 'mesh' in child.attrib:
