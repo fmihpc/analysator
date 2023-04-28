@@ -1264,6 +1264,10 @@ class VlsvReader(object):
 
        currentOffset = 0;
        fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       # Hacky fix for FHA FSgrid output, where decompositions 1 and 2 may be flipped
+       if os.getenv('FSGRIDSWAP'):
+          fsgridDecomposition[1],fsgridDecomposition[2] = fsgridDecomposition[2],fsgridDecomposition[1]
+
        for i in range(0,numWritingRanks):
            x = (i // fsgridDecomposition[2]) // fsgridDecomposition[1]
            y = (i // fsgridDecomposition[2]) % fsgridDecomposition[1]
