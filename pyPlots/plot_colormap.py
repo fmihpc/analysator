@@ -436,6 +436,9 @@ def plot_colormap(filename=None,
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
         pt.plot.plot_helpers.PLANE = 'XY'
+    if ysize!=1 and zsize!=1 and xsize!=1:
+        print("Mesh is not 2-D: Use plot_colormap3Dslice instead!")
+        return
 
     # Select window to draw
     if len(boxm)==4:
@@ -770,7 +773,7 @@ def plot_colormap(filename=None,
     rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
     rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
     XYmask = rhomap.mask
-    if XYmask.any():
+    if XYmask.any() and not pass_full:
         if XYmask.all():
             # if everything was masked in rhomap, allow plotting
             XYmask[:,:] = False
@@ -970,10 +973,13 @@ def plot_colormap(filename=None,
         else:
             # v5 Vlasiator data
             cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-            #ff_b = f.read_variable("vg_b_vol", cellids=cid)
-            ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            try:
+               ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            except:
+               ff_b = f.read_variable("vg_b_vol", cellids=cid)
             if (ff_b.size!=3):
-                print("Error reading fg_b data for fluxfunction normalization!")
+               print("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
+
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
             else:
