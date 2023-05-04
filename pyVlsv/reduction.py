@@ -697,7 +697,15 @@ def vg_coordinates_cellcenter( variables, reader):
    if not hasattr(cellids,"__len__"): # single cell
       return reader.get_cell_coordinates(cellids)
    else: # list of cellids
-      return(reader.get_cells_coordinates(cellids))
+      return reader.get_cells_coordinates(cellids)
+
+def vg_coordinates_lowcorner( variables, reader):
+   cellids = variables[0]
+   dxs = variables[1]
+   if not hasattr(cellids,"__len__"): # single cell
+      return reader.get_cell_coordinates(cellids)-dxs/2
+   else: # list of cellids
+      return reader.get_cells_coordinates(cellids)-dxs/2
 
 def vg_dx(variables, reader):
    cellids = variables[0]
@@ -1019,7 +1027,9 @@ v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
-v5reducers["vg_coordinates_cellcenter"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
