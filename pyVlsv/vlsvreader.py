@@ -26,6 +26,8 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import sys
+import re
 import numbers
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
@@ -591,14 +593,13 @@ class VlsvReader(object):
       print("File ",self.file_name," contains no version information")
       return False
   
-   def print_config(self):
+   def get_config_string(self):
       '''
-      Prints config information from VLSV file.
+      Gets config information from VLSV file.
       TAG is hardcoded to CONFIG
 
-      :returns True if config is found otherwise returns False
+      :returns configuration file string if config is found otherwise returns None
       '''
-      import sys
       tag="CONFIG"
       # Seek for requested data in VLSV file
       for child in self.__xml_root:
@@ -613,17 +614,66 @@ class VlsvReader(object):
                fptr = open(self.file_name,"rb")
             else:
                fptr = self.__fptr
-         
+
             fptr.seek(variable_offset)
             configuration = fptr.read(array_size).decode("utf-8")
 
-            print("Configuration file for ",self.file_name)
-            print(configuration)
-            return True
+            return configuration
 
       #if we end up here the file does not contain any config info
-      print("File ",self.file_name," contains no config information")
-      return False
+      return None
+
+   def get_config(self):
+      '''
+      Gets config information from VLSV file
+
+      :returns a nested dictionary of dictionaries,
+        where keys (str) are config file group headings (appearing in '[]')
+        and values are dictionaries which contain (lists of) strings 
+
+      If the same heading/parameter pair appears >once in the config file,
+      the different values are appended to the list .
+
+      EXAMPLE:
+      if the config contains these lines:
+         [proton_precipitation]
+         nChannels = 9
+      then the following returns ['9']:
+      vlsvReader.get_config()['proton_precipitation']['nChannels']
+      '''
+      fa = re.findall(r'\[\w+\]|\w+ = \S+', self.get_config_string())
+      heading = ''
+      output = {heading:{}}
+
+      for i, sfa in enumerate(fa):
+         if (sfa[0] == '[') and (sfa[-1] == ']'):
+            heading = sfa[1:-1]
+            output[heading] = {}
+         else:
+            var_name = sfa.split('=')[0].strip()
+            var_value = sfa.split('=')[1].strip()
+            if var_name in output[heading]:
+               # when the same parameter is assigned a value multiple times
+               output[heading][var_name].append(var_value)
+            else:
+               output[heading][var_name] = [var_value]
+
+      return output
+
+   def print_config(self):
+      '''
+      Prints config information from VLSV file.
+
+      :returns True if config is found otherwise returns False
+      '''
+      config_string = self.get_config_string()
+      if config_string is not None:
+         print(config_string)
+         return True
+      else:
+         #if we end up here the file does not contain any config info
+         print("File ",self.file_name," contains no config information")
+         return False
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
@@ -643,39 +693,6 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-
-      # Special handling for dxs: need reader object to call get_cell_dx
-      if name == "vg_dxs":
-         if isinstance(cellids, numbers.Number): # single or all cells
-            if cellids >= 0: # single cell
-               return self.get_cell_dx(cellids)
-            else:
-               cellids = self.read_variable("CellID")
-               return self.get_cell_dxs(cellids)
-
-               # dxs = np.zeros((len(cellids),3)) #this is bad
-               # for i, cid in enumerate(cellids):
-               #    dxs[i,:]= self.get_cell_dx(cid)
-               # return dxs
-               
-         else: # list of cellids
-            # dxs = np.zeros((len(cellids),3))
-            # for i, cid in enumerate(cellids):
-            #    dxs[i,:]= self.get_cell_dx(cid)
-            # return dxs
-            return self.get_cell_dxs(cellids)
-      if name == "vg_coordinates":
-         if isinstance(cellids, numbers.Number): # single or all cells
-            if cellids >= 0: # single cell
-               return self.get_cell_coordinates(cellids)
-            else:
-               cellids = self.read_variable("CellID")
-               return(self.get_cells_coordinates(cellids))
-               #return np.array([self.get_cell_coordinates(c) for c in cellids])
-               
-         else: # list of cellids
-            return(self.get_cells_coordinates(cellids))
-            #return [self.get_cell_coordinates(c) for c in cellids]
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
@@ -819,7 +836,7 @@ class VlsvReader(object):
             operator="absolute"
 
          # Return the output of the datareducer
-         if reducer.useVspace:
+         if reducer.useVspace and not reducer.useReader:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
             output = np.zeros(len(actualcellids))
             index = 0
@@ -835,12 +852,20 @@ class VlsvReader(object):
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
                print(index,"/",len(actualcellids))
-            return data_operators[operator](output)
+            
+            if reducer.useReader:
+               print("Combined useVspace and useReader reducers not implemented!")
+               raise NotImplementedError()
+            else:
+               return data_operators[operator](output)
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
-            return data_operators[operator](reducer.operation( tmp_vars ))
+            if reducer.useReader:
+               return data_operators[operator](reducer.operation( tmp_vars, self ))
+            else:
+               return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multipop datareducers
       if 'pop/'+varname in reducer_multipop:
@@ -1301,6 +1326,10 @@ class VlsvReader(object):
 
        currentOffset = 0;
        fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       # Hacky fix for FHA FSgrid output, where decompositions 1 and 2 may be flipped
+       if os.getenv('FSGRIDSWAP'):
+          fsgridDecomposition[1],fsgridDecomposition[2] = fsgridDecomposition[2],fsgridDecomposition[1]
+
        for i in range(0,numWritingRanks):
            x = (i // fsgridDecomposition[2]) // fsgridDecomposition[1]
            y = (i // fsgridDecomposition[2]) % fsgridDecomposition[1]

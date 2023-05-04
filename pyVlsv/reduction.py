@@ -1311,6 +1311,27 @@ def N_flip_distance( variables ):
    N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
 
    return N_zero_intercept
+def vg_coordinates_cellcenter( variables, reader):
+   cellids = variables[0]
+   if not hasattr(cellids,"__len__"): # single cell
+      return reader.get_cell_coordinates(cellids)
+   else: # list of cellids
+      return reader.get_cells_coordinates(cellids)
+
+def vg_coordinates_lowcorner( variables, reader):
+   cellids = variables[0]
+   dxs = variables[1]
+   if not hasattr(cellids,"__len__"): # single cell
+      return reader.get_cell_coordinates(cellids)-dxs/2
+   else: # list of cellids
+      return reader.get_cells_coordinates(cellids)-dxs/2
+
+def vg_dx(variables, reader):
+   cellids = variables[0]
+   if not hasattr(cellids,"__len__"): # single cell
+      return reader.get_cell_dx(cellids)
+   else: # list of cellids
+      return reader.get_cell_dxs(cellids)
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
@@ -1636,6 +1657,14 @@ v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobi
 v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 
 #v5reducers["vg_dxs"] =                   DataReducerVariable(["CellID"], DXs, "m", 1, latex=r"$\delta\vec{x}$",latexunits=r"$\mathrm{m}$")
+v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
+
+v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
 
 
 #multipopv5reducers
