@@ -694,39 +694,6 @@ class VlsvReader(object):
       # Force lowercase name for internal checks
       name = name.lower()
 
-      # Special handling for dxs: need reader object to call get_cell_dx
-      if name == "vg_dxs":
-         if isinstance(cellids, numbers.Number): # single or all cells
-            if cellids >= 0: # single cell
-               return self.get_cell_dx(cellids)
-            else:
-               cellids = self.read_variable("CellID")
-               return self.get_cell_dxs(cellids)
-
-               # dxs = np.zeros((len(cellids),3)) #this is bad
-               # for i, cid in enumerate(cellids):
-               #    dxs[i,:]= self.get_cell_dx(cid)
-               # return dxs
-               
-         else: # list of cellids
-            # dxs = np.zeros((len(cellids),3))
-            # for i, cid in enumerate(cellids):
-            #    dxs[i,:]= self.get_cell_dx(cid)
-            # return dxs
-            return self.get_cell_dxs(cellids)
-      if name == "vg_coordinates":
-         if isinstance(cellids, numbers.Number): # single or all cells
-            if cellids >= 0: # single cell
-               return self.get_cell_coordinates(cellids)
-            else:
-               cellids = self.read_variable("CellID")
-               return(self.get_cells_coordinates(cellids))
-               #return np.array([self.get_cell_coordinates(c) for c in cellids])
-               
-         else: # list of cellids
-            return(self.get_cells_coordinates(cellids))
-            #return [self.get_cell_coordinates(c) for c in cellids]
-
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
          if isinstance(cellids, numbers.Number): # single or all cells
@@ -869,7 +836,7 @@ class VlsvReader(object):
             operator="absolute"
 
          # Return the output of the datareducer
-         if reducer.useVspace:
+         if reducer.useVspace and not reducer.useReader:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
             output = np.zeros(len(actualcellids))
             index = 0
@@ -885,12 +852,20 @@ class VlsvReader(object):
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
                print(index,"/",len(actualcellids))
-            return data_operators[operator](output)
+            
+            if reducer.useReader:
+               print("Combined useVspace and useReader reducers not implemented!")
+               raise NotImplementedError()
+            else:
+               return data_operators[operator](output)
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
-            return data_operators[operator](reducer.operation( tmp_vars ))
+            if reducer.useReader:
+               return data_operators[operator](reducer.operation( tmp_vars, self ))
+            else:
+               return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multipop datareducers
       if 'pop/'+varname in reducer_multipop:

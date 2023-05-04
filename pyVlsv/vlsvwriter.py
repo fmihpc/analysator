@@ -162,11 +162,11 @@ class VlsvWriter(object):
       for child in xml_root:
          if child.tag in tags:
             if 'name' in child.attrib:
-                name = child.attrib['name']
-                if not name in vars:
+               name = child.attrib['name']
+               if not name in vars:
                   continue
-                else:
-                   found_vars.append(name)
+               else:
+                  found_vars.append(name)
             else:
                 continue
             if 'mesh' in child.attrib:
