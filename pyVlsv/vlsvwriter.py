@@ -156,6 +156,7 @@ class VlsvWriter(object):
       # Get list of tags to write:
       tags = {}
       tags['VARIABLE'] = ''
+      found_vars = []
 
       # Copy the xml root and write variables
       for child in xml_root:
@@ -164,9 +165,8 @@ class VlsvWriter(object):
                 name = child.attrib['name']
                 if not name in vars:
                   continue
-                  #  varinfo = vlsvReader.read_variable_info(name)
-                  #  self.write_variable_info(varinfo, mesh, unitConversion, extra_attribs={}))
-                  #  continue
+                else:
+                   found_vars.append(name)
             else:
                 continue
             if 'mesh' in child.attrib:
@@ -185,6 +185,10 @@ class VlsvWriter(object):
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+
+      for name in [varname for varname in vars if varname not in found_vars]:
+         varinfo = vlsvReader.read_variable_info(name)
+         self.write_variable_info(varinfo, 'SpatialGrid', 1)
       return
 
    def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
@@ -268,7 +272,8 @@ class VlsvWriter(object):
          print("BAD DATASIZE")
          return False
       
-      if extra_attribs != '':
+      if (extra_attribs != '') and (extra_attribs is not None):
+         print(extra_attribs)
          for i in extra_attribs.items():
             child.attrib[i[0]] = i[1]
 
@@ -276,7 +281,10 @@ class VlsvWriter(object):
       # Info the xml about the file offset for the data:
       child.text = str(current_offset)
 
-      data.tofile(fptr)
+      try:
+         data.tofile(fptr)
+      except:
+         np.ma.getdata(data).tofile(fptr) # numpy maskedarray tofile not implemented yet
 
       # write the xml footer:
       self.__write_xml_footer()
