@@ -694,25 +694,17 @@ def firstadiabatic( variables ):
 
 def vg_coordinates_cellcenter( variables, reader):
    cellids = variables[0]
-   if not hasattr(cellids,"__len__"): # single cell
-      return reader.get_cell_coordinates(cellids)
-   else: # list of cellids
-      return reader.get_cells_coordinates(cellids)
+   return reader.get_cell_coordinates(cellids)
 
 def vg_coordinates_lowcorner( variables, reader):
    cellids = variables[0]
    dxs = variables[1]
-   if not hasattr(cellids,"__len__"): # single cell
-      return reader.get_cell_coordinates(cellids)-dxs/2
-   else: # list of cellids
-      return reader.get_cells_coordinates(cellids)-dxs/2
+   return reader.get_cell_coordinates(cellids)-dxs/2
 
 def vg_dx(variables, reader):
    cellids = variables[0]
-   if not hasattr(cellids,"__len__"): # single cell
-      return reader.get_cell_dx(cellids)
-   else: # list of cellids
-      return reader.get_cell_dxs(cellids)
+   return reader.get_cell_dx(cellids)
+
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
