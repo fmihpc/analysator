@@ -75,7 +75,7 @@ class VlsvReader(object):
       self.__blocks_per_cell = {} # per-pop
       self.__blocks_per_cell_offsets = {} # per-pop
       self.__order_for_cellid_blocks = {} # per-pop
-      self.__vg_cellids_on_fg = np.array([])
+      self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
       
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
@@ -688,6 +688,12 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
+      if tag == "" and name == "":
+         print("Bad (empty) arguments at VlsvReader.read")
+         raise ValueError()
+
+      # Force lowercase name for internal checks
+      name = name.lower()
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
@@ -697,17 +703,14 @@ class VlsvReader(object):
          else: # list of cellids
             self.__read_fileindex_for_cellid()
                
-      if tag == "" and name == "":
-         print("Bad arguments at read")
-
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
 
-      # Force lowercase name for internal checks
-      name = name.lower()
+
          
+
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -834,7 +837,7 @@ class VlsvReader(object):
             operator="absolute"
 
          # Return the output of the datareducer
-         if reducer.useVspace:
+         if reducer.useVspace and not reducer.useReader:
             actualcellids = self.read(mesh="SpatialGrid", name="CellID", tag="VARIABLE", operator=operator, cellids=cellids)
             output = np.zeros(len(actualcellids))
             index = 0
@@ -850,12 +853,20 @@ class VlsvReader(object):
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
                print(index,"/",len(actualcellids))
-            return data_operators[operator](output)
+            
+            if reducer.useReader:
+               print("Combined useVspace and useReader reducers not implemented!")
+               raise NotImplementedError()
+            else:
+               return data_operators[operator](output)
          else:
             tmp_vars = []
             for i in np.atleast_1d(reducer.variables):
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
-            return data_operators[operator](reducer.operation( tmp_vars ))
+            if reducer.useReader:
+               return data_operators[operator](reducer.operation( tmp_vars, self ))
+            else:
+               return data_operators[operator](reducer.operation( tmp_vars ))
 
       # Check if the name is in multipop datareducers
       if 'pop/'+varname in reducer_multipop:
@@ -1526,18 +1537,35 @@ class VlsvReader(object):
             
          self.__max_spatial_amr_level = AMR_count - 1
       return self.__max_spatial_amr_level
-      
+
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid
       
       :param cellid:        The cell's cellid
       :returns:             The cell's refinement level in the AMR
       '''
-      AMR_count = 0
-      while (cellid > 0):
-         cellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
-         AMR_count += 1
-      return AMR_count - 1 
+      stack = True
+      if not hasattr(cellid,"__len__"):
+         cellid = np.atleast_1d(cellid)
+         stack = False
+
+      AMR_count = np.zeros(np.array(cellid).shape, dtype=np.int64)
+      cellids = cellid.astype(np.int64)
+      iters = 0
+      while np.any(cellids > 0):
+         mask = cellids > 0
+         sub = 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells)
+         np.subtract(cellids, sub, out = cellids, where = mask)
+         np.add(AMR_count, 1, out = AMR_count, where = mask)
+         iters = iters+1
+         if(iters > self.get_max_refinement_level()+1):
+            print("Can't have that large refinements. Something broke.")
+            break
+
+      if stack:
+         return AMR_count - 1 
+      else:
+         return (AMR_count - 1)[0]
 
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
@@ -1545,7 +1573,25 @@ class VlsvReader(object):
       :param cellid:        The cell's cellid
       :returns:             The cell's size [dx, dy, dz]
       '''
-      return np.array([self.__dx,self.__dy,self.__dz])/2**self.get_amr_level(cellid)
+
+      stack = True
+      if not hasattr(cellid,"__len__"):
+         cellid = np.atleast_1d(cellid)
+         stack = False
+
+      cellid = np.array(cellid, dtype=np.int64)
+
+      dxs = np.array([[self.__dx,self.__dy,self.__dz]])
+
+      dxs = dxs.repeat(cellid.shape[0], axis=0)
+
+      amrs = np.array([self.get_amr_level(cellid)]).transpose()
+      amrs = amrs.repeat(3,axis=1)
+
+      if stack:
+         return dxs/2**amrs
+      else:
+         return (dxs/2**amrs)[0]
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
@@ -1587,7 +1633,7 @@ class VlsvReader(object):
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
       if array.ndim == 4:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+         return array[lowi[0]:upi[0]+int(1), lowi[1]:upi[1]+int(1), lowi[2]:upi[2]+int(1), :]
       else:
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
 
@@ -1607,24 +1653,17 @@ class VlsvReader(object):
    def fsgrid_array_to_vg(self, array):
       cellIds=self.read_variable("CellID")
 
-      #if not hasattr(self, 'fsCellIdTargets'):
-      #   self.fsCellIdTargets = np.zeros(self.get_fsgrid_mesh_size())
-      #   for cid in cellIds:
-      #      lowi, upi = self.get_cell_fsgrid_slicemap(cid)
-      #      self.fsCellIdTargets[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1] = cid
       self.map_vg_onto_fg()
-      #vgarr = [self.downsample_fsgrid_subarray(cid, array) for cid in cellIds]
-      counts = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size))
+      counts = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size))
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
          for i in range(numel):
-            print("vector variable", i)
-            sums = np.bincount(np.reshape(self.__vg_cellids_on_fg,self.__vg_cellids_on_fg.size),
+            sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
                                   weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
             vgarr[:,i] = np.divide(sums,counts)
       else:
-         sums = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size), weights=np.reshape(array,array.size))
+         sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
          vgarr = np.divide(sums,counts)
       return vgarr
 
@@ -1661,30 +1700,34 @@ class VlsvReader(object):
       else:
          fg_var = np.zeros(sz, dtype=vg_var.dtype)
       self.map_vg_onto_fg()
-      fg_var = vg_var[self.__vg_cellids_on_fg]
+      fg_var = vg_var[self.__vg_indexes_on_fg]
       return fg_var
 
+   # Builds fsgrid array that contains indices to the SpatialGrid data that are colocated with the fsgrid cells.
+   # Many fsgrid cells may map to the same index of SpatialGrid data.
+   # Example: for fsgrid cell at indices [i,j,k], find the overlaying SpatialGrid cell by:
+   # vg_overlaying_CellID_at_ijk = self.read_variable('CellID')[self.__vg_indexes_on_fg[i,j,k]]
+   # or, for all fsgrid cells:
+   # vg_CellIDs_on_fg = self.read_variable('CellID')[self.__vg_indexes_on_fg]
    def map_vg_onto_fg(self):
-      if(len(self.__vg_cellids_on_fg)==0):
+      if(len(self.__vg_indexes_on_fg)==0):
          vg_cellids = self.read_variable('CellID')
          sz = self.get_fsgrid_mesh_size()
          sz_amr = self.get_spatial_mesh_size()
-         self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
-         current_amr_level = self.get_amr_level(np.min(vg_cellids))
          max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
-         current_max_cellid = 0
-         for level in range(current_amr_level+1):
-            current_max_cellid += 2**(3*(level))*(self.__xcells*self.__ycells*self.__zcells)
-         for id in np.argsort(vg_cellids):
-            if vg_cellids[id] > current_max_cellid:
-               current_amr_level += 1
-               current_max_cellid += 2**(3*(current_amr_level))*(self.__xcells*self.__ycells*self.__zcells)
-            this_cell_indices = np.array(self.get_cell_indices(vg_cellids[id], current_amr_level), dtype=np.int64)
-            refined_ids_start = this_cell_indices * 2**(max_amr_level-current_amr_level)
-            refined_ids_end = refined_ids_start + 2**(max_amr_level-current_amr_level)
-            self.__vg_cellids_on_fg[refined_ids_start[0]:refined_ids_end[0],refined_ids_start[1]:refined_ids_end[1],refined_ids_start[2]:refined_ids_end[2]] = id
+         self.__vg_indexes_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+         amr_levels = self.get_amr_level(vg_cellids)
+         cell_indices = np.array(self.get_cell_indices(vg_cellids,amr_levels),dtype=np.int64)
+         refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
+         refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
+            
+         
+         for i in range(vg_cellids.shape[0]):
+            self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
+                                    refined_ids_start[i,1]:refined_ids_end[i,1],
+                                    refined_ids_start[i,2]:refined_ids_end[i,2]] = i
 
-
+      return self.__vg_indexes_on_fg
 
    def get_cell_fsgrid(self, cellid):
       '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
@@ -1763,55 +1806,51 @@ class VlsvReader(object):
 
           if AMR_count == refmax + 1:
               raise Exception('CellID does not exist in any AMR level')
-
-   def get_cell_coordinates(self, cellid):
+   
+   def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
-      :param cellid:            The cell's ID
+      :param cellids:            The array of cell IDs
       :returns: a numpy array with the coordinates
 
       .. seealso:: :func:`get_cellid`
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-      # Get cell lengths:
-      xcells = self.__xcells
-      ycells = self.__ycells
-      zcells = self.__zcells
-      cellid = (int)(cellid - 1)
-      # Handle AMR
-      cellscount = self.__xcells*self.__ycells*self.__zcells
-      reflevel=0
-      subtraction = (int)(cellscount * (2**reflevel)**3)
-      while (cellid >= subtraction):
-         cellid -= subtraction
-         reflevel += 1
-         subtraction = (int)(cellscount * (2**reflevel)**3)
-         xcells *= 2
-         ycells *= 2
-         zcells *= 2
-      # Get cell indices:
-      cellindices = np.zeros(3)
-      cellindices[0] = (int)(cellid)%(int)(xcells)
-      cellindices[1] = ((int)(cellid)//(int)(xcells))%(int)(ycells)
-      cellindices[2] = (int)(cellid)//(int)(xcells*ycells)
-      # cellindices[0] = (int)(cellid)%(int)(self.__xcells)
-      # cellindices[1] = ((int)(cellid)//(int)(self.__xcells))%(int)(self.__ycells)
-      # cellindices[2] = (int)(cellid)//(int)(self.__xcells*self.__ycells)
-   
-      # Get cell coordinates:
-      cell_lengths = np.array([(self.__xmax - self.__xmin)/(float)(xcells), (self.__ymax - self.__ymin)/(float)(ycells), (self.__zmax - self.__zmin)/(float)(zcells)])
-      cellcoordinates = np.zeros(3)
-      cellcoordinates[0] = self.__xmin + (cellindices[0] + 0.5) * cell_lengths[0]
-      cellcoordinates[1] = self.__ymin + (cellindices[1] + 0.5) * cell_lengths[1]
-      cellcoordinates[2] = self.__zmin + (cellindices[2] + 0.5) * cell_lengths[2]
-      # Return the coordinates:
-      return np.array(cellcoordinates)
 
-   def get_cell_indices(self, cellid, reflevel):
+      stack = True
+      if not hasattr(cellids,"__len__"):
+         cellids = np.atleast_1d(cellids)
+         stack = False
+
+      # Get cell lengths:
+      xcells = np.zeros((self.get_max_refinement_level()+1), dtype=np.int64)
+      ycells = np.zeros((self.get_max_refinement_level()+1), dtype=np.int64)
+      zcells = np.zeros((self.get_max_refinement_level()+1), dtype=np.int64)
+      for r in range(self.get_max_refinement_level()+1):
+         xcells[r] = self.__xcells*2**(r)
+         ycells[r] = self.__ycells*2**(r)
+         zcells[r] = self.__zcells*2**(r)
+
+      reflevels = self.get_amr_level(cellids)
+      cellindices = self.get_cell_indices(cellids)
+
+      # Get cell coordinates:
+      cell_lengths = np.array([(self.__xmax - self.__xmin)/(xcells[reflevels]),
+                               (self.__ymax - self.__ymin)/(ycells[reflevels]),
+                               (self.__zmax - self.__zmin)/(zcells[reflevels])]).T
+      mins = np.array([self.__xmin,self.__ymin,self.__zmin])
+      cellcoordinates = mins + (cellindices + 0.5)*cell_lengths
+      # Return the coordinates:
+      if stack:
+         return np.array(cellcoordinates)
+      else:
+         return np.array(cellcoordinates)[0]
+
+   def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
 
-      :param cellid:            The cell's ID
+      :param cellid:            The cell's ID, numpy array
       :param reflevel:          The cell's refinement level in the AMR
       :returns: a numpy array with the coordinates
 
@@ -1819,20 +1858,37 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
+
+      stack = True
+      if not hasattr(cellids,"__len__"):
+         cellids = np.atleast_1d(cellids)
+         stack = False
+
+      if reflevels is None:
+         reflevels = self.get_amr_level(cellids)
+      else:
+         reflevels = np.atleast_1d(reflevels)
+      
       # Calculating the index of the first cell at this reflevel
-      index_at_reflevel = 0
-      for i in range(0,reflevel):
-         index_at_reflevel += 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
+      index_at_reflevel = np.zeros(self.get_max_refinement_level()+1, dtype=np.int64)
+      isum = 0
+      for i in range(0,self.get_max_refinement_level()):
+         isum = isum + 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
+         index_at_reflevel[i+1] = isum
+
 
       # Get cell indices:
-      cellid = (int)(cellid - 1 - index_at_reflevel)
-      cellindices = np.zeros(3)
-      cellindices[0] = (int)(cellid)%(int)(2**reflevel*self.__xcells)
-      cellindices[1] = ((int)(cellid)//(int)(2**reflevel*self.__xcells))%(int)(2**reflevel*self.__ycells)
-      cellindices[2] = (int)(cellid)//(int)(4**reflevel*self.__xcells*self.__ycells)
+      cellids = np.array(cellids - 1 - index_at_reflevel[reflevels], dtype=np.int64).copy()
+      cellindices = np.zeros((len(cellids),3))
+      cellindices[:,0] = (cellids)%(np.power(2,reflevels)*self.__xcells)
+      cellindices[:,1] = ((cellids)//(np.power(2,reflevels)*self.__xcells))%(np.power(2,reflevels)*self.__ycells)
+      cellindices[:,2] = (cellids)//(np.power(4,reflevels)*self.__xcells*self.__ycells)
 
       # Return the indices:
-      return np.array(cellindices)
+      if stack:
+         return np.array(cellindices)
+      else:
+         return np.array(cellindices)[0]
 
    def get_cell_neighbor(self, cellid, offset, periodic):
       ''' Returns a given cells neighbor at offset (in indices)
@@ -2312,8 +2368,12 @@ class VlsvReader(object):
       :returns: Size of mesh in number of cells, array with three elements
       '''
       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
-      bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
-      return np.array(bbox[0:3])
+      try:
+         bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+         return np.array(bbox[0:3])
+      except:
+         bbox = self.read(tag="MESH_BBOX", mesh="SpatialGrid")
+         return np.array(bbox[0:3]) * 2**self.get_max_refinement_level()
 
    def get_fsgrid_mesh_extent(self):
       ''' Read fsgrid mesh extent

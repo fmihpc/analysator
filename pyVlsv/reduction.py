@@ -692,6 +692,20 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def vg_coordinates_cellcenter( variables, reader):
+   cellids = variables[0]
+   return reader.get_cell_coordinates(cellids)
+
+def vg_coordinates_lowcorner( variables, reader):
+   cellids = variables[0]
+   dxs = variables[1]
+   return reader.get_cell_coordinates(cellids)-dxs/2
+
+def vg_dx(variables, reader):
+   cellids = variables[0]
+   return reader.get_cell_dx(cellids)
+
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -1003,6 +1017,15 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
+
+v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
+
+v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
 
 
 #multipopv5reducers

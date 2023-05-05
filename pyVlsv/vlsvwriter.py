@@ -101,6 +101,8 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
+            #print("writing",name, tag)
+
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 
@@ -154,14 +156,17 @@ class VlsvWriter(object):
       # Get list of tags to write:
       tags = {}
       tags['VARIABLE'] = ''
+      found_vars = []
 
       # Copy the xml root and write variables
       for child in xml_root:
          if child.tag in tags:
             if 'name' in child.attrib:
-                name = child.attrib['name']
-                if not name in vars:
-                   continue
+               name = child.attrib['name']
+               if not name in vars:
+                  continue
+               else:
+                  found_vars.append(name)
             else:
                 continue
             if 'mesh' in child.attrib:
@@ -180,6 +185,10 @@ class VlsvWriter(object):
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+
+      for name in [varname for varname in vars if varname not in found_vars]:
+         varinfo = vlsvReader.read_variable_info(name)
+         self.write_variable_info(varinfo, 'SpatialGrid', 1)
       return
 
    def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
@@ -263,7 +272,7 @@ class VlsvWriter(object):
          print("BAD DATASIZE")
          return False
       
-      if extra_attribs != '':
+      if (extra_attribs != '') and (extra_attribs is not None):
          for i in extra_attribs.items():
             child.attrib[i[0]] = i[1]
 
@@ -271,7 +280,10 @@ class VlsvWriter(object):
       # Info the xml about the file offset for the data:
       child.text = str(current_offset)
 
-      data.tofile(fptr)
+      try:
+         data.tofile(fptr)
+      except:
+         np.ma.getdata(data).tofile(fptr) # numpy maskedarray tofile not implemented yet
 
       # write the xml footer:
       self.__write_xml_footer()
@@ -282,10 +294,10 @@ class VlsvWriter(object):
          -data: The variable data (array)
          -name: Name of the data array
          -latex: LaTeX string representation of the variable name
-         -units: plaintext string represenation of the unit
-         -latexunits: LaTeX string represenation of the unit
+         -units: plaintext string representation of the unit
+         -latexunits: LaTeX string representation of the unit
       :param mesh: Mesh for the data array
-      :param unitConversion: string represenation of the unit conversion to get to SI
+      :param unitConversion: string representation of the unit conversion to get to SI
       :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh,
         or contained in varinfo. Can be used to overwrite varinfo values besids name.
 
