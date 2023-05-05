@@ -1537,18 +1537,6 @@ class VlsvReader(object):
             
          self.__max_spatial_amr_level = AMR_count - 1
       return self.__max_spatial_amr_level
-      
-   # def get_amr_level(self,cellid):
-   #    '''Returns the AMR level of a given cell defined by its cellid
-      
-   #    :param cellid:        The cell's cellid
-   #    :returns:             The cell's refinement level in the AMR
-   #    '''
-   #    AMR_count = 0
-   #    while (cellid > 0):
-   #       cellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
-   #       AMR_count += 1
-   #    return AMR_count - 1 
 
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid
@@ -1858,32 +1846,6 @@ class VlsvReader(object):
          return np.array(cellcoordinates)
       else:
          return np.array(cellcoordinates)[0]
-
-   # def get_cell_indices(self, cellid, reflevel):
-   #    ''' Returns a given cell's indices as a numpy array
-
-   #    :param cellid:            The cell's ID
-   #    :param reflevel:          The cell's refinement level in the AMR
-   #    :returns: a numpy array with the coordinates
-
-   #    .. seealso:: :func:`get_cellid`
-
-   #    .. note:: The cell ids go from 1 .. max not from 0
-   #    '''
-   #    # Calculating the index of the first cell at this reflevel
-   #    index_at_reflevel = 0
-   #    for i in range(0,reflevel):
-   #       index_at_reflevel += 2**(3*i) * self.__xcells * self.__ycells * self.__zcells
-
-   #    # Get cell indices:
-   #    cellid = (int)(cellid - 1 - index_at_reflevel)
-   #    cellindices = np.zeros(3)
-   #    cellindices[0] = (int)(cellid)%(int)(2**reflevel*self.__xcells)
-   #    cellindices[1] = ((int)(cellid)//(int)(2**reflevel*self.__xcells))%(int)(2**reflevel*self.__ycells)
-   #    cellindices[2] = (int)(cellid)//(int)(4**reflevel*self.__xcells*self.__ycells)
-
-   #    # Return the indices:
-   #    return np.array(cellindices)
 
    def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
