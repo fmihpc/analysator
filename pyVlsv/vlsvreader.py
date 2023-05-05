@@ -1644,7 +1644,6 @@ class VlsvReader(object):
       '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
-      print('subarray:',lowi, upi)
       if array.ndim == 4:
          return array[lowi[0]:upi[0]+int(1), lowi[1]:upi[1]+int(1), lowi[2]:upi[2]+int(1), :]
       else:
@@ -1728,6 +1727,7 @@ class VlsvReader(object):
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
             
+         
          for i in range(vg_cellids.shape[0]):
             self.__vg_cellids_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
                                     refined_ids_start[i,1]:refined_ids_end[i,1],
