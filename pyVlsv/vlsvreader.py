@@ -75,7 +75,7 @@ class VlsvReader(object):
       self.__blocks_per_cell = {} # per-pop
       self.__blocks_per_cell_offsets = {} # per-pop
       self.__order_for_cellid_blocks = {} # per-pop
-      self.__vg_cellids_on_fg = np.array([])
+      self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
       
       self.__read_xml_footer()
       # Check if the file is using new or old vlsv format
@@ -1666,16 +1666,16 @@ class VlsvReader(object):
       cellIds=self.read_variable("CellID")
 
       self.map_vg_onto_fg()
-      counts = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size))
+      counts = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size))
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
          for i in range(numel):
-            sums = np.bincount(np.reshape(self.__vg_cellids_on_fg,self.__vg_cellids_on_fg.size),
+            sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
                                   weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
             vgarr[:,i] = np.divide(sums,counts)
       else:
-         sums = np.bincount(np.reshape(self.__vg_cellids_on_fg, self.__vg_cellids_on_fg.size), weights=np.reshape(array,array.size))
+         sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
          vgarr = np.divide(sums,counts)
       return vgarr
 
@@ -1712,16 +1712,22 @@ class VlsvReader(object):
       else:
          fg_var = np.zeros(sz, dtype=vg_var.dtype)
       self.map_vg_onto_fg()
-      fg_var = vg_var[self.__vg_cellids_on_fg]
+      fg_var = vg_var[self.__vg_indexes_on_fg]
       return fg_var
 
+   # Builds fsgrid array that contains indices to the SpatialGrid data that are colocated with the fsgrid cells.
+   # Many fsgrid cells may map to the same index of SpatialGrid data.
+   # Example: for fsgrid cell at indices [i,j,k], find the overlaying SpatialGrid cell by:
+   # vg_overlaying_CellID_at_ijk = self.read_variable('CellID')[self.__vg_indexes_on_fg[i,j,k]]
+   # or, for all fsgrid cells:
+   # vg_CellIDs_on_fg = self.read_variable('CellID')[self.__vg_indexes_on_fg]
    def map_vg_onto_fg(self):
-      if(len(self.__vg_cellids_on_fg)==0):
+      if(len(self.__vg_indexes_on_fg)==0):
          vg_cellids = self.read_variable('CellID')
          sz = self.get_fsgrid_mesh_size()
          sz_amr = self.get_spatial_mesh_size()
          max_amr_level = int(np.log2(sz[0] / sz_amr[0]))
-         self.__vg_cellids_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+         self.__vg_indexes_on_fg = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
          amr_levels = self.get_amr_level(vg_cellids)
          cell_indices = np.array(self.get_cell_indices(vg_cellids,amr_levels),dtype=np.int64)
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
@@ -1729,11 +1735,11 @@ class VlsvReader(object):
             
          
          for i in range(vg_cellids.shape[0]):
-            self.__vg_cellids_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
+            self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
                                     refined_ids_start[i,1]:refined_ids_end[i,1],
                                     refined_ids_start[i,2]:refined_ids_end[i,2]] = i
 
-      return self.__vg_cellids_on_fg
+      return self.__vg_indexes_on_fg
 
    def get_cell_fsgrid(self, cellid):
       '''Returns a slice tuple of fsgrid indices that are contained in the SpatialGrid
