@@ -273,7 +273,6 @@ class VlsvWriter(object):
          return False
       
       if (extra_attribs != '') and (extra_attribs is not None):
-         print(extra_attribs)
          for i in extra_attribs.items():
             child.attrib[i[0]] = i[1]
 
