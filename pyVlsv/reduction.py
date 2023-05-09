@@ -748,6 +748,10 @@ def vg_dx(variables, reader):
    cellids = variables[0]
    return reader.get_cell_dx(cellids)
 
+def vg_reflevel(variables, reader):
+   cellids = variables[0]
+   return reader.get_amr_level(cellids)
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -1068,8 +1072,7 @@ v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["C
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
-
-
+v5reducers["vg_reflevel"] =            DataReducerVariable(["CellID"], vg_reflevel, "", 1, latex=r"reflevel", latexunits=r"", useReader=True)
 
 v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
