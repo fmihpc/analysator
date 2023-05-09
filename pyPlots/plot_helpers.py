@@ -1496,5 +1496,5 @@ def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     else:
         ref = extmaps['vg_reflevel']
 
-    ax.contour(XmeshXY, YmeshXY, ref, antialiased=False, linewidths=0.1, cmap='viridis')
+    ax.contour(XmeshXY, YmeshXY, ref, antialiased=False, linewidths=0.1, cmap='gray')
 
