@@ -231,7 +231,6 @@ def restart_rhoq( variables ):
          return None
    return rhoq
 
-
 def rhom( variables ):
    ''' Data reducer function for calculating rhom from pre-multipop file
    '''
@@ -693,7 +692,7 @@ def ion_inertial( variables ):
    rho = np.ma.masked_less_equal(np.ma.masked_invalid(np.array(variables[0])),0)
    mass = vlsvvariables.speciesamu[vlsvvariables.activepopulation]*mp
    charge = vlsvvariables.speciescharge[vlsvvariables.activepopulation]*elementalcharge
-   omegapi = np.sqrt(rho/(mass*epsilon_0))*charge
+   omegapi = np.sqrt(rho * charge * charge / (mass*epsilon_0))
    di = np.ma.divide(speedoflight,omegapi)
    return di
 
@@ -730,6 +729,12 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def JPerB_criteria( variables ):
+   ''' Data reducer function for calculating J/B refinement criterion as it is done in Vlasiator
+   '''
+   J_per_B = variables[0]
+   return np.log2(J_per_B * vlsvvariables.cellsize + 1E-30)# + vlsvvariables.J_per_B_modifier
+
 def vg_coordinates_cellcenter( variables, reader):
    cellids = variables[0]
    return reader.get_cell_coordinates(cellids)
@@ -743,6 +748,9 @@ def vg_dx(variables, reader):
    cellids = variables[0]
    return reader.get_cell_dx(cellids)
 
+def vg_reflevel(variables, reader):
+   cellids = variables[0]
+   return reader.get_amr_level(cellids)
 
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
@@ -1055,6 +1063,7 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
+v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jperb"], JPerB_criteria, "", 1, latex=r"$\log_2 (J/B_{\perp} \cdot \Delta x_0)$",latexunits=r"1")
 
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
@@ -1063,8 +1072,7 @@ v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["C
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
-
-
+v5reducers["vg_reflevel"] =            DataReducerVariable(["CellID"], vg_reflevel, "", 1, latex=r"reflevel", latexunits=r"", useReader=True)
 
 v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
