@@ -1496,5 +1496,8 @@ def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     else:
         ref = extmaps['vg_reflevel']
 
-    ax.contour(XmeshXY, YmeshXY, ref, antialiased=False, linewidths=0.1, cmap='gray')
+    minref = int(np.amin(ref))
+    maxref = int(np.amax(ref))
+    levels = np.arange(minref,maxref)+0.5
+    ax.contour(XmeshXY, YmeshXY, ref, levels, antialiased=False, linewidths=0.1, cmap='gray')
 
