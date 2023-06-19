@@ -54,6 +54,10 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
       Proper Ursian SDF/SDB
    '''
    stack = True
+   LMNs = LMNs.copy()
+   jacobs = jacobs.copy()
+   dxs = dxs.copy()
+   Bs = Bs.copy()
    if(Bs.shape == (3,)):  # I want these to be stacks
       stack = False
       LMNs = np.array([LMNs])

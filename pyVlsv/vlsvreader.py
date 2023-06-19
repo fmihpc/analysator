@@ -38,6 +38,17 @@ except ImportError:
 from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
+from numba import jit
+
+@jit(nopython=True)
+def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
+   #arr = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+
+   for i in range(vg_cellids.shape[0]):
+      arr[refined_ids_start[i,0]:refined_ids_end[i,0],
+                           refined_ids_start[i,1]:refined_ids_end[i,1],
+                           refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+   return arr
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -1373,6 +1384,9 @@ class VlsvReader(object):
          singletons = [i for i, sz in enumerate(fssize) if sz == 1]
          for dim in singletons:
             fgdata=np.expand_dims(fgdata, dim)
+      return self.fg_array_to_volumetric(fgdata, name, centering=centering, operator=operator)
+
+   def fg_array_to_volumetric(self, fgdata, name, centering=None,operator="pass"):
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if centering is None:
@@ -1665,6 +1679,7 @@ class VlsvReader(object):
                                   weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
             vgarr[:,i] = np.divide(sums,counts)
       else:
+         print("1671: self.__vg_indexes_on_fg.size = ", self.__vg_indexes_on_fg.size, "array.size = ", array.size)
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
          vgarr = np.divide(sums,counts)
       return vgarr
@@ -1705,6 +1720,7 @@ class VlsvReader(object):
       fg_var = vg_var[self.__vg_indexes_on_fg]
       return fg_var
 
+
    # Builds fsgrid array that contains indices to the SpatialGrid data that are colocated with the fsgrid cells.
    # Many fsgrid cells may map to the same index of SpatialGrid data.
    # Example: for fsgrid cell at indices [i,j,k], find the overlaying SpatialGrid cell by:
@@ -1723,11 +1739,11 @@ class VlsvReader(object):
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
             
-         
-         for i in range(vg_cellids.shape[0]):
-            self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
-                                    refined_ids_start[i,1]:refined_ids_end[i,1],
-                                    refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+         self.__vg_indexes_on_fg = map_vg_onto_fg_loop(self.__vg_indexes_on_fg,vg_cellids, refined_ids_start, refined_ids_end)
+         # for i in range(vg_cellids.shape[0]): #this loop to jit
+         #    self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
+         #                            refined_ids_start[i,1]:refined_ids_end[i,1],
+         #                            refined_ids_start[i,2]:refined_ids_end[i,2]] = i
 
       return self.__vg_indexes_on_fg
 

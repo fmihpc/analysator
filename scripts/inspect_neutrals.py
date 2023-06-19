@@ -30,6 +30,7 @@ from multiprocessing import shared_memory
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
+import time
 
 # https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
 def set_axes_equal(ax):
@@ -62,39 +63,46 @@ def set_axes_equal(ax):
 
 RE = 6371e3
 
-file_id = 806
-path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/"
-fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+file_id = 1267
+path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk_sidecars/lmn/protos/"
+#fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
+fn = "EGI_lmn_{:07d}.vlsv".format(file_id)
 flmn = pt.vlsvfile.VlsvReader(path+fn)
-fxo = pt.vlsvfile.VlsvReader(path+"pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id))
+fxo = flmn #pt.vlsvfile.VlsvReader(path+"pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id))
 
 
 
 Ls = flmn.read_variable("LMN_magnetopause/vg_L")
 Ms = flmn.read_variable("LMN_magnetopause/vg_M")
 Ns = flmn.read_variable("LMN_magnetopause/vg_N")
-ds = fxo.read_variable("vg_LMN_neutral_line_distance")
+ds = fxo.read_variable("vg_LMN_neutral_line_distance").squeeze()
 Js = flmn.read_variable("vg_J")
-d = flmn.read_variable("LMN_magnetopause/vg_jacobian")
+d = flmn.read_variable("LMN_magnetopause/vg_jacobian_b")
 Dimn = fxo.read_variable("vg_MDD_dimensionality")
 CellIds = flmn.read_variable("CellID")
+allcoords = flmn.read_variable("vg_coordinates_cell_center")
+t0 = time.time()
+B = flmn.read_variable_as_fg("vg_b_vol")
+print("B.shape", B.shape)
+print(time.time() - t0, "for read_variable_as_fg")
+dxs = flmn.read_variable_as_fg("vg_dxs")
+# picklefn ="/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/1267-coords.npz"
+# try:
+#    loads = np.load(picklefn)
+#    B = loads['B']
+#    dxs = loads['dxs']
+#    allcoords = loads['allcoords']
+#    print("Loaded B,dxs")
+# except:
+#    B = flmn.read_variable_as_fg("vg_b_vol")
+#    dxs = flmn.read_variable_as_fg("vg_dxs")
+#    allcoords = np.array([flmn.get_cell_coordinates(cid) for cid in CellIds])
+#    np.savez(picklefn, B=B, dxs=dxs,allcoords=allcoords)
 
-picklefn ="/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/806-coords.npz"
-try:
-   loads = np.load(picklefn)
-   B = loads['B']
-   dxs = loads['dxs']
-   allcoords = loads['allcoords']
-   print("Loaded B,dxs")
-except:
-   B = flmn.read_variable_as_fg("vg_b_vol")
-   dxs = flmn.read_variable_as_fg("vg_dxs")
-   allcoords = np.array([flmn.get_cell_coordinates(cid) for cid in CellIds])
-   np.savez(picklefn, B=B, dxs=dxs,allcoords=allcoords)
+# allcoords = np.array([flmn.get_cell_coordinates(cid) for cid in CellIds])
 
 
-
-outfolder = "/proj/mjalho/analysator/scripts/inspect_xo/"
+outfolder = "/proj/mjalho/analysator/scripts/1267/"
 # dB = pt.calculations.idmesh3d2(CellIds, B, flmn.get_max_refinement_level(), *flmn.get_spatial_mesh_size(), 3)
 # ds = pt.calculations.idmesh3d2(CellIds, ds, flmn.get_max_refinement_level(), *flmn.get_spatial_mesh_size(), None)
 boxed = np.all(np.abs(allcoords) < 40*6371e3,axis=-1) & (np.sum(allcoords**2,axis=-1) > (5.5*RE)**2)
@@ -105,15 +113,17 @@ sus_cellids = [354515492]
 hits = np.array(ds < 0.36) & boxed
 scatterpts = allcoords[hits,:]
 # print(np.max(dB),np.max(ds))
-cid = 355282688
-cid = 41099615
-for i,cid in enumerate(CellIds): #[355282688]):#,355282689]):
+# cid = 355282688
+# cid = 41099615
+
+cids_analyse = [4961682,4961414]
+for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
+   i = np.argwhere(CellIds == cid)
    if(ds[i] > 0.36):
      continue
-   #i = np.argwhere(CellIds == cid)
    dx = flmn.get_cell_dx(cid)
    reflevel = flmn.get_amr_level(cid)
-   coords = allcoords[i,:]
+   coords = allcoords[i,:].squeeze()
    if(np.any(np.abs(coords)/6371e3 > 40) or np.linalg.norm(coords) < 5.5*RE):
        continue
    M = (Ms[i,:]/np.linalg.norm(Ms[i,:])).squeeze()
@@ -132,13 +142,17 @@ for i,cid in enumerate(CellIds): #[355282688]):#,355282689]):
    # m1
    # print(coords/6371e3, cp, cid, reflevel)
    
-   try:
-      lowi, upi = flmn.get_bbox_fsgrid_slicemap(low,hi)
-      Bsub = flmn.get_bbox_fsgrid_subarray(low,hi,B)
-      dsub = dxs[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, 0]
-   except:
-      print(cid, "failed at get_bbox_fsgrid_subarray")
-      continue   
+   # try:
+   lowi, upi = flmn.get_bbox_fsgrid_slicemap(low,hi)
+   print(lowi, upi)
+   Bsub = flmn.get_bbox_fsgrid_subarray(low,hi,B)
+   print("Bsub.shape", Bsub.shape)
+   dsub = dxs[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1,0]
+   print("dsub.shape", dsub.shape)
+   # except Exception as e:
+   #    print(cid, "failed at get_bbox_fsgrid_subarray with exception:")
+   #    print(e)
+   #    continue   
    l0 = -np.min(dx)*nd
    l1 = +np.min(dx)*nd
    n0 = -np.min(dx)*nd
@@ -269,7 +283,7 @@ for i,cid in enumerate(CellIds): #[355282688]):#,355282689]):
    y = 1 * np.outer(np.sin(u), np.sin(v))
    z = 1 * np.outer(np.ones(np.size(u)), np.cos(v))
    ax_3d_overview.plot_surface(x, y, z)
-   sc = ax_3d_overview.scatter(allcoords[hits,0]/RE,allcoords[hits,1]/RE,allcoords[hits,2]/RE, c=d[hits,6], s=1, alpha=0.3, marker=',', cmap="roma_r",vmin=-1e-6,vmax=1e-6,label="X/O")
+   sc = ax_3d_overview.scatter(allcoords[hits,0]/RE,allcoords[hits,1]/RE,allcoords[hits,2]/RE, c=d[hits,6], s=1, alpha=0.3, marker=',', cmap="roma_r",vmin=-1e-15,vmax=1e-15,label="X/O")
    cb = plt.colorbar(sc,ax=ax_3d_overview, pad=0.2)
    cb.set_label("$\partial{}_LB_N / \mathrm{Tm}^-1$ (positive is X)")
    #ax2.set_aspect('equal')
@@ -332,13 +346,22 @@ for i,cid in enumerate(CellIds): #[355282688]):#,355282689]):
          folder = "O_1e-3"
       else:
          folder = "O_low"
-
+   folder = ""
    #plt.title(["r = {0:3f}".format(*tuple(coords/RE)), "\n (LNM) = (" + str(L) +", "+ str(M) + "," +str(N)])
-   plt.suptitle("CellID {:d}".format(cid) + ", J = ({:3e},{:3e},{:3e}), {:3e} A".format(*tuple(Js[i,:]),np.linalg.norm(Js[i,:])) +
-               "\nr/RE = [{0:.1f}, {1:.1f}, {2:.1f}]; dBNdL = {3:.3e}".format(*tuple(coords/RE),d[i,6].squeeze()) + xostr + ", ds = {:.2f}".format(ds[i]) + ", Di = ({0:.2f},{1:.2f},{2:.2f})".format(*tuple(Dimn[i,:])) +
+   print(cid)
+   print(Js[i,:])
+   print(coords)
+   print(d[i,6])
+   print(ds[i].squeeze())
+   print(Dimn[i,:],Dimn[i,:].squeeze())
+   plt.suptitle("CellID {:d}".format(cid) + 
+               ", J = ({:3e},{:3e},{:3e}), {:3e} A".format(*tuple(Js[i,:].squeeze()),np.linalg.norm(Js[i,:].squeeze())) +
+               "\nr/RE = [{0:.1f}, {1:.1f}, {2:.1f}]; dBNdL = {3:.3e}".format(*tuple(coords/RE),d[i,6].squeeze()) +
+               xostr + ", ds = {:.2f}".format(ds[i].squeeze()) +
+               ", Di = ({0:.2f},{1:.2f},{2:.2f})".format(*tuple(Dimn[i,:].squeeze())) +
                "\n LMN: ({0:.2f},{1:.2f},{2:.2f}),({3:.2f},{4:.2f},{5:.2f}),({6:.2f},{7:.2f},{8:.2f})".format(*tuple(L),*tuple(M),*tuple(N)))
    
-   plt.savefig("806/"+folder+"/fig{:012d}.png".format(cid))
+   plt.savefig(outfolder+folder+"/fig{:012d}.png".format(cid), dpi=150)
    # print(rot @ np.array([[1,0,0],[0,1,0],[0,0,1]]))
 
 # print(lowi,upi)

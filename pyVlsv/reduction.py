@@ -766,10 +766,9 @@ def GGT( variables ):
    stack = True
    if(variables[0].shape == (9,)):
       stack = False
-      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
-      
-   print(variables[0], variables[0].shape[0])
-   jacobian = variables[0].reshape((variables[0].shape[0],3,3))
+      jacobian = np.array([variables[0]]).reshape((variables[0].shape[0],3,3))
+   else:   
+      jacobian = variables[0].reshape((variables[0].shape[0],3,3))
    jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
    GGT = np.matmul(jacobian, jacobian.transpose((0,2,1)))
    if stack:
@@ -786,8 +785,9 @@ def GTG( variables ):
    stack = True
    if(variables[0].shape == (9,)):
       stack = False
-      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
-   jacobian = variables[0].reshape((variables[0].shape[0],3,3))
+      jacobian = np.array([variables[0]]).reshape((variables[0].shape[0],3,3))
+   else:
+      jacobian = variables[0].reshape((variables[0].shape[0],3,3))
    jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
    GTG = np.matmul(jacobian.transpose((0,2,1)), jacobian)
    if stack:
@@ -909,9 +909,9 @@ def LMN( variables ):
    '''
 
    stack = True
-   MGA_vecs = variables[0]
-   MDD_vecs = variables[1]
-   Js = variables[2]
+   MGA_vecs = variables[0].copy()
+   MDD_vecs = variables[1].copy()
+   Js = variables[2].copy()
    if(Js.shape == (3,)):
       stack = False
       MGA_vecs = np.array([MGA_vecs])
@@ -1349,6 +1349,11 @@ def N_flip_distance( variables ):
    N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
 
    return N_zero_intercept
+
+def vg_e_vol( variables, reader):
+   fg_e = reader.read_fg_variable_as_volumetric("fg_e")
+   return reader.fsgrid_array_to_vg(fg_e)
+
 def vg_coordinates_cellcenter( variables, reader):
    cellids = variables[0]
    return reader.get_cell_coordinates(cellids)
@@ -1607,6 +1612,8 @@ v5reducers["vg_mms"] =                    DataReducerVariable(["vg_v", "vg_vms"]
 
 v5reducers["vg_v_parallel"] =              DataReducerVariable(["vg_v", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_\parallel$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_v_perpendicular"] =         DataReducerVariable(["vg_v", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_\perp$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
+v5reducers["vg_e_vol"] =              DataReducerVariable([], vg_e_vol, "V/m", 1, latex=r"$E_\mathrm{vol,vg}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$",useReader=True)
 
 v5reducers["vg_e_parallel"] =              DataReducerVariable(["vg_e_vol", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_e_perpendicular"] =         DataReducerVariable(["vg_e_vol", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
