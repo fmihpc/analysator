@@ -19,6 +19,50 @@ def interpolate_y(b, x, y, z):
 def interpolate_z(c, x, y, z):
     return interpolate_x(c, z, x, y)
 
+# y and z are simply cyclic rotations of this
+def interpolate_dbxdx(a, x, y, z):
+    B_x = 0
+    for i in range(5):
+        for j in range(4):
+            for k in range(4):
+                B_x += a[i][j][k] * np.polyder(P[i])(x) * P[j](y) * P[k](z)
+    return B_x
+
+def interpolate_dbydx(b, x, y, z):
+    return interpolate_dbxdx(b, y, z, x)
+
+def interpolate_dbzdx(c, x, y, z):
+    return interpolate_dbxdx(c, z, x, y)
+
+def interpolate_dbxdy(a, x, y, z):
+    B_x = 0
+    for i in range(5):
+        for j in range(4):
+            for k in range(4):
+                B_x += a[i][j][k] * P[i](x) * np.polyder(P[j])(y) * P[k](z)
+    return B_x
+
+def interpolate_dbydy(b, x, y, z):
+    return interpolate_dbxdy(b, y, z, x)
+
+def interpolate_dbzdy(c, x, y, z):
+    return interpolate_dbxdy(c, z, x, y)
+
+def interpolate_dbxdz(a, x, y, z):
+    B_x = 0
+    for i in range(5):
+        for j in range(4):
+            for k in range(4):
+                B_x += a[i][j][k] * P[i](x) * P[j](y) * np.polyder(P[k])(z)
+    return B_x
+
+def interpolate_dbydz(b, x, y, z):
+    return interpolate_dbxdz(b, y, z, x)
+
+def interpolate_dbzdz(c, x, y, z):
+    return interpolate_dbxdz(c, z, x, y)
+
+
 # Returns moments as [ijk, order, x, y, z]
 def solve_moments_from_B(fg_b):
     x_moments = solve_x_moments(fg_b[:, :, :, 0])
@@ -340,3 +384,15 @@ def center_values(B_moments, coords, order=4):
 def all_center_values(B_moments, order=4):
     abc = solve_all_coefficients(B_moments, order)
     return np.transpose(np.array([interpolate_x(abc[0], 0, 0, 0), interpolate_y(abc[1], 0, 0, 0), interpolate_z(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
+
+def all_center_values_dbxdi(B_moments, order=4):
+    abc = solve_all_coefficients(B_moments, order)
+    return np.transpose(np.array([interpolate_dbxdx(abc[0], 0, 0, 0), interpolate_dbxdy(abc[1], 0, 0, 0), interpolate_dbxdz(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
+
+def all_center_values_dbydi(B_moments, order=4):
+    abc = solve_all_coefficients(B_moments, order)
+    return np.transpose(np.array([interpolate_dbydx(abc[0], 0, 0, 0), interpolate_dbydy(abc[1], 0, 0, 0), interpolate_dbydz(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
+
+def all_center_values_dbzdi(B_moments, order=4):
+    abc = solve_all_coefficients(B_moments, order)
+    return np.transpose(np.array([interpolate_dbzdx(abc[0], 0, 0, 0), interpolate_dbzdy(abc[1], 0, 0, 0), interpolate_dbzdz(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
