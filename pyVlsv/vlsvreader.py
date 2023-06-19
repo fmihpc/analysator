@@ -248,6 +248,11 @@ class VlsvReader(object):
                  pop.__precipitation_centre_energy = np.asarray(energybins)
                  vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
+              vlsvvariables.cellsize = self.__dx
+
+              if self.check_parameter("j_per_b_modifier"):
+                 vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
+
       self.__fptr.close()
 
 
