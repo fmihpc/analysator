@@ -516,6 +516,7 @@ def Pressure( variables ):
 
 def Pdyn( variables ):
    ''' Data reducer function for dynamic pressure
+       Pdyn = rho_m*V^2
        input: V, rhom
    '''
    Vmag = np.linalg.norm(np.array(variables[0]), axis=-1)
@@ -598,6 +599,16 @@ def beta( variables ):
    Pressure = variables[0]
    Magneticfield = variables[1]   
    return 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
+
+def beta_star( variables ):
+   ''' Data reducer for finding the Brenner+2021 plasma beta
+      beta* = (P_thermal + P_ram)/P_magnetic
+   '''
+   Pressure_thermal = variables[0]
+   Pressure_dynamic = variables[1]
+   Magneticfield = variables[2]   
+   return 2.0 * mu_0 * np.ma.divide(Pressure_thermal + Pressure_dynamic, np.sum(np.asarray(Magneticfield)**2,axis=-1))
+
 
 def rMirror( variables ):
    # More efficient file access, now just takes PTensor and B
@@ -1056,6 +1067,7 @@ v5reducers["vg_beta_anisotropy_thermal"] =DataReducerVariable(["vg_ptensor_rotat
 v5reducers["vg_beta"] =                   DataReducerVariable(["vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta$", latexunits=r"")
 v5reducers["vg_beta_parallel"] =           DataReducerVariable(["vg_p_parallel", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\parallel$", latexunits=r"")
 v5reducers["vg_beta_perpendicular"] =      DataReducerVariable(["vg_p_perpendicular", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\perp$", latexunits=r"")
+v5reducers["vg_beta_star"] =               DataReducerVariable(["vg_pressure", "vg_pdyn", "vg_b_vol"], beta_star ,"", 1, latex=r"$\beta^\star$", latexunits=r"")
 
 v5reducers["vg_rmirror"] =                DataReducerVariable(["vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m}$")
 
