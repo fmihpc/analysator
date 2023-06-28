@@ -1659,7 +1659,7 @@ class VlsvReader(object):
          return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
 
 
-   def downsample_fsgrid_subarray(self, cellid, array):
+   def downsample_fsgrid_subarray(self, cellid, array, average_later=False):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
       '''
       fsarr = self.get_cell_fsgrid_subarray(cellid, array)
@@ -1669,9 +1669,12 @@ class VlsvReader(object):
       ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
       if(n != ncells):
          print("Warning: weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
-      return np.mean(fsarr,axis=(0,1,2))
+      if average_later:
+         return np.sum(fsarr)
+      else:
+         return np.mean(fsarr,axis=(0,1,2))
 
-   def fsgrid_array_to_vg(self, array):
+   def fsgrid_array_to_vg(self, array, average_later=False):
       cellIds=self.read_variable("CellID")
 
       self.map_vg_onto_fg()
@@ -1682,12 +1685,29 @@ class VlsvReader(object):
          for i in range(numel):
             sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
                                   weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
-            vgarr[:,i] = np.divide(sums,counts)
+            if average_later:
+               vgarr[:,i] = sums
+            else:
+               vgarr[:,i] = np.divide(sums,counts)
       else:
-         print("1671: self.__vg_indexes_on_fg.size = ", self.__vg_indexes_on_fg.size, "array.size = ", array.size)
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
-         vgarr = np.divide(sums,counts)
+         if average_later:
+            vgarr = sums
+         else:
+            vgarr = np.divide(sums,counts)
       return vgarr
+
+   def apply_fsgrid_averaging_on_vg(self, array):
+
+      self.map_vg_onto_fg()
+      counts = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size))
+      if array.ndim == 4:
+         numel = array.shape[3]
+         for i in range(numel):
+            array[:,i] = np.divide(array[:,i],counts)
+      else:
+         array = np.divide(array,counts)
+      return array
 
    def vg_uniform_grid_process(self, variable, expr, exprtuple):
       cellIds=self.read_variable("CellID")

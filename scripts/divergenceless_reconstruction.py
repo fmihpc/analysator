@@ -492,3 +492,11 @@ def all_center_values_dbzdi(B_moments):
     abc = solve_all_coefficients(B_moments)
     return np.transpose(np.array([interpolate_dbzdx(abc[2], 0, 0, 0), interpolate_dbzdy(abc[2], 0, 0, 0), interpolate_dbzdz(abc[2], 0, 0, 0)]), (1, 2, 3, 0))
 
+def all_center_values_dbidi(B_moments):
+    abc = solve_all_coefficients(B_moments)
+    return np.concatenate(
+            (np.transpose(np.array([interpolate_dbxdx(abc[0], 0, 0, 0), interpolate_dbxdy(abc[0], 0, 0, 0), interpolate_dbxdz(abc[0], 0, 0, 0)]), (1, 2, 3, 0)),
+            np.transpose(np.array([interpolate_dbydx(abc[1], 0, 0, 0), interpolate_dbydy(abc[1], 0, 0, 0), interpolate_dbydz(abc[1], 0, 0, 0)]), (1, 2, 3, 0)),
+            np.transpose(np.array([interpolate_dbzdx(abc[2], 0, 0, 0), interpolate_dbzdy(abc[2], 0, 0, 0), interpolate_dbzdz(abc[2], 0, 0, 0)]), (1, 2, 3, 0))),
+            axis=3)
+

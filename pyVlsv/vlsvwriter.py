@@ -238,7 +238,8 @@ class VlsvWriter(object):
 
       if len(np.shape(data)) == 2:
          child.attrib["vectorsize"] = np.shape(data)[1]
-         datatype = str(type(data[0][0]))
+         #datatype = str(type(data[0][0]))
+         datatype = data.dtype.__str__()
       elif len(np.shape(data)) > 2:
          print("ERROR, np.shape returned len(np.shape(data)) > 2")
          return False
@@ -249,9 +250,11 @@ class VlsvWriter(object):
                datatype="int32"
             else:
                print("Trying to extract datatype from an empty array. I will fail as usual, since this is not the special case that is guarded against!")
-               datatype = str(type(data[0]))
+               #datatype = str(type(data[0]))
+               datatype = data.dtype.__str__()
          else:
-            datatype = str(type(data[0]))
+            #datatype = str(type(data[0]))
+            datatype = data.dtype.__str__()
 
       # Parse the data types:
       if 'uint' in datatype:
