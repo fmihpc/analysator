@@ -47,6 +47,11 @@ from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
 from plot_ionosphere import plot_ionosphere
 
+try:
+    from plot_isosurface import plot_isosurface
+except:
+    print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
+
 from distutils.version import LooseVersion, StrictVersion
 import numpy as np, os
 

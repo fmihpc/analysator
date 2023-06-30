@@ -25,11 +25,9 @@ import matplotlib
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
-
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from skimage import measure
-
 import scipy
 import os, sys
 import glob
@@ -41,34 +39,8 @@ from matplotlib.ticker import LinearLocator
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
-
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-matplotlib.rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
-matplotlib.rcParams['mathtext.fontset'] = 'stix'
-matplotlib.rcParams['font.family'] = 'STIXGeneral'
-# matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
-#matplotlib.rcParams['font.family'] = 'serif'
-#matplotlib.rcParams['font.serif'] = 'cmmib10' #'cm' 
-
-# Register custom colourmaps
-plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
-plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
-plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
-plt.register_cmap(name='magma', cmap=cmaps.magma)
-plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=matplotlib.colors.ListedColormap(cmaps.parula.colors[::-1]))
-# plt.register_cmap(name='cork',cmap=cork_map)
-# plt.register_cmap(name='davos_r',cmap=davos_r_map)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+from distutils.version import LooseVersion, StrictVersion
+import ids3d
 
 
 def plot_isosurface(filename=None,
@@ -82,13 +54,15 @@ def plot_isosurface(filename=None,
                     #
                     title=None, cbtitle=None,
                     draw=None, usesci=None,
-                    #
+                    symmetric=False,
+                    highres=None,
                     boxm=[],boxre=[],
                     colormap=None,
-                    run=None,wmark=None, nocb=None,
+                    run=None,wmark=None, nocb=False,
                     unit=None, thick=1.0,scale=1.0,
-
+                    vscale=1.0,
                     vmin=None, vmax=None, lin=None, symlog=None,
+                    angle = [30.,90.]
                     ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -120,18 +94,24 @@ def plot_isosurface(filename=None,
     :kword unit:        Plot axes using 10^{unit} m (default: Earth radius R_E)
 
     :kwird usesci:      Use scientific notation for colorbar ticks? (default: 1)
+    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+                        or from tesla to nanotesla. Guesses correct units for colourbar for some known
+                        variables. Set to None to seek for a default scaling.
     :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
+    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
     :kword lin:         Flag for using linear colour scaling instead of log
     :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
 
     :kword scale:       Scale text size (default=1.0)
     :kword thick:       line and axis thickness, default=1.0
     :kword nocb:        Set to suppress drawing of colourbar
+    :kword angle:       Viewing elevation and azimuthal angles in degrees
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -140,7 +120,6 @@ def plot_isosurface(filename=None,
     # Example usage:
 
     '''
-
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
@@ -181,7 +160,7 @@ def plot_isosurface(filename=None,
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
-    fontsize3=5*scale # Colour bar ticks
+    fontsize3=7*scale # Colour bar ticks
 
     # Plot title with time
     timeval=None
@@ -223,7 +202,7 @@ def plot_isosurface(filename=None,
             # For components, always use linear scale, unless symlog is set
             color_opstr='_'+color_op
             if symlog==None:
-                lin=1
+                lin=10
     # Verify validity of operator
     if surf_op!=None:
         if surf_op!='x' and surf_op!='y' and surf_op!='z':
@@ -248,21 +227,48 @@ def plot_isosurface(filename=None,
         else:
             print("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
+
     Re = 6.371e+6 # Earth radius in m
-    #read in mesh size and cells in ordinary space
+    # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
+    xsize = int(xsize)
+    ysize = int(ysize)
+    zsize = int(zsize)    
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
     cellids = f.read_variable("CellID")
-    # xsize = f.read_parameter("xcells_ini")
-    # ysize = f.read_parameter("ycells_ini")
-    # zsize = f.read_parameter("zcells_ini")
-    # xmin = f.read_parameter("xmin")
-    # xmax = f.read_parameter("xmax")
-    # ymin = f.read_parameter("ymin")
-    # ymax = f.read_parameter("ymax")
-    # zmin = f.read_parameter("zmin")
-    # zmax = f.read_parameter("zmax")
+
+    # Read the FSgrid mesh
+    try:
+        [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
+        xsizefg = int(xsizefg)
+        ysizefg = int(ysizefg)
+        zsizefg = int(zsizefg)
+        [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
+        cellsizefg = (xmaxfg-xminfg)/xsizefg
+        pt.plot.plot_helpers.CELLSIZE = cellsizefg
+    except:
+        if xsize!=1 and ysize!=1 and zsize!=1:
+            print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
+            [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
+            cellsizefg = cellsize
+            pt.plot.plot_helpers.CELLSIZE = cellsize
+        else:
+            print("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            return -1
+
+    # sort the cellid and the datamap list
+    indexids = cellids.argsort()
+    cellids = cellids[indexids]
+
+    # find the highest refiment level
+    reflevel = ids3d.refinement_level(xsize, ysize, zsize, cellids[-1])
+    for i in range(5): # Check if Vlasov grid doesn't reach maximum (fsgrid) refinement
+        if xsize*(2**(reflevel + i)) == xsizefg:
+            reflevel += i
+            break
+
 
     if (xsize==1) or (ysize==1) or (zsize==1):
         print("Error: isosurface plotting requires 3D spatial domain!")
@@ -306,45 +312,114 @@ def plot_isosurface(filename=None,
     simext=[i/unit for i in simext]
     boxcoords=[i/unit for i in boxcoords]
 
-    if color_op==None and color_var!=None:
-        color_op='pass'
-        cb_title = color_var
-        color_data = f.read_variable(color_var,cellids=[1,2])
-        # If value was vector value, take magnitude
-        if np.size(color_data) != 2:
-            cb_title = r"$|"+color_var+"|$"
-    elif color_op!=None and color_var!=None:
-        cb_title = r" $"+color_var+"_"+color_op+"$"
+    if color_var != None:
+        if color_op==None:
+            color_op="pass"
+        datamap_info = f.read_variable_info(color_var, operator=color_op)
+
+        cb_title_use = datamap_info.latex
+        # Check if vscale results in standard unit
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+
+        # Add unit to colorbar title
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
     else: # color_var==None
-        cb_title = ""
+        cb_title_use = ""
         nocb=1
 
-    if f.check_variable(surf_var)!=True:
-        print("Error, surface variable "+surf_var+" not found!")
-        return
-    if surf_op==None:
-        surf_data = f.read_variable(surf_var)
-        # If value was vector value, take magnitude
-        if np.ndim(surf_data) != 1:
-            surf_data = np.linalg.norm(np.asarray(surf_data),axis=-1)
-    else:
-        surf_data = f.read_variable(surf_var,operator=surf_op)            
-    if np.ndim(surf_data)!=1:
-        print("Error reading surface variable "+surf_var+"! Exiting.")
+    if cbtitle is not None:
+        # Here allow underscores for manual math mode
+        cb_title_use = cbtitle      
+
+
+    if surf_op is None:
+            surf_op="pass"
+    surf_datamap_info = f.read_variable_info(surf_var, operator=surf_op)
+
+    surf_datamap = surf_datamap_info.data
+
+    # Verify data shape
+    if np.ndim(surf_datamap)==0:
+        print("Error, read only single surface variable value from vlsv file!",surf_datamap.shape)
         return -1
     
-    # Reshape data to ordered 3D arrays for plotting
-    #color_data = color_data[cellids.argsort()].reshape([sizes[2],sizes[1],sizes[0]])
-    surf_data = surf_data[cellids.argsort()].reshape([sizes[2],sizes[1],sizes[0]])
-    # The data we have now is Z,Y,X
-    # Rotate data so it's X,Y,Z
-    surf_data = np.swapaxes(surf_data,0,2)
+
+    #Define the box limits
+    low = np.array([boxcoords[0], boxcoords[2], boxcoords[4]])*Re
+    up = np.array([boxcoords[1], boxcoords[3], boxcoords[5]])*Re
+
+
+    # Choose CellIDs inside the box
+    ids, idx = ids3d.ids3d_box(cellids, low, up, reflevel, xsize, ysize, zsize, [xmin, ymin, zmin, xmax, ymax, zmax])
+
+    surf_datamap = surf_datamap[indexids]
+    surf_datamap = surf_datamap[idx]
+
+    # Reshape surface data
+    if np.ndim(surf_datamap)==1:
+        surf_data_in_box = ids3d.idmesh3d2(ids, surf_datamap, reflevel, xsize, ysize, zsize,  None)
+    elif np.ndim(surf_datamap)==2:
+        surf_data_in_box = ids3d.idmesh3d2(ids, surf_datamap, reflevel, xsize, ysize, zsize, surf_datamap.shape[1])
+    elif np.ndim(surf_datamap)==3:
+        surf_data_in_box = ids3d.idmesh3d2(ids, surf_datamap, reflevel, xsize, ysize, zsize, (surf_datamap.shape[1],surf_datamap.shape[2]))
+    else:
+        print("Dimension error in constructing 2D AMR slice!")
+        return -1
+
+    # Remove empty rows, columns and tubes
+    empty_0 = np.where(~np.all(surf_data_in_box==0, axis=0))
+    empty_1 = np.where(~np.all(surf_data_in_box==0, axis=1))
+
+    MaskX = empty_1[0]
+    MaskY = empty_0[0]
+    MaskZ = empty_1[1]
+
+    cropped_surf_data = surf_data_in_box[min(MaskX):max(MaskX)+1,:,:]
+    cropped_surf_data = cropped_surf_data[:,min(MaskY):max(MaskY)+1,:]
+    cropped_surf_data = cropped_surf_data[:,:,min(MaskZ):max(MaskZ)+1]
+
+
+    # Keep removing the face of the rectangle with the largest number of invalid values until the surface has only proper values
+    counter = 0
+    while True:
+        zero_counts = np.zeros(6)
+        zero_counts[0] = np.count_nonzero(cropped_surf_data[0, :, :]  == 0) # Face 0 (front)
+        zero_counts[1] = np.count_nonzero(cropped_surf_data[-1, :, :] == 0)  # Face 1 (back)
+        zero_counts[2] = np.count_nonzero(cropped_surf_data[:, 0, :]  == 0) # Face 2 (left)
+        zero_counts[3] = np.count_nonzero(cropped_surf_data[:, -1, :] == 0)  # Face 3 (right)
+        zero_counts[4] = np.count_nonzero(cropped_surf_data[:, :, 0]  == 0) # Face 4 (top)
+        zero_counts[5] = np.count_nonzero(cropped_surf_data[:, :, -1] == 0)  # Face 5 (bottom)
+
+        face_to_be_removed = np.argmax(zero_counts)
+
+        if face_to_be_removed==0:
+            cropped_surf_data = cropped_surf_data[1:,:,:]
+        elif face_to_be_removed==1:
+            cropped_surf_data = cropped_surf_data[:-1,:,:]
+        elif face_to_be_removed==2:
+            cropped_surf_data = cropped_surf_data[:,1:,:]
+        elif face_to_be_removed==3:
+            cropped_surf_data = cropped_surf_data[:,:-1,:]
+        elif face_to_be_removed==4:
+            cropped_surf_data = cropped_surf_data[:,:,1:]
+        elif face_to_be_removed==5:
+            cropped_surf_data = cropped_surf_data[:,:,:-1]
+
+        counter+=1
+        if counter > 50:    # Failsafe
+            print("Error reading surface variable "+surf_var+"! Exiting.")
+            return -1
+        
+        if np.all(zero_counts==0):
+            break 
+    
 
     if surf_level==None:
-        surf_level = 0.5*(np.amin(surf_data)+np.amax(surf_data))
-    print("Minimum found surface value "+str(np.amin(surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(surf_data)))
+        surf_level = 0.5*(np.amin(cropped_surf_data)+np.amax(cropped_surf_data))
+    print("Minimum found surface value "+str(np.amin(cropped_surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(cropped_surf_data)))
 
-    # Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing
+    # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if draw is not None:
         if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
             plt.switch_backend(pt.backend_interactive)
@@ -352,54 +427,27 @@ def plot_isosurface(filename=None,
         if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
             plt.switch_backend(pt.backend_noninteractive)  
 
-    # skimage.measure.marching_cubes_lewiner(volume, level=None, spacing=(1.0, 1.0, 1.0), 
-    #                                        gradient_direction='descent', step_size=1, 
-    #                                        allow_degenerate=True, use_classic=False)
 
+    spacing = ((xmaxfg-xminfg)/(xsizefg*unit), (ymaxfg-yminfg)/(ysizefg*unit), (zmaxfg-zminfg)/(zsizefg*unit))
 
-    # #Generate mask for only visible section of data
-    # # Apparently the marching cubes method does not ignore masked values, so this doesn't directly help.
-    # [Xmesh,Ymesh, Zmesh] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]),np.linspace(simext[4],simext[5],num=sizes[2]))
-    # print("simext",simext)
-    # print("sizes",sizes)    
-    # print("boxcoords", boxcoords)
-    # maskgrid = np.ma.masked_where(Xmesh<(boxcoords[0]), Xmesh)
-    # maskgrid = np.ma.masked_where(Xmesh>(boxcoords[1]), maskgrid)
-    # maskgrid = np.ma.masked_where(Ymesh<(boxcoords[2]), maskgrid)
-    # maskgrid = np.ma.masked_where(Ymesh>(boxcoords[3]), maskgrid)
-    # maskgrid = np.ma.masked_where(Zmesh<(boxcoords[4]), maskgrid)
-    # maskgrid = np.ma.masked_where(Zmesh>(boxcoords[5]), maskgrid)
-    # surf_data = np.ma.asarray(surf_data)
-    # surf_data.mask = maskgrid.mask
-    # print(surf_data.count())
-
-    surf_spacing = ((xmax-xmin)/(xsize*unit), (ymax-ymin)/(ysize*unit), (zmax-zmin)/(zsize*unit))
-    verts, faces, normals, arrays = measure.marching_cubes_lewiner(surf_data, level=surf_level,
-                                                                   spacing=surf_spacing,
+    verts, faces, normals, arrays = measure.marching_cubes(cropped_surf_data, level=surf_level,
+                                                                   spacing=spacing,
                                                                    gradient_direction='descent',
                                                                    step_size=surf_step,
-                                                                   allow_degenerate=True, use_classic=False)
+                                                                   allow_degenerate=True, method='lewiner', mask=cropped_surf_data!=0)
+    
 
 
-    # offset with respect to simulation domain corner
-    #print("simext",simext)
-    verts[:,0] = verts[:,0] + simext[0]
-    verts[:,1] = verts[:,1] + simext[2]
-    verts[:,2] = verts[:,2] + simext[4]
+    #offset with respect to simulation domain corner
+    verts[:,0] = verts[:,0] + low[0]/Re
+    verts[:,1] = verts[:,1] + low[1]/Re
+    verts[:,2] = verts[:,2] + low[2]/Re
 
-    # # Crop surface to box area
-    # verts = []
-    # faces = []
-    # for i in np.arange(len(verts_nocrop[:,0])):
-    #     if ((verts_nocrop[i,0] > boxcoords[0]) and (verts_nocrop[i,0] < boxcoords[1]) and
-    #         (verts_nocrop[i,1] > boxcoords[2]) and (verts_nocrop[i,1] < boxcoords[3]) and
-    #         (verts_nocrop[i,2] > boxcoords[4]) and (verts_nocrop[i,2] < boxcoords[5])):
-    #         verts.append(verts_nocrop[i,:])
-    #         faces.append(faces_nocrop[i,:]) # This is now incorrect
-    #     else:
-    #         dropped = dropped+1
-    # verts = np.asarray(verts)
-    # faces = np.asarray(faces)
+    # A box that contains the isosurface
+    contour_box_low = np.array([min(verts[:,0])-1,min(verts[:,1])-1,min(verts[:,2])-1])*Re
+    contour_box_up = np.array([max(verts[:,0])+1,max(verts[:,1])+1,max(verts[:,2])+1])*Re
+
+
 
     # Next find color variable values at vertices
     if color_var != None:
@@ -417,8 +465,34 @@ def plot_isosurface(filename=None,
             coords[2] = max(coords[2],simext_org[4]+0.1*cellsize)
             coords[2] = min(coords[2],simext_org[5]-cellsize)
             all_coords[i] = coords
-        # Use interpolated values, WARNING periodic y (2.9 polar) hard-coded here /!\
-        color_data = f.read_interpolated_variable(color_var, all_coords, operator=color_op, periodic=["False", "True", "False"])
+
+
+        # Choose CellIDs inside the isosurface box
+        color_ids, color_idx = ids3d.ids3d_box(cellids, contour_box_low, contour_box_up, reflevel, xsize, ysize, zsize, [xmin, ymin, zmin, xmax, ymax, zmax])
+
+        # Read the variables to be plotted inside the box
+        if f.check_variable(color_var)!=True:
+            print("Error, color variable "+color_var+" not found!")
+            return
+        if color_op==None:
+            vg_colors = f.read_variable(color_var, color_ids)
+            # If value was vector value, take magnitude
+            if np.ndim(vg_colors) != 1:
+                vg_colors = np.linalg.norm(np.asarray(vg_colors),axis=-1)
+        else:
+            vg_colors = f.read_variable(color_var, color_ids, operator=color_op)            
+        if np.ndim(vg_colors)!=1:
+            print("Error reading color variable "+color_var+"! Exiting.")
+            return -1
+
+
+        vg_coords = f.read_variable("vg_coordinates", color_ids)
+
+        # Interpolate the values to the surface
+        interpolation = scipy.interpolate.RBFInterpolator(vg_coords, vg_colors, neighbors = 27)
+
+        color_data = interpolation(all_coords)*vscale
+
         # Make sure color data is 1-dimensional (e.g. magnitude of E instead of 3 components)
         if np.ndim(color_data)!=1:
             color_data=np.linalg.norm(color_data, axis=-1)
@@ -440,24 +514,31 @@ def plot_isosurface(filename=None,
         if vmax!=None:
             vmaxuse=vmax
         else:
-            vmaxuse=np.ma.amax(color_data)                   
+            vmaxuse=np.ma.amax(color_data)       
+
+        # If both values are zero, we have an empty array
+        if vmaxuse==vminuse==0:
+            print("Error, requested array is zero everywhere. Exiting.")
+            return 0            
 
         # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
-        # e.g. to plot transverse field components
-        if vmin==None and vmax==None:
-            if (vminuse*vmaxuse < 0) and (abs(abs(vminuse)-abs(vmaxuse))/abs(vminuse) < 0.4 ) and (abs(abs(vminuse)-abs(vmaxuse))/abs(vmaxuse) < 0.4 ):
+        # e.g. to plot transverse field components. Always done for symlog.
+        if vmin is None and vmax is None:
+            if symmetric or np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2) or symlog is not None:
                 absval = max(abs(vminuse),abs(vmaxuse))
-                if vminuse < 0:
-                    vminuse = -absval
-                    vmaxuse = absval
-                else:
-                    vminuse = absval
-                    vmaxuse = -absval
+                vminuse = -absval
+                vmaxuse = absval
 
         # Check that lower bound is valid for logarithmic plots
         if (vminuse <= 0) and (lin==None) and (symlog==None):
             # Drop negative and zero values
             vminuse = np.ma.amin(np.ma.masked_less_equal(color_data,0))
+
+        # Special case of very small vminuse values
+        if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
+            vminuse = vmaxuse*1e-5
+            if lin is not None:
+                vminuse = 0
 
         # If symlog scaling is set:
         if symlog!=None:
@@ -467,11 +548,15 @@ def plot_isosurface(filename=None,
                 linthresh = max(abs(vminuse),abs(vmaxuse))*1.e-2
 
         # Lin or log colour scaling, defaults to log
-        if lin==None:
+        if lin is None:
             # Special SymLogNorm case
-            if symlog!=None:
-                #norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, ncolors=cmapuse.N, clip=True)
-                norm = SymLogNorm(linthresh=linthresh, linscale = 0.3, vmin=vminuse, vmax=vmaxuse, clip=True)
+            if symlog is not None:
+                if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+                    norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
+                    print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                    #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+                else:
+                    norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 maxlog=int(np.ceil(np.log10(vmaxuse)))
                 minlog=int(np.ceil(np.log10(-vminuse)))
                 logthresh=int(np.floor(np.log10(linthresh)))
@@ -480,20 +565,37 @@ def plot_isosurface(filename=None,
                         +[0.0]
                         +[(10**x) for x in range(logthresh, maxlog+1, logstep)] )
             else:
+                # Logarithmic plot
                 norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-                ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+                ticks = LogLocator(base=10,subs=range(10)) # where to show labels
         else:
             # Linear
             levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
             norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-            ticks = np.linspace(vminuse,vmaxuse,num=7)            
+            ticks = np.linspace(vminuse,vmaxuse,num=lin)            
 
         print("Selected color range: "+str(vminuse)+" to "+str(vmaxuse))
 
     # Create 300 dpi image of suitable size
-    fig = plt.figure(figsize=[4.0,4.0],dpi=300)
+    fig = plt.figure(figsize=[5,5],dpi=450)
     #ax1 = fig.gca(projection='3d')
     ax1 = fig.add_subplot(111, projection='3d')
+
+    # If requested high res image
+    if highres:
+        highresscale = 2
+        if ((type(highres) is float) or (type(highres) is int)):
+            highresscale = float(highres)
+            if np.isclose(highresscale, 1.0):
+                highresscale = 2
+        figsize= [x * highresscale for x in figsize]
+        fontsize=fontsize*highresscale
+        fontsize2=fontsize2*highresscale
+        fontsize3=fontsize3*highresscale
+        scale=scale*highresscale
+        thick=thick*highresscale
+        streamlinethick=streamlinethick*highresscale
+        vectorsize=vectorsize*highresscale
 
     # Generate virtual bounding box to get equal aspect
     maxrange = np.array([boxcoords[1]-boxcoords[0], boxcoords[3]-boxcoords[2], boxcoords[5]-boxcoords[4]]).max() / 2.0
@@ -512,7 +614,7 @@ def plot_isosurface(filename=None,
 
 
         # Set camera angle
-        ax1.view_init(elev=30., azim=90)
+        ax1.view_init(elev=angle[0], azim=angle[1])
         # Set virtual bounding box
         ax1.set_xlim([midvals[2]-maxrange, midvals[2]+maxrange])
         ax1.set_ylim([midvals[0]-maxrange, midvals[0]+maxrange])
@@ -527,7 +629,7 @@ def plot_isosurface(filename=None,
         ax1.set_ylabel("y ["+unitstr+"]", fontsize=fontsize3)
         ax1.set_zlabel("z ["+unitstr+"]", fontsize=fontsize3)
         # Set camera angle
-        ax1.view_init(elev=30., azim=0)
+        ax1.view_init(elev=angle[0], azim=angle[1])
         # Set virtual bounding box
         ax1.set_xlim([midvals[0]-maxrange, midvals[0]+maxrange])
         ax1.set_ylim([midvals[1]-maxrange, midvals[1]+maxrange])
@@ -555,34 +657,64 @@ def plot_isosurface(filename=None,
     # ax1.xaxis.set_tick_params(width=thick,length=3)
     # ax1.yaxis.set_tick_params(width=thick,length=3)
     # #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
-    # #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
+    # #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)    
 
 
-
-    if cbtitle==None:
-        cb_title_use = cb_title
-    else:
-        cb_title_use = cbtitle        
-
-
-    if nocb==None:
+    if not nocb:
         # First draw colorbar
         if usesci==0:        
-            cb = fig.colorbar(generatedsurface,ticks=ticks, drawedges=False, fraction=0.023, pad=0.02)
+            cb = fig.colorbar(generatedsurface,ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), drawedges=False, fraction=0.023, pad=0.02)
         else:
-            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(pt.plot.fmt),drawedges=False, fraction=0.046, pad=0.04)
+            cb = fig.colorbar(generatedsurface,ticks=ticks,format=mtick.FuncFormatter(pt.plot.cbfmtsci),drawedges=False, fraction=0.046, pad=0.04)
 
         if len(cb_title_use)!=0:
-            cb.ax.set_title(cb_title_use,fontsize=fontsize2,fontweight='bold')
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
+
+        if lin is None:
+            pt.plot.cb_linear = False
+        else:
+            pt.plot.cb_linear = True
 
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
         cb.outline.set_linewidth(thick)
+        cb.ax.set_title(cb_title_use)
+        cb.ax.title.set_horizontalalignment('center')
 
-        # if too many subticks:
-        if lin==None and usesci!=0 and symlog==None:
-            # Note: if usesci==0, only tick labels at powers of 10 are shown anyway.
-            # For non-square pictures, adjust tick count
-            nlabels = len(cb.ax.yaxis.get_ticklabels()) / ratio
+        # Adjust precision for colorbar ticks
+        thesetickvalues = cb.locator()
+        if len(thesetickvalues)<2:
+            precision_b=1
+        else:
+            mintickinterval = abs(thesetickvalues[-1]-thesetickvalues[0])
+            # find smallest interval
+            for ticki in range(len(thesetickvalues)-1):
+                mintickinterval = min(mintickinterval,abs(thesetickvalues[ticki+1]-thesetickvalues[ticki]))
+            precision_a, precision_b = '{:.1e}'.format(mintickinterval).split('e')
+            # e.g. 9.0e-1 means we need precision 1
+            # e.g. 1.33e-1 means we need precision 3?
+        pt.plot.decimalprecision_cblin = 1
+        if int(precision_b)<1: pt.plot.decimalprecision_cblin = str(1+abs(-int(precision_b)))
+        cb.update_ticks()
+
+        if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
+            cbt=cb.ax.yaxis.get_ticklabels()
+            (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2-1].set_va("top")
+            (cbtx,cbty) = cbt[len(cbt)//2+1].get_position() # just above zero
+            if abs(0.5-cbty)/scale < 0.1:
+                cbt[len(cbt)//2+1].set_va("bottom")
+            if len(cbt)>=7: # If we have at least seven ticks, may want to adjust next ones as well
+                (cbtx,cbty) = cbt[len(cbt)//2-2].get_position() # second below zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2-2].set_va("top")
+                (cbtx,cbty) = cbt[len(cbt)//2+2].get_position() # second above zero
+                if abs(0.5-cbty)/scale < 0.15:
+                    cbt[len(cbt)//2+2].set_va("bottom")
+
+        # if too many subticks in logarithmic colorbar:
+        if lin is None and symlog is None:
+            nlabels = len(cb.ax.yaxis.get_ticklabels()) #/ ratio
             valids = ['1','2','3','4','5','6','7','8','9']
             if nlabels > 10:
                 valids = ['1','2','3','4','5','6','8']
@@ -591,10 +723,15 @@ def plot_isosurface(filename=None,
             if nlabels > 28:
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
-            for label in cb.ax.yaxis.get_ticklabels():
-                # labels will be in format $x.0\times10^{y}$
-                if not label.get_text()[1] in valids:
+            for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                if not labeltext:
+                    continue
+                firstdigit = labeltext[0]
+                if not firstdigit in valids: 
                     label.set_visible(False)
+
+
 
     # Add Vlasiator watermark
     if wmark!=None:        
@@ -614,24 +751,24 @@ def plot_isosurface(filename=None,
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
         try:
-            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
         except:
             savechange=1
             plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
             try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
                 plot_title = "t="+str(np.int(timeval))+' s   '
                 ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                 try:
-                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                    plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 except:
                     plot_title = ""
                     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                     try:
-                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                        plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
                         print("Error:", sys.exc_info())
                         print("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
