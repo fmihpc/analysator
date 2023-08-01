@@ -182,10 +182,13 @@ def plot_isosurface(filename=None,
         plot_title = title
 
     # step, used for file name
-    if step!=None:
+    if step is not None:
         stepstr = '_'+str(step).rjust(7,'0')
     else:
-        stepstr = ''
+        if filename:
+            stepstr = '_'+filename[-12:-5]
+        else:
+            stepstr = ''
 
     # If run name isn't given, just put "plot" in the output file name
     if run==None:
@@ -202,7 +205,7 @@ def plot_isosurface(filename=None,
             # For components, always use linear scale, unless symlog is set
             color_opstr='_'+color_op
             if symlog==None:
-                lin=10
+                lin=9
     # Verify validity of operator
     if surf_op!=None:
         if surf_op!='x' and surf_op!='y' and surf_op!='z':
@@ -346,9 +349,8 @@ def plot_isosurface(filename=None,
     
 
     #Define the box limits
-    low = np.array([boxcoords[0], boxcoords[2], boxcoords[4]])*Re
-    up = np.array([boxcoords[1], boxcoords[3], boxcoords[5]])*Re
-
+    low = np.array([boxcoords[0], boxcoords[2], boxcoords[4]])*unit
+    up = np.array([boxcoords[1], boxcoords[3], boxcoords[5]])*unit
 
     # Choose CellIDs inside the box
     ids, idx = ids3d.ids3d_box(cellids, low, up, reflevel, xsize, ysize, zsize, [xmin, ymin, zmin, xmax, ymax, zmax])
@@ -408,7 +410,7 @@ def plot_isosurface(filename=None,
 
         counter+=1
         if counter > 50:    # Failsafe
-            print("Error reading surface variable "+surf_var+"! Exiting.")
+            print("Error with boundaries! Exiting.")
             return -1
         
         if np.all(zero_counts==0):
@@ -439,13 +441,13 @@ def plot_isosurface(filename=None,
 
 
     #offset with respect to simulation domain corner
-    verts[:,0] = verts[:,0] + low[0]/Re
-    verts[:,1] = verts[:,1] + low[1]/Re
-    verts[:,2] = verts[:,2] + low[2]/Re
+    verts[:,0] = verts[:,0] + low[0]/unit
+    verts[:,1] = verts[:,1] + low[1]/unit
+    verts[:,2] = verts[:,2] + low[2]/unit
 
     # A box that contains the isosurface
-    contour_box_low = np.array([min(verts[:,0])-1,min(verts[:,1])-1,min(verts[:,2])-1])*Re
-    contour_box_up = np.array([max(verts[:,0])+1,max(verts[:,1])+1,max(verts[:,2])+1])*Re
+    contour_box_low = np.array([min(verts[:,0])-1,min(verts[:,1])-1,min(verts[:,2])-1])*unit
+    contour_box_up = np.array([max(verts[:,0])+1,max(verts[:,1])+1,max(verts[:,2])+1])*unit
 
 
 
@@ -473,8 +475,8 @@ def plot_isosurface(filename=None,
         # Read the variables to be plotted inside the box
         if f.check_variable(color_var)!=True:
             print("Error, color variable "+color_var+" not found!")
-            return
-        if color_op==None:
+            return -1
+        if color_op=="pass":
             vg_colors = f.read_variable(color_var, color_ids)
             # If value was vector value, take magnitude
             if np.ndim(vg_colors) != 1:

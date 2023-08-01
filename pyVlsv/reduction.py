@@ -390,7 +390,7 @@ def PerpendicularVectorComponent( variables ):
          vmag = np.linalg.norm(inputvector)
          presqrt = vmag*vmag - vpara*vpara
          if (presqrt>=0):
-            return sqrt(presqrt)
+            return np.sqrt(presqrt)
          else:
             return 0
       else:
@@ -400,7 +400,7 @@ def PerpendicularVectorComponent( variables ):
       vpara = (inputvector*bgnorm).sum(-1)
       vmag = np.linalg.norm(inputvector, axis=-1)
       presqrt = np.sqrt(vmag*vmag - vpara*vpara)
-      return sqrt(np.ma.masked_less(presqrt,0))
+      return np.sqrt(np.ma.masked_less(presqrt,0))
 
 def FullTensor( variables ):
    ''' Data reducer function to reconstruct a full tensor from diagonal and off-diagonal
