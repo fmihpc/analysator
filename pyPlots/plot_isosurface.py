@@ -753,24 +753,24 @@ def plot_isosurface(filename=None,
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
         try:
-            plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
         except:
             savechange=1
             plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
             try:
-                plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
                 plot_title = "t="+str(np.int(timeval))+' s   '
                 ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                 try:
-                    plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 except:
                     plot_title = ""
                     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                     try:
-                        plt.savefig(savefigname,dpi=450, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                        plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
                         print("Error:", sys.exc_info())
                         print("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
