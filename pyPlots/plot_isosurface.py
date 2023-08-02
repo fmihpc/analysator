@@ -205,7 +205,7 @@ def plot_isosurface(filename=None,
             # For components, always use linear scale, unless symlog is set
             color_opstr='_'+color_op
             if symlog==None:
-                lin=9
+                lin=7
     # Verify validity of operator
     if surf_op!=None:
         if surf_op!='x' and surf_op!='y' and surf_op!='z':
@@ -579,7 +579,7 @@ def plot_isosurface(filename=None,
         print("Selected color range: "+str(vminuse)+" to "+str(vmaxuse))
 
     # Create 300 dpi image of suitable size
-    fig = plt.figure(figsize=[5,5],dpi=450)
+    fig = plt.figure(figsize=[4.5,4.5],dpi=300)
     #ax1 = fig.gca(projection='3d')
     ax1 = fig.add_subplot(111, projection='3d')
 

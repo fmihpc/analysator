@@ -255,20 +255,20 @@ def ids3d_box(cellids, low, up, reflevel,
     [xmin, ymin, zmin, xmax, ymax, zmax] = spatial_mesh_extent
 
     # find the edge depths (index) for each refinement level
-    prox_min = (low[0]+abs(xmin))/(xmax-xmin)
-    proy_min = (low[1]+abs(ymin))/(ymax-ymin)
-    proz_min = (low[2]+abs(zmin))/(zmax-zmin)
+    prox_min = (low[0]-xmin)/(xmax-xmin)
+    proy_min = (low[1]-ymin)/(ymax-ymin)
+    proz_min = (low[2]-zmin)/(zmax-zmin)
     
-    prox_max = (up[0]+abs(xmin))/(xmax-xmin)
-    proy_max = (up[1]+abs(ymin))/(ymax-ymin)
-    proz_max = (up[2]+abs(zmin))/(zmax-zmin)
+    prox_max = (up[0]-xmin)/(xmax-xmin)
+    proy_max = (up[1]-ymin)/(ymax-ymin)
+    proz_max = (up[2]-zmin)/(zmax-zmin)
     
     depths_x = []
     depths_y = []
     depths_z = []
 
     for i in range(reflevel+1):
-        depth_xmin = int(prox_min*xsize*2**i) + 1
+        depth_xmin = int(prox_min*xsize*2**i) + 1   # goes from 1 to Nmax
         depth_ymin = int(proy_min*ysize*2**i) + 1 
         depth_zmin = int(proz_min*zsize*2**i) + 1 
         
