@@ -1017,6 +1017,8 @@ def plot_colormap3dslice(filename=None,
             else:
                 # Mask datamap
                 datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        XYmask = np.full(rhomap.shape, False)
 
     #If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
