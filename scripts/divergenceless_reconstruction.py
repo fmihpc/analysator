@@ -109,19 +109,32 @@ def solve_moments_from_B(fg_b):
 # Returns moments for x as [order, x, y, z]
 # With order (0, y, z, yy, yz, zz, yyy, yyz, yzz, zzz)
 # y and z as cyclic rotations
+# 6..9 required for order > 3
+# 3..5 required for order > 2
+# 1..2 required for order > 1
+# 0    required for order = 0
 def solve_x_moments(B_x):
+    if order > 2:
+        n_moments = 10
+        # order = 4 and order = 3 have also different n_moments, but order=2 is what we actually need, so look into this later
+    elif order == 2:
+        n_moments = 3
+    else:
+        n_moments = 1
     x_moments = np.zeros((10,) + np.shape(B_x))
     x_moments[0] = B_x
-    x_moments[1:3] = np.gradient(B_x)[1:3]
-    start = 3
-    for i in range(2):
-        j = i + 1
-        x_moments[start:start+3-j] = np.gradient(x_moments[1+i])[j:3]
-        start += (3-j)
-    for i in range(3):
-        j = i + 1 if i < 2 else 2
-        x_moments[start:start+3-j] = np.gradient(x_moments[3+i])[j:3]
-        start += (3-j)
+    if order > 1:
+        x_moments[1:3] = np.gradient(B_x)[1:3]
+    if order > 2:
+        start = 3
+        for i in range(2):
+            j = i + 1
+            x_moments[start:start+3-j] = np.gradient(x_moments[1+i])[j:3]
+            start += (3-j)
+        for i in range(3):
+            j = i + 1 if i < 2 else 2
+            x_moments[start:start+3-j] = np.gradient(x_moments[3+i])[j:3]
+            start += (3-j)
     return x_moments
 
 def solve_y_moments(B_y):
