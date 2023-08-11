@@ -329,7 +329,7 @@ def plot_colormap3dslice(filename=None,
             operatorstr='_'+operator
             operatorfilestr='_'+operator
             if symlog is None:
-                lin=True
+                lin=7
         # index a vector
         if operator.isdigit():
             operator = str(operator)
