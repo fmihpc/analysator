@@ -818,7 +818,7 @@ def plot_neutral_sheet(filename=None,
                   useimshow=False, imshowinterp='none', folding=True, z_extent=[-5,5], sheetlayer='above'
                   ):
     
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots a coloured plot along the neutral sheet with axes and a colour bar.
 
     :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
     :kword vlsvobj:     Optionally provide a python vlsvfile object instead
@@ -883,14 +883,66 @@ def plot_neutral_sheet(filename=None,
                         If the function accepts a fifth variable, if set to true, it is expected to 
                         return a list of required variables for constructing the pass_maps dictionary.
     :kword expression:  Optional function which calculates a custom expression to plot. The function
+                        receives the same dictionary of numpy arrays as external, as an argument pass_maps,
+                        the contents of which are maps of variables. Each is either of size [ysize,xsize]
+                        or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+                        If the function accepts a second variable, if set to true, it is expected to 
+                        return a list of required variables for pass_maps.
+
+    Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
+    for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+    on, see the plot_helpers.py file.
+
+    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+                        or from tesla to nanotesla. Guesses correct units for colourbar for some known
+                        variables. Set to None to seek for a default scaling.
+    :kword absolute:    Plot the absolute of the evaluated variable
+
+    :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
+                        as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
+                        for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
+    :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
+                        functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
+                        pass_times has two values, the first is the extent before, the second after.
+                        (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
+                        for a total of four timesteps)
+                        This causes pass_vars to become a list of timesteps, with each timestep containing
+                        a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
+                        added as 'dstep' which gives the timestep offset from the master frame.
+                        Does not work if working from a vlsv-object.
+    :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
+
+    :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
+                        the regular source file and the file given by this keyword. This overides external
+                        and expression keywords, as well as related pass_vars, pass_times, and pass_full.
+
+    :kword z_extent:    Search bracket for the neutral sheet in axisunit units
+    :kword folding:     If set to True, plots transparent dots over the regions where the sheet has multiple separate z-values
+    :kword sheetlayer:  If set to 'above', plots the topmost layer of the neutral sheet in case of folding. If set to anything else, 
+                        the downmost layer is plotted.
+    :kword nomask:      Do not mask plotting based on proton density
+
+    :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
+    :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
+    :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+    :kword vectorsize:  Scaling of vector sizes
+
+    :kword streamlines: Set to a vector variable to overplot as streamlines
+    :kword streamlinedensity: Set streamline density (default 1)
+    :kword streamlinecolor: Set streamline color (default white)
+    :kword streamlinethick: Set streamline thickness
+
+    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
                         It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
                         to be automatically added next to the panel (but this may affect the overall layout)
                         Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                         proportions may change if the box and axes size are not designed to match by the user
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
+    :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
+    :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
     :kword useimshow:   Use imshow for raster background instead (default: False)
     :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
-    :kword todo:
 
 
     :returns:           Outputs an image to a file or to the screen.
@@ -1234,10 +1286,10 @@ def plot_neutral_sheet(filename=None,
         # Save lists for masking
         MaskX = np.where(~np.all(maskgrid.mask, axis=1))[0] # [0] takes the first element of a tuple
         MaskY = np.where(~np.all(maskgrid.mask, axis=0))[0]
-        XmeshPass = XmeshXY[MaskX[0]:MaskX[-1]+2,:]
-        XmeshPass = XmeshPass[:,MaskY[0]:MaskY[-1]+2]
-        YmeshPass = YmeshXY[MaskX[0]:MaskX[-1]+2,:]
-        YmeshPass = YmeshPass[:,MaskY[0]:MaskY[-1]+2]
+        XmeshPass = XmeshXY[MaskX[0]:MaskX[-1]+1,:]
+        XmeshPass = XmeshPass[:,MaskY[0]:MaskY[-1]+1]
+        YmeshPass = YmeshXY[MaskX[0]:MaskX[-1]+1,:]
+        YmeshPass = YmeshPass[:,MaskY[0]:MaskY[-1]+1]
         XmeshCentres = XmeshCentres[MaskX[0]:MaskX[-1]+1,:]
         XmeshCentres = XmeshCentres[:,MaskY[0]:MaskY[-1]+1]
         YmeshCentres = YmeshCentres[MaskX[0]:MaskX[-1]+1,:]
@@ -1488,8 +1540,8 @@ def plot_neutral_sheet(filename=None,
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
         # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[MaskX[0]:MaskX[-1]+2,:]
-        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+2]
+        rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
+        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
 
 
     # Mask region outside ionosphere. Note that for some boundary layer cells, 
@@ -1679,7 +1731,7 @@ def plot_neutral_sheet(filename=None,
 
     if folding:
         folds_to_plot=np.array(folds)
-        ax1.plot(folds_to_plot[:,0]/axisunit, folds_to_plot[:,1]/axisunit, '.k', alpha=0.2)
+        ax1.scatter(folds_to_plot[:,0]/axisunit, folds_to_plot[:,1]/axisunit, c='k', s=0.1, alpha=0.2)
 
 
     if streamlines:
@@ -1730,6 +1782,16 @@ def plot_neutral_sheet(filename=None,
         ax1.quiver(X,Y,U,V,C, cmap=vectorcolormap, units='dots', scale=0.05/vectorsize, headlength=4, headwidth=4,
                    headaxislength=2, scale_units='dots', pivot='middle')
     
+
+    # Optional external additional plotting routine overlayed on color plot
+    # Uses the same pass_maps variable as expressions
+    if external:
+        #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
+        if not axes:
+            extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)
+        else:
+            extresult=external(axes, XmeshCentres,YmeshCentres, pass_maps)
+
 
     if not nocb:
         if cbaxes: 
