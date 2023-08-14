@@ -1182,7 +1182,7 @@ class VlsvReader(object):
 
       else:
          # Multiple coordinates
-
+         ncoords = coordinates.shape[0]
          # Read all cells as we're anyway going to need this
          whole_cellids  = self.read_variable("CellID")
          whole_variable = self.read_variable(name,operator=operator)
@@ -1204,9 +1204,9 @@ class VlsvReader(object):
          
          # Start iteration
          if value_length == 1:
-            ret_array = np.zeros(len(coordinates))
+            ret_array = np.zeros(ncoords)
          else:
-            ret_array = np.zeros((len(coordinates), value_length))
+            ret_array = np.zeros(ncoords, value_length))
 
          offsets = np.zeros(coordinates.shape,dtype=np.int32)
          offsets[coordinates[:,0] <= batch_closest_cell_coordinates[:,0],0] = -1
@@ -1222,6 +1222,20 @@ class VlsvReader(object):
          scaled_coordinatess=np.zeros_like(upper_cell_coordinatess)
          nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
          scaled_coordinatess[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
+
+         ngbrvaluess=np.zeros((ncoords,2,2,2,value_length))
+         offsets = np.zeros((8,3), dtype=np.int32)
+         ii = 0
+         for x in [0,1]:
+            for y in [0,1]:
+               for z  in [0,1]:
+                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
+         offsets = np.repeat(offsets, ncoords, axis=0)
+         cellid_neighbors = int(self.get_cells_neighbor(lower_cell_ids, offsets, periodic))
+         ngbrvaluess = self.read_variable(name, cellids=cellid_neighbors, operator=operator)
+         ngbrvaluess = np.reshape(ngbrvaluess, (ncoords,2,2,2,value_length))
+         #ngbrvaluess[:,x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
+
 
          for i,cell_coords in enumerate(coordinates):
             #closest_cell_id=self.get_cellid(cell_coords)
@@ -1259,13 +1273,13 @@ class VlsvReader(object):
             #    else:
             #       scaled_coordinates[j] = 0.0 # Special case for periodic systems with one cell in a dimension
             scaled_coordinates = scaled_coordinatess[i,:]
-            ngbrvalues=np.zeros((2,2,2,value_length))
-            for x in [0,1]:
-               for y in [0,1]:
-                  for z  in [0,1]:
-                     cellid_neighbor = int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic))
-                     ngbrvalues[x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
-            
+            # ngbrvalues=np.zeros((2,2,2,value_length))
+            # for x in [0,1]:
+            #    for y in [0,1]:
+            #       for z  in [0,1]:
+            #          cellid_neighbor = int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic))
+            #          ngbrvalues[x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
+            ngbrvalues = ngbrvaluess[i,:,:,:,:]
             c2d=np.zeros((2,2,value_length))
             for y in  [0,1]:
                for z in  [0,1]:
