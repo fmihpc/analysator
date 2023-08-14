@@ -38,8 +38,6 @@ except ImportError:
 from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
-from time import time
-
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -1114,8 +1112,7 @@ class VlsvReader(object):
 
 
       coordinates = get_data(coordinates)
-      
-      
+            
       if len(np.shape(coordinates)) == 1:
          # Get closest id
          closest_cell_id=self.get_cellid(coordinates)
@@ -1183,35 +1180,18 @@ class VlsvReader(object):
       else:
          # Multiple coordinates
          ncoords = coordinates.shape[0]
-         # Read all cells as we're anyway going to need this
-         # whole_cellids  = self.read_variable("CellID")
-         whole_variable = self.read_variable(name,cellids=[1,2],operator=operator)
-         # t0 = time()
+         test_variable = self.read_variable(name,cellids=[1,2],operator=operator)
          closest_cell_ids = self.get_cellid(coordinates)
-         # print(time()-t0,"seconds for batch ids")
-         # t0=time()
-         #this is actually pretty fast for <O(1e5) points on a laptop o_O
-         #closest_cell_ids = np.array([(int)(self.get_cellid(c)) for c in coordinates])
-         # print(time()-t0,"seconds for list comprehension ids")
-         # print(np.sum(closest_cell_ids == closest_cell_idss), "out of ",len(coordinates))
          batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
 
          # Check one value for the length
-         if isinstance(whole_variable[0], Iterable):
-            value_length=len(whole_variable[0])
+         if isinstance(test_variable[0], Iterable):
+            value_length=len(test_variable[0])
          else:
             value_length=1
          
-         # # Start iteration
-         # if value_length == 1:
-         #    ret_array = np.zeros(ncoords)
-         # else:
-         #    ret_array = np.zeros((ncoords, value_length))
-
          offsets = np.zeros(coordinates.shape,dtype=np.int32)
-         offsets[coordinates[:,0] <= batch_closest_cell_coordinates[:,0],0] = -1
-         offsets[coordinates[:,1] <= batch_closest_cell_coordinates[:,1],1] = -1
-         offsets[coordinates[:,2] <= batch_closest_cell_coordinates[:,2],2] = -1
+         offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
          lower_cell_ids = self.get_cells_neighbor(closest_cell_ids, offsets, periodic)
          lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
@@ -1235,82 +1215,15 @@ class VlsvReader(object):
          lower_ids_temp = np.atleast_2d(lower_cell_ids)
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
          cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
-         # ngbrvaluess[:,x,y,z,:] = np.reshape(whole_variable[np.nonzero(whole_cellids==cellid_neighbors)[0][0]],(2,2,2))
 
          ngbrvaluess = self.read_variable(name, cellids=cellid_neighbors, operator=operator)
          ngbrvaluess = np.reshape(ngbrvaluess, (ncoords,2,2,2,value_length))
-         #ngbrvaluess[:,x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
-
-         # c2ds=np.zeros((ncoords, 2,2,value_length))
-         # for y in  [0,1]:
-         #    for z in  [0,1]:
-         #       c2ds[:,y,z,:]=ngbrvaluess[:,0,y,z,:]* (1- np.atleast_2d(scaled_coordinatess[:,0])).T +  ngbrvaluess[:,1,y,z,:]*np.atleast_2d(scaled_coordinatess[:,0]).T
          c2ds=ngbrvaluess[:,0,:,:,:]* (1- scaled_coordinatess[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvaluess[:,1,:,:,:]*scaled_coordinatess[:,0][:,np.newaxis,np.newaxis,np.newaxis]
 
          c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinatess[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinatess[:,1][:,np.newaxis,np.newaxis]
          final_values=c1ds[:,0,:] * (1 - scaled_coordinatess[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinatess[:,2][:,np.newaxis]
-         #print(ret_array.shape, final_values.shape)
-         # for i,cell_coords in enumerate(coordinates):
-         #    #closest_cell_id=self.get_cellid(cell_coords)
-         #    closest_cell_id=closest_cell_ids[i]
-         #    if closest_cell_id == 0:
-         #       if value_length==1:
-         #          ret_array[i]=None
-         #       else:
-         #          ret_array[i,:] = None
-         #       continue
-         #    closest_cell_coordinates=batch_closest_cell_coordinates[i,:]
-         #    #closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
-            
-         #    # Now identify the lower one of the 8 neighbor cells
-         #    # offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
-         #    #           0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
-         #    #           0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
-         #    offset = offsets[i,:]
-         #    # lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
-         #    # lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
-         #    lower_cell_id = lower_cell_ids[i]
-         #    lower_cell_coordinates = lower_cell_coordinatess[i,:]
-         #    # offset = [1,1,1]
-         #    # upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
-         #    # upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         #    upper_cell_id = upper_cell_ids[i]
-         #    upper_cell_coordinates = upper_cell_coordinatess[i,:]
-         #    #if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
-         #       #print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
- 
-         #    # scaled_coordinates=np.zeros(3)
-         #    # for j in range(3):
-         #    #    if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
-         #    #       scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
-         #    #    else:
-         #    #       scaled_coordinates[j] = 0.0 # Special case for periodic systems with one cell in a dimension
-         #    scaled_coordinates = scaled_coordinatess[i,:]
-         #    # ngbrvalues=np.zeros((2,2,2,value_length))
-         #    # for x in [0,1]:
-         #    #    for y in [0,1]:
-         #    #       for z  in [0,1]:
-         #    #          cellid_neighbor = int(self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic))
-         #    #          ngbrvalues[x,y,z,:] = whole_variable[np.nonzero(whole_cellids==cellid_neighbor)[0][0]]
-         #    ngbrvalues = ngbrvaluess[i,:,:,:,:]
-         #    # c2d=np.zeros((2,2,value_length))
-         #    # for y in  [0,1]:
-         #    #    for z in  [0,1]:
-         #    #       c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
-         #    c2d = c2ds[i,:,:,:]
-         #    # c1d=np.zeros((2,value_length))
-         #    # for z in [0,1]:
-         #    #    c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
-         #    c1d = c1ds[i,:,:]
-         #    final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
-         #    final_value=final_values[i,:]
-         #    if len(final_value)==1:
-         #       ret_array[i] = final_value[0]
-         #    else:
-         #       ret_array[i, :] = final_value
-         
-         # Done.
-         return final_values.squeeze()
+
+         return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
    def read_fsgrid_variable_cellid(self, name, cellids=-1, operator="pass"):
       ''' Reads fsgrid variables from the open vlsv file.
