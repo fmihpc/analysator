@@ -1187,7 +1187,7 @@ class VlsvReader(object):
          # whole_cellids  = self.read_variable("CellID")
          whole_variable = self.read_variable(name,cellids=[1,2],operator=operator)
          # t0 = time()
-         closest_cell_ids = self.get_cellids(coordinates)
+         closest_cell_ids = self.get_cellid(coordinates)
          # print(time()-t0,"seconds for batch ids")
          # t0=time()
          #this is actually pretty fast for <O(1e5) points on a laptop o_O
@@ -1626,7 +1626,7 @@ class VlsvReader(object):
       while np.any(cellids > 0):
          mask = cellids > 0
          sub = 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells)
-         np.subtract(cellids, sub, out = cellids, where = mask)
+         np.subtract(cellids, sub.astype(np.int64), out = cellids, where = mask)
          np.add(AMR_count, 1, out = AMR_count, where = mask)
          iters = iters+1
          if(iters > self.get_max_refinement_level()+1):
@@ -1828,57 +1828,57 @@ class VlsvReader(object):
       cidsout = list(OrderedDict.fromkeys(cids))
       return cidsout
 
-   def get_cellid(self, coordinates):
-      ''' Returns the cell id at given coordinates
+   # def get_cellid(self, coordinates):
+   #    ''' Returns the cell id at given coordinates
 
-      :param coordinates:        The cell's coordinates
-      :returns: the cell id
+   #    :param coordinates:        The cell's coordinates
+   #    :returns: the cell id
 
-      .. note:: Returns 0 if the cellid is out of bounds!
-      '''
-      # If needed, read the file index for cellid
-      if len(self.__fileindex_for_cellid) == 0:
-         self.__read_fileindex_for_cellid()
+   #    .. note:: Returns 0 if the cellid is out of bounds!
+   #    '''
+   #    # If needed, read the file index for cellid
+   #    if len(self.__fileindex_for_cellid) == 0:
+   #       self.__read_fileindex_for_cellid()
 
-      # Check that the coordinates are not out of bounds:
-      if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
-         return 0
-      if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
-         return 0
-      if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
-         return 0
-      # Get cell lengths:
-      cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
+   #    # Check that the coordinates are not out of bounds:
+   #    if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
+   #       return 0
+   #    if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
+   #       return 0
+   #    if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
+   #       return 0
+   #    # Get cell lengths:
+   #    cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
 
-      # Get cell indices:
-      cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
-      # Get the cell id:
-      cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
+   #    # Get cell indices:
+   #    cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
+   #    # Get the cell id:
+   #    cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
 
-      # Going through AMR levels as needed
-      AMR_count = 0
-      ncells_lowerlevel = 0
-      refmax = self.get_max_refinement_level()
+   #    # Going through AMR levels as needed
+   #    AMR_count = 0
+   #    ncells_lowerlevel = 0
+   #    refmax = self.get_max_refinement_level()
 
-      while AMR_count < refmax + 1:
-          try:
-              self.__fileindex_for_cellid[cellid]
-              return cellid
-          except:
-              ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
-              AMR_count += 1
-              # Get cell lengths:
-              cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
+   #    while AMR_count < refmax + 1:
+   #        try:
+   #            self.__fileindex_for_cellid[cellid]
+   #            return cellid
+   #        except:
+   #            ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
+   #            AMR_count += 1
+   #            # Get cell lengths:
+   #            cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
 
-              # Get cell indices:
-              cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
-              # Get the cell id:
-              cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
+   #            # Get cell indices:
+   #            cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
+   #            # Get the cell id:
+   #            cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
 
-          if AMR_count == refmax + 1:
-              raise Exception('CellID does not exist in any AMR level')
+   #        if AMR_count == refmax + 1:
+   #            raise Exception('CellID does not exist in any AMR level')
    
-   def get_cellids(self, coordinates):
+   def get_cellid(self, coordinates):
       ''' Returns the cell ids at given coordinates
 
       :param coordinates:        The cells' coordinates
@@ -1886,6 +1886,13 @@ class VlsvReader(object):
 
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
+
+      stack = True
+
+      if len(coordinates.shape) == 1:
+         coordinates = np.atleast_2d(coordinates)
+         stack = False
+
       # If needed, read the file index for cellid
       if len(self.__fileindex_for_cellid) == 0:
          self.__read_fileindex_for_cellid()
@@ -1947,7 +1954,10 @@ class VlsvReader(object):
       mask[mask] = mask[mask] & drop
       #mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
       cellids[mask] = 0 # set missing cells to null cell
-      return cellids
+      if stack:
+         return cellids
+      else:
+         return cellids[0]
 
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
@@ -1987,7 +1997,7 @@ class VlsvReader(object):
       if stack:
          return np.array(cellcoordinates)
       else:
-         return np.array(cellcoordinates)[0]
+         return np.array(cellcoordinates)[0,:]
 
    def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
@@ -2021,6 +2031,7 @@ class VlsvReader(object):
 
       # Get cell indices:
       cellids = np.array(cellids - 1 - index_at_reflevel[reflevels], dtype=np.int64).copy()
+      cellids = np.atleast_1d(cellids)
       cellindices = np.zeros((len(cellids),3))
       cellindices[:,0] = (cellids)%(np.power(2,reflevels)*self.__xcells)
       cellindices[:,1] = ((cellids)//(np.power(2,reflevels)*self.__xcells))%(np.power(2,reflevels)*self.__ycells)
@@ -2117,7 +2128,7 @@ class VlsvReader(object):
 
       coord_neighbour = np.zeros(ngbr_indices.shape, dtype=np.float64)
       coord_neighbour[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
-      cellid_neighbours[mask] = self.get_cellids(coord_neighbour[mask,:])
+      cellid_neighbours[mask] = self.get_cellid(coord_neighbour[mask,:])
       return cellid_neighbours
 
    def get_WID(self):
