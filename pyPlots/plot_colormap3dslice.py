@@ -292,7 +292,7 @@ def plot_colormap3dslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+'\,s'
+            plot_title = "t="+timeformat.format(timeval)+'\,'+rmstring('s'):
     else:
         plot_title = title
 
