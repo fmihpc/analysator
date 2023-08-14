@@ -38,6 +38,8 @@ except ImportError:
 from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
+from time import time
+
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -243,6 +245,7 @@ class VlsvReader(object):
                  vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
       self.__fptr.close()
+      self.__read_fileindex_for_cellid()
 
 
    def __read_xml_footer(self):
@@ -1112,6 +1115,7 @@ class VlsvReader(object):
 
       coordinates = get_data(coordinates)
       
+      
       if len(np.shape(coordinates)) == 1:
          # Get closest id
          closest_cell_id=self.get_cellid(coordinates)
@@ -1132,8 +1136,8 @@ class VlsvReader(object):
             print("Error: requested cell id for interpolation outside simulation domain")
             return -1
          # If the interpolation is done across two different refinement levels, issue a warning
-         if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
-            print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
+         #if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
+            #print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
 
          scaled_coordinates=np.zeros(3)
          for i in range(3):
@@ -1178,10 +1182,19 @@ class VlsvReader(object):
 
       else:
          # Multiple coordinates
-         
+
          # Read all cells as we're anyway going to need this
          whole_cellids  = self.read_variable("CellID")
          whole_variable = self.read_variable(name,operator=operator)
+         # t0 = time()
+         closest_cell_ids = self.get_cellids(coordinates)
+         # print(time()-t0,"seconds for batch ids")
+         # t0=time()
+         #this is actually pretty fast for <O(1e5) points on a laptop o_O
+         #closest_cell_ids = np.array([(int)(self.get_cellid(c)) for c in coordinates])
+         # print(time()-t0,"seconds for list comprehension ids")
+         # print(np.sum(closest_cell_ids == closest_cell_idss), "out of ",len(coordinates))
+         batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
 
          # Check one value for the length
          if isinstance(whole_variable[0], Iterable):
@@ -1194,36 +1207,58 @@ class VlsvReader(object):
             ret_array = np.zeros(len(coordinates))
          else:
             ret_array = np.zeros((len(coordinates), value_length))
+
+         offsets = np.zeros(coordinates.shape,dtype=np.int32)
+         offsets[coordinates[:,0] <= batch_closest_cell_coordinates[:,0],0] = -1
+         offsets[coordinates[:,1] <= batch_closest_cell_coordinates[:,1],1] = -1
+         offsets[coordinates[:,2] <= batch_closest_cell_coordinates[:,2],2] = -1
+
+         lower_cell_ids = self.get_cells_neighbor(closest_cell_ids, offsets, periodic)
+         lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
+         offsets.fill(1)
+         upper_cell_ids = self.get_cells_neighbor(lower_cell_ids, offsets, periodic)
+         upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
+
+         scaled_coordinatess=np.zeros_like(upper_cell_coordinatess)
+         nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
+         scaled_coordinatess[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
+
          for i,cell_coords in enumerate(coordinates):
-            closest_cell_id=self.get_cellid(cell_coords)
+            #closest_cell_id=self.get_cellid(cell_coords)
+            closest_cell_id=closest_cell_ids[i]
             if closest_cell_id == 0:
                if value_length==1:
                   ret_array[i]=None
                else:
                   ret_array[i,:] = None
                continue
-            closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
+            closest_cell_coordinates=batch_closest_cell_coordinates[i,:]
+            #closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
             
             # Now identify the lower one of the 8 neighbor cells
-            offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
-                      0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
-                      0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
-            lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
-            lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
-            offset = [1,1,1]
-            upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
-            upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-           
-            if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
-               print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
+            # offset = [0 if cell_coords[0] > closest_cell_coordinates[0] else -1,\
+            #           0 if cell_coords[1] > closest_cell_coordinates[1] else -1,\
+            #           0 if cell_coords[2] > closest_cell_coordinates[2] else -1]
+            offset = offsets[i,:]
+            # lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+            # lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
+            lower_cell_id = lower_cell_ids[i]
+            lower_cell_coordinates = lower_cell_coordinatess[i,:]
+            # offset = [1,1,1]
+            # upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+            # upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
+            upper_cell_id = upper_cell_ids[i]
+            upper_cell_coordinates = upper_cell_coordinatess[i,:]
+            #if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
+               #print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
  
-            scaled_coordinates=np.zeros(3)
-            for j in range(3):
-               if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
-                  scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
-               else:
-                  scaled_coordinates[j] = 0.0 # Special case for periodic systems with one cell in a dimension
-            
+            # scaled_coordinates=np.zeros(3)
+            # for j in range(3):
+            #    if lower_cell_coordinates[j] != upper_cell_coordinates[j]:
+            #       scaled_coordinates[j]=(cell_coords[j] - lower_cell_coordinates[j])/(upper_cell_coordinates[j] - lower_cell_coordinates[j])
+            #    else:
+            #       scaled_coordinates[j] = 0.0 # Special case for periodic systems with one cell in a dimension
+            scaled_coordinates = scaled_coordinatess[i,:]
             ngbrvalues=np.zeros((2,2,2,value_length))
             for x in [0,1]:
                for y in [0,1]:
@@ -1815,6 +1850,77 @@ class VlsvReader(object):
           if AMR_count == refmax + 1:
               raise Exception('CellID does not exist in any AMR level')
    
+   def get_cellids(self, coordinates):
+      ''' Returns the cell ids at given coordinates
+
+      :param coordinates:        The cells' coordinates
+      :returns: the cell ids
+
+      .. note:: Returns 0 if the cellid is out of bounds!
+      '''
+      # If needed, read the file index for cellid
+      if len(self.__fileindex_for_cellid) == 0:
+         self.__read_fileindex_for_cellid()
+      #good_ids = self.read_variable("CellID")
+      # good_ids = np.array(list(self.__fileindex_for_cellid.keys()))
+      # good_ids.sort()
+
+      cellids = np.zeros((coordinates.shape[0]), dtype=np.int64)
+
+      # mask for cells that are unresolved - out-of-bounds coordinates stay at zero
+      mask = (
+               (self.__xmax > coordinates[:,0]) & (self.__xmin < coordinates[:,0]) &
+               (self.__ymax > coordinates[:,1]) & (self.__ymin < coordinates[:,1]) &
+               (self.__zmax > coordinates[:,2]) & (self.__zmin < coordinates[:,2])
+      )
+
+      # Get cell lengths:
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
+
+      cellindices = np.zeros(coordinates.shape, dtype=np.int64)
+      #print(cellindices.shape)
+      # Get cell indices:
+      cellindices[mask,0] = (coordinates[mask,0] - self.__xmin)/cell_lengths[0]
+      cellindices[mask,1] = (coordinates[mask,1] - self.__ymin)/cell_lengths[1]
+      cellindices[mask,2] = (coordinates[mask,2] - self.__zmin)/cell_lengths[2]
+      # Get the cell id:
+      cellids[mask] = cellindices[mask,0] + cellindices[mask,1] * self.__xcells + cellindices[mask,2] * self.__xcells * self.__ycells + 1
+
+      # Going through AMR levels as needed
+      AMR_count = 0
+      ncells_lowerlevel = 0
+      refmax = self.get_max_refinement_level()
+
+      while AMR_count < refmax +1:
+         # print(AMR_count,": mask", mask)
+         # print(AMR_count,": cellids[mask]", cellids[mask])
+         # print(AMR_count,": notfoundyet", np.isin(cellids[mask], good_ids, invert=True))
+         drop = np.array([c not in self.__fileindex_for_cellid.keys() for c in cellids[mask]], dtype=bool)
+         mask[mask] = mask[mask] & drop
+         # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
+         
+         
+
+         ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
+         AMR_count += 1
+         # Get cell lengths:
+         cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
+
+         # Get cell indices:
+         #cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
+         cellindices[mask,0] = (coordinates[mask,0] - self.__xmin)/cell_lengths[0]
+         cellindices[mask,1] = (coordinates[mask,1] - self.__ymin)/cell_lengths[1]
+         cellindices[mask,2] = (coordinates[mask,2] - self.__zmin)/cell_lengths[2]
+         # Get the cell id:
+         #cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
+         cellids[mask] = ncells_lowerlevel + cellindices[mask,0] + 2**(AMR_count)*cellindices[mask,1] * self.__xcells + 4**(AMR_count) * cellindices[mask,2] * self.__xcells * self.__ycells + 1
+
+      drop = np.array([c not in self.__fileindex_for_cellid.keys() for c in cellids[mask]], dtype=bool)
+      mask[mask] = mask[mask] & drop
+      #mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
+      cellids[mask] = 0 # set missing cells to null cell
+      return cellids
+
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
@@ -1936,6 +2042,55 @@ class VlsvReader(object):
       coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
       cellid_neighbour = self.get_cellid(coord_neighbour)
       return cellid_neighbour
+
+   def get_cells_neighbor(self, cellids, offsets, periodic):
+      ''' Returns a given cells neighbor at offset (in indices)
+
+      :param cellids:            The cell's ID
+      :param offsets:            The offset to the neighbor in indices
+      :param periodic:          For each dimension, is the system periodic
+      :returns: the cellid of the neighbor
+
+      .. note:: Returns 0 if the offset is out of bounds!
+
+      '''
+      reflevel = self.get_amr_level(cellids)
+      indices = self.get_cell_indices(cellids, reflevel)
+
+      cellid_neighbours = cellids.copy()
+      mask = np.ones(cellids.shape, dtype=bool)
+      # Special case if no offset      
+      mask = ~((offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0))
+
+      # Getting the neighbour at the same refinement level
+      ngbr_indices = np.zeros((len(cellids),3))
+      sys_sizes= np.ones(ngbr_indices.shape, dtype=np.float64)
+      sys_sizes[:,0] = 2**reflevel*self.__xcells
+      sys_sizes[:,1] = 2**reflevel*self.__ycells
+      sys_sizes[:,2] = 2**reflevel*self.__zcells
+      for i in range(3):
+         ngbr_indices[:,i] = indices[:,i] + offsets[:,i]
+         if periodic[i]:
+            lowmask = mask & (ngbr_indices[:,i] < 0)
+            ngbr_indices[lowmask,i] = ngbr_indices[lowmask,i] % sys_sizes[lowmask,i]
+            himask = mask & (ngbr_indices[:,i] >= sys_sizes[:,i])
+            ngbr_indices[himask,i] = ngbr_indices[himask,i] % sys_sizes[himask,i]
+
+            # for j in range(abs(offsets[:,i])):
+            #    #loop over offset abs as offset may be larger than the system size
+            #    if ngbr_indices[i] < 0:
+            #       ngbr_indices[i] = ngbr_indices[i] + sys_size[i]
+            #    elif ngbr_indices[i] >= sys_size[i]:
+            #       ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
+   
+         elif np.any((ngbr_indices[mask, i] < 0) or (ngbr_indices[mask,i] >= sys_sizes[mask,i])):
+            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
+            #pass
+
+      coord_neighbour = np.zeros(ngbr_indices.shape, dtype=np.float64)
+      coord_neighbour[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
+      cellid_neighbours[mask] = self.get_cellids(coord_neighbour[mask,:])
+      return cellid_neighbours
 
    def get_WID(self):
       # default WID=4
