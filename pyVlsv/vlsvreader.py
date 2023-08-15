@@ -1115,6 +1115,8 @@ class VlsvReader(object):
             
       if len(np.shape(coordinates)) == 1:
          # Get closest id
+         if(len(coordinates) != 3):
+            raise TypeError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
          closest_cell_id=self.get_cellid(coordinates)
          if closest_cell_id == 0:
             return None
@@ -1180,6 +1182,8 @@ class VlsvReader(object):
       else:
          # Multiple coordinates
          ncoords = coordinates.shape[0]
+         if(coordinates.shape[1] != 3):
+            raise TypeError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
          test_variable = self.read_variable(name,cellids=[1,2],operator=operator)
          closest_cell_ids = self.get_cellid(coordinates)
          batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
