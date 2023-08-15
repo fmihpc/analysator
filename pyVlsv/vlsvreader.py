@@ -38,6 +38,7 @@ except ImportError:
 from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
+import warnings
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -243,7 +244,6 @@ class VlsvReader(object):
                  vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
       self.__fptr.close()
-      self.__read_fileindex_for_cellid()
 
 
    def __read_xml_footer(self):
@@ -1089,7 +1089,7 @@ class VlsvReader(object):
       print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
-   def read_interpolated_variable(self, name, coordinates, operator="pass",periodic=[True, True, True]):
+   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True]):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
@@ -1106,12 +1106,12 @@ class VlsvReader(object):
 
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
-         return self.read_interpolated_fsgrid_variable(name, coordinates, operator, periodic)
+         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coordinates, operator, periodic)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic)
 
-
-      coordinates = get_data(coordinates)
+      coordinates = get_data(coords)
+      coordinates = np.array(coordinates)
             
       if len(np.shape(coordinates)) == 1:
          # Get closest id
@@ -1133,8 +1133,8 @@ class VlsvReader(object):
             print("Error: requested cell id for interpolation outside simulation domain")
             return -1
          # If the interpolation is done across two different refinement levels, issue a warning
-         #if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
-            #print("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.")
+         if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
+            warnings.warn("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.",UserWarning)
 
          scaled_coordinates=np.zeros(3)
          for i in range(3):
@@ -1199,11 +1199,11 @@ class VlsvReader(object):
          upper_cell_ids = self.get_cells_neighbor(lower_cell_ids, offsets, periodic)
          upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
 
-         scaled_coordinatess=np.zeros_like(upper_cell_coordinatess)
+         scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
          nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
-         scaled_coordinatess[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
+         scaled_coordinates[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
 
-         ngbrvaluess=np.zeros((ncoords,2,2,2,value_length))
+         ngbrvalues=np.zeros((ncoords,2,2,2,value_length))
          offsets = np.zeros((8,3), dtype=np.int32)
          ii = 0
          for x in [0,1]:
@@ -1216,12 +1216,12 @@ class VlsvReader(object):
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
          cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
 
-         ngbrvaluess = self.read_variable(name, cellids=cellid_neighbors, operator=operator)
-         ngbrvaluess = np.reshape(ngbrvaluess, (ncoords,2,2,2,value_length))
-         c2ds=ngbrvaluess[:,0,:,:,:]* (1- scaled_coordinatess[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvaluess[:,1,:,:,:]*scaled_coordinatess[:,0][:,np.newaxis,np.newaxis,np.newaxis]
+         ngbrvalues = self.read_variable(name, cellids=cellid_neighbors, operator=operator)
+         ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
+         c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
 
-         c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinatess[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinatess[:,1][:,np.newaxis,np.newaxis]
-         final_values=c1ds[:,0,:] * (1 - scaled_coordinatess[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinatess[:,2][:,np.newaxis]
+         c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
+         final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
 
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
@@ -1791,17 +1791,17 @@ class VlsvReader(object):
    #        if AMR_count == refmax + 1:
    #            raise Exception('CellID does not exist in any AMR level')
    
-   def get_cellid(self, coordinates):
+   def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
 
-      :param coordinates:        The cells' coordinates
+      :param coords:        The cells' coordinates
       :returns: the cell ids
 
       .. note:: Returns 0 if the cellid is out of bounds!
       '''
 
       stack = True
-
+      coordinates = np.array(coords)
       if len(coordinates.shape) == 1:
          coordinates = np.atleast_2d(coordinates)
          stack = False
