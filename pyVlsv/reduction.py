@@ -393,7 +393,7 @@ def PerpendicularVectorComponent( variables ):
          vmag = np.linalg.norm(inputvector)
          presqrt = vmag*vmag - vpara*vpara
          if (presqrt>=0):
-            return sqrt(presqrt)
+            return np.sqrt(presqrt)
          else:
             return 0
       else:

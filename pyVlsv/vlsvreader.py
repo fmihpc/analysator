@@ -657,7 +657,10 @@ class VlsvReader(object):
       then the following returns ['9']:
       vlsvReader.get_config()['proton_precipitation']['nChannels']
       '''
-      fa = re.findall(r'\[\w+\]|\w+ = \S+', self.get_config_string())
+      confstring = self.get_config_string()
+      if confstring is None:
+         return None
+      fa = re.findall(r'\[\w+\]|\w+ = \S+', confstring)
       heading = ''
       output = {heading:{}}
 

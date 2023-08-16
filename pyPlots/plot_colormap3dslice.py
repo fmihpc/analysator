@@ -292,7 +292,7 @@ def plot_colormap3dslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+'\,s'
+            plot_title = "t="+timeformat.format(timeval)+'\,'+pt.plot.rmstring('s')
     else:
         plot_title = title
 
@@ -1017,6 +1017,8 @@ def plot_colormap3dslice(filename=None,
             else:
                 # Mask datamap
                 datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        XYmask = np.full(rhomap.shape, False)
 
     #If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values

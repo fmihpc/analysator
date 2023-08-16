@@ -1483,7 +1483,7 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
     return np.abs(fgreturn-vg)
 
 
-# Contour plot refinement levels
+# Contour plot spatial AMR refinement levels
 def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     if requestvariables==True:
         return ['vg_reflevel']
@@ -1501,3 +1501,20 @@ def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     levels = np.arange(minref,maxref)+0.5
     ax.contour(XmeshXY, YmeshXY, ref, levels, antialiased=False, linewidths=0.1, cmap='gray')
 
+# Contour plot MPI ranks
+def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['vg_rank']
+
+    # Check if pass_maps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        rank = extmaps[curri]['vg_rank']
+    else:
+        rank = extmaps['vg_rank']
+
+    minrank = int(np.amin(rank))
+    maxrank = int(np.amax(rank))
+    levels = np.arange(minrank,maxrank)+0.5
+    ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')
