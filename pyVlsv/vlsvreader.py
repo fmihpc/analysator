@@ -1124,6 +1124,7 @@ class VlsvReader(object):
             raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
          closest_cell_id=self.get_cellid(coordinates)
          if closest_cell_id == 0:
+            warnings.warn("Warning: requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
             if value_length == 1:
                return np.nan
             else:
