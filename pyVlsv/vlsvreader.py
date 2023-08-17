@@ -1745,56 +1745,6 @@ class VlsvReader(object):
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
       cidsout = list(OrderedDict.fromkeys(cids))
       return cidsout
-
-   # def get_cellid(self, coordinates):
-   #    ''' Returns the cell id at given coordinates
-
-   #    :param coordinates:        The cell's coordinates
-   #    :returns: the cell id
-
-   #    .. note:: Returns 0 if the cellid is out of bounds!
-   #    '''
-   #    # If needed, read the file index for cellid
-   #    if len(self.__fileindex_for_cellid) == 0:
-   #       self.__read_fileindex_for_cellid()
-
-   #    # Check that the coordinates are not out of bounds:
-   #    if (self.__xmax < coordinates[0]) or (self.__xmin >= coordinates[0]):
-   #       return 0
-   #    if (self.__ymax < coordinates[1]) or (self.__ymin >= coordinates[1]):
-   #       return 0
-   #    if (self.__zmax < coordinates[2]) or (self.__zmin >= coordinates[2]):
-   #       return 0
-   #    # Get cell lengths:
-   #    cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
-
-   #    # Get cell indices:
-   #    cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
-   #    # Get the cell id:
-   #    cellid = cellindices[0] + cellindices[1] * self.__xcells + cellindices[2] * self.__xcells * self.__ycells + 1
-
-   #    # Going through AMR levels as needed
-   #    AMR_count = 0
-   #    ncells_lowerlevel = 0
-   #    refmax = self.get_max_refinement_level()
-
-   #    while AMR_count < refmax + 1:
-   #        try:
-   #            self.__fileindex_for_cellid[cellid]
-   #            return cellid
-   #        except:
-   #            ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
-   #            AMR_count += 1
-   #            # Get cell lengths:
-   #            cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
-
-   #            # Get cell indices:
-   #            cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
-   #            # Get the cell id:
-   #            cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
-
-   #        if AMR_count == refmax + 1:
-   #            raise Exception('CellID does not exist in any AMR level')
    
    def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
