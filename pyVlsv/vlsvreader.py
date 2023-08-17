@@ -969,7 +969,8 @@ class VlsvReader(object):
          
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True]):
-      ''' Read a linearly interpolated FSgrid variable value from the open vlsv file.
+      ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
+      Note that this does not account for varying centerings of fsgrid data.
       Arguments:
       :param name: Name of the (FSgrid) variable
       :param coords: Coordinates from which to read data 
@@ -1005,7 +1006,8 @@ class VlsvReader(object):
          for c,index in enumerate(indices):
             #Non periodic case
             if ((index<0 or index>fg_size[c]-1) and not periodic[c]):
-               #out of bounds return NaN
+               # Returns False, interpolateSingle converts that to nans
+               warnings.warn("Warning: requested fsgrid index for interpolation outside simulation domain.", UserWarning)
                return False
              # Here we are either periodic or (not periodic and inside the domain)
             if (index >= fg_size[c] or index <0):
@@ -1059,12 +1061,8 @@ class VlsvReader(object):
          for k in [0,1]:
             for j in [0,1]:
                for i in [0,1]:
-                  try:
-                      retind=getFsGridIndices([xl+i,yl+j,zl+k])
-                      if (not retind): return None #outside of a non periodic domain
-                  except ValueError as error:
-                      print(error,file=sys.stderr)
-                      return np.NaN  #one of the neighbors cannot be located
+                  retind=getFsGridIndices([xl+i,yl+j,zl+k])
+                  if (not retind): retval.fill(np.nan) # outside of a non periodic domain
                   retval += w[4*k+2*j+i]*fg_data[retind]
 
          return retval
@@ -1112,14 +1110,24 @@ class VlsvReader(object):
 
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
-            
+      
+      # Check one value for the length
+      test_variable = self.read_variable(name,cellids=[1],operator=operator)
+      if isinstance(test_variable, Iterable):
+         value_length=len(test_variable)
+      else:
+         value_length=1
+
       if len(np.shape(coordinates)) == 1:
          # Get closest id
          if(len(coordinates) != 3):
-            raise TypeError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
+            raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
          closest_cell_id=self.get_cellid(coordinates)
          if closest_cell_id == 0:
-            return None
+            if value_length == 1:
+               return np.nan
+            else:
+               return np.full((value_length,),np.nan) 
          closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
 
          # Now identify the lower one of the 8 neighbor cells
@@ -1132,8 +1140,11 @@ class VlsvReader(object):
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
          if (lower_cell_id<1 or upper_cell_id<1):
-            print("Error: requested cell id for interpolation outside simulation domain")
-            return -1
+            warnings.warn("Warning: requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
+            if value_length == 1:
+               return np.nan
+            else:
+               return np.full((value_length,),np.nan)
          # If the interpolation is done across two different refinement levels, issue a warning
          if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
             warnings.warn("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.",UserWarning)
@@ -1144,18 +1155,9 @@ class VlsvReader(object):
                scaled_coordinates[i]=(coordinates[i] - lower_cell_coordinates[i])/(upper_cell_coordinates[i] - lower_cell_coordinates[i])
             else:
                scaled_coordinates[i] = 0.0 # Special case for periodic systems with one cell in a dimension
-
-         test_val=self.read_variable(name,lower_cell_id,operator)
-         if isinstance(test_val, Iterable):
-            try:
-               value_length=len(test_val)
-            except Exception as e:
-               # Can't determine size, maybe some division by zero?
-               value_length=1
-         else:
-            value_length=1
          
          # Now identify 8 cells, starting from the lower one
+         # this could be vectorized now
          ngbrvalues=np.zeros((2,2,2,value_length))
          for x in [0,1]:
             for y in [0,1]:
@@ -1183,16 +1185,9 @@ class VlsvReader(object):
          # Multiple coordinates
          ncoords = coordinates.shape[0]
          if(coordinates.shape[1] != 3):
-            raise TypeError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-         test_variable = self.read_variable(name,cellids=[1,2],operator=operator)
+            raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
          closest_cell_ids = self.get_cellid(coordinates)
          batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
-
-         # Check one value for the length
-         if isinstance(test_variable[0], Iterable):
-            value_length=len(test_variable[0])
-         else:
-            value_length=1
          
          offsets = np.zeros(coordinates.shape,dtype=np.int32)
          offsets[coordinates <= batch_closest_cell_coordinates] = -1
@@ -1207,7 +1202,7 @@ class VlsvReader(object):
          nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
          scaled_coordinates[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
 
-         ngbrvalues=np.zeros((ncoords,2,2,2,value_length))
+         ngbrvalues=np.full((ncoords*2*2*2,value_length),np.nan)
          offsets = np.zeros((8,3), dtype=np.int32)
          ii = 0
          for x in [0,1]:
@@ -1218,15 +1213,20 @@ class VlsvReader(object):
          offsets = np.tile(offsets, (ncoords, 1))
          lower_ids_temp = np.atleast_2d(lower_cell_ids)
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
+
          cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
-
-         ngbrvalues = self.read_variable(name, cellids=cellid_neighbors, operator=operator)
+         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
          ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
+         
          c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
-
          c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
          final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
 
+         if np.any(cellid_neighbors==0):
+            warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
+         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
    def read_fsgrid_variable_cellid(self, name, cellids=-1, operator="pass"):
@@ -1810,6 +1810,9 @@ class VlsvReader(object):
          coordinates = np.atleast_2d(coordinates)
          stack = False
 
+      if coordinates.shape[1] != 3:
+         raise IndexError("Coordinates are required to be 3-dimensional (coords were %d-dimensional)" % coordinates.shape[1])
+
       # If needed, read the file index for cellid
       if len(self.__fileindex_for_cellid) == 0:
          self.__read_fileindex_for_cellid()
@@ -1937,7 +1940,8 @@ class VlsvReader(object):
          reflevels = self.get_amr_level(cellids)
       else:
          reflevels = np.atleast_1d(reflevels)
-      
+
+      mask = reflevels >= 0
       # Calculating the index of the first cell at this reflevel
       index_at_reflevel = np.zeros(self.get_max_refinement_level()+1, dtype=np.int64)
       isum = 0
@@ -1947,12 +1951,11 @@ class VlsvReader(object):
 
 
       # Get cell indices:
-      cellids = np.array(cellids - 1 - index_at_reflevel[reflevels], dtype=np.int64).copy()
-      cellids = np.atleast_1d(cellids)
-      cellindices = np.zeros((len(cellids),3))
-      cellindices[:,0] = (cellids)%(np.power(2,reflevels)*self.__xcells)
-      cellindices[:,1] = ((cellids)//(np.power(2,reflevels)*self.__xcells))%(np.power(2,reflevels)*self.__ycells)
-      cellindices[:,2] = (cellids)//(np.power(4,reflevels)*self.__xcells*self.__ycells)
+      cellids = np.array(cellids - 1 - index_at_reflevel[reflevels], dtype=np.int64)
+      cellindices = np.full((len(cellids),3), -1)
+      cellindices[mask,0] = (cellids[mask])%(np.power(2,reflevels[mask])*self.__xcells)
+      cellindices[mask,1] = ((cellids[mask])//(np.power(2,reflevels[mask])*self.__xcells))%(np.power(2,reflevels[mask])*self.__ycells)
+      cellindices[mask,2] = (cellids[mask])//(np.power(4,reflevels[mask])*self.__xcells*self.__ycells)
 
       # Return the indices:
       if stack:
@@ -2013,17 +2016,17 @@ class VlsvReader(object):
       reflevel = self.get_amr_level(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
 
-      cellid_neighbours = cellids.copy()
+      cellid_neighbors = np.zeros_like(cellids)
       mask = np.ones(cellids.shape, dtype=bool)
-      # Special case if no offset      
-      mask = ~((offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0))
+      # Special case if no offset (return self in that case); and require in-domain reflevel
+      mask = ~((offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)) & (reflevel >= 0)
 
       # Getting the neighbour at the same refinement level
       ngbr_indices = np.zeros((len(cellids),3))
       sys_sizes= np.ones(ngbr_indices.shape, dtype=np.float64)
-      sys_sizes[:,0] = 2**reflevel*self.__xcells
-      sys_sizes[:,1] = 2**reflevel*self.__ycells
-      sys_sizes[:,2] = 2**reflevel*self.__zcells
+      sys_sizes[mask,0] = 2**reflevel[mask]*self.__xcells
+      sys_sizes[mask,1] = 2**reflevel[mask]*self.__ycells
+      sys_sizes[mask,2] = 2**reflevel[mask]*self.__zcells
       for i in range(3):
          ngbr_indices[:,i] = indices[:,i] + offsets[:,i]
          if periodic[i]:
@@ -2043,10 +2046,12 @@ class VlsvReader(object):
             print("Error in Vlsvreader get_cell_neighbor: out of bounds")
             #pass
 
-      coord_neighbour = np.zeros(ngbr_indices.shape, dtype=np.float64)
-      coord_neighbour[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
-      cellid_neighbours[mask] = self.get_cellid(coord_neighbour[mask,:])
-      return cellid_neighbours
+      coord_neighbor = np.zeros(ngbr_indices.shape, dtype=np.float64)
+      coord_neighbor[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
+      
+      cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
+      cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
+      return cellid_neighbors
 
    def get_WID(self):
       # default WID=4
