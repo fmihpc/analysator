@@ -133,16 +133,16 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
    linevec = n_line/np.broadcast_to(np.linalg.norm(n_line,axis=-1),(3,n_cells)).transpose()
    
    # Golden section search.
-   golden_ratio = 0.38197
+   golden_ratio_factor = 0.38197
 
    # a,b,c,x are displacement vectors along the line normal, with
    # 
    # |----------------------| < bracket interval
    # a       b     x        c    
    a = np.zeros_like(s_line)
-   b = np.ones_like(s_line)*init_interval*golden_ratio
+   b = np.ones_like(s_line)*init_interval*golden_ratio_factor
    c = np.ones_like(s_line)*init_interval
-   x = np.ones_like(s_line)*b+(c-b)*golden_ratio
+   x = np.ones_like(s_line)*b+(c-b)*golden_ratio_factor
 
    # Are we bracketing the interval a-b or b-c?
    bracket_dir = np.ones_like(s_line)
@@ -212,15 +212,11 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
       # a[(bracket_dir == -1) & (fb >= fx) & in_stepping] = a[(bracket_dir == -1) & (fb >= fx) & in_stepping]
       b[(bracket_dir == -1) & (fb >= fx) & in_stepping] = x[(bracket_dir == -1) & (fb >= fx) & in_stepping]
       c[(bracket_dir == -1) & (fb >= fx) & in_stepping] = b[(bracket_dir == -1) & (fb >= fx) & in_stepping]
-      # what was this about
-      # a[(bracket_dir == -1) & (fb >= fx) & in_stepping] = b[(bracket_dir == -1) & (fb >= fx) & in_stepping]
-      # b[(bracket_dir == -1) & (fb >= fx) & in_stepping] = x[(bracket_dir == -1) & (fb >= fx) & in_stepping]
-      # c[(bracket_dir == -1) & (fb >= fx) & in_stepping] = c[(bracket_dir == -1) & (fb >= fx) & in_stepping]
 
       bracket_dir[(b - a) < (c - b)] = 1
       bracket_dir[(b - a) >= (c - b)] = -1
-      x[in_stepping & (bracket_dir == -1)] = b[in_stepping & (bracket_dir == -1)] - ((b-a)*golden_ratio)[in_stepping & (bracket_dir == -1)]
-      x[in_stepping & (bracket_dir ==  1)] = b[in_stepping & (bracket_dir ==  1)] + ((c-b)*golden_ratio)[in_stepping & (bracket_dir ==  1)]
+      x[in_stepping & (bracket_dir == -1)] = b[in_stepping & (bracket_dir == -1)] - ((b-a)*golden_ratio_factor)[in_stepping & (bracket_dir == -1)]
+      x[in_stepping & (bracket_dir ==  1)] = b[in_stepping & (bracket_dir ==  1)] + ((c-b)*golden_ratio_factor)[in_stepping & (bracket_dir ==  1)]
 
       in_stepping = in_stepping & ((c - a) > tolerance)
       niter = niter+1
@@ -228,36 +224,14 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
             "right ", np.sum(bracket_dir[in_stepping] ==1), "left ", np.sum(bracket_dir[in_stepping]==-1))
       if(niter >= maxiters):
          break
-      
+
+   # Construct a line segment of local dx length where the neutral line is approximated to be
    s_line[mask] = np.fmin(fb,fx)[mask]
-
-
-
-
-   # np.divide(-1, s_line,out=s_line, where=hits) # SDF takes care of this now!
-   # np.add(s_line, 1,out=s_line, where=hits) # so that barely hitting approaches 0-
-   # np.subtract(s_line, 0.5, out=s_line, where=np.logical_not(hits)) # so that barely missing approaches 0+
-
-# these are a bit fiddly yet?
-
-   tmpout="/proj/mjalho/analysator/scripts/tmp.dat"
-   # print(n_line_intercept)
-   # print(n_line_intercept*dxs)
    a = coords+(n_line_intercept)*dxs
    b = n_line
-   # print("a",a)
-   # print("coords",coords)
-   # print("b",b)
-   # print(s_line)
-   # print(b)
-   # print(n_line_intercept)
-   # print(dxs)
    par_dist = np.sum((n_line_intercept*dxs)*n_line, axis=-1)[:,np.newaxis]
-   # print(par_dist)
    stck = np.hstack((a,b,s_line[:,np.newaxis],coords,-(n_line_intercept)*dxs,
                   par_dist))
-      #print(stck)
-      #np.save(tmpout, stck[np.all(np.isfinite(stck),axis=1) & (s_line < 1),:]) # get close hits
    if stack:
       return s_line, stck
    else:
