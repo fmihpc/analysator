@@ -280,9 +280,7 @@ class VlsvReader(object):
       #Check if it is not iterable. If it is a scale then make it a list
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
-      for index,cellid in enumerate(cellids):
-         self.__fileindex_for_cellid[cellid]=index
-         
+      self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
 
    def __read_blocks(self, cellid, pop="proton"):
       ''' Read raw velocity block data from the open file.
