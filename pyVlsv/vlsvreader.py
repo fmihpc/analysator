@@ -1252,9 +1252,13 @@ class VlsvReader(object):
 
          if np.any(cellid_neighbors==0):
             warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+
          refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
          if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
+            refsmask = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
+            delaunayValues = np.array([self.read_interpolated_variable_irregular(name, c, operator) for c in coordinates[refsmask,:]])
+            final_values[refsmask,:] = delaunayValues[:,np.newaxis]
+            # warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
    def is_cell_irregular(self, cellid):
@@ -1459,7 +1463,8 @@ class VlsvReader(object):
             # Check if we need to expand
             level = 1
             cells_set = set(cellid_neighbors)
-            while(Del.find_simplex(coordinates) == -1):
+            simplex = Del.find_simplex(coordinates)
+            while(simplex == -1):
                offset = self.get_cell_dx(max_ref_cell)/2.
                for x in [-level,0,level]:
                   for y in [-level,0,level]:
@@ -1469,11 +1474,12 @@ class VlsvReader(object):
                Del.add_points(self.get_cell_coordinates(np.array(new_cells)))
                self.__delaunay_cellids += new_cells
                level += 1
+               simplex = Del.find_simplex(coordinates)
 
-            #print(self.__delaunay_cellids)
-            simplex = Del.find_simplex(coordinates)
-            #crds = Del.
-            intp = LinearNDInterpolator(Del, self.read_variable(name, self.__delaunay_cellids,operator=operator))
+            simplex_coords = Del.points[Del.simplices[simplex.squeeze()]]
+            intp = LinearNDInterpolator(simplex_coords, self.read_variable(name, self.get_cellid(simplex_coords),operator=operator))
+            
+            #intp = LinearNDInterpolator(Del, self.read_variable(name, self.__delaunay_cellids,operator=operator))
             #print("coplanars",Del.coplanar)
 
             #intp = LinearNDInterpolator(self.__irregular_cells_delaunay, self.read_variable(name, self.get_irregular_cells() ,operator=operator))
