@@ -1165,7 +1165,10 @@ class VlsvReader(object):
 
          cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
          ngbrvalues=np.full((2*2*2,value_length),np.nan)
-         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         if value_length > 1:
+            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         else:
+            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
          ngbrvalues = np.reshape(ngbrvalues, (2,2,2,value_length))
 
          c2d=np.zeros((2,2,value_length))
@@ -1223,7 +1226,10 @@ class VlsvReader(object):
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
 
          cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
-         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         if value_length > 1:
+            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         else:
+            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
          ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
          
          c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
