@@ -1144,9 +1144,6 @@ class VlsvReader(object):
                return np.nan
             else:
                return np.full((value_length,),np.nan)
-         # If the interpolation is done across two different refinement levels, issue a warning
-         if self.get_amr_level(upper_cell_id) != self.get_amr_level(lower_cell_id):
-            warnings.warn("Warning: Interpolation across different AMR levels; this might lead to suboptimal results.",UserWarning)
 
          scaled_coordinates=np.zeros(3)
          for i in range(3):
@@ -1155,15 +1152,21 @@ class VlsvReader(object):
             else:
                scaled_coordinates[i] = 0.0 # Special case for periodic systems with one cell in a dimension
          
-         # Now identify 8 cells, starting from the lower one
-         # this could be vectorized now
-         ngbrvalues=np.zeros((2,2,2,value_length))
+         # Now identify 8 cells, starting from the lower one - vectorized subloop, a bit faster
+         offsets = np.zeros((8,3), dtype=np.int32)
+         ii = 0
          for x in [0,1]:
             for y in [0,1]:
                for z  in [0,1]:
-                  ngbrvalues[x,y,z,:] = self.read_variable(name, \
-                                                           self.get_cell_neighbor(lower_cell_id, [x,y,z] , periodic), \
-                                                           operator)
+                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
+                  ii+=1
+         lower_ids_temp = np.atleast_2d(lower_cell_id)
+         lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,8)
+
+         cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
+         ngbrvalues=np.full((2*2*2,value_length),np.nan)
+         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         ngbrvalues = np.reshape(ngbrvalues, (2,2,2,value_length))
 
          c2d=np.zeros((2,2,value_length))
          for y in  [0,1]:
@@ -1175,6 +1178,12 @@ class VlsvReader(object):
             c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
             
          final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+
+         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(1,8))
+         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
+
+
          if len(final_value)==1:
             return final_value[0]
          else:
