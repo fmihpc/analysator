@@ -1941,9 +1941,11 @@ class VlsvReader(object):
       stack = True
       if not hasattr(cellids,"__len__"):
          cellids = np.atleast_1d(cellids)
+         offsets = np.atleast_2d(offsets)
          stack = False
 
       reflevel = self.get_amr_level(cellids)
+      # print(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
 
       cellid_neighbors = np.zeros_like(cellids)
@@ -1973,6 +1975,9 @@ class VlsvReader(object):
       
       cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
+
+      if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
+         warnings.warn("Warning: A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
       if stack:
