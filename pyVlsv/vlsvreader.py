@@ -1163,7 +1163,7 @@ class VlsvReader(object):
          lower_ids_temp = np.atleast_2d(lower_cell_id)
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,8)
 
-         cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
+         cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
          ngbrvalues=np.full((2*2*2,value_length),np.nan)
          if value_length > 1:
             ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
@@ -1203,10 +1203,10 @@ class VlsvReader(object):
          offsets = np.zeros(coordinates.shape,dtype=np.int32)
          offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
-         lower_cell_ids = self.get_cells_neighbor(closest_cell_ids, offsets, periodic)
+         lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic)
          lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
          offsets.fill(1)
-         upper_cell_ids = self.get_cells_neighbor(lower_cell_ids, offsets, periodic)
+         upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
          upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
 
          scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
@@ -1225,7 +1225,7 @@ class VlsvReader(object):
          lower_ids_temp = np.atleast_2d(lower_cell_ids)
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
 
-         cellid_neighbors = self.get_cells_neighbor(lower_ids_temp, offsets, periodic)
+         cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
          if value_length > 1:
             ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
          else:
@@ -1927,46 +1927,7 @@ class VlsvReader(object):
       else:
          return np.array(cellindices)[0]
 
-   def get_cell_neighbor(self, cellid, offset, periodic):
-      ''' Returns a given cells neighbor at offset (in indices)
-
-      :param cellid:            The cell's ID
-      :param offset:            The offset to the neighbor in indices
-      :param periodic:          For each dimension, is the system periodic
-      :returns: the cellid of the neighbor
-
-      .. note:: Returns 0 if the offset is out of bounds!
-
-      '''
-      reflevel = self.get_amr_level(cellid)
-      indices = self.get_cell_indices(cellid, reflevel)
-
-      # Special case if no offset      
-      if ((offset[0]==0) * (offset[1]==0) * (offset[2]==0)):
-         return cellid
-
-      # Getting the neighbour at the same refinement level
-      ngbr_indices = np.zeros(3)
-      sys_size = [2**reflevel*self.__xcells, 2**reflevel*self.__ycells, 2**reflevel*self.__zcells]
-      for i in range(3):
-         ngbr_indices[i] = indices[i] + offset[i]
-         if periodic[i]:
-            for j in range(abs(offset[i])):
-               #loop over offset abs as offset may be larger than the system size
-               if ngbr_indices[i] < 0:
-                  ngbr_indices[i] = ngbr_indices[i] + sys_size[i]
-               elif ngbr_indices[i] >= sys_size[i]:
-                  ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
-   
-         elif ngbr_indices[i] < 0 or  ngbr_indices[i] >= sys_size[i]:
-            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
-            return 0
-
-      coord_neighbour = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**reflevel
-      cellid_neighbour = self.get_cellid(coord_neighbour)
-      return cellid_neighbour
-
-   def get_cells_neighbor(self, cellids, offsets, periodic):
+   def get_cell_neighbor(self, cellids, offsets, periodic):
       ''' Returns a given cells neighbor at offset (in indices)
 
       :param cellids:            The cell's ID
@@ -1977,6 +1938,11 @@ class VlsvReader(object):
       .. note:: Returns 0 if the offset is out of bounds!
 
       '''
+      stack = True
+      if not hasattr(cellids,"__len__"):
+         cellids = np.atleast_1d(cellids)
+         stack = False
+
       reflevel = self.get_amr_level(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
 
@@ -1998,24 +1964,21 @@ class VlsvReader(object):
             ngbr_indices[lowmask,i] = ngbr_indices[lowmask,i] % sys_sizes[lowmask,i]
             himask = mask & (ngbr_indices[:,i] >= sys_sizes[:,i])
             ngbr_indices[himask,i] = ngbr_indices[himask,i] % sys_sizes[himask,i]
-
-            # for j in range(abs(offsets[:,i])):
-            #    #loop over offset abs as offset may be larger than the system size
-            #    if ngbr_indices[i] < 0:
-            #       ngbr_indices[i] = ngbr_indices[i] + sys_size[i]
-            #    elif ngbr_indices[i] >= sys_size[i]:
-            #       ngbr_indices[i] = ngbr_indices[i] - sys_size[i]
    
          elif np.any((ngbr_indices[mask, i] < 0) or (ngbr_indices[mask,i] >= sys_sizes[mask,i])):
-            print("Error in Vlsvreader get_cell_neighbor: out of bounds")
-            #pass
+            raise ValueError("Error in Vlsvreader get_cell_neighbor: neighbor out of bounds")
 
       coord_neighbor = np.zeros(ngbr_indices.shape, dtype=np.float64)
       coord_neighbor[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
       
       cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
-      return cellid_neighbors
+
+      # Return the neighbor cellids/cellid:
+      if stack:
+         return np.array(cellid_neighbors)
+      else:
+         return np.array(cellid_neighbors)[0]
 
    def get_WID(self):
       # default WID=4
