@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 
-def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, direction='+', fg = None ):
+def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, direction='+', fg = 'fg_b' ):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
@@ -187,42 +187,43 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
        param vlsvReader:      A vlsvReader object (~an open .vlsv file)
        param coord_list:      a list of 3-element array-like initial coordinates [ [x1,y1,z1], [x2,y2,z2], ... ]
                               if considering just a single starting point, the code accepts a 3-element array-like object [x1,y1,z1]
-       param max_iterations:  The maximum amount of iterations before the algorithm stops
-       param dx:              One iteration step length (ex. dx=R_EARTH/50)
-       keyword direction:     '+' or '-' or '+-' Follow field in the plus direction or minus direction
+       param max_iterations:  The maximum number of iterations (int) before the algorithm stops. Total traced length is dx*max_iterations
+       param dx:              One iteration step length [meters] (ex. dx=1e4 for typical applications)
+       keyword direction:     '+' or '-' or '+-' Follow field in the plus direction, minus direction, or both
        keyword fg:            The field grid variable to be traced (either a string or numpy array)
                               options include:
                                   fg = some string
                                       ex. fg='fg_b': B-field, fg='fg_e': E-field
                                       static_field_tracer_3d() will load the appropriate variable via the vlsvReader object
-                                  fg = None
-                                      same as inputting fg='fg_b' above
+                                      NOTE: volumetric variables, with '_vol' suffix, may not work as intended. Use face-centered values: 'fg_b', 'fg_e' etc.
                                   fg = some field-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
+                                      If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
                                    
       :returns:                  points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
                                  ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
       EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
                           fg_b = vlsvobj.read_variable('fg_b')
-                          static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
+                          traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
    '''
 
    # standardize input (a list of 3-element arrays/lists)
    if type(coord_list[0]) not in [list, np.ndarray]:
       coord_list = [coord_list]
 
-   # Read face-centered field grid variable (denoted 'fg_*' in .vlsv files):
+   # Read face-centered field grid variable (denoted 'fg_*' in .vlsv files, no '_vol' suffix):
    if type(fg) == str:
       fg = vlsvReader.read_variable(fg)
-   elif (fg is None):
-      fg = vlsvReader.read_variable('fg_b')        # e.g., for EGL run: fg.shape = (1024, 736, 736, 3)
    else:
       #   fg is already an ndarray
-      warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
-
-   # Recursion (trace in both directions and sum the result)
+      try:
+         warnings.warn("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+      except:
+         print("Error! Inspect keyword parameter fg (array with shape [nx, ny, nz, 3] expected).") 
+   
+   # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
       backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', fg=fg)
       backward.reverse()
