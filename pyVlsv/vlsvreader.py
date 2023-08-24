@@ -1005,7 +1005,7 @@ class VlsvReader(object):
             #Non periodic case
             if ((index<0 or index>fg_size[c]-1) and not periodic[c]):
                # Returns False, interpolateSingle converts that to nans
-               warnings.warn("Warning: requested fsgrid index for interpolation outside simulation domain.", UserWarning)
+               warnings.warn("Requested fsgrid index for interpolation outside simulation domain.", UserWarning)
                return False
              # Here we are either periodic or (not periodic and inside the domain)
             if (index >= fg_size[c] or index <0):
@@ -1122,7 +1122,7 @@ class VlsvReader(object):
             raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
          closest_cell_id=self.get_cellid(coordinates)
          if closest_cell_id == 0:
-            warnings.warn("Warning: requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
+            warnings.warn("Requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
             if value_length == 1:
                return np.nan
             else:
@@ -1139,7 +1139,7 @@ class VlsvReader(object):
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
          if (lower_cell_id<1 or upper_cell_id<1):
-            warnings.warn("Warning: requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
+            warnings.warn("Requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
             if value_length == 1:
                return np.nan
             else:
@@ -1649,7 +1649,7 @@ class VlsvReader(object):
          n = n/3
       ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
       if(n != ncells):
-         print("Warning: weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
+         warnings.warn("Weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
@@ -1945,7 +1945,6 @@ class VlsvReader(object):
          stack = False
 
       reflevel = self.get_amr_level(cellids)
-      # print(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
 
       cellid_neighbors = np.zeros_like(cellids)
@@ -1977,7 +1976,7 @@ class VlsvReader(object):
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
 
       if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
-         warnings.warn("Warning: A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
+         warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
       if stack:
