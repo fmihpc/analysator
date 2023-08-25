@@ -682,6 +682,55 @@ class VlsvReader(object):
          print("File ",self.file_name," contains no config information")
          return False
 
+   def read_variable_vectorsize(self, name):
+
+      if name.startswith('fg_'):
+          mesh = "fsgrid"
+      elif name.startswith('ig_'):
+          mesh = "ionosphere"
+      else:
+          mesh = "SpatialGrid"
+
+      return self.read_attribute(name=name, mesh=mesh,attribute="vectorsize", tag="VARIABLE")
+
+   def read_attribute(self, name="", mesh="", attribute="", tag=""):
+      ''' Read data from the open vlsv file. 
+      
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :param operator: Datareduction operator. "pass" does no operation on data.
+      :param cellids:  If -1 then all data is read. If nonzero then only the vector
+                       for the specified cell id or cellids is read
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read_variable` :func:`read_variable_info`
+      '''
+      if tag == "" and name == "":
+         print("Bad (empty) arguments at VlsvReader.read")
+         raise ValueError()
+
+      # Force lowercase name for internal checks
+      name = name.lower()       
+
+      # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if tag != "":
+            if child.tag != tag:
+               continue
+         if name != "":
+            if "name" in child.attrib and child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
+               continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            return ast.literal_eval(child.attrib[attribute])
+         
+      raise ValueError("Variable or attribute not found")
+
+
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
       
