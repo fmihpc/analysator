@@ -1454,12 +1454,12 @@ class VlsvReader(object):
 
             # print("vert",refs0, max_ref, cellid_neighbors)
             Del = self.__irregular_cells_delaunay
-            if Del is None:
-               self.__irregular_cells_delaunay = DelaunayWrapper(self)
+            if Del is None or True:
+               self.__irregular_cells_delaunay = DelaunayWrapper(self,cellids=np.array(list(cells_set)))
                #Del = Delaunay(cellid_neighbors_coordinates, incremental = True, qhull_options="QJ Qc Q12")
                Del = self.__irregular_cells_delaunay
             
-            Del.add_cells(list(cells_set))
+            #Del.add_cells(list(cells_set))
             
             intp = Del.get_interpolator(name,operator,coords)
             return intp(coordinates[0],coordinates[1],coordinates[2])
@@ -1512,6 +1512,7 @@ class VlsvReader(object):
          lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
          offsets.fill(1)
          upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
+
          upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
 
          scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
@@ -1564,23 +1565,27 @@ class VlsvReader(object):
             max_ref_cells = np.reshape(cellid_neighbors,(ncoords,8))[irregular_cells,np.argmax(refs0[irregular_cells,:],axis=1)]
             # needs to cover all vertices of required simplices
             offsets = self.get_cell_dx(max_ref_cells)/2.
-            for x in [-2.5, -1.5, 1.5, 2.5]:
-               for y in [-2.5, -1.5, 1.5, 2.5]:
-                  for z in [-2.5, -1.5, 1.5, 2.5]:
+            # for x in [-2.5, -1.5, 1.5, 2.5]:
+            #    for y in [-2.5, -1.5, 1.5, 2.5]:
+            #       for z in [-2.5, -1.5, 1.5, 2.5]:
+            for x in [-1.5, 1.5]:
+               for y in [-1.5, 1.5]:
+                  for z in [-1.5, 1.5]:
                      cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
 
             Del = self.__irregular_cells_delaunay
             if Del is None or True:
-               self.__irregular_cells_delaunay = DelaunayWrapper(self)
+               self.__irregular_cells_delaunay = DelaunayWrapper(self, cellids=np.array(list(cells_set)))
                #Del = Delaunay(cellid_neighbors_coordinates, incremental = True, qhull_options="QJ Qc Q12")
                Del = self.__irregular_cells_delaunay
             
-            Del.add_cells(list(cells_set))
+            #Del.add_cells(list(cells_set))
             
             intp = Del.get_interpolator(name,operator, coords_irr)
             print(np.sum(irregular_cells),irregular_cells)
             
-            final_values[irregular_cells,:] = intp(coords_irr[:,0],coords_irr[:,1],coords_irr[:,2])[:,np.newaxis]
+            # final_values[irregular_cells,:] = intp(coords_irr[:,0],coords_irr[:,1],coords_irr[:,2])[:,np.newaxis]
+            final_values[irregular_cells,:] = intp(coords_irr)[:,np.newaxis]
 
 
 

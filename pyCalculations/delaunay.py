@@ -1,6 +1,6 @@
 from scipy.spatial import Delaunay
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator
+from scipy.interpolate import LinearNDInterpolator, RBFInterpolator
 
 
 class DelaunayWrapper(object):
@@ -8,11 +8,12 @@ class DelaunayWrapper(object):
 
    '''
 
-   def __init__(self, reader):
+   def __init__(self, reader, cellids=np.array([1,2,3,4,5],dtype=np.int64)):
       self.reader = reader
-      self.__cellids = np.array([1,2,3,4,5],dtype=np.int64)
+      self.__cellids = cellids
       # Cannot initialize an empty Delaunay
-      self.__Delaunay = Delaunay(reader.get_cell_coordinates(self.__cellids), incremental = True, qhull_options="QJ Qc Q12")
+      #self.__Delaunay = Delaunay(reader.get_cell_coordinates(self.__cellids), incremental = True, qhull_options="QJ Qc Q12")
+      self.__Delaunay = Delaunay(reader.get_cell_coordinates(self.__cellids),qhull_options="QJ")
 
    def add_cells(self, cells):
       new_cells = [c for c in cells if c not in self.__cellids]
@@ -21,8 +22,11 @@ class DelaunayWrapper(object):
 
    def get_interpolator(self, name, operator, coords):
       
-      simplices = self.__Delaunay.find_simplex(coords)
-      pts = self.__Delaunay.points[self.__Delaunay.simplices[simplices].flatten()]
+      # simplices = self.__Delaunay.find_simplex(coords)
+      # pts = self.__Delaunay.points[self.__Delaunay.simplices[simplices].flatten()]
 
-      return LinearNDInterpolator(pts, self.reader.read_variable(name, self.reader.get_cellid(pts), operator=operator))
+      pts = self.__Delaunay.points
+      vals = self.reader.read_variable(name, self.reader.get_cellid(pts), operator=operator)
+      # return LinearNDInterpolator(pts, vals)
+      return RBFInterpolator(pts, vals,neighbors=35)
 
