@@ -219,9 +219,10 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
    else:
       #   fg is already an ndarray
       try:
-         warnings.warn("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+         if ((np.array(fg)).ndim!=4 or (np.array(fg)).shape[-1]!=3):
+            raise ValueError("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
       except:
-         print("Error! Inspect keyword parameter fg (array with shape [nx, ny, nz, 3] expected).") 
+         raise ValueError("Keyword parameter fg does not seem to be an array.")
    
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
