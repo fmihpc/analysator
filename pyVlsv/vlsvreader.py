@@ -1275,13 +1275,6 @@ class VlsvReader(object):
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
       
-      # # Check one value for the length
-      # test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      # if isinstance(test_variable, Iterable):
-      #    value_length=len(test_variable)
-      # else:
-      #    value_length=1
-
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
@@ -1316,18 +1309,13 @@ class VlsvReader(object):
       offset[coords <= batch_closest_cell_coordinates] = -1
 
       closest_vertex_coords = batch_closest_cell_coordinates + offset*self.get_cell_dx(closest_cell_ids)/2
-      print(vertex_neighbors.shape, cellid_neighbors.shape, refs0.shape)
-      print(np.argmax(refs0,axis=1).shape)
-      print(refs0,np.argmax(refs0,axis=1,keepdims=True))
+
       max_ref_cells = np.atleast_1d(np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1,keepdims=True), axis=1).squeeze())
-      print(max_ref_cells, max_ref_cells.shape)
+
       # needs to cover all vertices of required simplices/dual cells (so, cell centers)
       offsets = self.get_cell_dx(max_ref_cells)/2.
       eps = 1e-3
 
-      # for x in [-3.5,-2.5,-1.5, 1.5,2.5,3.5]:
-      #    for y in [-3.5, -2.5,-1.5, 1.5,2.5,3.5]:
-      #       for z in [-3.5,-2.5,-1.5, 1.5,2.5,3.5]:
       for x in [-1.5, 1.5]:
          for y in [-1.5, 1.5]:
             for z in [-1.5, 1.5]:
@@ -1336,7 +1324,7 @@ class VlsvReader(object):
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
       intp = intp_wrapper.get_interpolator(name,operator, coords, method="RBF", methodargs={"RBF":{"neighbors":35}})
       
-      # final_values[irregular_cells,:] = intp(coords_irr[:,0],coords_irr[:,1],coords_irr[:,2])[:,np.newaxis]
+
       final_values = intp(coords)[:,np.newaxis]
 
       if stack:
