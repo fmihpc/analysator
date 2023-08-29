@@ -959,7 +959,9 @@ class VlsvReader(object):
          return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         print("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
+         if self.__fptr.closed:
+            fptr.close()
+         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
       if self.__fptr.closed:
          fptr.close()
 
