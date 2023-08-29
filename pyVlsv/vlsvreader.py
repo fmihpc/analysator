@@ -1318,16 +1318,19 @@ class VlsvReader(object):
       max_ref_cells = np.atleast_1d(np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1,keepdims=True), axis=1).squeeze())
 
       # needs to cover all vertices of required simplices/dual cells (so, cell centers)
-      offsets = self.get_cell_dx(max_ref_cells)/2.
+      offsets = self.get_cell_dx(max_ref_cells)
       eps = 1e-3
 
+      # for x in [-1.5, -0.5,0.5, 1.5]:
+      #    for y in [-1.5, -0.5,0.5, 1.5]:
+      #       for z in [-1.5, -0.5,0.5, 1.5]:
       for x in [-1.5, 1.5]:
          for y in [-1.5, 1.5]:
             for z in [-1.5, 1.5]:
                cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
 
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
-      intp = intp_wrapper.get_interpolator(name,operator, coords, method="RBF", methodargs={"RBF":{"neighbors":35}})
+      intp = intp_wrapper.get_interpolator(name,operator, coords, method="RBF", methodargs={"kernel":"linear","RBF":{"neighbors":64}})
       
 
       final_values = intp(coords)[:,np.newaxis]
