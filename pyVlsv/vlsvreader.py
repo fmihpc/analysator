@@ -42,7 +42,7 @@ import warnings
 from scipy.interpolate import LinearNDInterpolator
 from scipy.spatial import Delaunay
 import time
-from delaunay import DelaunayWrapper
+from interpolator_amr import AMRInterpolator
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -1293,6 +1293,46 @@ class VlsvReader(object):
          else:
             return False
 
+   def get_are_points_irregular(self, coords, periodic = [True, True, True]):
+      ''' Check if the points in the array coords (shape of (3) or (n, 3)) lie in an irregular patch of SpatialGrid.
+      Arguments:
+      :param coords: Coordinates to check
+      :param periodic: Periodicity of the system. Default is periodic in all dimension [ WARNING: Not implemented! ]
+
+      :returns: boolean vector with True if irregular, False if regular
+
+      '''
+
+      stack = True
+      if coords.ndim == 1:
+         stack = False
+         coords = coords[np.newaxis,:]
+
+      closest_cell_ids = self.get_cellid(coords)
+      closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
+      offsets = np.ones(coords.shape)
+      offsets[coords <= closest_cell_coordinates] = -1
+      closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
+
+      offsets = np.zeros((8,3))
+      eps = self.get_cell_dx(closest_cell_ids)/1e6
+      ii = 0
+      for x in [-1,1]:
+         for y in [-1,1]:
+            for z  in [-1,1]:
+               offsets[ii,:] = closest_vertices + np.array((x,y,z))*eps
+               ii+=1
+      
+      vertex_neighbors = self.get_cellid(closest_vertices+offsets)
+
+      refs0 = np.reshape(self.get_amr_level(vertex_neighbors),(len(closest_cell_ids),8))
+      irregular_cells = np.any(refs0 != refs0[:,0][:,np.newaxis], axis=1)
+      if stack:
+         return irregular_cells
+      else:
+         return irregular_cells[0]
+
+
 
    def are_cells_irregular(self, cellids):
 
@@ -1371,6 +1411,11 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
+      stack = True
+      if coords.ndim == 1:
+         stack = False
+         coords = coords[np.newaxis,:]
+         
       if (len(periodic)!=3):
             raise ValueError("Periodic must be a list of 3 booleans.")
 
@@ -1437,60 +1482,30 @@ class VlsvReader(object):
 
          refs0 = self.get_amr_level(cellid_neighbors)
          
-         if np.any(refs0 != refs0[0]):
-            # print("irregular grid branch")
-            max_ref = np.max(refs0)
-            max_ref_cell = cellid_neighbors[np.argmax(refs0)]
+         max_ref = np.max(refs0)
+         max_ref_cell = cellid_neighbors[np.argmax(refs0)]
 
-            cells_set = set(cellid_neighbors)
-            # The immediate neighbours are already covered, now a second layer.. but easier to go through all for now
-            # needs to cover all vertices of required simplices
-            offset = self.get_cell_dx(max_ref_cell)/2.
-            for x in [-2.5, -1.5, 1.5, 2.5]:
-               for y in [-2.5, -1.5, 1.5, 2.5]:
-                  for z in [-2.5, -1.5, 1.5, 2.5]:
-                     cells_set.add(self.get_cellid(closest_vertex_coords + np.array((x,y,z))*offset))
+         cells_set = set(cellid_neighbors)
+         # The immediate neighbours are already covered, now a second layer.. but easier to go through all for now
+         # needs to cover all vertices of required simplices
+         offset = self.get_cell_dx(max_ref_cell)/2.
+         for x in [-2.5, -1.5, 1.5, 2.5]:
+            for y in [-2.5, -1.5, 1.5, 2.5]:
+               for z in [-2.5, -1.5, 1.5, 2.5]:
+                  cells_set.add(self.get_cellid(closest_vertex_coords + np.array((x,y,z))*offset))
 
 
-            # print("vert",refs0, max_ref, cellid_neighbors)
-            Del = self.__irregular_cells_delaunay
-            if Del is None or True:
-               self.__irregular_cells_delaunay = DelaunayWrapper(self,cellids=np.array(list(cells_set)))
-               #Del = Delaunay(cellid_neighbors_coordinates, incremental = True, qhull_options="QJ Qc Q12")
-               Del = self.__irregular_cells_delaunay
-            
-            #Del.add_cells(list(cells_set))
-            
-            intp = Del.get_interpolator(name,operator,coords)
-            return intp(coordinates[0],coordinates[1],coordinates[2])
-            
-         else:
-            #print("regular grid branch")
-            scaled_coordinates=np.zeros(3)
-            for i in range(3):
-               if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
-                  scaled_coordinates[i]=(coordinates[i] - lower_cell_coordinates[i])/(upper_cell_coordinates[i] - lower_cell_coordinates[i])
-               else:
-                  scaled_coordinates[i] = 0.0 # Special case for periodic systems with one cell in a dimension
-            
-            
-            ngbrvalues=np.full((2*2*2,value_length),np.nan)
-            if value_length > 1:
-               ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
-            else:
-               ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-            ngbrvalues = np.reshape(ngbrvalues, (2,2,2,value_length))
-
-            c2d=np.zeros((2,2,value_length))
-            for y in  [0,1]:
-               for z in  [0,1]:
-                  c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
-
-            c1d=np.zeros((2,value_length))
-            for z in [0,1]:
-               c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
-               
-            final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
+         # print("vert",refs0, max_ref, cellid_neighbors)
+         intp_wrapper = self.__irregular_cells_delaunay
+         if intp_wrapper is None or True:
+            self.__irregular_cells_delaunay = AMRInterpolator(self,cellids=np.array(list(cells_set)))
+            #Del = Delaunay(cellid_neighbors_coordinates, incremental = True, qhull_options="QJ Qc Q12")
+            intp_wrapper = self.__irregular_cells_delaunay
+         
+         #Del.add_cells(list(cells_set))
+         
+         intp = intp_wrapper.get_interpolator(name,operator,coords)
+         final_value = intp(coordinates[0],coordinates[1],coordinates[2])
 
          if len(final_value)==1:
             return final_value[0]
@@ -1505,90 +1520,52 @@ class VlsvReader(object):
          closest_cell_ids = self.get_cellid(coordinates)
          batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
          
-         offsets = np.zeros(coordinates.shape,dtype=np.int32)
-         offsets[coordinates <= batch_closest_cell_coordinates] = -1
+         offsets = np.ones(coords.shape)
+         offsets[coords <= batch_closest_cell_coordinates] = -1
+         closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
 
-         lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic)
-         lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
-         offsets.fill(1)
-         upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
-
-         upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
-
-         scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
-         nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
-         scaled_coordinates[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
-
-         ngbrvalues=np.full((ncoords*2*2*2,value_length),np.nan)
-         offsets = np.zeros((8,3), dtype=np.int32)
+         offsets = np.zeros((ncoords, 8, 3))
+         eps = self.get_cell_dx(closest_cell_ids)/1e3
          ii = 0
-         for x in [0,1]:
-            for y in [0,1]:
-               for z  in [0,1]:
-                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
+         for x in [-1,1]:
+            for y in [-1,1]:
+               for z  in [-1,1]:
+                  offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
                   ii+=1
-         offsets = np.tile(offsets, (ncoords, 1))
-         neigbhor_ids_temp = np.atleast_2d(lower_cell_ids)
-         neigbhor_ids_temp = np.reshape(np.repeat(neigbhor_ids_temp, 8, axis=1).T,ncoords*8)
-
-         cellid_neighbors = self.get_cell_neighbor(neigbhor_ids_temp, offsets, periodic)
-         if value_length > 1:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
-         else:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-         ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
          
-         c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
-         c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
-         final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
+         vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
 
+         cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
          if np.any(cellid_neighbors==0):
             warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+
          refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
-         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            # warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
-            irregular_cells = np.any(refs0 != refs0[:,0][:,np.newaxis], axis=1)
-            coords_irr = coords[irregular_cells,:]
-            n_irreg = np.sum(irregular_cells)
-            
+         
+         # Gather the set of points (cell centers) to use for intp
+         cells_set = set(vertex_neighbors)
 
-            cells_set = set(cellid_neighbors)
-            # offset = np.array([  1 if coords_irr[:,0] > batch_closest_cell_coordinates[irregular_cells,0] else -1,\
-            #                      1 if coords_irr[:,1] > batch_closest_cell_coordinates[irregular_cells,1] else -1,\
-            #                      1 if coords_irr[:,2] > batch_closest_cell_coordinates[irregular_cells,2] else -1  ])
+         offset = np.ones(coords.shape,dtype=np.int32)
+         offset[coords <= batch_closest_cell_coordinates] = -1
 
-            offset = np.ones(coords_irr.shape,dtype=np.int32)
-            offset[coords_irr <= batch_closest_cell_coordinates[irregular_cells,:]] = -1
+         closest_vertex_coords = batch_closest_cell_coordinates + offset*self.get_cell_dx(closest_cell_ids)/2
+         print(vertex_neighbors.shape, cellid_neighbors.shape, refs0.shape)
+         print(np.argmax(refs0,axis=1).shape)
+         max_ref_cells = np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1)[:,np.newaxis], axis=1).squeeze()
+         print(max_ref_cells.shape)
+         # needs to cover all vertices of required simplices/dual cells (so, cell centers)
+         offsets = self.get_cell_dx(max_ref_cells)/2.
+         eps = 1e-3
 
-            closest_vertex_coords = batch_closest_cell_coordinates[irregular_cells,:] + offset*self.get_cell_dx(closest_cell_ids[irregular_cells])/2
+         for x in [-1.5, 1.5]:
+            for y in [-1.5, 1.5]:
+               for z in [-1.5, 1.5]:
+                  cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
 
-            max_ref_cells = np.reshape(cellid_neighbors,(ncoords,8))[irregular_cells,np.argmax(refs0[irregular_cells,:],axis=1)]
-            # needs to cover all vertices of required simplices
-            offsets = self.get_cell_dx(max_ref_cells)/2.
-            # for x in [-2.5, -1.5, 1.5, 2.5]:
-            #    for y in [-2.5, -1.5, 1.5, 2.5]:
-            #       for z in [-2.5, -1.5, 1.5, 2.5]:
-            for x in [-1.5, 1.5]:
-               for y in [-1.5, 1.5]:
-                  for z in [-1.5, 1.5]:
-                     cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
-
-            Del = self.__irregular_cells_delaunay
-            if Del is None or True:
-               self.__irregular_cells_delaunay = DelaunayWrapper(self, cellids=np.array(list(cells_set)))
-               #Del = Delaunay(cellid_neighbors_coordinates, incremental = True, qhull_options="QJ Qc Q12")
-               Del = self.__irregular_cells_delaunay
-            
-            #Del.add_cells(list(cells_set))
-            
-            intp = Del.get_interpolator(name,operator, coords_irr)
-            print(np.sum(irregular_cells),irregular_cells)
-            
-            # final_values[irregular_cells,:] = intp(coords_irr[:,0],coords_irr[:,1],coords_irr[:,2])[:,np.newaxis]
-            final_values[irregular_cells,:] = intp(coords_irr)[:,np.newaxis]
-
-
-
+         intp_wrapper = AMRInterpolator(self, method="RBF",cellids=np.array(list(cells_set)))
+         intp = intp_wrapper.get_interpolator(name,operator, coords)
+         
+         # final_values[irregular_cells,:] = intp(coords_irr[:,0],coords_irr[:,1],coords_irr[:,2])[:,np.newaxis]
+         final_values = intp(coords)[:,np.newaxis]
 
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
