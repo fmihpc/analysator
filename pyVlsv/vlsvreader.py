@@ -1168,6 +1168,11 @@ class VlsvReader(object):
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,8)
 
          cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
+
+         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(1,8))
+         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
+
          ngbrvalues=np.full((2*2*2,value_length),np.nan)
          if value_length > 1:
             ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
