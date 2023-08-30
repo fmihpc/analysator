@@ -226,7 +226,7 @@ class VlsvWriter(object):
       '''
 
       if data is None:
-         warnings.warn("Trying to write `None` data. Skipping, but not failing in case there is yet some data remaining that the user doesn't want to fly to bit heaven.")
+         warnings.warn("Trying to write `None` data for " + name + ". Skipping, but not raising an error in case there is yet some data remaining that the user doesn't want to fly to bit heaven.")
          return False
       # Make sure the data is in numpy array format:
       data = np.atleast_1d(data)
