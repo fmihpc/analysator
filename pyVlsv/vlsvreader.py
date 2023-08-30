@@ -1251,13 +1251,21 @@ class VlsvReader(object):
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
 
-   def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True]):
+   def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
+                                            method="RBF",
+                                            methodargs={
+                                             "RBF":{"neighbors":64},
+                                             "Delaunay":{"qhull_options":"QJ"}
+                                             }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
-      :param name: Name of the variable
-      :param coords: Coordinates from which to read data 
-      :param periodic: Periodicity of the system. Default is periodic in all dimension
-      :param operator: Datareduction operator. "pass" does no operation on data
+      :param name:         Name of the variable
+      :param coords:       Coordinates from which to read data 
+      :param periodic:     Periodicity of the system. Default is periodic in all dimension
+      :param operator:     Datareduction operator. "pass" does no operation on data
+      :param method:       Method for interpolation, default "RBF" ("Delaunay" is available)
+      :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "RBF", "Delaunay";
+                           see scipy.interpolate.RBFInterpolator for RBF and scipy.interpolate.LinearNDInterpolator for Delaunay
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -1330,7 +1338,7 @@ class VlsvReader(object):
                cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
 
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
-      intp = intp_wrapper.get_interpolator(name,operator, coords, method="RBF", methodargs={"kernel":"linear","RBF":{"neighbors":64}})
+      intp = intp_wrapper.get_interpolator(name,operator, coords, method=method, methodargs=methodargs)
       
 
       final_values = intp(coords)[:,np.newaxis]
