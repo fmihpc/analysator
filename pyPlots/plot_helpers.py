@@ -475,6 +475,10 @@ def expr_Diff(pass_maps, requestvariables=False):
     if (map0.shape != map1.shape):
         print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
         sys.exit(-1)
+    if (map0.dtype in ['uint8','uint16','uint32','uint64']):
+        print("Diff: Converting from unsigned to signed integers")
+        map0 = map0.astype('int64')
+        map1 = map1.astype('int64')
     return (map0-map1) # use keyword absolute to get abs diff
 
 def expr_Hall(pass_maps, requestvariables=False):
