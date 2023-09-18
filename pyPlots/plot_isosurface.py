@@ -473,9 +473,6 @@ def plot_isosurface(filename=None,
         color_ids, color_idx = ids3d.ids3d_box(cellids, contour_box_low, contour_box_up, reflevel, xsize, ysize, zsize, [xmin, ymin, zmin, xmax, ymax, zmax])
 
         # Read the variables to be plotted inside the box
-        if f.check_variable(color_var)!=True:
-            print("Error, color variable "+color_var+" not found!")
-            return -1
         if color_op=="pass":
             vg_colors = f.read_variable(color_var, color_ids)
             # If value was vector value, take magnitude
@@ -484,8 +481,7 @@ def plot_isosurface(filename=None,
         else:
             vg_colors = f.read_variable(color_var, color_ids, operator=color_op)            
         if np.ndim(vg_colors)!=1:
-            print("Error reading color variable "+color_var+"! Exiting.")
-            return -1
+            raise ValueError("Error reading color variable "+color_var+"! Exiting.")
 
 
         vg_coords = f.read_variable("vg_coordinates", color_ids)
