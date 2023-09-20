@@ -1519,11 +1519,11 @@ class VlsvReader(object):
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
-            if popname in self.active_populations:
-               varname = name.split('/')[1]
-            else:
-               popname = 'pop'
-               varname = name
+         if popname in self.active_populations:
+            varname = name.split('/')[1]
+         else:
+            popname = 'pop'
+            varname = name
       else:
          popname = "pop"
          varname = name
