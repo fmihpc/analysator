@@ -611,7 +611,7 @@ def plot_vdf(filename=None,
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
-                stepstr = '_t'+str(int(timeval))
+                stepstr = '_t'+str(np.int(timeval))
             else:
                 stepstr = ''
 

@@ -176,7 +176,7 @@ def plot_isosurface(filename=None,
             print("Unknown time format encountered")
             plot_title = ''
         else:
-            #plot_title = "t="+str(int(timeval))+' s'
+            #plot_title = "t="+str(np.int(timeval))+' s'
             plot_title = "t="+'{:4.2f}'.format(timeval)+' s'
     else:
         plot_title = title
@@ -758,7 +758,7 @@ def plot_isosurface(filename=None,
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
-                plot_title = "t="+str(int(timeval))+' s   '
+                plot_title = "t="+str(np.int(timeval))+' s   '
                 ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                 try:
                     plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
