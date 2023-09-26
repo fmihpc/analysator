@@ -27,6 +27,7 @@ import ast
 import numpy as np
 import os
 from reduction import datareducers,data_operators
+import warnings
 
 class VlsvWriter(object):
    ''' Class for reading VLSV files
@@ -223,6 +224,10 @@ class VlsvWriter(object):
       :returns: True if the data was written successfully
 
       '''
+
+      if data is None:
+         warnings.warn("Trying to write `None` data for " + name + ". Skipping, but not raising an error in case there is yet some data remaining that the user doesn't want to fly to bit heaven.")
+         return False
       # Make sure the data is in numpy array format:
       data = np.atleast_1d(data)
       fptr = self.__fptr
@@ -241,7 +246,8 @@ class VlsvWriter(object):
          #datatype = str(type(data[0][0]))
          datatype = data.dtype.__str__()
       elif len(np.shape(data)) > 2:
-         print("ERROR, np.shape returned len(np.shape(data)) > 2")
+         warnings.warn("np.shape returned len(np.shape(data)) > 2. Writing "+name+" failed, skipping.")
+         self.__xml_root.remove(child)
          return False
       else:
          child.attrib["vectorsize"] = 1
@@ -249,7 +255,7 @@ class VlsvWriter(object):
             if tag=="MESH_GHOST_DOMAINS" or tag=="MESH_GHOST_LOCALIDS":
                datatype="int32"
             else:
-               print("Trying to extract datatype from an empty array. I will fail as usual, since this is not the special case that is guarded against!")
+               warnings.warn("Trying to extract datatype from an empty array (" + name + "). I will fail as usual, since this is not the special case that is guarded against!")
                #datatype = str(type(data[0]))
                datatype = data.dtype.__str__()
          else:
@@ -264,7 +270,8 @@ class VlsvWriter(object):
       elif 'float' in datatype:
          child.attrib["datatype"] = "float"
       else:
-         print("BAD DATATYPE: " + datatype)
+         warnings.warn("BAD DATATYPE: " + datatype+". Writing "+name+" failed, skipping.")
+         self.__xml_root.remove(child)
          return False
 
       if '64' in datatype:
@@ -272,7 +279,8 @@ class VlsvWriter(object):
       elif '32' in datatype:
          child.attrib["datasize"] = 4
       else:
-         print("BAD DATASIZE")
+         warnings.warn("BAD DATASIZE for datatype = " + datatype + ". Writing " + name + " failed, skipping.")
+         self.__xml_root.remove(child)
          return False
       
       if (extra_attribs != '') and (extra_attribs is not None):
@@ -289,7 +297,8 @@ class VlsvWriter(object):
          np.ma.getdata(data).tofile(fptr) # numpy maskedarray tofile not implemented yet
 
       # write the xml footer:
-      self.__write_xml_footer()
+      self.__write_xml_footer() # this _should_ also return a success value....
+      return True
 
    def write_variable_info(self, varinfo, mesh, unitConversion, extra_attribs={}):
       ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
