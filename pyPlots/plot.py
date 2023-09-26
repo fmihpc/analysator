@@ -48,7 +48,7 @@ from plot_threeslice import plot_threeslice
 from plot_ionosphere import plot_ionosphere
 
 try:
-    from plot_isosurface import plot_isosurface
+    from plot_isosurface import plot_isosurface, plot_neutral_sheet
 except:
     print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
