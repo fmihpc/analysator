@@ -766,12 +766,11 @@ class VlsvReader(object):
 
 
          
-
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
          if popname in self.active_populations:
-            varname = name.split('/')[1]
+            varname = name.split('/',1)[1]
          else:
             popname = 'pop'
             varname = name
@@ -958,10 +957,7 @@ class VlsvReader(object):
             if '/' not in i:
                tmp_vars.append( self.read( i, tag, mesh, "pass", cellids ) )
             else:
-               if i.split('/')[0] in self.active_populations: 
-                  tvar = i.split('/')[1]
-               else:
-                  tvar = i
+               tvar = i.split('/',1)[1]
                tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
          return data_operators[operator](reducer.operation( tmp_vars ))
 
@@ -1520,7 +1516,7 @@ class VlsvReader(object):
       if '/' in name:
          popname = name.split('/')[0]
          if popname in self.active_populations:
-            varname = name.split('/')[1]
+            varname = name.split('/',1)[1]
          else:
             popname = 'pop'
             varname = name
