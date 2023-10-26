@@ -548,13 +548,13 @@ def plot_colormap3dslice(filename=None,
     elif f.check_variable("rho"): #old non-AMR data, can still be 3D
         rhomap = f.read_variable("rho")
     else:
-        print("error!")
-        quit
-              
-    rhomap = rhomap[indexids] # sort
-    rhomap = rhomap[indexlist] # find required cells
-    # Create the plotting grid
-    rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
+        # No rhomap found - do not perform any masking.
+        nomask = True
+    if not nomask:
+        rhomap = rhomap[indexids] # sort
+        rhomap = rhomap[indexlist] # find required cells
+        # Create the plotting grid
+        rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
 
     ############################################
     # Read data and calculate required variables
@@ -995,9 +995,10 @@ def plot_colormap3dslice(filename=None,
 
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
-        # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
-        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
+        if not nomask:
+            # Strip away columns and rows which are outside the plot region
+            rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
+            rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
         # Also for the datamap, unless it was already provided by an expression
         if not expression:
             datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
@@ -1018,7 +1019,8 @@ def plot_colormap3dslice(filename=None,
                 # Mask datamap
                 datamap = np.ma.array(datamap, mask=XYmask)
     else:
-        XYmask = np.full(rhomap.shape, False)
+        # no masking
+        XYmask = np.full(datamap.shape, False)
 
     #If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values

@@ -64,6 +64,7 @@ def plot_colormap(filename=None,
                   fluxfile=None, fluxdir=None, flux_levels=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
+                  nomask=False,
                   Earth=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
@@ -175,6 +176,7 @@ def plot_colormap(filename=None,
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+    :kword nomask:      Do not mask plotting based on proton density
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
     :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
@@ -753,15 +755,20 @@ def plot_colormap(filename=None,
         rhomap = f.read_variable("proton/rho")
     elif f.check_variable("moments"):
         rhomap = f.read_variable("restart_rhom")
-    else:
+    elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
-    rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+    else:
+        # No rhomap found - do not perform any masking.
+        nomask = True
+    if not nomask:
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
         
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
-        # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
-        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
+        if not nomask:
+            # Strip away columns and rows which are outside the plot region
+            rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
+            rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
         # Also for the datamap, unless it was already provided by an expression
         if not expression:
             datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
@@ -770,16 +777,20 @@ def plot_colormap(filename=None,
     # Mask region outside ionosphere. Note that for some boundary layer cells, 
     # a density is calculated, but e.g. pressure is not, and these cells aren't
     # excluded by this method. Also mask away regions where datamap is invalid
-    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
-    rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    XYmask = rhomap.mask
-    if XYmask.any() and not pass_full:
-        if XYmask.all():
-            # if everything was masked in rhomap, allow plotting
-            XYmask[:,:] = False
-        else:
-            # Mask datamap
-            datamap = np.ma.array(datamap, mask=XYmask)
+    if not nomask:
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
+        rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
+        XYmask = rhomap.mask
+        if XYmask.any() and not pass_full:
+            if XYmask.all():
+                # if everything was masked in rhomap, allow plotting
+                XYmask[:,:] = False
+            else:
+                # Mask datamap
+                datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        # no masking
+        XYmask = np.full(datamap.shape, False)
 
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
