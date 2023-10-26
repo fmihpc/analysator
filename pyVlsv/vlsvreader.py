@@ -1007,10 +1007,22 @@ class VlsvReader(object):
          if not "name" in child.attrib:
             continue
          # Found the requested data entry in the file
-         unit = child.attrib["unit"]
-         unitLaTeX = child.attrib["unitLaTeX"]
-         variableLaTeX = child.attrib["variableLaTeX"]
-         unitConversion = child.attrib["unitConversion"] 
+         try:
+            unit = child.attrib["unit"]
+         except:
+            unit = ""
+         try:
+            unitLaTeX = child.attrib["unitLaTeX"]
+         except:
+            unitLaTeX = ""
+         try:
+            variableLaTeX = child.attrib["variableLaTeX"]
+         except:
+            variableLaTeX = ""
+         try:
+            unitConversion = child.attrib["unitConversion"] 
+         except:
+            unitConversion = ""
          return unit, unitLaTeX, variableLaTeX, unitConversion
             
       if name!="":
