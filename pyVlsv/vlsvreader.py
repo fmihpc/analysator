@@ -1200,9 +1200,15 @@ class VlsvReader(object):
                    0 if coordinates[1] > closest_cell_coordinates[1] else -1,\
                    0 if coordinates[2] > closest_cell_coordinates[2] else -1]
          lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
+         if lower_cell_id <= 0:
+            print("Error: cannot interpolate outside simulation domain!")
+            return self.read_variable(name,closest_cell_id,operator)
          lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
          offset = [1,1,1]
          upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
+         if upper_cell_id <= 0:
+            print("Error: cannot interpolate outside simulation domain!")
+            return self.read_variable(name,closest_cell_id,operator)
          upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
          if (lower_cell_id<1 or upper_cell_id<1):
             warnings.warn("Requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
@@ -1421,10 +1427,11 @@ class VlsvReader(object):
            else:
                # Special case for scalar data
                thatTasksData = rawData[currentOffset:currentOffset+totalSize]
-               thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
+               if (len(thatTasksData)>0):
+                  thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2]], order='F')
 
-               # ... and put it into place 
-               orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
+                  # ... and put it into place
+                  orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2]] = thatTasksData
 
            currentOffset += totalSize
 

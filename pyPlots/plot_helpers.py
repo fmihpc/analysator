@@ -462,6 +462,23 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
+
+def expr_timeavg(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return []
+    # Select first found variable
+    listofkeys = iter(pass_maps[0])
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+    ntimes = len(pass_maps)
+    thismap = thesemaps[var]
+    avgmap = np.zeros(np.array(thismap.shape))
+    for i in range(ntimes):
+        avgmap = np.add(avgmap, pass_maps[i][var])
+    avgmap = np.divide(np.ma.masked_less_equal(avgmap,0), np.array([ntimes]))
+    return avgmap
+
 def expr_Diff(pass_maps, requestvariables=False):
     if requestvariables==True:
         return []
