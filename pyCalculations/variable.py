@@ -23,7 +23,7 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
-#import pytools
+from plot import cbfmtsci
 from numbers import Number
 
 class VariableInfo:
@@ -80,7 +80,7 @@ class VariableInfo:
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
 
-   def get_scaling_metadata(self, env='EarthSpace', manualDict=None, vscale=None):
+   def get_scaled_units(self, vscale=None, env='EarthSpace', manualDict=None):
       ''' Return scaling metadata
 
           :param env:          A string to choose the scaling dictionary [default: EarthSpace]
@@ -108,6 +108,9 @@ class VariableInfo:
                  'Pa'     : {'defaultScale':1e9,
                              1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':r'$\mathrm{nPa}$'}
                             },
+                 '1/m'  :   {'defaultScale':1e3,
+                             1e3:{'scaledUnits':'1/km', 'scaledLatexUnit':r'$\mathrm{km}^{-1}$'}
+                            },
                  '1/m^3'  : {'defaultScale':1e-6,
                              1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
                             },
@@ -125,6 +128,14 @@ class VariableInfo:
                             },
                  'eV/cm^3': {'defaultScale':1e-3,
                              1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
+                            },
+                 'T/m': {'defaultScale':1e-12,
+                             1e-9:{'scaledUnits':'nT/m', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{m}^{-1}$'},
+                             1e-12:{'scaledUnits':'nT/km', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{km}^{-1}$'}
+                           },
+                 'kg/m3'  : {'defaultScale':5.97863741e26,
+                             5.97863741e26:{'scaledUnits':'amu/m^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{m}^{-3}$'},
+                             5.97863741e20:{'scaledUnits':'amu/cm^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{cm}^{-3}$'}
                             },
          }
 
@@ -159,7 +170,7 @@ class VariableInfo:
 
          if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
              #
-             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
+             return vscale, self.units+" x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+cbfmtsci(vscale,None)
          try:
             #above guarantees the list comprehension does not give an empty list
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
@@ -176,13 +187,13 @@ class VariableInfo:
           if vscale is None or np.isclose(vscale, 1.0):
             return 1.0, self.units, self.latexunits
           else:
-            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+pytools.plot.cbfmtsci(vscale,None)
+            return vscale, self.units+"x{vscale:e}".format(vscale=vscale), self.latexunits+r"{\times}"+cbfmtsci(vscale,None)
 
       return unitScale, scaledUnits, scaledLatexUnits
 
    # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
    # necessary, for default/other environments.
-   def get_scaled_var(self, data=None, env='EarthSpace', manualDict=None, vscale=None):
+   def get_scaled_var(self, vscale=None, data=None, env='EarthSpace', manualDict=None):
       ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
           default dictionaries.
 
@@ -200,7 +211,7 @@ class VariableInfo:
       else:
          self.data = data
 
-      unitScale, scaledUnits, scaledLatexUnits = self.get_scaling_metadata(env, manualDict, vscale)
+      unitScale, scaledUnits, scaledLatexUnits = self.get_scaled_units(vscale=vscale, env=env, manualDict=manualDict)
       if unitScale == 1: # no change, optimize out the calculation
           return self
 

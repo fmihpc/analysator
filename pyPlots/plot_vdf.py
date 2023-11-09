@@ -86,12 +86,12 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
     # Gather histogram of values
-    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],normed=0)
+    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],density=False)
 
     # Correct for summing multiple cells into one histogram output cell with the averaging reducer
     if reducer == "average":
         # Gather histogram of how many cells were summed for the histogram
-        (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
+        (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),density=False)
         nonzero = np.where(Chist != 0)
         nonzero = Chist > 0
         nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
@@ -611,7 +611,7 @@ def plot_vdf(filename=None,
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
-                stepstr = '_t'+str(np.int(timeval))
+                stepstr = '_t'+str(int(timeval))
             else:
                 stepstr = ''
 

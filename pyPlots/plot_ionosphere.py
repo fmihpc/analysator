@@ -268,17 +268,16 @@ def plot_ionosphere(filename=None,
     datamap_info.latex = re.sub("\\\\text","\\\\mathrm", datamap_info.latex)
     datamap_info.latexunits = re.sub("\\\\mho","\\\\Omega^{-1}", datamap_info.latexunits)
     cb_title_use = datamap_info.latex
-    datamap_unit = datamap_info.latexunits
     # Check if vscale results in standard unit
-    datamap_unit = pt.plot.scaleunits(datamap_info, vscale)
-    values = datamap_info.data
+    vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+    values = datamap_info.data*vscale
     if np.ndim(values) == 0:
         print("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
         return -1
 
     # Add unit to colorbar title
-    if datamap_unit:
-       cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+    if datamap_unit_latex:
+       cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
     if viewdir > 0:
         r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))

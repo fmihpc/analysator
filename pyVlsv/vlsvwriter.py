@@ -27,22 +27,26 @@ import ast
 import numpy as np
 import os
 from reduction import datareducers,data_operators
-from collections import Iterable
-
+import warnings
 
 class VlsvWriter(object):
    ''' Class for reading VLSV files
    '''
    file_name = ""
-   def __init__(self, vlsvReader, file_name ):
+   def __init__(self, vlsvReader, file_name, copy_meshes=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
           :param file_name:     Name of the vlsv file where to input data
+          :param copy_meshes:   list of mesh names to copy, default all
+          
       '''
       self.file_name = os.path.abspath(file_name)
-      self.__fptr = open(self.file_name,"wb")
-
+      try:
+         self.__fptr = open(self.file_name,"wb")
+      except FileNotFoundError as e:
+         print("No such path: ", self.file_name)
+         raise e
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 
@@ -52,9 +56,9 @@ class VlsvWriter(object):
       # Write xml_offset, for now put this to zero:
       np.array(0, dtype=np.uint64).tofile(self.__fptr)
 
-      self.__initialize( vlsvReader )
+      self.__initialize( vlsvReader, copy_meshes )
 
-   def __initialize( self, vlsvReader ):
+   def __initialize( self, vlsvReader, copy_meshes=None ):
       ''' Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid
       '''
       # Get the xml sheet:
@@ -64,11 +68,15 @@ class VlsvWriter(object):
       tags = {}
       tags['PARAMETER'] = ''
       tags['PARAMETERS'] = ''
+      tags['MESH_NODE_CRDS'] = ''
       tags['MESH_NODE_CRDS_X'] = ''
       tags['MESH_NODE_CRDS_Y'] = ''
       tags['MESH_NODE_CRDS_Z'] = ''
+      tags['MESH_OFFSETS'] = ''
       tags['MESH'] = ''
       tags['MESH_DOMAIN_SIZES'] = ''
+      tags['MESH_GHOST_DOMAINS'] = ''
+      tags['MESH_GHOST_LOCALIDS'] = ''
       tags['CellID'] = ''
       tags['MESH_BBOX'] = ''
       tags['COORDS'] = ''
@@ -79,21 +87,37 @@ class VlsvWriter(object):
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
-            else: mesh = ''
+            else: mesh = None
             tag = child.tag
+
+            if copy_meshes is not None:
+               if mesh is not None and not mesh in copy_meshes:
+                  continue
+               if tag == "MESH" and not name in copy_meshes:
+                  continue
+
             extra_attribs = {}
             for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
+            #print("writing",name, tag)
+
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 
-   def copy_variables( self, vlsvReader ):
-      ''' Copies all variables from vlsv reader to the file
-
+   def copy_variables( self, vlsvReader, varlist=None ):
+      ''' Copies variables from vlsv reader to the file.
+           varlist = None: list of variables to copy; if no
+           varlist is provided, copy all variables (default)
       '''
+
+      # Delegate to the variable list handler
+      if (varlist is not None):
+         self.copy_variables_list(vlsvReader, varlist)
+         return
+
       # Get the xml sheet:
       xml_root = vlsvReader._VlsvReader__xml_root
 
@@ -111,7 +135,7 @@ class VlsvWriter(object):
             if 'mesh' in child.attrib:
                 mesh = child.attrib['mesh']
             else:
-                mesh = ''
+                mesh = None
             tag = child.tag
             # Copy extra attributes:
             extra_attribs = {}
@@ -121,6 +145,51 @@ class VlsvWriter(object):
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      return
+
+   def copy_variables_list( self, vlsvReader, vars ):
+      ''' Copies variables in the list vars from vlsv reader to the file
+
+      '''
+      # Get the xml sheet:
+      xml_root = vlsvReader._VlsvReader__xml_root
+
+      # Get list of tags to write:
+      tags = {}
+      tags['VARIABLE'] = ''
+      found_vars = []
+
+      # Copy the xml root and write variables
+      for child in xml_root:
+         if child.tag in tags:
+            if 'name' in child.attrib:
+               name = child.attrib['name']
+               if not name in vars:
+                  continue
+               else:
+                  found_vars.append(name)
+            else:
+                continue
+            if 'mesh' in child.attrib:
+                mesh = child.attrib['mesh']
+            else:
+               if tag in ['VARIABLE']:
+                  print('MESH required')
+                  return
+               mesh = None
+            tag = child.tag
+            # Copy extra attributes:
+            extra_attribs = {}
+            for i in child.attrib.items():
+               if i[0] != 'name' and i[0] != 'mesh':
+                  extra_attribs[i[0]] = i[1]
+            data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
+            # Write the data:
+            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+
+      for name in [varname for varname in vars if varname not in found_vars]:
+         varinfo = vlsvReader.read_variable_info(name)
+         self.write_variable_info(varinfo, 'SpatialGrid', 1)
       return
 
    def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
@@ -155,6 +224,10 @@ class VlsvWriter(object):
       :returns: True if the data was written successfully
 
       '''
+
+      if data is None:
+         warnings.warn("Trying to write `None` data for " + name + ". Skipping, but not raising an error in case there is yet some data remaining that the user doesn't want to fly to bit heaven.")
+         return False
       # Make sure the data is in numpy array format:
       data = np.atleast_1d(data)
       fptr = self.__fptr
@@ -162,22 +235,32 @@ class VlsvWriter(object):
       datatype = ''
 
       # Add the data into the xml data:
-      child = ET.SubElement(parent=self.__xml_root, tag=tag)
+      child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
-      child.attrib["mesh"] = mesh
+      if mesh is not None:
+         child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
-      if extra_attribs != '':
-         for i in extra_attribs.items():
-            child.attrib[i[0]] = i[1]
+
       if len(np.shape(data)) == 2:
          child.attrib["vectorsize"] = np.shape(data)[1]
-         datatype = str(type(data[0][0]))
+         #datatype = str(type(data[0][0]))
+         datatype = data.dtype.__str__()
       elif len(np.shape(data)) > 2:
-         print("ERROR, np.shape returned len(np.shape(data)) > 2")
+         warnings.warn("np.shape returned len(np.shape(data)) > 2. Writing "+name+" failed, skipping.")
+         self.__xml_root.remove(child)
          return False
       else:
          child.attrib["vectorsize"] = 1
-         datatype = str(type(data[0]))
+         if(len(data) == 0):
+            if tag=="MESH_GHOST_DOMAINS" or tag=="MESH_GHOST_LOCALIDS":
+               datatype="int32"
+            else:
+               warnings.warn("Trying to extract datatype from an empty array (" + name + "). I will fail as usual, since this is not the special case that is guarded against!")
+               #datatype = str(type(data[0]))
+               datatype = data.dtype.__str__()
+         else:
+            #datatype = str(type(data[0]))
+            datatype = data.dtype.__str__()
 
       # Parse the data types:
       if 'uint' in datatype:
@@ -187,7 +270,8 @@ class VlsvWriter(object):
       elif 'float' in datatype:
          child.attrib["datatype"] = "float"
       else:
-         print("BAD DATATYPE")
+         warnings.warn("BAD DATATYPE: " + datatype+". Writing "+name+" failed, skipping.")
+         self.__xml_root.remove(child)
          return False
 
       if '64' in datatype:
@@ -195,17 +279,55 @@ class VlsvWriter(object):
       elif '32' in datatype:
          child.attrib["datasize"] = 4
       else:
-         print("BAD DATASIZE")
+         warnings.warn("BAD DATASIZE for datatype = " + datatype + ". Writing " + name + " failed, skipping.")
+         self.__xml_root.remove(child)
          return False
+      
+      if (extra_attribs != '') and (extra_attribs is not None):
+         for i in extra_attribs.items():
+            child.attrib[i[0]] = i[1]
 
       current_offset = fptr.tell()
       # Info the xml about the file offset for the data:
       child.text = str(current_offset)
 
-      data.tofile(fptr)
+      try:
+         data.tofile(fptr)
+      except:
+         np.ma.getdata(data).tofile(fptr) # numpy maskedarray tofile not implemented yet
 
       # write the xml footer:
-      self.__write_xml_footer()
+      self.__write_xml_footer() # this _should_ also return a success value....
+      return True
+
+   def write_variable_info(self, varinfo, mesh, unitConversion, extra_attribs={}):
+      ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
+      :param varinfo: VariableInfo object containing
+         -data: The variable data (array)
+         -name: Name of the data array
+         -latex: LaTeX string representation of the variable name
+         -units: plaintext string representation of the unit
+         -latexunits: LaTeX string representation of the unit
+      :param mesh: Mesh for the data array
+      :param unitConversion: string representation of the unit conversion to get to SI
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh,
+        or contained in varinfo. Can be used to overwrite varinfo values besids name.
+
+      :returns: True if the data was written successfully
+
+      '''
+
+      return self.write(varinfo.data, varinfo.name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':varinfo.latex, 'unit':varinfo.units, 'unitLaTeX':varinfo.latexunits, 'unitConversion':unitConversion}.update(extra_attribs))
+
+
+   def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):
+      # get a reader for the target file
+      #print(data.shape[0:3], reader.get_fsgrid_mesh_size(), (data.shape[0:3] == reader.get_fsgrid_mesh_size()))
+      if not (data.shape[0:3] == reader.get_fsgrid_mesh_size()).all():
+         print("Data shape does not match target fsgrid mesh")
+         return
+      vgdata = reader.fsgrid_array_to_vg(data)
+      self.write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)
 
    def __write_xml_footer( self ):
       # Write the xml footer:
@@ -221,6 +343,7 @@ class VlsvWriter(object):
          for i in child.attrib.items():
             child.attrib[i[0]] = str(child.attrib[i[0]])
       tree = ET.ElementTree( self.__xml_root)
+      xml_footer_indent( self.__xml_root)
       tree.write(fptr)
       # Write the offset (first 8 bytes = endianness):
       offset_endianness = 8
@@ -234,3 +357,17 @@ class VlsvWriter(object):
       self.__write_xml_footer()
       self.__fptr.close()
 
+def xml_footer_indent(elem, level=0):
+   i = "\n" + level*"   "
+   if len(elem):
+      if not elem.text or not elem.text.strip():
+            elem.text = i + "   "
+      if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+      for elem in elem:
+            xml_footer_indent(elem, level+1)
+      if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+   else:
+      if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i

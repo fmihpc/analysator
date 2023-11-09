@@ -69,7 +69,8 @@ def plot_colormap3dslice(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
-                  normal='y', cutpoint=0., cutpointre=None
+                  normal='y', cutpoint=0., cutpointre=None,
+                  useimshow=False, imshowinterp='none',
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -192,6 +193,9 @@ def plot_colormap3dslice(filename=None,
     :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
     :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
     :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
+    :kword useimshow:   Use imshow for raster background instead (default: False)
+    :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -234,6 +238,8 @@ def plot_colormap3dslice(filename=None,
     # Change certain falsy values:
     if not lin and lin != 0:
         lin = None
+    if lin is True:
+        lin = 7
     if not symlog and symlog != 0:
         symlog = None
     if symlog is True:
@@ -286,7 +292,7 @@ def plot_colormap3dslice(filename=None,
             if title=="sec": timeformat='{:4.0f}'
             if title=="msec": timeformat='{:4.3f}'
             if title=="musec": timeformat='{:4.6f}'
-            plot_title = "t="+timeformat.format(timeval)+'\,s'
+            plot_title = "t="+timeformat.format(timeval)+'\,'+pt.plot.rmstring('s')
     else:
         plot_title = title
 
@@ -323,7 +329,7 @@ def plot_colormap3dslice(filename=None,
             operatorstr='_'+operator
             operatorfilestr='_'+operator
             if symlog is None:
-                lin=True
+                lin=7
         # index a vector
         if operator.isdigit():
             operator = str(operator)
@@ -342,6 +348,8 @@ def plot_colormap3dslice(filename=None,
                 var = 'proton/vg_rho'
             elif f.check_variable("moments"): # restart
                 var = 'vg_restart_rhom'
+            elif f.check_variable("rho"): # old pre-v5 data (no fsgrid or AMR)
+                var = 'rho'
         varstr=var.replace("/","_")
 
     # Activate diff mode?
@@ -421,14 +429,25 @@ def plot_colormap3dslice(filename=None,
     cellids = f.read_variable("CellID")
 
     # Read the FSgrid mesh
-    [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
-    xsizefg = int(xsizefg)
-    ysizefg = int(ysizefg)
-    zsizefg = int(zsizefg)
-    [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
-    cellsizefg = (xmaxfg-xminfg)/xsizefg
-    pt.plot.plot_helpers.CELLSIZE = cellsizefg
-    
+    try:
+        [xsizefg, ysizefg, zsizefg] = f.get_fsgrid_mesh_size()
+        xsizefg = int(xsizefg)
+        ysizefg = int(ysizefg)
+        zsizefg = int(zsizefg)
+        [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = f.get_fsgrid_mesh_extent()
+        cellsizefg = (xmaxfg-xminfg)/xsizefg
+        pt.plot.plot_helpers.CELLSIZE = cellsizefg
+    except:
+        if xsize!=1 and ysize!=1 and zsize!=1:
+            print("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
+            [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
+            cellsizefg = cellsize
+            pt.plot.plot_helpers.CELLSIZE = cellsize
+        else:
+            print("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            return -1
+
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
     cellids = cellids[indexids]
@@ -526,14 +545,16 @@ def plot_colormap3dslice(filename=None,
         rhomap = f.read_variable("proton/vg_rho")
     elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
+    elif f.check_variable("rho"): #old non-AMR data, can still be 3D
+        rhomap = f.read_variable("rho")
     else:
-        print("error!")
-        quit
-              
-    rhomap = rhomap[indexids] # sort
-    rhomap = rhomap[indexlist] # find required cells
-    # Create the plotting grid
-    rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
+        # No rhomap found - do not perform any masking.
+        nomask = True
+    if not nomask:
+        rhomap = rhomap[indexids] # sort
+        rhomap = rhomap[indexlist] # find required cells
+        # Create the plotting grid
+        rhomap = ids3d.idmesh3d(idlist, rhomap, reflevel, xsize, ysize, zsize, xyz, None)
 
     ############################################
     # Read data and calculate required variables
@@ -545,13 +566,12 @@ def plot_colormap3dslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
 
         # Add unit to colorbar title
-        if datamap_unit:
-            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
 
@@ -975,9 +995,10 @@ def plot_colormap3dslice(filename=None,
 
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
-        # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
-        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
+        if not nomask:
+            # Strip away columns and rows which are outside the plot region
+            rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
+            rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
         # Also for the datamap, unless it was already provided by an expression
         if not expression:
             datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
@@ -997,6 +1018,9 @@ def plot_colormap3dslice(filename=None,
             else:
                 # Mask datamap
                 datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        # no masking
+        XYmask = np.full(datamap.shape, False)
 
     #If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -1065,7 +1089,7 @@ def plot_colormap3dslice(filename=None,
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
         norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
-        ticks = np.linspace(vminuse,vmaxuse,num=7)            
+        ticks = np.linspace(vminuse,vmaxuse,num=lin)            
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if not axes: # If axes are provided, leave backend as-is.
@@ -1117,7 +1141,16 @@ def plot_colormap3dslice(filename=None,
         fig = plt.gcf() # get current figure
 
     # Plot the actual mesh
-    fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    if(not useimshow):
+        fig1 = ax1.pcolormesh(XmeshPass,YmeshPass,datamap, cmap=colormap,norm=norm)
+    else:
+        fig1 = ax1.imshow(datamap,
+                          cmap=colormap,
+                          norm=norm,
+                          interpolation=imshowinterp,
+                          origin='lower',
+                          extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
+                         )
 
     # Title and plot limits
     if len(plot_title)!=0:

@@ -64,6 +64,7 @@ def plot_colormap(filename=None,
                   fluxfile=None, fluxdir=None, flux_levels=None,
                   fluxthick=1.0, fluxlines=1,
                   fsaved=None,
+                  nomask=False,
                   Earth=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
@@ -175,6 +176,7 @@ def plot_colormap(filename=None,
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+    :kword nomask:      Do not mask plotting based on proton density
 
     :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
     :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
@@ -436,6 +438,9 @@ def plot_colormap(filename=None,
         simext=[xmin,xmax,ymin,ymax]
         sizes=[xsize,ysize]
         pt.plot.plot_helpers.PLANE = 'XY'
+    if ysize!=1 and zsize!=1 and xsize!=1:
+        print("Mesh is not 2-D: Use plot_colormap3Dslice instead!")
+        return
 
     # Select window to draw
     if len(boxm)==4:
@@ -478,13 +483,12 @@ def plot_colormap(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
         
         # Add unit to colorbar title
-        if datamap_unit:
-            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
@@ -751,15 +755,20 @@ def plot_colormap(filename=None,
         rhomap = f.read_variable("proton/rho")
     elif f.check_variable("moments"):
         rhomap = f.read_variable("restart_rhom")
-    else:
+    elif f.check_variable("rhom"):
         rhomap = f.read_variable("rhom")
-    rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
+    else:
+        # No rhomap found - do not perform any masking.
+        nomask = True
+    if not nomask:
+        rhomap = rhomap[cellids.argsort()].reshape([sizes[1],sizes[0]])
         
     # Crop both rhomap and datamap to view region
     if np.ma.is_masked(maskgrid):
-        # Strip away columns and rows which are outside the plot region
-        rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
-        rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
+        if not nomask:
+            # Strip away columns and rows which are outside the plot region
+            rhomap = rhomap[MaskX[0]:MaskX[-1]+1,:]
+            rhomap = rhomap[:,MaskY[0]:MaskY[-1]+1]
         # Also for the datamap, unless it was already provided by an expression
         if not expression:
             datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
@@ -768,16 +777,20 @@ def plot_colormap(filename=None,
     # Mask region outside ionosphere. Note that for some boundary layer cells, 
     # a density is calculated, but e.g. pressure is not, and these cells aren't
     # excluded by this method. Also mask away regions where datamap is invalid
-    rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
-    rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
-    XYmask = rhomap.mask
-    if XYmask.any():
-        if XYmask.all():
-            # if everything was masked in rhomap, allow plotting
-            XYmask[:,:] = False
-        else:
-            # Mask datamap
-            datamap = np.ma.array(datamap, mask=XYmask)
+    if not nomask:
+        rhomap = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap), 0)
+        rhomap = np.ma.masked_where(~np.isfinite(datamap), rhomap)
+        XYmask = rhomap.mask
+        if XYmask.any() and not pass_full:
+            if XYmask.all():
+                # if everything was masked in rhomap, allow plotting
+                XYmask[:,:] = False
+            else:
+                # Mask datamap
+                datamap = np.ma.array(datamap, mask=XYmask)
+    else:
+        # no masking
+        XYmask = np.full(datamap.shape, False)
 
     # If automatic range finding is required, find min and max of array
     # Performs range-finding on a masked array to work even if array contains invalid values
@@ -971,10 +984,13 @@ def plot_colormap(filename=None,
         else:
             # v5 Vlasiator data
             cid = f.get_cellid( [xmax-2*cellsize, 0,0] )
-            #ff_b = f.read_variable("vg_b_vol", cellids=cid)
-            ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            try:
+               ff_b = f.read_fsgrid_variable("fg_b")[-2, 2] # assumes data is of shape [nx,ny] or [nx,nz]
+            except:
+               ff_b = f.read_variable("vg_b_vol", cellids=cid)
             if (ff_b.size!=3):
-                print("Error reading fg_b data for fluxfunction normalization!")
+               print("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
+
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
             else:

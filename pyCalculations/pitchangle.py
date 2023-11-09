@@ -1,45 +1,47 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2019 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
+import pytools as pt
 import numpy as np
 import sys, os
 from output import output_1d
 
-def pitch_angles( vlsvReader, 
-                     cellid, 
+def pitch_angles( vlsvReader,
+                     cellid,
                      nbins=10,
                      filename=None,
                      filedir=None, step=None,
                      outputdir=None, outputfile=None,
-                     cosine=False, 
-                     plasmaframe=False, 
+                     cosine=False,
+                     plasmaframe=False,
                      vcut=None,
+                     vcutmax=None,
                      pop="proton"):
 
    ''' Calculates the pitch angle distribution for a given cell
 
    :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.
-   :param cellid:            The cell id whose pitch angle the user wants 
+   :param cellid:            The cell id whose pitch angle the user wants
                              NOTE: The cell id must have a velocity distribution!
    :kword filename:          path to .vlsv file to use for input.
    :kword filedir:           Optionally provide directory where files are located and use step for bulk file name
@@ -57,6 +59,8 @@ def pitch_angles( vlsvReader,
 
    :kword vcut:              Set to True to ignore velocity cells below 2x the thermal speed.
                              If set to a number, will use that velocity in m/s instead.
+   :kword vcutmax:           Set to True to ignore velocity cells above 2x the thermal speed.
+                             If set to a number, will use that velocity in m/s instead.
 
    :kword outputdir:         Optional (recommended) method to save results to a file in the given directory.
                              If directory does not exist, it will be created. Filenames within directory are
@@ -64,14 +68,14 @@ def pitch_angles( vlsvReader,
    :kword outputfile:        Provide exact output file name (including complete path)
 
    :kword pop:               Active population, defaults to proton (avgs)
-                                      
+
    :returns: pitch angles and avgs [pitch_angles, avgs]
 
        .. code-block:: python
 
           # Example usage:
           vlsvReader = VlsvReader("restart.0000798.vlsv")
-          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True, 
+          result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True,
                                  plasmaframe=True, outputdir="/wrk/username/pitchangledirectory/" )
    '''
 
@@ -90,13 +94,25 @@ def pitch_angles( vlsvReader,
       elif plasmaframe is True:
          if vlsvReader.check_variable("moments"): # restart
             frame = vlsvReader.read_variable('restart_V', cellid)
-         else:
+         elif vlsvReader.check_variable("V"):
             frame = vlsvReader.read_variable('V', cellid)
+         elif vlsvReader.check_variable("vg_V"):
+            frame = vlsvReader.read_variable('vg_V', cellid)
+         elif vlsvReader.check_variable(pop+"/vg_V"):
+            frame = vlsvReader.read_variable(pop+'/vg_V', cellid)
+         else:
+            print("Error extracting plasma frame velocity!")
       elif len(plasmaframe)==3: # Assume it's a vector
          frame = plasmaframe
-         
+
    # Find the magnetic field direction
-   B = vlsvReader.read_variable("B", cellid)
+   if vlsvReader.check_variable("B"):
+      B = vlsvReader.read_variable('B', cellid)
+   elif vlsvReader.check_variable("vg_b_vol"):
+      B = vlsvReader.read_variable('vg_b_vol', cellid)
+   elif vlsvReader.check_variable("fg_b"):
+      coordinates = vlsvReader.get_cell_coordinates(cellid)
+      B = vlsvReader.read_interpolated_fsgrid_variable('fg_b', coordinates)
    Bmag = np.linalg.norm(B)
    B_unit = B / Bmag
 
@@ -112,23 +128,36 @@ def pitch_angles( vlsvReader,
    else:
       if not vlsvReader.check_population(pop):
          print("Unable to detect population "+pop+" in .vlsv file!")
-         sys.exit()       
+         sys.exit()
 
    # Read temperature for thermal speed
-   if vcut is True:
+   if (vcut is True or vcutmax is True):
       if vlsvReader.check_variable("moments"): # restart, use overall rho/rhom and pressure
          rhom = vlsvReader.read_variable("restart_rhom", cellid)
          PDiagonal = vlsvReader.read_variable("pressure", cellid)
          Pressure = (PDiagonal[0] + PDiagonal[1] + PDiagonal[2])*(1./3.)
          vth = np.sqrt(Pressure*8./(rhom*np.pi))
       else:
-         if vlsvReader.check_variable("rhom"): # multipop
-            vth = vlsvReader.read_variable(pop+"/vThermal", cellid)
+         if vlsvReader.check_variable(pop+"/vg_rho"): # v5
+            vth = vlsvReader.read_variable(pop+"/vg_thermalvelocity", cellid)
+         elif vlsvReader.check_variable(pop+"/rho"): # multipop
+            vth = vlsvReader.read_variable(pop+"/thermalvelocity", cellid)
          else:
-            vth = vlsvReader.read_variable("vThermal", cellid)
+            vth = vlsvReader.read_variable("thermalvelocity", cellid)
+
+   if vcut is True:
       vcutoff=2*vth
-   else: # assume it's a number to use as the speed in m/s
-      vcutoff=vcut      
+   elif vcut is not None: # assume it's a number to use as the speed in m/s
+      vcutoff=vcut
+   else:
+      vcutoff=0
+
+   if vcutmax is True:
+      vcutoffmax=2*vth
+   elif vcutmax is not None: # assume it's a number to use as the speed in m/s
+      vcutoffmax=vcutmax
+   else:
+      vcutoffmax = np.inf
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid, pop=pop)
@@ -152,18 +181,21 @@ def pitch_angles( vlsvReader,
 
    # Calculate velocity cell sizes
    [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
-   [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)      
+   [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
    dvx=(vxmax-vxmin)/(4*vxsize)
    dvy=(vymax-vymin)/(4*vysize)
    dvz=(vzmax-vzmin)/(4*vzsize)
    dv3=dvx*dvy*dvz
 
-   # Clip negative avgs to zero 
+   # Clip negative avgs to zero
    # (Some elements may be negative due to ghost cell propagation effects)
    avgs = np.array(avgs).clip(min=0) * dv3
 
    # Mask off cells below threshold
-   condition = (v_norms > vcutoff)
+   cond1 = (v_norms > vcutoff)
+   cond2 = (v_norms < vcutoffmax)
+   condition = np.logical_and(cond1,cond2)
+   print(cond1.shape,cond2.shape,condition.shape)
    # Get the velocity cells above cutoff speed
    #vcellids_nonsphere = np.extract(condition, vcellids)
    # Get the avgs
@@ -182,16 +214,16 @@ def pitch_angles( vlsvReader,
    print("rho",rho_summed, rho_nonsphere)
 
    if outputfile!=None or outputdir!=None: # Save output to file
-      # Generate filename 
+      # Generate filename
       timestr='{:4.1f}'.format(vlsvReader.read_parameter("time"))
-      if outputfile==None: 
+      if outputfile==None:
          outputfile = outputdir+"/pitchangle_weights_cellid_"+str(cellid).rjust(7,'0')+"_time_"+timestr+".txt"
       if outputfile!=None and outputdir!=None:
          print("Please use either outputfile or outputdir, not both. Ignoring outputdir.")
 
       # Check to find actual target sub-directory
       outputprefixind = outputfile.rfind('/')
-      if outputprefixind >= 0:            
+      if outputprefixind >= 0:
          outputdir = outputfile[:outputprefixind+1]
       # Ensure output directory exists and is writeable
       if not os.path.exists(outputdir):

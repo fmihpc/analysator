@@ -492,6 +492,10 @@ def expr_Diff(pass_maps, requestvariables=False):
     if (map0.shape != map1.shape):
         print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
         sys.exit(-1)
+    if (map0.dtype in ['uint8','uint16','uint32','uint64']):
+        print("Diff: Converting from unsigned to signed integers")
+        map0 = map0.astype('int64')
+        map1 = map1.astype('int64')
     return (map0-map1) # use keyword absolute to get abs diff
 
 def expr_Hall(pass_maps, requestvariables=False):
@@ -1498,3 +1502,40 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
     # resample back up for plotting
     fgreturn = np.repeat(np.repeat(np.repeat(fgavg, 2, axis=0), 2, axis=1), 2, axis=2)
     return np.abs(fgreturn-vg)
+
+
+# Contour plot spatial AMR refinement levels
+def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['vg_reflevel']
+
+    # Check if pass_maps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        ref = extmaps[curri]['vg_reflevel']
+    else:
+        ref = extmaps['vg_reflevel']
+
+    minref = int(np.amin(ref))
+    maxref = int(np.amax(ref))
+    levels = np.arange(minref,maxref)+0.5
+    ax.contour(XmeshXY, YmeshXY, ref, levels, antialiased=False, linewidths=0.1, cmap='gray')
+
+# Contour plot MPI ranks
+def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['vg_rank']
+
+    # Check if pass_maps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        rank = extmaps[curri]['vg_rank']
+    else:
+        rank = extmaps['vg_rank']
+
+    minrank = int(np.amin(rank))
+    maxrank = int(np.amax(rank))
+    levels = np.arange(minrank,maxrank)+0.5
+    ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')
