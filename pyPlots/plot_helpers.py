@@ -439,13 +439,12 @@ def vec_currentdensity_lim(inputarray):
     # Output array is of format [nx,ny,3]
     return numcurllimited(inputarray) / mu0
 
-def vec_Hallterm(currentdensity, magneticfield, numberdensity):
+def vec_Hallterm(currentdensity, magneticfield, chargedensity):
     # assumes current density of shape [nx,ny,3]
     # assumes Magnetic field of shape [nx,ny,3]
-    # assumes number density of shape [nx,ny]
-    unitcharge = 1.602177e-19
+    # assumes charge density of shape [nx,ny]
     crossp = np.cross(currentdensity, magneticfield)
-    chargedensity = np.ma.masked_less_equal(numberdensity, 0) * unitcharge
+    chargedensity = np.ma.masked_less_equal(chargedensity, 0) # ions only
     # Output array is of format [nx,ny,3]
     return np.ma.divide(crossp, chargedensity[:,:,np.newaxis])
 
@@ -500,20 +499,29 @@ def expr_Diff(pass_maps, requestvariables=False):
 
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # charge density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return np.swapaxes(Hallterm, 0,1)
+
+def expr_Hall_lim(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rhoq']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    RhoQmap = pass_maps['rhoq'].T # charge density
+    Jmap_lim = vec_currentdensity_lim(Bmap)
+    Hallterm_lim = vec_Hallterm(Jmap_lim,Bmap,RhoQmap)
+    return np.swapaxes(Hallterm_lim, 0,1)
 
 def expr_Hall_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # number density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return VectorArrayAnisotropy(Hallterm,Bmap).T
 
 def expr_J(pass_maps, requestvariables=False):
