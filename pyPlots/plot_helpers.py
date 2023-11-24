@@ -119,7 +119,7 @@ def expandMask(inputarray):
     newmask = np.logical_or(np.roll(mask,(-1,1),axis=(0,1)),newmask)
     newmask = np.logical_or(np.roll(mask,(-1,-1),axis=(0,1)),newmask)
     if np.ndim(inputarray) == 2:
-        inputarray.mask = 1.*newmask 
+        inputarray.mask = 1.*newmask
     else:
         for i in range(3):
             inputarray.mask[:,:,i] = 1.*newmask
@@ -361,7 +361,7 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
     # Calculates the magnitude of the perpendicular vector component
     # of each inputvector to each directionvector.
-    dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
+    dirnorm = np.ma.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
     # paravector = dirnorm
     # for i in np.arange(len(inputvector[:,0,0])):
@@ -531,6 +531,25 @@ def expr_J(pass_maps, requestvariables=False):
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
+
+def expr_JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    return np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+
+def expr_log2JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    JperBperp = np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+    return np.ma.log2(JperBperp)
 
 def expr_J3d(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -1116,18 +1135,18 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     pastmaps = pass_maps[previ]
 
     thisB = TransposeVectorArray(thesemaps['B'])
-    pastB = TransposeVectorArray(pastmaps['B'])    
+    pastB = TransposeVectorArray(pastmaps['B'])
     Vddt = (thisV-pastV)/DT
 
     Bmap = TransposeVectorArray(thesemaps['B'])
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
     rhom = thesemaps['rho'].T * 1.6726e-27
-    
+
     BxdVdt = numcrossproduct(Bmap, dVdt)
     result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
-    
-    
+
+
 ################
 ## Note: pyPlots/plot_colormap.py already includes some functionality for plotting
 ## vectors and streamlines on top of the colormap. For simple variables, those will
@@ -1182,7 +1201,7 @@ def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):
     V = vfip[:,:,1]
     ax.streamplot(X,Y,U,V,linewidth=0.5, density=3, color='white')
 
-    
+
 def expr_electronflow(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
     # Then calculates the required electron flow velocity to support that current.
@@ -1200,7 +1219,7 @@ def expr_electronflow(pass_maps, requestvariables=False):
     pvmap = TransposeVectorArray(pass_maps['proton/vg_v'])
     erhomap = pass_maps['electron/vg_rho'].T
     prhomap = pass_maps['proton/vg_rho'].T
-    
+
     j = numcurl(Bmap)/mu0
     jprot = pvmap*prhomap[:,:,np.newaxis]*unitcharge
     jele = -evmap*erhomap[:,:,np.newaxis]*unitcharge
@@ -1235,7 +1254,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     pvmap = TransposeVectorArray(pass_maps['proton/vg_v'])
     erhomap = pass_maps['electron/vg_rho'].T
     prhomap = pass_maps['proton/vg_rho'].T
-    
+
     j = numcurl(Bmap)/mu0
     jprot = pvmap*prhomap[:,:,np.newaxis]*unitcharge
     jele = -evmap*erhomap[:,:,np.newaxis]*unitcharge
@@ -1250,7 +1269,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
     print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
     print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
-        
+
     return np.swapaxes(everror, 0,1)
 
 
@@ -1301,10 +1320,10 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     SHFAs[SHFAs.mask == False] = 1.
     print("SHFA",SHFAs.sum())
     # draw contours
-    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
+    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock],
                                linewidths=1.2, colors=color_BS,label='Bow shock')
-    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
-    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
+    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
+    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
 def expr_numberdensitycheck(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
@@ -1332,7 +1351,7 @@ def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
     rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
     temp_p = pass_maps['temperature'].T
 
-    # This version assumes isothermal electrons with upstream beta_i = beta_p 
+    # This version assumes isothermal electrons with upstream beta_i = beta_p
     # i.e. pressure_i = pressure_p, scalar pressure
     # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
     # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
@@ -1371,12 +1390,12 @@ def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
     index=5./3.
     #index=1
     # pn^-index = const
-    
+
     #rho_e = pass_maps['electron/rho'].T
     rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
     pres_p = pass_maps['pressure'].T
 
-    # This version assumes polytropic electrons with upstream beta_i = beta_p 
+    # This version assumes polytropic electrons with upstream beta_i = beta_p
     # i.e. pressure_i = pressure_p, scalar pressure
     # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
     # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))

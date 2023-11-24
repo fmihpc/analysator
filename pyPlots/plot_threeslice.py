@@ -1639,6 +1639,9 @@ def plot_threeslice(filename=None,
             cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
  
         cbticks = cb.get_ticks()
         cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
