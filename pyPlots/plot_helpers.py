@@ -42,6 +42,8 @@ def inplane(inputarray):
         inputarray[:,:,2] = np.zeros(inputarray[:,:,2].shape)
     elif PLANE=='XZ':
         inputarray[:,:,1] = np.zeros(inputarray[:,:,1].shape)
+    elif PLANE=='YZ':
+        inputarray[:,:,0] = np.zeros(inputarray[:,:,0].shape)
     else:
         print("Error defining plane!")
         return -1
@@ -50,9 +52,11 @@ def inplane(inputarray):
 def inplanevec(inputarray):
     # Assumes input array is of format [nx,ny,3]
     if PLANE=='XY':
-        return inputarray[:,:,0:1]
+        return inputarray[:,:,0:2]
     elif PLANE=='XZ':
         return inputarray[:,:,0:3:2]
+    elif PLANE=='YZ':
+        return inputarray[:,:,1:3]
     else:
         print("Error defining plane!")
         return -1
@@ -69,6 +73,10 @@ def numjacobian(inputarray):
         jac[:,:,0,0], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
         jac[:,:,1,0], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
         jac[:,:,2,0], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
+    elif PLANE=='YZ':
+        jac[:,:,0,1], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
+        jac[:,:,1,1], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
+        jac[:,:,2,1], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -99,6 +107,8 @@ def numgradscalar(inputarray):
         grad[:,:,0],grad[:,:,1] = np.gradient(inputarray, CELLSIZE)
     elif PLANE=='XZ':
         grad[:,:,0],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
+    elif PLANE=='YZ':
+        grad[:,:,1],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -262,6 +272,10 @@ def numcurllimited(inputarray):
         jac[:, :, 0, 0], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
         jac[:, :, 1, 0], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
         jac[:, :, 2, 0], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
+    elif PLANE == 'YZ':
+        jac[:, :, 0, 1], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
+        jac[:, :, 1, 1], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
+        jac[:, :, 2, 1], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -1180,6 +1194,8 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
         V = vectmap[::step,::step,1]
     elif PLANE=="XZ":
         V = vectmap[::step,::step,2]
+    elif PLANE=="YZ":
+        V = vectmap[::step,::step,0]
     C = colors[::step,::step]
     ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
                        headaxislength=2, scale_units='dots', pivot='middle')
