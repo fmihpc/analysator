@@ -1325,6 +1325,8 @@ def plot_neutral_sheet(filename=None,
         if np.ndim(datamap)==0:
             print("Error, read only single value from vlsv file!",datamap.shape)
             return -1
+        elif np.ndim(datamap)==3: # Vector variable
+            datamap = np.linalg.norm(datamap, axis=-1)
         
         # vlasov grid, AMR
         datamap = datamap[indexids] # sort
