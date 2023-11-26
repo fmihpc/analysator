@@ -141,6 +141,4 @@ def ballooning_crit(reader, B, P, beta):
     
     kappaC = vfield3_dot(nnorm, n)
 
-    balloon = (2 + beta) / 4.0 * kappaP / (kappaC + 1e-27)
-
-    return (balloon, kappaC, gradP)
+    return (kappaC, gradP)
