@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
+import warnings
 from reduction import datareducers,data_operators
 import warnings
 
@@ -104,7 +105,7 @@ class VlsvWriter(object):
             # Write the data:
             #print("writing",name, tag)
 
-            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+            self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
 
    def copy_variables( self, vlsvReader, varlist=None ):
@@ -144,7 +145,7 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+            self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
       return
 
    def copy_variables_list( self, vlsvReader, vars ):
@@ -185,7 +186,7 @@ class VlsvWriter(object):
                   extra_attribs[i[0]] = i[1]
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+            self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
       for name in [varname for varname in vars if varname not in found_vars]:
          varinfo = vlsvReader.read_variable_info(name)
@@ -206,14 +207,47 @@ class VlsvWriter(object):
       blocks_per_cell    = np.array([number_of_blocks])
 
       # Write them out
-      self.write( data=cells_with_blocks, name='', mesh="SpatialGrid", tag="CELLSWITHBLOCKS" )
-      self.write( data=blocks_per_cell, name='', mesh="SpatialGrid", tag="BLOCKSPERCELL" )
+      self.__write( data=cells_with_blocks, name='', mesh="SpatialGrid", tag="CELLSWITHBLOCKS" )
+      self.__write( data=blocks_per_cell, name='', mesh="SpatialGrid", tag="BLOCKSPERCELL" )
 
       # Write blockids and values
-      self.write( data=blocks_and_values[0], name='', mesh="SpatialGrid", tag="BLOCKIDS" )
-      self.write( data=blocks_and_values[1], name='avgs', mesh="SpatialGrid", tag="BLOCKVARIABLE" )
+      self.__write( data=blocks_and_values[0], name='', mesh="SpatialGrid", tag="BLOCKIDS" )
+      self.__write( data=blocks_and_values[1], name='avgs', mesh="SpatialGrid", tag="BLOCKVARIABLE" )
+
 
    def write(self, data, name, tag, mesh, extra_attribs={}):
+      ''' Writes an array into the vlsv file
+
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh
+
+      :returns: True if the data was written successfully
+
+      '''
+      if(tag=="VARIABLE"):
+         warnings.warn("Please use write_variable_info instead for writing variables. Behaviour may be enforced in future.")
+
+      self.__write(data, name, tag, mesh, extra_attribs=extra_attribs)
+
+   def __write(self, data, name, tag, mesh, extra_attribs={}):
+      ''' Writes an array into the vlsv file
+
+      :param name: Name of the data array
+      :param tag:  Tag of the data array.
+      :param mesh: Mesh for the data array
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh
+
+      :returns: True if the data was written successfully
+
+      '''
+      if(tag=="VARIABLE"):
+         warnings.warn("Please use write_variable_info instead for writing variables. Behaviour may be enforced in future.")
+
+      self.__write(data, name, tag, mesh, extra_attribs=extra_attribs)
+
+   def __write(self, data, name, tag, mesh, extra_attribs={}):
       ''' Writes an array into the vlsv file
 
       :param name: Name of the data array
@@ -316,8 +350,27 @@ class VlsvWriter(object):
       :returns: True if the data was written successfully
 
       '''
+      atts = extra_attribs.copy()
+      atts.update({'variableLaTeX':varinfo.latex, 'unit':varinfo.units, 'unitLaTeX':varinfo.latexunits, 'unitConversion':unitConversion})
+      return self.__write(varinfo.data, varinfo.name, 'VARIABLE', mesh, extra_attribs=atts)
 
-      return self.write(varinfo.data, varinfo.name, 'VARIABLE', mesh, extra_attribs={'variableLaTeX':varinfo.latex, 'unit':varinfo.units, 'unitLaTeX':varinfo.latexunits, 'unitConversion':unitConversion}.update(extra_attribs))
+   def write_variable(self, data, name, mesh, units, latex, latexunits, unitConversion, extra_attribs={}):
+      ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
+      :param data: The variable data (array)
+      :param name: Name of the data array
+      :param mesh: Mesh for the data array
+      :param latex: LaTeX string representation of the variable name
+      :param units: plaintext string representation of the unit
+      :param latexunits: LaTeX string representation of the unit
+      :param unitConversion: string representation of the unit conversion to get to SI
+      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh.
+
+      :returns: True if the data was written successfully
+
+      '''
+      atts = extra_attribs.copy()
+      atts.update({'variableLaTeX':latex, 'unit':units, 'unitLaTeX':latexunits, 'unitConversion':unitConversion})
+      return self.__write(data, name, 'VARIABLE', mesh, extra_attribs=atts)
 
 
    def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):
@@ -327,7 +380,7 @@ class VlsvWriter(object):
          print("Data shape does not match target fsgrid mesh")
          return
       vgdata = reader.fsgrid_array_to_vg(data)
-      self.write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)
+      self.__write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)
 
    def __write_xml_footer( self ):
       # Write the xml footer:
