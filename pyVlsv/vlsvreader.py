@@ -40,6 +40,69 @@ from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
 
+# Helper functions ported from c++ (fsgrid.hpp)
+def computeLegacyDomainDecomposition(globalsize, ntasks):
+   inttype = np.int64
+   processDomainDecomposition = np.ones((3),dtype=inttype)
+   processBox = np.zeros((3),dtype=inttype)
+   optimValue = np.iinfo(inttype).max
+   for i in range(1,min(ntasks,globalsize[0])+1):
+      processBox[0] = max(globalsize[0]//i,1)
+      for j in range(1,min(ntasks,globalsize[1])+1):
+            if(i * j > ntasks):
+               break
+            processBox[1] = max(globalsize[1]//j,1)
+            for k in range(1,min(ntasks,globalsize[2])+1):
+               if(i * j * k > ntasks):
+                  break
+               processBox[2] = max(globalsize[2]//k,1)
+               value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+               ((processBox[1] * processBox[2]) if i>1 else 0) + \
+               ((processBox[0] * processBox[2]) if j>1 else 0) + \
+               ((processBox[0] * processBox[1]) if k>1 else 0)
+               if i*j*k == ntasks:
+                  if value < optimValue:
+                     optimValue = value
+                     processDomainDecomposition=[i,j,k]
+   if (np.prod(processDomainDecomposition) != ntasks):
+      print("Mismatch in FSgrid rank decomposition")
+      return -1
+   return processDomainDecomposition
+
+# Helper functions ported from c++ (fsgrid.hpp)
+def computeDomainDecomposition(globalsize, ntasks, legacy=False):
+   if(legacy):
+      warnings.warn("Trying legacy decomposition for fsgrid.")
+      return computeLegacyDomainDecomposition(globalsize,ntasks)
+   inttype = np.int64
+   processDomainDecomposition = np.ones((3),dtype=inttype)
+   processBox = np.zeros((3),dtype=inttype)
+   optimValue = np.iinfo(inttype).max
+   for i in range(1,min(ntasks,globalsize[0])+1):
+      processBox[0] = max(globalsize[0]//i,1)
+      for j in range(1,min(ntasks,globalsize[1])+1):
+            if(i * j > ntasks):
+               break
+            processBox[1] = max(globalsize[1]//j,1)
+            for k in range(1,min(ntasks,globalsize[2])+1):
+               if(i * j * k > ntasks):
+                  break
+               if(i * j * k != ntasks):
+                  continue
+               processBox[2] = max(globalsize[2]//k,1)
+               value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+               ((i * processBox[1] * processBox[2]) if i>1 else 0) + \
+               ((j * processBox[0] * processBox[2]) if j>1 else 0) + \
+               ((k * processBox[0] * processBox[1]) if k>1 else 0)
+               if value < optimValue:
+                  optimValue = value
+                  processDomainDecomposition=[i,j,k]
+
+   if (np.prod(processDomainDecomposition) != ntasks):
+      print("Mismatch in FSgrid rank decomposition")
+      return -1
+   return processDomainDecomposition
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -52,7 +115,7 @@ class VlsvReader(object):
       pass
 
    file_name=""
-   def __init__(self, file_name):
+   def __init__(self, file_name, fsgridDecomposition=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
@@ -1335,34 +1398,6 @@ class VlsvReader(object):
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
        else:
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
-
-       # Helper functions ported from c++ (fsgrid.hpp)
-       def computeDomainDecomposition(globalsize, ntasks):
-           processDomainDecomposition = [1,1,1]
-           processBox = [0,0,0]
-           optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0])+1):
-               processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1])+1):
-                   if(i * j > ntasks):
-                       break
-                   processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2])+1):
-                       if(i * j * k > ntasks):
-                           continue
-                       processBox[2] = max(1.*globalsize[2]/k,1)
-                       value = 10 * processBox[0] * processBox[1] * processBox[2] + \
-                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
-                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
-                        ((processBox[0] * processBox[1]) if k>1 else 0)
-                       if i*j*k == ntasks:
-                           if value < optimValue:
-                              optimValue = value
-                              processDomainDecomposition=[i,j,k]
-           if (np.prod(processDomainDecomposition) != ntasks):
-              print("Mismatch in FSgrid rank decomposition")
-              return -1
-           return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
            n_per_task = globalCells//ntasks

@@ -33,7 +33,7 @@
 
 '''
 
-from vlsvreader import VlsvReader
+from vlsvreader import VlsvReader,computeDomainDecomposition
 from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
 
