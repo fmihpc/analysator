@@ -746,13 +746,13 @@ def alpha2( variables ):
    (J_per_B, dx) = variables
    return J_per_B * dx
 
-def alpha_target( variables ):
+def alpha1_target( variables ):
    ''' Data reducer function for calculating target refinement level based on alpha_1
    '''
    (alpha, dx) = variables
    return np.log2(alpha * vlsvvariables.cellsize / dx + 1E-30)
 
-def jperb_target( variables ):
+def alpha2_target( variables ):
    ''' Data reducer function for calculating target refinement level based on J/B_perp
    '''
    J_per_B = variables[0]
@@ -1089,9 +1089,9 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
-v5reducers["vg_amr_alpha2"] =           DataReducerVariable(["vg_amr_jperb", "vg_dx"], alpha2, "", 1, latex=r"$J/B_{\perp} \cdot \Delta x$",latexunits=r"1")
-v5reducers["vg_amr_alpha_target"] =           DataReducerVariable(["vg_amr_alpha", "vg_dx"], alpha_target, "", 1, latex=r"$\log_2 (\alpha_1 \cdot \Delta x_0 / \Delta x)$",latexunits=r"1")
-v5reducers["vg_amr_jperb_target"] =           DataReducerVariable(["vg_amr_jperb"], jperb_target, "", 1, latex=r"$\log_2 (J/B_{\perp} \cdot \Delta x_0)$",latexunits=r"1")
+v5reducers["vg_amr_alpha2"] =           DataReducerVariable(["vg_amr_jperb", "vg_dx"], alpha2, "", 1, latex=r"$\alpha_2$",latexunits=r"1")
+v5reducers["vg_amr_alpha1_target"] =           DataReducerVariable(["vg_amr_alpha", "vg_dx"], alpha1_target, "", 1, latex=r"$\alpha_1'$",latexunits=r"1")
+v5reducers["vg_amr_alpha2_target"] =           DataReducerVariable(["vg_amr_jperb"], alpha2_target, "", 1, latex=r"$\alpha_2'$",latexunits=r"1")
 
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
