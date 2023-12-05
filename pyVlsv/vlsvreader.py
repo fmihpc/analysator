@@ -42,20 +42,19 @@ import warnings
 
 # Helper functions ported from c++ (fsgrid.hpp)
 def computeLegacyDomainDecomposition(globalsize, ntasks):
-   inttype = np.int64
-   processDomainDecomposition = np.ones((3),dtype=inttype)
-   processBox = np.zeros((3),dtype=inttype)
-   optimValue = np.iinfo(inttype).max
+   processDomainDecomposition = [1,1,1]
+   processBox = [0,0,0]
+   optimValue = 999999999999999.
    for i in range(1,min(ntasks,globalsize[0])+1):
-      processBox[0] = max(globalsize[0]//i,1)
+      processBox[0] = max(1.*globalsize[0]/i,1)
       for j in range(1,min(ntasks,globalsize[1])+1):
             if(i * j > ntasks):
                break
-            processBox[1] = max(globalsize[1]//j,1)
+            processBox[1] = max(1.*globalsize[1]/j,1)
             for k in range(1,min(ntasks,globalsize[2])+1):
                if(i * j * k > ntasks):
-                  break
-               processBox[2] = max(globalsize[2]//k,1)
+                  continue
+               processBox[2] = max(1.*globalsize[2]/k,1)
                value = 10 * processBox[0] * processBox[1] * processBox[2] + \
                ((processBox[1] * processBox[2]) if i>1 else 0) + \
                ((processBox[0] * processBox[2]) if j>1 else 0) + \
@@ -84,13 +83,14 @@ def computeDomainDecomposition(globalsize, ntasks, legacy=False):
             if(i * j > ntasks):
                break
             processBox[1] = max(globalsize[1]//j,1)
+            print(type(globalsize[2]), type(globalsize[2]+1), type(1))
             for k in range(1,min(ntasks,globalsize[2])+1):
                if(i * j * k > ntasks):
                   break
                if(i * j * k != ntasks):
                   continue
                processBox[2] = max(globalsize[2]//k,1)
-               value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+               value = \
                ((i * processBox[1] * processBox[2]) if i>1 else 0) + \
                ((j * processBox[0] * processBox[2]) if j>1 else 0) + \
                ((k * processBox[0] * processBox[1]) if k>1 else 0)
@@ -115,7 +115,7 @@ class VlsvReader(object):
       pass
 
    file_name=""
-   def __init__(self, file_name, fsgridDecomposition=None):
+   def __init__(self, file_name, fsGridDecomposition=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
@@ -132,6 +132,7 @@ class VlsvReader(object):
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__max_spatial_amr_level = -1
+      self.__fsGridDecomposition = fsGridDecomposition
 
       self.use_dict_for_blocks = False
       self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
@@ -1388,6 +1389,7 @@ class VlsvReader(object):
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
        bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+       bbox = np.int32(bbox)
 
        # Read the raw array data
        rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
@@ -1415,22 +1417,34 @@ class VlsvReader(object):
                return n_per_task
 
        currentOffset = 0;
-       fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+       if self.__fsGridDecomposition is None:
+         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
+         if self.__fsGridDecomposition is not None:
+            print("Found FsGrid decomposition from vlsv file: ", self.__fsGridDecomposition)
+         else:
+            print("Did not find FsGrid decomposition from vlsv file.")
+       
+       # If decomposition is None even after reading, we need to calculate it:
+       if self.__fsGridDecomposition is None:
+         print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
+         self.__fsGridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
+         print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
        # Hacky fix for FHA FSgrid output, where decompositions 1 and 2 may be flipped
        if os.getenv('FSGRIDSWAP'):
-          fsgridDecomposition[1],fsgridDecomposition[2] = fsgridDecomposition[2],fsgridDecomposition[1]
+          self.__fsGridDecomposition[1],self.__fsGridDecomposition[2] = self.__fsGridDecomposition[2],self.__fsGridDecomposition[1]
+          print("Swapped FsGrid decomposition elements to be: ", self.__fsGridDecomposition, " (see if you'd like to explicitly define the decomposition in the constructor)")
 
        for i in range(0,numWritingRanks):
-           x = (i // fsgridDecomposition[2]) // fsgridDecomposition[1]
-           y = (i // fsgridDecomposition[2]) % fsgridDecomposition[1]
-           z = i % fsgridDecomposition[2]
+           x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
+           y = (i // self.__fsGridDecomposition[2]) % self.__fsGridDecomposition[1]
+           z = i % self.__fsGridDecomposition[2]
  	   
-           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
-                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
-                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
-           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
-                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
-                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksSize = [calcLocalSize(bbox[0], self.__fsGridDecomposition[0], x), \
+                            calcLocalSize(bbox[1], self.__fsGridDecomposition[1], y), \
+                            calcLocalSize(bbox[2], self.__fsGridDecomposition[2], z)]
+           thatTasksStart = [calcLocalStart(bbox[0], self.__fsGridDecomposition[0], x), \
+                             calcLocalStart(bbox[1], self.__fsGridDecomposition[1], y), \
+                             calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
 
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
