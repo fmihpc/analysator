@@ -41,67 +41,53 @@ from variable import get_data
 import warnings
 
 # Helper functions ported from c++ (fsgrid.hpp)
-def computeLegacyDomainDecomposition(globalsize, ntasks):
+def computeLegacyDomainDecomposition(globalsize, ntasks, choose = 0, verbose = False):
+   
    processDomainDecomposition = [1,1,1]
    processBox = [0,0,0]
-   optimValue = 999999999999999.
+   optimValue = np.iinfo(np.int64).max
+   scoredDecompositions = {optimValue:[(0,0,0)]}
    for i in range(1,min(ntasks,globalsize[0])+1):
-      processBox[0] = max(1.*globalsize[0]/i,1)
       for j in range(1,min(ntasks,globalsize[1])+1):
             if(i * j > ntasks):
                break
-            processBox[1] = max(1.*globalsize[1]/j,1)
-            for k in range(1,min(ntasks,globalsize[2])+1):
-               if(i * j * k > ntasks):
-                  continue
-               processBox[2] = max(1.*globalsize[2]/k,1)
-               value = 10 * processBox[0] * processBox[1] * processBox[2] + \
+            k = ntasks//(i * j)
+            # for k in range(1,min(ntasks,globalsize[2])+1):
+            if(i * j * k > ntasks):
+               break
+            if(i * j * k != ntasks):
+               continue
+            processBox[0] = max(globalsize[0]/i,1)
+            processBox[1] = max(globalsize[1]/j,1)
+            processBox[2] = max(globalsize[2]/k,1)
+            # 10 * processBox[0] * processBox[1] * processBox[2] + \
+            value = (  
                ((processBox[1] * processBox[2]) if i>1 else 0) + \
                ((processBox[0] * processBox[2]) if j>1 else 0) + \
                ((processBox[0] * processBox[1]) if k>1 else 0)
-               if i*j*k == ntasks:
-                  if value < optimValue:
-                     optimValue = value
-                     processDomainDecomposition=[i,j,k]
-   if (np.prod(processDomainDecomposition) != ntasks):
-      print("Mismatch in FSgrid rank decomposition")
-      return -1
-   return processDomainDecomposition
-
-# Helper functions ported from c++ (fsgrid.hpp)
-def computeDomainDecomposition(globalsize, ntasks, legacy=False):
-   if(legacy):
-      warnings.warn("Trying legacy decomposition for fsgrid.")
-      return computeLegacyDomainDecomposition(globalsize,ntasks)
-   inttype = np.int64
-   processDomainDecomposition = np.ones((3),dtype=inttype)
-   processBox = np.zeros((3),dtype=inttype)
-   optimValue = np.iinfo(inttype).max
-   for i in range(1,min(ntasks,globalsize[0])+1):
-      processBox[0] = max(globalsize[0]//i,1)
-      for j in range(1,min(ntasks,globalsize[1])+1):
-            if(i * j > ntasks):
-               break
-            processBox[1] = max(globalsize[1]//j,1)
-            print(type(globalsize[2]), type(globalsize[2]+1), type(1))
-            for k in range(1,min(ntasks,globalsize[2])+1):
-               if(i * j * k > ntasks):
-                  break
-               if(i * j * k != ntasks):
-                  continue
-               processBox[2] = max(globalsize[2]//k,1)
-               value = \
-               ((i * processBox[1] * processBox[2]) if i>1 else 0) + \
-               ((j * processBox[0] * processBox[2]) if j>1 else 0) + \
-               ((k * processBox[0] * processBox[1]) if k>1 else 0)
-               if value < optimValue:
+            )
+            if i*j*k == ntasks:
+               if value <= optimValue:
                   optimValue = value
-                  processDomainDecomposition=[i,j,k]
+                  try:
+                     scoredDecompositions[value].append((i,j,k))
+                  except:
+                     scoredDecompositions[value] = [(i,j,k)]
 
+   processDomainDecomposition = scoredDecompositions[min(scoredDecompositions.keys())][choose]
    if (np.prod(processDomainDecomposition) != ntasks):
       print("Mismatch in FSgrid rank decomposition")
       return -1
+   
+   if verbose:
+      print("Computed minimum-score decompositions for "+str(globalsize)+" cells and "+str(ntasks)+" tasks:")
+      print("id\tdecomposition")
+      for i,dd in enumerate(scoredDecompositions[min(scoredDecompositions.keys())]):
+         print(i,"\t",dd)
+
+
    return processDomainDecomposition
+
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -119,6 +105,9 @@ class VlsvReader(object):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
+          :param fsGridDecomposition: Either scalar integer or a len-3 list of ints.
+                                       Scalar: compute legacy decompositions, use this as index to choose among the equal-weight decompositions
+                                       List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
       '''
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)
@@ -1426,13 +1415,24 @@ class VlsvReader(object):
        
        # If decomposition is None even after reading, we need to calculate it:
        if self.__fsGridDecomposition is None:
-         print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
-         self.__fsGridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
-         print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
-       # Hacky fix for FHA FSgrid output, where decompositions 1 and 2 may be flipped
-       if os.getenv('FSGRIDSWAP'):
-          self.__fsGridDecomposition[1],self.__fsGridDecomposition[2] = self.__fsGridDecomposition[2],self.__fsGridDecomposition[1]
-          print("Swapped FsGrid decomposition elements to be: ", self.__fsGridDecomposition, " (see if you'd like to explicitly define the decomposition in the constructor)")
+          # Default: take the canonical decomposition
+          print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
+          self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, verbose = True)
+          print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
+       elif np.isscalar(self.__fsGridDecomposition):
+          # Given a scalar decomposition: choose another 
+          decom_index = self.__fsGridDecomposition
+          print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
+          self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, choose = decom_index, verbose = True)
+          print("Computed FsGrid decomposition, and taking decomposition at index "+str(decom_index)+": ", self.__fsGridDecomposition)
+       else:
+          # Decomposition is a list - use it instead
+          pass
+          
+       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
+       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have three elements, but is " + str(self.__fsGridDecomposition)
+               
+          
 
        for i in range(0,numWritingRanks):
            x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
