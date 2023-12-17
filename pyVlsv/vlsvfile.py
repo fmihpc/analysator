@@ -33,7 +33,8 @@
 
 '''
 
-from vlsvreader import VlsvReader,computeLegacyDomainDecomposition
+from vlsvreader import VlsvReader
+from vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex,computeLegacyDomainDecomposition
 from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
 

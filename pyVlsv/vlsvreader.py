@@ -88,6 +88,40 @@ def computeLegacyDomainDecomposition(globalsize, ntasks, choose = 0, verbose = F
 
    return processDomainDecomposition
 
+def fsGlobalIdToGlobalIndex(globalids, bbox):
+   indices = np.zeros((globalids.shape[0],3),dtype=np.int64)
+
+   stride = np.int64(1)
+   for d in [0,1,2]:
+      indices[:,d] = (globalids // stride) % bbox[d]
+      stride *= np.int64(bbox[d])
+
+   return indices
+
+def fsReadGlobalIdsPerRank(reader):
+   numWritingRanks = reader.read_parameter("numWritingRanks")
+   rawData = reader.read(tag="MESH", name="fsgrid")
+   bbox = reader.read(tag="MESH_BBOX", mesh="fsgrid")
+   sizes = reader.read(tag="MESH_DOMAIN_SIZES", mesh="fsgrid")
+
+   currentOffset = np.int64(0)
+   rankIds = {}
+   rankIndices = {}
+   for i in range(0,numWritingRanks):
+      taskIds = rawData[currentOffset:int(currentOffset+sizes[i,0])]
+      rankIds[i] = np.array([min(taskIds),max(taskIds)])
+      rankIndices[i] = fsGlobalIdToGlobalIndex(rankIds[i], bbox)
+      currentOffset += int(sizes[i,0])
+      
+   return rankIds, rankIndices
+
+def fsDecompositionFromGlobalIds(reader):
+   ids, inds = fsReadGlobalIdsPerRank(reader)
+   lows = np.array([inds[i][0] for i in inds.keys()])
+   xs = np.unique(lows[:,0])
+   ys = np.unique(lows[:,1])
+   zs = np.unique(lows[:,2])
+   return [xs.size, ys.size, zs.size]
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -1445,8 +1479,9 @@ class VlsvReader(object):
            thatTasksStart = [calcLocalStart(bbox[0], self.__fsGridDecomposition[0], x), \
                              calcLocalStart(bbox[1], self.__fsGridDecomposition[1], y), \
                              calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
+           
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
-
+           print(i, thatTasksStart, thatTasksEnd)
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
