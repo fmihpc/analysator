@@ -545,6 +545,14 @@ def Poynting( variables ):
    B=np.array(variables[1])
    return np.cross(E, B) / mu_0
 
+def Hallterm( variables ):
+   ''' Data reducer for the deducing an estimate of the Hall term
+   '''
+   E=np.array(variables[0])
+   V=np.array(variables[1])
+   B=np.array(variables[2])
+   return E + np.cross(V, B)
+
 def Temperature( variables ):
    ''' Data reducer for converting pressure to temperature
    '''
@@ -1312,6 +1320,7 @@ datareducers["pdyn"] =            DataReducerVariable(["v", "rhom"], Pdyn, "Pa",
 datareducers["pdynx"] =            DataReducerVariable(["v", "rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"$\mathrm{Pa}$")
 
 datareducers["poynting"] = DataReducerVariable(["e", "b"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")
+datareducers["hallterm"] = DataReducerVariable(["e", "v", "b"], Hallterm, "V/m", 3, latex=r"$E_\mathrm{Hall}$", latexunits=r"\mathrm{V}\,\mathrm{m}^{-1}$")
 datareducers["firstadiabatic"] =    DataReducerVariable(["tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_\perp B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
 
 # Reducers for simplifying access calls for old and/or new output data versions
@@ -1385,6 +1394,8 @@ datareducers["betaperpoverparnonbackstream"] =DataReducerVariable(["ptensorrotat
 datareducers["beta"] =                   DataReducerVariable(["pressure", "b"], beta ,"", 1, latex=r"$\beta$", latexunits=r"")
 datareducers["betaparallel"] =           DataReducerVariable(["pparallel", "b"], beta ,"", 1, latex=r"$\beta_\parallel$", latexunits=r"")
 datareducers["betaperpendicular"] =      DataReducerVariable(["pperpendicular", "b"], beta ,"", 1, latex=r"$\beta_\perp$", latexunits=r"")
+datareducers["beta_star"] =               DataReducerVariable(["pressure", "pdyn", "b"], beta_star ,"", 1, latex=r"$\beta^\star$", latexunits=r"")
+
 
 datareducers["rmirror"] =                DataReducerVariable(["ptensor", "b"], rMirror, "", 1, latex=r"$R_\mathrm{m}$")
 datareducers["dng"] =                    DataReducerVariable(["ptensor", "pparallel", "pperpendicular", "b"], Dng, "", 1, latex=r"$\mathrm{Dng}$") # I think this has vector length 1?

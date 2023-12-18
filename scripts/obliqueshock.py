@@ -26,6 +26,7 @@ def newtonmethod(theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
     cos12 = np.cos(theta)**2
     sin12 = np.sin(theta)**2
     MA2=V1sq/vA1sq
+    print("MA ",np.sqrt(MA2))
     Ztry = max( ((0.5/cos12)*(calctemp1 + np.sqrt(calctemp1**2 - 2.*Gamma*beta1*cos12)) -1.),
                 ((0.5/cos12)*(calctemp1 - np.sqrt(calctemp1**2 - 2.*Gamma*beta1*cos12)) -1.), 0.)
     # First (root for M**2) -1
