@@ -1455,20 +1455,21 @@ class VlsvReader(object):
        if self.__fsGridDecomposition is None:
           # Default: take the canonical decomposition
           print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
-          self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, verbose = True)
+         #  self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, verbose = True)
+          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
           print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
-       elif np.isscalar(self.__fsGridDecomposition):
-          # Given a scalar decomposition: choose another 
-          decom_index = self.__fsGridDecomposition
-          print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
-          self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, choose = decom_index, verbose = True)
-          print("Computed FsGrid decomposition, and taking decomposition at index "+str(decom_index)+": ", self.__fsGridDecomposition)
+      #  elif np.isscalar(self.__fsGridDecomposition):
+      #     # Given a scalar decomposition: choose another 
+      #     decom_index = self.__fsGridDecomposition
+      #     print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
+      #     self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, choose = decom_index, verbose = True)
+      #     print("Computed FsGrid decomposition, and taking decomposition at index "+str(decom_index)+": ", self.__fsGridDecomposition)
        else:
-          # Decomposition is a list - use it instead
+          # Decomposition is a list (or fail assertions below) - use it instead
           pass
           
        assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
-       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have three elements, but is " + str(self.__fsGridDecomposition)
+       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
                
           
 
@@ -1485,7 +1486,7 @@ class VlsvReader(object):
                              calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
            
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
-           print(i, thatTasksStart, thatTasksEnd)
+         #   print(i, thatTasksStart, thatTasksEnd)
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
