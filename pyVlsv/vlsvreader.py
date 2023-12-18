@@ -98,6 +98,8 @@ def fsGlobalIdToGlobalIndex(globalids, bbox):
 
    return indices
 
+# Read in the global ids and indices for FsGrid cells, returns
+# min and max corners of the fsGrid chunk by rank
 def fsReadGlobalIdsPerRank(reader):
    numWritingRanks = reader.read_parameter("numWritingRanks")
    rawData = reader.read(tag="MESH", name="fsgrid")
@@ -115,6 +117,8 @@ def fsReadGlobalIdsPerRank(reader):
       
    return rankIds, rankIndices
 
+# Read global ID bboxes per rank and figure out the decomposition from
+# the number of unique corner coordinates per dimension
 def fsDecompositionFromGlobalIds(reader):
    ids, inds = fsReadGlobalIdsPerRank(reader)
    lows = np.array([inds[i][0] for i in inds.keys()])
