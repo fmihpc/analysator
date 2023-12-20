@@ -783,11 +783,16 @@ class VlsvReader(object):
          if tag != "":
             if child.tag != tag:
                continue
+         # Verify that any requested name or mesh matches those of the data
          if name != "":
-            if "name" in child.attrib and child.attrib["name"].lower() != name:
+            if not "name" in child.attrib:
+               continue
+            if child.attrib["name"].lower() != name:
                continue
          if mesh != "":
-            if "mesh" in child.attrib and child.attrib["mesh"] != mesh:
+            if not "mesh" in child.attrib:
+               continue
+            if child.attrib["mesh"] != mesh:
                continue
          if child.tag == tag:
             # Found the requested data entry in the file
