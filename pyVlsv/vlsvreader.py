@@ -1310,10 +1310,14 @@ class VlsvReader(object):
       vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
 
       cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
+      mask = np.logical_not(np.any(cellid_neighbors==0, axis=-1))
       if np.any(cellid_neighbors==0):
          warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
-      refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
+      refs0 = np.zeros_like(cellid_neighbors)
+      amrs = self.get_amr_level(cellid_neighbors[mask,:])
+      reffs = np.reshape(amrs,(mask.sum(),8))
+      refs0[mask,:] = reffs
       
       # Gather the set of points (cell centers) to use for intp
       cells_set = set(vertex_neighbors)
@@ -1337,10 +1341,11 @@ class VlsvReader(object):
             for z in [-1.5, 1.5]:
                cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
 
+
+      cells_set.discard(0)
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
       intp = intp_wrapper.get_interpolator(name,operator, coords, method=method, methodargs=methodargs)
       
-
       final_values = intp(coords)[:,np.newaxis]
 
       if stack:
@@ -1699,11 +1704,14 @@ class VlsvReader(object):
 
       amrs = np.array([self.get_amr_level(cellid)]).transpose()
       amrs = amrs.repeat(3,axis=1)
+      amrs[amrs < 0] = 0
+
+      ret = dxs/2**amrs
 
       if stack:
-         return dxs/2**amrs
+         return ret
       else:
-         return (dxs/2**amrs)[0]
+         return ret[0]
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
