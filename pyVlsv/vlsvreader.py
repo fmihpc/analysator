@@ -83,6 +83,8 @@ class VlsvReader(object):
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
       self.__read_xml_footer()
+      self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
+      self.__cell_vertices = {} # cellid : 8-tuple of vertex indices tuples
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
       # storing them will anyway take the most time and memory):
@@ -1960,6 +1962,187 @@ class VlsvReader(object):
          return cellids
       else:
          return cellids[0]
+
+   def get_vertex_indices(self, coordinates):
+      coordinates = np.array(coordinates)
+      stack = True
+      if(len(coordinates.shape) == 1):
+         stack = False
+         coordinates = coordinates[np.newaxis,:]
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**self.get_max_refinement_level()
+      extents = self.get_fsgrid_mesh_extent()
+      mins = extents[0:3]
+      maxs = extents[3:5]
+      eps = np.mean(cell_lengths)/1000
+      crds = coordinates - mins[np.newaxis,:] + eps
+      indices = crds/cell_lengths[np.newaxis,:]
+      indices = indices.astype(int)
+
+      if stack:
+         return [tuple(inds) for inds in indices]
+      else:
+         coordinates = coordinates[0,:]
+         return tuple(indices[0,:])
+      
+   def get_vertex_coordinates_from_indices(self, indices):
+      stack = True
+      inds = np.array(indices)
+      if(len(inds.shape) == 1):
+         stack = False
+         inds = inds[np.newaxis,:]
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**self.get_max_refinement_level()
+      extents = self.get_fsgrid_mesh_extent()
+      mins = extents[0:3]
+      crds = inds*cell_lengths[np.newaxis,:]
+      crds = crds + mins[np.newaxis,:]
+
+      if stack:
+         return crds
+      else:
+         return crds[0,:]
+
+   # this should then do the proper search instead of intp for in which dual of the cell the point lies
+   def get_dual(self, p):
+      def f(ksi, fi):
+         return (1-ksi[0]) * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
+                     ksi[0]  * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
+                  (1-ksi[0]) *    ksi[1]  * (1-ksi[2]) * fi[2] + \
+                     ksi[0]  *    ksi[1]  * (1-ksi[2]) * fi[3] + \
+                  (1-ksi[0]) * (1-ksi[1]) *    ksi[2]  * fi[4] + \
+                     ksi[0]  * (1-ksi[1]) *    ksi[2]  * fi[5] + \
+                  (1-ksi[0]) *    ksi[1]  *    ksi[2]  * fi[6] + \
+                     ksi[0]  *    ksi[1]  *    ksi[2]  * fi[7]
+
+      def df(ksi, fi):
+         d0 =  -1 * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
+                  1 * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
+               -1 *    ksi[1]  * (1-ksi[2]) * fi[2] + \
+                  1 *    ksi[1]  * (1-ksi[2]) * fi[3] + \
+               -1 * (1-ksi[1]) *    ksi[2]  * fi[4] + \
+                  1 * (1-ksi[1]) *    ksi[2]  * fi[5] + \
+               -1 *    ksi[1]  *    ksi[2]  * fi[6] + \
+                  1 *    ksi[1]  *    ksi[2]  * fi[7]
+         d1 =  (1-ksi[0]) * -1  * (1-ksi[2]) * fi[0] + \
+                  ksi[0]  * -1  * (1-ksi[2]) * fi[1] + \
+               (1-ksi[0]) *  1  * (1-ksi[2]) * fi[2] + \
+                  ksi[0]  *  1  * (1-ksi[2]) * fi[3] + \
+               (1-ksi[0]) * -1  *    ksi[2]  * fi[4] + \
+                  ksi[0]  * -1  *    ksi[2]  * fi[5] + \
+               (1-ksi[0]) *  1  *    ksi[2]  * fi[6] + \
+                  ksi[0]  *  1  *    ksi[2]  * fi[7]
+         d2 =  (1-ksi[0]) * (1-ksi[1]) * -1 * fi[0] + \
+                  ksi[0]  * (1-ksi[1]) * -1 * fi[1] + \
+               (1-ksi[0]) *    ksi[1]  * -1 * fi[2] + \
+                  ksi[0]  *    ksi[1]  * -1 * fi[3] + \
+               (1-ksi[0]) * (1-ksi[1]) *  1 * fi[4] + \
+                  ksi[0]  * (1-ksi[1]) *  1 * fi[5] + \
+               (1-ksi[0]) *    ksi[1]  *  1 * fi[6] + \
+                  ksi[0]  *    ksi[1]  *  1 * fi[7]
+         return np.stack((d0,d1,d2),axis = -1)
+
+      def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
+         ksi0 = [0.5,0.5,0.5]
+         J = df(ksi0, verts)
+         # print("J", J)
+         ksi_n = ksi0
+         f_n =  f(ksi_n,verts)-p
+         convergence = False
+         for i in range(maxiters):
+            
+            J = df(ksi_n, verts)
+            f_n = f(ksi_n,verts)-p
+            # print("f(r) = ", f_n)
+            # step = np.matmul(np.linalg.inv(J),f_n)
+            step = np.linalg.solve(J, -f_n)
+            # print("J^-1 f0 = ",step)
+            ksi_n1 = step + ksi_n # r_(n+1) 
+            ksi_n = ksi_n1
+            
+            # print(ksi_n1, f(ksi_n1,verts), np.linalg.norm(f(ksi_n1,verts) - p))
+            # print("--------------")
+            if(np.linalg.norm(f(ksi_n1,verts) - p) < tol):
+               convergence = True
+               break
+
+         if convergence:
+            # print("Converged after ", i, "iterations")
+            return ksi_n1
+         else:
+            warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
+            return np.array([np.nan, np.nan, np.nan])
+
+      cid = self.get_cellid(p)
+      if(cid not in self.__cell_vertices):
+         self.build_cell_vertices(np.atleast_1d(cid))
+      
+      verts = self.__cell_vertices[cid]
+      # print(verts)
+      for vert in verts:
+         if(vert not in self.__dual_cells.keys()):
+            self.build_dual_from_vertices([vert])
+         ksi = find_ksi(p, self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         if np.all(ksi < 1) and np.all(ksi >= 0):
+            return vert, ksi
+      return None, None
+      
+
+   def build_cell_vertices(self, cid):
+      coords = self.get_cell_coordinates(cid)
+      vertices = np.zeros((len(cid), 8, 3),dtype=int)
+
+      ii = 0
+      for x in [-1,1]:
+         for y in [-1,1]:
+            for z  in [-1,1]:
+               vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid)/2))
+               ii += 1
+
+      for i, c in enumerate(cid):
+         vlist = vertices[i,:,:]
+         vtuple = tuple([tuple(inds) for inds in vlist])
+         self.__cell_vertices.update({c : vtuple})
+
+
+   def build_dual_from_vertices(self, vertices):
+      # vertices = list(vertices)
+      eps = 1
+      v_cells = np.zeros((len(vertices), 8),dtype=int)
+      v_cellcoords = np.zeros((len(vertices), 8,3))
+      ii = 0
+      vcoords = self.get_vertex_coordinates_from_indices(vertices)
+      # print(vcoords)
+      for x in [-1,1]:
+         for y in [-1,1]:
+            for z  in [-1,1]:
+               v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
+               v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
+               ii += 1
+      # print(v_cellcoords)
+      # print(v_cells)
+
+
+      for i, vertexInds in enumerate(vertices):
+         self.__dual_cells.update({vertexInds : tuple(v_cells[i,:])})
+
+
+   def build_duals(self, coordinates):
+      
+      coordinates = np.atleast_2d(coordinates)
+      cid = self.get_cellid(coordinates)
+      coords = self.get_cell_coordinates(cid)
+      
+      ncoords = coords.shape[0]
+      if(coords.shape[1] != 3):
+         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+      
+      vertices = set()
+      for x in [-1,1]:
+         for y in [-1,1]:
+            for z  in [-1,1]:
+               vertices.update(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid)/2))
+      
+      self.build_dual_from_vertices(list(vertices))
+
 
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
