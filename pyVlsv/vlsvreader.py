@@ -1248,7 +1248,7 @@ class VlsvReader(object):
          refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
          if np.any(refs0 != refs0[:,0][:,np.newaxis]):
             irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
-            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator),(-1,value_length))
+            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method="Trilinear"),(-1,value_length))
             warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
@@ -2077,12 +2077,53 @@ class VlsvReader(object):
       
       verts = self.__cell_vertices[cid]
       # print(verts)
+      set_of_cells = set()
       for vert in verts:
          if(vert not in self.__dual_cells.keys()):
             self.build_dual_from_vertices([vert])
-         ksi = find_ksi(p, self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         offsets = np.array([[-1.0, -1.0, -1.0],
+                             [-1.0, -1.0,  1.0],
+                             [-1.0,  1.0, -1.0],
+                             [-1.0,  1.0,  1.0],
+                             [ 1.0, -1.0, -1.0],
+                             [ 1.0, -1.0,  1.0],
+                             [ 1.0,  1.0, -1.0],
+                             [ 1.0,  1.0,  1.0],
+                           ])
+         set_of_cells.update(np.array(self.__dual_cells[vert]))
+         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          if np.all(ksi < 1) and np.all(ksi >= 0):
             return vert, ksi
+      print("No interior of dual found for p = ", p)
+      print("Re-scanning the duals..")
+
+      set_of_verts = set()
+      for cell in set_of_cells:
+         self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
+         self.build_cell_vertices(np.array(list(set_of_cells)))
+         set_of_verts.update(self.__cell_vertices[cell])
+
+      verts = set_of_verts.difference(set(verts))
+      for vert in verts:
+         if(vert not in self.__dual_cells.keys()):
+            self.build_dual_from_vertices([vert])
+         offsets = np.array([[-1.0, -1.0, -1.0],
+                             [-1.0, -1.0,  1.0],
+                             [-1.0,  1.0, -1.0],
+                             [-1.0,  1.0,  1.0],
+                             [ 1.0, -1.0, -1.0],
+                             [ 1.0, -1.0,  1.0],
+                             [ 1.0,  1.0, -1.0],
+                             [ 1.0,  1.0,  1.0],
+                           ])
+         set_of_cells.update(np.array(self.__dual_cells[vert]))
+         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         if np.all(ksi < 1) and np.all(ksi >= 0):
+            return vert, ksi
+         # print("Dual vertices\n", offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         print(ksi)
+
       return None, None
       
 
