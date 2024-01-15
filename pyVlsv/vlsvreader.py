@@ -1256,7 +1256,7 @@ class VlsvReader(object):
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
                                             method="RBF",
                                             methodargs={
-                                             "RBF":{"neighbors":64},
+                                             "RBF":{"neighbors":127},
                                              "Delaunay":{"qhull_options":"QJ"}
                                              }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
@@ -1294,54 +1294,78 @@ class VlsvReader(object):
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       closest_cell_ids = self.get_cellid(coordinates)
-      batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
-      
-      offsets = np.ones(coords.shape)
-      offsets[coords <= batch_closest_cell_coordinates] = -1
-      closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
+      neighbors_method = "dual"
+      if neighbors_method != "dual":
+         batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
+         
+         offsets = np.ones(coords.shape)
+         offsets[coords <= batch_closest_cell_coordinates] = -1
+         closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
 
-      offsets = np.zeros((ncoords, 8, 3))
-      eps = self.get_cell_dx(closest_cell_ids)/1e3
-      ii = 0
-      for x in [-1,1]:
-         for y in [-1,1]:
-            for z  in [-1,1]:
-               offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
-               ii+=1
-      
-      vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
+         offsets = np.zeros((ncoords, 8, 3))
+         eps = self.get_cell_dx(closest_cell_ids)/1e3
+         ii = 0
+         for x in [-1,1]:
+            for y in [-1,1]:
+               for z  in [-1,1]:
+                  offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
+                  ii+=1
+         
+         vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
 
-      cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
-      mask = np.logical_not(np.any(cellid_neighbors==0, axis=-1))
-      if np.any(cellid_neighbors==0):
-         warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+         cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
+         mask = np.logical_not(np.any(cellid_neighbors==0, axis=-1))
+         if np.any(cellid_neighbors==0):
+            warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
-      refs0 = np.zeros_like(cellid_neighbors)
-      amrs = self.get_amr_level(cellid_neighbors[mask,:])
-      reffs = np.reshape(amrs,(mask.sum(),8))
-      refs0[mask,:] = reffs
-      
-      # Gather the set of points (cell centers) to use for intp
-      cells_set = set(vertex_neighbors)
+         refs0 = np.zeros_like(cellid_neighbors)
+         amrs = self.get_amr_level(cellid_neighbors[mask,:])
+         reffs = np.reshape(amrs,(mask.sum(),8))
+         refs0[mask,:] = reffs
+         
+         # Gather the set of points (cell centers) to use for intp
+         cells_set = set(vertex_neighbors)
 
-      offset = np.ones(coords.shape,dtype=np.int32)
-      offset[coords <= batch_closest_cell_coordinates] = -1
+         offset = np.ones(coords.shape,dtype=np.int32)
+         offset[coords <= batch_closest_cell_coordinates] = -1
 
-      closest_vertex_coords = batch_closest_cell_coordinates + offset*self.get_cell_dx(closest_cell_ids)/2
+         closest_vertex_coords = batch_closest_cell_coordinates + offset*self.get_cell_dx(closest_cell_ids)/2
 
-      max_ref_cells = np.atleast_1d(np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1,keepdims=True), axis=1).squeeze())
+         max_ref_cells = np.atleast_1d(np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1,keepdims=True), axis=1).squeeze())
 
-      # needs to cover all vertices of required simplices/dual cells (so, cell centers)
-      offsets = self.get_cell_dx(max_ref_cells)
-      eps = 1e-3
+         # needs to cover all vertices of required simplices/dual cells (so, cell centers)
+         offsets = self.get_cell_dx(max_ref_cells)
+         eps = 1e-3
 
-      # for x in [-1.5, -0.5,0.5, 1.5]:
-      #    for y in [-1.5, -0.5,0.5, 1.5]:
-      #       for z in [-1.5, -0.5,0.5, 1.5]:
-      for x in [-1.5, 1.5]:
-         for y in [-1.5, 1.5]:
-            for z in [-1.5, 1.5]:
-               cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
+         # for x in [-1.5, -0.5,0.5, 1.5]:
+         #    for y in [-1.5, -0.5,0.5, 1.5]:
+         #       for z in [-1.5, -0.5,0.5, 1.5]:
+         for x in [-1.5, 1.5]:
+            for y in [-1.5, 1.5]:
+               for z in [-1.5, 1.5]:
+                  cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
+      else:
+         self.build_cell_vertices(closest_cell_ids)
+         
+         verts = set()
+         [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         cells_set = set()
+         for vert in verts:
+            if(vert not in self.__dual_cells.keys()):
+               self.build_dual_from_vertices([vert])
+            cells_set.update(np.array(self.__dual_cells[vert]))
+
+         set_of_verts = set()
+         for cell in cells_set:
+            self.build_duals(self.get_cell_coordinates(np.array([cell])))
+            self.build_cell_vertices(np.array([cell]))
+            set_of_verts.update(self.__cell_vertices[cell])
+
+         verts = set_of_verts.difference(set(verts))
+         for vert in verts:
+            if(vert not in self.__dual_cells.keys()):
+               self.build_dual_from_vertices([vert])
+            cells_set.update(np.array(self.__dual_cells[vert]))
 
 
       cells_set.discard(0)
@@ -2099,8 +2123,8 @@ class VlsvReader(object):
 
       set_of_verts = set()
       for cell in set_of_cells:
-         self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
-         self.build_cell_vertices(np.array(list(set_of_cells)))
+         self.build_duals(self.get_cell_coordinates(np.array([cell])))
+         self.build_cell_vertices(np.array([cell]))
          set_of_verts.update(self.__cell_vertices[cell])
 
       verts = set_of_verts.difference(set(verts))
