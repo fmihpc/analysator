@@ -40,6 +40,46 @@ from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
 
+
+def fsGlobalIdToGlobalIndex(globalids, bbox):
+   indices = np.zeros((globalids.shape[0],3),dtype=np.int64)
+
+   stride = np.int64(1)
+   for d in [0,1,2]:
+      indices[:,d] = (globalids // stride) % bbox[d]
+      stride *= np.int64(bbox[d])
+
+   return indices
+
+# Read in the global ids and indices for FsGrid cells, returns
+# min and max corners of the fsGrid chunk by rank
+def fsReadGlobalIdsPerRank(reader):
+   numWritingRanks = reader.read_parameter("numWritingRanks")
+   rawData = reader.read(tag="MESH", name="fsgrid")
+   bbox = reader.read(tag="MESH_BBOX", mesh="fsgrid")
+   sizes = reader.read(tag="MESH_DOMAIN_SIZES", mesh="fsgrid")
+
+   currentOffset = np.int64(0)
+   rankIds = {}
+   rankIndices = {}
+   for i in range(0,numWritingRanks):
+      taskIds = rawData[currentOffset:int(currentOffset+sizes[i,0])]
+      rankIds[i] = np.array([min(taskIds),max(taskIds)])
+      rankIndices[i] = fsGlobalIdToGlobalIndex(rankIds[i], bbox)
+      currentOffset += int(sizes[i,0])
+      
+   return rankIds, rankIndices
+
+# Read global ID bboxes per rank and figure out the decomposition from
+# the number of unique corner coordinates per dimension
+def fsDecompositionFromGlobalIds(reader):
+   ids, inds = fsReadGlobalIdsPerRank(reader)
+   lows = np.array([inds[i][0] for i in inds.keys()])
+   xs = np.unique(lows[:,0])
+   ys = np.unique(lows[:,1])
+   zs = np.unique(lows[:,2])
+   return [xs.size, ys.size, zs.size]
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -52,10 +92,12 @@ class VlsvReader(object):
       pass
 
    file_name=""
-   def __init__(self, file_name):
+   def __init__(self, file_name, fsGridDecomposition=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
+          :param fsGridDecomposition: Either None or a len-3 list of ints.
+                                       List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
       '''
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)
@@ -69,6 +111,7 @@ class VlsvReader(object):
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       self.__max_spatial_amr_level = -1
+      self.__fsGridDecomposition = fsGridDecomposition
 
       self.use_dict_for_blocks = False
       self.__fileindex_for_cellid_blocks={} # [0] is index, [1] is blockcount
@@ -1348,6 +1391,7 @@ class VlsvReader(object):
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
        bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+       bbox = np.int32(bbox)
 
        # Read the raw array data
        rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
@@ -1358,34 +1402,6 @@ class VlsvReader(object):
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
        else:
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2]])
-
-       # Helper functions ported from c++ (fsgrid.hpp)
-       def computeDomainDecomposition(globalsize, ntasks):
-           processDomainDecomposition = [1,1,1]
-           processBox = [0,0,0]
-           optimValue = 999999999999999.
-           for i in range(1,min(ntasks,globalsize[0])+1):
-               processBox[0] = max(1.*globalsize[0]/i,1)
-               for j in range(1,min(ntasks,globalsize[1])+1):
-                   if(i * j > ntasks):
-                       break
-                   processBox[1] = max(1.*globalsize[1]/j,1)
-                   for k in range(1,min(ntasks,globalsize[2])+1):
-                       if(i * j * k > ntasks):
-                           continue
-                       processBox[2] = max(1.*globalsize[2]/k,1)
-                       value = 10 * processBox[0] * processBox[1] * processBox[2] + \
-                        ((processBox[1] * processBox[2]) if i>1 else 0) + \
-                        ((processBox[0] * processBox[2]) if j>1 else 0) + \
-                        ((processBox[0] * processBox[1]) if k>1 else 0)
-                       if i*j*k == ntasks:
-                           if value < optimValue:
-                              optimValue = value
-                              processDomainDecomposition=[i,j,k]
-           if (np.prod(processDomainDecomposition) != ntasks):
-              print("Mismatch in FSgrid rank decomposition")
-              return -1
-           return processDomainDecomposition
 
        def calcLocalStart(globalCells, ntasks, my_n):
            n_per_task = globalCells//ntasks
@@ -1403,24 +1419,40 @@ class VlsvReader(object):
                return n_per_task
 
        currentOffset = 0;
-       fsgridDecomposition = computeDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks)
-       # Hacky fix for FHA FSgrid output, where decompositions 1 and 2 may be flipped
-       if os.getenv('FSGRIDSWAP'):
-          fsgridDecomposition[1],fsgridDecomposition[2] = fsgridDecomposition[2],fsgridDecomposition[1]
+       if self.__fsGridDecomposition is None:
+         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
+         if self.__fsGridDecomposition is not None:
+            print("Found FsGrid decomposition from vlsv file: ", self.__fsGridDecomposition)
+         else:
+            print("Did not find FsGrid decomposition from vlsv file.")
+       
+       # If decomposition is None even after reading, we need to calculate it:
+       if self.__fsGridDecomposition is None:
+          print("Calculating fsGrid decomposition from the file")
+          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
+          print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
+       else:
+          # Decomposition is a list (or fail assertions below) - use it instead
+          pass
+          
+       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
+       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
+               
+          
 
        for i in range(0,numWritingRanks):
-           x = (i // fsgridDecomposition[2]) // fsgridDecomposition[1]
-           y = (i // fsgridDecomposition[2]) % fsgridDecomposition[1]
-           z = i % fsgridDecomposition[2]
+           x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
+           y = (i // self.__fsGridDecomposition[2]) % self.__fsGridDecomposition[1]
+           z = i % self.__fsGridDecomposition[2]
  	   
-           thatTasksSize = [calcLocalSize(bbox[0], fsgridDecomposition[0], x), \
-                            calcLocalSize(bbox[1], fsgridDecomposition[1], y), \
-                            calcLocalSize(bbox[2], fsgridDecomposition[2], z)]
-           thatTasksStart = [calcLocalStart(bbox[0], fsgridDecomposition[0], x), \
-                             calcLocalStart(bbox[1], fsgridDecomposition[1], y), \
-                             calcLocalStart(bbox[2], fsgridDecomposition[2], z)]
+           thatTasksSize = [calcLocalSize(bbox[0], self.__fsGridDecomposition[0], x), \
+                            calcLocalSize(bbox[1], self.__fsGridDecomposition[1], y), \
+                            calcLocalSize(bbox[2], self.__fsGridDecomposition[2], z)]
+           thatTasksStart = [calcLocalStart(bbox[0], self.__fsGridDecomposition[0], x), \
+                             calcLocalStart(bbox[1], self.__fsGridDecomposition[1], y), \
+                             calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
+           
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
-
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
