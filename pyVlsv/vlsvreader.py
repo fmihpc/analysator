@@ -1428,8 +1428,7 @@ class VlsvReader(object):
        
        # If decomposition is None even after reading, we need to calculate it:
        if self.__fsGridDecomposition is None:
-          # Default: take the canonical decomposition
-          print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
+          print("Calculating fsGrid decomposition from the file")
           self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
           print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
        else:
