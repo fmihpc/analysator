@@ -504,6 +504,9 @@ def plot_ionosphere(filename=None,
         else:
             cb.ax.tick_params(labelsize=fontsize)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (axes is None) and (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):

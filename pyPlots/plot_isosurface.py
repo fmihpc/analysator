@@ -673,6 +673,10 @@ def plot_isosurface(filename=None,
         else:
             pt.plot.cb_linear = True
 
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
+
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
         cb.outline.set_linewidth(thick)
         cb.ax.set_title(cb_title_use)
@@ -2161,5 +2165,3 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
     sheet_zs = z_interpolation(xy_pairs)    # Interpolated sheet location at grid values
 
     return np.hstack((xy_pairs, sheet_zs[:, np.newaxis])), folds    # Return list of sheet coordinates interpolated to grid values and information of the possible foldings
-
-    

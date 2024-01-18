@@ -188,7 +188,13 @@ class VlsvWriter(object):
             self.write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
       for name in [varname for varname in vars if varname not in found_vars]:
-         varinfo = vlsvReader.read_variable_info(name)
+         try:
+            varinfo = vlsvReader.read_variable_info(name)
+         except Exception as e:
+            print('Could not obtain ' +name+' from file or datareduction, skipping.')
+            print('Original error was:')
+            print(e)
+            continue
          self.write_variable_info(varinfo, 'SpatialGrid', 1)
       return
 
