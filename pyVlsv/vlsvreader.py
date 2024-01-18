@@ -40,53 +40,6 @@ from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
 
-# Helper functions ported from c++ (fsgrid.hpp)
-def computeLegacyDomainDecomposition(globalsize, ntasks, choose = 0, verbose = False):
-   
-   processDomainDecomposition = [1,1,1]
-   processBox = [0,0,0]
-   optimValue = np.iinfo(np.int64).max
-   scoredDecompositions = {optimValue:[(0,0,0)]}
-   for i in range(1,min(ntasks,globalsize[0])+1):
-      for j in range(1,min(ntasks,globalsize[1])+1):
-            if(i * j > ntasks):
-               break
-            k = ntasks//(i * j)
-            # for k in range(1,min(ntasks,globalsize[2])+1):
-            if(i * j * k > ntasks):
-               break
-            if(i * j * k != ntasks):
-               continue
-            processBox[0] = max(globalsize[0]/i,1)
-            processBox[1] = max(globalsize[1]/j,1)
-            processBox[2] = max(globalsize[2]/k,1)
-            # 10 * processBox[0] * processBox[1] * processBox[2] + \
-            value = (  
-               ((processBox[1] * processBox[2]) if i>1 else 0) + \
-               ((processBox[0] * processBox[2]) if j>1 else 0) + \
-               ((processBox[0] * processBox[1]) if k>1 else 0)
-            )
-            if i*j*k == ntasks:
-               if value <= optimValue:
-                  optimValue = value
-                  try:
-                     scoredDecompositions[value].append((i,j,k))
-                  except:
-                     scoredDecompositions[value] = [(i,j,k)]
-
-   processDomainDecomposition = scoredDecompositions[min(scoredDecompositions.keys())][choose]
-   if (np.prod(processDomainDecomposition) != ntasks):
-      print("Mismatch in FSgrid rank decomposition")
-      return -1
-   
-   if verbose:
-      print("Computed minimum-score decompositions for "+str(globalsize)+" cells and "+str(ntasks)+" tasks:")
-      print("id\tdecomposition")
-      for i,dd in enumerate(scoredDecompositions[min(scoredDecompositions.keys())]):
-         print(i,"\t",dd)
-
-
-   return processDomainDecomposition
 
 def fsGlobalIdToGlobalIndex(globalids, bbox):
    indices = np.zeros((globalids.shape[0],3),dtype=np.int64)
@@ -143,8 +96,7 @@ class VlsvReader(object):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
-          :param fsGridDecomposition: Either scalar integer or a len-3 list of ints.
-                                       Scalar: compute legacy decompositions, use this as index to choose among the equal-weight decompositions
+          :param fsGridDecomposition: Either None or a len-3 list of ints.
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
       '''
       # Make sure the path is set in file name: 
@@ -1478,15 +1430,8 @@ class VlsvReader(object):
        if self.__fsGridDecomposition is None:
           # Default: take the canonical decomposition
           print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
-         #  self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, verbose = True)
           self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
           print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
-      #  elif np.isscalar(self.__fsGridDecomposition):
-      #     # Given a scalar decomposition: choose another 
-      #     decom_index = self.__fsGridDecomposition
-      #     print(bbox, numWritingRanks, type(bbox), bbox.dtype, type(numWritingRanks))
-      #     self.__fsGridDecomposition = computeLegacyDomainDecomposition([bbox[0],bbox[1],bbox[2]],numWritingRanks, choose = decom_index, verbose = True)
-      #     print("Computed FsGrid decomposition, and taking decomposition at index "+str(decom_index)+": ", self.__fsGridDecomposition)
        else:
           # Decomposition is a list (or fail assertions below) - use it instead
           pass
