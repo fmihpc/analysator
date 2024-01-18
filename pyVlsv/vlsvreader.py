@@ -1256,7 +1256,7 @@ class VlsvReader(object):
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
                                             method="RBF",
                                             methodargs={
-                                             "RBF":{"neighbors":127},
+                                             "RBF":{"neighbors":64},
                                              "Delaunay":{"qhull_options":"QJ"}
                                              }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
