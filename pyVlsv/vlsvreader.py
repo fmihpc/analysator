@@ -1454,7 +1454,6 @@ class VlsvReader(object):
                              calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
            
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
-         #   print(i, thatTasksStart, thatTasksEnd)
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
            # Extract datacube of that task... 
            if len(rawData.shape) > 1:
