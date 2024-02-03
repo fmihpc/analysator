@@ -2119,6 +2119,10 @@ class VlsvReader(object):
       for vert in verts:
          if(vert not in self.__dual_cells.keys()):
             self.build_dual_from_vertices([vert])
+         
+         # Breaks degeneracies by expanding the dual cells vertices along
+         #  main-grid diagonals
+         offset_eps = 1.0
          offsets = np.array([[-1.0, -1.0, -1.0],
                              [-1.0, -1.0,  1.0],
                              [-1.0,  1.0, -1.0],
@@ -2127,7 +2131,7 @@ class VlsvReader(object):
                              [ 1.0, -1.0,  1.0],
                              [ 1.0,  1.0, -1.0],
                              [ 1.0,  1.0,  1.0],
-                           ])
+                           ]) * offset_eps
          set_of_cells.update(np.array(self.__dual_cells[vert]))
          # Check bounding boxes and ignore if not inside the bbox of this dual
          if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
@@ -2148,6 +2152,10 @@ class VlsvReader(object):
       for vert in verts:
          if(vert not in self.__dual_cells.keys()):
             self.build_dual_from_vertices([vert])
+
+         # Breaks degeneracies by expanding the dual cells vertices along
+         #  main-grid diagonals
+         offset_eps = 1.0
          offsets = np.array([[-1.0, -1.0, -1.0],
                              [-1.0, -1.0,  1.0],
                              [-1.0,  1.0, -1.0],
@@ -2156,7 +2164,7 @@ class VlsvReader(object):
                              [ 1.0, -1.0,  1.0],
                              [ 1.0,  1.0, -1.0],
                              [ 1.0,  1.0,  1.0],
-                           ])
+                           ]) * offset_eps
          set_of_cells.update(np.array(self.__dual_cells[vert]))
          # Check bounding boxes and ignore if not inside the bbox of this dual
          if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
@@ -2165,7 +2173,7 @@ class VlsvReader(object):
          if np.all(ksi < 1) and np.all(ksi >= 0):
             return vert, ksi
          # print("Dual vertices\n", offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         # ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          # print(ksi)
 
       return None, None
