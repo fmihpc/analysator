@@ -84,7 +84,10 @@ class VlsvReader(object):
 
       self.__read_xml_footer()
       self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
+      self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
       self.__cell_vertices = {} # cellid : 8-tuple of vertex indices tuples
+      self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
+
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
       # storing them will anyway take the most time and memory):
@@ -1302,15 +1305,21 @@ class VlsvReader(object):
          offsets[coords <= batch_closest_cell_coordinates] = -1
          closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
 
-         offsets = np.zeros((ncoords, 8, 3))
-         eps = self.get_cell_dx(closest_cell_ids)/1e3
-         ii = 0
-         for x in [-1,1]:
-            for y in [-1,1]:
-               for z  in [-1,1]:
-                  offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
-                  ii+=1
+         # offsets = np.zeros((ncoords, 8, 3))
+         # eps = self.get_cell_dx(closest_cell_ids)/1e3
+         # ii = 0
+         # for x in [-1,1]:
+         #    for y in [-1,1]:
+         #       for z  in [-1,1]:
+         #          offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
+         #          ii+=1
+         cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
          
+         verts = set()
+         # [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         [verts.update(set(vset)) for vset in cell_vertex_sets.values()]
+
+
          vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
 
          cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
@@ -1345,10 +1354,11 @@ class VlsvReader(object):
                for z in [-1.5, 1.5]:
                   cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
       else:
-         self.build_cell_vertices(closest_cell_ids)
+         cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
          
          verts = set()
-         [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         # [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         [verts.update(set(vset)) for vset in cell_vertex_sets.values()]
          cells_set = set()
          for vert in verts:
             if(vert not in self.__dual_cells.keys()):
@@ -2026,6 +2036,7 @@ class VlsvReader(object):
          return crds[0,:]
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
+   # also VECTORIZE!
    def get_dual(self, p):
       def f(ksi, fi):
          return (1-ksi[0]) * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
@@ -2064,6 +2075,7 @@ class VlsvReader(object):
                   ksi[0]  *    ksi[1]  *  1 * fi[7]
          return np.stack((d0,d1,d2),axis = -1)
 
+      # VECTORIZE!
       def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
          ksi0 = [0.5,0.5,0.5]
          J = df(ksi0, verts)
@@ -2092,6 +2104,7 @@ class VlsvReader(object):
             # print("Converged after ", i, "iterations")
             return ksi_n1
          else:
+            # pass
             warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
             return np.array([np.nan, np.nan, np.nan])
 
@@ -2102,6 +2115,7 @@ class VlsvReader(object):
       verts = self.__cell_vertices[cid]
       # print(verts)
       set_of_cells = set()
+      # Loops over duals indexed by vertex tuple
       for vert in verts:
          if(vert not in self.__dual_cells.keys()):
             self.build_dual_from_vertices([vert])
@@ -2115,11 +2129,14 @@ class VlsvReader(object):
                              [ 1.0,  1.0,  1.0],
                            ])
          set_of_cells.update(np.array(self.__dual_cells[vert]))
+         # Check bounding boxes and ignore if not inside the bbox of this dual
+         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
+            continue
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          if np.all(ksi < 1) and np.all(ksi >= 0):
             return vert, ksi
-      print("No interior of dual found for p = ", p)
-      print("Re-scanning the duals..")
+      # print("No interior of dual found for p = ", p)
+      # print("Re-scanning the duals..")
 
       set_of_verts = set()
       for cell in set_of_cells:
@@ -2141,31 +2158,58 @@ class VlsvReader(object):
                              [ 1.0,  1.0,  1.0],
                            ])
          set_of_cells.update(np.array(self.__dual_cells[vert]))
+         # Check bounding boxes and ignore if not inside the bbox of this dual
+         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
+            continue
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          if np.all(ksi < 1) and np.all(ksi >= 0):
             return vert, ksi
          # print("Dual vertices\n", offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         print(ksi)
+         # print(ksi)
 
       return None, None
       
-
+   # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid):
-      coords = self.get_cell_coordinates(cid)
-      vertices = np.zeros((len(cid), 8, 3),dtype=int)
+      mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
+      coords = self.get_cell_coordinates(cid[mask])
+      vertices = np.zeros((len(cid[mask]), 8, 3),dtype=int)
 
       ii = 0
       for x in [-1,1]:
          for y in [-1,1]:
             for z  in [-1,1]:
-               vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid)/2))
+               vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid[mask])/2))
                ii += 1
 
-      for i, c in enumerate(cid):
+      cell_vertex_sets = {}
+      for i, c in enumerate(cid[mask]):
          vlist = vertices[i,:,:]
          vtuple = tuple([tuple(inds) for inds in vlist])
-         self.__cell_vertices.update({c : vtuple})
+         cell_vertex_sets[c] = vtuple
+         
+      self.__cell_vertices.update(cell_vertex_sets)
+
+      for i, c in enumerate(cid[~mask]):
+         cell_vertex_sets[c] = self.__cell_vertices[c]
+
+      return cell_vertex_sets
+
+
+   # again, combined getter and builder..
+   def build_cell_neighborhoods(self, cids):
+      cell_vertex_sets = self.build_cell_vertices(cids)
+
+      cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
+      for c,verts in cell_vertex_sets.items():
+         neighbor_tuples = self.build_dual_from_vertices(verts)
+         [cell_neighbor_sets[c].update(set(neighbor_tuples)) for tuples in neighbor_tuples.values()]
+      
+      self.__cell_neighbours.update(cell_neighbor_sets)
+
+      return cell_neighbor_sets
+
 
 
    def build_dual_from_vertices(self, vertices):
@@ -2185,11 +2229,22 @@ class VlsvReader(object):
       # print(v_cellcoords)
       # print(v_cells)
 
-
+      dual_sets = {}
+      dual_bboxes = {}
       for i, vertexInds in enumerate(vertices):
-         self.__dual_cells.update({vertexInds : tuple(v_cells[i,:])})
+         dual_sets[vertexInds] = tuple(v_cells[i,:])
+         cellcoords = self.get_cell_coordinates(v_cells[i,:])
+         mins = np.min(cellcoords,axis=0)
+         maxs = np.max(cellcoords,axis=0)
+         dual_bboxes[vertexInds] = np.hstack((mins, maxs))
 
 
+      self.__dual_cells.update(dual_sets)
+      self.__dual_bboxes.update(dual_bboxes)
+      return dual_sets
+
+
+   # build a dual coverage to enable interpolation to each coordinate
    def build_duals(self, coordinates):
       
       coordinates = np.atleast_2d(coordinates)
