@@ -85,7 +85,7 @@ class VlsvReader(object):
       self.__read_xml_footer()
       self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
-      self.__cell_vertices = {} # cellid : 8-tuple of vertex indices tuples
+      self.__cell_vertices = {} # cellid : varying-length tuple of vertex indices tuples - this includes hanging nodes!
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
 
       # Check if the file is using new or old vlsv format
@@ -2116,12 +2116,18 @@ class VlsvReader(object):
    def build_cell_vertices(self, cid):
       mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
       coords = self.get_cell_coordinates(cid[mask])
-      vertices = np.zeros((len(cid[mask]), 8, 3),dtype=int)
+      vertices = np.zeros((len(cid[mask]), 26, 3),dtype=int)
 
+      # Now, here, the zero-vertices are possible hanging nodes that might have been missed.
+      # These can now produce very degenerate dual cells, which should be filtered out. These
+      # don't seem to bother things - "line-duals" are hard to hit, and if they are, they are
+      # still made nondegenerate. Should be gotten rid of, though, but seems to work for now!
       ii = 0
-      for x in [-1,1]:
-         for y in [-1,1]:
-            for z  in [-1,1]:
+      for x in [-1,0,1]:
+         for y in [-1,0,1]:
+            for z  in [-1,0,1]:
+               if x == 0 and y == 0 and z == 0:
+                  continue
                vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid[mask])/2))
                ii += 1
 

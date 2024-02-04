@@ -91,9 +91,12 @@ class HexahedralTrilinearInterpolator(object):
          for p in pt:
             dual, ksi = self.reader.get_dual(p)
             # print(dual, ksi)
-            dual_corners = self.reader._VlsvReader__dual_cells[dual]
-            fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
-            vals.append(fp)
+            if dual is None:
+               vals.append(np.nan)
+            else:
+               dual_corners = self.reader._VlsvReader__dual_cells[dual]
+               fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
+               vals.append(fp)
          return np.array(vals)
       else:
          dual, ksi = self.reader.get_dual(pt)
