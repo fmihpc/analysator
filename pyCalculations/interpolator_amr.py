@@ -45,7 +45,7 @@ def df(ksi, fi):
 def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
    ksi0 = [0.5,0.5,0.5]
    J = df(ksi0, verts)
-   print("J", J)
+   # print("J", J)
    ksi_n = ksi0
    f_n =  f(ksi_n,verts)-p
    convergence = False
@@ -91,14 +91,14 @@ class HexahedralTrilinearInterpolator(object):
          for p in pt:
             dual, ksi = self.reader.get_dual(p)
             # print(dual, ksi)
-            dual = self.reader._VlsvReader__dual_cells[dual]
-            fp = f(ksi, self.reader.read_variable(self.var, np.array(dual), operator=self.operator))
+            dual_corners = self.reader._VlsvReader__dual_cells[dual]
+            fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
             vals.append(fp)
          return np.array(vals)
       else:
          dual, ksi = self.reader.get_dual(pt)
-         dual = self.__dual_cells[dual]
-         fp = f(ksi, self.reader.read_variable(self.var, np.array(dual), operator=self.operator))
+         dual_corners = self.__dual_cells[dual]
+         fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
          return fp
 
 

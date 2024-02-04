@@ -2038,87 +2038,18 @@ class VlsvReader(object):
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
    # also VECTORIZE!
    def get_dual(self, p):
-      def f(ksi, fi):
-         return (1-ksi[0]) * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
-                     ksi[0]  * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
-                  (1-ksi[0]) *    ksi[1]  * (1-ksi[2]) * fi[2] + \
-                     ksi[0]  *    ksi[1]  * (1-ksi[2]) * fi[3] + \
-                  (1-ksi[0]) * (1-ksi[1]) *    ksi[2]  * fi[4] + \
-                     ksi[0]  * (1-ksi[1]) *    ksi[2]  * fi[5] + \
-                  (1-ksi[0]) *    ksi[1]  *    ksi[2]  * fi[6] + \
-                     ksi[0]  *    ksi[1]  *    ksi[2]  * fi[7]
+      from pyCalculations.interpolator_amr import find_ksi
 
-      def df(ksi, fi):
-         d0 =  -1 * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
-                  1 * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
-               -1 *    ksi[1]  * (1-ksi[2]) * fi[2] + \
-                  1 *    ksi[1]  * (1-ksi[2]) * fi[3] + \
-               -1 * (1-ksi[1]) *    ksi[2]  * fi[4] + \
-                  1 * (1-ksi[1]) *    ksi[2]  * fi[5] + \
-               -1 *    ksi[1]  *    ksi[2]  * fi[6] + \
-                  1 *    ksi[1]  *    ksi[2]  * fi[7]
-         d1 =  (1-ksi[0]) * -1  * (1-ksi[2]) * fi[0] + \
-                  ksi[0]  * -1  * (1-ksi[2]) * fi[1] + \
-               (1-ksi[0]) *  1  * (1-ksi[2]) * fi[2] + \
-                  ksi[0]  *  1  * (1-ksi[2]) * fi[3] + \
-               (1-ksi[0]) * -1  *    ksi[2]  * fi[4] + \
-                  ksi[0]  * -1  *    ksi[2]  * fi[5] + \
-               (1-ksi[0]) *  1  *    ksi[2]  * fi[6] + \
-                  ksi[0]  *  1  *    ksi[2]  * fi[7]
-         d2 =  (1-ksi[0]) * (1-ksi[1]) * -1 * fi[0] + \
-                  ksi[0]  * (1-ksi[1]) * -1 * fi[1] + \
-               (1-ksi[0]) *    ksi[1]  * -1 * fi[2] + \
-                  ksi[0]  *    ksi[1]  * -1 * fi[3] + \
-               (1-ksi[0]) * (1-ksi[1]) *  1 * fi[4] + \
-                  ksi[0]  * (1-ksi[1]) *  1 * fi[5] + \
-               (1-ksi[0]) *    ksi[1]  *  1 * fi[6] + \
-                  ksi[0]  *    ksi[1]  *  1 * fi[7]
-         return np.stack((d0,d1,d2),axis = -1)
-
-      # VECTORIZE!
-      def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
-         ksi0 = [0.5,0.5,0.5]
-         J = df(ksi0, verts)
-         # print("J", J)
-         ksi_n = ksi0
-         f_n =  f(ksi_n,verts)-p
-         convergence = False
-         for i in range(maxiters):
-            
-            J = df(ksi_n, verts)
-            f_n = f(ksi_n,verts)-p
-            # print("f(r) = ", f_n)
-            # step = np.matmul(np.linalg.inv(J),f_n)
-            step = np.linalg.solve(J, -f_n)
-            # print("J^-1 f0 = ",step)
-            ksi_n1 = step + ksi_n # r_(n+1) 
-            ksi_n = ksi_n1
-            
-            # print(ksi_n1, f(ksi_n1,verts), np.linalg.norm(f(ksi_n1,verts) - p))
-            # print("--------------")
-            if(np.linalg.norm(f(ksi_n1,verts) - p) < tol):
-               convergence = True
-               break
-
-         if convergence:
-            # print("Converged after ", i, "iterations")
-            return ksi_n1
-         else:
-            # pass
-            warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
-            return np.array([np.nan, np.nan, np.nan])
-
+      # start the search from the vertices 
       cid = self.get_cellid(p)
       if(cid not in self.__cell_vertices):
          self.build_cell_vertices(np.atleast_1d(cid))
       
       verts = self.__cell_vertices[cid]
-      # print(verts)
       set_of_cells = set()
       # Loops over duals indexed by vertex tuple
+      self.build_dual_from_vertices(list(verts))
       for vert in verts:
-         if(vert not in self.__dual_cells.keys()):
-            self.build_dual_from_vertices([vert])
          
          # Breaks degeneracies by expanding the dual cells vertices along
          #  main-grid diagonals
@@ -2137,10 +2068,11 @@ class VlsvReader(object):
          if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
             continue
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         if np.all(ksi < 1) and np.all(ksi >= 0):
+         if np.all(ksi <= 1) and np.all(ksi >= 0):
             return vert, ksi
-      # print("No interior of dual found for p = ", p)
-      # print("Re-scanning the duals..")
+
+      # If the first set didn't find a covering dual, expand the search to cover the next layer of neighbours
+      warnings.warn("Search expanded, not sure if this should happen.")
 
       set_of_verts = set()
       for cell in set_of_cells:
@@ -2149,9 +2081,10 @@ class VlsvReader(object):
          set_of_verts.update(self.__cell_vertices[cell])
 
       verts = set_of_verts.difference(set(verts))
+      self.build_dual_from_vertices(list(verts))
+
+      # print(len(verts), verts)
       for vert in verts:
-         if(vert not in self.__dual_cells.keys()):
-            self.build_dual_from_vertices([vert])
 
          # Breaks degeneracies by expanding the dual cells vertices along
          #  main-grid diagonals
@@ -2170,12 +2103,13 @@ class VlsvReader(object):
          if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
             continue
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         if np.all(ksi < 1) and np.all(ksi >= 0):
+         if np.all(ksi <= 1) and np.all(ksi >= 0):
             return vert, ksi
          # print("Dual vertices\n", offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          # ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          # print(ksi)
 
+      print("Dual cell not found for", p)
       return None, None
       
    # For now, combined caching accessor and builder
@@ -2221,36 +2155,44 @@ class VlsvReader(object):
 
 
    def build_dual_from_vertices(self, vertices):
-      # vertices = list(vertices)
-      eps = 1
-      v_cells = np.zeros((len(vertices), 8),dtype=int)
-      v_cellcoords = np.zeros((len(vertices), 8,3))
-      ii = 0
-      vcoords = self.get_vertex_coordinates_from_indices(vertices)
-      # print(vcoords)
-      for x in [-1,1]:
-         for y in [-1,1]:
-            for z  in [-1,1]:
-               v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
-               v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
-               ii += 1
-      # print(v_cellcoords)
-      # print(v_cells)
 
+      done = []
+      todo = []
+      for v in vertices:
+         if v in self.__dual_cells.keys():
+            done.append(v)
+         else:
+            todo.append(v)
+      dual_sets_done   = {v : self.__dual_cells[v] for v in done}
       dual_sets = {}
-      dual_bboxes = {}
-      for i, vertexInds in enumerate(vertices):
-         dual_sets[vertexInds] = tuple(v_cells[i,:])
-         cellcoords = self.get_cell_coordinates(v_cells[i,:])
-         mins = np.min(cellcoords,axis=0)
-         maxs = np.max(cellcoords,axis=0)
-         dual_bboxes[vertexInds] = np.hstack((mins, maxs))
 
+      if len(todo) > 0:
+         
+         dual_bboxes = {}
+         eps = 1
+         v_cells = np.zeros((len(todo), 8),dtype=int)
+         v_cellcoords = np.zeros((len(todo), 8,3))
+         ii = 0
+         vcoords = self.get_vertex_coordinates_from_indices(todo)
+         for x in [-1,1]:
+            for y in [-1,1]:
+               for z  in [-1,1]:
+                  v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
+                  v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
+                  ii += 1
 
-      self.__dual_cells.update(dual_sets)
-      self.__dual_bboxes.update(dual_bboxes)
-      return dual_sets
+         for i, vertexInds in enumerate(todo):
+            dual_sets[vertexInds] = tuple(v_cells[i,:])
+            cellcoords = self.get_cell_coordinates(v_cells[i,:])
+            mins = np.min(cellcoords,axis=0)
+            maxs = np.max(cellcoords,axis=0)
+            dual_bboxes[vertexInds] = np.hstack((mins, maxs))
 
+         self.__dual_cells.update(dual_sets)
+         self.__dual_bboxes.update(dual_bboxes)
+
+      dual_sets_done.update(dual_sets)
+      return dual_sets_done
 
    # build a dual coverage to enable interpolation to each coordinate
    def build_duals(self, coordinates):
