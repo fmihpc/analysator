@@ -2075,10 +2075,13 @@ class VlsvReader(object):
       warnings.warn("Search expanded, not sure if this should happen.")
 
       set_of_verts = set()
-      for cell in set_of_cells:
-         self.build_duals(self.get_cell_coordinates(np.array([cell])))
-         self.build_cell_vertices(np.array([cell]))
-         set_of_verts.update(self.__cell_vertices[cell])
+      self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
+      self.build_cell_vertices(np.array(list(set_of_cells)))
+      from operator import itemgetter
+      todos = list(itemgetter(*set_of_cells)(self.__cell_vertices))
+      for verts in todos:
+         set_of_verts.update(set(verts))
+
 
       verts = set_of_verts.difference(set(verts))
       self.build_dual_from_vertices(list(verts))
@@ -2105,9 +2108,6 @@ class VlsvReader(object):
          ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
          if np.all(ksi <= 1) and np.all(ksi >= 0):
             return vert, ksi
-         # print("Dual vertices\n", offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         # ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         # print(ksi)
 
       print("Dual cell not found for", p)
       return None, None
