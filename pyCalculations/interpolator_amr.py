@@ -5,6 +5,8 @@ import warnings
 from variable import get_data
 
 
+# With values fi at hexahedral vertices and trilinear basis coordinates ksi,
+# return the trilinear interpolant for fi
 def f(ksi, fi):
    return (1-ksi[0]) * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
                ksi[0]  * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
@@ -15,6 +17,9 @@ def f(ksi, fi):
             (1-ksi[0]) *    ksi[1]  *    ksi[2]  * fi[6] + \
                ksi[0]  *    ksi[1]  *    ksi[2]  * fi[7]
 
+
+# With values fi at hexahedral vertices and trilinear basis coordinates ksi,
+# return the interpolated gradient/jacobian of fi wrt. the trilinear basis at ksi
 def df(ksi, fi):
    d0 =  -1 * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
             1 * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
@@ -42,6 +47,9 @@ def df(ksi, fi):
             ksi[0]  *    ksi[1]  *  1 * fi[7]
    return np.stack((d0,d1,d2),axis = -1)
 
+# For hexahedral vertices verts and point p, find the trilinear basis coordinates ksi
+# that interpolate the coordinates of verts to the tolerance tol.
+# This is an iterative procedure. Return nans in case of no convergence.
 def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
    ksi0 = [0.5,0.5,0.5]
    J = df(ksi0, verts)
@@ -106,7 +114,17 @@ class HexahedralTrilinearInterpolator(object):
 
 
 class AMRInterpolator(object):
-   ''' Class for holding and managing a Delaunay tetrahedralization for cells at refinement interface
+   ''' Wrapper class for interpolators, esp. at refinement interfaces.
+   Supported methods:
+   Radial Basis Functions, RBF
+      - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.
+      - kword options: "neighbors" for number of neighbors (64)
+   Delaunay
+      - Fails with regular grids and produces also artefact at refinement interfaces.
+      - kword options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
+   Trilinear
+      - (nearly) C0 continuous, regular-grid trilinear interpolant extended to collapsed hexahedral cells.
+      - Exact handling of multiply-degenerate hexahedra is missing, with the enabling hack causing errors in trilinear coordinate on the order of 1m
 
    '''
 
