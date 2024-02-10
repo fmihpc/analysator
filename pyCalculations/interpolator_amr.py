@@ -116,19 +116,25 @@ class HexahedralTrilinearInterpolator(object):
 class AMRInterpolator(object):
    ''' Wrapper class for interpolators, esp. at refinement interfaces.
    Supported methods:
-   Radial Basis Functions, RBF
-      - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.
-      - kword options: "neighbors" for number of neighbors (64)
-   Delaunay
-      - Fails with regular grids and produces also artefact at refinement interfaces.
-      - kword options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
    Trilinear
       - (nearly) C0 continuous, regular-grid trilinear interpolant extended to collapsed hexahedral cells.
+      - Non-parametric
       - Exact handling of multiply-degenerate hexahedra is missing, with the enabling hack causing errors in trilinear coordinate on the order of 1m
+
+
+   Radial Basis Functions, RBF
+      - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.
+      - Not continuous with regular-grid trilinear interpolants, needs to be used in the entire interpolation domain.
+      - kword options: "neighbors" for number of neighbors (64)
+      - basis function uses SciPy default. A free parameter.
+
+   Delaunay (not recommended)
+      - Choice of triangulation is not unique with regular grids, including refinement interfaces.
+      - kword options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
 
    '''
 
-   def __init__(self, reader, method = "RBF", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
+   def __init__(self, reader, method = "Trilinear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
       self.__reader = reader
       self.__cellids = np.array(list(set(cellids)),dtype=np.int64)
       self.duals = {}

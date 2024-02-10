@@ -1094,7 +1094,7 @@ class VlsvReader(object):
       print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
-   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True]):
+   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Trilinear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
@@ -1125,7 +1125,7 @@ class VlsvReader(object):
       else:
          value_length=1
 
-      if len(np.shape(coordinates)) == 1:
+      if len(np.shape(coordinates)) == 1: # This could be deprecated in favour of the array variant
          # Get closest id
          if(len(coordinates) != 3):
             raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
@@ -1251,8 +1251,8 @@ class VlsvReader(object):
          refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
          if np.any(refs0 != refs0[:,0][:,np.newaxis]):
             irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
-            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method="Trilinear"),(-1,value_length))
-            warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
+            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
+            # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
 
 
@@ -1305,14 +1305,6 @@ class VlsvReader(object):
          offsets[coords <= batch_closest_cell_coordinates] = -1
          closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
 
-         # offsets = np.zeros((ncoords, 8, 3))
-         # eps = self.get_cell_dx(closest_cell_ids)/1e3
-         # ii = 0
-         # for x in [-1,1]:
-         #    for y in [-1,1]:
-         #       for z  in [-1,1]:
-         #          offsets[:,ii,:] = closest_vertices + np.array((x,y,z))*eps
-         #          ii+=1
          cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
          
          verts = set()
@@ -2352,8 +2344,8 @@ class VlsvReader(object):
       cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
 
-      if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
-         warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
+      # if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
+      #    warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
       if stack:
