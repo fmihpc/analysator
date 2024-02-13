@@ -137,6 +137,22 @@ class VariableInfo:
                              5.97863741e26:{'scaledUnits':'amu/m^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{m}^{-3}$'},
                              5.97863741e20:{'scaledUnits':'amu/cm^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{cm}^{-3}$'}
                             },
+                 'A/m^2' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mA/m^2', 'scaledLatexUnit':r'$\mathrm{mA}\,\mathrm{m}^{-2}$'}
+                            },
+                 'W/m^2' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mW/m^2', 'scaledLatexUnit':r'$\mathrm{mW}\,\mathrm{m}^{-2}$'}
+                            },
+                 'm^2' :   {'defaultScale':1,
+                             1e-4:{'scaledUnits':'km^2', 'scaledLatexUnit':r'$\mathrm{km}^{2}$'}
+                            },
+                 'V' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mV', 'scaledLatexUnit':r'$\mathrm{mV}$'}
+                            },
+                 'Degrees' :   {'defaultScale':1,
+                            },
+                 'mho' :   {'defaultScale':1,
+                            },
          }
 
       else:
