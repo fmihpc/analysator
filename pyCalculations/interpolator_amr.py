@@ -1,6 +1,12 @@
 from scipy.spatial import Delaunay
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, RBFInterpolator
+from scipy.interpolate import LinearNDInterpolator
+try:
+   from scipy.interpolate import RBFInterpolator
+except:
+   def RBFInterpolator(*args, **kwargs):
+      print("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class.")
+      
 import warnings
 from variable import get_data
 
