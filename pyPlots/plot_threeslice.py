@@ -584,6 +584,7 @@ def plot_threeslice(filename=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
                   wmark=False,wmarkb=False,
+                  nomask=None,
                   Earth=True,
                   thick=1.0,scale=1.0,
                   expression=None,
@@ -649,6 +650,7 @@ def plot_threeslice(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kword nomask:      Do not mask plotting based on proton density
     :kword Earth:       Draw Earth at origin (default True)
 
     :kword scale:       Scale text size (default=1.0)

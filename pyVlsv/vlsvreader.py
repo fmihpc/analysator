@@ -39,6 +39,10 @@ from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
+from scipy.interpolate import LinearNDInterpolator
+from scipy.spatial import Delaunay
+import time
+from interpolator_amr import AMRInterpolator
 
 
 def fsGlobalIdToGlobalIndex(globalids, bbox):
@@ -120,8 +124,13 @@ class VlsvReader(object):
       self.__blocks_per_cell_offsets = {} # per-pop
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
-      
+
       self.__read_xml_footer()
+      self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
+      self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
+      self.__cell_vertices = {} # cellid : varying-length tuple of vertex indices tuples - this includes hanging nodes!
+      self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
+
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
       # storing them will anyway take the most time and memory):
@@ -1199,7 +1208,7 @@ class VlsvReader(object):
       print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
-   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True]):
+   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Trilinear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
@@ -1230,7 +1239,7 @@ class VlsvReader(object):
       else:
          value_length=1
 
-      if len(np.shape(coordinates)) == 1:
+      if len(np.shape(coordinates)) == 1: # This could be deprecated in favour of the array variant
          # Get closest id
          if(len(coordinates) != 3):
             raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
@@ -1284,6 +1293,11 @@ class VlsvReader(object):
          lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,8)
 
          cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
+
+         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(1,8))
+         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
+
          ngbrvalues=np.full((2*2*2,value_length),np.nan)
          if value_length > 1:
             ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
@@ -1301,11 +1315,6 @@ class VlsvReader(object):
             c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
             
          final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
-
-         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(1,8))
-         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
-
 
          if len(final_value)==1:
             return final_value[0]
@@ -1358,10 +1367,144 @@ class VlsvReader(object):
 
          if np.any(cellid_neighbors==0):
             warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+
          refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
          if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
+            irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
+            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
+            # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
+
+
+   def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
+                                            method="RBF",
+                                            methodargs={
+                                             "RBF":{"neighbors":64},
+                                             "Delaunay":{"qhull_options":"QJ"}
+                                             }):
+      ''' Read a linearly interpolated variable value from the open vlsv file.
+      Arguments:
+      :param name:         Name of the variable
+      :param coords:       Coordinates from which to read data 
+      :param periodic:     Periodicity of the system. Default is periodic in all dimension
+      :param operator:     Datareduction operator. "pass" does no operation on data
+      :param method:       Method for interpolation, default "RBF" ("Delaunay" is available)
+      :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "RBF", "Delaunay";
+                           see scipy.interpolate.RBFInterpolator for RBF and scipy.interpolate.LinearNDInterpolator for Delaunay
+      :returns: numpy array with the data
+
+      .. seealso:: :func:`read` :func:`read_variable_info`
+      '''
+
+      stack = True
+      if coords.ndim == 1:
+         stack = False
+         coords = coords[np.newaxis,:]
+
+      if (len(periodic)!=3):
+            raise ValueError("Periodic must be a list of 3 booleans.")
+
+      # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
+      if name[0:3] == 'fg_':
+         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic)
+      if name[0:3] == 'ig_':
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic)
+
+      coordinates = get_data(coords)
+      coordinates = np.array(coordinates)
+      
+      ncoords = coordinates.shape[0]
+      if(coordinates.shape[1] != 3):
+         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+      closest_cell_ids = self.get_cellid(coordinates)
+      neighbors_method = "dual"
+      if neighbors_method != "dual":
+         batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
+         
+         offsets = np.ones(coords.shape)
+         offsets[coords <= batch_closest_cell_coordinates] = -1
+         closest_vertices = coords + offsets*self.get_cell_dx(closest_cell_ids)/2
+
+         cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
+         
+         verts = set()
+         # [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         [verts.update(set(vset)) for vset in cell_vertex_sets.values()]
+
+
+         vertex_neighbors = self.get_cellid(np.reshape(closest_vertices[:,np.newaxis,:]+offsets, (ncoords*8, 3)))
+
+         cellid_neighbors = np.reshape(vertex_neighbors,(ncoords,8))
+         mask = np.logical_not(np.any(cellid_neighbors==0, axis=-1))
+         if np.any(cellid_neighbors==0):
+            warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
+
+         refs0 = np.zeros_like(cellid_neighbors)
+         amrs = self.get_amr_level(cellid_neighbors[mask,:])
+         reffs = np.reshape(amrs,(mask.sum(),8))
+         refs0[mask,:] = reffs
+         
+         # Gather the set of points (cell centers) to use for intp
+         cells_set = set(vertex_neighbors)
+
+         offset = np.ones(coords.shape,dtype=np.int32)
+         offset[coords <= batch_closest_cell_coordinates] = -1
+
+         closest_vertex_coords = batch_closest_cell_coordinates + offset*self.get_cell_dx(closest_cell_ids)/2
+
+         max_ref_cells = np.atleast_1d(np.take_along_axis(cellid_neighbors, np.argmax(refs0,axis=1,keepdims=True), axis=1).squeeze())
+
+         # needs to cover all vertices of required simplices/dual cells (so, cell centers)
+         offsets = self.get_cell_dx(max_ref_cells)
+         eps = 1e-3
+
+         # for x in [-1.5, -0.5,0.5, 1.5]:
+         #    for y in [-1.5, -0.5,0.5, 1.5]:
+         #       for z in [-1.5, -0.5,0.5, 1.5]:
+         for x in [-1.5, 1.5]:
+            for y in [-1.5, 1.5]:
+               for z in [-1.5, 1.5]:
+                  cells_set.update(self.get_cellid(closest_vertex_coords + np.array((x,y,z))[np.newaxis,:]*offset))
+      else:
+         cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
+         
+         verts = set()
+         # [verts.update(set(self.__cell_vertices[cid])) for cid in closest_cell_ids]
+         [verts.update(set(vset)) for vset in cell_vertex_sets.values()]
+         cells_set = set()
+         for vert in verts:
+            if(vert not in self.__dual_cells.keys()):
+               self.build_dual_from_vertices([vert])
+            cells_set.update(np.array(self.__dual_cells[vert]))
+
+         set_of_verts = set()
+         for cell in cells_set:
+            self.build_duals(self.get_cell_coordinates(np.array([cell])))
+            self.build_cell_vertices(np.array([cell]))
+            set_of_verts.update(self.__cell_vertices[cell])
+
+         verts = set_of_verts.difference(set(verts))
+         for vert in verts:
+            if(vert not in self.__dual_cells.keys()):
+               self.build_dual_from_vertices([vert])
+            cells_set.update(np.array(self.__dual_cells[vert]))
+
+
+      cells_set.discard(0)
+      intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
+      intp = intp_wrapper.get_interpolator(name,operator, coords, method=method, methodargs=methodargs)
+      
+      final_values = intp(coords)[:,np.newaxis]
+
+      if stack:
+         return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
+      else:
+         final_value = final_values[0,:]
+         if len(final_value)==1:
+            return final_value[0]
+         else:
+            return final_value
+
 
    def read_fsgrid_variable_cellid(self, name, cellids=-1, operator="pass"):
       ''' Reads fsgrid variables from the open vlsv file.
@@ -1703,11 +1846,14 @@ class VlsvReader(object):
 
       amrs = np.array([self.get_amr_level(cellid)]).transpose()
       amrs = amrs.repeat(3,axis=1)
+      amrs[amrs < 0] = 0
+
+      ret = dxs/2**amrs
 
       if stack:
-         return dxs/2**amrs
+         return ret
       else:
-         return (dxs/2**amrs)[0]
+         return ret[0]
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
@@ -1957,6 +2103,229 @@ class VlsvReader(object):
       else:
          return cellids[0]
 
+   def get_vertex_indices(self, coordinates):
+      coordinates = np.array(coordinates)
+      stack = True
+      if(len(coordinates.shape) == 1):
+         stack = False
+         coordinates = coordinates[np.newaxis,:]
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**self.get_max_refinement_level()
+      extents = self.get_fsgrid_mesh_extent()
+      mins = extents[0:3]
+      maxs = extents[3:5]
+      eps = np.mean(cell_lengths)/1000
+      crds = coordinates - mins[np.newaxis,:] + eps
+      indices = crds/cell_lengths[np.newaxis,:]
+      indices = indices.astype(int)
+
+      if stack:
+         return [tuple(inds) for inds in indices]
+      else:
+         coordinates = coordinates[0,:]
+         return tuple(indices[0,:])
+      
+   def get_vertex_coordinates_from_indices(self, indices):
+      stack = True
+      inds = np.array(indices)
+      if(len(inds.shape) == 1):
+         stack = False
+         inds = inds[np.newaxis,:]
+      cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**self.get_max_refinement_level()
+      extents = self.get_fsgrid_mesh_extent()
+      mins = extents[0:3]
+      crds = inds*cell_lengths[np.newaxis,:]
+      crds = crds + mins[np.newaxis,:]
+
+      if stack:
+         return crds
+      else:
+         return crds[0,:]
+
+   # this should then do the proper search instead of intp for in which dual of the cell the point lies
+   # also VECTORIZE!
+   def get_dual(self, p):
+      from pyCalculations.interpolator_amr import find_ksi
+
+      # start the search from the vertices 
+      cid = self.get_cellid(p)
+      if(cid not in self.__cell_vertices):
+         self.build_cell_vertices(np.atleast_1d(cid))
+      
+      verts = self.__cell_vertices[cid]
+      set_of_cells = set()
+      # Loops over duals indexed by vertex tuple
+      self.build_dual_from_vertices(list(verts))
+      for vert in verts:
+         
+         # Breaks degeneracies by expanding the dual cells vertices along
+         #  main-grid diagonals
+         offset_eps = 1.0
+         offsets = np.array([[-1.0, -1.0, -1.0],
+                             [-1.0, -1.0,  1.0],
+                             [-1.0,  1.0, -1.0],
+                             [-1.0,  1.0,  1.0],
+                             [ 1.0, -1.0, -1.0],
+                             [ 1.0, -1.0,  1.0],
+                             [ 1.0,  1.0, -1.0],
+                             [ 1.0,  1.0,  1.0],
+                           ]) * offset_eps
+         set_of_cells.update(np.array(self.__dual_cells[vert]))
+         # Check bounding boxes and ignore if not inside the bbox of this dual
+         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
+            continue
+         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         if np.all(ksi <= 1) and np.all(ksi >= 0):
+            return vert, ksi
+
+      # If the first set didn't find a covering dual, expand the search to cover the next layer of neighbours
+      warnings.warn("Search expanded, not sure if this should happen.")
+
+      set_of_verts = set()
+      self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
+      self.build_cell_vertices(np.array(list(set_of_cells)))
+      from operator import itemgetter
+      todos = list(itemgetter(*set_of_cells)(self.__cell_vertices))
+      for verts in todos:
+         set_of_verts.update(set(verts))
+
+
+      verts = set_of_verts.difference(set(verts))
+      self.build_dual_from_vertices(list(verts))
+
+      # print(len(verts), verts)
+      for vert in verts:
+
+         # Breaks degeneracies by expanding the dual cells vertices along
+         #  main-grid diagonals
+         offset_eps = 1.0
+         offsets = np.array([[-1.0, -1.0, -1.0],
+                             [-1.0, -1.0,  1.0],
+                             [-1.0,  1.0, -1.0],
+                             [-1.0,  1.0,  1.0],
+                             [ 1.0, -1.0, -1.0],
+                             [ 1.0, -1.0,  1.0],
+                             [ 1.0,  1.0, -1.0],
+                             [ 1.0,  1.0,  1.0],
+                           ]) * offset_eps
+         set_of_cells.update(np.array(self.__dual_cells[vert]))
+         # Check bounding boxes and ignore if not inside the bbox of this dual
+         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
+            continue
+         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+         if np.all(ksi <= 1) and np.all(ksi >= 0):
+            return vert, ksi
+
+      print("Dual cell not found for", p)
+      return None, None
+      
+   # For now, combined caching accessor and builder
+   def build_cell_vertices(self, cid):
+      mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
+      coords = self.get_cell_coordinates(cid[mask])
+      vertices = np.zeros((len(cid[mask]), 26, 3),dtype=int)
+
+      # Now, here, the zero-vertices are possible hanging nodes that might have been missed.
+      # These can now produce very degenerate dual cells, which should be filtered out. These
+      # don't seem to bother things - "line-duals" are hard to hit, and if they are, they are
+      # still made nondegenerate. Should be gotten rid of, though, but seems to work for now!
+      ii = 0
+      for x in [-1,0,1]:
+         for y in [-1,0,1]:
+            for z  in [-1,0,1]:
+               if x == 0 and y == 0 and z == 0:
+                  continue
+               vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid[mask])/2))
+               ii += 1
+
+      cell_vertex_sets = {}
+      for i, c in enumerate(cid[mask]):
+         vlist = vertices[i,:,:]
+         vtuple = tuple([tuple(inds) for inds in vlist])
+         cell_vertex_sets[c] = vtuple
+         
+      self.__cell_vertices.update(cell_vertex_sets)
+
+      for i, c in enumerate(cid[~mask]):
+         cell_vertex_sets[c] = self.__cell_vertices[c]
+
+      return cell_vertex_sets
+
+
+   # again, combined getter and builder..
+   def build_cell_neighborhoods(self, cids):
+      cell_vertex_sets = self.build_cell_vertices(cids)
+
+      cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
+      for c,verts in cell_vertex_sets.items():
+         neighbor_tuples = self.build_dual_from_vertices(verts)
+         [cell_neighbor_sets[c].update(set(neighbor_tuples)) for tuples in neighbor_tuples.values()]
+      
+      self.__cell_neighbours.update(cell_neighbor_sets)
+
+      return cell_neighbor_sets
+
+
+
+   def build_dual_from_vertices(self, vertices):
+
+      done = []
+      todo = []
+      for v in vertices:
+         if v in self.__dual_cells.keys():
+            done.append(v)
+         else:
+            todo.append(v)
+      dual_sets_done   = {v : self.__dual_cells[v] for v in done}
+      dual_sets = {}
+
+      if len(todo) > 0:
+         
+         dual_bboxes = {}
+         eps = 1
+         v_cells = np.zeros((len(todo), 8),dtype=int)
+         v_cellcoords = np.zeros((len(todo), 8,3))
+         ii = 0
+         vcoords = self.get_vertex_coordinates_from_indices(todo)
+         for x in [-1,1]:
+            for y in [-1,1]:
+               for z  in [-1,1]:
+                  v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
+                  v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
+                  ii += 1
+
+         for i, vertexInds in enumerate(todo):
+            dual_sets[vertexInds] = tuple(v_cells[i,:])
+            cellcoords = self.get_cell_coordinates(v_cells[i,:])
+            mins = np.min(cellcoords,axis=0)
+            maxs = np.max(cellcoords,axis=0)
+            dual_bboxes[vertexInds] = np.hstack((mins, maxs))
+
+         self.__dual_cells.update(dual_sets)
+         self.__dual_bboxes.update(dual_bboxes)
+
+      dual_sets_done.update(dual_sets)
+      return dual_sets_done
+
+   # build a dual coverage to enable interpolation to each coordinate
+   def build_duals(self, coordinates):
+      
+      coordinates = np.atleast_2d(coordinates)
+      cid = self.get_cellid(coordinates)
+      coords = self.get_cell_coordinates(cid)
+      
+      ncoords = coords.shape[0]
+      if(coords.shape[1] != 3):
+         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+      
+      vertices = set()
+      for x in [-1,1]:
+         for y in [-1,1]:
+            for z  in [-1,1]:
+               vertices.update(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid)/2))
+      
+      self.build_dual_from_vertices(list(vertices))
+
+
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
@@ -2089,8 +2458,8 @@ class VlsvReader(object):
       cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
 
-      if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
-         warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
+      # if np.any(self.get_amr_level(cellid_neighbors)!=reflevel):
+      #    warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
       if stack:

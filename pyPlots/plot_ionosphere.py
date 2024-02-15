@@ -318,6 +318,10 @@ def plot_ionosphere(filename=None,
     else:
         vmaxuse = np.ma.amax(values)
 
+    # Ionospheric special handling: if we have negative values, let's turn on linear mode.
+    if lin is None and symlog is None and (vminuse<=0):
+        lin=True
+
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
         print("Error, requested array is zero everywhere. Exiting.")
