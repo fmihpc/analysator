@@ -740,23 +740,17 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
-def alpha2( variables ):
-   ''' Data reducer function for calculating alpha_2 as it is done in Vlasiator
-   '''
-   (J_per_B, dx) = variables
-   return J_per_B * dx
-
 def alpha1_target( variables ):
    ''' Data reducer function for calculating target refinement level based on alpha_1
    '''
-   (alpha, dx) = variables
-   return np.log2(alpha * vlsvvariables.cellsize / dx + 1E-30)
+   (alpha_1, dx) = variables
+   return np.log2(alpha_1 * vlsvvariables.cellsize / dx + 1E-30)
 
 def alpha2_target( variables ):
    ''' Data reducer function for calculating target refinement level based on J/B_perp
    '''
-   J_per_B = variables[0]
-   return np.log2(J_per_B * vlsvvariables.cellsize + 1E-30)
+   (alpha_2, dx) = variables[0]
+   return np.log2(alpha_2 * vlsvvariables.cellsize / dx + 1E-30)
 
 def vg_coordinates_cellcenter( variables, reader):
    cellids = variables[0]
@@ -1089,9 +1083,8 @@ v5reducers["vg_restart_v"] =              DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rho"] =            DataReducerVariable(["moments"], restart_rho, "1/m3", 1, latex=r"$n_\mathrm{p}$",latexunits=r"$\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], restart_rhom, "kg/m3", 1, latex=r"$\rho_m$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
-v5reducers["vg_amr_alpha2"] =           DataReducerVariable(["vg_amr_jperb", "vg_dx"], alpha2, "", 1, latex=r"$\alpha_2$",latexunits=r"1")
-v5reducers["vg_amr_alpha1_target"] =           DataReducerVariable(["vg_amr_alpha", "vg_dx"], alpha1_target, "", 1, latex=r"$\alpha_1'$",latexunits=r"1")
-v5reducers["vg_amr_alpha2_target"] =           DataReducerVariable(["vg_amr_jperb"], alpha2_target, "", 1, latex=r"$\alpha_2'$",latexunits=r"1")
+v5reducers["vg_amr_alpha1_target"] =           DataReducerVariable(["vg_amr_alpha1", "vg_dx"], alpha1_target, "", 1, latex=r"$\alpha_1'$",latexunits=r"1")
+v5reducers["vg_amr_alpha2_target"] =           DataReducerVariable(["vg_amr_alpha2", "vg_dx"], alpha2_target, "", 1, latex=r"$\alpha_2'$",latexunits=r"1")
 
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
