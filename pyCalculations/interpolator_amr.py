@@ -1,13 +1,17 @@
 from scipy.spatial import Delaunay
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
+
+import warnings
+
 try:
    from scipy.interpolate import RBFInterpolator
 except:
-   def RBFInterpolator(*args, **kwargs):
-      print("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class.")
+   def RBFInterpolator(pts, vals, **kwargs):
+      warnings.warn("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class. Falling back to Hexahedral trilinear itnerpolator.")
+      return HexahedralTrilinearInterpolator(pts,vals,**kwargs)
+
       
-import warnings
 from variable import get_data
 
 
