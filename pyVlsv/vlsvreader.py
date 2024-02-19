@@ -43,6 +43,7 @@ from scipy.interpolate import LinearNDInterpolator
 from scipy.spatial import Delaunay
 import time
 from interpolator_amr import AMRInterpolator
+from operator import itemgetter
 
 
 def fsGlobalIdToGlobalIndex(globalids, bbox):
@@ -128,7 +129,8 @@ class VlsvReader(object):
       self.__read_xml_footer()
       self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
-      self.__cell_vertices = {} # cellid : varying-length tuple of vertex indices tuples - this includes hanging nodes!
+      self.__cell_vertices = {} # cellid : varying-length tuple of vertex-indices - includes hanging nodes!
+      self.__cell_corner_vertices = {} # cellid : varying-length tuple of vertex-indices - no hanging nodes!
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
 
       # Check if the file is using new or old vlsv format
@@ -2183,7 +2185,6 @@ class VlsvReader(object):
       set_of_verts = set()
       self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
       self.build_cell_vertices(np.array(list(set_of_cells)))
-      from operator import itemgetter
       todos = list(itemgetter(*set_of_cells)(self.__cell_vertices))
       for verts in todos:
          set_of_verts.update(set(verts))
@@ -2222,7 +2223,47 @@ class VlsvReader(object):
    def build_cell_vertices(self, cid):
       mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
       coords = self.get_cell_coordinates(cid[mask])
-      vertices = np.zeros((len(cid[mask]), 26, 3),dtype=int)
+      #vertices = np.zeros((len(cid[mask]), 26, 3),dtype=int)
+      vertices = {}
+      # {cid : 8-tuple of vertex_inds}
+      corner_vertices = self.get_cell_corner_vertices(cid[mask])
+      cell_neighbors = self.build_cell_neighborhoods(cid[mask])
+
+      levels = self.get_amr_level(cid[mask])
+
+
+      irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i]!=self.get_amr_level(np.array(list(cell_neighbors[c]))))]
+
+      cell_hanging_nodes = {c: () for c in cid[mask]}
+
+      for i,c in enumerate(irregular_cells):
+         corners = np.array(self.__cell_vertices[c])
+         finer_neighbors = [n for n in cell_neighbors[c] if self.get_amr_level(n) > levels[i]]
+         hanging_set = set()
+         ncorners = self.get_cell_corner_vertices(np.array(finer_neighbors))
+
+         for vertex_inds_set in ncorners.values():
+            hanging_set.update({vert for vert in vertex_inds_set})
+         
+         cmin = np.min(corners,axis=0)
+         cmax = np.max(corners,axis=0)
+         
+         pruned_hangers = set()
+         for v in hanging_set:
+            va = np.array(v)
+            if np.all(va <= cmax) and np.all(va >= cmin):
+               pruned_hangers.add(v)
+
+         cell_hanging_nodes[c] = tuple(pruned_hangers)
+
+      for c in cid[mask]:
+         vertices[c] = corner_vertices[c]+cell_hanging_nodes[c]
+      
+      self.__cell_vertices.update(vertices)
+      
+      vertices.update({c:self.__cell_vertices[c] for c in cid[~mask]})
+      
+      return vertices
 
       # Now, here, the zero-vertices are possible hanging nodes that might have been missed.
       # These can now produce very degenerate dual cells, which should be filtered out. These
@@ -2250,15 +2291,44 @@ class VlsvReader(object):
 
       return cell_vertex_sets
 
+   def get_cell_corner_vertices(self, cids):
+
+      mask = np.isin(cids, self.__cell_vertices.keys(), invert = True)
+      coords = self.get_cell_coordinates(cids[mask])
+      vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
+      cell_vertex_sets = {}
+
+      if(len(cids[mask]) > 0): 
+         ii = 0
+         for x in [-1,1]:
+            for y in [-1,1]:
+               for z  in [-1,1]:
+                  if x == 0 and y == 0 and z == 0:
+                     continue
+                  vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cids[mask])/2))
+                  ii += 1
+
+         for i, c in enumerate(cids[mask]):
+            vlist = vertices[i,:,:]
+            vtuple = tuple([tuple(inds) for inds in vlist])
+            cell_vertex_sets[c] = vtuple
+            
+         self.__cell_vertices.update(cell_vertex_sets)
+
+      for i, c in enumerate(cids[~mask]):
+         cell_vertex_sets[c] = self.__cell_vertices[c]
+
+      return cell_vertex_sets
+
 
    # again, combined getter and builder..
    def build_cell_neighborhoods(self, cids):
-      cell_vertex_sets = self.build_cell_vertices(cids)
+      cell_vertex_sets = self.get_cell_corner_vertices(cids) # these are enough to fetch the neighbours
 
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
       for c,verts in cell_vertex_sets.items():
          neighbor_tuples = self.build_dual_from_vertices(verts)
-         [cell_neighbor_sets[c].update(set(neighbor_tuples)) for tuples in neighbor_tuples.values()]
+         [cell_neighbor_sets[c].update(set(tuples)) for tuples in neighbor_tuples.values()]
       
       self.__cell_neighbours.update(cell_neighbor_sets)
 
