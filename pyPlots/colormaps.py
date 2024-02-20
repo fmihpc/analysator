@@ -1152,7 +1152,7 @@ warhol_colormap = LinearSegmentedColormap("warhol",warhol_cdict)
 #LinearSegmentedColormap(name, segmentdata, N=256, gamma=1.0)[source]
 
 
-#Read in Scientific Colormaps 7 from subdirectory
+#Read in Scientific Colormaps from subdirectory
 import glob,os
 import numpy as np
 import matplotlib.pyplot as plt
