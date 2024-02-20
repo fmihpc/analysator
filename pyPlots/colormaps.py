@@ -1158,7 +1158,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 (_fpath, _thisfile) = os.path.split(os.path.abspath(__file__))
 
-_SCMfiles = glob.glob(_fpath+"/SCM7/*.txt")
+_SCMfiles = glob.glob(_fpath+"/SCM8/*.txt")
 for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
