@@ -125,11 +125,13 @@ class VlsvReader(object):
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
       self.__read_xml_footer()
-      self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
-      self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
+                              # vertex-indices is a 3-tuple of integers
+      self.__dual_cells = {} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
+      self.__dual_bboxes = {} # vertex-indices : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
       self.__cell_vertices = {} # cellid : varying-length tuple of vertex-indices - includes hanging nodes!
       self.__cell_corner_vertices = {} # cellid : varying-length tuple of vertex-indices - no hanging nodes!
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
+      self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
 
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -1371,7 +1373,7 @@ class VlsvReader(object):
          c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
          c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
          final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
-
+         final_values = final_values*np.nan
          if np.any(cellid_neighbors==0):
             warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
@@ -1431,31 +1433,11 @@ class VlsvReader(object):
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-      closest_cell_ids = self.get_cellid(coordinates)
-      cell_vertex_sets = self.build_cell_vertices(closest_cell_ids)
-      
-      verts = set()
-      [verts.update(set(vset)) for vset in cell_vertex_sets.values()]
+      containing_cells = self.get_unique_cellids(coordinates)
+      duals = self.build_duals(list(containing_cells))
+
       cells_set = set()
-      for vert in verts:
-         if(vert not in self.__dual_cells.keys()):
-            self.build_dual_from_vertices([vert])
-         cells_set.update(np.array(self.__dual_cells[vert]))
-
-      set_of_verts = set()
-      self.build_cell_vertices(np.array(list(cells_set)))
-
-      for cell in cells_set:
-         self.build_duals(self.get_cell_coordinates(np.array([cell])))
-         # self.build_cell_vertices(np.array([cell]))
-         set_of_verts.update(self.__cell_vertices[cell])
-
-      verts = set_of_verts.difference(set(verts))
-      for vert in verts:
-         if(vert not in self.__dual_cells.keys()):
-            self.build_dual_from_vertices([vert])
-         cells_set.update(np.array(self.__dual_cells[vert]))
-
+      cells_set = cells_set.union(*duals.values())
 
       cells_set.discard(0)
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
@@ -2045,8 +2027,6 @@ class VlsvReader(object):
          mask[mask] = mask[mask] & drop
          # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
          
-         
-
          ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
          AMR_count += 1
          # Get cell lengths:
@@ -2145,47 +2125,14 @@ class VlsvReader(object):
             return vert, ksi
 
       # If the first set didn't find a covering dual, expand the search to cover the next layer of neighbours
-      warnings.warn("Search expanded, not sure if this should happen.")
-
-      set_of_verts = set()
-      self.build_duals(self.get_cell_coordinates(np.array(list(set_of_cells))))
-      self.build_cell_vertices(np.array(list(set_of_cells)))
-      todos = list(itemgetter(*set_of_cells)(self.__cell_vertices))
-      for verts in todos:
-         set_of_verts.update(set(verts))
-
-
-      verts = set_of_verts.difference(set(verts))
-      self.build_dual_from_vertices(list(verts))
-
-      # print(len(verts), verts)
-      for vert in verts:
-
-         # Breaks degeneracies by expanding the dual cells vertices along
-         #  main-grid diagonals
-         offset_eps = 1.0
-         offsets = np.array([[-1.0, -1.0, -1.0],
-                             [-1.0, -1.0,  1.0],
-                             [-1.0,  1.0, -1.0],
-                             [-1.0,  1.0,  1.0],
-                             [ 1.0, -1.0, -1.0],
-                             [ 1.0, -1.0,  1.0],
-                             [ 1.0,  1.0, -1.0],
-                             [ 1.0,  1.0,  1.0],
-                           ]) * offset_eps
-         set_of_cells.update(np.array(self.__dual_cells[vert]))
-         # Check bounding boxes and ignore if not inside the bbox of this dual
-         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
-            continue
-         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         if np.all(ksi <= 1) and np.all(ksi >= 0):
-            return vert, ksi
-
-      print("Dual cell not found for", p)
-      return None, None
+      warnings.warn("Dual cell not found for", p)
+      return None,None
       
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid):
+      cids = set(cid)
+      cid = np.array(list(cids),dtype=np.int64)
+      
       mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
       coords = self.get_cell_coordinates(cid[mask])
       # {cid : 8-tuple of vertex_inds}
@@ -2196,16 +2143,17 @@ class VlsvReader(object):
       levels = self.get_amr_level(cid[mask])
 
       # find irregular cells, but only with refined neighbours
-      irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i] < self.get_amr_level(np.array(list(cell_neighbors[c]))))]
-
+      irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c]))))]
+      # print(len(irregular_cells), "of which irregular")
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
       # Loop over all the irregular cells (with finer neighbours) that may have hanging nodes
       for i,c in enumerate(irregular_cells):
-         corners = np.array(self.__cell_vertices[c])
-         finer_neighbors = [n for n in cell_neighbors[c] if self.get_amr_level(n) > levels[i]]
+         corners = np.array(self.__cell_vertices[c], dtype=np.int64)
+         # finer_neighbors = [n for n in cell_neighbors[c] if self.get_amr_level(n) > levels[i]]
          hanging_set = set()
-         ncorners = self.get_cell_corner_vertices(np.array(finer_neighbors))
+         # ncorners = self.get_cell_corner_vertices(np.array(finer_neighbors))
+         ncorners = self.get_cell_corner_vertices(np.array(list(cell_neighbors[c])))
 
          # Possible hanging nodes are those that are the vertices of finer neighbours.
          for vertex_inds_set in ncorners.values():
@@ -2214,8 +2162,7 @@ class VlsvReader(object):
          cmin = np.min(corners,axis=0)
          cmax = np.max(corners,axis=0)
 
-         #          
-         pruned_hangers = {v for v in hanging_set if np.all(v <= cmax) and np.all(v >= cmin)}
+         pruned_hangers = {v for v in hanging_set if np.all(np.array(v,dtype=np.int64) <= cmax) and np.all(np.array(v,dtype=np.int64) >= cmin)}
          cell_hanging_nodes[c] = tuple(pruned_hangers)
 
       vertices = {c: corner_vertices[c]+cell_hanging_nodes[c] for c in cid[mask]}
@@ -2284,7 +2231,9 @@ class VlsvReader(object):
 
    # again, combined getter and builder..
    def build_cell_neighborhoods(self, cids):
-      cell_vertex_sets = self.get_cell_corner_vertices(cids) # these are enough to fetch the neighbours
+
+      mask = np.isin(cids, self.__cell_neighbours.keys(), invert = True)
+      cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
 
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
       for c,verts in cell_vertex_sets.items():
@@ -2292,6 +2241,9 @@ class VlsvReader(object):
          [cell_neighbor_sets[c].update(set(tuples)) for tuples in neighbor_tuples.values()]
       
       self.__cell_neighbours.update(cell_neighbor_sets)
+
+      for c in cids[~mask]:
+         cell_neighbor_sets[c] = self.__cell_neighbors[c]
 
       return cell_neighbor_sets
 
@@ -2338,7 +2290,7 @@ class VlsvReader(object):
       return dual_sets_done
 
    # build a dual coverage to enable interpolation to each coordinate
-   def build_duals(self, coordinates):
+   def build_duals_from_coordinates(self, coordinates):
       
       coordinates = np.atleast_2d(coordinates)
       cid = self.get_cellid(coordinates)
@@ -2348,18 +2300,38 @@ class VlsvReader(object):
       if(coords.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       
-      # vertices = set()
-      # for x in [-1,1]:
-      #    for y in [-1,1]:
-      #       for z  in [-1,1]:
-      #          vertices.update(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid)/2))
-
       vertices = set()
       vsets = self.build_cell_vertices(cid)
-      for c in cid:
-         vertices.update({v for v in vsets[c]})
+      vertices = vertices.union(*vsets.values())
+      # for c in cid:
+      #    vertices.update({v for v in vsets[c]})
       
-      self.build_dual_from_vertices(list(vertices))
+      return self.build_dual_from_vertices(list(vertices))
+
+   # build a dual coverage to enable interpolation to each coordinate
+   def build_duals(self, cid):
+      
+      cid = np.atleast_1d(cid)
+      mask = np.isin(cid, self.__cell_duals.keys(), invert = True)
+
+      coords = self.get_cell_coordinates(cid[mask])
+      
+      ncoords = coords.shape[0]
+      if(coords.shape[1] != 3):
+         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+      
+      vertices = set()
+      vsets = self.build_cell_vertices(cid[mask])
+      vertices = vertices.union(*vsets.values())
+      for c in cid:
+         self.__cell_duals[c] = vsets[c]
+         # vertices.update({v for v in vsets[c]})
+      
+      duals = self.build_dual_from_vertices(list(vertices))
+      self.__cell_duals.update(duals)
+      for c in cid[~mask]:
+         duals[c] = self.__cell_duals[c]
+      return duals
 
 
    def get_cell_coordinates(self, cellids):
