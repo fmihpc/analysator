@@ -39,8 +39,6 @@ from collections import OrderedDict
 from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
-from scipy.interpolate import LinearNDInterpolator
-from scipy.spatial import Delaunay
 import time
 from interpolator_amr import AMRInterpolator
 
