@@ -2173,32 +2173,6 @@ class VlsvReader(object):
       
       return vertices
 
-      # Now, here, the zero-vertices are possible hanging nodes that might have been missed.
-      # These can now produce very degenerate dual cells, which should be filtered out. These
-      # don't seem to bother things - "line-duals" are hard to hit, and if they are, they are
-      # still made nondegenerate. Should be gotten rid of, though, but seems to work for now!
-      ii = 0
-      for x in [-1,0,1]:
-         for y in [-1,0,1]:
-            for z  in [-1,0,1]:
-               if x == 0 and y == 0 and z == 0:
-                  continue
-               vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cid[mask])/2))
-               ii += 1
-
-      cell_vertex_sets = {}
-      for i, c in enumerate(cid[mask]):
-         vlist = vertices[i,:,:]
-         vtuple = tuple([tuple(inds) for inds in vlist])
-         cell_vertex_sets[c] = vtuple
-         
-      self.__cell_vertices.update(cell_vertex_sets)
-
-      for i, c in enumerate(cid[~mask]):
-         cell_vertex_sets[c] = self.__cell_vertices[c]
-
-      return cell_vertex_sets
-
    def get_cell_corner_vertices(self, cids):
 
       mask = np.isin(cids, self.__cell_vertices.keys(), invert = True)
