@@ -1248,149 +1248,66 @@ class VlsvReader(object):
       else:
          value_length=1
 
-      if len(np.shape(coordinates)) == 1: # This could be deprecated in favour of the array variant
-         # Get closest id
-         if(len(coordinates) != 3):
-            raise IndexError("Coordinates are required to be three-dimensional (len(coords)==3 or convertible to such))")
-         closest_cell_id=self.get_cellid(coordinates)
-         if closest_cell_id == 0:
-            warnings.warn("Requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
-            if value_length == 1:
-               return np.nan
-            else:
-               return np.full((value_length,),np.nan) 
-         closest_cell_coordinates=self.get_cell_coordinates(closest_cell_id)
+      ncoords = coordinates.shape[0]
+      if(coordinates.shape[1] != 3):
+         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+      closest_cell_ids = self.get_cellid(coordinates)
+      batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
+      
+      offsets = np.zeros(coordinates.shape,dtype=np.int32)
+      offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
-         # Now identify the lower one of the 8 neighbor cells
-         offset = [0 if coordinates[0] > closest_cell_coordinates[0] else -1,\
-                   0 if coordinates[1] > closest_cell_coordinates[1] else -1,\
-                   0 if coordinates[2] > closest_cell_coordinates[2] else -1]
-         lower_cell_id = self.get_cell_neighbor(closest_cell_id, offset, periodic)
-         if lower_cell_id <= 0:
-            print("Error: cannot interpolate outside simulation domain!")
-            return self.read_variable(name,closest_cell_id,operator)
-         lower_cell_coordinates=self.get_cell_coordinates(lower_cell_id)
-         offset = [1,1,1]
-         upper_cell_id = self.get_cell_neighbor(lower_cell_id, offset, periodic)
-         if upper_cell_id <= 0:
-            print("Error: cannot interpolate outside simulation domain!")
-            return self.read_variable(name,closest_cell_id,operator)
-         upper_cell_coordinates=self.get_cell_coordinates(upper_cell_id)
-         if (lower_cell_id<1 or upper_cell_id<1):
-            warnings.warn("Requested cell id for interpolation outside simulation domain. Returning NaN.", UserWarning)
-            if value_length == 1:
-               return np.nan
-            else:
-               return np.full((value_length,),np.nan)
+      lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic)
+      lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
+      offsets.fill(1)
+      upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
+      upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
 
-         scaled_coordinates=np.zeros(3)
-         for i in range(3):
-            if lower_cell_coordinates[i] != upper_cell_coordinates[i]:
-               scaled_coordinates[i]=(coordinates[i] - lower_cell_coordinates[i])/(upper_cell_coordinates[i] - lower_cell_coordinates[i])
-            else:
-               scaled_coordinates[i] = 0.0 # Special case for periodic systems with one cell in a dimension
-         
-         # Now identify 8 cells, starting from the lower one - vectorized subloop, a bit faster
-         offsets = np.zeros((8,3), dtype=np.int32)
-         ii = 0
-         for x in [0,1]:
-            for y in [0,1]:
-               for z  in [0,1]:
-                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
-                  ii+=1
-         lower_ids_temp = np.atleast_2d(lower_cell_id)
-         lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,8)
+      scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
+      nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
+      scaled_coordinates[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
 
-         cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
+      ngbrvalues=np.full((ncoords*2*2*2,value_length),np.nan)
+      offsets = np.zeros((8,3), dtype=np.int32)
+      ii = 0
+      for x in [0,1]:
+         for y in [0,1]:
+            for z  in [0,1]:
+               offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
+               ii+=1
+      offsets = np.tile(offsets, (ncoords, 1))
+      lower_ids_temp = np.atleast_2d(lower_cell_ids)
+      lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
 
-         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(1,8))
-         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            warnings.warn("Interpolation across refinement levels. Results are not accurate there.",UserWarning)
-
-         ngbrvalues=np.full((2*2*2,value_length),np.nan)
-         if value_length > 1:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
-         else:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-         ngbrvalues = np.reshape(ngbrvalues, (2,2,2,value_length))
-
-         c2d=np.zeros((2,2,value_length))
-         for y in  [0,1]:
-            for z in  [0,1]:
-               c2d[y,z,:]=ngbrvalues[0,y,z,:]* (1- scaled_coordinates[0]) +  ngbrvalues[1,y,z,:]*scaled_coordinates[0]
-
-         c1d=np.zeros((2,value_length))
-         for z in [0,1]:
-            c1d[z,:]=c2d[0,z,:]*(1 - scaled_coordinates[1]) + c2d[1,z,:] * scaled_coordinates[1]
-            
-         final_value=c1d[0,:] * (1 - scaled_coordinates[2]) + c1d[1,:] * scaled_coordinates[2]
-
-         if len(final_value)==1:
-            return final_value[0]
-         else:
-            return final_value
-
+      cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
+      if value_length > 1:
+         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
       else:
-         # Multiple coordinates
-         ncoords = coordinates.shape[0]
-         if(coordinates.shape[1] != 3):
-            raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-         closest_cell_ids = self.get_cellid(coordinates)
-         batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
-         
-         offsets = np.zeros(coordinates.shape,dtype=np.int32)
-         offsets[coordinates <= batch_closest_cell_coordinates] = -1
+         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
+      ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
+      
+      c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
+      c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
+      final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
 
-         lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic)
-         lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
-         offsets.fill(1)
-         upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
-         upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
+      if np.any(cellid_neighbors==0):
+         warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
-         scaled_coordinates=np.zeros_like(upper_cell_coordinatess)
-         nonperiodic = lower_cell_coordinatess != upper_cell_coordinatess
-         scaled_coordinates[nonperiodic] = (coordinates[nonperiodic] - lower_cell_coordinatess[nonperiodic])/(upper_cell_coordinatess[nonperiodic] - lower_cell_coordinatess[nonperiodic])
-
-         ngbrvalues=np.full((ncoords*2*2*2,value_length),np.nan)
-         offsets = np.zeros((8,3), dtype=np.int32)
-         ii = 0
-         for x in [0,1]:
-            for y in [0,1]:
-               for z  in [0,1]:
-                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
-                  ii+=1
-         offsets = np.tile(offsets, (ncoords, 1))
-         lower_ids_temp = np.atleast_2d(lower_cell_ids)
-         lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
-
-         cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
-         if value_length > 1:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+      refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
+      if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+         irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
+         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
+         # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
+      # Switched the single-cell interp to the stacked version, hope it works. Less code to manage.
+      
+      if stack:
+         return final_values.squeeze()
+      else:
+         if value_length == 1:
+            return final_values.squeeze()[()] # The only special case to return a scalar instead of an array
          else:
-            ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-         ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
-         
-         c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
-         c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
-         final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
-
-         if np.any(cellid_neighbors==0):
-            warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
-
-         refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
-         if np.any(refs0 != refs0[:,0][:,np.newaxis]):
-            irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)
-            final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
-            # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
-         # Switched the single-cell interp to the stacked version, hope it works. Less code to manage.
-         if stack:
             return final_values.squeeze()
-         else:
-            if value_length == 1:
-               return final_values.squeeze()[0]
-            else:
-               return final_values.squeeze()
-         # return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
+
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
