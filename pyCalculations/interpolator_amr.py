@@ -1,8 +1,19 @@
 from scipy.spatial import Delaunay
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, RBFInterpolator
+from scipy.interpolate import LinearNDInterpolator
+
 import warnings
-from variable import get_data
+
+importerror = None
+
+try:
+   from scipy.interpolate import RBFInterpolator
+except Exception as e:
+   importerror = e
+   class RBFInterpolator(object):
+      def __init__(self, pts, vals, **kwargs):
+         raise importerror #Exception("Module load error")
+   
 
 
 # With values fi at hexahedral vertices and trilinear basis coordinates ksi,
@@ -151,7 +162,7 @@ class AMRInterpolator(object):
    def get_interpolator(self, name, operator, coords, 
                         method="RBF", 
                         methodargs={
-                           "RBF":{"neighbors":64},
+                           "RBF":{"neighbors":64}, # Harrison-Stetson number of neighbors
                            "Delaunay":{"qhull_options":"QJ"}
                            }):
       methodargs["Trilinear"] = {"reader":self.__reader, "var" : name, "op":operator}
@@ -162,7 +173,11 @@ class AMRInterpolator(object):
          self.__Delaunay = Delaunay(self.reader.get_cell_coordinates(self.__cellids),**methodargs[method])
          return LinearNDInterpolator(self.__Delaunay, vals)
       elif method == "RBF":
-         return RBFInterpolator(pts, vals, **methodargs[method]) # Harrison-Stetson number of neighbors
+         try:
+            return RBFInterpolator(pts, vals, **methodargs[method])
+         except Exception as e:
+            warnings.warn("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class. Falling back to Hexahedral trilinear interpolator. Error given was " + str(e))
+            return HexahedralTrilinearInterpolator(pts, vals, **methodargs["Trilinear"])
       elif method == "Trilinear":
          return HexahedralTrilinearInterpolator(pts, vals, **methodargs[method])
 
