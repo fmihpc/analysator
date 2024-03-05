@@ -271,14 +271,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center == "peak":
+    if str(center) == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
-        print(peakindex)
+        #print(peakindex)
         print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
-        if len(center)==3: # assumes it's a vector
+        # assumes it's a vector, either provided or extracted from bulk velocity
+        if len(center)==3:
             print("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
@@ -973,8 +974,9 @@ def plot_vdf(filename=None,
             normvectX = normvectX/np.linalg.norm(normvectX)
 
 
-        if cbulk is not None or center=='bulk':
-            center=None # Finds the bulk velocity and places it in the center vector
+        if (cbulk is not None) or (str(center)=='bulk'):
+            center = None # Fallthrough handling
+            # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
                 if vlsvReader.check_variable(cbulk):
@@ -982,7 +984,7 @@ def plot_vdf(filename=None,
                     print("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
-
+        # Note: center can still be equal to vector, or to the string "peak" and be valid
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
