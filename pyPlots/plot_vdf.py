@@ -427,7 +427,7 @@ def plot_vdf(filename=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,bvectorscale=0.2,
-             cbulk=None, center=None, wflux=None, setThreshold=None,
+             cbulk=None, cpeak=None,center=None, wflux=None, setThreshold=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
@@ -486,6 +486,8 @@ def plot_vdf(filename=None,
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
+    :kword cpeak:       Center plot on velocity associated with highest (peak) phase-space density for
+                        this population)
     :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
                         If set instead to "bulk" will center on bulk velocity
                         If set instead to "peak" will center on velocity with highest phase-space density
@@ -973,7 +975,8 @@ def plot_vdf(filename=None,
             normvectX = np.array(normvectX)
             normvectX = normvectX/np.linalg.norm(normvectX)
 
-
+        if (cpeak is not None):
+            center='peak'
         if (cbulk is not None) or (str(center)=='bulk'):
             center = None # Fallthrough handling
             # Finds the bulk velocity and places it in the center vector
