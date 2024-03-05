@@ -1,6 +1,7 @@
 from scipy.spatial import Delaunay
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
+from operator import itemgetter
 
 import warnings
 
@@ -18,79 +19,131 @@ except Exception as e:
 
 # With values fi at hexahedral vertices and trilinear basis coordinates ksi,
 # return the trilinear interpolant for fi
-def f(ksi, fi):
-   return (1-ksi[0]) * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
-               ksi[0]  * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
-            (1-ksi[0]) *    ksi[1]  * (1-ksi[2]) * fi[2] + \
-               ksi[0]  *    ksi[1]  * (1-ksi[2]) * fi[3] + \
-            (1-ksi[0]) * (1-ksi[1]) *    ksi[2]  * fi[4] + \
-               ksi[0]  * (1-ksi[1]) *    ksi[2]  * fi[5] + \
-            (1-ksi[0]) *    ksi[1]  *    ksi[2]  * fi[6] + \
-               ksi[0]  *    ksi[1]  *    ksi[2]  * fi[7]
+# Vectorized. Assumes that the first dimension ksii, fii are the index for an individual query - 
+# singleton dimension required for a single query!
+def f(ksii, fii):
+   ksi = np.atleast_2d(ksii)
+   if(fii.ndim == 1):
+      fi = fii[np.newaxis,:,np.newaxis]
+   elif(fii.ndim == 2):
+      fi = fii
+      res = (1-ksi[:,0]) * (1-ksi[:,1]) * (1-ksi[:,2]) * fi[:,0] + \
+               ksi[:,0]  * (1-ksi[:,1]) * (1-ksi[:,2]) * fi[:,1] + \
+            (1-ksi[:,0]) *    ksi[:,1]  * (1-ksi[:,2]) * fi[:,2] + \
+               ksi[:,0]  *    ksi[:,1]  * (1-ksi[:,2]) * fi[:,3] + \
+            (1-ksi[:,0]) * (1-ksi[:,1]) *    ksi[:,2]  * fi[:,4] + \
+               ksi[:,0]  * (1-ksi[:,1]) *    ksi[:,2]  * fi[:,5] + \
+            (1-ksi[:,0]) *    ksi[:,1]  *    ksi[:,2]  * fi[:,6] + \
+               ksi[:,0]  *    ksi[:,1]  *    ksi[:,2]  * fi[:,7]
+      return res
+   else:
+      fi = fii
+
+   # this broadcasts to ksi@ksi shape for scalar fis for whatever reason, so above
+   res = (1-ksi[:,0,None]) * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,0,:] + \
+            ksi[:,0,None]  * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,1,:] + \
+         (1-ksi[:,0,None]) *    ksi[:,1,None]  * (1-ksi[:,2,None]) * fi[:,2,:] + \
+            ksi[:,0,None]  *    ksi[:,1,None]  * (1-ksi[:,2,None]) * fi[:,3,:] + \
+         (1-ksi[:,0,None]) * (1-ksi[:,1,None]) *    ksi[:,2,None]  * fi[:,4,:] + \
+            ksi[:,0,None]  * (1-ksi[:,1,None]) *    ksi[:,2,None]  * fi[:,5,:] + \
+         (1-ksi[:,0,None]) *    ksi[:,1,None]  *    ksi[:,2,None]  * fi[:,6,:] + \
+            ksi[:,0,None]  *    ksi[:,1,None]  *    ksi[:,2,None]  * fi[:,7,:]
+   if(res.shape[-1] == 1):
+      return np.squeeze(res, axis = -1)
+   else:
+      return res
 
 
 # With values fi at hexahedral vertices and trilinear basis coordinates ksi,
 # return the interpolated gradient/jacobian of fi wrt. the trilinear basis at ksi
-def df(ksi, fi):
-   d0 =  -1 * (1-ksi[1]) * (1-ksi[2]) * fi[0] + \
-            1 * (1-ksi[1]) * (1-ksi[2]) * fi[1] + \
-         -1 *    ksi[1]  * (1-ksi[2]) * fi[2] + \
-            1 *    ksi[1]  * (1-ksi[2]) * fi[3] + \
-         -1 * (1-ksi[1]) *    ksi[2]  * fi[4] + \
-            1 * (1-ksi[1]) *    ksi[2]  * fi[5] + \
-         -1 *    ksi[1]  *    ksi[2]  * fi[6] + \
-            1 *    ksi[1]  *    ksi[2]  * fi[7]
-   d1 =  (1-ksi[0]) * -1  * (1-ksi[2]) * fi[0] + \
-            ksi[0]  * -1  * (1-ksi[2]) * fi[1] + \
-         (1-ksi[0]) *  1  * (1-ksi[2]) * fi[2] + \
-            ksi[0]  *  1  * (1-ksi[2]) * fi[3] + \
-         (1-ksi[0]) * -1  *    ksi[2]  * fi[4] + \
-            ksi[0]  * -1  *    ksi[2]  * fi[5] + \
-         (1-ksi[0]) *  1  *    ksi[2]  * fi[6] + \
-            ksi[0]  *  1  *    ksi[2]  * fi[7]
-   d2 =  (1-ksi[0]) * (1-ksi[1]) * -1 * fi[0] + \
-            ksi[0]  * (1-ksi[1]) * -1 * fi[1] + \
-         (1-ksi[0]) *    ksi[1]  * -1 * fi[2] + \
-            ksi[0]  *    ksi[1]  * -1 * fi[3] + \
-         (1-ksi[0]) * (1-ksi[1]) *  1 * fi[4] + \
-            ksi[0]  * (1-ksi[1]) *  1 * fi[5] + \
-         (1-ksi[0]) *    ksi[1]  *  1 * fi[6] + \
-            ksi[0]  *    ksi[1]  *  1 * fi[7]
-   return np.stack((d0,d1,d2),axis = -1)
+# Vectorized. Assumes that the first dimension ksii, fii are the index for an individual query - 
+# singleton dimension required for a single query!
+# does not handle scalars?
+def df(ksii, fii):
+   ksi = np.atleast_2d(ksii)
+   # print(fii.shape)
+   if(fii.ndim == 1):
+      fi = fii[np.newaxis,:,np.newaxis]
+   elif(fii.ndim == 2):
+      fi = np.atleast_3d(fii)#fii[:,:,np.newaxis]
+   else:
+      fi = fii
+   # print(fi)
+   # print(fi.shape)
+   d0 =  -1 * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,0,:] + \
+          1 * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,1,:] + \
+         -1 *    ksi[:,1,None]  * (1-ksi[:,2,None]) * fi[:,2,:] + \
+          1 *    ksi[:,1,None]  * (1-ksi[:,2,None]) * fi[:,3,:] + \
+         -1 * (1-ksi[:,1,None]) *    ksi[:,2,None]  * fi[:,4,:] + \
+          1 * (1-ksi[:,1,None]) *    ksi[:,2,None]  * fi[:,5,:] + \
+         -1 *    ksi[:,1,None]  *    ksi[:,2,None]  * fi[:,6,:] + \
+          1 *    ksi[:,1,None]  *    ksi[:,2,None]  * fi[:,7,:]
+   d1 =  (1-ksi[:,0,None]) * -1  * (1-ksi[:,2,None]) * fi[:,0,:] + \
+            ksi[:,0,None]  * -1  * (1-ksi[:,2,None]) * fi[:,1,:] + \
+         (1-ksi[:,0,None]) *  1  * (1-ksi[:,2,None]) * fi[:,2,:] + \
+            ksi[:,0,None]  *  1  * (1-ksi[:,2,None]) * fi[:,3,:] + \
+         (1-ksi[:,0,None]) * -1  *    ksi[:,2,None]  * fi[:,4,:] + \
+            ksi[:,0,None]  * -1  *    ksi[:,2,None]  * fi[:,5,:] + \
+         (1-ksi[:,0,None]) *  1  *    ksi[:,2,None]  * fi[:,6,:] + \
+            ksi[:,0,None]  *  1  *    ksi[:,2,None]  * fi[:,7,:]
+   d2 =  (1-ksi[:,0,None]) * (1-ksi[:,1,None]) * -1 * fi[:,0,:] + \
+            ksi[:,0,None]  * (1-ksi[:,1,None]) * -1 * fi[:,1,:] + \
+         (1-ksi[:,0,None]) *    ksi[:,1,None]  * -1 * fi[:,2,:] + \
+            ksi[:,0,None]  *    ksi[:,1,None]  * -1 * fi[:,3,:] + \
+         (1-ksi[:,0,None]) * (1-ksi[:,1,None]) *  1 * fi[:,4,:] + \
+            ksi[:,0,None]  * (1-ksi[:,1,None]) *  1 * fi[:,5,:] + \
+         (1-ksi[:,0,None]) *    ksi[:,1,None]  *  1 * fi[:,6,:] + \
+            ksi[:,0,None]  *    ksi[:,1,None]  *  1 * fi[:,7,:]
+   res = np.stack((d0,d1,d2),axis = -1)
+   return res
 
 # For hexahedral vertices verts and point p, find the trilinear basis coordinates ksi
 # that interpolate the coordinates of verts to the tolerance tol.
 # This is an iterative procedure. Return nans in case of no convergence.
-def find_ksi(p, verts, tol= 1e-6, maxiters = 200):
-   ksi0 = [0.5,0.5,0.5]
-   J = df(ksi0, verts)
+def find_ksi(p, v_coords, tol= 1e-6, maxiters = 100):
+   p = np.atleast_2d(p)
+   v_coords = np.atleast_3d(v_coords)
+   ksi0 = np.full_like(p, 0.5)
+   J = df(ksi0, v_coords)
    # print("J", J)
    ksi_n = ksi0
-   f_n =  f(ksi_n,verts)-p
-   convergence = False
+   ksi_n1 = np.full_like(ksi0, np.nan)
+   f_n =  f(ksi_n,v_coords)
+   # print(f_n.shape, p.shape)
+   # print(f_n)
+   f_n = f_n - p
+
+   convergence = np.full((p.shape[0],),False, dtype=bool)
    for i in range(maxiters):
       
-      J = df(ksi_n, verts)
-      f_n = f(ksi_n,verts)-p
+      J[~convergence,:,:] = df(ksi_n[~convergence,:], v_coords[~convergence,:,:])
+      # print('J',J[~convergence,...])
+      f_n[~convergence,:] = f(ksi_n[~convergence,:],v_coords[~convergence,:,:])-p[~convergence,:]
+      # print('fn',f_n[~convergence,...])
       # print("f(r) = ", f_n)
       # step = np.matmul(np.linalg.inv(J),f_n)
-      step = np.linalg.solve(J, -f_n)
+      # print(J.shape, f_n.shape)
+      step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
       # print("J^-1 f0 = ",step)
-      ksi_n1 = step + ksi_n # r_(n+1) 
-      ksi_n = ksi_n1
+      ksi_n1[~convergence,:] = step + ksi_n[~convergence,:] # r_(n+1) 
+      ksi_n[~convergence,:] = ksi_n1[~convergence,:]
       
       # print(ksi_n1, f(ksi_n1,verts), np.linalg.norm(f(ksi_n1,verts) - p))
       # print("--------------")
-      if(np.linalg.norm(f(ksi_n1,verts) - p) < tol):
-         convergence = True
-         break
+      convergence[~convergence] = (np.linalg.norm(f(ksi_n1[~convergence,:],v_coords[~convergence,:,:]) - p[~convergence,:],axis=1) < tol)
+         # convergence = True
+      if np.all(convergence):
+         # print("All converged in ", i, "iterations")
+         return ksi_n1
+      
 
-   if convergence:
+   if np.all(convergence):
       # print("Converged after ", i, "iterations")
       return ksi_n1
    else:
-      warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
-      return np.array([np.nan, np.nan, np.nan])
+      # warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
+      ksi_n1[~convergence,:] = np.nan
+      return ksi_n1
       
 class HexahedralTrilinearInterpolator(object):
    ''' Class for doing general hexahedral interpolation, including degenerate hexahedra (...eventually).
@@ -107,20 +160,39 @@ class HexahedralTrilinearInterpolator(object):
    def __call__(self, pt):
       if(len(pt.shape) == 2):
          vals = []
-         for p in pt:
-            dual, ksi = self.reader.get_dual(p)
-            # print(dual, ksi)
+         duals, ksis = self.reader.get_dual(pt)
+         duals_corners = np.array(itemgetter(*duals)(self.reader._VlsvReader__dual_cells))
+         fi = self.reader.read_variable(self.var, duals_corners.reshape(-1), operator=self.operator)
+         ksis = np.array(ksis).squeeze() # n x 1 x 3 ...... fix
+         # print(ksis.shape, fi.shape)
+         fi = fi.reshape(-1,8)
+         # print('fi reshaped', fi.shape)
+         vals = f(ksis, fi)
+         print(vals.shape)
+         print(vals)
+         return vals
+      
+         # the following loop is not reached, kept for reference
+         for i,p in enumerate(pt):
+            # dual, ksi = self.reader.get_dual(np.atleast_2d(p))
+            # dual = dual[0]
+            # ksi = ksi[0]
+            # print("regular:",i,dual, ksi)
+            dual = duals[i]
+            ksi = ksis[i]
+            # print("from batch:", dual, ksi)
             if dual is None:
                vals.append(np.nan)
             else:
-               dual_corners = self.reader._VlsvReader__dual_cells[dual]
-               fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
+               # dual_corners = self.reader._VlsvReader__dual_cells[dual]
+               dual_corners = duals_corners[i]
+               fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator)[np.newaxis,:])
                vals.append(fp)
          return np.array(vals)
       else:
          dual, ksi = self.reader.get_dual(pt)
          dual_corners = self.__dual_cells[dual]
-         fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator))
+         fp = f(ksi, self.reader.read_variable(self.var, np.array(dual_corners), operator=self.operator)[np.newaxis,:])
          return fp
 
 

@@ -1882,7 +1882,7 @@ class VlsvReader(object):
       cids = [int(self.get_cellid(coord)) for coord in coords]
 
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
-      cidsout = list(OrderedDict.fromkeys(cids))
+      cidsout = np.array(list(OrderedDict.fromkeys(cids)))
       return cidsout
    
    def get_cellid(self, coords):
@@ -2007,43 +2007,119 @@ class VlsvReader(object):
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
    # also VECTORIZE!
-   def get_dual(self, p):
+   def get_dual(self, pts):
       from pyCalculations.interpolator_amr import find_ksi
 
       # start the search from the vertices 
-      cid = self.get_cellid(p)
-      if(cid not in self.__cell_vertices):
-         self.build_cell_vertices(np.atleast_1d(cid))
+      cid = self.get_cellid(np.atleast_2d(pts))
+      for c in cid:
+         if(c not in self.__cell_vertices):
+            self.build_cell_vertices(np.atleast_1d(c))
+      # self.build_cell_vertices(np.atleast_1d(cid))
       
-      verts = self.__cell_vertices[cid]
-      set_of_cells = set()
+      vverts = [self.__cell_vertices[c] for c in cid]
+      set_of_verts = set()
       # Loops over duals indexed by vertex tuple
-      self.build_dual_from_vertices(list(verts))
-      for vert in verts:
-         
-         # Breaks degeneracies by expanding the dual cells vertices along
-         #  main-grid diagonals
-         offset_eps = 1.0
-         offsets = np.array([[-1.0, -1.0, -1.0],
-                             [-1.0, -1.0,  1.0],
-                             [-1.0,  1.0, -1.0],
-                             [-1.0,  1.0,  1.0],
-                             [ 1.0, -1.0, -1.0],
-                             [ 1.0, -1.0,  1.0],
-                             [ 1.0,  1.0, -1.0],
-                             [ 1.0,  1.0,  1.0],
-                           ]) * offset_eps
-         set_of_cells.update(np.array(self.__dual_cells[vert]))
-         # Check bounding boxes and ignore if not inside the bbox of this dual
-         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
-            continue
-         ksi = find_ksi(p, offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-         if np.all(ksi <= 1) and np.all(ksi >= 0):
-            return vert, ksi
+      self.build_dual_from_vertices(list(set_of_verts.union(*vverts)))
 
-      # If the first set didn't find a covering dual, expand the search to cover the next layer of neighbours
-      warnings.warn("Dual cell not found for", p)
-      return None,None
+      for i,verts in enumerate(vverts):
+         bboxes = np.array(itemgetter(*verts)(self.__dual_bboxes))
+         vmask = np.all(pts[i,:] > bboxes[:,0:3],axis=1) & np.all(pts[i,:] < bboxes[:,3:6],axis=1)
+         okverts = [verts[ind] for ind, val in enumerate(vmask) if val]
+         vverts[i] = okverts
+
+      # Breaks degeneracies by expanding the dual cells vertices along
+      #  main-grid diagonals
+      offset_eps = 1.0
+      offsets = np.array([[-1.0, -1.0, -1.0],
+                           [-1.0, -1.0,  1.0],
+                           [-1.0,  1.0, -1.0],
+                           [-1.0,  1.0,  1.0],
+                           [ 1.0, -1.0, -1.0],
+                           [ 1.0, -1.0,  1.0],
+                           [ 1.0,  1.0, -1.0],
+                           [ 1.0,  1.0,  1.0],
+                        ]) * offset_eps
+
+      duals = []
+      ksis = []
+      verts_per_pt = [len(verts) for verts in vverts]
+      ppts = pts.repeat(verts_per_pt, axis=0)
+      pinds = np.indices((pts.shape[0],)).repeat(verts_per_pt)
+      # print(ppts.shape, pinds.shape)
+      all_verts = [v for vs in vverts for v in vs]
+
+      # all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*vverts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
+      all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*all_verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
+      # print(all_vcoords, ppts)
+      all_vcoords = offsets[np.newaxis,:,:]+all_vcoords.reshape(-1,8,3)
+      # print(all_vcoords)
+      all_vksis = find_ksi(ppts, all_vcoords)
+      # print(all_vksis)
+      foundmask = np.all(all_vksis <=1, axis=1) & np.all(all_vksis >= 0, axis=1)
+      # print(foundmask)
+      ind = np.nonzero(foundmask)[0]
+      # print(ind.shape)
+      # print(ind)
+      all_vksis = all_vksis[ind,:]
+      # print(all_vksis.shape)
+      found_pts = pinds[ind]
+      found_pts, inds = np.unique(found_pts, return_index = True)
+      # print(found_pts.shape)
+
+      ksis = np.full_like(pts, np.nan)
+      duals = np.full((pts.shape[0],),None)
+
+      ksis[found_pts,:] = all_vksis[inds,:]
+      duals[found_pts] = [v for i,v in enumerate(itemgetter(*ind)(all_verts)) if i in found_pts]
+
+      print(ksis.shape)
+      print(len(duals))
+
+      return duals, ksis
+
+
+      for i,verts in enumerate(vverts):
+         vfound = False
+         # bboxes = np.array(itemgetter(*verts)(self.__dual_bboxes))
+         # vmask = np.all(p[i,:] > bboxes[:,0:3],axis=1) & np.all(p[i,:] < bboxes[:,3:6],axis=1)
+         # print( np.nonzero(vmask))
+         # okverts = [verts[index] for index in np.nonzero(vmask)]
+         # vids = itemgetter(okverts)(self.__dual_cells)
+         nverts = len(verts)
+         vcoords = self.get_cell_coordinates(np.array(itemgetter(*verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
+
+         # print(np.atleast_2d(p[i,:]).repeat(nverts,axis=0).shape, (offsets[np.newaxis,:,:]+vcoords.reshape(-1,8,3)).shape)
+         vksis = find_ksi(np.atleast_2d(pts[i,:]).repeat(nverts,axis=0), offsets[np.newaxis,:,:]+vcoords.reshape(-1,8,3))
+         # print(vksis)
+         foundmask = np.all(vksis <=1, axis=1) & np.all(vksis >= 0, axis=1)
+         # print(foundmask.shape)
+         ind = np.nonzero(foundmask)[0]
+         # print(ind[0])
+         if (np.sum(foundmask) > 0):
+            duals.append(verts[ind[0]])
+            ksis.append(vksis[ind[0]])
+         else:
+            duals.append(None)
+            ksis.append(None)
+         continue
+
+         for vert in verts:
+            # Check bounding boxes and ignore if not inside the bbox of this dual
+            if np.any(pts[i,:] < self.__dual_bboxes[vert][0:3]) or np.any(pts[i,:] > self.__dual_bboxes[vert][3:6]):
+               continue
+            ksi = find_ksi(pts[i,:], offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
+            if np.all(ksi <= 1) and np.all(ksi >= 0):
+               vfound = True
+               duals.append(vert)
+               ksis.append(ksi)
+         # print("seeked vertexdual for ", i, vfound)
+         if not vfound:
+            duals.append(None)
+            ksis.append(None)
+
+      # warnings.warn("Dual cell not found for", p)
+      return duals,ksis
       
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid):
@@ -2051,7 +2127,6 @@ class VlsvReader(object):
       cid = np.array(list(cids),dtype=np.int64)
       
       mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
-      coords = self.get_cell_coordinates(cid[mask])
       # {cid : 8-tuple of vertex_inds}
       corner_vertices = self.get_cell_corner_vertices(cid[mask])
       cell_neighbors = self.build_cell_neighborhoods(cid[mask])
@@ -2184,7 +2259,7 @@ class VlsvReader(object):
    def build_duals_from_coordinates(self, coordinates):
       
       coordinates = np.atleast_2d(coordinates)
-      cid = self.get_cellid(coordinates)
+      cid = self.get_unique_cellids(coordinates)
       coords = self.get_cell_coordinates(cid)
       
       ncoords = coords.shape[0]
