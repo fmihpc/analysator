@@ -123,6 +123,8 @@ class VlsvReader(object):
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
+      self.variable_cache = {} # {(varname, operator):data}
+
       self.__read_xml_footer()
       self.__dual_cells = {} # vertex-indices tuple : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices tuple : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
@@ -1666,6 +1668,30 @@ class VlsvReader(object):
 
        return rawData
 
+
+   def read_variable_from_cache(self, name, cellids, operator):
+      ''' Read variable from cache instead of the vlsv file.
+         :param name: Name of the variable
+         :param cellids: a value of -1 reads all data
+         :param operator: Datareduction operator. "pass" does no operation on data
+         :returns: numpy array with the data, same format as read_variable
+
+         .. seealso:: :func:`read_variable`
+      '''
+      data = None
+      #data = self.variable_cache[(name,operator)][] # <-- this needs to be made to extract data with given cellids as the
+      #                                                    functions read_variable and read do.
+
+      return data # This to be filled
+   
+   def read_variable_to_cache(self, name, operator="pass"):
+      ''' Read variable from vlsv file to cache, for the whole grid and after applying
+          operator.
+
+      '''
+      # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
+      self.variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
       Arguments:
@@ -1690,6 +1716,9 @@ class VlsvReader(object):
             print("Warning, CellID requests not supported for ionosphere variables! Aborting.")
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
+      
+      if((name,operator) in self.variable_cache.keys()):
+         return self.read_variable_from_cache(name,cellids,operator)
 
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
