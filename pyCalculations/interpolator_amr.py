@@ -2,7 +2,7 @@ from scipy.spatial import Delaunay
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 from operator import itemgetter
-
+# from time import time
 import warnings
 
 importerror = None
@@ -100,7 +100,7 @@ def df(ksii, fii):
 # For hexahedral vertices verts and point p, find the trilinear basis coordinates ksi
 # that interpolate the coordinates of verts to the tolerance tol.
 # This is an iterative procedure. Return nans in case of no convergence.
-def find_ksi(p, v_coords, tol= 1e-6, maxiters = 100):
+def find_ksi(p, v_coords, tol= 1e-7, maxiters = 200):
    p = np.atleast_2d(p)
    v_coords = np.atleast_3d(v_coords)
    ksi0 = np.full_like(p, 0.5)
@@ -141,7 +141,7 @@ def find_ksi(p, v_coords, tol= 1e-6, maxiters = 100):
       # print("Converged after ", i, "iterations")
       return ksi_n1
    else:
-      # warnings.warn("Generalized trilinear interpolation did not converge. Nans inbound.")
+      # warnings.warn("Generalized trilinear interpolation did not converge for " + str(np.sum(~convergence)) + " points. Nans inbound.")
       ksi_n1[~convergence,:] = np.nan
       return ksi_n1
       
@@ -159,6 +159,7 @@ class HexahedralTrilinearInterpolator(object):
 
    def __call__(self, pt):
       if(len(pt.shape) == 2):
+         # t0 = time()
          vals = []
          duals = []
          ksis = []
@@ -174,8 +175,7 @@ class HexahedralTrilinearInterpolator(object):
          fi = fi.reshape(-1,8)
          # print('fi reshaped', fi.shape)
          vals = f(ksis, fi)
-         print(vals.shape)
-         print(vals)
+         # print("irregular interpolator __call__ done in", time()-t0,"s")
          return vals
       
          # the following loop is not reached, kept for reference

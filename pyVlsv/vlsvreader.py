@@ -126,7 +126,7 @@ class VlsvReader(object):
 
       self.__read_xml_footer()
                               # vertex-indices is a 3-tuple of integers
-      self.__dual_cells = {} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
+      self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
       self.__cell_vertices = {} # cellid : varying-length tuple of vertex-indices - includes hanging nodes!
       self.__cell_corner_vertices = {} # cellid : varying-length tuple of vertex-indices - no hanging nodes!
@@ -1280,10 +1280,15 @@ class VlsvReader(object):
       lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
 
       cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
+      cellids_neighbors_unique, indices = np.unique(cellid_neighbors[cellid_neighbors!=0], return_inverse=True)
       if value_length > 1:
-         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
+         read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)
+         ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices]
+         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
       else:
-         ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
+         read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)[:,np.newaxis]
+         ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices]
+         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
       ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
       
       c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
@@ -2025,7 +2030,7 @@ class VlsvReader(object):
 
       for i,verts in enumerate(vverts):
          bboxes = np.array(itemgetter(*verts)(self.__dual_bboxes))
-         vmask = np.all(pts[i,:] > bboxes[:,0:3],axis=1) & np.all(pts[i,:] < bboxes[:,3:6],axis=1)
+         vmask = np.all(pts[i,:] >= bboxes[:,0:3],axis=1) & np.all(pts[i,:] <= bboxes[:,3:6],axis=1)
          okverts = [verts[ind] for ind, val in enumerate(vmask) if val]
          vverts[i] = okverts
 
@@ -2042,42 +2047,37 @@ class VlsvReader(object):
                            [ 1.0,  1.0,  1.0],
                         ]) * offset_eps
 
-      duals = []
-      ksis = []
       verts_per_pt = [len(verts) for verts in vverts]
       ppts = pts.repeat(verts_per_pt, axis=0)
       pinds = np.indices((pts.shape[0],)).repeat(verts_per_pt)
-      # print(ppts.shape, pinds.shape)
+
       all_verts = [v for vs in vverts for v in vs]
 
-      # all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*vverts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
+
       all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*all_verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
-      # print(all_vcoords, ppts)
+
       all_vcoords = offsets[np.newaxis,:,:]+all_vcoords.reshape(-1,8,3)
-      # print(all_vcoords)
+
       all_vksis = find_ksi(ppts, all_vcoords)
-      # print(all_vksis)
       foundmask = np.all(all_vksis <=1, axis=1) & np.all(all_vksis >= 0, axis=1)
-      # print(foundmask)
+
       ind = np.nonzero(foundmask)[0]
-      # print(ind.shape)
-      # print(ind)
       all_vksis = all_vksis[ind,:]
-      # print(all_vksis.shape)
+
       found_pts = pinds[ind]
       found_pts, inds = np.unique(found_pts, return_index = True)
-      # print(found_pts.shape)
+
+
 
       ksis = np.full_like(pts, np.nan)
-      duals = np.full((pts.shape[0],),None)
+      duals = np.empty((pts.shape[0],),dtype="i,i,i")
+      duals[:] = (0,0,0)
+      dduals = np.array(np.array(all_verts,dtype="i,i,i")[ind], dtype="i,i,i")
 
       ksis[found_pts,:] = all_vksis[inds,:]
-      duals[found_pts] = [v for i,v in enumerate(itemgetter(*ind)(all_verts)) if i in found_pts]
+      duals[found_pts] = dduals[inds]
 
-      print(ksis.shape)
-      print(len(duals))
-
-      return duals, ksis
+      return duals.astype(object), ksis
 
 
       for i,verts in enumerate(vverts):
