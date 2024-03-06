@@ -41,6 +41,7 @@ from variable import get_data
 import warnings
 import time
 from interpolator_amr import AMRInterpolator
+from operator import itemgetter
 
 
 def fsGlobalIdToGlobalIndex(globalids, bbox):
@@ -1678,19 +1679,26 @@ class VlsvReader(object):
 
          .. seealso:: :func:`read_variable`
       '''
-      data = None
-      #data = self.variable_cache[(name,operator)][] # <-- this needs to be made to extract data with given cellids as the
-      #                                                    functions read_variable and read do.
-
-      return data # This to be filled
-   
+      print("Reading from cache")
+      if isinstance(cellids, numbers.Number):
+         if cellids == -1:
+            return self.variable_cache[(name,operator)]
+         else:
+            return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids],:] # handle scalars as well!
+      else:
+         indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
+         return self.variable_cache[(name,operator)][indices,:] # handle scalars!
+         
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
           operator.
 
       '''
+
       # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
       self.variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
+      # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
+      self.__read_fileindex_for_cellid()
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
