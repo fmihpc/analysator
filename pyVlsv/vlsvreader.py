@@ -2007,46 +2007,8 @@ class VlsvReader(object):
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
    # also VECTORIZE!
-   def get_dual(self, p):
+   def get_dual(self, pts):
 
-      from pyCalculations.interpolator_amr import find_ksi
-
-      # start the search from the vertices 
-      cid = self.get_cellid(p)
-      if(cid not in self.__cell_vertices):
-         self.build_cell_vertices(np.atleast_1d(cid))
-      
-      verts = self.__cell_vertices[cid]
-      set_of_cells = set()
-      # Loops over duals indexed by vertex tuple
-      self.build_dual_from_vertices(list(verts))
-      for vert in verts:
-         
-         # Breaks degeneracies by expanding the dual cells vertices along
-         #  main-grid diagonals
-         offset_eps = 1.0
-         offsets = np.array([[-1.0, -1.0, -1.0],
-                             [-1.0, -1.0,  1.0],
-                             [-1.0,  1.0, -1.0],
-                             [-1.0,  1.0,  1.0],
-                             [ 1.0, -1.0, -1.0],
-                             [ 1.0, -1.0,  1.0],
-                             [ 1.0,  1.0, -1.0],
-                             [ 1.0,  1.0,  1.0],
-                           ]) * offset_eps
-         set_of_cells.update(np.array(self.__dual_cells[vert]))
-         # Check bounding boxes and ignore if not inside the bbox of this dual
-         if np.any(p < self.__dual_bboxes[vert][0:3]) or np.any(p > self.__dual_bboxes[vert][3:6]):
-            continue
-         ksi = find_ksi(np.atleast_2d([p]), (offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))[np.newaxis,:,:])
-         if np.all(ksi <= 1) and np.all(ksi >= 0):
-            return vert, ksi
-
-      # If the first set didn't find a covering dual, expand the search to cover the next layer of neighbours
-      warnings.warn("Dual cell not found for", p)
-      return None,None
-
-      # Bugged...
       from pyCalculations.interpolator_amr import find_ksi
 
       # start the search from the vertices 

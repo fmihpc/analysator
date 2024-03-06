@@ -162,11 +162,11 @@ class HexahedralTrilinearInterpolator(object):
          vals = []
          duals = []
          ksis = []
-         for i,p in enumerate(pt):
-            d, ksi = self.reader.get_dual(p)
-            duals.append(d)
-            ksis.append(ksi)
-         # duals, ksis = self.reader.get_dual(pt)
+         # for i,p in enumerate(pt):
+         #    d, ksi = self.reader.get_dual(p)
+         #    duals.append(d)
+         #    ksis.append(ksi)
+         duals, ksis = self.reader.get_dual(pt)
          duals_corners = np.array(itemgetter(*duals)(self.reader._VlsvReader__dual_cells))
          fi = self.reader.read_variable(self.var, duals_corners.reshape(-1), operator=self.operator)
          ksis = np.array(ksis).squeeze() # n x 1 x 3 ...... fix
