@@ -158,7 +158,8 @@ class HexahedralTrilinearInterpolator(object):
       self.operator = kwargs['op']
 
    def __call__(self, pt):
-      if(len(pt.shape) == 2):
+      pts = np.atleast_2d(pt)
+      if(len(pts.shape) == 2):
          # t0 = time()
          vals = []
          duals = []
@@ -167,19 +168,26 @@ class HexahedralTrilinearInterpolator(object):
          #    d, ksi = self.reader.get_dual(p)
          #    duals.append(d)
          #    ksis.append(ksi)
-         duals, ksis = self.reader.get_dual(pt)
+         duals, ksis = self.reader.get_dual(pts)
          duals_corners = np.array(itemgetter(*duals)(self.reader._VlsvReader__dual_cells))
          fi = self.reader.read_variable(self.var, duals_corners.reshape(-1), operator=self.operator)
+         if(fi.ndim == 2):
+            val_len = fi.shape[1]
+         else:
+            val_len = 1
          ksis = np.array(ksis).squeeze() # n x 1 x 3 ...... fix
          # print(ksis.shape, fi.shape)
-         fi = fi.reshape(-1,8)
+         if(val_len == 1):
+            fi = fi.reshape((-1,8))
+         else:
+            fi = fi.reshape((-1,8,val_len))
          # print('fi reshaped', fi.shape)
          vals = f(ksis, fi)
          # print("irregular interpolator __call__ done in", time()-t0,"s")
          return vals
       
          # the following loop is not reached, kept for reference
-         for i,p in enumerate(pt):
+         for i,p in enumerate(pts):
             # dual, ksi = self.reader.get_dual(np.atleast_2d(p))
             # dual = dual[0]
             # ksi = ksi[0]
