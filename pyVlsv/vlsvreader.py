@@ -1679,15 +1679,15 @@ class VlsvReader(object):
 
          .. seealso:: :func:`read_variable`
       '''
-      print("Reading from cache")
+
       if isinstance(cellids, numbers.Number):
          if cellids == -1:
             return self.variable_cache[(name,operator)]
          else:
-            return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids],:] # handle scalars as well!
+            return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids]]
       else:
          indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
-         return self.variable_cache[(name,operator)][indices,:] # handle scalars!
+         return self.variable_cache[(name,operator)][indices]
          
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
