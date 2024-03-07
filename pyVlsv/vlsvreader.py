@@ -1559,7 +1559,7 @@ class VlsvReader(object):
             return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids]]
       else:
          indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
-         return self.variable_cache[(name,operator)][indices]
+         return self.variable_cache[(name,operator)][indices,:]
          
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
