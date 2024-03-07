@@ -2250,7 +2250,7 @@ class VlsvReader(object):
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
       for c,verts in cell_vertex_sets.items():
          neighbor_tuples = self.build_dual_from_vertices(verts)
-         [cell_neighbor_sets[c].update(set(tuples)) for tuples in neighbor_tuples.values()]
+         cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
       
       self.__cell_neighbours.update(cell_neighbor_sets)
 
@@ -2281,6 +2281,8 @@ class VlsvReader(object):
          v_cellcoords = np.zeros((len(todo), 8,3))
          ii = 0
          vcoords = self.get_vertex_coordinates_from_indices(todo)
+
+         # TODO get rid of the loop
          for x in [-1,1]:
             for y in [-1,1]:
                for z  in [-1,1]:
