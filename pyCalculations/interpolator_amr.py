@@ -246,7 +246,7 @@ class AMRInterpolator(object):
       return self.__reader.get_cell_coordinates(self.__cellids)
    
    def get_interpolator(self, name, operator, coords, 
-                        method="RBF", 
+                        method="Trilinear", 
                         methodargs={
                            "RBF":{"neighbors":64}, # Harrison-Stetson number of neighbors
                            "Delaunay":{"qhull_options":"QJ"}

@@ -1315,10 +1315,15 @@ class VlsvReader(object):
          else:
             return final_values.squeeze()
 
+   def get_duals(self,cids):
+      fo = dict(filter(lambda kv:kv[0] in cids, self.__cell_duals.items()))
+      vset = set()
+      vset.union(*fo.values())
+      return dict(filter(lambda kv:kv[0] in vset, self.__dual_cells.items()))
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
-                                            method="RBF",
+                                            method="Trilinear",
                                             methodargs={
                                              "RBF":{"neighbors":64},
                                              "Delaunay":{"qhull_options":"QJ"}
@@ -1358,7 +1363,8 @@ class VlsvReader(object):
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       containing_cells = self.get_unique_cellids(coordinates)
-      duals = self.build_duals(list(containing_cells))
+      self.build_duals(list(containing_cells))
+      duals = self.get_duals(containing_cells)
 
       cells_set = set()
       cells_set = cells_set.union(*duals.values())
@@ -1920,7 +1926,8 @@ class VlsvReader(object):
       :param coords:         A list of coordinates
       :returns: a list of unique cell ids
       '''
-      cids = [int(self.get_cellid(coord)) for coord in coords]
+      # cids = [int(self.get_cellid(coord)) for coord in coords]
+      cids = self.get_cellid(coords)
 
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
       cidsout = np.array(list(OrderedDict.fromkeys(cids)))
@@ -1982,6 +1989,8 @@ class VlsvReader(object):
          # print(AMR_count,": cellids[mask]", cellids[mask])
          # print(AMR_count,": notfoundyet", np.isin(cellids[mask], good_ids, invert=True))
          drop = np.array([c not in self.__fileindex_for_cellid.keys() for c in cellids[mask]], dtype=bool)
+
+         # print(AMR_count,np.all(drop==drop2), np.sum(drop==drop2))
          mask[mask] = mask[mask] & drop
          # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
          
@@ -2054,10 +2063,10 @@ class VlsvReader(object):
 
       # start the search from the vertices 
       cid = self.get_cellid(np.atleast_2d(pts))
-      for c in cid:
-         if(c not in self.__cell_vertices):
-            self.build_cell_vertices(np.atleast_1d(c))
-      # self.build_cell_vertices(np.atleast_1d(cid))
+      # for c in cid:
+      #    if(c not in self.__cell_vertices):
+      #       self.build_cell_vertices(np.atleast_1d(c))
+      self.build_cell_vertices(np.atleast_1d(cid))
       
       vverts = [self.__cell_vertices[c] for c in cid]
       set_of_verts = set()
@@ -2163,7 +2172,7 @@ class VlsvReader(object):
       cids = set(cid)
       cid = np.array(list(cids),dtype=np.int64)
       
-      mask = np.isin(cid, self.__cell_vertices.keys(), invert = True)
+      mask = np.isin(cid, list(self.__cell_vertices.keys()), invert = True)
       # {cid : 8-tuple of vertex_inds}
       corner_vertices = self.get_cell_corner_vertices(cid[mask])
       cell_neighbors = self.build_cell_neighborhoods(cid[mask])
@@ -2204,7 +2213,7 @@ class VlsvReader(object):
 
    def get_cell_corner_vertices(self, cids):
 
-      mask = np.isin(cids, self.__cell_vertices.keys(), invert = True)
+      mask = np.isin(cids, list(self.__cell_vertices.keys()), invert = True)
       coords = self.get_cell_coordinates(cids[mask])
       vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
       cell_vertex_sets = {}
@@ -2315,26 +2324,24 @@ class VlsvReader(object):
    def build_duals(self, cid):
       
       cid = np.atleast_1d(cid)
-      mask = np.isin(cid, self.__cell_duals.keys(), invert = True)
+      mask = np.isin(cid, list(self.__cell_duals.keys()), invert = True)
 
-      coords = self.get_cell_coordinates(cid[mask])
-      
-      ncoords = coords.shape[0]
-      if(coords.shape[1] != 3):
-         raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-      
-      vertices = set()
-      vsets = self.build_cell_vertices(cid[mask])
-      vertices = vertices.union(*vsets.values())
-      for c in cid:
-         self.__cell_duals[c] = vsets[c]
-         # vertices.update({v for v in vsets[c]})
-      
-      duals = self.build_dual_from_vertices(list(vertices))
-      self.__cell_duals.update(duals)
-      for c in cid[~mask]:
-         duals[c] = self.__cell_duals[c]
-      return duals
+      if(np.sum(mask) > 0):
+         coords = self.get_cell_coordinates(cid[mask])
+         
+         ncoords = coords.shape[0]
+         if(coords.shape[1] != 3):
+            raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
+         
+         vertices = set()
+         vsets = self.build_cell_vertices(cid[mask])
+         vertices = vertices.union(*vsets.values())
+         for c in cid:
+            self.__cell_duals[c] = vsets[c]
+            # vertices.update({v for v in vsets[c]})
+         
+         self.build_dual_from_vertices(list(vertices))
+
 
 
    def get_cell_coordinates(self, cellids):
