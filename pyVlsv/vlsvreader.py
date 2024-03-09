@@ -1564,8 +1564,12 @@ class VlsvReader(object):
          else:
             return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids]]
       else:
-         indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
+         if(len(cellids) > 0):
+            indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
+         else:
+            indices = np.array([],dtype=np.int64)
          return self.variable_cache[(name,operator)][indices,:]
+         
          
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
@@ -2263,34 +2267,59 @@ class VlsvReader(object):
 
    def build_dual_from_vertices(self, vertices):
 
+      # print(vertices)
+      # vertices = np.array(list(vertices),dtype="i,i,i")
+      # print(vertices)
+      # vertices = np.array(list(vertices),dtype="i,i,i")
+
+      # vertices = np.array(list(vertices), dtype="i,i,i")
       done = []
       todo = []
-      for v in vertices:
+      # mask = np.isin(vertices, list(self.__dual_cells.keys()),invert=True)
+      # mask = np.empty(len(vertices),dtype=bool)
+      # print(mask)
+      for i,v in enumerate(vertices):
+      # mask = np.array([v not in self.__dual_cells.keys() for v in vertices],dtype=bool)
          if v in self.__dual_cells.keys():
             done.append(v)
          else:
             todo.append(v)
       dual_sets_done   = {v : self.__dual_cells[v] for v in done}
+      # vertices = np.array(vertices,dtype=object)
+      # print(vertices[~mask])
+
+      # dual_sets_done = dict(filter(lambda kv:kv[0] in np.array(vertices,dtype=object)[~mask], self.__dual_cells.items()))
       dual_sets = {}
 
-      if len(todo) > 0:
+      len_todo = len(todo)
+
+      if len_todo > 0:#np.sum(mask) > 0:
          
          dual_bboxes = {}
          eps = 1
-         v_cells = np.zeros((len(todo), 8),dtype=int)
-         v_cellcoords = np.zeros((len(todo), 8,3))
+         v_cells = np.zeros((len_todo, 8),dtype=int)
+         v_cellcoords = np.zeros((len_todo, 8,3))
          ii = 0
-         vcoords = self.get_vertex_coordinates_from_indices(todo)
+         # print(vertices[mask])
+         # print(todo)
+         vcoords = self.get_vertex_coordinates_from_indices(todo)#list(vertices[mask]))
+         # print(vcoords.shape)
 
          # TODO get rid of the loop
+         offsets = []
          for x in [-1,1]:
             for y in [-1,1]:
                for z  in [-1,1]:
+                  offsets.append([x,y,z])
                   v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
                   v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
                   ii += 1
 
-         for i, vertexInds in enumerate(todo):
+         # offsets = np.array(offsets)
+         # v_cellcoords = eps*offsets[np.newaxis,:,:] + np.reshape(vcoords,(-1,8,3))
+         # v_cells = np.reshape(self.get_cellid(np.reshape(v_cellcoords,(-1,3))),(-1,8))
+
+         for i, vertexInds in enumerate(todo): #vertices[mask]):
             dual_sets[vertexInds] = tuple(v_cells[i,:])
             cellcoords = self.get_cell_coordinates(v_cells[i,:])
             mins = np.min(cellcoords,axis=0)
@@ -2299,8 +2328,11 @@ class VlsvReader(object):
 
          self.__dual_cells.update(dual_sets)
          self.__dual_bboxes.update(dual_bboxes)
-
       dual_sets_done.update(dual_sets)
+      # print(self.__dual_cells, vertices)
+      # print(vertices[0], self.__dual_cells.keys())
+      # dual_sets_done = dict(filter(lambda kv:kv[0] in list(vertices[~mask]), self.__dual_cells.items()))
+
       return dual_sets_done
 
    # build a dual coverage to enable interpolation to each coordinate
@@ -2326,7 +2358,10 @@ class VlsvReader(object):
    def build_duals(self, cid):
       
       cid = np.atleast_1d(cid)
-      mask = np.isin(cid, list(self.__cell_duals.keys()), invert = True)
+      mask = np.empty((cid.shape[0]),dtype=bool)
+      # mask = np.isin(cid, list(self.__cell_duals.keys()), invert = True)
+      for i,c in enumerate(cid):
+         mask[i] = c in self.__cell_duals.keys()
 
       if(np.sum(mask) > 0):
          coords = self.get_cell_coordinates(cid[mask])
