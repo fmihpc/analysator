@@ -45,10 +45,13 @@ from operator import itemgetter
 
 def dict_keys_exist(dictionary, query_keys):
    # this helps quite a lot!
-   unique_keys, indices = np.unique(query_keys, return_inverse=True)
+   unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
 
    # these are all about the same...
+   # if (unique_keys.ndim == 1):
    mask = np.array([k in dictionary.keys() for k in unique_keys],dtype=bool)
+   # else: # and this isn't worth it?
+   #    mask = np.array([tuple(k) in dictionary.keys() for k in unique_keys],dtype=bool)
 
    # mask = np.empty(query_keys.shape, dtype=bool)
    # for i,k in enumerate(query_keys):
@@ -1278,24 +1281,23 @@ class VlsvReader(object):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       closest_cell_ids = self.get_cellid(coordinates)
 
-
-      
-
       batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
       
       offsets = np.zeros(coordinates.shape,dtype=np.int32)
       offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
-      lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic)
+      # This we cannot cache, unfortunately. np.unique on (closest_cell_ids,offsets) helps a bit in some cases.
+      lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic,prune_uniques=True)
 
       lower_cell_ids_unique, unique_cell_indices = np.unique(lower_cell_ids, return_inverse=True)
+      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
 
-      # lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids)
+      # This can leverage caching if vg_regular_interp_neighbors is cached by the user (~30s for EGI).
+      cellid_neighbors = self.read_variable("vg_regular_interp_neighbors", cellids=lower_cell_ids_unique).reshape((-1))
+
       lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids_unique)
 
-      offsets = np.ones((lower_cell_coordinatess.shape),dtype=np.int32)
-      # upper_cell_ids = self.get_cell_neighbor(lower_cell_ids, offsets, periodic)
-      upper_cell_ids = self.get_cell_neighbor(lower_cell_ids_unique, offsets, periodic)
+      upper_cell_ids = cellid_neighbors[7::8]
       upper_cell_coordinatess=self.get_cell_coordinates(upper_cell_ids)
 
       scaled_coordinates = np.zeros_like(coordinates)
@@ -1303,23 +1305,6 @@ class VlsvReader(object):
       nonperiodic_all = nonperiodic[unique_cell_indices]
       scaled_coordinates[nonperiodic_all] = (coordinates[nonperiodic_all] - lower_cell_coordinatess[unique_cell_indices][nonperiodic_all])/(upper_cell_coordinatess[unique_cell_indices][nonperiodic_all] - lower_cell_coordinatess[unique_cell_indices][nonperiodic_all])
 
-      # ngbrvalues=np.full((ncoords*2*2*2,value_length),np.nan)
-      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
-      offsets = np.zeros((8,3), dtype=np.int32)
-      ii = 0
-      for x in [0,1]:
-         for y in [0,1]:
-            for z  in [0,1]:
-               offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
-               ii+=1
-      # offsets = np.tile(offsets, (ncoords, 1))
-      # lower_ids_temp = np.atleast_2d(lower_cell_ids)
-      offsets = np.tile(offsets, (len(lower_cell_ids_unique), 1))
-      lower_ids_temp = np.atleast_2d(lower_cell_ids_unique)
-      # lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,ncoords*8)
-      lower_ids_temp = np.reshape(np.repeat(lower_ids_temp, 8, axis=1).T,len(lower_cell_ids_unique)*8)
-
-      cellid_neighbors = self.get_cell_neighbor(lower_ids_temp, offsets, periodic)
       # neighbour tuples can also overlap, so choose only unique ones here as well for reading (should be moved to read_variable)
       cellids_neighbors_unique, indices = np.unique(cellid_neighbors[cellid_neighbors!=0], return_inverse=True)
 
@@ -1344,14 +1329,13 @@ class VlsvReader(object):
       if np.any(cellid_neighbors==0):
          warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
-      # refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(ncoords,8))
+      
       refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(-1,8))
-      if np.any(refs0 != refs0[:,0][:,np.newaxis]):
+      if np.any(np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)):
          irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)[unique_cell_indices]
          final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
          # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
-      # Switched the single-cell interp to the stacked version, hope it works. Less code to manage.
-      
+
       if stack:
          return final_values.squeeze()
       else:
@@ -2050,16 +2034,9 @@ class VlsvReader(object):
 
 
       while AMR_count < refmax +1:
-         # print(AMR_count,": mask", mask)
-         # print(AMR_count,": cellids[mask]", cellids[mask])
-         # print(AMR_count,": notfoundyet", np.isin(cellids[mask], good_ids, invert=True))
-         
          drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
 
-
-         # print(AMR_count,np.all(drop==drop2), np.sum(drop==drop2))
          mask[mask] = mask[mask] & drop
-         # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
          
          ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
          AMR_count += 1
@@ -2067,17 +2044,14 @@ class VlsvReader(object):
          cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
 
          # Get cell indices:
-         #cellindices = np.array([(int)((coordinates[0] - self.__xmin)/(float)(cell_lengths[0])), (int)((coordinates[1] - self.__ymin)/(float)(cell_lengths[1])), (int)((coordinates[2] - self.__zmin)/(float)(cell_lengths[2]))])
          cellindices[mask,0] = (coordinates[mask,0] - self.__xmin)/cell_lengths[0]
          cellindices[mask,1] = (coordinates[mask,1] - self.__ymin)/cell_lengths[1]
          cellindices[mask,2] = (coordinates[mask,2] - self.__zmin)/cell_lengths[2]
          # Get the cell id:
-         #cellid = ncells_lowerlevel + cellindices[0] + 2**(AMR_count)*self.__xcells*cellindices[1] + 4**(AMR_count)*self.__xcells*self.__ycells*cellindices[2] + 1
          cellids[mask] = ncells_lowerlevel + cellindices[mask,0] + 2**(AMR_count)*cellindices[mask,1] * self.__xcells + 4**(AMR_count) * cellindices[mask,2] * self.__xcells * self.__ycells + 1
 
-      drop = np.array([c not in self.__fileindex_for_cellid.keys() for c in cellids[mask]], dtype=bool)
+      drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
       mask[mask] = mask[mask] & drop
-      #mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
       cellids[mask] = 0 # set missing cells to null cell
       if stack:
          return cellids
@@ -2132,9 +2106,7 @@ class VlsvReader(object):
          cid = self.get_cellid(np.atleast_2d(pts))
       else:
          cid = cellids
-      # for c in cid:
-      #    if(c not in self.__cell_vertices):
-      #       self.build_cell_vertices(np.atleast_1d(c))
+
       self.build_cell_vertices(np.atleast_1d(cid))
       
       vverts = [self.__cell_vertices[c] for c in cid]
@@ -2167,14 +2139,11 @@ class VlsvReader(object):
 
       all_verts = [v for vs in vverts for v in vs]
 
-      # print("get_duals all_verts",all_verts)
       all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*all_verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
 
       all_vcoords = offsets[np.newaxis,:,:]+all_vcoords.reshape(-1,8,3)
-      # print("get_duals ppts",ppts)
-      # print("get_duals all_vcoords",all_vcoords)
       all_vksis = find_ksi(ppts, all_vcoords)
-      # print("get_duals all_vksis", all_vksis)
+
       foundmask = np.all(all_vksis <=1, axis=1) & np.all(all_vksis >= 0, axis=1)
 
       ind = np.nonzero(foundmask)[0]
@@ -2192,71 +2161,24 @@ class VlsvReader(object):
 
       ksis[found_pts,:] = all_vksis[inds,:]
       duals[found_pts] = dduals[inds]
-      # print("get_dual foundmask",foundmask)
-      # print("get_dual duals",duals)
-      # print("get_dual pts",pts)
 
       return duals.astype(object), ksis
-
-
-      for i,verts in enumerate(vverts):
-         vfound = False
-         # bboxes = np.array(itemgetter(*verts)(self.__dual_bboxes))
-         # vmask = np.all(p[i,:] > bboxes[:,0:3],axis=1) & np.all(p[i,:] < bboxes[:,3:6],axis=1)
-         # print( np.nonzero(vmask))
-         # okverts = [verts[index] for index in np.nonzero(vmask)]
-         # vids = itemgetter(okverts)(self.__dual_cells)
-         nverts = len(verts)
-         vcoords = self.get_cell_coordinates(np.array(itemgetter(*verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
-
-         # print(np.atleast_2d(p[i,:]).repeat(nverts,axis=0).shape, (offsets[np.newaxis,:,:]+vcoords.reshape(-1,8,3)).shape)
-         vksis = find_ksi(np.atleast_2d(pts[i,:]).repeat(nverts,axis=0), offsets[np.newaxis,:,:]+vcoords.reshape(-1,8,3))
-         # print(vksis)
-         foundmask = np.all(vksis <=1, axis=1) & np.all(vksis >= 0, axis=1)
-         # print(foundmask.shape)
-         ind = np.nonzero(foundmask)[0]
-         # print(ind[0])
-         if (np.sum(foundmask) > 0):
-            duals.append(verts[ind[0]])
-            ksis.append(vksis[ind[0]])
-         else:
-            duals.append(None)
-            ksis.append(None)
-         continue
-
-         for vert in verts:
-            # Check bounding boxes and ignore if not inside the bbox of this dual
-            if np.any(pts[i,:] < self.__dual_bboxes[vert][0:3]) or np.any(pts[i,:] > self.__dual_bboxes[vert][3:6]):
-               continue
-            ksi = find_ksi(pts[i,:], offsets+self.get_cell_coordinates(np.array(self.__dual_cells[vert])))
-            if np.all(ksi <= 1) and np.all(ksi >= 0):
-               vfound = True
-               duals.append(vert)
-               ksis.append(ksi)
-         # print("seeked vertexdual for ", i, vfound)
-         if not vfound:
-            duals.append(None)
-            ksis.append(None)
-
-      # warnings.warn("Dual cell not found for", p)
-      return duals,ksis
       
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid):
       cid = np.unique(cid)
-      # mask = np.isin(cid, list(self.__cell_vertices.keys()), invert = True)
       mask = ~dict_keys_exist(self.__cell_vertices,cid)
       # {cid : 8-tuple of vertex_inds}
       
       corner_vertices = self.get_cell_corner_vertices(cid[mask])
       cell_neighbors = self.build_cell_neighborhoods(cid[mask])
-      # print("building vertices for "+str(len(cid[mask]))+" cells")
 
       levels = self.get_amr_level(cid[mask])
 
-      # find irregular cells, but only with refined neighbour
-      # irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c]))))]
-      # print(len(irregular_cells), "of which irregular")
+      # find irregular cells
+      irregular_mask = np.array([np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c])))) for i,c in enumerate(cid[mask])],dtype=bool)
+      mask[mask] = mask[mask] & irregular_mask # beautiful
+      
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
       if(len(cid[mask])>0):
@@ -2290,7 +2212,6 @@ class VlsvReader(object):
 
    def get_cell_corner_vertices(self, cids):
 
-      #mask = np.isin(cids, list(self.__cell_corner_vertices.keys()), invert = True)
       mask = ~dict_keys_exist(self.__cell_vertices,cids)
       coords = self.get_cell_coordinates(cids[mask])
       vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
@@ -2322,8 +2243,7 @@ class VlsvReader(object):
    # again, combined getter and builder..
    def build_cell_neighborhoods(self, cids):
 
-      mask = np.isin(cids, self.__cell_neighbours.keys(), invert = True)
-      # mask = ~dict_keys_exist(self.__cell_neighbours, cids)
+      mask = ~dict_keys_exist(self.__cell_neighbours, cids)
       cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
 
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
@@ -2352,22 +2272,28 @@ class VlsvReader(object):
 
       # vertices = np.array(list(vertices), dtype="i,i,i")
       vertices = list(set(vertices))
+      # vertices = np.array(list(set(vertices)),dtype=(np.int64,3))
+      # vertices.flags.writeable = False
+      
+      # print(vertices.shape)
       done = []
       todo = []
       # mask = np.isin(vertices, list(self.__dual_cells.keys()),invert=True)
       # mask = np.empty(len(vertices),dtype=bool)
       # print(mask)
+      # mask = dict_keys_exist(self.__dual_cells, vertices)
       for i,v in enumerate(vertices):
       # mask = np.array([v not in self.__dual_cells.keys() for v in vertices],dtype=bool)
          if v in self.__dual_cells.keys():
             done.append(v)
          else:
             todo.append(v)
-      dual_sets_done   = {v : self.__dual_cells[v] for v in done}
-      # vertices = np.array(vertices,dtype=object)
-      # print(vertices[~mask])
+      # vertices=np.array(vertices,dtype="i,i,i")
+      # done = [tuple(v) for v in vertices[mask]]
+      # todo = [tuple(v) for v in vertices[~mask]]
 
-      # dual_sets_done = dict(filter(lambda kv:kv[0] in np.array(vertices,dtype=object)[~mask], self.__dual_cells.items()))
+      dual_sets_done   = {v : self.__dual_cells[v] for v in done}
+      
       dual_sets = {}
 
       len_todo = len(todo)
@@ -2545,7 +2471,7 @@ class VlsvReader(object):
       else:
          return np.array(cellindices)[0]
 
-   def get_cell_neighbor(self, cellids, offsets, periodic):
+   def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
 
       :param cellids:            The cell's ID
@@ -2557,10 +2483,21 @@ class VlsvReader(object):
 
       '''
       stack = True
-      if not hasattr(cellids,"__len__"):
-         cellids = np.atleast_1d(cellids)
-         offsets = np.atleast_2d(offsets)
+      if not hasattr(cellidss,"__len__"):
+         cellidss = np.atleast_1d(cellidss)
+         offsetss = np.atleast_2d(offsetss)
          stack = False
+
+      if prune_uniques:
+         fullargs = np.array(np.hstack((cellidss[:,np.newaxis],offsetss)))
+         uniqueargs, inverse_indices = np.unique(fullargs,axis=0, return_inverse=True)
+         cellids = uniqueargs[:,0]
+         offsets = uniqueargs[:,1:4]
+      else:
+         cellids = cellidss
+         offsets = offsetss
+         inverse_indices = np.indices((len(cellids),))
+
 
       reflevel = self.get_amr_level(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
@@ -2598,7 +2535,7 @@ class VlsvReader(object):
 
       # Return the neighbor cellids/cellid:
       if stack:
-         return np.array(cellid_neighbors)
+         return np.array(cellid_neighbors[inverse_indices])
       else:
          return np.array(cellid_neighbors)[0]
 
