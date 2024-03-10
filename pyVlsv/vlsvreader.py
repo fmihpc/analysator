@@ -43,25 +43,28 @@ import time
 from interpolator_amr import AMRInterpolator
 from operator import itemgetter
 
-def dict_keys_exist(dictionary, query_keys):
+def dict_keys_exist(dictionary, query_keys, prune_unique=True):
    # this helps quite a lot!
-   unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
+   if prune_unique:
+      unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
 
-   # these are all about the same...
-   # if (unique_keys.ndim == 1):
-   mask = np.array([k in dictionary.keys() for k in unique_keys],dtype=bool)
-   # else: # and this isn't worth it?
-   #    mask = np.array([tuple(k) in dictionary.keys() for k in unique_keys],dtype=bool)
+      # these are all about the same...
+      # if (unique_keys.ndim == 1):
+      mask = np.array([k in dictionary.keys() for k in unique_keys],dtype=bool)
+      # else: # and this isn't worth it?
+      #    mask = np.array([tuple(k) in dictionary.keys() for k in unique_keys],dtype=bool)
 
-   # mask = np.empty(query_keys.shape, dtype=bool)
-   # for i,k in enumerate(query_keys):
-   #    mask[i] = [k in dictionary.keys() for k in query_keys],dtype=bool)
+      # mask = np.empty(query_keys.shape, dtype=bool)
+      # for i,k in enumerate(query_keys):
+      #    mask[i] = [k in dictionary.keys() for k in query_keys],dtype=bool)
 
-   # mask = np.array(list(map(lambda c: c in dictionary.keys(),query_keys)), dtype=bool)
+      # mask = np.array(list(map(lambda c: c in dictionary.keys(),query_keys)), dtype=bool)
 
-   # dlambda = np.frompyfunc(lambda c: c in dictionary.keys(),1,1)
-   # mask = np.array(dlambda(query_keys),dtype=bool)
-   mask = mask[indices]
+      # dlambda = np.frompyfunc(lambda c: c in dictionary.keys(),1,1)
+      # mask = np.array(dlambda(query_keys),dtype=bool)
+      mask = mask[indices]
+   else:
+      mask = np.array([k in dictionary.keys() for k in query_keys],dtype=bool)
 
    return mask
 
@@ -2106,7 +2109,7 @@ class VlsvReader(object):
       else:
          cid = cellids
 
-      self.build_cell_vertices(np.atleast_1d(cid))
+      self.build_cell_vertices(np.atleast_1d(cid),prune_unique=True)
       
       vverts = [self.__cell_vertices[c] for c in cid]
       set_of_verts = set()
@@ -2164,13 +2167,15 @@ class VlsvReader(object):
       return duals.astype(object), ksis
       
    # For now, combined caching accessor and builder
-   def build_cell_vertices(self, cid):
-      cid = np.unique(cid)
-      mask = ~dict_keys_exist(self.__cell_vertices,cid)
+   def build_cell_vertices(self, cid, prune_unique=False):
+      if prune_unique:
+         cid = np.unique(cid)
+
+      mask = ~dict_keys_exist(self.__cell_vertices,cid,prune_unique=False)
       # {cid : 8-tuple of vertex_inds}
       
-      corner_vertices = self.get_cell_corner_vertices(cid[mask])
       cell_neighbors = self.build_cell_neighborhoods(cid[mask])
+      corner_vertices = self.get_cell_corner_vertices(cid[mask])
 
       levels = self.get_amr_level(cid[mask])
 
@@ -2211,7 +2216,7 @@ class VlsvReader(object):
 
    def get_cell_corner_vertices(self, cids):
 
-      mask = ~dict_keys_exist(self.__cell_vertices,cids)
+      mask = ~dict_keys_exist(self.__cell_vertices,cids,prune_unique=False)
       coords = self.get_cell_coordinates(cids[mask])
       vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
       cell_vertex_sets = {}
@@ -2242,7 +2247,7 @@ class VlsvReader(object):
    # again, combined getter and builder..
    def build_cell_neighborhoods(self, cids):
 
-      mask = ~dict_keys_exist(self.__cell_neighbours, cids)
+      mask = ~dict_keys_exist(self.__cell_neighbours, cids, prune_unique=False)
       cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
 
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
@@ -2330,7 +2335,7 @@ class VlsvReader(object):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       
       vertices = set()
-      vsets = self.build_cell_vertices(cid)
+      vsets = self.build_cell_vertices(cid,prune_unique=False)
       vertices = vertices.union(*vsets.values())
       
       return self.build_dual_from_vertices(list(vertices))
@@ -2340,7 +2345,7 @@ class VlsvReader(object):
       
       cid = np.atleast_1d(cid)
 
-      mask = ~dict_keys_exist(self.__cell_duals, cid)
+      mask = ~dict_keys_exist(self.__cell_duals, cid, prune_unique=False)
 
       if(np.sum(mask) > 0):
          coords = self.get_cell_coordinates(cid[mask])
