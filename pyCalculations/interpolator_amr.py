@@ -157,7 +157,7 @@ class HexahedralTrilinearInterpolator(object):
       self.var = kwargs['var']
       self.operator = kwargs['op']
 
-   def __call__(self, pt):
+   def __call__(self, pt, cellids = None):
       pts = np.atleast_2d(pt)
       if(len(pts.shape) == 2):
          # t0 = time()
@@ -168,7 +168,7 @@ class HexahedralTrilinearInterpolator(object):
          #    d, ksi = self.reader.get_dual(p)
          #    duals.append(d)
          #    ksis.append(ksi)
-         duals, ksis = self.reader.get_dual(pts)
+         duals, ksis = self.reader.get_dual(pts, cellids)
          duals_corners = np.array(itemgetter(*duals)(self.reader._VlsvReader__dual_cells))
          fi = self.reader.read_variable(self.var, duals_corners.reshape(-1), operator=self.operator)
          if(fi.ndim == 2):

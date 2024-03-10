@@ -1361,9 +1361,11 @@ class VlsvReader(object):
             return final_values.squeeze()
 
    def get_duals(self,cids):
-      fo = dict(filter(lambda kv:kv[0] in cids, self.__cell_duals.items()))
+      # fo = dict(filter(lambda kv:kv[0] in cids, self.__cell_duals.items()))
+      fo = {c: self.__cell_duals[c] for c in cids}
       vset = set()
       vset.union(*fo.values())
+      return {v: self.__dual_cells[v] for v in vset}
       return dict(filter(lambda kv:kv[0] in vset, self.__dual_cells.items()))
 
 
@@ -1407,8 +1409,10 @@ class VlsvReader(object):
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-      containing_cells = self.get_unique_cellids(coordinates)
-      self.build_duals(list(containing_cells))
+      cellids = self.get_cellid(coordinates)
+      # containing_cells = self.get_unique_cellids(coordinates)
+      containing_cells = np.unique(cellids)
+      self.build_duals(containing_cells)
       duals = self.get_duals(containing_cells)
 
       cells_set = set()
@@ -1418,7 +1422,7 @@ class VlsvReader(object):
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
       intp = intp_wrapper.get_interpolator(name,operator, coords, method=method, methodargs=methodargs)
       
-      final_values = intp(coords)[:,np.newaxis]
+      final_values = intp(coords, cellids=cellids)[:,np.newaxis]
 
       if stack:
          return final_values.squeeze() # this will be an array as long as this is still a multi-cell codepath!
@@ -2119,12 +2123,15 @@ class VlsvReader(object):
          return crds[0,:]
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
-   def get_dual(self, pts):
+   def get_dual(self, pts, cellids=None):
 
       from pyCalculations.interpolator_amr import find_ksi
 
       # start the search from the vertices 
-      cid = self.get_cellid(np.atleast_2d(pts))
+      if cellids is None:
+         cid = self.get_cellid(np.atleast_2d(pts))
+      else:
+         cid = cellids
       # for c in cid:
       #    if(c not in self.__cell_vertices):
       #       self.build_cell_vertices(np.atleast_1d(c))
@@ -2236,10 +2243,9 @@ class VlsvReader(object):
       
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid):
-      cids = set(cid)
-      cid = np.array(list(cids),dtype=np.int64)
-      mask = np.isin(cid, list(self.__cell_vertices.keys()), invert = True)
-      # mask = ~dict_keys_exist(self.__cell_vertices,cid)
+      cid = np.unique(cid)
+      # mask = np.isin(cid, list(self.__cell_vertices.keys()), invert = True)
+      mask = ~dict_keys_exist(self.__cell_vertices,cid)
       # {cid : 8-tuple of vertex_inds}
       
       corner_vertices = self.get_cell_corner_vertices(cid[mask])
@@ -2248,11 +2254,13 @@ class VlsvReader(object):
 
       levels = self.get_amr_level(cid[mask])
 
-      # find irregular cells, but only with refined neighbours
-      irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c]))))]
+      # find irregular cells, but only with refined neighbour
+      # irregular_cells = [c for i,c in enumerate(cid[mask]) if np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c]))))]
       # print(len(irregular_cells), "of which irregular")
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
+      if(len(cid[mask])>0):
+         self.get_cell_corner_vertices(np.array(list(set().union(*itemgetter(*cid[mask])(cell_neighbors)))))
       # Loop over all the irregular cells (with finer neighbours) that may have hanging nodes
       # for i,c in enumerate(irregular_cells):
       for i,c in enumerate(cid[mask]):
@@ -2260,10 +2268,10 @@ class VlsvReader(object):
          # finer_neighbors = [n for n in cell_neighbors[c] if self.get_amr_level(n) > levels[i]]
          hanging_set = set()
          # ncorners = self.get_cell_corner_vertices(np.array(finer_neighbors))
-         ncorners = self.get_cell_corner_vertices(np.array(list(cell_neighbors[c])))
+         ncorners = itemgetter(*cell_neighbors[c])(self.__cell_corner_vertices) #self.get_cell_corner_vertices(np.array(list(cell_neighbors[c])))
 
          # Possible hanging nodes are those that are the vertices of finer neighbours.
-         for vertex_inds_set in ncorners.values():
+         for vertex_inds_set in ncorners:#.values():
             hanging_set.update(set(vertex_inds_set) - set(corner_vertices[c])) # no need to add current corners
          
          cmin = np.min(corners,axis=0)
@@ -2282,8 +2290,8 @@ class VlsvReader(object):
 
    def get_cell_corner_vertices(self, cids):
 
-      mask = np.isin(cids, list(self.__cell_corner_vertices.keys()), invert = True)
-      # mask = ~dict_keys_exist(self.__cell_vertices,cids)
+      #mask = np.isin(cids, list(self.__cell_corner_vertices.keys()), invert = True)
+      mask = ~dict_keys_exist(self.__cell_vertices,cids)
       coords = self.get_cell_coordinates(cids[mask])
       vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
       cell_vertex_sets = {}
@@ -2319,9 +2327,12 @@ class VlsvReader(object):
       cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
 
       cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
+      vertices_todo = set().union(*cell_vertex_sets.values())
+      neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
       for c,verts in cell_vertex_sets.items():
-         neighbor_tuples = self.build_dual_from_vertices(verts)
-         cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
+         # neighbor_tuples = self.build_dual_from_vertices(verts)
+         # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
+         cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
       
       self.__cell_neighbours.update(cell_neighbor_sets)
 
@@ -2340,6 +2351,7 @@ class VlsvReader(object):
       # vertices = np.array(list(vertices),dtype="i,i,i")
 
       # vertices = np.array(list(vertices), dtype="i,i,i")
+      vertices = list(set(vertices))
       done = []
       todo = []
       # mask = np.isin(vertices, list(self.__dual_cells.keys()),invert=True)
@@ -2383,12 +2395,12 @@ class VlsvReader(object):
                   ii += 1
 
          # offsets = np.array(offsets)
-         # v_cellcoords = eps*offsets[np.newaxis,:,:] + np.reshape(vcoords,(-1,8,3))
+         v_cellcoords = self.get_cell_coordinates(v_cells.reshape((-1))).reshape((-1,8,3))
          # v_cells = np.reshape(self.get_cellid(np.reshape(v_cellcoords,(-1,3))),(-1,8))
 
          for i, vertexInds in enumerate(todo): #vertices[mask]):
             dual_sets[vertexInds] = tuple(v_cells[i,:])
-            cellcoords = self.get_cell_coordinates(v_cells[i,:])
+            cellcoords = v_cellcoords[i,:] #self.get_cell_coordinates(v_cells[i,:])
             mins = np.min(cellcoords,axis=0)
             maxs = np.max(cellcoords,axis=0)
             dual_bboxes[vertexInds] = np.hstack((mins, maxs))
@@ -2425,10 +2437,11 @@ class VlsvReader(object):
    def build_duals(self, cid):
       
       cid = np.atleast_1d(cid)
-      mask = np.empty((cid.shape[0]),dtype=bool)
+      # mask = np.empty((cid.shape[0]),dtype=bool)
       # mask = np.isin(cid, list(self.__cell_duals.keys()), invert = True)
-      for i,c in enumerate(cid):
-         mask[i] = c in self.__cell_duals.keys()
+      mask = ~dict_keys_exist(self.__cell_duals, cid)
+      # for i,c in enumerate(cid):
+         # mask[i] = c in self.__cell_duals.keys()
 
       if(np.sum(mask) > 0):
          coords = self.get_cell_coordinates(cid[mask])
@@ -2440,7 +2453,7 @@ class VlsvReader(object):
          vertices = set()
          vsets = self.build_cell_vertices(cid[mask])
          vertices = vertices.union(*vsets.values())
-         for c in cid:
+         for c in cid[mask]:
             self.__cell_duals[c] = vsets[c]
             # vertices.update({v for v in vsets[c]})
          
