@@ -763,6 +763,15 @@ def vg_coordinates_lowcorner( variables, reader):
    dxs = variables[1]
    return reader.get_cell_coordinates(cellids)-dxs/2
 
+def vg_low_corner_neighbor( variables, reader):
+   cellids = variables[0]
+   cellids = np.atleast_1d(cellids)
+   offsets = np.zeros((cellids.shape[0]),dtype=np.int32)
+   return reader.get_cell_neighbor(cellids, offsets, [True, True, True])
+
+def vg_regular_interp_neighbors( variables, reader):
+   return reader
+
 def vg_dx(variables, reader):
    cellids = variables[0]
    return reader.get_cell_dx(cellids)
@@ -1091,6 +1100,9 @@ v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jpe
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+
+v5reducers["vg_low_corner_neighbor"] =            DataReducerVariable(["CellID"], vg_low_corner_neighbor, "", 1, latex=r"low-corner neigbhor", latexunits=r"$$", useReader=True)
+v5reducers["vg_regular_interp_neighbors"] =            DataReducerVariable(["CellID"], vg_regular_interp_neighbors, "", 1, latex=r"low-corner neigbhor", latexunits=r"$$", useReader=True)
 
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
