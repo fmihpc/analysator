@@ -2110,7 +2110,6 @@ class VlsvReader(object):
          return crds[0,:]
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
-   # also VECTORIZE!
    def get_dual(self, pts):
 
       from pyCalculations.interpolator_amr import find_ksi
@@ -2152,12 +2151,14 @@ class VlsvReader(object):
 
       all_verts = [v for vs in vverts for v in vs]
 
-
+      # print("get_duals all_verts",all_verts)
       all_vcoords = self.get_cell_coordinates(np.array(itemgetter(*all_verts)(self.__dual_cells))[np.newaxis,:].reshape(-1))
 
       all_vcoords = offsets[np.newaxis,:,:]+all_vcoords.reshape(-1,8,3)
-
+      # print("get_duals ppts",ppts)
+      # print("get_duals all_vcoords",all_vcoords)
       all_vksis = find_ksi(ppts, all_vcoords)
+      # print("get_duals all_vksis", all_vksis)
       foundmask = np.all(all_vksis <=1, axis=1) & np.all(all_vksis >= 0, axis=1)
 
       ind = np.nonzero(foundmask)[0]
@@ -2175,6 +2176,9 @@ class VlsvReader(object):
 
       ksis[found_pts,:] = all_vksis[inds,:]
       duals[found_pts] = dduals[inds]
+      # print("get_dual foundmask",foundmask)
+      # print("get_dual duals",duals)
+      # print("get_dual pts",pts)
 
       return duals.astype(object), ksis
 
@@ -2225,7 +2229,6 @@ class VlsvReader(object):
    def build_cell_vertices(self, cid):
       cids = set(cid)
       cid = np.array(list(cids),dtype=np.int64)
-      
       mask = np.isin(cid, list(self.__cell_vertices.keys()), invert = True)
       # mask = ~dict_keys_exist(self.__cell_vertices,cid)
       # {cid : 8-tuple of vertex_inds}
@@ -2242,8 +2245,9 @@ class VlsvReader(object):
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
       # Loop over all the irregular cells (with finer neighbours) that may have hanging nodes
-      for i,c in enumerate(irregular_cells):
-         corners = np.array(self.__cell_vertices[c], dtype=np.int64)
+      # for i,c in enumerate(irregular_cells):
+      for i,c in enumerate(cid[mask]):
+         corners = np.array(self.__cell_corner_vertices[c], dtype=np.int64)
          # finer_neighbors = [n for n in cell_neighbors[c] if self.get_amr_level(n) > levels[i]]
          hanging_set = set()
          # ncorners = self.get_cell_corner_vertices(np.array(finer_neighbors))
@@ -2269,7 +2273,7 @@ class VlsvReader(object):
 
    def get_cell_corner_vertices(self, cids):
 
-      mask = np.isin(cids, list(self.__cell_vertices.keys()), invert = True)
+      mask = np.isin(cids, list(self.__cell_corner_vertices.keys()), invert = True)
       # mask = ~dict_keys_exist(self.__cell_vertices,cids)
       coords = self.get_cell_coordinates(cids[mask])
       vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
@@ -2290,10 +2294,10 @@ class VlsvReader(object):
             vtuple = tuple([tuple(inds) for inds in vlist])
             cell_vertex_sets[c] = vtuple
             
-         self.__cell_vertices.update(cell_vertex_sets)
+         self.__cell_corner_vertices.update(cell_vertex_sets)
 
       for i, c in enumerate(cids[~mask]):
-         cell_vertex_sets[c] = self.__cell_vertices[c]
+         cell_vertex_sets[c] = self.__cell_corner_vertices[c]
 
       return cell_vertex_sets
 
