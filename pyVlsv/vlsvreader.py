@@ -1345,12 +1345,11 @@ class VlsvReader(object):
             return final_values.squeeze()
 
    def get_duals(self,cids):
-      # fo = dict(filter(lambda kv:kv[0] in cids, self.__cell_duals.items()))
+
       fo = {c: self.__cell_duals[c] for c in cids}
       vset = set()
       vset.union(*fo.values())
       return {v: self.__dual_cells[v] for v in vset}
-      return dict(filter(lambda kv:kv[0] in vset, self.__dual_cells.items()))
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
@@ -2265,25 +2264,14 @@ class VlsvReader(object):
 
    def build_dual_from_vertices(self, vertices):
 
-      # print(vertices)
-      # vertices = np.array(list(vertices),dtype="i,i,i")
-      # print(vertices)
-      # vertices = np.array(list(vertices),dtype="i,i,i")
-
-      # vertices = np.array(list(vertices), dtype="i,i,i")
       vertices = list(set(vertices))
-      # vertices = np.array(list(set(vertices)),dtype=(np.int64,3))
-      # vertices.flags.writeable = False
-      
-      # print(vertices.shape)
+
+      # I don't like this, but alternatives seem worse.
       done = []
       todo = []
-      # mask = np.isin(vertices, list(self.__dual_cells.keys()),invert=True)
-      # mask = np.empty(len(vertices),dtype=bool)
-      # print(mask)
       # mask = dict_keys_exist(self.__dual_cells, vertices)
-      for i,v in enumerate(vertices):
       # mask = np.array([v not in self.__dual_cells.keys() for v in vertices],dtype=bool)
+      for i,v in enumerate(vertices):
          if v in self.__dual_cells.keys():
             done.append(v)
          else:
@@ -2305,10 +2293,7 @@ class VlsvReader(object):
          v_cells = np.zeros((len_todo, 8),dtype=int)
          v_cellcoords = np.zeros((len_todo, 8,3))
          ii = 0
-         # print(vertices[mask])
-         # print(todo)
-         vcoords = self.get_vertex_coordinates_from_indices(todo)#list(vertices[mask]))
-         # print(vcoords.shape)
+         vcoords = self.get_vertex_coordinates_from_indices(todo)
 
          # TODO get rid of the loop
          offsets = []
@@ -2320,23 +2305,16 @@ class VlsvReader(object):
                   v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
                   ii += 1
 
-         # offsets = np.array(offsets)
          v_cellcoords = self.get_cell_coordinates(v_cells.reshape((-1))).reshape((-1,8,3))
-         # v_cells = np.reshape(self.get_cellid(np.reshape(v_cellcoords,(-1,3))),(-1,8))
 
-         for i, vertexInds in enumerate(todo): #vertices[mask]):
-            dual_sets[vertexInds] = tuple(v_cells[i,:])
-            cellcoords = v_cellcoords[i,:] #self.get_cell_coordinates(v_cells[i,:])
-            mins = np.min(cellcoords,axis=0)
-            maxs = np.max(cellcoords,axis=0)
-            dual_bboxes[vertexInds] = np.hstack((mins, maxs))
+         dual_sets.update({vinds: tuple(v_cells[i,:]) for i,vinds in enumerate(todo)})
+         mins = np.min(v_cellcoords, axis=1)
+         maxs = np.max(v_cellcoords, axis=1)
+         dual_bboxes.update({vinds: np.hstack((mins[i,:],maxs[i,:])) for i,vinds in enumerate(todo)})
 
          self.__dual_cells.update(dual_sets)
          self.__dual_bboxes.update(dual_bboxes)
       dual_sets_done.update(dual_sets)
-      # print(self.__dual_cells, vertices)
-      # print(vertices[0], self.__dual_cells.keys())
-      # dual_sets_done = dict(filter(lambda kv:kv[0] in list(vertices[~mask]), self.__dual_cells.items()))
 
       return dual_sets_done
 
@@ -2354,8 +2332,6 @@ class VlsvReader(object):
       vertices = set()
       vsets = self.build_cell_vertices(cid)
       vertices = vertices.union(*vsets.values())
-      # for c in cid:
-      #    vertices.update({v for v in vsets[c]})
       
       return self.build_dual_from_vertices(list(vertices))
 
@@ -2363,11 +2339,8 @@ class VlsvReader(object):
    def build_duals(self, cid):
       
       cid = np.atleast_1d(cid)
-      # mask = np.empty((cid.shape[0]),dtype=bool)
-      # mask = np.isin(cid, list(self.__cell_duals.keys()), invert = True)
+
       mask = ~dict_keys_exist(self.__cell_duals, cid)
-      # for i,c in enumerate(cid):
-         # mask[i] = c in self.__cell_duals.keys()
 
       if(np.sum(mask) > 0):
          coords = self.get_cell_coordinates(cid[mask])
@@ -2381,7 +2354,6 @@ class VlsvReader(object):
          vertices = vertices.union(*vsets.values())
          for c in cid[mask]:
             self.__cell_duals[c] = vsets[c]
-            # vertices.update({v for v in vsets[c]})
          
          self.build_dual_from_vertices(list(vertices))
 
