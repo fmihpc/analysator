@@ -100,7 +100,7 @@ def df(ksii, fii):
 # For hexahedral vertices verts and point p, find the trilinear basis coordinates ksi
 # that interpolate the coordinates of verts to the tolerance tol.
 # This is an iterative procedure. Return nans in case of no convergence.
-def find_ksi(p, v_coords, tol= 1e-5, maxiters = 200):
+def find_ksi(p, v_coords, tol= .1, maxiters = 200):
    p = np.atleast_2d(p)
    v_coords = np.atleast_3d(v_coords)
    ksi0 = np.full_like(p, 0.5)

@@ -1603,17 +1603,26 @@ class VlsvReader(object):
          .. seealso:: :func:`read_variable`
       '''
 
+      var_data = self.variable_cache[(name,operator)]
+      if var_data.ndim == 2:
+         value_len = var_data.shape[1]
+      else:
+         value_len = 1
+         
       if isinstance(cellids, numbers.Number):
          if cellids == -1:
-            return self.variable_cache[(name,operator)]
+            return var_data
          else:
-            return self.variable_cache[(name,operator)][self.__fileindex_for_cellid[cellids]]
+            return var_data[self.__fileindex_for_cellid[cellids]]
       else:
          if(len(cellids) > 0):
-            indices = itemgetter(*cellids)(self.__fileindex_for_cellid)
+            indices = np.array(itemgetter(*cellids)(self.__fileindex_for_cellid),dtype=np.int64)
          else:
             indices = np.array([],dtype=np.int64)
-         return self.variable_cache[(name,operator)][indices,:]
+         if value_len == 1:
+            return var_data[indices]
+         else:
+            return var_data[indices,:]
          
          
    def read_variable_to_cache(self, name, operator="pass"):
