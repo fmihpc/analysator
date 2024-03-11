@@ -2185,7 +2185,9 @@ class VlsvReader(object):
       
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
-      if(len(cid[mask])>0):
+      if(len(cid[mask])==1):
+         self.get_cell_corner_vertices(np.array(list(set().union(itemgetter(*cid[mask])(cell_neighbors)))))
+      elif(len(cid[mask])>=1):
          self.get_cell_corner_vertices(np.array(list(set().union(*itemgetter(*cid[mask])(cell_neighbors)))))
       # Loop over all the irregular cells (with finer neighbours) that may have hanging nodes
       # for i,c in enumerate(irregular_cells):
