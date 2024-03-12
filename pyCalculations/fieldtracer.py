@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 
-def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, direction='+', fg = 'fg_b' ):
+def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol' ):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
@@ -190,89 +190,140 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
        param max_iterations:  The maximum number of iterations (int) before the algorithm stops. Total traced length is dx*max_iterations
        param dx:              One iteration step length [meters] (ex. dx=1e4 for typical applications)
        keyword direction:     '+' or '-' or '+-' Follow field in the plus direction, minus direction, or both
-       keyword fg:            The field grid variable to be traced (either a string or numpy array)
+       keyword grid_var:      Variable to be traced (A string)
                               options include:
-                                  fg = some string
+                                  grid_var = some string
                                       ex. fg='fg_b': B-field, fg='fg_e': E-field
                                       static_field_tracer_3d() will load the appropriate variable via the vlsvReader object
                                       NOTE: volumetric variables, with '_vol' suffix, may not work as intended. Use face-centered values: 'fg_b', 'fg_e' etc.
-                                  fg = some field-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
+                                  grid_var = some field-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
-                                   
-      :returns:                  points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
+                                  grid_variable = 'vg_b_vol'
+
+      :returns:               fg:   points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
                                  ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
+                              vg:   points_traced --- a 3d numpy array [len(seed_coords)]
       EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
                           fg_b = vlsvobj.read_variable('fg_b')
                           traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
    '''
 
-   # standardize input (a list of 3-element arrays/lists)
-   if type(coord_list[0]) not in [list, np.ndarray]:
-      coord_list = [coord_list]
+   # Standardize input: (N,3) np.array
+   if type(seed_coords) != np.ndarray:
+      raise TypeError("Please give a numpy array.")
 
-   # Read face-centered field grid variable (denoted 'fg_*' in .vlsv files, no '_vol' suffix):
-   if type(fg) == str:
-      fg = vlsvReader.read_variable(fg)
+   # Cache and read variables:
+   vg = None
+   fg = None
+
+   if type(grid_var) == str:
+      if grid_var.startswith("fg"):
+         fg = grid_var
+
+      elif grid_var.startswith("vg"):   
+         vg = grid_var   
+         neighbors_vg = vlsvReader.read_variable_to_cache("vg_regular_interp_neighbors")
+         vg_cache = vlsvReader.read_variable_to_cache(vg)
+
+      else:
+         raise ValueError("Please give a valid string (eg. 'vg_b_vol')")
    else:
-      #   fg is already an ndarray
-      if not isinstance(fg, np.ndarray):
-         raise TypeError("Keyword parameter fg does not seem to be a numpy ndarray.")
-      elif fg.ndim!=4 or fg.shape[-1]!=3:
-         raise ValueError("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+      raise TypeError("Please give a string")
+      # #   fg is already an ndarray
+      # if not isinstance(grid_var, np.ndarray):
+      #    raise TypeError("Keyword parameter fg does not seem to be a numpy ndarray.")
+      # elif fg.ndim!=4 or fg.shape[-1]!=3:
+      #    raise ValueError("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
          
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
-      backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', fg=fg)
+      backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', grid_var = grid_var)
       backward.reverse()
-      forward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='+', fg=fg)
-      return backward + forward[1:]
+      forward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='+', grid_var = grid_var)
+      return np.concatenate((backward,forward[:, 1:, :]), axis = 1)
 
+
+   multiplier = -1 if direction == '-' else 1
+
+   
    # Create x, y, and z coordinates:
-   xsize = fg.shape[0]
-   ysize = fg.shape[1]
-   zsize = fg.shape[2]
-   xmin = vlsvReader.read_parameter('xmin')
-   xmax = vlsvReader.read_parameter('xmax')
-   ymin = vlsvReader.read_parameter('ymin')
-   ymax = vlsvReader.read_parameter('ymax')
-   zmin = vlsvReader.read_parameter('zmin')
-   zmax = vlsvReader.read_parameter('zmax')
-   sizes = np.array([xsize, ysize, zsize])
-   maxs = np.array([xmax, ymax, zmax])
-   mins = np.array([xmin, ymin, zmin])
-   dcell = (maxs - mins)/(sizes.astype('float'))
-   x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
-   y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
-   z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-   coordinates = np.array([x,y,z], dtype=object)
+   if fg is not None:
+      xsize = fg.shape[0]
+      ysize = fg.shape[1]
+      zsize = fg.shape[2]
+      xmin = vlsvReader.read_parameter('xmin')
+      xmax = vlsvReader.read_parameter('xmax')
+      ymin = vlsvReader.read_parameter('ymin')
+      ymax = vlsvReader.read_parameter('ymax')
+      zmin = vlsvReader.read_parameter('zmin')
+      zmax = vlsvReader.read_parameter('zmax')
+      sizes = np.array([xsize, ysize, zsize])
+      maxs = np.array([xmax, ymax, zmax])
+      mins = np.array([xmin, ymin, zmin])
+      dcell = (maxs - mins)/(sizes.astype('float'))
+      x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
+      y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
+      z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
+      coordinates = np.array([x,y,z], dtype=object)
 
-   # Create grid interpolation of vector field (V)
-   interpolator_face_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
-   interpolators = [interpolator_face_V_0, interpolator_face_V_1, interpolator_face_V_2]
+      # Create grid interpolation of vector field (V)
+      interpolator_face_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
+      interpolator_face_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
+      interpolator_face_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
+      interpolators = [interpolator_face_V_0, interpolator_face_V_1, interpolator_face_V_2]
 
-   # Trace vector field lines
-   if direction == '-':
-      multiplier = -1
-   else:
-      multiplier = 1
-   points_traced = [np.array(coord_list)]              # iteratively append traced trajectories to this list
-   points = points_traced[0]
-   N = len(list(coord_list))
-   V_unit = np.zeros([3, N])
-   for i in range(max_iterations):
-      V_unit[0, :] = interpolators[0](points)
-      V_unit[1, :] = interpolators[1](points)
-      V_unit[2, :] = interpolators[2](points)
-      V_mag = np.linalg.norm(V_unit, axis=(0))
-      V_unit = V_unit / V_mag[np.newaxis,:]
-      new_points = points + multiplier*V_unit.T * dx
-      points = new_points
-      points_traced.append( list(points) )             # list of lists of 3-element arrays
+      # Trace vector field lines
+      points_traced = [np.array(coord_list)]              # iteratively append traced trajectories to this list
+      points = points_traced[0]
+      N = len(list(coord_list))
+      V_unit = np.zeros([3, N])
+      for i in range(max_iterations):
+         V_unit[0, :] = interpolators[0](points)
+         V_unit[1, :] = interpolators[1](points)
+         V_unit[2, :] = interpolators[2](points)
+         V_mag = np.linalg.norm(V_unit, axis=(0))
+         V_unit = V_unit / V_mag[np.newaxis,:]
+         new_points = points + multiplier*V_unit.T * dx
+         points = new_points
+         points_traced.append( list(points) )             # list of lists of 3-element arrays
+   
+   elif vg is not None:
+      # Search for the unique coordinates in the given seeds only
+      unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
+      n_unique_seeds = unique_seed_coords.shape[0]
+      points_traced_unique = np.zeros((n_unique_seeds, max_iterations, 3))
+      print(vg)
+      def find_unit_vector(vg, coord):
+         val_at_point = vlsvReader.read_interpolated_variable(vg,coord)
+         val_mag = np.linalg.norm(val_at_point, axis = 1, keepdims = True)
+         return val_at_point/val_mag
+      
+      unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
+      n_unique_seeds = unique_seed_coords.shape[0]
+      points_traced_unique = np.zeros((n_unique_seeds, max_iterations, 3))
 
-   return points_traced
+      Re = 6371000
+      mask_update = np.ones((n_unique_seeds,),dtype = bool) # A mask to determine if the points are still needed to trace further
+      points_traced_unique[:, 0, :] = unique_seed_coords
+
+      for i in range(1, max_iterations):
+
+         var_unit = find_unit_vector(vg, points_traced_unique[:, i-1, :])
+         next_points = points_traced_unique[:, i-1, :] + multiplier * dx * var_unit
+
+         points_traced_unique[mask_update,i,:] = next_points[mask_update,:]
+
+         distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
+         mask_update[(distances <= 5*Re) | (distances >= 40*Re)] = False
+
+         points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
+
+      points_traced = points_traced_unique[indices,:,:]
+
+
+
+   return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
 
