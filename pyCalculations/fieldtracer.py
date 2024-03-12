@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 
-def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol' ):
+def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol', lower_bound = 5 * 6371000, upper_bound = 40 * 6371000):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
@@ -201,7 +201,9 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
                                   grid_variable = 'vg_b_vol'
-
+      keyword lower_bound, upper_bound:
+                              Distances of the coordinates to origin, unit: m
+                              For the vg trace only, the tracing stops if the distance of coordinate reaches lower_bound or upper bound.
       :returns:               fg:   points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
                                  ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
@@ -220,10 +222,10 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
    fg = None
 
    if type(grid_var) == str:
-      if grid_var.startswith("fg"):
+      if "fg" in grid_var:
          fg = grid_var
 
-      elif grid_var.startswith("vg"):   
+      elif "vg" in grid_var:   
          vg = grid_var   
          neighbors_vg = vlsvReader.read_variable_to_cache("vg_regular_interp_neighbors")
          vg_cache = vlsvReader.read_variable_to_cache(vg)
@@ -248,9 +250,9 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
 
    multiplier = -1 if direction == '-' else 1
 
-   
-   # Create x, y, and z coordinates:
-   if fg is not None:
+   # Trace the field of fg variables
+   def fg_trace(fg):
+      # Create x, y, and z coordinates:
       xsize = fg.shape[0]
       ysize = fg.shape[1]
       zsize = fg.shape[2]
@@ -289,17 +291,22 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
          new_points = points + multiplier*V_unit.T * dx
          points = new_points
          points_traced.append( list(points) )             # list of lists of 3-element arrays
-   
-   elif vg is not None:
+      return points_traced
+
+   def vg_trace(vg, lower_bound, upper_bound):
       # Search for the unique coordinates in the given seeds only
       unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
       n_unique_seeds = unique_seed_coords.shape[0]
       points_traced_unique = np.zeros((n_unique_seeds, max_iterations, 3))
-      print(vg)
+      
       def find_unit_vector(vg, coord):
          val_at_point = vlsvReader.read_interpolated_variable(vg,coord)
          val_mag = np.linalg.norm(val_at_point, axis = 1, keepdims = True)
          return val_at_point/val_mag
+
+      # The stop condition for tracing, unit: m
+      def stopping_condition(distances, lower_bound, upper_bound):
+         return (distances <= lower_bound) | (distances >= upper_bound)
       
       unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
       n_unique_seeds = unique_seed_coords.shape[0]
@@ -309,6 +316,7 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
       mask_update = np.ones((n_unique_seeds,),dtype = bool) # A mask to determine if the points are still needed to trace further
       points_traced_unique[:, 0, :] = unique_seed_coords
 
+
       for i in range(1, max_iterations):
 
          var_unit = find_unit_vector(vg, points_traced_unique[:, i-1, :])
@@ -317,12 +325,20 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
          points_traced_unique[mask_update,i,:] = next_points[mask_update,:]
 
          distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
-         mask_update[(distances <= 5*Re) | (distances >= 40*Re)] = False
+         mask_update[stopping_condition(distnaces, lower_bound, upper_bound)] = False
 
          points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
 
       points_traced = points_traced_unique[indices,:,:]
+      return points_traced
 
+      
+   
+   if fg is not None:
+      points_traced = fg_trace(fg)
+   
+   elif vg is not None:
+      points_traced = vg_trace(vg)
 
 
    return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
