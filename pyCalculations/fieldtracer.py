@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 # fg tracing for static_field_tracer_3d
-def fg_trace(fg, seed_coords, max_iterations):
+def fg_trace(fg, seed_coords, max_iterations, dx, multiplier):
    # Create x, y, and z coordinates:
    xsize = fg.shape[0]
    ysize = fg.shape[1]
@@ -223,7 +223,7 @@ def fg_trace(fg, seed_coords, max_iterations):
 
 
 # vg tracing for static_field_tracer_3d
-def vg_trace(vg, seed_coords, max_iterations, stop_condition):
+def vg_trace(vg, seed_coords, max_iterations, dx, multiplier, stop_condition):
    # Search for the unique coordinates in the given seeds only
    unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
    n_unique_seeds = unique_seed_coords.shape[0]
@@ -329,18 +329,18 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
          
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
-      backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', grid_var = grid_var)
+      backward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='-', grid_var = grid_var, stop_condition = default_stopping_condition)
       backward.reverse()
-      forward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='+', grid_var = grid_var)
+      forward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = grid_var, stop_condition = default_stopping_condition)
       return np.concatenate((backward,forward[:, 1:, :]), axis = 1)
 
    multiplier = -1 if direction == '-' else 1   
    
    if fg is not None:
-      points_traced = fg_trace(fg, seed_coords, max_iterations)
+      points_traced = fg_trace(fg, seed_coords, max_iterations, dx, multiplier)
    
    elif vg is not None:
-      points_traced = vg_trace(vg, seed_coords, max_iterations, stop_condition)
+      points_traced = vg_trace(vg, seed_coords, max_iterations, dx, multiplier, stop_condition)
 
 
    return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
