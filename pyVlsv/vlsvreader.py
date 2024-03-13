@@ -2186,8 +2186,8 @@ class VlsvReader(object):
       levels = self.get_amr_level(cid[mask])
 
       # find irregular cells
-      irregular_mask = np.array([np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c])))) for i,c in enumerate(cid[mask])],dtype=bool)
-      mask[mask] = mask[mask] & irregular_mask # beautiful
+      # irregular_mask = np.array([np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c])))) for i,c in enumerate(cid[mask])],dtype=bool)
+      mask[mask] = mask[mask] #& irregular_mask # beautiful
       
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
