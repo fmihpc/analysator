@@ -767,6 +767,7 @@ def vg_coordinates_lowcorner( variables, reader):
 def vg_regular_interp_neighbors( variables, reader):
 
    cellids = variables[0]
+   len_cellids = np.atleast_1d(cellids).shape[0]
    offsets = np.zeros((8,3), dtype=np.int32)
    ii = 0
    for x in [0,1]:
@@ -775,8 +776,8 @@ def vg_regular_interp_neighbors( variables, reader):
             offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
             ii+=1
 
-   cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids), 8, axis=1).T,len(cellids)*8)
-   offsets = np.tile(offsets, (len(cellids), 1))
+   cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids), 8, axis=1).T,len_cellids*8)
+   offsets = np.tile(offsets, (len_cellids, 1))
    # print(cellids_rep.shape, offsets.shape)
    cellid_neighbors = reader.get_cell_neighbor(cellids_rep, offsets, [True,True,True], prune_uniques=False)
    cellid_neighbors = cellid_neighbors.reshape((-1,8))
