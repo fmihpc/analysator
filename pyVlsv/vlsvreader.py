@@ -361,6 +361,9 @@ class VlsvReader(object):
    def __read_fileindex_for_cellid(self):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
       """
+      if not self.__fileindex_for_cellid == {}:
+         return
+      
       cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
       #Check if it is not iterable. If it is a scale then make it a list
@@ -647,8 +650,8 @@ class VlsvReader(object):
    def get_cellid_locations(self):
       ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
       '''
-      if len( self.__fileindex_for_cellid ) == 0:
-         self.__read_fileindex_for_cellid()
+      # if len( self.__fileindex_for_cellid ) == 0:
+      self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
    def print_version(self):
@@ -2003,8 +2006,8 @@ class VlsvReader(object):
          raise IndexError("Coordinates are required to be 3-dimensional (coords were %d-dimensional)" % coordinates.shape[1])
 
       # If needed, read the file index for cellid
-      if len(self.__fileindex_for_cellid) == 0:
-         self.__read_fileindex_for_cellid()
+      # if len(self.__fileindex_for_cellid) == 0:
+      self.__read_fileindex_for_cellid()
       #good_ids = self.read_variable("CellID")
       # good_ids = np.array(list(self.__fileindex_for_cellid.keys()))
       # good_ids.sort()
