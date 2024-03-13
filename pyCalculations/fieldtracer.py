@@ -208,7 +208,7 @@ def fg_trace(fg, seed_coords, max_iterations):
    # Trace vector field lines
    points_traced = [np.array(seed_coords)]              # iteratively append traced trajectories to this list
    points = points_traced[0]
-   N = len(list(coord_list))
+   N = len(list(seed_coords))
    V_unit = np.zeros([3, N])
    for i in range(max_iterations):
       V_unit[0, :] = interpolators[0](points)
