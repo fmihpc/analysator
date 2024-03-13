@@ -43,8 +43,11 @@ import time
 from interpolator_amr import AMRInterpolator
 from operator import itemgetter
 
-def dict_keys_exist(dictionary, query_keys, prune_unique=True):
-   # this helps quite a lot!
+
+def dict_keys_exist(dictionary, query_keys, prune_unique=False):
+   if query_keys.shape[0] == 0:
+      return np.array([],dtype=bool)
+   # this helps quite a lot... for some cases.
    if prune_unique:
       unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
 

@@ -778,7 +778,7 @@ def vg_regular_interp_neighbors( variables, reader):
    cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids), 8, axis=1).T,len(cellids)*8)
    offsets = np.tile(offsets, (len(cellids), 1))
    # print(cellids_rep.shape, offsets.shape)
-   cellid_neighbors = reader.get_cell_neighbor(cellids_rep, offsets, [True,True,True])
+   cellid_neighbors = reader.get_cell_neighbor(cellids_rep, offsets, [True,True,True], prune_uniques=False)
    cellid_neighbors = cellid_neighbors.reshape((-1,8))
    
    return cellid_neighbors
