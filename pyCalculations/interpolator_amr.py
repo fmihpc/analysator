@@ -123,7 +123,16 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
       # print("f(r) = ", f_n)
       # step = np.matmul(np.linalg.inv(J),f_n)
       # print(J.shape, f_n.shape)
-      step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
+      try:
+         step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
+      except:
+         step = np.zeros_like(p[~convergence,:])
+         for i in range(step.shape[0]):
+            try:
+               step[i,:] = np.linalg.solve(J[~convergence,:,:][i,:,:], -f_n[~convergence,:][i,:])
+            except:
+               print("Failed at point", p[~convergence,:][i,:])
+               sys.exit()
       # print("J^-1 f0 = ",step)
       ksi_n1[~convergence,:] = step + ksi_n[~convergence,:] # r_(n+1) 
       ksi_n[~convergence,:] = ksi_n1[~convergence,:]
