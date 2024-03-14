@@ -268,7 +268,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
 
 # Default stop tracing condition for the vg tracing, (No stop until max_iteration)
 def default_stopping_condition(points):
-   return np.full((seed_coords.shape[0]), False)
+   return np.full((points.shape[0]), False)
 
 def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol', stop_condition = default_stopping_condition):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
