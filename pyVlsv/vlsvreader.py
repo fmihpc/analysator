@@ -1296,13 +1296,15 @@ class VlsvReader(object):
       offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
       # This we cannot cache, unfortunately. np.unique on (closest_cell_ids,offsets) helps a bit in some cases.
-      lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic,prune_uniques=True)
+      lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic, prune_uniques=True)
 
       lower_cell_ids_unique, unique_cell_indices = np.unique(lower_cell_ids, return_inverse=True)
       ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
 
-      # This can leverage caching if vg_regular_interp_neighbors is cached by the user (~30s for EGI).
-      cellid_neighbors = self.read_variable("vg_regular_interp_neighbors", cellids=lower_cell_ids_unique).reshape((-1))
+      cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
+      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.read_variable("vg_regular_interp_neighbors", cellids=lower_cell_ids_unique[lower_cell_ids_unique != 0])
+      cellid_neighbors = cellid_neighbors.reshape((-1))
+   
 
       lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids_unique)
 
