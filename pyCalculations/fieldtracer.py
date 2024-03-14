@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 # fg tracing for static_field_tracer_3d
-def fg_trace(fg, seed_coords, max_iterations, dx, multiplier):
+def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition):
    # Create x, y, and z coordinates:
    xsize = fg.shape[0]
    ysize = fg.shape[1]
@@ -206,24 +206,33 @@ def fg_trace(fg, seed_coords, max_iterations, dx, multiplier):
    interpolators = [interpolator_face_V_0, interpolator_face_V_1, interpolator_face_V_2]
 
    # Trace vector field lines
-   points_traced = [np.array(seed_coords)]              # iteratively append traced trajectories to this list
-   points = points_traced[0]
-   N = len(list(seed_coords))
-   V_unit = np.zeros([3, N])
-   for i in range(max_iterations):
-      V_unit[0, :] = interpolators[0](points)
-      V_unit[1, :] = interpolators[1](points)
-      V_unit[2, :] = interpolators[2](points)
-      V_mag = np.linalg.norm(V_unit, axis=(0))
+   points = seed_coords
+   points_traced = np.zeros((seed_coords.shape[0], max_iterations + 1, 3))
+   points_traced[:, 0,:] = seed_coords
+   mask_update = np.ones(seed_coords.shape[0], dtype = bool)
+   # points_traced = [np.array(seed_coords)]              # iteratively append traced trajectories to this list
+   # points = points_traced[0]
+   # N = len(list(seed_coords))
+   V_unit = np.zeros([seed_coords.shape[0], 3])
+   for i in range(1, max_iterations):
+      V_unit[:, 0] = interpolators[0](points)
+      V_unit[:, 1] = interpolators[1](points)
+      V_unit[:, 2] = interpolators[2](points)
+      V_mag = np.linalg.norm(V_unit, axis=(1))
       V_unit = V_unit / V_mag[np.newaxis,:]
       new_points = points + multiplier*V_unit.T * dx
+      points_traced[mask_update,i,:] = new_points[mask_update]
+      mask_update[stop_condition(new_points)] = False
       points = new_points
-      points_traced.append( list(points) )             # list of lists of 3-element arrays
+      points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]
+      # points = new_points
+      # points_traced[:,i,:] = points             # list of lists of 3-element arrays
+      
    return points_traced
 
 
 # vg tracing for static_field_tracer_3d
-def vg_trace(vg, seed_coords, max_iterations, dx, multiplier, stop_condition):
+def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_condition):
    # Search for the unique coordinates in the given seeds only
    unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
    n_unique_seeds = unique_seed_coords.shape[0]
@@ -282,7 +291,7 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
-                                  grid_variable = 'vg_b_vol'
+                                  grid_var = 'vg_b_vol'
       keyword stop_condition: Boolean array (seed_coords.shape[0],)
                               Determine when the iteration stop, for the vg trace only
                               If not specified, it will always be True for each seed points.
@@ -337,10 +346,10 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
    multiplier = -1 if direction == '-' else 1   
    
    if fg is not None:
-      points_traced = fg_trace(fg, seed_coords, max_iterations, dx, multiplier)
+      points_traced = fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition)
    
    elif vg is not None:
-      points_traced = vg_trace(vg, seed_coords, max_iterations, dx, multiplier, stop_condition)
+      points_traced = vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_condition)
 
 
    return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
