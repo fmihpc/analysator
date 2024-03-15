@@ -30,7 +30,7 @@ def jplots(
 
     dr /= r_e
 
-    fnr_arr = np.arange(fnr0, fnr1 + 1, 0.1, dtype=int)
+    fnr_arr = np.arange(fnr0, fnr1 + 0.1, 1, dtype=int)
     t_arr = np.zeros_like(fnr_arr).astype(float)
 
     if bulkpath[-1] != "/":
@@ -73,7 +73,7 @@ def jplots(
     if filt > 0:
         data_arr = uniform_filter1d(data_arr, size=filt, axis=0)
 
-    XmeshXY, YmeshXY = np.meshgrid(point_list, fnr_arr)
+    XmeshXY, YmeshXY = np.meshgrid(point_list, t_arr)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 12), constrained_layout=True)
 
@@ -87,8 +87,10 @@ def jplots(
     )
     print(t_arr[0])
     print(t_arr[-1])
+    print(fnr_arr[0])
+    print(fnr_arr[-1])
     ax.set_xlim(point_list[0], point_list[-1])
-    ax.set_ylim(fnr_arr[0], fnr_arr[-1])
+    ax.set_ylim(t_arr[0], t_arr[-1])
     ax.set_xlabel("Point along cut", labelpad=10)
     ax.set_ylabel("Time [s]", labelpad=10)
 
