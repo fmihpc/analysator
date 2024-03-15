@@ -28,8 +28,10 @@ def jplots(
     cmap="viridis",
 ):
 
+    dr /= r_e
+
     fnr_arr = np.arange(fnr0, fnr1 + 1, 0.1, dtype=int)
-    t_arr = np.empty_like(fnr_arr).astype(float)
+    t_arr = np.zeros_like(fnr_arr).astype(float)
 
     if bulkpath[-1] != "/":
         bulkpath += "/"
@@ -52,7 +54,7 @@ def jplots(
         ]
     point_list = np.arange(xlist.size)
 
-    data_arr = np.empty((fnr_arr.size, point_list.size), dtype=float)
+    data_arr = np.zeros((fnr_arr.size, point_list.size), dtype=float)
 
     for idx in range(fnr_arr.size):
         fnr = fnr_arr[idx]
@@ -71,14 +73,14 @@ def jplots(
     if filt > 0:
         data_arr = uniform_filter1d(data_arr, size=filt, axis=0)
 
-    XmeshXY, YmeshXY = np.meshgrid(t_arr, point_list)
+    XmeshXY, YmeshXY = np.meshgrid(point_list, t_arr)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 12), constrained_layout=True)
 
     im = ax.pcolormesh(
         XmeshXY,
         YmeshXY,
-        data_arr.T,
+        data_arr,
         shading="gouraud",
         cmap=cmap,
         rasterized=True,
@@ -86,7 +88,7 @@ def jplots(
     ax.set_xlim(point_list[0], point_list[-1])
     ax.set_ylim(t_arr[0], t_arr[-1])
     ax.set_xlabel("Point along cut", labelpad=10)
-    ax.set_ylabel(var, labelpad=10)
+    ax.set_ylabel("Time [s]", labelpad=10)
 
     cb = fig.colorbar(im, ax=ax)
 
