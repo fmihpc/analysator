@@ -79,7 +79,7 @@ def jplots(
         XmeshXY,
         YmeshXY,
         data_arr.T,
-        shading="gouraud",
+        shading="nearest",
         cmap=cmap,
         rasterized=True,
     )
