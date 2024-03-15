@@ -91,8 +91,9 @@ def jplots(
     print(fnr_arr[-1])
     ax.set_xlim(point_list[0], point_list[-1])
     ax.set_ylim(t_arr[0], t_arr[-1])
-    ax.set_xlabel("Point along cut", labelpad=10)
-    ax.set_ylabel("Time [s]", labelpad=10)
+    ax.set_xlabel("Point along cut", labelpad=10, fontsize=16)
+    ax.set_ylabel("Time [s]", labelpad=10, fontsize=16)
+    ax.set_title(var, pad=10, fontsize=16)
 
     cb = fig.colorbar(im, ax=ax)
 
