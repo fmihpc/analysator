@@ -55,7 +55,7 @@ from themis_observation import themis_plot_phasespace_helistyle
 from cut3d import cut3d
 from lineout import lineout
 import fit
-from fieldtracer import static_field_tracer
+from fieldtracer import static_field_tracer, static_field_tracer_3d
 from fieldtracer import dynamic_field_tracer
 from interpolator_amr import AMRInterpolator
 
