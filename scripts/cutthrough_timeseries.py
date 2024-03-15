@@ -71,7 +71,7 @@ def jplots(
     if filt > 0:
         data_arr = uniform_filter1d(data_arr, size=filt, axis=0)
 
-    XmeshXY, YmeshXY = np.meshgrid(point_list, t_arr)
+    XmeshXY, YmeshXY = np.meshgrid(t_arr, point_list)
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 12), constrained_layout=True)
 
@@ -79,7 +79,7 @@ def jplots(
         XmeshXY,
         YmeshXY,
         data_arr.T,
-        shading="nearest",
+        shading="gouraud",
         cmap=cmap,
         rasterized=True,
     )
