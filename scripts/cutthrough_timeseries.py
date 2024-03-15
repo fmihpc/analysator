@@ -85,6 +85,8 @@ def jplots(
         cmap=cmap,
         rasterized=True,
     )
+    print(t_arr[0])
+    print(t_arr[-1])
     ax.set_xlim(point_list[0], point_list[-1])
     ax.set_ylim(fnr_arr[0], fnr_arr[-1])
     ax.set_xlabel("Point along cut", labelpad=10)
