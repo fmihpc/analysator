@@ -138,7 +138,7 @@ if __name__ == "__main__":
         print("cmap: Colormap")
         print("\nExiting")
         print("\n")
-        return 1
+        raise Exception
 
     (
         arg0,
