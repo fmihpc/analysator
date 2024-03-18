@@ -85,10 +85,7 @@ def jplots(
         cmap=cmap,
         rasterized=True,
     )
-    print(t_arr[0])
-    print(t_arr[-1])
-    print(fnr_arr[0])
-    print(fnr_arr[-1])
+
     ax.set_xlim(point_list[0], point_list[-1])
     ax.set_ylim(t_arr[0], t_arr[-1])
     ax.set_xlabel("Point along cut", labelpad=10, fontsize=16)
@@ -141,6 +138,7 @@ if __name__ == "__main__":
         print("cmap: Colormap")
         print("\nExiting")
         print("\n")
+        return 1
 
     (
         arg0,
