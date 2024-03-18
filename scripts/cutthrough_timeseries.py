@@ -28,6 +28,7 @@ def jplots(
     cmap="viridis",
 ):
 
+    dr *= 1000
     dr /= r_e
 
     fnr_arr = np.arange(fnr0, fnr1 + 0.1, 1, dtype=int)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         print("x1: Cut-through ending point x coordinate [Re]")
         print("y1: Cut-through ending point y coordinate [Re]")
         print("z1: Cut-through ending point z coordinate [Re]")
-        print("dr: Distance between cut-through sample points")
+        print("dr: Distance between cut-through sample points (km)")
         print("bulkpath: Path to bulk files")
         print("bulkprefix: Starting string of bulk file name (e.g. bulk, bulk1, bulk5)")
         print("outputname: Name of output file")
