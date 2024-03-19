@@ -118,7 +118,7 @@ def jplots(
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 19:
+    if len(sys.argv) != 13:
         print("\n")
         print("This script takes 18 parameters, example usage:")
         print(
