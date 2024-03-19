@@ -149,12 +149,16 @@ print('VLSV files found: ' + str(Ntimes))
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
+ cell_coordinates = vlsvReader.get_cell_coordinates(cid)
+ return vlsvReader.get_cellid_with_vdf(cell_coordinates)
+ ''' v deprecated v 
  cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
  cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
  cell_coordinates = vlsvReader.get_cell_coordinates(cid)
  norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
  norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
  return cell_candidates[i]
+ '''
 
 # find cell ids with vspace to be analyzed if not given
 vlsvReader = pt.vlsvfile.VlsvReader(vlsvFiles[0])

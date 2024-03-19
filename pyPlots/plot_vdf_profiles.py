@@ -42,6 +42,9 @@ from rotation import rotateVectorToVector,rotateVectorToVector_X
 
 # find nearest spatial cell with vspace to cid
 def getNearestCellWithVspace(vlsvReader,cid):
+    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
+    return vlsvReader.get_cellid_with_vdf(cell_coordinates)
+    ''' v deprecated v
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
     if len(cell_candidates)==0:
         print("Error: No velocity distributions found!")
@@ -51,6 +54,7 @@ def getNearestCellWithVspace(vlsvReader,cid):
     norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
     norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
     return cell_candidates[i]
+    '''
 
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):

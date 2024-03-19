@@ -2017,11 +2017,10 @@ class VlsvReader(object):
       cidsout = list(OrderedDict.fromkeys(cids))
       return cidsout
    
-   def get_cellid(self, coords, nearest_vdf = False):
+   def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
 
       :param coords:        The cells' coordinates
-      :keyword nearest_vdf: if True, find nearest cell with vdf data
       :returns: the cell ids
 
       .. note:: Returns 0 if the cellid is out of bounds!
@@ -2035,22 +2034,6 @@ class VlsvReader(object):
 
       if coordinates.shape[1] != 3:
          raise IndexError("Coordinates are required to be 3-dimensional (coords were %d-dimensional)" % coordinates.shape[1])
-
-      if nearest_vdf:
-         these_cellids = self.get_cellid(coordinates, nearest_vdf = False)
-         output = np.zeros(these_cellids.size, dtype=np.int64)
-         vg_f_saved = self.read_variable('vg_f_saved')
-         ind = np.where(vg_f_saved == 1)[0]
-         cellids_w_vdf = self.read_variable('cellid')[ind]
-         coords_w_vdf = self.read_variable('vg_coordinates')[ind]
-         for i, this_cellid in enumerate(these_cellids):
-            this_coord = self.get_cell_coordinates(this_cellid)
-            diff = np.linalg.norm(coords_w_vdf - this_coord, axis = -1)
-            output[i] = cellids_w_vdf[np.argmin(diff)]
-         if stack:
-            return output
-         else:
-            return output[0]
 
       # If needed, read the file index for cellid
       if len(self.__fileindex_for_cellid) == 0:
@@ -2093,8 +2076,6 @@ class VlsvReader(object):
          mask[mask] = mask[mask] & drop
          # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
          
-         
-
          ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
          AMR_count += 1
          # Get cell lengths:
@@ -2117,6 +2098,49 @@ class VlsvReader(object):
          return cellids
       else:
          return cellids[0]
+
+   def get_cellid_with_vdf(self, coords):
+      ''' Returns the cell ids at given test coordinates,
+          of the nearest cells that contain VDFs
+
+      :param coords:        Test coordinates of the cells
+      :returns: the cell ids
+
+      '''
+      stack = True
+      coords_in = np.array(coords)
+      if len(coords_in.shape) == 1:
+         coords_in = np.atleast_2d(coords_in)
+         stack = False
+
+      cid_w_vdf = self.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
+      coords_w_vdf = self.get_cell_coordinates(cid_w_vdf)
+      N_in = coords_in.shape[0]; N_w_vdf = len(cid_w_vdf)
+
+      if N_w_vdf==0:
+         print("Error: No velocity distributions found!")
+         sys.exit()
+
+      # calculate distances for each pair of cells (test vs. vdf cells)
+      try:
+         # Vectorized approach: 
+         coords_in_rpt = np.repeat(coords_in[:, None, :], N_w_vdf, axis=1)
+         coords_w_vdf_rpt = np.repeat(coords_w_vdf[None, :, :], N_in, axis=0)
+         dist2 = np.nansum((coords_in_rpt - coords_w_vdf_rpt)**2, axis = -1)   # distance^2, [N_in, N_w_vdf]
+         output = cid_w_vdf[np.argmin(dist2, axis = 1)]
+      except MemoryError:
+         # Loop approach:
+         print('Not enough memory to broadcast arrays! Using a loop instead...')
+         output = np.zeros(N_in, dtype=np.int64)
+         for i, this_coord in enumerate(coords_in):
+            dist2 = np.nansum((coords_w_vdf - this_coord)**2, axis = -1)
+            output[i] = cid_w_vdf[np.argmin(dist2)]
+
+      # return cells that minimize the distance to the test cells
+      if stack:
+         return output
+      else:
+         return output[0]
 
    def get_vertex_indices(self, coordinates):
       coordinates = np.array(coordinates)
