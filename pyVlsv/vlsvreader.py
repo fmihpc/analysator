@@ -2017,10 +2017,11 @@ class VlsvReader(object):
       cidsout = list(OrderedDict.fromkeys(cids))
       return cidsout
    
-   def get_cellid(self, coords):
+   def get_cellid(self, coords, nearest_vdf = False):
       ''' Returns the cell ids at given coordinates
 
       :param coords:        The cells' coordinates
+      :keyword nearest_vdf: if True, find nearest cell with vdf data
       :returns: the cell ids
 
       .. note:: Returns 0 if the cellid is out of bounds!
@@ -2034,6 +2035,22 @@ class VlsvReader(object):
 
       if coordinates.shape[1] != 3:
          raise IndexError("Coordinates are required to be 3-dimensional (coords were %d-dimensional)" % coordinates.shape[1])
+
+      if nearest_vdf:
+         these_cellids = self.get_cellid(coordinates, nearest_vdf = False)
+         output = np.zeros(these_cellids.size, dtype=np.int64)
+         vg_f_saved = self.read_variable('vg_f_saved')
+         ind = np.where(vg_f_saved == 1)[0]
+         cellids_w_vdf = self.read_variable('cellid')[ind]
+         coords_w_vdf = self.read_variable('vg_coordinates')[ind]
+         for i, this_cellid in enumerate(these_cellids):
+            this_coord = self.get_cell_coordinates(this_cellid)
+            diff = np.linalg.norm(coords_w_vdf - this_coord, axis = -1)
+            output[i] = cellids_w_vdf[np.argmin(diff)]
+         if stack:
+            return output
+         else:
+            return output[0]
 
       # If needed, read the file index for cellid
       if len(self.__fileindex_for_cellid) == 0:
