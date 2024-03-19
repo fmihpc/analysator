@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 13:
         print("\n")
-        print("This script takes 18 parameters, example usage:")
+        print("This script takes 12 parameters, example usage:")
         print(
             "python cutthrough_timeseries.py var fnr0 fnr1 x0 y0 z0 x1 y1 z1 dr bulkpath bulkprefix outputname outputdir intpol filt op cmap"
         )
