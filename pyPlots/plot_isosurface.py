@@ -815,7 +815,7 @@ def plot_neutral_sheet(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
-                  useimshow=False, imshowinterp='none', folding=True, z_extent=[-5,5], sheetlayer='above'
+                  useimshow=False, imshowinterp='none', folding_alpha=0, z_extent=[-5,5], sheetlayer='above'
                   ):
     
     ''' Plots a coloured plot along the neutral sheet with axes and a colour bar.
@@ -917,7 +917,7 @@ def plot_neutral_sheet(filename=None,
                         and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
     :kword z_extent:    Search bracket for the neutral sheet in axisunit units
-    :kword folding:     If set to True, plots transparent dots over the regions where the sheet has multiple separate z-values
+    :kword folding_alpha: If non-zero, plots transparent dots over the regions where the sheet has multiple separate z-values. A value of 1.0 is opaque, a value of 0.0 is transparent.
     :kword sheetlayer:  If set to 'above', plots the topmost layer of the neutral sheet in case of folding. If set to anything else, 
                         the downmost layer is plotted.
     :kword nomask:      Do not mask plotting based on proton density
@@ -1731,9 +1731,9 @@ def plot_neutral_sheet(filename=None,
         ax1.add_artist(Earth)
         ax1.add_artist(Earth2)
 
-    if folding:
+    if folding_alpha > 0:
         folds_to_plot=np.array(folds)
-        ax1.scatter(folds_to_plot[:,0]/axisunit, folds_to_plot[:,1]/axisunit, c='k', s=0.1, alpha=0.2)
+        ax1.scatter(folds_to_plot[:,0]/axisunit, folds_to_plot[:,1]/axisunit, c='k', s=0.1, alpha=folding_alpha)
 
 
     if streamlines:
@@ -1837,6 +1837,9 @@ def plot_neutral_sheet(filename=None,
             cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
 
         if not cbaxes:
             cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
@@ -2132,6 +2135,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
     folds=[]
     pointdict = {}
+    flagdict = {}
 
     for i in range(len(all_x)):
         key = str(round(all_x[i]/1e6))+"_"+str(round(all_y[i]/1e6))     # Key for hashing XY coordinates, precise to one cell
@@ -2141,8 +2145,11 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
             
         else:   # If the XY coordinate already has a sheet coordinate associated with it, check if the sheet is folded and pick the upper (lower) z value
 
-            if round(all_z[i]/1e6) != round(pointdict[key][2]/1e6):
-                folds.append([all_x[i],all_y[i]])
+            if (round(all_z[i]/1e6) < round(pointdict[key][2]/1e6)-1 or round(all_z[i]/1e6) > round(pointdict[key][2]/1e6)+1):
+                if key not in flagdict:     # Test version: Only calculate folds if there are three points within the same cell
+                    flagdict[key] = 0
+                else:
+                    folds.append([all_x[i],all_y[i]])
             
             if sheetlayer=='above':
                 if all_z[i] > pointdict[key][2]:
