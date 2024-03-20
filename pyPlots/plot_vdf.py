@@ -1371,7 +1371,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
              wmark=None, wmarkb=None,
-             fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=True,
+             fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=False,
              cellsize=None,
              xy=None, xz=None, yz=None,
              normal=None, normalx=None,
@@ -1400,7 +1400,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
 
     :kword cellids:     LIST of cell IDs to plot VDF for
-    :kword cellids2:    Optional: LIST of cell IDs from input file 2. Same ass cellids if omitted.
+    :kword cellids2:    Optional: LIST of cell IDs from input file 2. Same as cellids if omitted.
     :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
     :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
     :kword pop:         Population to plot, default proton
@@ -1999,7 +1999,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
                                                        center=center,setThreshold=setThreshold,normvectX=normvectX)
 
-        (checkOk,binsXY2,edgesX,edgesY) = vSpaceReducer(vlsvReader2,cellid2,slicetype,normvect2,VXBins, VYBins,pop=pop,
+        (checkOk2,binsXY2,edgesX,edgesY) = vSpaceReducer(vlsvReader2,cellid2,slicetype,normvect2,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
                                                        center=center2,setThreshold=setThreshold,normvectX=normvectX)
 
@@ -2007,7 +2007,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         binsXY-=binsXY2;
 
         # Check that data is ok and not empty
-        if checkOk == False:
+        if checkOk == False or checkOk2 == False:
             print('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
