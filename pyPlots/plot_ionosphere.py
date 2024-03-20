@@ -318,6 +318,10 @@ def plot_ionosphere(filename=None,
     else:
         vmaxuse = np.ma.amax(values)
 
+    # Ionospheric special handling: if we have negative values, let's turn on linear mode.
+    if lin is None and symlog is None and (vminuse<=0):
+        lin=True
+
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
         print("Error, requested array is zero everywhere. Exiting.")
@@ -504,6 +508,9 @@ def plot_ionosphere(filename=None,
         else:
             cb.ax.tick_params(labelsize=fontsize)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (axes is None) and (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):

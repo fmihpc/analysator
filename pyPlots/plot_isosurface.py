@@ -176,7 +176,7 @@ def plot_isosurface(filename=None,
             print("Unknown time format encountered")
             plot_title = ''
         else:
-            #plot_title = "t="+str(np.int(timeval))+' s'
+            #plot_title = "t="+str(int(timeval))+' s'
             plot_title = "t="+'{:4.2f}'.format(timeval)+' s'
     else:
         plot_title = title
@@ -673,6 +673,10 @@ def plot_isosurface(filename=None,
         else:
             pt.plot.cb_linear = True
 
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
+
         cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
         cb.outline.set_linewidth(thick)
         cb.ax.set_title(cb_title_use)
@@ -758,7 +762,7 @@ def plot_isosurface(filename=None,
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
-                plot_title = "t="+str(np.int(timeval))+' s   '
+                plot_title = "t="+str(int(timeval))+' s   '
                 ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                 try:
                     plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
@@ -2163,5 +2167,3 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
     sheet_zs = z_interpolation(xy_pairs)    # Interpolated sheet location at grid values
 
     return np.hstack((xy_pairs, sheet_zs[:, np.newaxis])), folds    # Return list of sheet coordinates interpolated to grid values and information of the possible foldings
-
-    
