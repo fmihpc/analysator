@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import matplotlib
 import warnings
@@ -79,10 +79,10 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     # Select cells which are within slice area
     if vthick!=0:
         indexes = [(abs(Voutofslice) <= 0.5*vthick) &
-                   (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+                   (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
     else:
-        indexes = [(VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+        indexes = [(VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
     # Gather histogram of values
@@ -97,7 +97,7 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
         nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
 
     dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
-    
+
     if vthick==0:
         # slickethick=0, perform a projection. This is done by taking averages for each sampled stack of cells (above)
         # (in order to deal with rotated sampling issues) and then rescaling the resultant 2D VDF with the unsampled
@@ -114,14 +114,14 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     # and y values on the ordinate axis. Rather, x is histogrammed along the first dimension of the array (vertical),
     # and y along the second dimension of the array (horizontal). This ensures compatibility with histogramdd.
     nVhist = nVhist.transpose()
-    
+
     # Rotation contributions are already normalized, this is just to rescaling to correct units
     # nb: maybe not great for finite slices...?
     if reducer == "integrate":
         nVhist = nVhist*initial_dV**3/dV**2 # normalization
 
     return (nVhist,VXEdges,VYEdges)
-  
+
 def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate", wflux=None):
 
     if wflux is not None:
@@ -411,14 +411,14 @@ def plot_vdf(filename=None,
              vlsvobj=None,
              filedir=None, step=None,
              cellids=None, pop="proton",
-             coordinates=None, coordre=None, 
+             coordinates=None, coordre=None,
              outputdir=None, outputfile=None,
              nooverwrite=None,
              draw=None,axisunit=None,axiskmps=None,title=None, cbtitle=None,
              tickinterval=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
-             wmark=None, wmarkb=None, 
+             wmark=None, wmarkb=None,
              fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=True,
              cellsize=None,
              xy=None, xz=None, yz=None,
@@ -443,8 +443,8 @@ def plot_vdf(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
-     
+    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
+
     :kword cellids:     LIST of cell IDs to plot VDF for
     :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
     :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
@@ -467,7 +467,7 @@ def plot_vdf(filename=None,
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
     :kword axiskmps:    Plot v-axes using 10^{axiskmps} km/s (default: km/s, when the kword has a value)
     :kword tickinterval: Interval at which to have ticks on axes
-   
+
     :kword xy:          Perform slice in x-y-direction
     :kword xz:          Perform slice in x-z-direction
     :kword yz:          Perform slice in y-z-direction
@@ -523,7 +523,7 @@ def plot_vdf(filename=None,
     :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
     :kword scale_label: Big label text additional scale factor (default=12.0)
     :kword thick:       line and axis thickness, default=1.0
-    
+
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -553,7 +553,7 @@ def plot_vdf(filename=None,
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
-    
+
     # Input file or object
     if filename is not None:
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
@@ -580,8 +580,8 @@ def plot_vdf(filename=None,
     timeval=vlsvReader.read_parameter("time")
 
     # Plot title with time
-    if title is None or title=="msec" or title=="musec":        
-        if timeval == None:    
+    if title is None or title=="msec" or title=="musec":
+        if timeval == None:
             plot_title = ''
         else:
             timeformat='{:4.1f}'
@@ -623,7 +623,7 @@ def plot_vdf(filename=None,
                 if type(filename) is str:
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
-        
+
         # Indicate projection in file name
         projstr=""
         if slicethick==0:
@@ -637,12 +637,12 @@ def plot_vdf(filename=None,
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
             savefigname = savefigdir+run
-        else: 
+        else:
             if outputdir is not None:
                 savefigname = outputdir+outputfile
             else:
                 savefigname = outputfile
-            
+
         # Re-check to find actual target sub-directory
         savefigprefixind = savefigname.rfind('/')
         if savefigprefixind >= 0:
@@ -665,7 +665,7 @@ def plot_vdf(filename=None,
 
 
 
-    # If population isn't defined i.e. defaults to protons, check if 
+    # If population isn't defined i.e. defaults to protons, check if
     # instead should use old version "avgs"
     if pop=="proton":
        if not vlsvReader.check_population(pop):
@@ -678,7 +678,7 @@ def plot_vdf(filename=None,
     else:
         if not vlsvReader.check_population(pop):
             print("Unable to detect population "+pop+" in .vlsv file!")
-            sys.exit()       
+            sys.exit()
 
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
@@ -720,11 +720,11 @@ def plot_vdf(filename=None,
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg':
                 plt.switch_backend(pt.backend_interactive)
         else:
             if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
-                plt.switch_backend(pt.backend_noninteractive)  
+                plt.switch_backend(pt.backend_noninteractive)
 
     if (cellids is None and coordinates is None and coordre is None):
         print("Error: must provide either cell id's or coordinates")
@@ -740,7 +740,7 @@ def plot_vdf(filename=None,
         if type(coordinates[0]) is not list:
             coordinates = [coordinates]
 
-        # Calculate cell IDs from given coordinates        
+        # Calculate cell IDs from given coordinates
         xReq = np.asarray(coordinates).T[0]
         yReq = np.asarray(coordinates).T[1]
         zReq = np.asarray(coordinates).T[2]
@@ -788,7 +788,7 @@ def plot_vdf(filename=None,
 
 
     if draw is not None or axes is not None:
-        # Program was requested to draw to screen or existing axes instead of saving to a file. 
+        # Program was requested to draw to screen or existing axes instead of saving to a file.
         # Just handle the first cellid.
         if len(cellids) > 1:
             cellids = [cellids[0]]
@@ -839,7 +839,7 @@ def plot_vdf(filename=None,
                     cellidlist = [cellid,cellid+1,cellid+xsize]
                 else:
                     cellidlist = [cellid,cellid+1,cellid+xsize,cellid+xsize*ysize]
-                # Read raw data for the required cells    
+                # Read raw data for the required cells
                 if vlsvReader.check_variable("B"):
                     Braw = vlsvReader.read_variable("B", cellidlist)
                 elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
@@ -958,7 +958,7 @@ def plot_vdf(filename=None,
             else:
                 savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
-            if (nooverwrite is not None and os.path.exists(savefigname)):            
+            if (nooverwrite is not None and os.path.exists(savefigname)):
                 if os.stat(savefigname).st_size > 0: # Also check that file is not empty
                     print("Found existing file "+savefigname+". Skipping.")
                     return
@@ -1018,8 +1018,8 @@ def plot_vdf(filename=None,
 
         # num must be vxsize+1 or vysize+1 in order to do both edges for each cell
         VXBins = np.linspace(vxmin*gridratio,vxmax*gridratio,num=vxsize+1)
-        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)            
-        
+        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)
+
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
@@ -1099,20 +1099,20 @@ def plot_vdf(filename=None,
             xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
             yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
 
-        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit       
+        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit
         # Set required decimal precision
         precision_a, precision_b = '{:.1e}'.format(np.amax(abs(np.array(boxcoords)))).split('e')
         pt.plot.decimalprecision_ax = '0'
-        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))        
+        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))
 
         # TODO make plot area square if it's almost square?
 
-        # Define figure size        
+        # Define figure size
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
         # default for square figure is figsize=[4.0,3.15]
         figsize = [4.0,3.15*ratio]
 
-        # Plot the slice         
+        # Plot the slice
         [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
@@ -1149,7 +1149,7 @@ def plot_vdf(filename=None,
         ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
 
         if len(plot_title)>0:
-            plot_title = pt.plot.textbfstring(plot_title)            
+            plot_title = pt.plot.textbfstring(plot_title)
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         #fig.canvas.draw() # draw to get tick positions
@@ -1170,7 +1170,7 @@ def plot_vdf(filename=None,
             for t in ticklabs: # note that the tick labels haven't yet been populated with text
                 t.set_fontweight("black")
                 # If label has >3 numbers, tilt it
-                if tickmaxlens[axisi]>3: 
+                if tickmaxlens[axisi]>3:
                     t.set_rotation(30)
                     t.set_verticalalignment('top')
                     t.set_horizontalalignment('right')
@@ -1190,7 +1190,7 @@ def plot_vdf(filename=None,
 
         if biglabel is not None:
             if biglabloc is None:
-                biglabloc = 0 # default top-left corner               
+                biglabloc = 0 # default top-left corner
             if biglabloc==0:
                 BLcoords=[0.02,0.98]
                 BLha = "left"
@@ -1273,19 +1273,19 @@ def plot_vdf(filename=None,
                         cbloc=2
                         cbdir="right"
                         horalign="left"
-                    if internalcb=="SW": 
+                    if internalcb=="SW":
                         cbloc=3
                         cbdir="right"
                         horalign="left"
-                    if internalcb=="SE": 
+                    if internalcb=="SE":
                         cbloc=4
                         cbdir="left"
                         horalign="right"
-                cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
+                cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc,
                                  bbox_transform=ax1.transAxes, borderpad=1.0)
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
-            # Colourbar title             
+            # Colourbar title
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
@@ -1299,7 +1299,7 @@ def plot_vdf(filename=None,
                 cb.ax.tick_params(labelsize=fontsize)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
-                    
+
 
 
         if noxlabels is not None:
@@ -1307,9 +1307,9 @@ def plot_vdf(filename=None,
                 label.set_visible(False)
         if noylabels is not None:
             for label in ax1.yaxis.get_ticklabels():
-                label.set_visible(False)       
+                label.set_visible(False)
 
-        # Adjust layout. Uses tight_layout() but in fact this ensures 
+        # Adjust layout. Uses tight_layout() but in fact this ensures
         # that long titles and tick labels are still within the plot area.
         if axes is not None:
             savefig_pad=0.01
@@ -1363,14 +1363,14 @@ def plot_vdfdiff(filename1=None, filename2=None,
              filedir=None, step=None,
              cellids=None, cellids2=None,
              pop="proton",
-             coordinates=None, coordre=None, 
+             coordinates=None, coordre=None,
              outputdir=None, outputfile=None,
              nooverwrite=None,
              draw=None,axisunit=None,axiskmps=None,title=None, cbtitle=None,
              tickinterval=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
-             wmark=None, wmarkb=None, 
+             wmark=None, wmarkb=None,
              fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=True,
              cellsize=None,
              xy=None, xz=None, yz=None,
