@@ -1721,6 +1721,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
     if type(cellids) is not list:
         print("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
+    if type(cellids2) is not list:
+        cellids2 = [cellids2]
 
     if coordinates is None and coordre is None:
         # User-provided cellids
@@ -1744,13 +1746,15 @@ def plot_vdfdiff(filename1=None, filename2=None,
         cellids2 = cellids
 
     print("\n")
-    for cellid in cellids:
+    for cellid,cellid2 in list(map(list,zip(*(cellids,cellids2)))):
         # Initialise some values
         fminuse=None
         fmaxuse=None
 
         x,y,z = vlsvReader1.get_cell_coordinates(cellid)
         print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
+        x,y,z = vlsvReader2.get_cell_coordinates(cellid2)
+        print('cellid2 ' + str(cellid2) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
@@ -1758,23 +1762,23 @@ def plot_vdfdiff(filename1=None, filename2=None,
         if vlsvReader1.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader1.read_variable('restart_V',cellid)
-            Vbulk2 = vlsvReader2.read_variable('restart_V',cellid)
+            Vbulk2 = vlsvReader2.read_variable('restart_V',cellid2)
         elif vlsvReader1.check_variable(pop+'/vg_v'):
             # multipop v5 bulk file
             Vbulk = vlsvReader1.read_variable(pop+'/vg_v',cellid)
-            Vbulk2 = vlsvReader2.read_variable(pop+'/vg_v',cellid)
+            Vbulk2 = vlsvReader2.read_variable(pop+'/vg_v',cellid2)
         elif vlsvReader1.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader1.read_variable(pop+'/V',cellid)
-            Vbulk2 = vlsvReader2.read_variable(pop+'/V',cellid)
+            Vbulk2 = vlsvReader2.read_variable(pop+'/V',cellid2)
         elif vlsvReader1.check_variable(pop+'/vg_v'):
             # multipop V5 bulk file
             Vbulk = vlsvReader1.read_variable(pop+'/vg_v',cellid)
-            Vbulk2 = vlsvReader2.read_variable(pop+'/vg_v',cellid)
+            Vbulk2 = vlsvReader2.read_variable(pop+'/vg_v',cellid2)
         else:
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader1.read_variable('V',cellid)
-            Vbulk2 = vlsvReader2.read_variable('V',cellid)
+            Vbulk2 = vlsvReader2.read_variable('V',cellid2)
         if Vbulk is None:
             print("Error in finding plasma bulk velocity!")
             sys.exit()
@@ -1784,8 +1788,10 @@ def plot_vdfdiff(filename1=None, filename2=None,
             # First check if volumetric fields are present
             if vlsvReader1.check_variable("B_vol"):
                 Bvect = vlsvReader1.read_variable("B_vol", cellid)
+                Bvect2 = vlsvReader2.read_variable("B_vol", cellid2)
             elif vlsvReader1.check_variable("vg_b_vol"):
                 Bvect = vlsvReader1.read_variable("vg_b_vol", cellid)
+                Bvect2 = vlsvReader1.read_variable("vg_b_vol", cellid2)
             # Otherwise perform linear reconstruction to find
             # approximation of cell-center value
             else:
@@ -1813,6 +1819,9 @@ def plot_vdfdiff(filename1=None, filename2=None,
                     Bvect=np.array([0.5*(Braw[0][0]+Braw[1][0]), 0.5*(Braw[0][1]+Braw[2][1]), Braw[0][2]])
                 else: # 3D, verify this?
                     Bvect=np.array([0.5*(Braw[0][0]+Braw[1][0]), 0.5*(Braw[0][1]+Braw[2][1]), 0.5*(Braw[0][2]+Braw[3][2])])
+
+                # TODO: I guess we should do this interpolation in the second file too, instead of assuming identical Bvect
+                Bvect2 = Bvect
 
         # Check slice to perform (and possibly normal vector)
         normvect=None
@@ -1862,20 +1871,24 @@ def plot_vdfdiff(filename1=None, filename2=None,
             pltxstr=r"$v_x$ "+velUnitStr
             pltystr=r"$v_y$ "+velUnitStr
             normvect=[0,0,1] # used just for cell size normalisation
+            normvect2=normvect
         elif xz is not None:
             slicetype="xz"
             pltxstr=r"$v_x$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[0,1,0] # used just for cell size normalisation
+            normvect2=normvect
         elif yz is not None:
             slicetype="yz"
             pltxstr=r"$v_y$ "+velUnitStr
             pltystr=r"$v_z$ "+velUnitStr
             normvect=[1,0,0] # used just for cell size normalisation
+            normvect2=normvect
         elif bpara is not None or bpara1 is not None or bperp is not None:
             if Bvect.shape==(1,3):
                 Bvect = Bvect[0]
             normvect = Bvect
+            normvect2 = Bvect2
 
             # Ensure bulkV has some value
             if np.linalg.norm(Vbulk) < 1e-10:
@@ -1923,6 +1936,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
         normvect = normvect/np.linalg.norm(normvect)
+        normvect2 = np.array(normvect2)
+        normvect2 = normvect2/np.linalg.norm(normvect2)
         if normvectX is not None:
             normvectX = np.array(normvectX)
             normvectX = normvectX/np.linalg.norm(normvectX)
@@ -1936,7 +1951,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                     center = vlsvReader1.read_variable(cbulk,cellid)
                     print("Found bulk frame from variable "+cbulk)
                 if vlsvReader2.check_variable(cbulk):
-                    center2 = vlsvReader2.read_variable(cbulk,cellid)
+                    center2 = vlsvReader2.read_variable(cbulk,cellid2)
                     print("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
@@ -1984,7 +1999,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
                                                        center=center,setThreshold=setThreshold,normvectX=normvectX)
 
-        (checkOk,binsXY2,edgesX,edgesY) = vSpaceReducer(vlsvReader2,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
+        (checkOk,binsXY2,edgesX,edgesY) = vSpaceReducer(vlsvReader2,cellid2,slicetype,normvect2,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
                                                        center=center2,setThreshold=setThreshold,normvectX=normvectX)
 
