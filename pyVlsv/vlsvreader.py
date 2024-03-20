@@ -2100,10 +2100,12 @@ class VlsvReader(object):
          return cellids[0]
 
    def get_cellid_with_vdf(self, coords):
-      ''' Returns the cell ids at given test coordinates,
-          of the nearest cells that contain VDFs
+      ''' Returns the cell ids nearest to test points, that contain VDFs
 
-      :param coords:        Test coordinates of the cells
+      :param coords:    Test coordinates [meters] of N_in points in ND-dimensional space
+                        array with shape [N_in, ND] or [ND]
+
+      Example: cellid = vlsvReader.get_cellid_with_vdf(np.array([1e8, 0, 0]))
       :returns: the cell ids
 
       '''
@@ -2121,12 +2123,15 @@ class VlsvReader(object):
          print("Error: No velocity distributions found!")
          sys.exit()
 
-      # calculate distances for each pair of cells (test vs. vdf cells)
+      # TODO: test if queried points (coords_in) already lie within vdf-containing cells,
+      # to exclude these points from the nearest-distance calculation below
+
+      # Direct search: calculate distances for each pair points (test <--> vdf cells)
       try:
          # Vectorized approach: 
          coords_in_rpt = np.repeat(coords_in[:, None, :], N_w_vdf, axis=1)
          coords_w_vdf_rpt = np.repeat(coords_w_vdf[None, :, :], N_in, axis=0)
-         dist2 = np.nansum((coords_in_rpt - coords_w_vdf_rpt)**2, axis = -1)   # distance^2, [N_in, N_w_vdf]
+         dist2 = np.nansum((coords_in_rpt - coords_w_vdf_rpt)**2, axis = -1)   # distance^2, shape [N_in, N_w_vdf]
          output = cid_w_vdf[np.argmin(dist2, axis = 1)]
       except MemoryError:
          # Loop approach:
@@ -2136,7 +2141,7 @@ class VlsvReader(object):
             dist2 = np.nansum((coords_w_vdf - this_coord)**2, axis = -1)
             output[i] = cid_w_vdf[np.argmin(dist2)]
 
-      # return cells that minimize the distance to the test cells
+      # return cells that minimize the distance to the test points
       if stack:
          return output
       else:
