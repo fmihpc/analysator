@@ -35,7 +35,7 @@ def jplots(
     if bulkpath[-1] != "/":
         bulkpath += "/"
 
-    if not pointfile:
+    if pointfile is None:
         x0, y0, z0 = start_coords * r_e / 1000
         x1, y1, z1 = end_coords * r_e / 1000
         npoints = (
@@ -238,4 +238,5 @@ if __name__ == "__main__":
         filt=args.filt,
         op=args.op,
         cmap=args.cmap,
+        pointfile=args.pointfile,
     )
