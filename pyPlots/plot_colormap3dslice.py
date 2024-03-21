@@ -1376,11 +1376,11 @@ def plot_colormap3dslice(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
-            cb.ax.tick_params(labelsize=fontsize)
+            cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks
