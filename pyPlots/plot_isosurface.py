@@ -617,7 +617,7 @@ def plot_isosurface(filename=None,
         ax1.set_xlim([midvals[2]-maxrange, midvals[2]+maxrange])
         ax1.set_ylim([midvals[0]-maxrange, midvals[0]+maxrange])
         ax1.set_zlim([midvals[1]-maxrange, midvals[1]+maxrange])
-        ax1.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        ax1.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
         
     else: # 3D or 2.9D ecliptic, leave as is
         generatedsurface = ax1.plot_trisurf(verts[:,0], verts[:,1], verts[:,2], triangles=faces,
@@ -632,7 +632,7 @@ def plot_isosurface(filename=None,
         ax1.set_xlim([midvals[0]-maxrange, midvals[0]+maxrange])
         ax1.set_ylim([midvals[1]-maxrange, midvals[1]+maxrange])
         ax1.set_zlim([midvals[2]-maxrange, midvals[2]+maxrange])
-        ax1.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        ax1.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
 
 
     # Setting per-triangle colours for plot_trisurf needs to be done
@@ -677,7 +677,7 @@ def plot_isosurface(filename=None,
         if lin is not None:
             cb.minorticks_off()
 
-        cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+        cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
         cb.outline.set_linewidth(thick)
         cb.ax.set_title(cb_title_use)
         cb.ax.title.set_horizontalalignment('center')
@@ -1702,8 +1702,8 @@ def plot_neutral_sheet(filename=None,
 
     for axis in ['top','bottom','left','right']:
         ax1.spines[axis].set_linewidth(thick)
-    ax1.xaxis.set_tick_params(width=thick,length=3)
-    ax1.yaxis.set_tick_params(width=thick,length=3)
+    ax1.xaxis.set_tick_params(width=thick,length=3*thick)
+    ax1.yaxis.set_tick_params(width=thick,length=3*thick)
     #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 
@@ -1837,11 +1837,11 @@ def plot_neutral_sheet(filename=None,
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
-            cb.ax.tick_params(labelsize=fontsize)
+            cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
 
         # Perform intermediate draw if necessary to gain access to ticks

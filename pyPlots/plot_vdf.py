@@ -1143,10 +1143,10 @@ def plot_vdf(filename=None,
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
 
-        ax1.xaxis.set_tick_params(width=thick,length=4)
-        ax1.yaxis.set_tick_params(width=thick,length=4)
-        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
-        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
+        ax1.xaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.yaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
+        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
 
         if len(plot_title)>0:
             plot_title = pt.plot.textbfstring(plot_title)            
@@ -1293,10 +1293,10 @@ def plot_vdf(filename=None,
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
-                cb.ax.tick_params(labelsize=fontsize)
+                cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
                     

@@ -1165,8 +1165,8 @@ def plot_colormap3dslice(filename=None,
 
     for axis in ['top','bottom','left','right']:
         ax1.spines[axis].set_linewidth(thick)
-    ax1.xaxis.set_tick_params(width=thick,length=3)
-    ax1.yaxis.set_tick_params(width=thick,length=3)
+    ax1.xaxis.set_tick_params(width=thick,length=3*thick)
+    ax1.yaxis.set_tick_params(width=thick,length=3*thick)
     #ax1.xaxis.set_tick_params(which='minor',width=3,length=5)
     #ax1.yaxis.set_tick_params(which='minor',width=3,length=5)
 

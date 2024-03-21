@@ -1648,7 +1648,7 @@ def plot_threeslice(filename=None,
         cbticks = cb.get_ticks()
         cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
+        cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
         cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
         cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
