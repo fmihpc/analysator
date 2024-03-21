@@ -2,7 +2,6 @@ import pytools as pt
 import sys, os, socket
 import numpy as np
 import math
-import scipy
 
 # Script for attempting to estimate AMR 6D run costs for the FRODO GC run
 # MCB 2.5.2018
@@ -84,7 +83,7 @@ for j in timetot:
     sizes=[xsize,zsize]
     cellids = BCHf.read_variable("CellID")
     datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0]])
-    [XmeshXY,YmeshXY] = scipy.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
+    [XmeshXY,YmeshXY] = np.meshgrid(np.linspace(simext[0],simext[1],num=sizes[0]),np.linspace(simext[2],simext[3],num=sizes[1]))
 
 Re = 6.371e6
 # V = 4/3 pi r^3
