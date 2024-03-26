@@ -1115,7 +1115,7 @@ def plot_vdf(filename=None,
         figsize = [4.0,3.15*ratio]
 
         # Plot the slice
-        [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
+        [XmeshXY,YmeshXY] = np.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
             # Create 300 dpi image of suitable size
@@ -2103,7 +2103,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         figsize = [4.0,3.15*ratio]
 
         # Plot the slice
-        [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
+        [XmeshXY,YmeshXY] = np.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
             # Create 300 dpi image of suitable size
