@@ -798,6 +798,9 @@ class VlsvReader(object):
          print("Bad (empty) arguments at VlsvReader.read")
          raise ValueError()
 
+      if mesh == None:
+         mesh = ''
+
       # Force lowercase name for internal checks
       name = name.lower()
 
