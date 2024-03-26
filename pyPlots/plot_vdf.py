@@ -272,7 +272,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
 
     # center on highest f-value
     
-    if type(center) == 'str':
+    if type(center) == str:
       if center == "peak":
          peakindex = np.argmax(f)
          Vpeak = V[peakindex,:]
@@ -1948,7 +1948,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         if cbulk is None and center is None:
             center = np.zeros((3,))
             center2 = np.zeros((3,))
-        elif cbulk is not None or type(center) == 'str' and center=='bulk':
+        elif cbulk is not None or type(center) is str and center=='bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
