@@ -92,7 +92,7 @@ class VlsvWriter(object):
             tag = child.tag
 
             if copy_meshes is not None:
-               if mesh is not None and not mesh in copy_meshes:
+               if mesh != '' and not mesh in copy_meshes:
                   continue
                if tag == "MESH" and not name in copy_meshes:
                   continue
