@@ -271,12 +271,14 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center == "peak":
-        peakindex = np.argmax(f)
-        Vpeak = V[peakindex,:]
-        V = V - Vpeak
-        print(peakindex)
-        print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
+    
+    if type(center) == 'str':
+      if center == "peak":
+         peakindex = np.argmax(f)
+         Vpeak = V[peakindex,:]
+         V = V - Vpeak
+         print(peakindex)
+         print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
         if len(center)==3: # assumes it's a vector
             print("Transforming to frame travelling at speed "+str(center))
@@ -1742,11 +1744,12 @@ def plot_vdfdiff(filename1=None, filename2=None,
             cellids = [cellids[0]]
             print("User requested on-screen display, only plotting first requested cellid!")
 
-    if cellids2 is None:
+    if cellids2 is None or cellids2[0] is None:
         cellids2 = cellids
 
     print("\n")
     for cellid,cellid2 in list(map(list,zip(*(cellids,cellids2)))):
+      #   print(cellid,cellid2, cellids, cellids2)
         # Initialise some values
         fminuse=None
         fmaxuse=None
@@ -1942,8 +1945,10 @@ def plot_vdfdiff(filename1=None, filename2=None,
             normvectX = np.array(normvectX)
             normvectX = normvectX/np.linalg.norm(normvectX)
 
-
-        if cbulk is not None or center=='bulk':
+        if cbulk is None and center is None:
+            center = np.zeros((3,))
+            center2 = np.zeros((3,))
+        elif cbulk is not None or type(center) == 'str' and center=='bulk':
             center=None # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
