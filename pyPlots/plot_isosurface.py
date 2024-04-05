@@ -2138,14 +2138,14 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
     flagdict = {}   # Dictionary to keep track of fold locations
 
     for i in range(len(all_x)):
-        key = str(round(all_x[i]/1e6))+"_"+str(round(all_y[i]/1e6))     # Key for hashing xy coordinates, precise to one cell
+        key = (round(all_x[i]/cellsizefg),round(all_y[i]/cellsizefg))     # Key for hashing xy coordinates, precise to one cell
         
         if key not in pointdict:    # If no value given to XY coordinate, save sheet coordinates to dictionary
             pointdict[key] = [all_x[i],all_y[i],all_z[i]]
             
         else:   # If the XY coordinate already has a sheet coordinate associated with it, check if the sheet is folded and pick the upper (lower) z value
 
-            if abs(round(all_z[i]/1e6) - round(pointdict[key][2]/1e6)) > 1:  # If z values differ by more than 1e6
+            if abs(round(all_z[i]/cellsizefg) - round(pointdict[key][2]/cellsizefg)) > 1:  # If z values differ by more than one fg dx
                 if key not in flagdict:     # Only calculate folds if there are three different z values within the same xy location, record the first double instance
                     flagdict[key] = 0
                 else:   # Three distinct z values for the same xy location: folding has occurred
