@@ -137,6 +137,22 @@ class VariableInfo:
                              5.97863741e26:{'scaledUnits':'amu/m^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{m}^{-3}$'},
                              5.97863741e20:{'scaledUnits':'amu/cm^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{cm}^{-3}$'}
                             },
+                 'A/m^2' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mA/m^2', 'scaledLatexUnit':r'$\mathrm{mA}\,\mathrm{m}^{-2}$'}
+                            },
+                 'W/m^2' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mW/m^2', 'scaledLatexUnit':r'$\mathrm{mW}\,\mathrm{m}^{-2}$'}
+                            },
+                 'm^2' :   {'defaultScale':1,
+                             1e-4:{'scaledUnits':'km^2', 'scaledLatexUnit':r'$\mathrm{km}^{2}$'}
+                            },
+                 'V' :   {'defaultScale':1,
+                             1e-3:{'scaledUnits':'mV', 'scaledLatexUnit':r'$\mathrm{mV}$'}
+                            },
+                 'Degrees' :   {'defaultScale':1,
+                            },
+                 'mho' :   {'defaultScale':1,
+                            },
          }
 
       else:
@@ -152,7 +168,6 @@ class VariableInfo:
          try:
             udict = self.scaleDict[dictKey]
          except:
-            print('No entry in specialist dict for unit "' + self.units+ '"')
             if vscale is None:
                return 1.0, self.units, self.latexunits
             else:
@@ -161,7 +176,6 @@ class VariableInfo:
             try:
                unitScale = udict['defaultScale']
             except:
-               print('No vscale or defaultScale in specialist dict for unit "' + self.units +'"')
                return 1.0, self.units, self.latexunits
          elif np.isclose(vscale, 1.0):
                return 1.0, self.units, self.latexunits
@@ -176,12 +190,12 @@ class VariableInfo:
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
             scaledUnits = udict[unitScale]['scaledUnits']
          except KeyError:
-            print('Missing scaledUnits in specialist dict for' + self.units + ' for unitScale='+str(unitScale))
+            # print('Missing scaledUnits in specialist dict for' + self.units + ' for unitScale='+str(unitScale))
             return 1.0, self.units, self.latexunits
          try:
             scaledLatexUnits = udict[unitScale]['scaledLatexUnit']
          except:
-            print('Missing scaledLatexUnits in specialist dict for ' + self.units+ ' for unitScale='+str(unitScale))
+            # print('Missing scaledLatexUnits in specialist dict for ' + self.units+ ' for unitScale='+str(unitScale))
             return 1.0, self.units, self.latexunits
       else:
           if vscale is None or np.isclose(vscale, 1.0):

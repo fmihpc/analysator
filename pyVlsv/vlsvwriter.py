@@ -88,11 +88,11 @@ class VlsvWriter(object):
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
-            else: mesh = None
+            else: mesh = ''
             tag = child.tag
 
             if copy_meshes is not None:
-               if mesh is not None and not mesh in copy_meshes:
+               if mesh != '' and not mesh in copy_meshes:
                   continue
                if tag == "MESH" and not name in copy_meshes:
                   continue
@@ -101,9 +101,9 @@ class VlsvWriter(object):
             for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
+            #print("writing",name, tag, mesh, extra_attribs)
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            #print("writing",name, tag)
 
             self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
@@ -262,7 +262,7 @@ class VlsvWriter(object):
       # Add the data into the xml data:
       child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
-      if mesh is not None:
+      if mesh is not None and mesh != '':
          child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
 

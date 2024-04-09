@@ -42,12 +42,6 @@ Some old plotting tools requiring the MayaVi2 visualization library can be activ
 by setting the environment variable:
 export PTMAYAVI2=1
 
-# Mis-ordered fsgrid output
-#################################################
-If your FSgrid plotting output appears mis-reconstructed, the domain decomposition
-might me mis-inferred. To use an alternate approach, set the environment variable:
-export FSGRIDSWAP=1
-
 # For setting the default output directory (default: $HOME/Plots)
 #################################################
 export PTOUTPUTDIR=/proj/USERNAME/Plots/
