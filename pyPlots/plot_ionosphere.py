@@ -93,7 +93,7 @@ def plot_ionosphere(filename=None,
 
     '''
 
-    IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
+    #IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
@@ -258,6 +258,15 @@ def plot_ionosphere(filename=None,
 
     # Read ionosphere mesh node coordinates
     coords = f.get_ionosphere_node_coords()
+    
+    # Read the ionosphere radius from the VLSV file
+    try:
+        ionosphere_radius = f.read_parameter("ionosphere_radius")
+    except:
+        # Recalculate the radius of the ionospheric grid
+        ionosphere_radius = np.max(np.linalg.norm(coords, axis=-1))
+
+
     # Read ionosphere mesh connectivity
     elements = f.get_ionosphere_element_corners()
     # Read selected variable valus
@@ -280,9 +289,9 @@ def plot_ionosphere(filename=None,
        cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
 
     if viewdir > 0:
-        r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+        r=np.degrees(np.arccos(coords[:,2]/ionosphere_radius))
     else:
-        r=np.degrees(np.arccos(-coords[:,2]/IONOSPHERE_RADIUS))
+        r=np.degrees(np.arccos(-coords[:,2]/ionosphere_radius))
     theta=np.arctan2(coords[:,1],coords[:,0])
 
     # Project nodes and elements into view plane
