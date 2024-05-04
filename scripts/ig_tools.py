@@ -24,7 +24,6 @@ def get_ig_r(f):
     # ionospheric mesh is at radius (R_EARTH + 100 km), see Urs's ionosphere writeup
     n = f.get_ionosphere_node_coords()          # node = vertex of the triangular mesh
     ec = f.get_ionosphere_element_corners()     # (Element Corners), where element = triangular face
-    #ig_r = np.zeros(ec.shape)
     ig_r = np.zeros(np.array(ec).shape)
     for i in range(ig_r.shape[0]):
         ig_r[i,:] = (n[ec[i,0], :] + n[ec[i,1], :] + n[ec[i,2], :]) / 3  #barycenter, aka centroid
@@ -54,7 +53,8 @@ def normalize(vec):
     '''
         assume [...., 3] array
     '''
-    return vec / np.repeat(np.linalg.norm(vec, axis = -1), 3).reshape(vec.shape)
+    return vec / np.linalg.norm(vec, axis = -1)[:, np.newaxis]
+    
 
 
 #add this as a data reducer
