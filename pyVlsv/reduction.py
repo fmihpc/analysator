@@ -33,8 +33,6 @@ import sys
 import math
 from null_lines import LMN_null_lines_FOTE
 
-global __reducer_reader
-
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
 kb = 1.38065e-23
@@ -875,24 +873,6 @@ def MDD_dimensionality( variables ):
    print("Error in MGA")
    return -1
 
-def DXs ( variables ):
-   stack = True
-   cids = variables[0]
-   global VLSV_reducer_reader
-   
-   if(np.isscalar(cids)):
-      cids = np.array([variables[0]])
-      stack=False
-   #print(globals(),locals())
-   dxs = np.zeros((cids.shape[0],3))
-   for i, cid in enumerate(cids):
-      dxs[i] = VLSV_reducer_reader.get_cell_dx(cid)
-
-   if stack:
-      return dxs
-   else:
-      return dxs[0,:]
-
 def LMN( variables ):
    ''' Data reducer to calculate the LMN basis vectors
         using the full B jacobian
@@ -1552,14 +1532,13 @@ v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "
 v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathrm{MDD}$",latexunits=r"")
 v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\\mathrm{D}_{i}$",latexunits=r"")
 v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathrm{LMN}$",latexunits=r"")
-v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs", "vg_coordinates"], LMN_xoline_distance, "dx", 1, latex=r"$\mathrm{LMN}_\mathrm{SDF,FOTE}$",latexunits=r"$\Delta x$")
-v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], L_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
-v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], N_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
+v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx", "vg_coordinates"], LMN_xoline_distance, "dx", 1, latex=r"$\mathrm{LMN}_\mathrm{SDF,FOTE}$",latexunits=r"$\Delta x$")
+v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx"], L_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
+v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx"], N_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
 
-#v5reducers["vg_dxs"] =                   DataReducerVariable(["CellID"], DXs, "m", 1, latex=r"$\delta\vec{x}$",latexunits=r"$\mathrm{m}$")
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
-v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dx"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
