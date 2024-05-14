@@ -1035,9 +1035,9 @@ def LMN_nullpoint_distance( variables ):
    gradBNn = np.linalg.norm(gradBN,axis=-1)
 
    # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
-   sL = BL/(gradBLn*1e-9)
-   sM = BM/(gradBMn*1e-9)
-   sN = BN/(gradBNn*1e-9)
+   sL = BL/(gradBLn)
+   sM = BM/(gradBMn)
+   sN = BN/(gradBNn)
    L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
    L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
    M_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
@@ -1141,19 +1141,14 @@ def L_flip_distance( variables ):
    jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
 
    BL = np.sum(Ls*Bs, axis=-1)
-   #BM = np.sum(Ms*Bs, axis=-1)
-   #BN = np.sum(Ns*Bs, axis=-1)
    gradBL = -1*jacobs[:, 0,:]
-   #gradBM = jacobs[1,:]
-   #gradBN = -1*jacobs[:, 2,:]
 
    gradBLn = np.linalg.norm(gradBL,axis=-1)
    #gradBNn = np.linalg.norm(gradBN,axis=-1)
 
-   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
-   sL = BL/(gradBLn*1e-9)
-   #sM = BM/(gradBMn*1e-9)
-   #sN = BN/(gradBNn*1e-9)
+   # Distance to zero plane for BL an BN
+   sL = BL/(gradBLn)
+
    L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
    L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
 
@@ -1191,20 +1186,14 @@ def N_flip_distance( variables ):
    # rotate the jacobians
    jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
 
-   #BL = np.sum(Ls*Bs, axis=-1)
-   #BM = np.sum(Ms*Bs, axis=-1)
    BN = np.sum(Ns*Bs, axis=-1)
-   #gradBL = -1*jacobs[:, 0,:]
-   #gradBM = jacobs[1,:]
    gradBN = -1*jacobs[:, 2,:]
 
    #gradBLn = np.linalg.norm(gradBL,axis=-1)
    gradBNn = np.linalg.norm(gradBN,axis=-1)
 
-   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
-   #sL = BL/(gradBLn*1e-9)
-   #sM = BM/(gradBMn*1e-9)
-   sN = BN/(gradBNn*1e-9)
+   # Distance to zero plane for BN
+   sN = BN/(gradBNn)
    N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
    N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
 
@@ -1557,15 +1546,15 @@ v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jperb"], JPerB_criteria, "", 1, latex=r"$\log_2 (J/B_{\perp} \cdot \Delta x_0)$",latexunits=r"1")
 
-v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "nT^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "nT^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{nT^2}\,\mathrm{m}^{-2}$")
-v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs", "vg_coordinates"], LMN_xoline_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], L_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], N_flip_distance, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "T^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "T^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{T^2}\,\mathrm{m}^{-2}$")
+v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathrm{MGA}$",latexunits=r"")
+v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathrm{MDD}$",latexunits=r"")
+v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\\mathrm{D}_{i}$",latexunits=r"")
+v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathrm{LMN}$",latexunits=r"")
+v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs", "vg_coordinates"], LMN_xoline_distance, "dx", 1, latex=r"$\mathrm{LMN}_\mathrm{SDF,FOTE}$",latexunits=r"$\Delta x$")
+v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], L_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
+v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dxs"], N_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
 
 #v5reducers["vg_dxs"] =                   DataReducerVariable(["CellID"], DXs, "m", 1, latex=r"$\delta\vec{x}$",latexunits=r"$\mathrm{m}$")
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
