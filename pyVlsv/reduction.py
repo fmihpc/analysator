@@ -751,34 +751,6 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
-
-def J( variables ):
-   ''' Data reducer taking a jacobian (assume 9-component vector) and extracting the current
-   via curl from the components of the jacobian (background or perturbed, as long as it has 9
-    components)
-
-   '''
-   stack = True
-   if(variables[0].shape == (9,)):
-      stack = False
-      variables[0] = np.array([variables[0]]) # I want this to be a stack of tensors
-   jacobian = variables[0]#.reshape((variables[0].shape[0],3,3))
-   # jacobian = jacobian.transpose((0,2,1)) # The axes are flipped at some point, correcting for that
-   J = np.zeros((jacobian.shape[0],3))
-
-   J[:,0] = (jacobian[:,7]-jacobian[:,5])/mu_0
-   J[:,1] = (jacobian[:,2]-jacobian[:,6])/mu_0
-   J[:,2] = (jacobian[:,3]-jacobian[:,1])/mu_0
-   if stack:
-      return J
-   else:
-      return J[0,:]
-
-
-   print("Error in J")
-   return -1
-
-
 def GGT( variables ):
    ''' Data reducer for MDD, or if you want to multiply a tensor with its transpose
    '''
@@ -1585,7 +1557,6 @@ v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jperb"], JPerB_criteria, "", 1, latex=r"$\log_2 (J/B_{\perp} \cdot \Delta x_0)$",latexunits=r"1")
 
-v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_b"], J, "nA/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{nA}\,\mathrm{m}^{-2}$")
 v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "nT^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "nT^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{nT^2}\,\mathrm{m}^{-2}$")
 v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{nT}^2\,\mathrm{m}^{-2}$")
