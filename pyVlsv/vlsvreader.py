@@ -82,9 +82,6 @@ def fsDecompositionFromGlobalIds(reader):
    zs = np.unique(lows[:,2])
    return [xs.size, ys.size, zs.size]
 
-from numba import jit
-
-@jit(nopython=True)
 def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
    #arr = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
 
