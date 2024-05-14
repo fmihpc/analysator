@@ -1979,11 +1979,11 @@ class VlsvReader(object):
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
 
-   def read_variable_as_fg(self, var):
+   def read_variable_as_fg(self, var, operator='pass'):
       vg_cellids = self.read_variable('CellID')
       sz = self.get_fsgrid_mesh_size()
       sz_amr = self.get_spatial_mesh_size()
-      vg_var = self.read_variable(var)
+      vg_var = self.read_variable(var, operator=operator)
       varsize = vg_var[0].size
       if(varsize > 1):
          fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
