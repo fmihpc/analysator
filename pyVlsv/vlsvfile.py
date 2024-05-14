@@ -39,4 +39,4 @@ from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
 
 from vlsvparticles import VlsvParticles
-from reduction import GGT, GTG, MDD, MGA, J, LMN,LMN_xoline_distance,MDD_dimensionality
+from reduction import GGT, GTG, MDD, MGA, J, LMN, LMN_xoline_distance, MDD_dimensionality
