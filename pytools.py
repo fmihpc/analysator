@@ -23,6 +23,8 @@
 
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
+import warnings
+warnings.filterwarnings("once", category=DeprecationWarning)
 
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
