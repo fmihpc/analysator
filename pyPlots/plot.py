@@ -56,6 +56,7 @@ from distutils.version import LooseVersion, StrictVersion
 import numpy as np, os
 
 
+
 if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
     plt.register_cmap(name='viridis', cmap=cmaps.viridis)
     plt.register_cmap(name='viridis_r', cmap=cmaps.viridis_r)
@@ -67,13 +68,13 @@ if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
     plt.register_cmap(name='magma_r', cmap=cmaps.magma_r)
 
 # Register custom colourmaps
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+matplotlib.colormaps.register(name='parula', cmap=cmaps.parula)
+matplotlib.colormaps.register(name='parula_r', cmap=cmaps.parula_r)
+matplotlib.colormaps.register(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+matplotlib.colormaps.register(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+matplotlib.colormaps.register(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+matplotlib.colormaps.register(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+matplotlib.colormaps.register(name='warhol', cmap=cmaps.warhol_colormap)
 
 
 decimalprecision_ax = 0

@@ -271,7 +271,7 @@ def plot_colormap3dslice(filename=None,
         colormap="hot_desaturated"
         if operator is not None and operator in 'xyz':
             colormap="bwr"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title

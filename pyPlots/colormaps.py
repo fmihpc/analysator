@@ -1108,6 +1108,7 @@ _parula_data = [[0.2081, 0.1663, 0.5292],
                 [0.9763, 0.9831, 0.0538]]
 
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as m
 cmaps = {}
 for (name, data) in (('magma', _magma_data),
                      ('magma_r', _magma_data[::-1]),
@@ -1164,6 +1165,6 @@ for _f in _SCMfiles:
     _cm_name = _cm_name[:-4]
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
-    plt.register_cmap(cmap=_cm)
-    plt.register_cmap(cmap=_cm.reversed())
+    m.colormaps.register(_cm)
+    m.colormaps.register(_cm.reversed())
 
