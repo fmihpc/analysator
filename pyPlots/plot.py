@@ -177,7 +177,7 @@ def mathmode(string):
         result = string.replace('$','')
         if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
-            result = result.replace('\,','~').replace('\qquad','~~~~~~')
+            result = result.replace(r'\,','~').replace(r'\qquad','~~~~~~')
         return r"$"+result+"$"
 
 def textbfstring(string):
