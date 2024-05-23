@@ -52,11 +52,13 @@ try:
 except:
     print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
-from distutils.version import LooseVersion, StrictVersion
+# from distutils.version import LooseVersion
+from packaging.version import Version
+
 import numpy as np, os
 
 
-if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+if Version(matplotlib.__version__) < Version("3.3.0"):
     plt.register_cmap(name='viridis', cmap=cmaps.viridis)
     plt.register_cmap(name='viridis_r', cmap=cmaps.viridis_r)
     plt.register_cmap(name='plasma', cmap=cmaps.plasma)
