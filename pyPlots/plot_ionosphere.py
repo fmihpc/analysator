@@ -132,7 +132,7 @@ def plot_ionosphere(filename=None,
     if not colormap:
         # Default values
         colormap="bwr"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
