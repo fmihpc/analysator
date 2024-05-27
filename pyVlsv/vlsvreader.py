@@ -2115,7 +2115,9 @@ class VlsvReader(object):
          coords_in = np.atleast_2d(coords_in)
          stack = False
 
-      cid_w_vdf = self.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
+      if not pop in self.__cells_with_blocks:
+         self.__set_cell_offset_and_blocks_nodict(pop)
+      cid_w_vdf = self.__cells_with_blocks[pop]
       coords_w_vdf = self.get_cell_coordinates(cid_w_vdf)
       N_in = coords_in.shape[0]; N_w_vdf = len(cid_w_vdf)
 
@@ -2125,8 +2127,6 @@ class VlsvReader(object):
 
       # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells, 
       output = self.get_cellid(coords_in)
-      if not pop in self.__cells_with_blocks:
-         self.__set_cell_offset_and_blocks_nodict(pop)
       flag_empty_in = np.array( [cid not in self.__order_for_cellid_blocks[pop] for cid in output] )
       N_empty_in = sum(flag_empty_in)
 
