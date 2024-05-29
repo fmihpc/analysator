@@ -2099,6 +2099,8 @@ class VlsvReader(object):
       else:
          return cellids[0]
 
+   from myutils import timer
+   @timer
    def get_cellid_with_vdf(self, coords, pop = 'proton'):
       ''' Returns the cell ids nearest to test points, that contain VDFs
 
@@ -2138,18 +2140,20 @@ class VlsvReader(object):
       
       # Direct search: calculate distances for each pair points (test <--> vdf cells)
       # Only calculate nearest distance if there is no VDF already in the cell (using flag_empty_in) 
+      '''
       try:
          # Vectorized approach: 
          dist2 = np.nansum((coords_in[flag_empty_in, None, :] - coords_w_vdf[None, :, :])**2, axis = -1)   # distance^2, shape [N_empty_in, N_w_vdf]
          output[flag_empty_in] = cid_w_vdf[np.argmin(dist2, axis = 1)]
       except MemoryError:
-         # Loop approach:
-         print('Not enough memory to broadcast arrays! Using a loop instead...')
-         ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
-         for ind in ind_emptycell:
-            this_coord = coords_in[ind, :]
-            dist2 = np.nansum((coords_w_vdf - this_coord)**2, axis = -1)
-            output[ind] = cid_w_vdf[np.argmin(dist2)]
+      '''
+      # Loop approach:
+      print('Not enough memory to broadcast arrays! Using a loop instead...')
+      ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
+      for ind in ind_emptycell:
+         this_coord = coords_in[ind, :]
+         dist2 = np.nansum((coords_w_vdf - this_coord)**2, axis = -1)
+         output[ind] = cid_w_vdf[np.argmin(dist2)]
 
       # return cells that minimize the distance to the test points
       if stack:
