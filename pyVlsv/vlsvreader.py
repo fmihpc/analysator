@@ -2130,16 +2130,17 @@ class VlsvReader(object):
       flag_empty_in = np.array( [cid not in self.__order_for_cellid_blocks[pop] for cid in output] )
       N_empty_in = sum(flag_empty_in)
 
-      if N_empty_in == 0:
-         return output  # every element of coords_in already within a vdf-containing cell
+      if N_empty_in == 0:   # every element of coords_in already within a vdf-containing cell
+         if stack:
+            return output
+         else:
+            return output[0]
       
       # Direct search: calculate distances for each pair points (test <--> vdf cells)
       # Only calculate nearest distance if there is no VDF already in the cell (using flag_empty_in) 
       try:
          # Vectorized approach: 
-         coords_in_rpt = coords_in[flag_empty_in, None, :]
-         coords_w_vdf_rpt = coords_w_vdf[None, :, :]
-         dist2 = np.nansum((coords_in_rpt - coords_w_vdf_rpt)**2, axis = -1)   # distance^2, shape [N_empty_in, N_w_vdf]
+         dist2 = np.nansum((coords_in[flag_empty_in, None, :] - coords_w_vdf[None, :, :])**2, axis = -1)   # distance^2, shape [N_empty_in, N_w_vdf]
          output[flag_empty_in] = cid_w_vdf[np.argmin(dist2, axis = 1)]
       except MemoryError:
          # Loop approach:
