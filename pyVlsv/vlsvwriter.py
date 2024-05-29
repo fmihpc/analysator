@@ -76,19 +76,24 @@ class VlsvWriter(object):
       tags['MESH_OFFSETS'] = ''
       tags['MESH'] = ''
       tags['MESH_DOMAIN_SIZES'] = ''
+      tags['MESH_DOMAIN_EXTENTS'] = ''
       tags['MESH_GHOST_DOMAINS'] = ''
       tags['MESH_GHOST_LOCALIDS'] = ''
       tags['CellID'] = ''
       tags['MESH_BBOX'] = ''
       tags['COORDS'] = ''
 
+      xml_mesh_tags = {}
       # Copy the xml root
       for child in xml_root:
          if child.tag in tags:
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
-            if 'mesh' in child.attrib: mesh = child.attrib['mesh']
-            else: mesh = None
+            if 'mesh' in child.attrib:
+               mesh = child.attrib['mesh']
+               xml_mesh_tags.setdefault(mesh, []).append(child.tag)
+            else:
+               mesh = None
             tag = child.tag
 
             if copy_meshes is not None:
@@ -106,6 +111,11 @@ class VlsvWriter(object):
             #print("writing",name, tag)
 
             self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      
+      for mesh, tags in xml_mesh_tags.items():
+         if "MESH_DOMAIN_EXTENTS" not in tags and mesh == "SpatialGrid":
+            self.__write( data = vlsvReader.get_mesh_domain_extents(mesh), name='', tag="MESH_DOMAIN_EXTENTS", mesh=mesh)
+
 
 
    def copy_variables( self, vlsvReader, varlist=None ):
