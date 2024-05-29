@@ -2099,8 +2099,6 @@ class VlsvReader(object):
       else:
          return cellids[0]
 
-   from myutils import timer
-   @timer
    def get_cellid_with_vdf(self, coords, pop = 'proton'):
       ''' Returns the cell ids nearest to test points, that contain VDFs
 
