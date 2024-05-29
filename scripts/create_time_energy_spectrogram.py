@@ -165,7 +165,7 @@ if 'cids' not in locals():
   cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
   cidNearestVspace = -1
   if cidRequest > 0:
-   cidNearestVspace = vlsvReader.get_cellid_with_vdf(vlsvReader.get_cell_coordinates(cidRequest), pop='proton')   # deprecated getNearestCellWithVspace(). needs testing
+   cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop='proton')   # deprecated getNearestCellWithVspace(). needs testing
   else:
    print('ERROR: cell not found')
    quit()
