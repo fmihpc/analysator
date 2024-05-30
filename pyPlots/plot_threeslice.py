@@ -1746,6 +1746,7 @@ def plot_threeslice(filename=None,
         except:
             print("Error with attempting to save figure.")
             print('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+        plt.close()
     else:
         # Draw on-screen
         plt.draw()

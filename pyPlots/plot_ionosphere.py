@@ -607,6 +607,7 @@ def plot_ionosphere(filename=None,
         except:
             print("Error attempting to save figure: ", sys.exc_info())
         print('...Done!') 
+        plt.close()
     elif draw is not None and axes is None:
         # Draw on-screen
         plt.draw()
