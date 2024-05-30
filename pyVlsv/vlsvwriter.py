@@ -112,9 +112,13 @@ class VlsvWriter(object):
 
             self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
       
+      # Find out and write possibly nonexisting metadata
       for mesh, tags in xml_mesh_tags.items():
-         if "MESH_DOMAIN_EXTENTS" not in tags and mesh == "SpatialGrid":
-            self.__write( data = vlsvReader.get_mesh_domain_extents(mesh), name='', tag="MESH_DOMAIN_EXTENTS", mesh=mesh)
+         if mesh == "SpatialGrid":
+            if "MESH_DOMAIN_EXTENTS" not in tags:
+               extents = vlsvReader.get_mesh_domain_extents(mesh)
+               print(extents)
+               self.__write( data = extents, name='', tag="MESH_DOMAIN_EXTENTS", mesh=mesh)
 
 
 
