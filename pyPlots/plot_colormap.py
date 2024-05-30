@@ -1319,6 +1319,7 @@ def plot_colormap(filename=None,
         except:
             print("Error with attempting to save figure.")
         print(outputfile+"\n")
+        plt.close()
     elif not axes:
         # Draw on-screen
         plt.draw()
