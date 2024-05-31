@@ -45,18 +45,6 @@ from rotation import rotateVectorToVector,rotateVectorToVector_X
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
 
-# find nearest spatial cell with vspace to cid
-def getNearestCellWithVspace(vlsvReader,cid):
-    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
-    if len(cell_candidates)==0:
-        print("Error: No velocity distributions found!")
-        sys.exit()
-    cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
-    norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
-    norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-    return cell_candidates[i]
-
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS').tolist()
@@ -755,7 +743,7 @@ def plot_vdf(filename=None,
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
             cidNearestVspace = -1
             if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
+                cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
                 print('ERROR: cell not found')
                 sys.exit()

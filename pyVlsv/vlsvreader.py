@@ -2076,8 +2076,6 @@ class VlsvReader(object):
          mask[mask] = mask[mask] & drop
          # mask[mask] = mask[mask] & np.isin(cellids[mask], good_ids, invert=True)
          
-         
-
          ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
          AMR_count += 1
          # Get cell lengths:
@@ -2100,6 +2098,66 @@ class VlsvReader(object):
          return cellids
       else:
          return cellids[0]
+
+   def get_cellid_with_vdf(self, coords, pop = 'proton'):
+      ''' Returns the cell ids nearest to test points, that contain VDFs
+
+      :param coords:    Test coordinates [meters] of N_in points in ND-dimensional space
+                        array with shape [N_in, ND] or [ND]
+
+      Example: cellid = vlsvReader.get_cellid_with_vdf(np.array([1e8, 0, 0]))
+      :returns: the cell ids
+
+      '''
+      stack = True
+      coords_in = np.array(coords)
+      if len(coords_in.shape) == 1:
+         coords_in = np.atleast_2d(coords_in)
+         stack = False
+
+      if not pop in self.__cells_with_blocks:
+         self.__set_cell_offset_and_blocks_nodict(pop)
+      cid_w_vdf = self.__cells_with_blocks[pop]
+      coords_w_vdf = self.get_cell_coordinates(cid_w_vdf)
+      N_in = coords_in.shape[0]; N_w_vdf = len(cid_w_vdf)
+
+      if N_w_vdf==0:
+         print("Error: No velocity distributions found!")
+         sys.exit()
+
+      # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells, 
+      output = self.get_cellid(coords_in)
+      flag_empty_in = np.array( [cid not in self.__order_for_cellid_blocks[pop] for cid in output] )
+      N_empty_in = sum(flag_empty_in)
+
+      if N_empty_in == 0:   # every element of coords_in already within a vdf-containing cell
+         if stack:
+            return output
+         else:
+            return output[0]
+      
+      # Direct search: calculate distances for each pair points (test <--> vdf cells)
+      # Only calculate nearest distance if there is no VDF already in the cell (using flag_empty_in) 
+      '''
+      try:
+         # Vectorized approach: 
+         dist2 = np.nansum((coords_in[flag_empty_in, None, :] - coords_w_vdf[None, :, :])**2, axis = -1)   # distance^2, shape [N_empty_in, N_w_vdf]
+         output[flag_empty_in] = cid_w_vdf[np.argmin(dist2, axis = 1)]
+      except MemoryError:
+      '''
+      # Loop approach:
+      print('Not enough memory to broadcast arrays! Using a loop instead...')
+      ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
+      for ind in ind_emptycell:
+         this_coord = coords_in[ind, :]
+         dist2 = np.nansum((coords_w_vdf - this_coord)**2, axis = -1)
+         output[ind] = cid_w_vdf[np.argmin(dist2)]
+
+      # return cells that minimize the distance to the test points
+      if stack:
+         return output
+      else:
+         return output[0]
 
    def get_vertex_indices(self, coordinates):
       coordinates = np.array(coordinates)
