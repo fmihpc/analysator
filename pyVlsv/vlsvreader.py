@@ -798,6 +798,9 @@ class VlsvReader(object):
          print("Bad (empty) arguments at VlsvReader.read")
          raise ValueError()
 
+      if mesh == None:
+         mesh = ''
+
       # Force lowercase name for internal checks
       name = name.lower()
 
@@ -3160,8 +3163,9 @@ class VlsvReader(object):
          MESH_DOMAIN_SIZES = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh="SpatialGrid")
          n_domain_cells = MESH_DOMAIN_SIZES[:,0]-MESH_DOMAIN_SIZES[:,1]
          cids_all = self.read_variable("CellID")
-         lowcorners_all = self.read_variable("vg_cell_lowcorners")
+         lowcorners_all = self.read_variable("vg_coordinates_cell_lowcorner")
          dxs_all = self.read_variable("vg_dx")
+         
 
          extents = np.zeros((MESH_DOMAIN_SIZES.shape[0],6))
          start = 0
@@ -3169,18 +3173,18 @@ class VlsvReader(object):
          for i, ncells in enumerate(n_domain_cells):
             end = start+ncells
             cids = cids_all[start:end]
-            lowcorners = lowcorners_all[start:end]
-            dxs = dxs_all[start:end]
+            lowcorners = lowcorners_all[start:end,:]
+            dxs = dxs_all[start:end,:]
             highcorners = lowcorners+dxs
-
+            print(np.sum(n_domain_cells), ncells, start, end,lowcorners)
             mins = np.min(lowcorners,axis=0)
             maxs = np.max(highcorners,axis=0)
 
-            extents[i,:] = [*mins, *maxs]
+            extents[i,:] = [mins[0],maxs[0],mins[1],maxs[1],mins[2],maxs[2]]
 
-            start += end
+            start = end
 
-         return extents.reshape((-1))
+         return extents.reshape((-1),order="C")
          
       else:
          raise ValueError
