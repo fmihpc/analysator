@@ -16,7 +16,9 @@ from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.cbook import get_sample_data
-from distutils.version import LooseVersion, StrictVersion
+# from distutils.version import LooseVersion
+from packaging.version import Version
+
 
 def plot_ionosphere(filename=None,
                   vlsvobj=None,
@@ -357,7 +359,7 @@ def plot_ionosphere(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator

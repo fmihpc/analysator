@@ -37,7 +37,9 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from distutils.version import LooseVersion, StrictVersion
+# from distutils.version import LooseVersion
+from packaging.version import Version
+
 
 def plot_colormap(filename=None,
                   vlsvobj=None,
@@ -487,7 +489,7 @@ def plot_colormap(filename=None,
         
         # Add unit to colorbar title
         if datamap_unit_latex:
-            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
+            cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
@@ -510,7 +512,7 @@ def plot_colormap(filename=None,
                 print("Error in reshaping datamap!") 
     else:
         # Expression set, use generated or provided colorbar title
-        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring(expression.__name__.replace("_","\_")) +operatorstr))
+        cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring(expression.__name__.replace(r"_",r"\_")) +operatorstr))
 
     # Allow title override
     if cbtitle is not None:
@@ -690,7 +692,7 @@ def plot_colormap(filename=None,
             diffvar = next(listofkeys)
             if diffvar!="dstep": break
         if not cbtitle:
-            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring("DIFF0~"+diffvar.replace("_","\_"))))
+            cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring("DIFF0~"+diffvar.replace("_",r"\_"))))
     # Evaluate time difference
     if diff:
         tvf=pt.vlsvfile.VlsvReader(filename)
@@ -838,7 +840,7 @@ def plot_colormap(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -945,7 +947,7 @@ def plot_colormap(filename=None,
     ax1.yaxis.set_tick_params(width=thick,length=3)
 
     if not noxlabels:
-        xlabelstr = pt.plot.mathmode(pt.plot.bfstring('x\,['+axisunitstr+']'))
+        xlabelstr = pt.plot.mathmode(pt.plot.bfstring(r'x\,['+axisunitstr+']'))
         ax1.set_xlabel(xlabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_xticklabels():
             item.set_fontsize(fontsize)
@@ -953,9 +955,9 @@ def plot_colormap(filename=None,
         ax1.xaxis.offsetText.set_fontsize(fontsize)# set axis exponent offset font sizes
     if not noylabels:
         if ysize==1: #Polar
-            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('z\,['+axisunitstr+']'))
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring(r'z\,['+axisunitstr+']'))
         else: #Ecliptic
-            ylabelstr = pt.plot.mathmode(pt.plot.bfstring('y\,['+axisunitstr+']'))
+            ylabelstr = pt.plot.mathmode(pt.plot.bfstring(r'y\,['+axisunitstr+']'))
         ax1.set_ylabel(ylabelstr,fontsize=fontsize,weight='black')
         for item in ax1.get_yticklabels():
             item.set_fontsize(fontsize)
@@ -1223,7 +1225,7 @@ def plot_colormap(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace(r'\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
                 if not labeltext:
                     continue
                 firstdigit = labeltext[0]
