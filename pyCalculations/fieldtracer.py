@@ -378,9 +378,9 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
          
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
-      backward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='-', grid_var = grid_var, stop_condition = default_stopping_condition)
+      backward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='-', grid_var = grid_var, stop_condition = default_stopping_condition, centering = centering)
       # backward.reverse()
-      forward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = grid_var, stop_condition = default_stopping_condition)
+      forward = static_field_tracer_3d(vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = grid_var, stop_condition = default_stopping_condition, centering = centering)
       return np.concatenate((backward[:,::-1,:],forward[:, 1:, :]), axis = 1)
 
    multiplier = -1 if direction == '-' else 1   
