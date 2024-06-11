@@ -1762,7 +1762,7 @@ class VlsvReader(object):
          latexunits = vlsvvariables.latexunitsdict[varname]
       else:
          units = ""
-         latex = r""+name.replace("_","\_")
+         latex = r""+name.replace(r"_",r"\_")
          latexunits = ""
 
       if name.startswith('fg_'):

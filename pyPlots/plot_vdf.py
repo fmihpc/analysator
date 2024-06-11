@@ -1237,14 +1237,14 @@ def plot_vdf(filename=None,
             if cb_title_use is None:
                 if wflux is None:
                     if reducer == 'average':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-6} \,"+pt.plot.rmstring('s')+r"^{3}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-5} \,"+pt.plot.rmstring('s')+"^{2}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-5} \,"+pt.plot.rmstring('s')+r"^{2}]$"
                 else:
                     if reducer == 'average':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-2} \,"+pt.plot.rmstring('s')+r"^{-1} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-1} \,"+pt.plot.rmstring('s')+"^{-2} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-1} \,"+pt.plot.rmstring('s')+r"^{-2} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
