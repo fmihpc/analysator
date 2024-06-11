@@ -7,6 +7,30 @@ import argparse
 
 r_e = 6.371e6
 
+"""
+    Script for plotting a cut-through timeseries, aka keogram, aka time-elongation map, etc. for a given variable, a given set of coordinates, and a range of times.
+
+    This script takes 12 parameters, example usage:
+    
+    python cutthrough_timeseries.py -var <var> -fnr <fnr0> <fnr1> -pointfile <pointfile> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -outputname <outputname> -outputdir <outputdir> -intpol <intpol> -filt <filt> -op <op> -cmap <cmap>
+
+    
+    Parameter descriptions:
+        var: Variable to plot
+        fnr0: First file number to plot
+        fnr1: Last file number to plot
+        dr: Distance between cut-through sample points (km)
+        pointfile: File containing a list of coordinates, in Re
+        bulkpath: Path to bulk files
+        bulkprefix: Starting string of bulk file name (e.g. bulk, bulk1, bulk5)
+        outputname: Name of output file
+        outputdir: Output file directory
+        intpol: Interpolate to cut-through sample points? (True/False)
+        filt: Filter out slowly changing signal? (<=0: no filtering, >0: filter with specified window size)
+        op: Variable operator
+        cmap: Colormap
+"""
+
 
 def jplots(
     var,
@@ -167,61 +191,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 if __name__ == "__main__":
-
-    # if len(sys.argv) != 13:
-    #     print("\n")
-    #     print("This script takes 12 parameters, example usage:")
-    #     print(
-    #         "python cutthrough_timeseries.py var fnr0 fnr1 x0 y0 z0 x1 y1 z1 dr bulkpath bulkprefix outputname outputdir intpol filt op cmap"
-    #     )
-    #     print("Parameter descriptions:")
-    #     print("var: Variable to plot")
-    #     print("fnr0: First file number to plot")
-    #     print("fnr1: Last file number to plot")
-    #     # print("x0: Cut-through starting point x coordinate [Re]")
-    #     # print("y0: Cut-through starting point y coordinate [Re]")
-    #     # print("z0: Cut-through starting point z coordinate [Re]")
-    #     # print("x1: Cut-through ending point x coordinate [Re]")
-    #     # print("y1: Cut-through ending point y coordinate [Re]")
-    #     # print("z1: Cut-through ending point z coordinate [Re]")
-    #     # print("dr: Distance between cut-through sample points (km)")
-    #     print("pointfile: File containing a list of coordinates, in Re")
-    #     print("bulkpath: Path to bulk files")
-    #     print("bulkprefix: Starting string of bulk file name (e.g. bulk, bulk1, bulk5)")
-    #     print("outputname: Name of output file")
-    #     print("outputdir: Output file directory")
-    #     print("intpol: Interpolate to cut-through sample points? (True/False)")
-    #     print(
-    #         "filt: Filter out slowly changing signal? (<=0: no filtering, >0: filter with specified window size)"
-    #     )
-    #     print("op: Variable operator")
-    #     print("cmap: Colormap")
-    #     print("\nExiting")
-    #     print("\n")
-    #     raise Exception
-
-    # (
-    #     arg0,
-    #     var,
-    #     fnr0,
-    #     fnr1,
-    #     # x0,
-    #     # y0,
-    #     # z0,
-    #     # x1,
-    #     # y1,
-    #     # z1,
-    #     # dr,
-    #     pointfile,
-    #     bulkpath,
-    #     bulkprefix,
-    #     outputname,
-    #     outputdir,
-    #     intpol,
-    #     filt,
-    #     op,
-    #     cmap,
-    # ) = sys.argv
 
     jplots(
         var=args.var,
