@@ -815,7 +815,7 @@ def plot_neutral_sheet(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
                   axes=None, cbaxes=None,
-                  useimshow=False, imshowinterp='none', folding_alpha=0, z_extent=[-5,5], sheetlayer='above'
+                  useimshow=False, imshowinterp='none', folding_alpha=0.2, z_extent=[-5,5], sheetlayer='above'
                   ):
     
     ''' Plots a coloured plot along the neutral sheet with axes and a colour bar.
