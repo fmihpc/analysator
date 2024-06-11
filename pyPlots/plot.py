@@ -53,9 +53,8 @@ except:
     print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
 from packaging.version import Version
+
 import numpy as np, os
-
-
 
 if Version(matplotlib.__version__) < Version("3.3.0"):
     plt.register_cmap(name='viridis', cmap=cmaps.viridis)
@@ -187,7 +186,7 @@ def mathmode(string):
         result = string.replace('$','')
         if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
-            result = result.replace('\,','~').replace('\qquad','~~~~~~')
+            result = result.replace(r'\,','~').replace(r'\qquad','~~~~~~')
         return r"$"+result+"$"
 
 def textbfstring(string):
