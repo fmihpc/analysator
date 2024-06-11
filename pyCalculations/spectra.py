@@ -85,37 +85,37 @@ def get_spectrum_energy(vlsvReader,
       if(weight == 'flux'):
          fw = f * np.sqrt(V2) * dV3 / (4*np.pi * Ekin) # use particle flux as weighting
          units = "1/(s m^2 sr eV)"
-         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\mathrm{eV}^{-1}$'
-         latex='$\mathcal{F}(\vec{r},E)\,E^{-1}$'
+         latexunits = r'$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\mathrm{eV}^{-1}$'
+         latex=r'$\mathcal{F}(\vec{r},E)\,E^{-1}$'
       else:
          fw = f * dV3 / Ekin
          units = "1/(m^3 eV)"
-         latexunits = '$\mathrm{m}^{-3}\,\mathrm{eV}^{-1}$'
-         latex='$f(\vec{r},E)\,E^{-1}$'
+         latexunits = r'$\mathrm{m}^{-3}\,\mathrm{eV}^{-1}$'
+         latex=r'$f(\vec{r},E)\,E^{-1}$'
          weight = 'particles'
    elif (bindifferential): # differential flux per d(eV)
       if(weight == 'flux'):
          fw = f * np.sqrt(V2) * dV3 / (4*np.pi) # use particle flux as weighting
          units = "1/(s m^2 sr eV)"
-         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\delta\mathrm{eV}^{-1}$'
-         latex='$\mathcal{F}(\vec{r},E)\,\Delta{E^{-1}}$'
+         latexunits = r'$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}\,\delta\mathrm{eV}^{-1}$'
+         latex=r'$\mathcal{F}(\vec{r},E)\,\Delta{E^{-1}}$'
       else:
          fw = f * dV3
          units = "1/(m^3 eV)"
-         latexunits = '$\mathrm{m}^{-3}\,\delta\mathrm{eV}^{-1}$'
-         latex='$f(\vec{r},E)\,\Delta{E^{-1}}$'
+         latexunits = r'$\mathrm{m}^{-3}\,\delta\mathrm{eV}^{-1}$'
+         latex=r'$f(\vec{r},E)\,\Delta{E^{-1}}$'
          weight = 'particles'
    else:
       if(weight == 'flux'):
          fw = f * np.sqrt(V2) * dV3 / (4*np.pi) # use particle flux as weighting
          units = "1/(s m^2 sr)"
-         latexunits = '$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}$'
-         latex='$\mathcal{F}(\vec{r},E)$'
+         latexunits = r'$\mathrm{s}^-1\,\mathrm{m}^{-2}\,\mathrm{sr}^{-1}$'
+         latex=r'$\mathcal{F}(\vec{r},E)$'
       else:
          fw = f * dV3
          units = "1/(m^3)"
-         latexunits = '$\mathrm{m}^{-3}$'
-         latex='$f(\vec{r},E)$'
+         latexunits = r'$\mathrm{m}^{-3}$'
+         latex=r'$f(\vec{r},E)$'
          weight = 'particles'
 
    #Ekin[Ekin < min(EkinBinEdges)] = min(EkinBinEdges)
@@ -214,18 +214,18 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    # normalization
    if (differential): # differential flux per [m/s]
       units = "s/m^4"
-      latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
-      latex='$f(\vec{r},v)\,v^{-1}$'
+      latexunits = r'$\mathrm{s}\mathrm{m}^{-4}$'
+      latex=r'$f(\vec{r},v)\,v^{-1}$'
       weight = 'particles'
    elif (bindifferential): # differential flux per d[m/s]
       units = "s/m^4"
-      latexunits = '$\mathrm{s}\mathrm{m}^{-4}$'
-      latex='$f(\vec{r},v)\,\Delta{v^{-1}}$'
+      latexunits = r'$\mathrm{s}\mathrm{m}^{-4}$'
+      latex=r'$f(\vec{r},v)\,\Delta{v^{-1}}$'
       weight = 'particles'
    else:
       units = "1/m^3"
-      latexunits = '$\mathrm{m}^{-3}$'
-      latex='$f(\vec{r},v)$'
+      latexunits = r'$\mathrm{m}^{-3}$'
+      latex=r'$f(\vec{r},v)$'
       weight = 'particles'
 
    (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
