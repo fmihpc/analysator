@@ -930,6 +930,7 @@ def plot_vdf_profiles(filename=None,
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")
+            plt.close()
         elif axes==None:
             # Draw on-screen
             plt.draw()

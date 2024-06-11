@@ -1341,6 +1341,7 @@ def plot_vdf(filename=None,
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")
+            plt.close()
         elif axes is None:
             # Draw on-screen
             plt.draw()
