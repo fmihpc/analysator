@@ -16,19 +16,18 @@ r_e = 6.371e6
 
     
     Parameter descriptions:
-        var: Variable to plot
+        var: Variable to plot (e.g. "proton/vg_rho", "vg_b_vol")
         fnr0: First file number to plot
         fnr1: Last file number to plot
-        dr: Distance between cut-through sample points (km)
-        pointfile: File containing a list of coordinates, in Re
-        bulkpath: Path to bulk files
+        pointfile: Path to text file containing coordinates. Each row should correspond to one point, having 3 columns containing coordinates (X,Y,Z), in units of RE
+        bulkpath: Path to directory containing bulk files
         bulkprefix: Starting string of bulk file name (e.g. bulk, bulk1, bulk5)
         outputname: Name of output file
-        outputdir: Output file directory
-        intpol: Interpolate to cut-through sample points? (True/False)
-        filt: Filter out slowly changing signal? (<=0: no filtering, >0: filter with specified window size)
-        op: Variable operator
-        cmap: Colormap
+        outputdir: Path to output directory
+        intpol: Interpolate to cut-through sample points? (True/False), default=False
+        filt: Filter out slowly changing signal? (<=0: no filtering, >0: filter with specified window size), default=-1
+        op: Variable operator, default="pass"
+        cmap: Colormap, default="viridis"
 """
 
 
@@ -36,9 +35,6 @@ def jplots(
     var,
     fnr0,
     fnr1,
-    start_coords,
-    end_coords,
-    dr,
     bulkpath,
     bulkprefix,
     outputname,
@@ -50,31 +46,14 @@ def jplots(
     pointfile=None,
 ):
 
-    # dr *= 1000
-    # dr /= r_e
-
     fnr_arr = np.arange(fnr0, fnr1 + 0.1, 1, dtype=int)
     t_arr = np.zeros_like(fnr_arr).astype(float)
 
     if bulkpath[-1] != "/":
         bulkpath += "/"
 
-    if pointfile is None:
-        x0, y0, z0 = start_coords * r_e / 1000
-        x1, y1, z1 = end_coords * r_e / 1000
-        npoints = (
-            int(np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2 + (z1 - z0) ** 2) / dr) + 1
-        )
-
-        xlist = np.linspace(x0, x1, npoints, dtype=float)
-        ylist = np.linspace(y0, y1, npoints, dtype=float)
-        zlist = np.linspace(z0, z1, npoints, dtype=float)
-
-        coords = r_e * np.array([xlist, ylist, zlist]).T
-        point_list = np.arange(xlist.size)
-    else:
-        coords = np.loadtxt(pointfile) * r_e
-        point_list = np.arange(len(coords))
+    coords = np.loadtxt(pointfile) * r_e
+    point_list = np.arange(len(coords))
     if not intpol:
         fobj = pt.vlsvfile.VlsvReader(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr0).zfill(7))
@@ -148,21 +127,6 @@ parser.add_argument(
     type=str,
 )
 parser.add_argument(
-    "-startpoint",
-    nargs=3,
-    help="Start coords of straight line cut-through in Re",
-    type=float,
-)
-parser.add_argument(
-    "-endpoint",
-    nargs=3,
-    help="End coords of straight line cut-through in Re",
-    type=float,
-)
-parser.add_argument(
-    "-dr", help="distance between points in straight line cut-through [km]", type=float
-)
-parser.add_argument(
     "-bulkpath", help="Path to directory with bulk files", type=str, required=True
 )
 parser.add_argument(
@@ -196,9 +160,6 @@ if __name__ == "__main__":
         var=args.var,
         fnr0=args.fnr[0],
         fnr1=args.fnr[1],
-        start_coords=args.startpoint,
-        end_coords=args.endpoint,
-        dr=args.dr,
         bulkpath=args.bulkpath,
         bulkprefix=args.bulkprefix,
         outputdir=args.outputdir,
