@@ -179,7 +179,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 
-def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, direction='+', fg = 'fg_b' ):
+def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, direction='+', fg = 'fg_b', centering = None ):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
@@ -195,26 +195,34 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
                                   fg = some string
                                       ex. fg='fg_b': B-field, fg='fg_e': E-field
                                       static_field_tracer_3d() will load the appropriate variable via the vlsvReader object
-                                      NOTE: volumetric variables, with '_vol' suffix, may not work as intended. Use face-centered values: 'fg_b', 'fg_e' etc.
+                                      NOTE: volumetric variables, with '_vol' suffix, may not work as intended.
                                   fg = some field-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
-                                   
+       keyword centering:     Set to a string ('face' or 'edge') indicating whether the fg variable is face- or edge-centered
+                              If keyword fg == 'fg_b', then centering = 'face' (overriding input)
+                              If keyword fg == 'fg_e', then centering = 'edge' (overriding input)
+
       :returns:                  points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
                                  ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
       EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
                           fg_b = vlsvobj.read_variable('fg_b')
-                          traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
+                          traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b, centering = 'face' )
    '''
 
    # standardize input (a list of 3-element arrays/lists)
    if type(coord_list[0]) not in [list, np.ndarray]:
       coord_list = [coord_list]
 
-   # Read face-centered field grid variable (denoted 'fg_*' in .vlsv files, no '_vol' suffix):
+   # Read field grid variable (denoted 'fg_*' in .vlsv files, no '_vol' suffix)
+   # (standardizes input by redefining fg as a numpy array)
    if type(fg) == str:
+      if fg == 'fg_b':
+          centering = 'face'
+      elif fg == 'fg_e':
+          centering = 'edge'
       fg = vlsvReader.read_variable(fg)
    else:
       #   fg is already an ndarray
@@ -247,13 +255,22 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
    x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
    y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
    z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-   coordinates = np.array([x,y,z], dtype=object)
 
-   # Create grid interpolation of vector field (V)
-   interpolator_face_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
-   interpolators = [interpolator_face_V_0, interpolator_face_V_1, interpolator_face_V_2]
+   if centering is None:
+      print("centering keyword not set! Aborting.")
+      return False
+  
+   # Create grid interpolation object for vector field (V). Feed the object the component data and locations of measurements.
+   if centering == 'face':
+      interpolator_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
+      interpolator_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
+      interpolator_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
+   elif centering == 'edge':
+      interpolator_V_0 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z-0.5*dcell[2]), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
+      interpolator_V_1 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z-0.5*dcell[2]), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
+      interpolator_V_2 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y-0.5*dcell[1], z), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
+
+   interpolators = [interpolator_V_0, interpolator_V_1, interpolator_V_2]
 
    # Trace vector field lines
    if direction == '-':
