@@ -52,11 +52,9 @@ try:
 except:
     print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
-# from distutils.version import LooseVersion
 from packaging.version import Version
 
 import numpy as np, os
-
 
 if Version(matplotlib.__version__) < Version("3.3.0"):
     plt.register_cmap(name='viridis', cmap=cmaps.viridis)
@@ -69,13 +67,22 @@ if Version(matplotlib.__version__) < Version("3.3.0"):
     plt.register_cmap(name='magma_r', cmap=cmaps.magma_r)
 
 # Register custom colourmaps
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+if Version(matplotlib.__version__) < Version("3.5.0"):
+    plt.register_cmap(name='parula', cmap=cmaps.parula)
+    plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
+    plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+    plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+    plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+else:
+    matplotlib.colormaps.register(name='parula', cmap=cmaps.parula)
+    matplotlib.colormaps.register(name='parula_r', cmap=cmaps.parula_r)
+    matplotlib.colormaps.register(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+    matplotlib.colormaps.register(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    matplotlib.colormaps.register(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+    matplotlib.colormaps.register(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    matplotlib.colormaps.register(name='warhol', cmap=cmaps.warhol_colormap)
 
 
 decimalprecision_ax = 0
