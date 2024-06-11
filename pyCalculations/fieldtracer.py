@@ -207,7 +207,7 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
       :returns:                  points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
                                  ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
-      EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
+      EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsv_file) 
                           fg_b = vlsvobj.read_variable('fg_b')
                           traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b, centering = 'face' )
    '''
@@ -233,9 +233,9 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
          
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
-      backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', fg=fg)
+      backward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='-', fg=fg, centering = centering)
       backward.reverse()
-      forward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='+', fg=fg)
+      forward = static_field_tracer_3d(vlsvReader, coord_list, max_iterations, dx, direction='+', fg=fg, centering = centering)
       return backward + forward[1:]
 
    # Create x, y, and z coordinates:
