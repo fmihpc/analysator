@@ -1103,16 +1103,17 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
+      warnings.warn("read_interpolated_fsgrid_variable: face- vs. edge- centered variables not accounted for!")
+
       if name[0:3] != 'fg_':
          raise ValueError("Interpolation of FsGrid called on non-FsGrid data; exiting.")
       
       if (len(periodic)!=3):
          raise ValueError("Periodic must be a list of 3 booleans.")
-
+\
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
       fg_size=self.get_fsgrid_mesh_size()
-      fg_data=np.reshape(fg_data,fg_size)
       nx,ny,nz=fg_size
       extents=self.get_fsgrid_mesh_extent()
       xmin,ymin,zmin,xmax,ymax,zmax=extents
@@ -1236,7 +1237,7 @@ class VlsvReader(object):
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
       if isinstance(test_variable, Iterable):
-         value_length=len(test_variable)
+         value_length=test_variable.size
       else:
          value_length=1
 
