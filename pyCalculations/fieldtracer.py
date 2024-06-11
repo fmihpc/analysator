@@ -249,7 +249,7 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
       V_unit = V_unit / V_mag[np.newaxis,:]
       new_points = points + multiplier*V_unit.T * dx
       points_traced[mask_update,i,:] = new_points[mask_update]
-      mask_update[stop_condition(new_points)] = False
+      mask_update[stop_condition(vlsvReader, new_points)] = False
       points = new_points
       points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]
       # points = new_points
@@ -267,6 +267,8 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
       
    def find_unit_vector(vg, coord):
       val_at_point = vlsvReader.read_interpolated_variable(vg,coord)
+      if val_at_point.ndim == 1:
+         val_at_point = val_at_point[np.newaxis, :]
       val_mag = np.linalg.norm(val_at_point, axis = 1, keepdims = True)
       return val_at_point/val_mag
       
@@ -286,7 +288,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
 
       points_traced_unique[mask_update,i,:] = next_points[mask_update,:]
       # distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
-      mask_update[stop_condition(points_traced_unique[:,i,:])] = False
+      mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:])] = False
 
       points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
 
@@ -294,8 +296,13 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
    return points_traced
 
 # Default stop tracing condition for the vg tracing, (No stop until max_iteration)
-def default_stopping_condition(points):
-   return np.full((points.shape[0]), False)
+def default_stopping_condition(vlsvReader, points):
+   [xmin, ymin, zmin, xmax, ymax, zmax] = vlsvReader.get_spatial_mesh_extent()
+   x = points[:, 0]
+   y = points[:, 1]
+   z = points[:, 2]
+   return (x < xmin)|(x > xmax) | (y < ymin)|(y > ymax) | (z < zmin)|(z > zmax)
+   # return np.full((points.shape[0]), False)
 
 def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol', stop_condition = default_stopping_condition, centering = None ):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 

@@ -117,29 +117,13 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
    for i in range(maxiters):
       
       J[~convergence,:,:] = df(ksi_n[~convergence,:], v_coords[~convergence,:,:])
-      # print('J',J[~convergence,...])
       f_n[~convergence,:] = f(ksi_n[~convergence,:],v_coords[~convergence,:,:])-p[~convergence,:]
-      # print('fn',f_n[~convergence,...])
-      # print("f(r) = ", f_n)
-      # step = np.matmul(np.linalg.inv(J),f_n)
-      # print(J.shape, f_n.shape)
-      try:
-         step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
-      except:
-         step = np.zeros_like(p[~convergence,:])
-         for i in range(step.shape[0]):
-            try:
-               step[i,:] = np.linalg.solve(J[~convergence,:,:][i,:,:], -f_n[~convergence,:][i,:])
-            except:
-               print("Failed at point", p[~convergence,:][i,:])
-               sys.exit()
-      # print("J^-1 f0 = ",step)
+      step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
       ksi_n1[~convergence,:] = step + ksi_n[~convergence,:] # r_(n+1) 
       ksi_n[~convergence,:] = ksi_n1[~convergence,:]
       
-      # print(ksi_n1, f(ksi_n1,verts), np.linalg.norm(f(ksi_n1,verts) - p))
-      # print("--------------")
       convergence[~convergence] = (np.linalg.norm(f(ksi_n1[~convergence,:],v_coords[~convergence,:,:]) - p[~convergence,:],axis=1) < tol)
+      convergence[~convergence] = np.linalg.norm(ksi_n1[~convergence,:],axis=1) > 1e2 # Don't bother if the solution is diverging either, will be checked later (remember to check later!)
          # convergence = True
       if np.all(convergence):
          # print("All converged in ", i, "iterations")

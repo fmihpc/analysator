@@ -163,7 +163,7 @@ class VlsvReader(object):
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
       self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
 
-      self.__regular_neighbor_cache = {} # (cellid,x,y,z) : cellid - store 
+      self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8-tuple of cellid)? To be refined, reading all regular neighbors to cache is not great
 
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
