@@ -834,10 +834,10 @@ def plot_vdf_profiles(filename=None,
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
 
-        ax1.xaxis.set_tick_params(width=thick,length=4)
-        ax1.yaxis.set_tick_params(width=thick,length=4)
-        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
-        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
+        ax1.xaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.yaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
+        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
 
         if len(plot_title)>0:
             if not os.getenv('PTNOLATEX'):
