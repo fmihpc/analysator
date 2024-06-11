@@ -2,7 +2,6 @@ import matplotlib
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
 import os, sys
 import re
 import glob
@@ -15,7 +14,9 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from distutils.version import LooseVersion, StrictVersion
+# from distutils.version import LooseVersion
+from packaging.version import Version
+
 
 import ids3d
 #from mpl_toolkits.mplot3d import axes3d
@@ -419,9 +420,9 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
                                (xr+axisarrowscale, yr, axextents[5]-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
-    xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
-    ylabelstr = pt.plot.mathmode(pt.plot.bfstring('Y\,['+axisunitstr+']'))
-    zlabelstr = pt.plot.mathmode(pt.plot.bfstring('Z\,['+axisunitstr+']'))
+    xlabelstr = pt.plot.mathmode(pt.plot.bfstring(r'X\,['+axisunitstr+']'))
+    ylabelstr = pt.plot.mathmode(pt.plot.bfstring(r'Y\,['+axisunitstr+']'))
+    zlabelstr = pt.plot.mathmode(pt.plot.bfstring(r'Z\,['+axisunitstr+']'))
 
     if halfaxes and styleXp == backaxisstyle:
         ax.text(axextents[0]-cXlabel, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
@@ -1045,7 +1046,7 @@ def plot_threeslice(filename=None,
 
         # Add unit to colorbar title
         if datamap_unit_latex:
-            cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
+            cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
         # Dummy variables
@@ -1249,7 +1250,7 @@ def plot_threeslice(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+            if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -1281,53 +1282,53 @@ def plot_threeslice(filename=None,
     ###############################################################################
     cutpointaxu = cutpoint/axisunituse
     # {X = x0 slice}
-    [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+    [YmeshYmZm,ZmeshYmZm] = np.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     XmeshYmZm = np.ones(YmeshYmZm.shape) * cutpointaxu[0]
 
-    [YmeshYpZm,ZmeshYpZm] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+    [YmeshYpZm,ZmeshYpZm] = np.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     XmeshYpZm = np.ones(YmeshYpZm.shape) * cutpointaxu[0]
 
-    [YmeshYmZp,ZmeshYmZp] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+    [YmeshYmZp,ZmeshYmZp] = np.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     XmeshYmZp = np.ones(YmeshYmZp.shape) * cutpointaxu[0]
 
-    [YmeshYpZp,ZmeshYpZp] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+    [YmeshYpZp,ZmeshYpZp] = np.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     XmeshYpZp = np.ones(YmeshYpZp.shape) * cutpointaxu[0]
 
     # {Y = y0 slice}
-    [XmeshXmZm,ZmeshXmZm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmZm,ZmeshXmZm] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     YmeshXmZm = np.ones(XmeshXmZm.shape) * cutpointaxu[1]
 
-    [XmeshXpZm,ZmeshXpZm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpZm,ZmeshXpZm] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     YmeshXpZm = np.ones(XmeshXpZm.shape) * cutpointaxu[1]
 
-    [XmeshXmZp,ZmeshXmZp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmZp,ZmeshXmZp] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     YmeshXmZp = np.ones(XmeshXmZp.shape) * cutpointaxu[1]
 
-    [XmeshXpZp,ZmeshXpZp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpZp,ZmeshXpZp] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     YmeshXpZp = np.ones(XmeshXpZp.shape) * cutpointaxu[1]
 
     # {Z = z0 slice}
-    [XmeshXmYm,YmeshXmYm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmYm,YmeshXmYm] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
     ZmeshXmYm = np.ones(XmeshXmYm.shape) * cutpointaxu[2]
 
-    [XmeshXpYm,YmeshXpYm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpYm,YmeshXpYm] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
     ZmeshXpYm = np.ones(XmeshXpYm.shape) * cutpointaxu[2]
 
-    [XmeshXmYp,YmeshXmYp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmYp,YmeshXmYp] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
     ZmeshXmYp = np.ones(XmeshXmYp.shape) * cutpointaxu[2]
 
-    [XmeshXpYp,YmeshXpYp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpYp,YmeshXpYp] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
     ZmeshXpYp = np.ones(XmeshXpYp.shape) * cutpointaxu[2]
 
@@ -1648,7 +1649,7 @@ def plot_threeslice(filename=None,
         cbticks = cb.get_ticks()
         cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
+        cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
         cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
         cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
@@ -1701,7 +1702,7 @@ def plot_threeslice(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace(r'\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
                 if not labeltext:
                     continue
                 firstdigit = labeltext[0]
@@ -1747,6 +1748,7 @@ def plot_threeslice(filename=None,
         except:
             print("Error with attempting to save figure.")
             print('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+        plt.close()
     else:
         # Draw on-screen
         plt.draw()

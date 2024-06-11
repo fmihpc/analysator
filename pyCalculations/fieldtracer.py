@@ -179,7 +179,25 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    return points
 
 # fg tracing for static_field_tracer_3d
-def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition):
+def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition, centering = None ):
+
+
+   # Read field grid variable (denoted 'fg_*' in .vlsv files, no '_vol' suffix)
+   # (standardizes input by redefining fg as a numpy array)
+   if type(fg) == str:
+      if fg == 'fg_b':
+          centering = 'face'
+      elif fg == 'fg_e':
+          centering = 'edge'
+      fg = vlsvReader.read_variable(fg)
+   else:
+      #   fg is already an ndarray
+      if not isinstance(fg, np.ndarray):
+         raise TypeError("Keyword parameter fg does not seem to be a numpy ndarray.")
+      elif fg.ndim!=4 or fg.shape[-1]!=3:
+         raise ValueError("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+
+
    # Create x, y, and z coordinates:
    xsize = fg.shape[0]
    ysize = fg.shape[1]
@@ -197,13 +215,22 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
    x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
    y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
    z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-   coordinates = np.array([x,y,z], dtype=object)
 
-   # Create grid interpolation of vector field (V)
-   interpolator_face_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
-   interpolator_face_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
-   interpolators = [interpolator_face_V_0, interpolator_face_V_1, interpolator_face_V_2]
+   if centering is None:
+      print("centering keyword not set! Aborting.")
+      return False
+  
+   # Create grid interpolation object for vector field (V). Feed the object the component data and locations of measurements.
+   if centering == 'face':
+      interpolator_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
+      interpolator_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
+      interpolator_V_2 = interpolate.RegularGridInterpolator((x, y, z-0.5*dcell[2]), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
+   elif centering == 'edge':
+      interpolator_V_0 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z-0.5*dcell[2]), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
+      interpolator_V_1 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z-0.5*dcell[2]), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
+      interpolator_V_2 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y-0.5*dcell[1], z), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
+
+   interpolators = [interpolator_V_0, interpolator_V_1, interpolator_V_2]
 
    # Trace vector field lines
    points = seed_coords
@@ -270,7 +297,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
 def default_stopping_condition(points):
    return np.full((points.shape[0]), False)
 
-def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol', stop_condition = default_stopping_condition):
+def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, direction='+', grid_var = 'vg_b_vol', stop_condition = default_stopping_condition, centering = None ):
    ''' static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
@@ -284,24 +311,28 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
        keyword grid_var:      Variable to be traced (A string)
                               options include:
                                   grid_var = some string
-                                      ex. fg='fg_b': B-field, fg='fg_e': E-field
+                                      grid_var = 'vg_b_vol': AMR-grid B-field
+                                      grid_var ='fg_b': fieldsolver grid B-field, grid_var='fg_e': fieldsolver grid E-field
                                       static_field_tracer_3d() will load the appropriate variable via the vlsvReader object
                                       NOTE: volumetric variables, with '_vol' suffix, may not work as intended. Use face-centered values: 'fg_b', 'fg_e' etc.
-                                  grid_var = some field-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
+                                  grid_var = some fieldsolver-grid ("fg") array.          dimensions [dimx,dimy,dimz,3]
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
-                                  grid_var = 'vg_b_vol'
-      keyword stop_condition: Boolean array (seed_coords.shape[0],)
+                                        keyword stop_condition: Boolean array (seed_coords.shape[0],)
                               Determine when the iteration stop, for the vg trace only
                               If not specified, it will always be True for each seed points.
                               eg. def my_stop(points):
                                     distances = np.linalg.norm(points[:,:],axis = 1)
                                     return (distances <= lower_bound) | (distances >= upper_bound)
       :returns:               fg:   points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
-                                 ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
+                                    ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
                                     note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
                               vg:   points_traced --- a 3d numpy array [len(seed_coords)]
+      keyword centering:     Set to a string ('face' or 'edge') indicating whether the fg variable is face- or edge-centered
+                              If keyword fg == 'fg_b', then centering = 'face' (overriding input)
+                              If keyword fg == 'fg_e', then centering = 'edge' (overriding input)
+
       EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
                           fg_b = vlsvobj.read_variable('fg_b')
                           traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
@@ -329,12 +360,13 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
       else:
          raise ValueError("Please give a valid string (eg. 'vg_b_vol')")
    else:
-      raise TypeError("Please give a string")
-      # #   fg is already an ndarray
-      # if not isinstance(grid_var, np.ndarray):
-      #    raise TypeError("Keyword parameter fg does not seem to be a numpy ndarray.")
-      # elif fg.ndim!=4 or fg.shape[-1]!=3:
-      #    raise ValueError("Checking array supplied in fg keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+      #   fg is already an ndarray
+      if not isinstance(grid_var, np.ndarray):
+         raise TypeError("Keyword parameter grid_var does not seem to be a string nor a numpy ndarray.")
+      elif fg.ndim!=4 or fg.shape[-1]!=3:
+         raise ValueError("Checking array supplied in grid_var keyword: fg[-1]={} (expected: 3), fg.ndim={} (expected: 4)".format(fg[-1], fg.ndim))
+      else:
+         raise TypeError("Unrecognized grid_var keyword data (expect string or numpy.ndarray)")
          
    # Recursion (trace in both directions and concatenate the results)
    if direction == '+-':
@@ -346,7 +378,7 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
    multiplier = -1 if direction == '-' else 1   
    
    if fg is not None:
-      points_traced = fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition)
+      points_traced = fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_condition, centering )
    
    elif vg is not None:
       points_traced = vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_condition)
