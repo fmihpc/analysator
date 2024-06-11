@@ -290,7 +290,7 @@ def plot_ionosphere(filename=None,
 
     # Add unit to colorbar title
     if datamap_unit_latex:
-       cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
+       cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
     if viewdir > 0:
         r=np.degrees(np.arccos(coords[:,2]/ionosphere_radius))

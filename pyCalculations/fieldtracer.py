@@ -234,9 +234,11 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
 
    # Trace vector field lines
    points = seed_coords
-   points_traced = np.zeros((seed_coords.shape[0], max_iterations + 1, 3))
+   points_traced = np.zeros((seed_coords.shape[0], max_iterations, 3))
+
    points_traced[:, 0,:] = seed_coords
    mask_update = np.ones(seed_coords.shape[0], dtype = bool)
+
    # points_traced = [np.array(seed_coords)]              # iteratively append traced trajectories to this list
    # points = points_traced[0]
    # N = len(list(seed_coords))
@@ -247,13 +249,12 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
       V_unit[:, 2] = interpolators[2](points)
       V_mag = np.linalg.norm(V_unit, axis=(1))
       V_unit = V_unit / V_mag[np.newaxis,:]
-      new_points = points + multiplier*V_unit.T * dx
-      points_traced[mask_update,i,:] = new_points[mask_update]
+      new_points = points + multiplier*V_unit * dx
+      points_traced[mask_update,i,:] = new_points[mask_update,:]
+
       mask_update[stop_condition(vlsvReader, new_points)] = False
       points = new_points
       points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]
-      # points = new_points
-      # points_traced[:,i,:] = points             # list of lists of 3-element arrays
       
    return points_traced
 
