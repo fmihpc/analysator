@@ -234,7 +234,7 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
 
    # Trace vector field lines
    points = seed_coords
-   points_traced = np.zeros((seed_coords.shape[0], max_iterations, 3))
+   points_traced = np.full((seed_coords.shape[0], max_iterations, 3), np.nan)
 
    points_traced[:, 0,:] = seed_coords
    mask_update = np.ones(seed_coords.shape[0], dtype = bool)
@@ -254,7 +254,7 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
 
       mask_update[stop_condition(vlsvReader, new_points)] = False
       points = new_points
-      points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]
+      # points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]
       
    return points_traced
 
@@ -275,7 +275,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
       
    unique_seed_coords,indices = np.unique(seed_coords, axis = 0, return_inverse = True)    # indice here is to reverse the coords order to initial
    n_unique_seeds = unique_seed_coords.shape[0]
-   points_traced_unique = np.zeros((n_unique_seeds, max_iterations, 3))
+   points_traced_unique = np.full((n_unique_seeds, max_iterations, 3),np.nan)
 
    Re = 6371000
    mask_update = np.ones((n_unique_seeds,),dtype = bool) # A mask to determine if the points are still needed to trace further
@@ -291,7 +291,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
       # distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
       mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:])] = False
 
-      points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
+      # points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
 
    points_traced = points_traced_unique[indices,:,:]
    return points_traced
