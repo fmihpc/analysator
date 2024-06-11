@@ -255,13 +255,12 @@ def static_field_tracer_3d( vlsvReader, coord_list, max_iterations, dx, directio
    x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
    y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
    z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-   coordinates = np.array([x,y,z], dtype=object)
 
    if centering is None:
       print("centering keyword not set! Aborting.")
       return False
   
-   # Create grid interpolation of vector field (V)
+   # Create grid interpolation object for vector field (V). Feed the object the component data and locations of measurements.
    if centering == 'face':
       interpolator_V_0 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z), fg[:,:,:,0], bounds_error = False, fill_value = np.nan)
       interpolator_V_1 = interpolate.RegularGridInterpolator((x, y-0.5*dcell[1], z), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
