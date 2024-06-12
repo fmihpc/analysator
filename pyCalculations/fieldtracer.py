@@ -333,10 +333,8 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
                               eg. def my_stop(points):
                                     distances = np.linalg.norm(points[:,:],axis = 1)
                                     return (distances <= lower_bound) | (distances >= upper_bound)
-      :returns:               fg:   points_traced --- Traced coordinates (a list of lists of 3-element coordinate arrays)
-                                    ex. points_traced[2][5][1]: at 3rd tracing step [2], the 6th point [5], y-coordinate [1]
-                                    note: Can convert output to a 3D numpy array if desired, with np.array(points_traced)
-                              vg:   points_traced --- a 3d numpy array [len(seed_coords)]
+      :returns:               points_traced --- a 3d numpy array [len(seed_coords),max_iterations (or 2*max_iterations-1 for '+-'),3]
+                              Non-traced sections (e.g. iterations after reaching outer boundaries) filled with np.nan
       keyword centering:     Set to a string ('face' or 'edge') indicating whether the fg variable is face- or edge-centered
                               If keyword fg == 'fg_b', then centering = 'face' (overriding input)
                               If keyword fg == 'fg_e', then centering = 'edge' (overriding input)
