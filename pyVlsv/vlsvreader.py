@@ -1250,6 +1250,37 @@ class VlsvReader(object):
       print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
+   # These are the 8 cells that span the upper corner vertex on a regular grid
+   def get_vg_regular_interp_neighbors(self, cellids):
+
+      
+      len_cellids = np.atleast_1d(cellids).shape[0]
+      cellid_neighbors = np.zeros((len_cellids, 8))
+
+      in_cache = dict_keys_exist(self.__regular_neighbor_cache, cellids)
+      
+      if(np.any(in_cache)):
+         cellid_neighbors[in_cache,:] = np.array(itemgetter(*cellids[in_cache])(self.__regular_neighbor_cache), dtype=np.int64)
+      n_not_in_cache = np.sum(~in_cache)
+
+      if n_not_in_cache > 0:
+         offsets = np.zeros((8,3), dtype=np.int32)
+         ii = 0
+         for x in [0,1]:
+            for y in [0,1]:
+               for z  in [0,1]:
+                  offsets[ii,:] = np.array((x,y,z), dtype=np.int32)
+                  ii+=1
+
+         cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids[~in_cache]), 8, axis=1).T,n_not_in_cache*8)
+         offsets = np.tile(offsets, (n_not_in_cache, 1))
+         cellid_neighbors_new = self.get_cell_neighbor(cellids_rep, offsets, [True,True,True], prune_uniques=False)
+         cellid_neighbors_new = cellid_neighbors_new.reshape((-1,8))
+         self.__regular_neighbor_cache.update( {c:cellid_neighbors_new[i,:] for i,c in enumerate(cellids[~in_cache])})
+         cellid_neighbors[~in_cache,:] = cellid_neighbors_new
+      
+      return cellid_neighbors
+
    def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Trilinear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
@@ -1305,7 +1336,7 @@ class VlsvReader(object):
       ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
 
       cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
-      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.read_variable("vg_regular_interp_neighbors", cellids=lower_cell_ids_unique[lower_cell_ids_unique != 0])
+      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0])
       cellid_neighbors = cellid_neighbors.reshape((-1))
    
 
