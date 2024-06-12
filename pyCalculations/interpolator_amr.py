@@ -113,29 +113,38 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
    # print(f_n)
    f_n = f_n - p
 
-   convergence = np.full((p.shape[0],),False, dtype=bool)
+   resolved = np.full((p.shape[0],),False, dtype=bool)
+   diverged = np.full((p.shape[0],),False, dtype=bool)
+   
    for i in range(maxiters):
       
-      J[~convergence,:,:] = df(ksi_n[~convergence,:], v_coords[~convergence,:,:])
-      f_n[~convergence,:] = f(ksi_n[~convergence,:],v_coords[~convergence,:,:])-p[~convergence,:]
-      step = np.linalg.solve(J[~convergence,:,:], -f_n[~convergence,:])
-      ksi_n1[~convergence,:] = step + ksi_n[~convergence,:] # r_(n+1) 
-      ksi_n[~convergence,:] = ksi_n1[~convergence,:]
+      J[~resolved,:,:] = df(ksi_n[~resolved,:], v_coords[~resolved,:,:])
+      f_n[~resolved,:] = f(ksi_n[~resolved,:],v_coords[~resolved,:,:])-p[~resolved,:]
+      step = np.linalg.solve(J[~resolved,:,:], -f_n[~resolved,:])
+      ksi_n1[~resolved,:] = step + ksi_n[~resolved,:] # r_(n+1) 
+      ksi_n[~resolved,:] = ksi_n1[~resolved,:]
       
-      convergence[~convergence] = (np.linalg.norm(f(ksi_n1[~convergence,:],v_coords[~convergence,:,:]) - p[~convergence,:],axis=1) < tol)
-      convergence[~convergence] = np.linalg.norm(ksi_n1[~convergence,:],axis=1) > 1e2 # Don't bother if the solution is diverging either, will be checked later (remember to check later!)
+      resolved[~resolved] = (np.linalg.norm(f(ksi_n1[~resolved,:],v_coords[~resolved,:,:]) - p[~resolved,:],axis=1) < tol)
+      resolved[~resolved] = np.linalg.norm(ksi_n1[~resolved,:],axis=1) > 1e2 # Don't bother if the solution is diverging either, set to nans later
          # convergence = True
-      if np.all(convergence):
-         # print("All converged in ", i, "iterations")
-         return ksi_n1
+      if np.all(resolved):
+         break
+         # diverged = np.linalg.norm(ksi_n1,axis=1) > 1e2
+         # ksi_n1[diverged,:] = np.nan
+         # # print("All converged in ", i, "iterations")
+         # return ksi_n1
       
 
-   if np.all(convergence):
+   if np.all(resolved):
       # print("Converged after ", i, "iterations")
+      diverged = np.linalg.norm(ksi_n1,axis=1) > 1e2
+      ksi_n1[diverged,:] = np.nan
       return ksi_n1
    else:
       # warnings.warn("Generalized trilinear interpolation did not converge for " + str(np.sum(~convergence)) + " points. Nans inbound.")
-      ksi_n1[~convergence,:] = np.nan
+      diverged = np.linalg.norm(ksi_n1,axis=1) > 1e2
+      ksi_n1[diverged,:] = np.nan
+      ksi_n1[~resolved,:] = np.nan
       return ksi_n1
       
 class HexahedralTrilinearInterpolator(object):
