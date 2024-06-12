@@ -37,7 +37,6 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-# from distutils.version import LooseVersion
 from packaging.version import Version
 
 import ids3d
