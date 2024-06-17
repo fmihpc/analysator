@@ -162,8 +162,7 @@ class VlsvReader(object):
       self.__cell_corner_vertices = {} # cellid : varying-length tuple of vertex-indices - no hanging nodes!
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
       self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
-
-      self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8-tuple of cellid)? To be refined, reading all regular neighbors to cache is not great
+      self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8,) np.array of cellids)
 
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -1390,6 +1389,11 @@ class VlsvReader(object):
             return final_values.squeeze()
 
    def get_duals(self,cids):
+      ''' Get the union of dual cells that cover each of CellIDs in cids.
+          Assumes all required duals are defined! TODO handling of missing duals, do not call separately.
+
+      :returns: Dict of vertex-indices v (3-tuple) : 8-tuple of cellids (corners of dual cells indexed by v)
+      '''
 
       fo = {c: self.__cell_duals[c] for c in cids}
       vset = set()
@@ -1660,6 +1664,8 @@ class VlsvReader(object):
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
           operator.
+          :param name: Name of the variable (or datareducer)
+          :param operator: Datareduction operator. "pass" does no operation on data.
 
       '''
 
@@ -2163,6 +2169,11 @@ class VlsvReader(object):
          return output[0]
 
    def get_vertex_indices(self, coordinates):
+      ''' Get dual grid vertex indices for all coordinates.
+      
+      Works by truncation to integer indices at fsgrid resolution, for cell low-corners.
+      :param coordinates: np.array of coordinates, shaped either (3,) or (N,3)
+      '''
       coordinates = np.array(coordinates)
       stack = True
       if(len(coordinates.shape) == 1):
@@ -2184,6 +2195,11 @@ class VlsvReader(object):
          return tuple(indices[0,:])
       
    def get_vertex_coordinates_from_indices(self, indices):
+      ''' Convert vertex indices to physical coordinates.
+      :param indices: numpy array of vertex indices, either (3,) or (N,3)
+
+      :returns: numpy array of coordinates, with matching shape to indices
+      '''
       stack = True
       inds = np.array(indices)
       if(len(inds.shape) == 1):
@@ -2202,6 +2218,13 @@ class VlsvReader(object):
 
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
    def get_dual(self, pts, cellids=None):
+      ''' Find the duals that contain the coordinate points pts. This will call the iterative find_ksi function
+      to see if the resulting interpolation weights for the coordinate are in the range [0,1]; if not, it will iterate 
+      through neighbouring duals until a dual is found.
+      :parameter pts: numpy array of coordinates (N,3)
+
+      :returns: duals (numpy array of N 3-tuples), ksis (numpy array of interpolation weights (N, 8))
+      '''
 
       from pyCalculations.interpolator_amr import find_ksi
 
@@ -2270,6 +2293,14 @@ class VlsvReader(object):
       
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid, prune_unique=False):
+      ''' Builds, caches and returns the vertices that lie on the surfaces of CellIDs cid.
+      :parameter cid: numpy array of CellIDs
+      :parameter prune_unique: bool [False], if you suspect you might be calling the function many times with the 
+      same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
+
+      :returns: Dictionary of cell c (int) : set of vertex indices (3-tuple) that touch the cell c.
+
+      '''
       if prune_unique:
          cid = np.unique(cid)
 
@@ -2319,6 +2350,12 @@ class VlsvReader(object):
       return vertices
 
    def get_cell_corner_vertices(self, cids):
+      ''' Builds, caches and returns the vertices that lie on the corners of CellIDs cid.
+      :parameter cid: numpy array of CellIDs
+
+      :returns: Dictionary of cell c (int) : 8-tuple of vertex indices (3-tuples).
+
+      '''
 
       mask = ~dict_keys_exist(self.__cell_vertices,cids,prune_unique=False)
       coords = self.get_cell_coordinates(cids[mask])
