@@ -44,6 +44,29 @@ import time
 from interpolator_amr import AMRInterpolator
 from operator import itemgetter
 
+class PicklableFile(object):
+    def __init__(self, fileobj):
+        self.fileobj = fileobj
+
+    def __getattr__(self, key):
+        return getattr(self.fileobj, key)
+
+    def __getstate__(self):
+        ret = self.__dict__.copy()
+        ret['_file_name'] = self.fileobj.name
+        ret['_file_mode'] = self.fileobj.mode
+        ret['_file_pos'] = self.fileobj.tell()
+        del ret['fileobj']
+        return ret
+
+    def __setstate__(self, dict):
+        self.fileobj = open(dict['_file_name'], dict['_file_mode'])
+        self.fileobj.seek(dict['_file_pos'])
+        del dict['_file_name']
+        del dict['_file_mode']
+        del dict['_file_pos']
+        self.__dict__.update(dict)
+
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
@@ -123,6 +146,9 @@ class VlsvReader(object):
       pass
 
    file_name=""
+   def __del__(self):
+      self.__fptr.close()
+
    def __init__(self, file_name, fsGridDecomposition=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
@@ -135,11 +161,11 @@ class VlsvReader(object):
 
       self.file_name = file_name
       try:
-         self.__fptr = open(self.file_name,"rb")
+         self.__fptr = PicklableFile(open(self.file_name,"rb"))
       except FileNotFoundError as e:
          print("File not found: ", self.file_name)
          raise e
-      f=open(self.file_name,"rb") # unmanaged life cycle for now
+      f=PicklableFile(open(self.file_name,"rb")) # unmanaged life cycle for now
       self.__mmapped = mmap.mmap(f.fileno(), 0, prot=mmap.PROT_READ)
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
@@ -331,7 +357,7 @@ class VlsvReader(object):
               if self.check_parameter("j_per_b_modifier"):
                  vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
-      self.__fptr.close()
+      # self.__fptr.close()
 
 
    def __read_xml_footer(self):
