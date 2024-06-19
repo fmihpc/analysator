@@ -1313,7 +1313,9 @@ class VlsvReader(object):
 
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      if isinstance(test_variable, Iterable):
+      if isinstance(test_variable,np.ma.core.MaskedConstant):
+         value_length=1
+      elif isinstance(test_variable, Iterable):
          value_length=len(test_variable)
       else:
          value_length=1
