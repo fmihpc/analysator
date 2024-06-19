@@ -1110,7 +1110,7 @@ class VlsvReader(object):
       
       if (len(periodic)!=3):
          raise ValueError("Periodic must be a list of 3 booleans.")
-\
+
       #First off let's fetch the data and some meta
       fg_data=self.read_fsgrid_variable( name,operator=operator)
       fg_size=self.get_fsgrid_mesh_size()
