@@ -1,7 +1,5 @@
 # Calculate the ground electric field in the ionosphere grid
 
-#@timer
-#@jit(nopython=True)
 def E_horizontal(dB_dt, pos, time, sigma = 0e-3):
     '''
         Calculate the horizontal electric field by integrating components of dB/dt 
@@ -9,7 +7,7 @@ def E_horizontal(dB_dt, pos, time, sigma = 0e-3):
         Inputs:
             dB_dt: cartesian dB/dt    [T/s] array dimension [len(time), 2]
             x: cartesian position [m]       2-element array
-            time: 0D array of times [s]
+            time: 1D array of times [s]
 
         Keywords:
             sigma = ground conductivity (siemens/meter)
@@ -37,16 +35,13 @@ if __name__ == '__main__':
     '''
     
     import os
-    #os.environ['PATH'] = "/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:" + os.environ['PATH']
     print(os.environ["PATH"])
     import matplotlib
-    #matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
     import numpy as np
     import ftest as ft
     import pytools as pt
-    #from numba import jit
-    from scriptutils import cartesian_to_spherical_vector, spherical_to_cartesian, mkdir_path, timer
+    from scriptutils import cartesian_to_spherical_vector, spherical_to_cartesian, mkdir_path
     
     R_EARTH = 6371000.
     print("test1")
@@ -60,24 +55,19 @@ if __name__ == '__main__':
         dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/sidecars/ig_B"
     f = ft.f("/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/ionosphere_B_sidecar_FHA.0000784.vlsv")     # FHA: file indices 501 - 1254
     f.list()
-    #plt.plot([1,2])
-    #plt.show()
     
     if run == "FHA":
         nmin = 501    # 501-1000 using _v2 sidecars
-        nmax = 1000    
-        #nmin = 1001  # 1001-1612 using original sidecars
-        #nmax = 1612
+        nmax = 1612 
     elif run == "FIA":
         nmin = 1
-        nmax = 817         #865 (files 818-819 missing)
+        nmax = 817         # max 865 (files 818-819 missing)
     elif run == "EGL":
         nmin = 621
-        nmax = 1760    # 1004
+        nmax = 1760
     time = np.linspace(nmin, nmax, nmax - nmin + 1)
     
     pos = f.read_variable('ig_r')   # ionospheric grid.  array dimensions (43132, 3)
-    #ig_B_arr = np.ndarray([pos.shape[0], pos.shape[1], nmax - nmin + 1])
     ig_dB_dt_arr = np.ndarray([pos.shape[0], pos.shape[1], nmax - nmin + 1])
     ig_B_ionosphere_arr = ig_dB_dt_arr * 0.
     ig_dB_dt_ionosphere_arr = ig_dB_dt_arr * 0.
@@ -91,9 +81,7 @@ if __name__ == '__main__':
     
     #populate B arrays
     for i in range(nmin, nmax+1):
-        #print(i)
-        #f = ft.f(dir + "/ionosphere_B_sidecar_{}.{}.vlsv".format(run, str(i).zfill(7)))     # FHA: file indices 1001 - 1612
-        f = ft.f(dir + "/ionosphere_B_sidecar_{}.{}_v2.vlsv".format(run, str(i).zfill(7)))     # FHA: file indices 501 - 1000 (missing horizontal currents in original sidecars is reconstructed in v2)
+        f = ft.f(dir + "/ionosphere_B_sidecar_{}.{}.vlsv".format(run, str(i).zfill(7)))
         try:
             ig_B_ionosphere = f.read_variable('ig_B_ionosphere')
             ig_B_ionosphere_arr[:,:,i-nmin] = ig_B_ionosphere
@@ -104,15 +92,10 @@ if __name__ == '__main__':
         ig_B_outer = f.read_variable('ig_B_outer')
         ig_B_outer_arr[:,:,i-nmin] = ig_B_outer
 
-
-    print("test2")
-    # interpolate across zeros in B arrays (missing data points, something funny about FHA and FIA makes ionosphere write operation unreliable?)
-    #for arr in [ig_B_arr, ig_B_ionosphere_arr, ig_B_inner_arr, ig_B_outer_arr]:
+    # interpolate across any zeros in B arrays (klug)
     
     for arr in [ig_B_ionosphere_arr]:
         try:
-            #reduced_arr = np.sum(arr, 0)
-            #ind = np.where(reduced_arr[0,:] != 0)[0]
             ind = np.where(arr[0,0,:] != 0)[0]
             print("{} points removed".format(arr.shape[2] - ind.size))
             interp_arr = arr[:,:, ind]  # only keep the non-zero times to conduct the interpolation
@@ -133,8 +116,6 @@ if __name__ == '__main__':
             ig_dB_dt_inner_arr[:,:,i-nmin] = ig_B_inner_arr[:,:,i-nmin] - ig_B_inner_arr[:,:,i-nmin-1]
             ig_dB_dt_outer_arr[:,:,i-nmin] = ig_B_outer_arr[:,:,i-nmin] - ig_B_outer_arr[:,:,i-nmin-1]
     
-    #i_pos = 0
-    #E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3)
     for i_pos in range(ig_dB_dt_arr.shape[0]):
         E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3)
         E_north_arr[i_pos,:] = E_north

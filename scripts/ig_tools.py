@@ -3,9 +3,10 @@
 
 import numpy as np
 
-
-# duplicate of ionosphere_mesh_area() as it appears in biot_savart.py
 def ionosphere_mesh_area(f):
+    '''
+       calculate areas of ionospheric elements (triangles)
+    '''
     # this function could be added to analysator:master vlsvReader
     n = f.get_ionosphere_node_coords()       # nodes: shape (21568, 3) vertices
     c = f.get_ionosphere_element_corners()   # corners of elements: indices integers 0-21567, shape (43132, 3)
@@ -18,7 +19,6 @@ def ionosphere_mesh_area(f):
     return areas
 
 
-# duplicate of get_ig_r() as it appears in biot_savart.py
 def get_ig_r(f):
     # Calculate barycenters of ionospheric elements. Could add this to master:analysator vlsvReader
     # ionospheric mesh is at radius (R_EARTH + 100 km), see Urs's ionosphere writeup
