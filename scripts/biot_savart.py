@@ -7,9 +7,9 @@
      mapped (assuming J \propto B) along the field lines connecting ionosphere radius R_IONO to coupling radius r_C
  3. Horizontal Ionospheric currents (altitude 100 km)
 
- The integration is done simply as a summation over the cells
+ The integration is a discrete summation over the 3 domains.
 
- Integrating the domain #2 will likely require this domain to be 'refined' in order to resolve the FAC structures
+ Integrating the domain #2 will likely require this mesh to be 'refined' in order to resolve the FAC structures
  see the functions refine_mesh() and graded_mesh()
 
  This script has been tested with the Vlasiator runs EGL, FHA, FIA
@@ -19,6 +19,9 @@
  
  EXAMPLE CALL (64 threads):
  python utils/biot_savart.py -nproc 64 -task 1 -run FHA
+
+ Example sidecar .vlsv files,  containing ground magnetic field data, can be found at:
+    /wrk-vakka/group/spacephysics/vlasiator/3D/{run name}/sidecars/ig_B/
 
 '''
 
@@ -46,57 +49,14 @@ global ARGS
 ARGS = parser.parse_args()
 
 
-# USER-DEFINED locations of .vlsv files. Here organized by run name 'EGL', 'FHA', 'FIA'
-def get_filename(run, fileIndex):
-    if run.upper() == 'EGL':
-        filename = "bulk1.{}.{}.vlsv".format(run.lower(), str(fileIndex).zfill(7) )
-    elif run.upper() == 'FHA':
-        filename = "bulk1.{}.vlsv".format(str(fileIndex).zfill(7) )
-    elif run.upper() == 'FIA':
-        filename = "bulk1.{}.vlsv".format(str(fileIndex).zfill(7) )
-    return filename
-
-def get_bulklocation(run):
-    if run.upper() == 'EGL':
-        location = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/bulk/"
-    elif run.upper() == 'FHA':
-        location = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/"
-    elif run.upper() == 'FIA':
-        location = "/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk/"
-    return location
-
-def get_vlsvfile_fullpath(run, fileIndex):
-    return get_bulklocation(run) + get_filename(run, fileIndex)
-
 def mkdir_path(path):
+    '''
+        Make a directory from the stem of an input file name (path)
+    '''
     filedir_list = path.split('/')
     filedir = path[:-len(filedir_list[-1])]
     if not(os.path.exists(filedir)):
          os.system('mkdir -p {}'.format(filedir))
-
-def save(file,**kwargs):
-    """
-    Save the value of some data in a file.
-    Usage: 
-    a = 3; bvar = 'string'; test = [True, '300', 3.14]
-    save('misdatos.pickle',a=a,b=bvar,test=test)
-    """
-    import pickle
-    f=open(file,"wb")
-    pickle.dump(kwargs,f,protocol=2)
-    f.close
-
-def restore(file):
-    """
-    Read data saved with save function.
-    Usage: datos = restore('misdatos.pickle')    #datos is a dict with the saved variables
-           print(datos['test'])                  #e.g.
-    """
-    import pickle
-    f=open(file,"rb")
-    result = pickle.load(f)
-    f.close
-    return result
 
 def cartesian_to_spherical(x, y, z):
     '''
@@ -127,24 +87,46 @@ def spherical_to_cartesian(r, theta, phi):
     return x, y, z
 
 def vec_len_2d(arr_2d):
+    '''
+        Vector length
+    '''
     return np.array([np.linalg.norm(arr_2d, axis = 1)] * 3).transpose()
 
 def vec_unit(arr_2d):
-    # assume arr_2d is a numpy array with shape [N, 3]. Return unit vectors with same shape
+    '''
+     assume arr_2d is a numpy array with shape [N, 3]. Return unit vectors with same shape
+    '''
     return arr_2d / vec_len_2d(arr_2d)
 
 
 def b_dip_magnitude(theta, r, mag_mom = 8e22):
-    # default: mag_mom = 8e22 [A / m^2] magnetic moment dipole, as in EGI, EGL, FHA runs
+    '''
+    Inputs:
+    theta: colatitude [radians]
+    r: radial distance [m]
+    keyword mag_mom: magnetic dipole moment, default=8e22 [A / m^2], as in EGI, EGL, FIA, FHA runs
+
+    Outputs: Earth's magnetic field magnitude [Tesla]
+    '''
     B_magnitude = mag_mom * (mu_0 / (4 * np.pi * r**3)) * np.sqrt((2*np.cos(theta))**2 + (np.sin(theta))**2)
     return B_magnitude
 
 
 def b_dip_direction(x, y, z, mag_mom_vector = np.array([0., 0., -8e22])):
+    '''
+    Inputs: cartesian coordinates x,y,z [m]
+        keyword mag_mom_vector: Earth's vector magnetic dipole moment
+    Outputs: dipole magnetic field unit vector
+    '''
     B = b_dip(x, y, z, mag_mom_vector = mag_mom_vector)
     return vec_unit(B)
 
 def b_dip(x, y, z, mag_mom_vector = np.array([0., 0., -8e22])):
+    '''
+    Inputs: cartesian coordinates x,y,z [m]
+        keyword mag_mom_vector: Earth's vector magnetic dipole moment
+    Outputs: dipole magnetic field
+    '''
     N = x.size
     pos_N = np.array([x, y, z]).transpose()    # shape (N, 3)
     m_N = np.array([list(mag_mom_vector)]*N)  # shape (N, 3)
@@ -481,11 +463,45 @@ def B_magnetosphere(f, f_J_sidecar = None, r_C = 5 * 6.371e6, ig_r = None):
 
 def save_B_vlsv(input_tuple):
     '''
-    calculate mag
+        calculate magnetic field at the Earth's surface and save in a .vslv file
 
-    input_tuple[0]: run (string)  # 'EGL' or 'FHA'
-    input_tuple[1]: fileIndex (int)
+        Inputs: input tuple
+            input_tuple[0]: run (string)  # 'EGL', 'FHA', or 'FIA'
+            input_tuple[1]: fileIndex (int)
+
+        Outputs:
+            ig_r: Cartesian ionospheric grid locations (radius R_EARTH + 100km)
+                note that B_iono, B_inner, B_outer are in fact evaluated at radius R_EARTH
+                ig_r is a copy of the Vlasiator ionosphere mesh, to enable combination with other data reducers
+            B_iono: Ionospheric (Domain #3) contribution to ground magnetic field (radius R_EARTH)
+            B_inner: Ionospheric (Domain #2) contribution to ground magnetic field (radius R_EARTH)
+            B_outer: Ionospheric (Domain #1) contribution to ground magnetic field (radius R_EARTH)
+
+        Note: the input and output .vlsv file paths may need to be modified in this script for different users
     '''
+    # get_vlsvfile_fullpath(), and helper functions get_filename(), get_bulklocation()
+    # compute the file names based on the name of the run ('EGL', 'FHA', 'FIA') and the time step fileIndex [s]
+    def get_vlsvfile_fullpath(run, fileIndex):
+        '''
+            Returns full path of a .vlsv file, based on the run name and time step (fileIndex)
+        '''
+        return get_bulklocation(run) + get_filename(run, fileIndex)
+    def get_filename(run, fileIndex):
+        if run.upper() == 'EGL':
+            filename = "bulk1.{}.{}.vlsv".format(run.lower(), str(fileIndex).zfill(7) )
+        elif run.upper() == 'FHA':
+            filename = "bulk1.{}.vlsv".format(str(fileIndex).zfill(7) )
+        elif run.upper() == 'FIA':
+            filename = "bulk1.{}.vlsv".format(str(fileIndex).zfill(7) )
+        return filename
+    def get_bulklocation(run):
+        if run.upper() == 'EGL':
+            location = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/bulk/"
+        elif run.upper() == 'FHA':
+            location = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/"
+        elif run.upper() == 'FIA':
+            location = "/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk/"
+        return location
     # instantiate VlsvWriter object
     run, fileIndex = input_tuple
     filename = get_vlsvfile_fullpath( run, fileIndex)
@@ -493,15 +509,13 @@ def save_B_vlsv(input_tuple):
     if run == 'EGL':
         f_J_sidecar = pt.vlsvfile.VlsvReader('/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/jlsidecar_bulk1.egl.{}.vlsv'.format(str(fileIndex).zfill(7)))
         f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/temp/ionogrid_FHA.vlsv' )
-        save_dir = '/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/sidecars/ig_B/'
     elif run == 'FHA':
         f_J_sidecar = None
         f_iono = f
-        save_dir = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/'
     elif run == 'FIA':
         f_J_sidecar = None
         f_iono = f
-        save_dir = '/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk_sidecars/ig_B/'
+    save_dir = './'   # USER-DEFINED PATH
     # calculate magnetic fields
     ig_r = ig_tools.get_ig_r(f_iono)                     # f_iono contains the ionospheric mesh (the locations where B is evaluated)
     B_iono = B_ionosphere(f, ig_r = ig_r, method = "integrate")
@@ -511,7 +525,7 @@ def save_B_vlsv(input_tuple):
         r_C = 5 * 6.371e6
     B_inner, B_outer = B_magnetosphere(f, f_J_sidecar = f_J_sidecar, r_C = r_C, ig_r = ig_r)
     # write to file
-    filename_vlsv = save_dir + 'ionosphere_B_sidecar_{}.{}_v2.vlsv'.format(run, str(fileIndex).zfill(7))
+    filename_vlsv = save_dir + 'ionosphere_B_sidecar_{}.{}.vlsv'.format(run, str(fileIndex).zfill(7))
     mkdir_path(filename_vlsv)
     writer = pt.vlsvfile.VlsvWriter(f_iono, filename_vlsv, copy_meshes=("ionosphere"))
     writer.write(ig_r,'ig_r','VARIABLE','ionosphere')

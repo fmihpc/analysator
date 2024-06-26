@@ -1,6 +1,68 @@
-# Calculate the ground electric field in the ionosphere grid
+'''
+ Given a batch of .vlsv files, containing ground magnetic field vector data at different times,
+ calculate the north & east components of induced ground electric field [V/m], and save in corresponding .vlsv files
 
-def E_horizontal(dB_dt, pos, time, sigma = 0e-3):
+ This script has been tested with the Vlasiator runs EGL, FHA, FIA
+ note that the usefulness for EGL is limited because there is no ionosphere (domain #3) for that run 
+
+ Note that the Geomagnetically Induced Currents (GICs) can be computed immediately from the geoelectric field:
+ The surface current density is J = sigma*E, where E, sigma are respectively the ground electric field and conductivity.
+
+ ###
+ 
+ EXAMPLE CALL:
+    python gics.py
+
+ Example sidecar .vlsv files,  containing ground magnetic field data (over the ionosphere mesh), can be found at:
+    /wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/geoelectric_field/
+
+'''
+
+import pytools as pt
+import os
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+    
+
+def cartesian_to_spherical(x, y, z):
+    '''
+    r > 0
+    0 < theta < pi
+    -pi < phi < pi
+    all are assumed to be numpy arrays of equal dimensions
+
+    returns:  r, theta, phi  [tuple]
+    '''
+    r = (x**2 + y**2 + z**2)**0.5
+    theta = np.arccos( z / r )
+    phi = np.arctan2(y, x)
+    return r, theta, phi
+
+def spherical_to_cartesian(r, theta, phi):
+    '''
+    r > 0
+    0 < theta < pi
+    -pi < phi < pi
+    all are assumed to be numpy arrays of equal dimensions
+
+    returns:  x, y, z   [tuple]
+    '''
+    x = r * np.sin(theta) * np.cos(phi)
+    y = r * np.sin(theta) * np.sin(phi)
+    z = r * np.cos(theta)
+    return x, y, z
+
+def mkdir_path(path):
+    '''
+        Make a directory from the stem of an input file name (path)
+    '''
+    filedir_list = path.split('/')
+    filedir = path[:-len(filedir_list[-1])]
+    if not(os.path.exists(filedir)):
+         os.system('mkdir -p {}'.format(filedir))
+
+def E_horizontal(dB_dt, pos, time, sigma = 1e-3):
     '''
         Calculate the horizontal electric field by integrating components of dB/dt 
             References: Cagniard et al 1952 (eq. 12), Pulkinnen et al 2006 (eq. 19)
@@ -31,30 +93,19 @@ def E_horizontal(dB_dt, pos, time, sigma = 0e-3):
 if __name__ == '__main__':    
     '''
     Before running cell blocks below, requires running biot_savart.py 
-    (option #1 in main()) to generate total ground magnetic field files
+    to generate total ground magnetic field sidecar .vlsv files
     '''
     
-    import os
-    print(os.environ["PATH"])
-    import matplotlib
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import ftest as ft
-    import pytools as pt
-    from scriptutils import cartesian_to_spherical_vector, spherical_to_cartesian, mkdir_path
-    
     R_EARTH = 6371000.
-    print("test1")
 
+    # user-defined locations of sidecar .vlsv files
     run = "FHA"  # EGL, FHA, FIA
     if run == "FIA":
-        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk_sidecars/ig_B"
+        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk_sidecars/ig_B/"
     elif run == "FHA":
-        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B"
+        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/"
     elif run == "EGL":
-        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/sidecars/ig_B"
-    f = ft.f("/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/ionosphere_B_sidecar_FHA.0000784.vlsv")     # FHA: file indices 501 - 1254
-    f.list()
+        dir = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/sidecars/ig_B/"
     
     if run == "FHA":
         nmin = 501    # 501-1000 using _v2 sidecars
@@ -66,7 +117,9 @@ if __name__ == '__main__':
         nmin = 621
         nmax = 1760
     time = np.linspace(nmin, nmax, nmax - nmin + 1)
-    
+
+    # load example file to initialize arrays with
+    f = pt.vlsvfile.VlsvReader("/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/ionosphere_B_sidecar_FHA.0000784.vlsv")     # FHA: file indices 501 - 1254
     pos = f.read_variable('ig_r')   # ionospheric grid.  array dimensions (43132, 3)
     ig_dB_dt_arr = np.ndarray([pos.shape[0], pos.shape[1], nmax - nmin + 1])
     ig_B_ionosphere_arr = ig_dB_dt_arr * 0.
@@ -79,9 +132,9 @@ if __name__ == '__main__':
     E_north_arr = np.ndarray([pos.shape[0], nmax - nmin + 1])
     E_east_arr = np.ndarray([pos.shape[0], nmax - nmin + 1])
     
-    #populate B arrays
+    # populate B arrays (read sidecar files)
     for i in range(nmin, nmax+1):
-        f = ft.f(dir + "/ionosphere_B_sidecar_{}.{}.vlsv".format(run, str(i).zfill(7)))
+        f = pt.vlsvfile.VlsvReader(dir + "ionosphere_B_sidecar_{}.{}.vlsv".format(run, str(i).zfill(7)))
         try:
             ig_B_ionosphere = f.read_variable('ig_B_ionosphere')
             ig_B_ionosphere_arr[:,:,i-nmin] = ig_B_ionosphere
@@ -92,8 +145,7 @@ if __name__ == '__main__':
         ig_B_outer = f.read_variable('ig_B_outer')
         ig_B_outer_arr[:,:,i-nmin] = ig_B_outer
 
-    # interpolate across any zeros in B arrays (klug)
-    
+    # interpolate across any zeros in B arrays (klug) 
     for arr in [ig_B_ionosphere_arr]:
         try:
             ind = np.where(arr[0,0,:] != 0)[0]
@@ -115,7 +167,8 @@ if __name__ == '__main__':
             ig_dB_dt_ionosphere_arr[:,:,i-nmin] = ig_B_ionosphere_arr[:,:,i-nmin] - ig_B_ionosphere_arr[:,:,i-nmin-1]
             ig_dB_dt_inner_arr[:,:,i-nmin] = ig_B_inner_arr[:,:,i-nmin] - ig_B_inner_arr[:,:,i-nmin-1]
             ig_dB_dt_outer_arr[:,:,i-nmin] = ig_B_outer_arr[:,:,i-nmin] - ig_B_outer_arr[:,:,i-nmin-1]
-    
+
+    # Integrate dB/dt to find induced geoelectric field, by Cagniard's formula. See E_horizontal()
     for i_pos in range(ig_dB_dt_arr.shape[0]):
         E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3)
         E_north_arr[i_pos,:] = E_north
@@ -123,8 +176,7 @@ if __name__ == '__main__':
         print(i_pos)
     
     # write geoelectric field to .vlsv
-    
-    save_dir = '/wrk-vakka/users/horakons/carrington/data/{}/GIC/'.format(run)
+    save_dir = './GIC_{}/'.format(run)   # user defined path
     f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/temp/ionogrid_FHA.vlsv' )
     
     for i, t in enumerate(time):
@@ -137,7 +189,6 @@ if __name__ == '__main__':
         writer.write(E_east_arr[:,i],'ig_E_east','VARIABLE','ionosphere')
     
     # Plot timeseries of the geoelectric field at different latitudes
-    
     plt.rcParams["figure.figsize"] = (10, 6)
     
     lat_deg = np.arange(60, 91, 1)
@@ -146,15 +197,10 @@ if __name__ == '__main__':
     phi = lat * 0
     
     x0, y0, z0 = spherical_to_cartesian(R_EARTH, theta, phi)
-    print(x0.size)
     for i in range(x0.size):
         # Find nearest neighbor of the ionosphere grid, index by 'ind_min', to the specified lat and phi
         dist = np.sqrt((x0[i] - pos[:,0])**2 + (y0[i] - pos[:,1])**2 + (z0[i] - pos[:,2])**2)
         ind_min = np.argmin(dist)
-        # print(lat[i] )
-        print(z0[i])
-        print(pos[ind_min,2])
-        print(lat_deg[i], np.nanmax(1e6 * E_north_arr[ind_min,:]))
         # PLOT:
         # geoelectic field
         plt.title('GIC Lat. = {} deg., noon, {}'.format(int(lat_deg[i]), run))
