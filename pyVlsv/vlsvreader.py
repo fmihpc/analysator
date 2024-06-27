@@ -925,7 +925,7 @@ class VlsvReader(object):
                return data_operators[operator](data)
 
       # Check which set of datareducers to use
-      if varname[0:3]=="vg_":
+      if varname[0:3]=="vg_" or varname[0:3]=="ig_":
          reducer_reg = v5reducers
          reducer_multipop = multipopv5reducers
       else:
@@ -1685,7 +1685,8 @@ class VlsvReader(object):
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
 
-      if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
+      #if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
+      if name.lower()[0:3]=="ig_":
          if not cellids == -1:
             print("Warning, CellID requests not supported for ionosphere variables! Aborting.")
             return False
@@ -1722,7 +1723,7 @@ class VlsvReader(object):
          varname = name
 
       # Check which set of datareducers to use
-      if varname[0:3]=="vg_":
+      if varname[0:3]=="vg_" or varname[0:3]=="ig_":
          reducer_reg = v5reducers
          reducer_multipop = multipopv5reducers
       else:
@@ -3018,7 +3019,7 @@ class VlsvReader(object):
          return []
 
    def get_ionosphere_latlon_coords(self):
-      ''' Read ionosphere nore coordinates (in magnetic longitude / latitude)
+      ''' Read ionosphere node coordinates (in magnetic longitude / latitude)
 
       :returns: [lat,lon] array of ionosphere node coordinates
       '''
@@ -3045,6 +3046,47 @@ class VlsvReader(object):
       except:
          print("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
          return []
+
+   def get_ionosphere_mesh_area(self):
+      ''' Read areas of ionosphere elements (triangular mesh)
+
+      :returns: 1D array, areas of the triangular elements [m^2]
+      '''
+      n = self.get_ionosphere_node_coords()       # nodes: shape (n_nodes, 3) vertices
+      c = self.get_ionosphere_element_corners()   # corners of elements: indices integers 0-(n_nodes-1), shape (n_elements, 3)
+      p = n[c,:]                               # shape(n_elements, 3, 3)   1st index is the element, 2nd index is triangle corners, 3rd index is x-y-z position
+      r1 = p[:,1,:] - p[:,0,:]
+      r2 = p[:,2,:] - p[:,0,:]
+      areas = np.linalg.norm(np.cross(r1, r2), axis = 1) / 2.
+      # checked: sum of triangle areas is near the expected area 4*pi*R^2 for a sphere:
+      # ( np.sum(areas) - (np.pi * 4 ) * (R_EARTH + 100000.)**2 ) / np.sum(areas) ~ 1
+      return areas
+
+   def get_ionosphere_element_coords(self):
+      ''' Read coordinates of ionosphere elements (triangle barycenters)
+
+      :returns: [x, y, z] array of ionosphere element barycenter coordinates (in meters).
+      '''
+      n = self.get_ionosphere_node_coords()          # Nodes, shape (n_nodes, 3)
+      ec = self.get_ionosphere_element_corners()     # Element corners, shape (n_elements, 3)
+      ig_r = np.zeros(np.array(ec).shape)
+      for i in range(ig_r.shape[0]):
+         ig_r[i,:] = (n[ec[i,0], :] + n[ec[i,1], :] + n[ec[i,2], :]) / 3  #barycenter, aka centroid
+      return ig_r
+
+   def read_ionosphere_node_variable_at_elements(self, varname):
+      ''' Interpolate an ionospheric node variavle to the element barycenters
+
+      :param varname: string, specifying variable (or data reducer) defined at ionosphere nodes
+      :returns: specified variable interpolated to the elements' barycenters
+
+        note: linear barycentric interpolation is just the sum of 3 corner values divided by 3!
+
+        TODO: check behavior for var.ndim>1
+      '''
+      var = self.read_variable(varname)
+      c = self.get_ionosphere_element_corners()              # (n_elements, 3) node indices
+      return np.nansum(var[c], axis = -1) / 3.
 
    def read_blocks(self, cellid, pop="proton"):
       ''' Read raw block data from the open file and return the data along with block ids

@@ -15,10 +15,15 @@
  This script has been tested with the Vlasiator runs EGL, FHA, FIA
  note that the usefulness for EGL is limited because there is no ionosphere (domain #3) for that run 
 
+ To run this script, require access to the data reducer/variable 'vg_J' in the .vlsv  file
+ This may be supplied by a .vlsv file's vlsvReader object, see keyword f_J_sidecar
+
+ This script is written for the UH environment. Adapt file paths as needed.
+
  ###
  
  EXAMPLE CALL (64 threads):
- python utils/biot_savart.py -nproc 64 -task 1 -run FHA
+ python biot_savart.py -nproc 64 -task 1 -run FHA
 
  Example sidecar .vlsv files,  containing ground magnetic field data, can be found at:
     /wrk-vakka/group/spacephysics/vlasiator/3D/{run name}/sidecars/ig_B/
@@ -29,7 +34,6 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
-import ig_tools
 
 global R_EARTH
 R_EARTH = 6.371e6
@@ -428,12 +432,12 @@ def B_ionosphere(f, coord_list = None, ig_r = None, method = 'integrate'):
         Magnetic field evaluated at coord_list
     '''
     if ig_r is None:
-        ig_r = ig_tools.get_ig_r(f)
+        ig_r = f.get_ionosphere_element_coords()
     if coord_list is None:
         coord_list = list(ig_r * R_EARTH / R_IONO)  # Default: Rescale ionospheric mesh (radius ~R_IONO) to a smaller grid at radius R_EARTH
     dummy = np.array(coord_list)*0. 
     try:
-        ig_inplanecurrent = ig_tools.ig_inplanecurrent(f)
+        ig_inplanecurrent = f.read_variable('ig_inplanecurrent')
         if method == "local":
             # assume local horizontal appear as an infinite plane, to a ground observer looking up
             # B = (mu_0 / 2) * r_hat x J_s , where J_s vector is current per unit length
@@ -445,7 +449,7 @@ def B_ionosphere(f, coord_list = None, ig_r = None, method = 'integrate'):
                 B_iono = (mu_0 / 2) * np.cross(ig_r_hat, ig_inplanecurrent)
         elif method == 'integrate':
             # integrate Biot-Savart law over ionospheric mesh. More accurate but slower.
-            dS = ig_tools.ionosphere_mesh_area(f)
+            dS = f.get_ionosphere_mesh_area()
             B_iono = integrate_biot_savart(coord_list, ig_r[:, 0], ig_r[:, 1], ig_r[:, 2], np.transpose(ig_inplanecurrent).copy(order='C'), dS)
         return B_iono
     except:
@@ -457,7 +461,7 @@ def B_magnetosphere(f, f_J_sidecar = None, r_C = 5 * 6.371e6, ig_r = None):
         wrapper for biot_savart()
     '''
     if ig_r is None:
-        ig_r = ig_tools.get_ig_r(f)
+        ig_r = f.get_ionosphere_element_coords()
     B_inner, B_outer = biot_savart( list(ig_r * R_EARTH / R_IONO), f, f_J_sidecar = f_J_sidecar, r_C = r_C, mesh = 'graded' )
     return B_inner, B_outer
 
@@ -508,7 +512,7 @@ def save_B_vlsv(input_tuple):
     f = pt.vlsvfile.VlsvReader( filename )      # f contains the vg_ mesh over which Biot-Savart is integrated
     if run == 'EGL':
         f_J_sidecar = pt.vlsvfile.VlsvReader('/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/jlsidecar_bulk1.egl.{}.vlsv'.format(str(fileIndex).zfill(7)))
-        f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/temp/ionogrid_FHA.vlsv' )
+        f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/misc_sidecars/ionogrid_FHA.vlsv' )
     elif run == 'FHA':
         f_J_sidecar = None
         f_iono = f
@@ -517,7 +521,7 @@ def save_B_vlsv(input_tuple):
         f_iono = f
     save_dir = './'   # USER-DEFINED PATH
     # calculate magnetic fields
-    ig_r = ig_tools.get_ig_r(f_iono)                     # f_iono contains the ionospheric mesh (the locations where B is evaluated)
+    ig_r = f_iono.get_ionosphere_element_coords()        # f_iono contains the ionospheric mesh (the locations where B is evaluated)
     B_iono = B_ionosphere(f, ig_r = ig_r, method = "integrate")
     try:    # FHA, FIA
         r_C = float(f.get_config()['ionosphere']['downmapRadius'][0]) * R_EARTH
@@ -529,9 +533,9 @@ def save_B_vlsv(input_tuple):
     mkdir_path(filename_vlsv)
     writer = pt.vlsvfile.VlsvWriter(f_iono, filename_vlsv, copy_meshes=("ionosphere"))
     writer.write(ig_r,'ig_r','VARIABLE','ionosphere')
-    writer.write(B_iono,'ig_B_ionosphere','VARIABLE','ionosphere')
-    writer.write(B_inner,'ig_B_inner','VARIABLE','ionosphere')
-    writer.write(B_outer,'ig_B_outer','VARIABLE','ionosphere')
+    writer.write(B_iono,'ig_b_ionosphere','VARIABLE','ionosphere')
+    writer.write(B_inner,'ig_b_inner','VARIABLE','ionosphere')
+    writer.write(B_outer,'ig_b_outer','VARIABLE','ionosphere')
     return ig_r, B_iono, B_inner, B_outer
 
 

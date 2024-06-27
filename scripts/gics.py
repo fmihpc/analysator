@@ -8,6 +8,8 @@
  Note that the Geomagnetically Induced Currents (GICs) can be computed immediately from the geoelectric field:
  The surface current density is J = sigma*E, where E, sigma are respectively the ground electric field and conductivity.
 
+ This script is written for the UH environment. Adapt file paths as needed.
+
  ###
  
  EXAMPLE CALL:
@@ -52,6 +54,20 @@ def spherical_to_cartesian(r, theta, phi):
     y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
     return x, y, z
+
+def cartesian_to_spherical_vector(vx, vy, vz, x, y, z):
+    '''
+    Convert cartesian vector(s) with coordinates (vx, vy, vz)
+    at the position(s) theta, phi (note: position r does not affect the vector transformation)
+    to spherical coordinates (v_r, v_theta, v_phi)
+
+    dimensions of vx, vy, vz, x, y, z arrays must either match or be a single number
+    '''
+    r, theta, phi = cartesian_to_spherical(x, y, z)
+    v_r =     vx * np.sin(theta) * np.cos(phi) + vy * np.sin(theta) * np.sin(phi) + vz * np.cos(theta)
+    v_theta = vx * np.cos(theta) * np.cos(phi) + vy * np.cos(theta) * np.sin(phi) - vz * np.sin(theta)
+    v_phi =  -vx * np.sin(phi) + vy * np.cos(phi)
+    return v_r, v_theta, v_phi
 
 def mkdir_path(path):
     '''
@@ -140,16 +156,16 @@ if __name__ == '__main__':
             ig_B_ionosphere_arr[:,:,i-nmin] = ig_B_ionosphere
         except:
             print("couldn't read ionospheric data") # for runs without an ionosphere, leave as zeros
-        ig_B_inner = f.read_variable('ig_B_inner')
+        ig_B_inner = f.read_variable('ig_b_inner')
         ig_B_inner_arr[:,:,i-nmin] = ig_B_inner
-        ig_B_outer = f.read_variable('ig_B_outer')
+        ig_B_outer = f.read_variable('ig_b_outer')
         ig_B_outer_arr[:,:,i-nmin] = ig_B_outer
 
     # interpolate across any zeros in B arrays (klug) 
     for arr in [ig_B_ionosphere_arr]:
         try:
             ind = np.where(arr[0,0,:] != 0)[0]
-            print("{} points removed".format(arr.shape[2] - ind.size))
+            print("Time interpolation: {} points removed".format(arr.shape[2] - ind.size))
             interp_arr = arr[:,:, ind]  # only keep the non-zero times to conduct the interpolation
             for i in range(arr.shape[0]): # positions
                 for j in range(3): # vector components
@@ -173,11 +189,10 @@ if __name__ == '__main__':
         E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3)
         E_north_arr[i_pos,:] = E_north
         E_east_arr[i_pos,:] = E_east
-        print(i_pos)
     
     # write geoelectric field to .vlsv
     save_dir = './GIC_{}/'.format(run)   # user defined path
-    f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/temp/ionogrid_FHA.vlsv' )
+    f_iono = pt.vlsvfile.VlsvReader( '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/misc_sidecars/ionogrid_FHA.vlsv' )
     
     for i, t in enumerate(time):
         # write to file
@@ -185,8 +200,8 @@ if __name__ == '__main__':
         mkdir_path(filename_vlsv)
         writer = pt.vlsvfile.VlsvWriter(f_iono, filename_vlsv)
         writer.write(pos,'ig_r','VARIABLE','ionosphere')
-        writer.write(E_north_arr[:,i],'ig_E_north','VARIABLE','ionosphere')
-        writer.write(E_east_arr[:,i],'ig_E_east','VARIABLE','ionosphere')
+        writer.write(E_north_arr[:,i],'ig_e_north','VARIABLE','ionosphere')
+        writer.write(E_east_arr[:,i],'ig_e_east','VARIABLE','ionosphere')
     
     # Plot timeseries of the geoelectric field at different latitudes
     plt.rcParams["figure.figsize"] = (10, 6)
@@ -210,7 +225,7 @@ if __name__ == '__main__':
         plt.plot(time, 1e6 * E_east_arr[ind_min,:], label = r'eastward E [$\mu$V/m]')
         plt.ylim([-400, 400])
         plt.legend()
-        filename =  '/wrk-vakka/users/horakons/carrington/plots/{}/GIC/geolectric_E_timeseries_lat_{}_{}'.format(run,int(lat_deg[i]),run)
+        filename =  '{}plots/geolectric_E_timeseries_lat_{}_{}'.format(save_dir,run,int(lat_deg[i]),run)
         mkdir_path(filename)
         plt.savefig(filename)
         plt.close()
@@ -224,7 +239,7 @@ if __name__ == '__main__':
         plt.plot(time, 1e9 * dB_dt_east, label = r'eastward dB/dt [nT/s]')
         plt.ylim([-8, 8])
         plt.legend()
-        filename =  '/wrk-vakka/users/horakons/carrington/plots/{}/GIC/dB_dt_timeseries_lat_{}_{}'.format(run,int(lat_deg[i]),run)
+        filename =  '{}plots/dB_dt_timeseries_lat_{}_{}'.format(save_dir,run,int(lat_deg[i]),run)
         mkdir_path(filename)
         plt.savefig(filename)
         plt.close()
@@ -245,7 +260,7 @@ if __name__ == '__main__':
             plt.plot(time, np.abs(1e9 * np.sqrt(dB_dt_north_outer**2 + dB_dt_east_outer**2) ), label = r'outer |dB/dt| [nT/s]')
             plt.ylim([-8, 8])
             plt.legend()
-            filename =  '/wrk-vakka/users/horakons/carrington/plots/{}/GIC/component_dB_dt_timeseries_lat_{}_{}'.format(run,int(lat_deg[i]),run)
+            filename =  '{}plots/component_dB_dt_timeseries_lat_{}_{}'.format(save_dir,run,int(lat_deg[i]),run)
             mkdir_path(filename)
             plt.savefig(filename)
             plt.close()
