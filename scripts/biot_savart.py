@@ -34,6 +34,7 @@ import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
+import os
 
 global R_EARTH
 R_EARTH = 6.371e6
