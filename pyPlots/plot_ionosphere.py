@@ -443,7 +443,14 @@ def plot_ionosphere(filename=None,
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
     #contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)
-    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading='gouraud')
+    if(len(values) == len(tri.triangles)):
+        shading = 'flat'
+    elif(len(values) == len(tri.x)):
+        shading = 'gouraud'
+    else:
+        raise ValueError("Number of values ("+str(len(values))+") matches neither number of elements ("+str(len(tri.triangles))+") or number of points ("+str(len(tri.x))+")")
+    
+    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading=shading)
     ax_cartesian.add_patch(clippingcircle)
 
     # Draw polar grid over it
