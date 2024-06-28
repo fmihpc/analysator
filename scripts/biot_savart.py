@@ -22,8 +22,8 @@
 
  ###
  
- EXAMPLE CALL (64 threads):
- python biot_savart.py -nproc 64 -task 1 -run FHA
+ EXAMPLE CALL (1 thread):
+ python biot_savart.py -nproc 1 -task 1 -run FHA
 
  Example sidecar .vlsv files,  containing ground magnetic field data, can be found at:
     /wrk-vakka/group/spacephysics/vlasiator/3D/{run name}/sidecars/ig_B/
