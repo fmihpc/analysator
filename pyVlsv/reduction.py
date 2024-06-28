@@ -771,6 +771,94 @@ def vg_reflevel(variables, reader):
    cellids = variables[0]
    return reader.get_amr_level(cellids)
 
+def _normalize(vec):
+   '''
+      (private) helper function, normalizes a multidimensinonal array of vectors
+      assume [...., 3] array
+   '''
+   return vec / np.linalg.norm(vec, axis = -1)[:, np.newaxis]
+
+def ig_E( variables, reader ):
+   ''' calculate in-plane ionospheric electric field from the ionospheric potential 'ig_potential'
+
+       :returns: (in-plane) ionospheric electric field [V/m]
+
+        The in-plane electric field has 2 degrees of freedom (orientation and magnitude),
+        uniquely matching the potential at 2 corners of the triangular element.
+
+        The algorithm:
+            1. WLOG let one corner have potential V0=0. Let r1, r2 be position vectors for the other corners, at potentials V1 & V2.
+            2. Construct an orthonormal basis {b1, b3} that spans the triangular element, where b1 || r1
+            3. calculate the unique electric field E1 || b1, that gives the correct potential V1 at position r1
+            4. infer the potential V1_B at the location r1_B (see figure)
+            5. calculate the unique electric field E3 || b3, that is required to match the potentials at r1_B and r2.
+            6. Calculate the total electric field E = E1 + E3
+               .
+              ^^\
+     r2,(V2) / | 
+            /  | 
+           /   | r3 (d3), b3, E3
+          /    |
+         /    _|     \
+        .____|_._____>.  r1 (d1), b1, E1, (V1)
+    V0=0    r1_B, V1_B
+
+       E = E1 + E3
+   '''
+   ig_potential = variables[0]
+   #ig_potential = reader.read_variable('ig_potential')   # shape (n_nodes)
+   c = reader.get_ionosphere_element_corners()          # Element corners. shape (n_elements, 3)
+   n = reader.get_ionosphere_node_coords()       # Nodes. shape (n_nodes, 3)
+   p = n[c,:]                               # shape (n_elements, 3, 3),  indexing (element, triangle corner, x-y-z position)     
+   r1 = p[:,1,:] - p[:,0,:]
+   r2 = p[:,2,:] - p[:,0,:]
+   r_shape = r1.shape
+   d1 = np.repeat(np.linalg.norm(r1, axis = 1), 3).reshape(r_shape)   # r1 distance (repeated 3 times for convenience)
+   # define some orthogonal basis vectors b1 and b3 (where b1 || r1) that span the triangular element:
+   b1 = _normalize(r1)
+   r1_B = b1 * np.repeat(np.nansum(r2 * b1, axis = 1), 3).reshape(r_shape)
+   r3 = r2 - r1_B
+   b3 = _normalize(r3)
+   d3 = np.repeat(np.linalg.norm(r3, axis = 1), 3).reshape(r_shape)
+   # electric field E = -grad V:
+   ig_potential_c = ig_potential[c]
+   V1 = np.repeat(ig_potential_c[:,1] - ig_potential_c[:,0], 3).reshape(r_shape)  # potential diff. btw. nodes 1 and 0 of a given triangular face
+   V2 = np.repeat(ig_potential_c[:,2] - ig_potential_c[:,0], 3).reshape(r_shape)
+   E1 = -b1 * V1 / d1         # (E1 || b1)
+   V1_B =  np.repeat(np.nansum(-E1 * r1_B, axis = 1), 3).reshape(r_shape)
+   E3 = -b3 * (V2 - V1_B) / d3         # (E_1 || b1)
+   E = E1 + E3
+   # checked: V1 === np.nansum(-E * r1, axis = 1),  and   V2 === np.nansum(-E * r2, axis = 1)
+   return E
+   
+def ig_inplanecurrent( variables, reader ):
+   ''' Calculate in-plane current vector J, from J_i = sigma_ij * E_j
+
+        :returns: height-integrated in-plane current [A/m], from the ionospheric electric field ig_E
+
+        This is probably only needed to reconstruct the ig_inplanecurrent for .vlsv files
+        that happen to be missing this variable (as in t=501-1000 in run FHA)
+
+        NOTE: this data reducer produces an in-plane current that is in the triangular element's plane
+              Tests have shown that saved variable 'ig_inplanecurrent' does NOT lie in the plane for some .vlsvs
+              TODO: understand this discrepancy
+   '''
+   E = variables[0]
+   ig_sigmah = np.repeat(reader.read_ionosphere_node_variable_at_elements('ig_sigmah'), 3).reshape(E.shape) 
+   ig_sigmap = np.repeat(reader.read_ionosphere_node_variable_at_elements('ig_sigmap'), 3).reshape(E.shape)
+   ig_r = reader.get_ionosphere_element_coords()
+   ig_r_hat = _normalize(ig_r)
+   n = reader.get_ionosphere_node_coords()       # nodes: shape (n_nodes, 3) vertices
+   c = reader.get_ionosphere_element_corners()   # corners of elements: indices integers 0-(n_nodes-1), shape (n_elements, 3)
+   p = n[c,:]                               # shape (n_elements, 3, 3),  indexing (element, triangle corner, x-y-z position)
+   r1 = p[:,1,:] - p[:,0,:]
+   r2 = p[:,2,:] - p[:,0,:]
+   normal = _normalize(np.cross(r1, r2))    # normal direction wrt element face
+   normal = normal * np.repeat(np.sign(np.sum(ig_r_hat * normal, axis = 1)), 3).reshape(normal.shape)  # ensure normals point outward
+   # Account for B-field polarity: ig_b_hat = normal in southern hemisphere, and ig_b_hat = -normal in northern hemisphere:
+   ig_b_hat = -normal * np.repeat(np.sign(ig_r[:,2]), 3).reshape(normal.shape)  # TODO: check precision of this z-coordinat test near the equator
+   return ig_sigmap * E - ig_sigmah * np.cross(E, ig_b_hat)
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -1010,6 +1098,12 @@ multipopdatareducers["pop/dng"] =                    DataReducerVariable(["pop/p
 ##########################################
 
 v5reducers = {}
+
+# IONOSPHERE ('ig_')
+v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurrent, "A/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-1}$", useReader=True)
+v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
+
+# MAGNETOSPHERE ('vg_')
 v5reducers["vg_vms"] =                    DataReducerVariable(["vg_pressure", "vg_rhom", "vg_b_vol"], vms, "m/s", 1, latex=r"$v_\mathrm{ms}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_vs"] =                     DataReducerVariable(["vg_pressure", "vg_rhom"], vs, "m/s", 1, latex=r"$v_\mathrm{s}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_va"] =                     DataReducerVariable(["vg_rhom", "vg_b_vol"], va, "m/s", 1, latex=r"$v_\mathrm{A}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
@@ -1099,7 +1193,6 @@ v5reducers["vg_reflevel"] =            DataReducerVariable(["CellID"], vg_reflev
 v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
-
 
 #multipopv5reducers
 multipopv5reducers = {}
