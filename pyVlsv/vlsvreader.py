@@ -159,8 +159,10 @@ class VlsvReader(object):
       # Move to the xml offset
       fptr.seek(offset)
       # Read the xml data
-      xml_data = ""
+      xml_data = bytearray()
       for chunk in iter(lambda: fptr.read(4096), ''):
+          if chunk == b'':
+             break
           xml_data += chunk
       # Read the xml as string
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
