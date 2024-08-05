@@ -41,6 +41,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
+from packaging.version import Version
+
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
@@ -560,7 +562,10 @@ def plot_vdf(filename=None,
 
     if colormap is None:
         colormap="hot_desaturated"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
