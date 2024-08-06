@@ -57,5 +57,6 @@ from lineout import lineout
 import fit
 from fieldtracer import static_field_tracer, static_field_tracer_3d
 from fieldtracer import dynamic_field_tracer
+from null_lines import LMN_null_lines_FOTE
 from interpolator_amr import AMRInterpolator
 

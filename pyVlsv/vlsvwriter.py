@@ -197,6 +197,7 @@ class VlsvWriter(object):
             print(e)
             continue
          self.write_variable_info(varinfo, 'SpatialGrid', 1)
+
       return
 
    def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
