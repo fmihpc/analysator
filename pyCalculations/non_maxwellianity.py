@@ -90,14 +90,41 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         if bulk is not None and B is None:
             try:
                 print("Trying to load vg_b_vol from given bulk file "+bulk)
-                B = pt.vlsvfile.reader(bulk.read_variable("vg_b_vol",cellids=cell))
+                bulkfile_for_moments_reader=pt.vlsvfile.VlsvReader(bulk)
+                B = pt.vlsvfile.reader(bulkfile_for_moments.read_variable("vg_b_vol",cellids=cell))
             except:
                 print("Could not load vg_b_vol from bulk file "+bulk)
         if B is None:
             warnings.warn("No B found, cannot proceed at cellid "+str(cell))
             return -1
-        
-    if bulk is None:
+
+    if bulk is not None:
+        try:
+            # get velocity moments from bulk file
+            bulkfile_for_moments_reader=pt.vlsvfile.VlsvReader(bulk)
+            n = bulkfile_for_moments_reader.read_variable(n_name,cellids=cell)
+            v0 = bulkfile_for_moments_reader.read_variable(v_name,cellids=cell)
+            v0_para = bulkfile_for_moments_reader.read_variable(v_para_name,cellids=cell)
+            v0_perp = bulkfile_for_moments_reader.read_variable(v_perp_name,cellids=cell)
+
+            T = bulkfile_for_moments_reader.read_variable(T_name,cellids=cell)
+            T_para = bulkfile_for_moments_reader.read_variable(T_para_name,cellids=cell)
+            T_perp = bulkfile_for_moments_reader.read_variable(T_perp_name,cellids=cell)
+            # Generate a parallel-perpedicular coordinate basis and corresponding velocity array
+            bhat = B/np.linalg.norm(B)
+            vperp2hat = np.cross(bhat,v0)/np.linalg.norm(np.cross(bhat,v0))
+            vperp1hat = np.cross(vperp2hat, bhat)/np.linalg.norm(np.cross(vperp2hat,bhat))
+
+            calc_moments = False
+
+        except:
+            print("Could not get moments from bulk file " + bulk + ". Calculating them from the VDF..")
+            calc_moments = True
+    else:
+        calc_moments = True
+
+    # calculate moments from VDF if bulk is None, or moments could not be fetched from the bulk file
+    if calc_moments:
         n = np.sum(np.array(D_vals))*dV
         v0 = np.average(vs, axis=0,weights=np.array(D_vals)*dV)
         # Generate a parallel-perpedicular coordinate basis and corresponding velocity array
@@ -115,22 +142,6 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         T = np.sum(P_diag) / (3.0 * n * k)
         T_para = P_diag[0] / (n * k)
         T_perp = (P_diag[1] + P_diag[2]) / (2.0 * n * k)
-        
-    else:
-        # get velocity moments from bulk file
-        bulkfile_for_moments_reader=pt.vlsvfile.VlsvReader(bulk)
-        n = bulkfile_for_moments_reader.read_variable(n_name,cellids=cell)
-        v0 = bulkfile_for_moments_reader.read_variable(v_name,cellids=cell)
-        v0_para = bulkfile_for_moments_reader.read_variable(v_para_name,cellids=cell)
-        v0_perp = bulkfile_for_moments_reader.read_variable(v_perp_name,cellids=cell)
-        
-        T = bulkfile_for_moments_reader.read_variable(T_name,cellids=cell)
-        T_para = bulkfile_for_moments_reader.read_variable(T_para_name,cellids=cell)
-        T_perp = bulkfile_for_moments_reader.read_variable(T_perp_name,cellids=cell)
-        # Generate a parallel-perpedicular coordinate basis and corresponding velocity array
-        bhat = B/np.linalg.norm(B)
-        vperp2hat = np.cross(bhat,v0)/np.linalg.norm(np.cross(bhat,v0))
-        vperp1hat = np.cross(vperp2hat, bhat)/np.linalg.norm(np.cross(vperp2hat,bhat))
         
     R = np.array([bhat, vperp1hat, vperp2hat])
     vb_mean = np.matmul(R,v0.T).T
