@@ -268,7 +268,7 @@ def solve_coefficients(B_moments, xyz):
 
     return abc
 
-def neighboursum(a, idx):
+def neighborsum(a, idx):
     second = a[:-1, :-1, :-1]
     if idx == 0:
         first = a[1:, :-1, :-1]
@@ -278,7 +278,7 @@ def neighboursum(a, idx):
         first = a[:-1, :-1, 1:]
     return first + second
 
-def neighbourdiff(a, idx):
+def neighbordiff(a, idx):
     second = a[:-1, :-1, :-1]
     if idx == 0:
         first = a[1:, :-1, :-1]
@@ -300,15 +300,15 @@ def solve_all_coefficients(B_moments):
             a = abc[i]
             Bx = B_moments[i]
 
-            a[0][3][0] = 1/2 * neighboursum(Bx[6], i)
-            a[0][2][1] = 1/2 * neighboursum(Bx[7], i)
-            a[0][1][2] = 1/2 * neighboursum(Bx[8], i)
-            a[0][0][3] = 1/2 * neighboursum(Bx[9], i)
+            a[0][3][0] = 1/2 * neighborsum(Bx[6], i)
+            a[0][2][1] = 1/2 * neighborsum(Bx[7], i)
+            a[0][1][2] = 1/2 * neighborsum(Bx[8], i)
+            a[0][0][3] = 1/2 * neighborsum(Bx[9], i)
 
-            a[1][3][0] = neighbourdiff(Bx[6], i)
-            a[1][2][1] = neighbourdiff(Bx[7], i)
-            a[1][1][2] = neighbourdiff(Bx[8], i)
-            a[1][0][3] = neighbourdiff(Bx[9], i)
+            a[1][3][0] = neighbordiff(Bx[6], i)
+            a[1][2][1] = neighbordiff(Bx[7], i)
+            a[1][1][2] = neighbordiff(Bx[8], i)
+            a[1][0][3] = neighbordiff(Bx[9], i)
 
         for i in range(3):
             j = (i+1) % 3
@@ -330,13 +330,13 @@ def solve_all_coefficients(B_moments):
             a = abc[i]
             Bx = B_moments[i]
 
-            a[0][2][0] = 1/2 * neighboursum(Bx[3], i) - 1/6 * a[2][2][0]
-            a[0][1][1] = 1/2 * neighboursum(Bx[4], i)
-            a[0][0][2] = 1/2 * neighboursum(Bx[5], i) - 1/6 * a[2][0][2]
+            a[0][2][0] = 1/2 * neighborsum(Bx[3], i) - 1/6 * a[2][2][0]
+            a[0][1][1] = 1/2 * neighborsum(Bx[4], i)
+            a[0][0][2] = 1/2 * neighborsum(Bx[5], i) - 1/6 * a[2][0][2]
 
-            a[1][2][0] = neighbourdiff(Bx[3], i)
-            a[1][1][1] = neighbourdiff(Bx[4], i)
-            a[1][0][2] = neighbourdiff(Bx[5], i)
+            a[1][2][0] = neighbordiff(Bx[3], i)
+            a[1][1][1] = neighbordiff(Bx[4], i)
+            a[1][0][2] = neighbordiff(Bx[5], i)
         
         for i in range(3):
             j = (i+1) % 3
@@ -357,13 +357,13 @@ def solve_all_coefficients(B_moments):
             a = abc[i]
             Bx = B_moments[i]
 
-            a[0][1][0] = 1/2 * neighboursum(Bx[1], i) - 1/6 * a[2][1][0]
-            a[0][0][1] = 1/2 * neighboursum(Bx[2], i) - 1/6 * a[2][0][1]
+            a[0][1][0] = 1/2 * neighborsum(Bx[1], i) - 1/6 * a[2][1][0]
+            a[0][0][1] = 1/2 * neighborsum(Bx[2], i) - 1/6 * a[2][0][1]
 
-            a[1][1][0] = neighbourdiff(Bx[1], i)
+            a[1][1][0] = neighbordiff(Bx[1], i)
             if order > 2:
                 a[1][1][0] -= 1/10 * a[3][1][0]
-            a[1][0][1] = neighbourdiff(Bx[2], i) 
+            a[1][0][1] = neighbordiff(Bx[2], i) 
             if order > 2:
                 a[1][0][1] -= 1/10 * a[3][0][1]
         
@@ -387,7 +387,7 @@ def solve_all_coefficients(B_moments):
             a = abc[i]
             Bx = B_moments[i]
 
-            a[1][0][0] = neighbourdiff(Bx[0], i)
+            a[1][0][0] = neighbordiff(Bx[0], i)
             if order > 2:
                 a[1][0][0] -= 1/10 * a[3][0][0]
     
@@ -396,7 +396,7 @@ def solve_all_coefficients(B_moments):
         a = abc[i]
         Bx = B_moments[i]
 
-        a[0][0][0] = 1/2 * neighboursum(Bx[0], i)
+        a[0][0][0] = 1/2 * neighborsum(Bx[0], i)
         if order > 1:
             a[0][0][0] -= 1/6 * a[2][0][0]
         if order > 3:
