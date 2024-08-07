@@ -30,8 +30,9 @@ class DataReducerVariable:
    latex = ""
    latexunits = ""
    useVspace = False
+   useReader = False
    vector_size=1
-   def __init__(self, variables, operation, units, vector_size, latex="", latexunits="",useVspace=False):
+   def __init__(self, variables, operation, units, vector_size, latex="", latexunits="",useVspace=False,useReader=False):
       ''' Constructor for the class
           :param variables          List of variables for doing calculations with
           :param operation          The operation (function) that operates on the variables
@@ -53,4 +54,5 @@ class DataReducerVariable:
       self.latex = latex
       self.latexunits = latexunits
       self.useVspace = useVspace
+      self.useReader = useReader
 
