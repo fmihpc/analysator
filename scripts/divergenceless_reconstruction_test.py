@@ -9,7 +9,7 @@ from sys import argv
 def main():
     if len(argv) < 2:
         print("Usage: ./divergenceless_reconstruction_test.py FILENAME")
-        exit(1)
+        return(1)
 
     filename = argv[1]
     f = pt.vlsvfile.VlsvReader(filename)
@@ -42,5 +42,9 @@ def main():
         print(np.max(abs(((all_ave_Bs(B_moments, i))[:-1, :-1, :-1] - fg_b_vol[:99, :99, :99])/fg_b_vol[:99,:99,:99])))
         print()
 
+    return 0
+
 if __name__ == "__main__":
-    main()
+    ret = main()
+    if(ret):
+        exit(ret)
