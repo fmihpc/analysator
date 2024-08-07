@@ -1,3 +1,6 @@
+# Reconstruction and interpolation of magntic field from face-average values
+# Based on Balsara 2011 (https://doi.org/10.48550/arXiv.0811.2192)
+
 import pytools as pt
 import numpy as np
 from scipy.special import legendre
