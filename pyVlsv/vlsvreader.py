@@ -3055,9 +3055,9 @@ class VlsvReader(object):
             fptr.seek(offset_avgs)
 
             if datatype == "float" and element_size == 4:
-               data_avgs =np.frombuffer(self.__mmapped[offset_avgs:offset_avgs+4*vector_size*num_of_blocks ],dtype=np.float32) 
+               data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
             if datatype == "float" and element_size == 8:
-               data_avgs =np.frombuffer(self.__mmapped[offset_avgs:offset_avgs+4*vector_size*num_of_blocks ],dtype=np.float64) 
+               data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
@@ -3070,9 +3070,9 @@ class VlsvReader(object):
             fptr.seek(offset_block_ids)
 
             if datatype == "uint" and element_size == 4:
-               data_block_ids = np.frombuffer(self.__mmapped[offset_block_ids:offset_block_ids+4*vector_size*num_of_blocks ],dtype=np.uint32)
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
             elif datatype == "uint" and element_size == 8:
-               data_block_ids = np.frombuffer(self.__mmapped[offset_block_ids:offset_block_ids+8*vector_size*num_of_blocks ],dtype=np.uint64)
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
                print("Error! Bad data type in blocks!")
                return
@@ -3087,16 +3087,18 @@ class VlsvReader(object):
             fptr.seek(offset_block_ids)
 
             if datatype == "uint" and element_size == 4:
-               data_block_ids = np.frombuffer(self.__mmapped[offset_block_ids:offset_block_ids+4*vector_size*num_of_blocks ],dtype=np.uint32)
+               data_block_ids = np.fromfile(fptr, dtype = np.uint32, count = vector_size*num_of_blocks)
             elif datatype == "uint" and element_size == 8:
-               data_block_ids = np.frombuffer(self.__mmapped[offset_block_ids:offset_block_ids+8*vector_size*num_of_blocks ],dtype=np.uint64)
+               data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
                print("Error! Bad data type in blocks!")
                return
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
-
+      if ~self.__fptr.closed:
+         fptr.close()
+         
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
          print("BAD DATA SIZES")
