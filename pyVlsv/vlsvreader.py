@@ -358,7 +358,7 @@ class VlsvReader(object):
               if self.check_parameter("j_per_b_modifier"):
                  vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
-      # self.__fptr.close() # Destructor handles now
+      self.__fptr.close()
 
 
    def __read_xml_footer(self):
