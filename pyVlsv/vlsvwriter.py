@@ -34,14 +34,20 @@ class VlsvWriter(object):
    ''' Class for reading VLSV files
    '''
    file_name = ""
-   def __init__(self, vlsvReader, file_name, copy_meshes=None):
+   def __init__(self, vlsvReader, file_name, copy_meshes=None, clone=False):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
-          :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
-          :param file_name:     Name of the vlsv file where to input data
-          :param copy_meshes:   list of mesh names to copy, default all
+       :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
+       :param file_name:     Name of the vlsv file where to input data
+       :param copy_meshes:   list of mesh names to copy, default all
+       :param clone:         Clones the input file to a new file named 'file_name'
           
       '''
+      #Just duplicates the vlsv Reader file.
+      if clone:
+         self.clone_file(vlsvReader,file_name)
+         return;
+      
       self.file_name = os.path.abspath(file_name)
       try:
          self.__fptr = open(self.file_name,"wb")
@@ -59,6 +65,35 @@ class VlsvWriter(object):
 
       self.__initialize( vlsvReader, copy_meshes )
 
+   def clone_file(self,vlsvReader,dst):
+      ''' 
+      Simply copies overs the file in vlsvReader to a fresh new file
+      :param vlsvReader:    Some open vlsv file 
+      :param dst:     Name of output file
+      '''
+      import shutil
+      src=vlsvReader.file_name
+      print(f"Duplicating Reader File from {src} to {dst}")
+      shutil.copy2(src,dst)
+      self.file_name = os.path.abspath(dst)
+      try:
+         self.__fptr = open(self.file_name,"ab")
+      except Exception as e:
+         print("ERROR:",e)
+         raise e
+      #Get XML offset and copy over the xml tree from the vlsvreader 
+      fptr_read = open(self.file_name,"rb")
+      # Eight first bytes indicate whether the system is big_endianness or something else
+      endianness_offset = 8
+      fptr_read.seek(endianness_offset)
+      # Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.
+      uint64_byte_amount = 8
+      (offset,) = struct.unpack("Q", fptr_read.read(uint64_byte_amount))
+      # Move to the xml offset
+      self.__fptr.seek(offset,0)
+      self.__xml_root = vlsvReader._VlsvReader__xml_root
+      fptr_read.close()
+  
    def __initialize( self, vlsvReader, copy_meshes=None ):
       ''' Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid
       '''
