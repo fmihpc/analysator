@@ -67,30 +67,6 @@ class PicklableFile(object):
         del dict['_file_pos']
         self.__dict__.update(dict)
 
-class PicklableFile(object):
-    def __init__(self, fileobj):
-        self.fileobj = fileobj
-
-    def __getattr__(self, key):
-        return getattr(self.fileobj, key)
-
-    def __getstate__(self):
-        ret = self.__dict__.copy()
-        ret['_file_name'] = self.fileobj.name
-        ret['_file_mode'] = self.fileobj.mode
-        ret['_file_pos'] = self.fileobj.tell()
-        del ret['fileobj']
-        return ret
-
-    def __setstate__(self, dict):
-        self.fileobj = open(dict['_file_name'], dict['_file_mode'])
-        self.fileobj.seek(dict['_file_pos'])
-        del dict['_file_name']
-        del dict['_file_mode']
-        del dict['_file_pos']
-        self.__dict__.update(dict)
-
-
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
       return np.array([],dtype=bool)
@@ -3098,7 +3074,7 @@ class VlsvReader(object):
 
       if ~self.__fptr.closed:
          fptr.close()
-         
+
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
          print("BAD DATA SIZES")
