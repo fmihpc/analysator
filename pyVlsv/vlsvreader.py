@@ -2774,7 +2774,7 @@ class VlsvReader(object):
                        blockCoordinatesY.astype(float),
                        blockCoordinatesZ.astype(float)]).transpose()
 
-   def get_velocity_blocks( self, blockcoordinates, pop="proton" ):
+   def get_velocity_blocks( self, blockCoordinates, pop="proton" ):
       ''' Returns the block ids of the given block coordinates in a numpy array form
 
           :param blockcoordinates:         list of block coordinates e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
