@@ -347,7 +347,6 @@ class VlsvWriter(object):
             child.attrib[i[0]] = i[1]
 
       current_offset = fptr.tell()
-      print(f"Current offset = {current_offset}")
       # Info the xml about the file offset for the data:
       child.text = str(current_offset)
 
