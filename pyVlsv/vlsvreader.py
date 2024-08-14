@@ -45,27 +45,30 @@ from interpolator_amr import AMRInterpolator
 from operator import itemgetter
 
 class PicklableFile(object):
-    def __init__(self, fileobj):
-        self.fileobj = fileobj
+   def __init__(self, fileobj):
+      self.fileobj = fileobj
 
-    def __getattr__(self, key):
-        return getattr(self.fileobj, key)
+   def __getattr__(self, key):
+      return getattr(self.fileobj, key)
 
-    def __getstate__(self):
-        ret = self.__dict__.copy()
-        ret['_file_name'] = self.fileobj.name
-        ret['_file_mode'] = self.fileobj.mode
-        ret['_file_pos'] = self.fileobj.tell()
-        del ret['fileobj']
-        return ret
+   def __getstate__(self):
+      ret = self.__dict__.copy()
+      ret['_file_name'] = self.fileobj.name
+      ret['_file_mode'] = self.fileobj.mode
+      if self.fileobj.closed:
+         ret['_file_pos'] = 0
+      else:
+         ret['_file_pos'] = self.fileobj.tell()
+      del ret['fileobj']
+      return ret
 
-    def __setstate__(self, dict):
-        self.fileobj = open(dict['_file_name'], dict['_file_mode'])
-        self.fileobj.seek(dict['_file_pos'])
-        del dict['_file_name']
-        del dict['_file_mode']
-        del dict['_file_pos']
-        self.__dict__.update(dict)
+   def __setstate__(self, dict):
+      self.fileobj = open(dict['_file_name'], dict['_file_mode'])
+      self.fileobj.seek(dict['_file_pos'])
+      del dict['_file_name']
+      del dict['_file_mode']
+      del dict['_file_pos']
+      self.__dict__.update(dict)
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
@@ -164,7 +167,7 @@ class VlsvReader(object):
       except FileNotFoundError as e:
          print("File not found: ", self.file_name)
          raise e
-      f=PicklableFile(open(self.file_name,"rb")) # unmanaged life cycle for now
+      
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 
@@ -355,7 +358,7 @@ class VlsvReader(object):
               if self.check_parameter("j_per_b_modifier"):
                  vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
-      # self.__fptr.close()
+      # self.__fptr.close() # Destructor handles now
 
 
    def __read_xml_footer(self):
@@ -384,8 +387,7 @@ class VlsvReader(object):
       (xml_string,) = struct.unpack("%ds" % len(xml_data), xml_data)
       # Input the xml data into xml_root
       self.__xml_root = ET.fromstring(xml_string)
-      if self.__fptr.closed:
-         fptr.close()
+      fptr.close()
 
    def __read_fileindex_for_cellid(self):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
@@ -479,8 +481,7 @@ class VlsvReader(object):
 
             data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
 
-      if self.__fptr.closed:
-         fptr.close()
+      fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
       print("data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids))
@@ -981,8 +982,7 @@ class VlsvReader(object):
                # Not-so-many single cell id's requested
                data = np.squeeze(np.array(arraydata))
 
-            if self.__fptr.closed:
-               fptr.close()
+            fptr.close()
 
             if vector_size > 1:
                data=data.reshape(result_size, vector_size)
@@ -1089,12 +1089,10 @@ class VlsvReader(object):
                tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
          return data_operators[operator](reducer.operation( tmp_vars ))
 
+      fptr.close()
       if name!="":
-         if self.__fptr.closed:
-            fptr.close()
          raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
-      if self.__fptr.closed:
-         fptr.close()
+
 
 
    def read_metadata(self, name="", tag="", mesh=""):
@@ -1155,8 +1153,7 @@ class VlsvReader(object):
             
       if name!="":
          print("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
-      if self.__fptr.closed:
-         fptr.close()
+      fptr.close()
       return -1
          
 
@@ -3072,8 +3069,7 @@ class VlsvReader(object):
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
-      if ~self.__fptr.closed:
-         fptr.close()
+      fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
