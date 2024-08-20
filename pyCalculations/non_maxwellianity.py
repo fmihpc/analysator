@@ -7,7 +7,7 @@ import random
 
 def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
                 model="bimaxwellian",
-                normorder=1, norm=2, 
+                normorder=1, norm=2, threshold=0,
                 dummy=None):
 
     ''' Calculates the 'non-maxwellianity' parameter for a distribution function f_i and its corresponding Maxwellian g_M.
@@ -22,6 +22,7 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     :kword model:       VDF model to be used. Available models "maxwellian", "bimaxwellian" (default)
     :kword normorder:   Norm used for model-data distance measure (default: 1)
     :kword norm:        Constant norm (default 2, see below)
+    :kword threshold:   Disregard vspace cells under this threshold [0]
     :kword dummy:       If not None, generate dummy data for e.g. integration.
 
     :returns:           scalar, non-Maxwellianity parameter for given model and norm
@@ -51,7 +52,6 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
         D_keys = list(D.keys())
         D_vals = list(D.values())
         distribution[D_keys] = D_vals
-        threshold = 1e-21
         distribution[distribution<threshold] = 0
     except:
         warnings.warn("Could not get VDF from bulk file!")
