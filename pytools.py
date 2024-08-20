@@ -23,6 +23,10 @@
 
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
+import warnings
+warnings.filterwarnings("once", category=DeprecationWarning)
+warnings.filterwarnings("once", category=PendingDeprecationWarning)
+warnings.filterwarnings("once", category=FutureWarning)
 
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
@@ -30,10 +34,11 @@ filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "miscellaneous")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCalculations")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyMayaVi")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyPlots")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
+if os.getenv('PTMAYAVI2') != None:
+   filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyMayaVi")
 
 
 # Make sure matplotlib has a unique temp directory
@@ -95,13 +100,16 @@ else:
    # Interactive plotting mode
    plt.ion()
    try:
-      import grid
-   except ImportError as e:
-      print("Note: Did not import (outdated MayaVi2) grid module: ", e)
-   try:
       plt.switch_backend(backend_interactive)
    except:
       print("Note: Unable to switch to "+backend_interactive+" backend")
+
+   #Only attempt loading MayaVi2 if requested
+   if os.getenv('PTMAYAVI2') != None:
+      try:
+         import grid
+      except ImportError as e:
+         print("Note: Did not import (outdated MayaVi2) grid module: ", e)
 
 try:
    import plot

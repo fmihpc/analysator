@@ -42,6 +42,8 @@ def inplane(inputarray):
         inputarray[:,:,2] = np.zeros(inputarray[:,:,2].shape)
     elif PLANE=='XZ':
         inputarray[:,:,1] = np.zeros(inputarray[:,:,1].shape)
+    elif PLANE=='YZ':
+        inputarray[:,:,0] = np.zeros(inputarray[:,:,0].shape)
     else:
         print("Error defining plane!")
         return -1
@@ -50,9 +52,11 @@ def inplane(inputarray):
 def inplanevec(inputarray):
     # Assumes input array is of format [nx,ny,3]
     if PLANE=='XY':
-        return inputarray[:,:,0:1]
+        return inputarray[:,:,0:2]
     elif PLANE=='XZ':
         return inputarray[:,:,0:3:2]
+    elif PLANE=='YZ':
+        return inputarray[:,:,1:3]
     else:
         print("Error defining plane!")
         return -1
@@ -69,6 +73,10 @@ def numjacobian(inputarray):
         jac[:,:,0,0], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
         jac[:,:,1,0], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
         jac[:,:,2,0], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
+    elif PLANE=='YZ':
+        jac[:,:,0,1], jac[:,:,0,2] = np.gradient(inputarray[:,:,0], CELLSIZE)
+        jac[:,:,1,1], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
+        jac[:,:,2,1], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -99,6 +107,8 @@ def numgradscalar(inputarray):
         grad[:,:,0],grad[:,:,1] = np.gradient(inputarray, CELLSIZE)
     elif PLANE=='XZ':
         grad[:,:,0],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
+    elif PLANE=='YZ':
+        grad[:,:,1],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -119,7 +129,7 @@ def expandMask(inputarray):
     newmask = np.logical_or(np.roll(mask,(-1,1),axis=(0,1)),newmask)
     newmask = np.logical_or(np.roll(mask,(-1,-1),axis=(0,1)),newmask)
     if np.ndim(inputarray) == 2:
-        inputarray.mask = 1.*newmask 
+        inputarray.mask = 1.*newmask
     else:
         for i in range(3):
             inputarray.mask[:,:,i] = 1.*newmask
@@ -262,6 +272,10 @@ def numcurllimited(inputarray):
         jac[:, :, 0, 0], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
         jac[:, :, 1, 0], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
         jac[:, :, 2, 0], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
+    elif PLANE == 'YZ':
+        jac[:, :, 0, 1], jac[:, :, 0, 2] = limitedgradient(inputarray[:, :, 0], CELLSIZE)
+        jac[:, :, 1, 1], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
+        jac[:, :, 2, 1], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
     else:
         print("Error defining plane!")
         return -1
@@ -361,7 +375,7 @@ def VectorArrayPerpendicularComponent(inputvector, directionvector):
     # assumes inputvector and directionvector are of shape [nx,ny,3]
     # Calculates the magnitude of the perpendicular vector component
     # of each inputvector to each directionvector.
-    dirnorm = np.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
+    dirnorm = np.ma.divide(directionvector, np.linalg.norm(directionvector, axis=-1)[:,:,np.newaxis])
     # Need to perform dot product in smaller steps due to memory constraints
     # paravector = dirnorm
     # for i in np.arange(len(inputvector[:,0,0])):
@@ -439,13 +453,12 @@ def vec_currentdensity_lim(inputarray):
     # Output array is of format [nx,ny,3]
     return numcurllimited(inputarray) / mu0
 
-def vec_Hallterm(currentdensity, magneticfield, numberdensity):
+def vec_Hallterm(currentdensity, magneticfield, chargedensity):
     # assumes current density of shape [nx,ny,3]
     # assumes Magnetic field of shape [nx,ny,3]
-    # assumes number density of shape [nx,ny]
-    unitcharge = 1.602177e-19
+    # assumes charge density of shape [nx,ny]
     crossp = np.cross(currentdensity, magneticfield)
-    chargedensity = np.ma.masked_less_equal(numberdensity, 0) * unitcharge
+    chargedensity = np.ma.masked_less_equal(chargedensity, 0) # ions only
     # Output array is of format [nx,ny,3]
     return np.ma.divide(crossp, chargedensity[:,:,np.newaxis])
 
@@ -462,6 +475,23 @@ def vec_ElectricFieldForce(electricfield, numberdensity):
 # pass_maps is a list of numpy arrays
 # Each array has 2 dimensions [ysize, xsize]
 # or 3 dimensions [ysize, xsize, components]
+
+def expr_timeavg(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return []
+    # Select first found variable
+    listofkeys = iter(pass_maps[0])
+    while True:
+        var = next(listofkeys)
+        if var!="dstep": break
+    ntimes = len(pass_maps)
+    thismap = thesemaps[var]
+    avgmap = np.zeros(np.array(thismap.shape))
+    for i in range(ntimes):
+        avgmap = np.add(avgmap, pass_maps[i][var])
+    avgmap = np.divide(np.ma.masked_less_equal(avgmap,0), np.array([ntimes]))
+    return avgmap
+
 def expr_Diff(pass_maps, requestvariables=False):
     if requestvariables==True:
         return []
@@ -475,24 +505,37 @@ def expr_Diff(pass_maps, requestvariables=False):
     if (map0.shape != map1.shape):
         print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
         sys.exit(-1)
+    if (map0.dtype in ['uint8','uint16','uint32','uint64']):
+        print("Diff: Converting from unsigned to signed integers")
+        map0 = map0.astype('int64')
+        map1 = map1.astype('int64')
     return (map0-map1) # use keyword absolute to get abs diff
 
 def expr_Hall(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # charge density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return np.swapaxes(Hallterm, 0,1)
+
+def expr_Hall_lim(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B','rhoq']
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    RhoQmap = pass_maps['rhoq'].T # charge density
+    Jmap_lim = vec_currentdensity_lim(Bmap)
+    Hallterm_lim = vec_Hallterm(Jmap_lim,Bmap,RhoQmap)
+    return np.swapaxes(Hallterm_lim, 0,1)
 
 def expr_Hall_aniso(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','rho']
+        return ['B','rhoq']
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
-    Rhomap = pass_maps['rho'].T # number density
+    RhoQmap = pass_maps['rhoq'].T # number density
     Jmap = vec_currentdensity(Bmap)
-    Hallterm = vec_Hallterm(Jmap,Bmap,Rhomap)
+    Hallterm = vec_Hallterm(Jmap,Bmap,RhoQmap)
     return VectorArrayAnisotropy(Hallterm,Bmap).T
 
 def expr_J(pass_maps, requestvariables=False):
@@ -502,6 +545,25 @@ def expr_J(pass_maps, requestvariables=False):
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
+
+def expr_JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    return np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+
+def expr_log2JperBperp(pass_maps, requestvariables=False):
+    if requestvariables==True:
+        return ['B']
+
+    Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
+    Jmap = vec_currentdensity(Bmap)
+    Bperp = VectorArrayPerpendicularComponent(Bmap, np.ma.masked_less_equal(Jmap,0))
+    JperBperp = np.swapaxes(np.ma.divide(np.linalg.norm(Jmap,axis=-1), np.ma.masked_less_equal(np.abs(Bperp),0)),0,1)
+    return np.ma.log2(JperBperp)
 
 def expr_J3d(pass_maps, requestvariables=False):
     if requestvariables==True:
@@ -1087,18 +1149,18 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     pastmaps = pass_maps[previ]
 
     thisB = TransposeVectorArray(thesemaps['B'])
-    pastB = TransposeVectorArray(pastmaps['B'])    
+    pastB = TransposeVectorArray(pastmaps['B'])
     Vddt = (thisV-pastV)/DT
 
     Bmap = TransposeVectorArray(thesemaps['B'])
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
     rhom = thesemaps['rho'].T * 1.6726e-27
-    
+
     BxdVdt = numcrossproduct(Bmap, dVdt)
     result = BxdVdt * (rhom*upBmag2)[:,:,np.newaxis]
     return np.swapaxes(result, 0,1)
-    
-    
+
+
 ################
 ## Note: pyPlots/plot_colormap.py already includes some functionality for plotting
 ## vectors and streamlines on top of the colormap. For simple variables, those will
@@ -1132,6 +1194,8 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
         V = vectmap[::step,::step,1]
     elif PLANE=="XZ":
         V = vectmap[::step,::step,2]
+    elif PLANE=="YZ":
+        V = vectmap[::step,::step,0]
     C = colors[::step,::step]
     ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
                        headaxislength=2, scale_units='dots', pivot='middle')
@@ -1153,7 +1217,7 @@ def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):
     V = vfip[:,:,1]
     ax.streamplot(X,Y,U,V,linewidth=0.5, density=3, color='white')
 
-    
+
 def expr_electronflow(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
     # Then calculates the required electron flow velocity to support that current.
@@ -1171,7 +1235,7 @@ def expr_electronflow(pass_maps, requestvariables=False):
     pvmap = TransposeVectorArray(pass_maps['proton/vg_v'])
     erhomap = pass_maps['electron/vg_rho'].T
     prhomap = pass_maps['proton/vg_rho'].T
-    
+
     j = numcurl(Bmap)/mu0
     jprot = pvmap*prhomap[:,:,np.newaxis]*unitcharge
     jele = -evmap*erhomap[:,:,np.newaxis]*unitcharge
@@ -1206,7 +1270,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     pvmap = TransposeVectorArray(pass_maps['proton/vg_v'])
     erhomap = pass_maps['electron/vg_rho'].T
     prhomap = pass_maps['proton/vg_rho'].T
-    
+
     j = numcurl(Bmap)/mu0
     jprot = pvmap*prhomap[:,:,np.newaxis]*unitcharge
     jele = -evmap*erhomap[:,:,np.newaxis]*unitcharge
@@ -1221,7 +1285,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
     print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
     print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
-        
+
     return np.swapaxes(everror, 0,1)
 
 
@@ -1272,10 +1336,10 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     SHFAs[SHFAs.mask == False] = 1.
     print("SHFA",SHFAs.sum())
     # draw contours
-    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock], 
+    contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock],
                                linewidths=1.2, colors=color_BS,label='Bow shock')
-    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)  
-    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)           
+    contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
+    contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
 def expr_numberdensitycheck(pass_maps, requestvariables=False):
     # Calculates the required current density to support the observed magnetic field.
@@ -1303,7 +1367,7 @@ def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
     rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
     temp_p = pass_maps['temperature'].T
 
-    # This version assumes isothermal electrons with upstream beta_i = beta_p 
+    # This version assumes isothermal electrons with upstream beta_i = beta_p
     # i.e. pressure_i = pressure_p, scalar pressure
     # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
     # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
@@ -1342,12 +1406,12 @@ def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
     index=5./3.
     #index=1
     # pn^-index = const
-    
+
     #rho_e = pass_maps['electron/rho'].T
     rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
     pres_p = pass_maps['pressure'].T
 
-    # This version assumes polytropic electrons with upstream beta_i = beta_p 
+    # This version assumes polytropic electrons with upstream beta_i = beta_p
     # i.e. pressure_i = pressure_p, scalar pressure
     # pressure=n 1.0/3.0 * np.ma.sum(PTensorDiagonal,axis=-1)
     # beta= 2.0 * mu_0 * np.ma.divide(Pressure, np.sum(np.asarray(Magneticfield)**2,axis=-1))
@@ -1481,3 +1545,40 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
     # resample back up for plotting
     fgreturn = np.repeat(np.repeat(np.repeat(fgavg, 2, axis=0), 2, axis=1), 2, axis=2)
     return np.abs(fgreturn-vg)
+
+
+# Contour plot spatial AMR refinement levels
+def reflevels(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['vg_reflevel']
+
+    # Check if pass_maps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        ref = extmaps[curri]['vg_reflevel']
+    else:
+        ref = extmaps['vg_reflevel']
+
+    minref = int(np.amin(ref))
+    maxref = int(np.amax(ref))
+    levels = np.arange(minref,maxref)+0.5
+    ax.contour(XmeshXY, YmeshXY, ref, levels, antialiased=False, linewidths=0.1, cmap='gray')
+
+# Contour plot MPI ranks
+def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
+    if requestvariables==True:
+        return ['vg_rank']
+
+    # Check if pass_maps has multiple time steps or just one
+    if type(extmaps) is list:
+        dsteps = [x['dstep'] for x in extmaps]
+        curri = dsteps.index(0)
+        rank = extmaps[curri]['vg_rank']
+    else:
+        rank = extmaps['vg_rank']
+
+    minrank = int(np.amin(rank))
+    maxrank = int(np.amax(rank))
+    levels = np.arange(minrank,maxrank)+0.5
+    ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')

@@ -41,21 +41,11 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
+from packaging.version import Version
+
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
-
-# find nearest spatial cell with vspace to cid
-def getNearestCellWithVspace(vlsvReader,cid):
-    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
-    if len(cell_candidates)==0:
-        print("Error: No velocity distributions found!")
-        sys.exit()
-    cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
-    norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
-    norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-    return cell_candidates[i]
 
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
@@ -86,12 +76,12 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
     # Gather histogram of values
-    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],normed=0)
+    (nVhist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),weights=fw[tuple(indexes)],density=False)
 
     # Correct for summing multiple cells into one histogram output cell with the averaging reducer
     if reducer == "average":
         # Gather histogram of how many cells were summed for the histogram
-        (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),normed=0)
+        (Chist,VXEdges,VYEdges) = np.histogram2d(VX[tuple(indexes)],VY[tuple(indexes)],bins=(vxBinEdges,vyBinEdges),density=False)
         nonzero = np.where(Chist != 0)
         nonzero = Chist > 0
         nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
@@ -271,14 +261,15 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     print("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center == "peak":
+    if str(center) == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
-        print(peakindex)
+        #print(peakindex)
         print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
-        if len(center)==3: # assumes it's a vector
+        # assumes it's a vector, either provided or extracted from bulk velocity
+        if len(center)==3:
             print("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
@@ -426,7 +417,7 @@ def plot_vdf(filename=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,bvectorscale=0.2,
-             cbulk=None, center=None, wflux=None, setThreshold=None,
+             cbulk=None, cpeak=None,center=None, wflux=None, setThreshold=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
@@ -485,6 +476,8 @@ def plot_vdf(filename=None,
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
+    :kword cpeak:       Center plot on velocity associated with highest (peak) phase-space density for
+                        this population)
     :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
                         If set instead to "bulk" will center on bulk velocity
                         If set instead to "peak" will center on velocity with highest phase-space density
@@ -569,7 +562,10 @@ def plot_vdf(filename=None,
 
     if colormap is None:
         colormap="hot_desaturated"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
@@ -611,7 +607,7 @@ def plot_vdf(filename=None,
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
-                stepstr = '_t'+str(np.int(timeval))
+                stepstr = '_t'+str(int(timeval))
             else:
                 stepstr = ''
 
@@ -755,7 +751,7 @@ def plot_vdf(filename=None,
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
             cidNearestVspace = -1
             if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
+                cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
                 print('ERROR: cell not found')
                 sys.exit()
@@ -972,9 +968,11 @@ def plot_vdf(filename=None,
             normvectX = np.array(normvectX)
             normvectX = normvectX/np.linalg.norm(normvectX)
 
-
-        if cbulk is not None or center=='bulk':
-            center=None # Finds the bulk velocity and places it in the center vector
+        if (cpeak is not None):
+            center='peak'
+        if (cbulk is not None) or (str(center)=='bulk'):
+            center = None # Fallthrough handling
+            # Finds the bulk velocity and places it in the center vector
             print("Transforming to plasma frame")
             if type(cbulk) is str:
                 if vlsvReader.check_variable(cbulk):
@@ -982,7 +980,7 @@ def plot_vdf(filename=None,
                     print("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
-
+        # Note: center can still be equal to vector, or to the string "peak" and be valid
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
@@ -1113,7 +1111,7 @@ def plot_vdf(filename=None,
         figsize = [4.0,3.15*ratio]
 
         # Plot the slice         
-        [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
+        [XmeshXY,YmeshXY] = np.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
             # Create 300 dpi image of suitable size
@@ -1143,10 +1141,10 @@ def plot_vdf(filename=None,
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
 
-        ax1.xaxis.set_tick_params(width=thick,length=4)
-        ax1.yaxis.set_tick_params(width=thick,length=4)
-        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
-        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
+        ax1.xaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.yaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
+        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
 
         if len(plot_title)>0:
             plot_title = pt.plot.textbfstring(plot_title)            
@@ -1244,14 +1242,14 @@ def plot_vdf(filename=None,
             if cb_title_use is None:
                 if wflux is None:
                     if reducer == 'average':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-6} \,"+pt.plot.rmstring('s')+r"^{3}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-5} \,"+pt.plot.rmstring('s')+"^{2}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-5} \,"+pt.plot.rmstring('s')+r"^{2}]$"
                 else:
                     if reducer == 'average':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-2} \,"+pt.plot.rmstring('s')+r"^{-1} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-1} \,"+pt.plot.rmstring('s')+"^{-2} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-1} \,"+pt.plot.rmstring('s')+r"^{-2} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
@@ -1293,10 +1291,10 @@ def plot_vdf(filename=None,
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
-                cb.ax.tick_params(labelsize=fontsize)
+                cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
                     
@@ -1353,6 +1351,7 @@ def plot_vdf(filename=None,
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")
+            plt.close()
         elif axes is None:
             # Draw on-screen
             plt.draw()

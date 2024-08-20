@@ -2,7 +2,6 @@ import matplotlib
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
 import os, sys
 import re
 import glob
@@ -15,7 +14,8 @@ import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
+
 
 import ids3d
 #from mpl_toolkits.mplot3d import axes3d
@@ -419,9 +419,9 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
                                (xr+axisarrowscale, yr, axextents[5]-1.7*axisarrowscale)), color=axiscolor, linewidth=linewidth3d, alpha=1, zorder=20)
     ax.add_line(line)
 
-    xlabelstr = pt.plot.mathmode(pt.plot.bfstring('X\,['+axisunitstr+']'))
-    ylabelstr = pt.plot.mathmode(pt.plot.bfstring('Y\,['+axisunitstr+']'))
-    zlabelstr = pt.plot.mathmode(pt.plot.bfstring('Z\,['+axisunitstr+']'))
+    xlabelstr = pt.plot.mathmode(pt.plot.bfstring(r'X\,['+axisunitstr+']'))
+    ylabelstr = pt.plot.mathmode(pt.plot.bfstring(r'Y\,['+axisunitstr+']'))
+    zlabelstr = pt.plot.mathmode(pt.plot.bfstring(r'Z\,['+axisunitstr+']'))
 
     if halfaxes and styleXp == backaxisstyle:
         ax.text(axextents[0]-cXlabel, yr, zr,xlabelstr,fontsize=fontsize,ha='center',va='center',zorder=50, weight='black')
@@ -447,7 +447,6 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         levels = MaxNLocator(nbins=255).tick_values(0,1)
         norm = BoundaryNorm(levels, ncolors=255, clip=True)
         scalarmap = plt.cm.ScalarMappable(cmap='Greys',norm=norm)
-        scalarmap.set_array([])
 
         ax.plot_surface(x, y, z, facecolors=scalarmap.to_rgba(albedo),alpha=1,zorder=30)
 
@@ -585,6 +584,7 @@ def plot_threeslice(filename=None,
                   tickinterval=None, fixedticks=False,
                   pass_full=None,
                   wmark=False,wmarkb=False,
+                  nomask=None,
                   Earth=True,
                   thick=1.0,scale=1.0,
                   expression=None,
@@ -650,6 +650,7 @@ def plot_threeslice(filename=None,
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kword nomask:      Do not mask plotting based on proton density
     :kword Earth:       Draw Earth at origin (default True)
 
     :kword scale:       Scale text size (default=1.0)
@@ -727,7 +728,10 @@ def plot_threeslice(filename=None,
         colormap="hot_desaturated"
         if operator is not None and operator in 'xyz':
             colormap="bwr"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
@@ -1015,19 +1019,19 @@ def plot_threeslice(filename=None,
     elif f.check_variable("vg_rhom"):
         rhomap = f.read_variable("vg_rhom")
     else:
-        print("Error reading masking map (density)")
-        quit
-
-    rhomap = rhomap[indexids]  # sort
-    if 'x' in slices:
-        rhomap_x = rhomap[indexlist_x] # find required cells (X cut)
-        rhomap_x = ids3d.idmesh3d(idlist_x, rhomap_x, reflevel, xsize, ysize, zsize, 0, None)
-    if 'y' in slices:
-        rhomap_y = rhomap[indexlist_y] # find required cells (Y cut)
-        rhomap_y = ids3d.idmesh3d(idlist_y, rhomap_y, reflevel, xsize, ysize, zsize, 1, None)
-    if 'z' in slices:
-        rhomap_z = rhomap[indexlist_z] # find required cells (Z cut)
-        rhomap_z = ids3d.idmesh3d(idlist_z, rhomap_z, reflevel, xsize, ysize, zsize, 2, None)
+        # No rhomap found - do not perform any masking.
+        nomask = True
+    if not nomask:
+        rhomap = rhomap[indexids]  # sort
+        if 'x' in slices:
+            rhomap_x = rhomap[indexlist_x] # find required cells (X cut)
+            rhomap_x = ids3d.idmesh3d(idlist_x, rhomap_x, reflevel, xsize, ysize, zsize, 0, None)
+        if 'y' in slices:
+            rhomap_y = rhomap[indexlist_y] # find required cells (Y cut)
+            rhomap_y = ids3d.idmesh3d(idlist_y, rhomap_y, reflevel, xsize, ysize, zsize, 1, None)
+        if 'z' in slices:
+            rhomap_z = rhomap[indexlist_z] # find required cells (Z cut)
+            rhomap_z = ids3d.idmesh3d(idlist_z, rhomap_z, reflevel, xsize, ysize, zsize, 2, None)
 
     ############################################
     # Read data and calculate required variables
@@ -1039,13 +1043,12 @@ def plot_threeslice(filename=None,
         datamap_info = f.read_variable_info(var, operator=operator)
 
         cb_title_use = datamap_info.latex
-        datamap_unit = datamap_info.latexunits
         # Check if vscale results in standard unit
-        vscale, datamap_unit_plain, datamap_unit = datamap_info.get_scaling_metadata(vscale=vscale)
+        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
 
         # Add unit to colorbar title
-        if datamap_unit:
-            cb_title_use = cb_title_use + "\,["+datamap_unit+"]"
+        if datamap_unit_latex:
+            cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
         datamap = datamap_info.data
         # Dummy variables
@@ -1249,7 +1252,7 @@ def plot_threeslice(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.2.0"):
+            if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -1274,7 +1277,6 @@ def plot_threeslice(filename=None,
 
     # Create the scalar mappable to define the face colouring of the surface elements
     scamap = plt.cm.ScalarMappable(cmap=colormap,norm=norm)
-    scamap.set_array([])
 
 
     ###############################################################################
@@ -1282,53 +1284,53 @@ def plot_threeslice(filename=None,
     ###############################################################################
     cutpointaxu = cutpoint/axisunituse
     # {X = x0 slice}
-    [YmeshYmZm,ZmeshYmZm] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+    [YmeshYmZm,ZmeshYmZm] = np.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     XmeshYmZm = np.ones(YmeshYmZm.shape) * cutpointaxu[0]
 
-    [YmeshYpZm,ZmeshYpZm] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+    [YmeshYpZm,ZmeshYpZm] = np.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     XmeshYpZm = np.ones(YmeshYpZm.shape) * cutpointaxu[0]
 
-    [YmeshYmZp,ZmeshYmZp] = scipy.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
+    [YmeshYmZp,ZmeshYmZp] = np.meshgrid(np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     XmeshYmZp = np.ones(YmeshYmZp.shape) * cutpointaxu[0]
 
-    [YmeshYpZp,ZmeshYpZp] = scipy.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
+    [YmeshYpZp,ZmeshYpZp] = np.meshgrid(np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     XmeshYpZp = np.ones(YmeshYpZp.shape) * cutpointaxu[0]
 
     # {Y = y0 slice}
-    [XmeshXmZm,ZmeshXmZm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmZm,ZmeshXmZm] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     YmeshXmZm = np.ones(XmeshXmZm.shape) * cutpointaxu[1]
 
-    [XmeshXpZm,ZmeshXpZm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpZm,ZmeshXpZm] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(simext[4],cutpointaxu[2],num=int(round((cutpoint[2]-zmin)/finecellsize))+1))
     YmeshXpZm = np.ones(XmeshXpZm.shape) * cutpointaxu[1]
 
-    [XmeshXmZp,ZmeshXmZp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmZp,ZmeshXmZp] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     YmeshXmZp = np.ones(XmeshXmZp.shape) * cutpointaxu[1]
 
-    [XmeshXpZp,ZmeshXpZp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpZp,ZmeshXpZp] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(cutpointaxu[2],simext[5],num=int(round((zmax-cutpoint[2])/finecellsize))+1))
     YmeshXpZp = np.ones(XmeshXpZp.shape) * cutpointaxu[1]
 
     # {Z = z0 slice}
-    [XmeshXmYm,YmeshXmYm] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmYm,YmeshXmYm] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
     ZmeshXmYm = np.ones(XmeshXmYm.shape) * cutpointaxu[2]
 
-    [XmeshXpYm,YmeshXpYm] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpYm,YmeshXpYm] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(simext[2],cutpointaxu[1],num=int(round((cutpoint[1]-ymin)/finecellsize))+1))
     ZmeshXpYm = np.ones(XmeshXpYm.shape) * cutpointaxu[2]
 
-    [XmeshXmYp,YmeshXmYp] = scipy.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
+    [XmeshXmYp,YmeshXmYp] = np.meshgrid(np.linspace(simext[0],cutpointaxu[0],num=int(round((cutpoint[0]-xmin)/finecellsize))+1),
                                np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
     ZmeshXmYp = np.ones(XmeshXmYp.shape) * cutpointaxu[2]
 
-    [XmeshXpYp,YmeshXpYp] = scipy.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
+    [XmeshXpYp,YmeshXpYp] = np.meshgrid(np.linspace(cutpointaxu[0],simext[1],num=int(round((xmax-cutpoint[0])/finecellsize))+1),
                                np.linspace(cutpointaxu[1],simext[3],num=int(round((ymax-cutpoint[1])/finecellsize))+1))
     ZmeshXpYp = np.ones(XmeshXpYp.shape) * cutpointaxu[2]
 
@@ -1352,10 +1354,11 @@ def plot_threeslice(filename=None,
     if 'y' in slices: datamap_y_list = [datamap_y[:zr,:xr],datamap_y[:zr,xr:],datamap_y[zr:,:xr],datamap_y[zr:,xr:]]
     if 'z' in slices: datamap_z_list = [datamap_z[:yr,:xr],datamap_z[:yr,xr:],datamap_z[yr:,:xr],datamap_z[yr:,xr:]]
 
-    # Creating lists of rhomap_i for the same purpose (especially in case the box does not extend to the full domain)
-    if 'x' in slices: rhomap_x_list = [rhomap_x[:zr,:yr],rhomap_x[:zr,yr:],rhomap_x[zr:,:yr],rhomap_x[zr:,yr:]]
-    if 'y' in slices: rhomap_y_list = [rhomap_y[:zr,:xr],rhomap_y[:zr,xr:],rhomap_y[zr:,:xr],rhomap_y[zr:,xr:]]
-    if 'z' in slices: rhomap_z_list = [rhomap_z[:yr,:xr],rhomap_z[:yr,xr:],rhomap_z[yr:,:xr],rhomap_z[yr:,xr:]]
+    if not nomask:
+        # Creating lists of rhomap_i for the same purpose (especially in case the box does not extend to the full domain)
+        if 'x' in slices: rhomap_x_list = [rhomap_x[:zr,:yr],rhomap_x[:zr,yr:],rhomap_x[zr:,:yr],rhomap_x[zr:,yr:]]
+        if 'y' in slices: rhomap_y_list = [rhomap_y[:zr,:xr],rhomap_y[:zr,xr:],rhomap_y[zr:,:xr],rhomap_y[zr:,xr:]]
+        if 'z' in slices: rhomap_z_list = [rhomap_z[:yr,:xr],rhomap_z[:yr,xr:],rhomap_z[yr:,:xr],rhomap_z[yr:,xr:]]
 
     # Creating a new figure and a 3d axes with a custom 3d coordinate axes 
     figsize = (6,5)
@@ -1383,9 +1386,10 @@ def plot_threeslice(filename=None,
         if 'y' in slices: datamap_y_i = datamap_y_list[i]
         if 'z' in slices: datamap_z_i = datamap_z_list[i]
 
-        if 'x' in slices: rhomap_x_i = rhomap_x_list[i]
-        if 'y' in slices: rhomap_y_i = rhomap_y_list[i]
-        if 'z' in slices: rhomap_z_i = rhomap_z_list[i]
+        if not nomask:
+            if 'x' in slices: rhomap_x_i = rhomap_x_list[i]
+            if 'y' in slices: rhomap_y_i = rhomap_y_list[i]
+            if 'z' in slices: rhomap_z_i = rhomap_z_list[i]
 
         # The grid generated by meshgrid has all four corners for each cell.
         # We mask using only the centre values.
@@ -1469,27 +1473,30 @@ def plot_threeslice(filename=None,
 
         # Crop both rhomap and datamap to view region
         if np.ma.is_masked(maskgrid_XY) and ('z' in slices) and not np.all(maskgrid_XY.mask):
-            # Strip away columns and rows which are outside the plot region
-            rhomap_z_i = rhomap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
-            rhomap_z_i = rhomap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
+            if not nomask:
+                # Strip away columns and rows which are outside the plot region
+                rhomap_z_i = rhomap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
+                rhomap_z_i = rhomap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
                 datamap_z_i = datamap_z_i[MaskXY_X[0]:MaskXY_X[-1]+1,:]
                 datamap_z_i = datamap_z_i[:,MaskXY_Y[0]:MaskXY_Y[-1]+1]
 
         if np.ma.is_masked(maskgrid_XZ) and ('y' in slices) and not np.all(maskgrid_XZ.mask):
-            # Strip away columns and rows which are outside the plot region
-            rhomap_y_i = rhomap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
-            rhomap_y_i = rhomap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
+            if not nomask:
+                # Strip away columns and rows which are outside the plot region
+                rhomap_y_i = rhomap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
+                rhomap_y_i = rhomap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
                 datamap_y_i = datamap_y_i[MaskXZ_X[0]:MaskXZ_X[-1]+1,:]
                 datamap_y_i = datamap_y_i[:,MaskXZ_Z[0]:MaskXZ_Z[-1]+1]
 
         if np.ma.is_masked(maskgrid_YZ) and ('x' in slices) and not np.all(maskgrid_YZ.mask):
-            # Strip away columns and rows which are outside the plot region
-            rhomap_x_i = rhomap_x_i[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
-            rhomap_x_i = rhomap_x_i[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
+            if not nomask:
+                # Strip away columns and rows which are outside the plot region
+                rhomap_x_i = rhomap_x_i[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
+                rhomap_x_i = rhomap_x_i[:,MaskYZ_Z[0]:MaskYZ_Z[-1]+1]
             # Also for the datamap, unless it was already provided by an expression
             if not expression:
                 datamap_x_i = datamap_x_i[MaskYZ_Y[0]:MaskYZ_Y[-1]+1,:]
@@ -1499,16 +1506,21 @@ def plot_threeslice(filename=None,
         # a density is calculated, but e.g. pressure is not, and these cells aren't
         # excluded by this method. Also mask away regions where datamap is invalid
         if 'z' in slices:
-            rhomap_z_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_z_i), 0)
-            rhomap_z_i = np.ma.masked_where(~np.isfinite(datamap_z_i), rhomap_z_i)
-            XYmask_z = rhomap_z_i.mask
-            if XYmask_z.any():
-                if XYmask_z.all():
-                    # if everything was masked in rhomap, allow plotting
-                    XYmask_z[:,:] = False
-                else:
-                    # Mask datamap
-                    datamap_z_i = np.ma.array(datamap_z_i, mask=XYmask_z)
+            if not nomask:
+                rhomap_z_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_z_i), 0)
+                rhomap_z_i = np.ma.masked_where(~np.isfinite(datamap_z_i), rhomap_z_i)
+                XYmask_z = rhomap_z_i.mask
+                if XYmask_z.any():
+                    if XYmask_z.all():
+                        # if everything was masked in rhomap, allow plotting
+                        XYmask_z[:,:] = False
+                    else:
+                        # Mask datamap
+                        datamap_z_i = np.ma.array(datamap_z_i, mask=XYmask_z)
+            else:
+                # no masking
+                XYmask_z = np.full(datamap_z_i.shape, False)
+                        
             # Building the face colour maps for plot_surface()
             if np.ma.isMaskedArray(datamap_z_i):
                 fcolor_z_i = scamap.to_rgba(datamap_z_i.data)
@@ -1517,16 +1529,20 @@ def plot_threeslice(filename=None,
                 fcolor_z_i = scamap.to_rgba(datamap_z_i)
 
         if 'y' in slices:
-            rhomap_y_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_y_i), 0)
-            rhomap_y_i = np.ma.masked_where(~np.isfinite(datamap_y_i), rhomap_y_i)
-            XZmask_y = rhomap_y_i.mask
-            if XZmask_y.any():
-                if XZmask_y.all():
-                    # if everything was masked in rhomap, allow plotting
-                    XZmask_y[:,:] = False
-                else:
-                    # Mask datamap
-                    datamap_y_i = np.ma.array(datamap_y_i, mask=XZmask_y)
+            if not nomask:
+                rhomap_y_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_y_i), 0)
+                rhomap_y_i = np.ma.masked_where(~np.isfinite(datamap_y_i), rhomap_y_i)
+                XZmask_y = rhomap_y_i.mask
+                if XZmask_y.any():
+                    if XZmask_y.all():
+                        # if everything was masked in rhomap, allow plotting
+                        XZmask_y[:,:] = False
+                    else:
+                        # Mask datamap
+                        datamap_y_i = np.ma.array(datamap_y_i, mask=XZmask_y)
+            else:
+                # no masking
+                XZmask_y = np.full(datamap_y_i.shape, False)                        
             # Building the face colour maps for plot_surface()
             if np.ma.isMaskedArray(datamap_y_i):
                 fcolor_y_i = scamap.to_rgba(datamap_y_i.data)
@@ -1535,16 +1551,20 @@ def plot_threeslice(filename=None,
                 fcolor_y_i = scamap.to_rgba(datamap_y_i)
 
         if 'x' in slices:
-            rhomap_x_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_x_i), 0)
-            rhomap_x_i = np.ma.masked_where(~np.isfinite(datamap_x_i), rhomap_x_i)
-            YZmask_x = rhomap_x_i.mask
-            if YZmask_x.any():
-                if YZmask_x.all():
-                    # if everything was masked in rhomap, allow plotting
-                    YZmask_x[:,:] = False
-                else:
-                    # Mask datamap
-                    datamap_x_i = np.ma.array(datamap_x_i, mask=YZmask_x)
+            if not nomask:
+                rhomap_x_i = np.ma.masked_less_equal(np.ma.masked_invalid(rhomap_x_i), 0)
+                rhomap_x_i = np.ma.masked_where(~np.isfinite(datamap_x_i), rhomap_x_i)
+                YZmask_x = rhomap_x_i.mask
+                if YZmask_x.any():
+                    if YZmask_x.all():
+                        # if everything was masked in rhomap, allow plotting
+                        YZmask_x[:,:] = False
+                    else:
+                        # Mask datamap
+                        datamap_x_i = np.ma.array(datamap_x_i, mask=YZmask_x)
+            else:
+                # no masking
+                YZmask_x = np.full(datamap_x_i.shape, False)
 
             # Building the face colour maps for plot_surface()
             if np.ma.isMaskedArray(datamap_x_i):
@@ -1624,11 +1644,14 @@ def plot_threeslice(filename=None,
             cb = plt.colorbar(scamap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
  
         cbticks = cb.get_ticks()
         cb.set_ticks(cbticks[(cbticks>=vminuse)*(cbticks<=vmaxuse)])
 
-        cb.ax.tick_params(labelsize=fontsize3, width=thick)#,width=1.5,length=3)
+        cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
         cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
         cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
@@ -1681,7 +1704,7 @@ def plot_threeslice(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace(r'\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
                 if not labeltext:
                     continue
                 firstdigit = labeltext[0]
@@ -1727,6 +1750,7 @@ def plot_threeslice(filename=None,
         except:
             print("Error with attempting to save figure.")
             print('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+        plt.close()
     else:
         # Draw on-screen
         plt.draw()

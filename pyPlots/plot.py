@@ -45,29 +45,44 @@ from plot_vdf import plot_vdf
 from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
+from plot_ionosphere import plot_ionosphere
 
-from distutils.version import LooseVersion, StrictVersion
+try:
+    from plot_isosurface import plot_isosurface, plot_neutral_sheet
+except:
+    print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
+
+from packaging.version import Version
+
 import numpy as np, os
 
-
-if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+if Version(matplotlib.__version__) < Version("3.3.0"):
     plt.register_cmap(name='viridis', cmap=cmaps.viridis)
-    plt.register_cmap(name='viridis_r', cmap=matplotlib.colors.ListedColormap(cmaps.viridis.colors[::-1]))
+    plt.register_cmap(name='viridis_r', cmap=cmaps.viridis_r)
     plt.register_cmap(name='plasma', cmap=cmaps.plasma)
-    plt.register_cmap(name='plasma_r', cmap=matplotlib.colors.ListedColormap(cmaps.plasma.colors[::-1]))
+    plt.register_cmap(name='plasma_r', cmap=cmaps.plasma_r)
     plt.register_cmap(name='inferno', cmap=cmaps.inferno)
-    plt.register_cmap(name='inferno_r', cmap=matplotlib.colors.ListedColormap(cmaps.inferno.colors[::-1]))
+    plt.register_cmap(name='inferno_r', cmap=cmaps.inferno_r)
     plt.register_cmap(name='magma', cmap=cmaps.magma)
-    plt.register_cmap(name='magma_r', cmap=matplotlib.colors.ListedColormap(cmaps.magma.colors[::-1]))
+    plt.register_cmap(name='magma_r', cmap=cmaps.magma_r)
 
 # Register custom colourmaps
-plt.register_cmap(name='parula', cmap=cmaps.parula)
-plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
-plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
-plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
-plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
-plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+if Version(matplotlib.__version__) < Version("3.5.0"):
+    plt.register_cmap(name='parula', cmap=cmaps.parula)
+    plt.register_cmap(name='parula_r', cmap=cmaps.parula_r)
+    plt.register_cmap(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+    plt.register_cmap(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    plt.register_cmap(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+    plt.register_cmap(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    plt.register_cmap(name='warhol', cmap=cmaps.warhol_colormap)
+else:
+    matplotlib.colormaps.register(name='parula', cmap=cmaps.parula)
+    matplotlib.colormaps.register(name='parula_r', cmap=cmaps.parula_r)
+    matplotlib.colormaps.register(name='hot_desaturated', cmap=cmaps.hot_desaturated_colormap)
+    matplotlib.colormaps.register(name='hot_desaturated_r', cmap=cmaps.hot_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    matplotlib.colormaps.register(name='pale_desaturated', cmap=cmaps.pale_desaturated_colormap)
+    matplotlib.colormaps.register(name='pale_desaturated_r', cmap=cmaps.pale_desaturated_colormap_r) # Listed colormap requires making reversed version at earlier step
+    matplotlib.colormaps.register(name='warhol', cmap=cmaps.warhol_colormap)
 
 
 decimalprecision_ax = 0
@@ -171,7 +186,7 @@ def mathmode(string):
         result = string.replace('$','')
         if os.getenv('PTNOLATEX'):
             # Get rid of latex spaces
-            result = result.replace('\,','~').replace('\qquad','~~~~~~')
+            result = result.replace(r'\,','~').replace(r'\qquad','~~~~~~')
         return r"$"+result+"$"
 
 def textbfstring(string):
@@ -182,3 +197,4 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
+

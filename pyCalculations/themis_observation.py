@@ -27,6 +27,7 @@ import matplotlib
 from rotation import rotateVectorToVector
 from scipy.interpolate import griddata
 from scipy.signal import sepfir2d
+from packaging.version import Version
 
 # Detector data obtained from the Themis ESA instrument paper
 # http://dx.doi.org/10.1007/s11214-008-9440-2
@@ -213,8 +214,12 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.set_title("Phasespace at cell " + str(cellID))
     ax.set_xlabel(xlabel+" (km/s)")
     ax.set_ylabel(ylabel+" (km/s)")
-    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=pl.get_cmap("Blues"), shading='flat')
-    cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=pl.get_cmap("Blues"))
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name="Blues")
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap("Blues")
+    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse, shading='flat')
+    cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse)
     #cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap("binary"))
     ax.grid(True)
     fig.colorbar(cax)

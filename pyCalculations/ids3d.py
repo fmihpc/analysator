@@ -236,3 +236,90 @@ def refinement_level(xsize, ysize, zsize, bigid):
 
   # return the highest refinement level
   return reflevel
+
+
+def ids3d_box(cellids, low, up, reflevel,
+          xsize, ysize, zsize,
+          spatial_mesh_extent):
+    """Returns lists of CellIDs and the corresponding indices inside a rectangular 3D box.
+    :param cellids:             List of cellids in the simulation box
+    :param low:                 An array holding the lower boundaries of the requested box
+    :param up:                  An array holding the upper boundaries of the requested box
+    :param reflevel:            Highest refinement level in the simulation
+    :param xsize:               Number of cells in x direction
+    :param ysize:               Number of cells in y direction
+    :param zsize:               Number of cells in z direction
+    :param spatial_mesh_extent: Smallest and largest values of each spatial component
+    """
+
+    [xmin, ymin, zmin, xmax, ymax, zmax] = spatial_mesh_extent
+
+    # find the edge depths (index) for each refinement level
+    prox_min = (low[0]-xmin)/(xmax-xmin)
+    proy_min = (low[1]-ymin)/(ymax-ymin)
+    proz_min = (low[2]-zmin)/(zmax-zmin)
+    
+    prox_max = (up[0]-xmin)/(xmax-xmin)
+    proy_max = (up[1]-ymin)/(ymax-ymin)
+    proz_max = (up[2]-zmin)/(zmax-zmin)
+    
+    depths_x = []
+    depths_y = []
+    depths_z = []
+
+    for i in range(reflevel+1):
+        depth_xmin = int(prox_min*xsize*2**i) + 1   # goes from 1 to Nmax
+        depth_ymin = int(proy_min*ysize*2**i) + 1 
+        depth_zmin = int(proz_min*zsize*2**i) + 1 
+        
+        depth_xmax = int(prox_max*xsize*2**i) + 1
+        depth_ymax = int(proy_max*ysize*2**i) + 1 
+        depth_zmax = int(proz_max*zsize*2**i) + 1
+        
+        
+        depths_x.append([depth_xmin, depth_xmax])
+        depths_y.append([depth_ymin, depth_ymax])
+        depths_z.append([depth_zmin, depth_zmax])
+
+
+    # find the ids
+    length = 0; 
+    cellids = np.array(cellids); 
+    idlist = np.array([]); indexlist = np.array([])
+    cells = int(xsize*ysize*zsize); cellsum = cells; cellsumII = 0 # cellsum = (the number of cells up to refinement
+    # level i); cellsumII = (the number of cells up to refinement level i-1)
+    
+    for i in range(reflevel+1):
+        # cell ids at the refinement level i
+        ids = cellids[(cellsumII < cellids) & (cellids <= cellsum)]
+
+        # compute every cell ids x, y and z coordinates
+        z = (ids - cellsumII - 1)//(xsize*ysize*4**i) +1 # goes from 1 to NZ
+        z = z.astype(int)
+
+        # cellsumB = (cellsumII + the number of ids up to the coordinate z in the refinement level i)
+        cellsumB = ((z-1)*xsize*ysize*4**i).astype(int) + cellsumII
+
+        y = (ids - cellsumB - 1)//(xsize*2**i) +1 # goes from 1 to NY
+        y = y.astype(int)
+
+        cellsumC = ((y-1)*xsize*2**i)
+        x = (ids - cellsumB - cellsumC).astype(int) # goes from 1 to NX
+
+        # finds the needed elements to create the asked box and puts the results in the indexlist and the idlist
+        
+        x_elements = np.logical_and(x >= depths_x[i][0], x < depths_x[i][1])
+        y_elements = np.logical_and(y >= depths_y[i][0], y < depths_y[i][1])
+        z_elements = np.logical_and(z >= depths_z[i][0], z < depths_z[i][1])
+
+        elements = x_elements & y_elements & z_elements     # elements within all the limits
+        
+        indexlist = np.append(indexlist, np.arange(length, length+len(elements))[elements])
+        idlist = np.append(idlist, ids[elements])
+
+        # update these values to match refinement level i+1
+        length += len(x)
+        cellsumII = cellsum
+        cellsum += cells*8**(i+1)
+    # returns a list of ids (idlist) and a equivalent list of indices (indexlist)
+    return idlist.astype(int), indexlist.astype(int)

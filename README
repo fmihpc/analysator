@@ -3,14 +3,13 @@
 #################################################
 
 # Install dependencies:
-sudo apt-get install mayavi2 python-matplotlib python-numpy python-scipy ipython
+sudo apt-get install python-matplotlib python-numpy python-scipy ipython
 
 # Set pythonpath environment variable:
 echo "export PYTHONPATH=$PYTHONPATH:$HOME/analysator" >> $HOME/.bashrc
 
 # Using Analysator:
 #################################################
-module load mayavi2   # Load mayavi2 dependencies, if necessary (e.g. CSC system)
 ipython               # Start ipython
 import pytools as pt  # Import Analysator
 
@@ -36,6 +35,15 @@ export PTBACKEND=Qt5Agg
 # For disabling full LaTeX formatted output (if texlive is not installed)
 #################################################
 export PTNOLATEX=1
+
+# MayaVi2 support (deprecated)
+#################################################
+Some old plotting tools requiring the MayaVi2 visualization library can be activated
+by setting the environment variable:
+export PTMAYAVI2=1
+
+This naturally depends on mayavi, so:
+sudo apt-get install mayavi2
 
 # For setting the default output directory (default: $HOME/Plots)
 #################################################

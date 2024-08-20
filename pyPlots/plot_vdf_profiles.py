@@ -40,18 +40,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
-# find nearest spatial cell with vspace to cid
-def getNearestCellWithVspace(vlsvReader,cid):
-    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
-    if len(cell_candidates)==0:
-        print("Error: No velocity distributions found!")
-        sys.exit()
-    cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
-    norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
-    norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-    return cell_candidates[i]
-
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
     cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS').tolist()
@@ -66,30 +54,42 @@ def verifyCellWithVspace(vlsvReader,cid):
 # create three 1-dimensional profiles
 def doProfiles(f,VX,VY,Voutofslice,slicethick):
     # Select cells which are within slice area
-    indexes1 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
-    indexes2 = np.array([(abs(Voutofslice) <= 0.5*slicethick) & (abs(VX) <= 0.5*slicethick)])[0]
-    indexes3 = np.array([(abs(VX) <= 0.5*slicethick) & (abs(VY) <= 0.5*slicethick)])[0]
+    indexes1 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
+    indexes2 = np.array([(Voutofslice < 0.5*slicethick) & (Voutofslice >= -0.5*slicethick) & (VX < 0.5*slicethick) & (VX >= -0.5*slicethick)])[0]
+    indexes3 = np.array([(VX < 0.5*slicethick) & (VX >= -0.5*slicethick) & (VY < 0.5*slicethick) & (VY >= -0.5*slicethick)])[0]
     
     bins1=bins2=bins3=axis1=axis2=axis3=[]
     if np.any(indexes1):
-        axis1 = VX[indexes1]
-        order1 = axis1.argsort()
-        bins1 = f[indexes1][order1]
-        axis1 = axis1[order1]
+        inax1 = VX[indexes1]
+        range1a = np.amin(inax1)
+        range1b = np.amax(inax1)+slicethick
+        nbins1 = int((range1b-range1a)/slicethick)
+        bins1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b], weights=f[indexes1])
+        nums1, axis1 = np.histogram(inax1, nbins1, range=[range1a,range1b])
+        nonzero = np.where(nums1 != 0)
+        bins1[nonzero] = np.divide(bins1[nonzero],nums1[nonzero])
 
     if np.any(indexes2):
-        axis2 = VY[indexes2]
-        order2 = axis2.argsort()
-        bins2 = f[indexes2][order2]
-        axis2 = axis2[order2]
+        inax2 = VY[indexes2]
+        range2a = np.amin(inax2)
+        range2b = np.amax(inax2)+slicethick
+        nbins2 = int((range2b-range2a)/slicethick)
+        bins2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b], weights=f[indexes2])
+        nums2, axis2 = np.histogram(inax2, nbins2, range=[range2a,range2b])
+        nonzero = np.where(nums2 != 0)
+        bins2[nonzero] = np.divide(bins2[nonzero],nums2[nonzero])
 
     if np.any(indexes3):
-        axis3 = Voutofslice[indexes3]
-        order3 = axis3.argsort()
-        bins3 = f[indexes3][order3]
-        axis3 = axis3[order3]
+        inax3 = Voutofslice[indexes3]
+        range3a = np.amin(inax3)
+        range3b = np.amax(inax3)+slicethick
+        nbins3 = int((range3b-range3a)/slicethick)
+        bins3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b], weights=f[indexes3])
+        nums3, axis3 = np.histogram(inax3, nbins3, range=[range3a,range3b])
+        nonzero = np.where(nums3 != 0)
+        bins3[nonzero] = np.divide(bins3[nonzero],nums3[nonzero])
 
-    return (bins1,bins2,bins3,axis1,axis2,axis3)
+    return (bins1,bins2,bins3,axis1[:-1],axis2[:-1],axis3[:-1])
 
 # analyze velocity space in a spatial cell (velocity space reducer)
 def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton", 
@@ -176,8 +176,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     rotminz=np.amin(sbrot[:,2])
     rotmaxz=np.amax(sbrot[:,2])
     gridratio = np.amax([ rotmaxx-rotminx, rotmaxy-rotminy, rotmaxz-rotminz ])
-#    if gridratio > 1.0:  # adds a 5% margin to slice thickness
-    gridratio = 1.05*gridratio
+    if gridratio > 1.0:  # adds a 5% margin to slice thickness
+        gridratio = 1.05*gridratio
     slicethick=inputcellsize*gridratio
 
     if slicetype=="xy":
@@ -390,7 +390,7 @@ def plot_vdf_profiles(filename=None,
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
-                stepstr = '_t'+str(np.int(timeval))
+                stepstr = '_t'+str(int(timeval))
             else:
                 stepstr = ''
 
@@ -523,7 +523,7 @@ def plot_vdf_profiles(filename=None,
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
             cidNearestVspace = -1
             if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
+                cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop = pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
                 print('ERROR: cell not found')
                 sys.exit()
@@ -834,10 +834,10 @@ def plot_vdf_profiles(filename=None,
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
 
-        ax1.xaxis.set_tick_params(width=thick,length=4)
-        ax1.yaxis.set_tick_params(width=thick,length=4)
-        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
-        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
+        ax1.xaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.yaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
+        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
 
         if len(plot_title)>0:
             if not os.getenv('PTNOLATEX'):
@@ -930,6 +930,7 @@ def plot_vdf_profiles(filename=None,
             except:
                 print("Error with attempting to save figure due to matplotlib LaTeX integration.")
             print(savefigname+"\n")
+            plt.close()
         elif axes==None:
             # Draw on-screen
             plt.draw()
