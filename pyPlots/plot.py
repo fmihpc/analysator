@@ -1,25 +1,25 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 ''' The plot module has all the functions related to plotting variables.
 
@@ -42,6 +42,7 @@ import colormaps as cmaps
 import plot_helpers
 from plot_colormap import plot_colormap
 from plot_vdf import plot_vdf
+from plot_vdfdiff import plot_vdfdiff
 from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
@@ -124,7 +125,7 @@ def cbfmtsci(x, pos):
     else:
         a, b = '{:.1e}'.format(x).split('e')
         number = '{:.1f}'.format(abs(float(a)))+r'{\times}'+'10^{{{}}}'.format(int(b))
-    signchar=r'' 
+    signchar=r''
     # Multiple braces for b take care of negative values in exponent
     # brackets around \times remove extra whitespace
     if not os.getenv('PTNOLATEX'):
@@ -136,7 +137,7 @@ def cbfmtsci(x, pos):
     if x==0:
         number = r'0.0{\times}10^{{{0}}}'
     return r'$'+signchar+number+'$'
-    
+
 # cbfmt replaces minus sign with en-dash to fix bug with latex descender value return, used for colorbar
 # nb: regular floating i.e. non-scientific format for colorbar ticks
 def cbfmt(x, pos):
@@ -162,7 +163,7 @@ def cbfmt(x, pos):
         return f.format(x)
 
 
-# Helper routines for latex output handling    
+# Helper routines for latex output handling
 def bfstring(string):
     if not os.getenv('PTNOLATEX'):
         if len(string)==0:
@@ -197,4 +198,3 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
-
