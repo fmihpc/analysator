@@ -67,11 +67,7 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     T_perp_name = pop+'/vg_t_perpendicular'
     T_para_name = pop+'/vg_t_parallel'
 
-    extent = f.get_velocity_mesh_extent(pop)
-    dvx = (extent[3] - extent[0]) / (4 * size[0])
-    dvy = (extent[4] - extent[1]) / (4 * size[1])
-    dvz = (extent[5] - extent[2]) / (4 * size[2])
-    dV = dvx*dvy*dvz  
+    dV = np.prod(f.get_velocity_mesh_dv(pop))
     # generate a velocity space 
     vids = np.arange(4 * 4 * 4 * int(size[0]) * int(size[1]) * int(size[2]))
     v = f.get_velocity_cell_coordinates(vids, pop)
@@ -91,7 +87,7 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
             try:
                 print("Trying to load vg_b_vol from given bulk file "+bulk)
                 bulkfile_for_moments_reader=pt.vlsvfile.VlsvReader(bulk)
-                B = pt.vlsvfile.reader(bulkfile_for_moments.read_variable("vg_b_vol",cellids=cell))
+                B = bulkfile_for_moments_reader.read_variable("vg_b_vol",cellids=cell)
             except:
                 print("Could not load vg_b_vol from bulk file "+bulk)
         if B is None:
