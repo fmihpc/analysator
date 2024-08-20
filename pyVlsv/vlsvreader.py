@@ -2754,6 +2754,33 @@ class VlsvReader(object):
 
       return cellCoordinates.transpose()
 
+   def get_velocity_block_indices( self, blocks, pop="proton"):
+      ''' Returns the block indices of the given blocks in a numpy array
+
+          :param blocks:         list of block ids
+          :returns: a numpy array containing the block indices e.g. np.array([np.array([2,1,3]), np.array([5,6,6]), ..])
+
+          .. seealso:: :func:`get_velocity_block_coordinates`
+      '''
+      WID=self.get_WID()
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      # Return the indices:
+      return np.array([blockIndicesX,
+                       blockIndicesY,
+                       blockIndicesZ]).transpose()
+
+   def get_velocity_blockGID(self, blockindices, pop="proton"):
+      WID=self.get_WID()
+
+      bIX = blockindices[:,0]
+      bIY = blockindices[:,1]
+      bIZ = blockindices[:,2]
+
+      GIDs = bIZ + bIY*self.__meshes[pop].__vzblocks + bIX*self.__meshes[pop].__vzblocks*self.__meshes[pop].__vyblocks
+      return GIDs
+
    def get_velocity_block_coordinates( self, blocks, pop="proton"):
       ''' Returns the block coordinates of the given blocks in a numpy array
 
