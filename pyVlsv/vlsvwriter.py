@@ -34,14 +34,20 @@ class VlsvWriter(object):
    ''' Class for reading VLSV files
    '''
    file_name = ""
-   def __init__(self, vlsvReader, file_name, copy_meshes=None):
+   def __init__(self, vlsvReader, file_name, copy_meshes=None, clone=False):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
-          :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
-          :param file_name:     Name of the vlsv file where to input data
-          :param copy_meshes:   list of mesh names to copy, default all
+       :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid
+       :param file_name:     Name of the vlsv file where to input data
+       :param copy_meshes:   list of mesh names to copy, default all
+       :param clone:         Clones the input file to a new file named 'file_name'
           
       '''
+      #Just duplicates the vlsv Reader file.
+      if clone:
+         self.clone_file(vlsvReader,file_name)
+         return;
+      
       self.file_name = os.path.abspath(file_name)
       try:
          self.__fptr = open(self.file_name,"wb")
@@ -59,6 +65,35 @@ class VlsvWriter(object):
 
       self.__initialize( vlsvReader, copy_meshes )
 
+   def clone_file(self,vlsvReader,dst):
+      ''' 
+      Simply copies overs the file in vlsvReader to a fresh new file
+      :param vlsvReader:    Some open vlsv file 
+      :param dst:     Name of output file
+      '''
+      import shutil
+      src=vlsvReader.file_name
+      print(f"Duplicating Reader File from {src} to {dst}")
+      shutil.copy2(src,dst)
+      self.file_name = os.path.abspath(dst)
+      try:
+         self.__fptr = open(self.file_name,"ab")
+      except Exception as e:
+         print("ERROR:",e)
+         raise e
+      #Get XML offset and copy over the xml tree from the vlsvreader 
+      fptr_read = open(self.file_name,"rb")
+      # Eight first bytes indicate whether the system is big_endianness or something else
+      endianness_offset = 8
+      fptr_read.seek(endianness_offset)
+      # Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.
+      uint64_byte_amount = 8
+      (offset,) = struct.unpack("Q", fptr_read.read(uint64_byte_amount))
+      # Move to the xml offset
+      self.__fptr.seek(offset,0)
+      self.__xml_root = vlsvReader._VlsvReader__xml_root
+      fptr_read.close()
+  
    def __initialize( self, vlsvReader, copy_meshes=None ):
       ''' Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid
       '''
@@ -88,11 +123,11 @@ class VlsvWriter(object):
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
-            else: mesh = None
+            else: mesh = ''
             tag = child.tag
 
             if copy_meshes is not None:
-               if mesh is not None and not mesh in copy_meshes:
+               if mesh != '' and not mesh in copy_meshes:
                   continue
                if tag == "MESH" and not name in copy_meshes:
                   continue
@@ -101,9 +136,9 @@ class VlsvWriter(object):
             for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
+            #print("writing",name, tag, mesh, extra_attribs)
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
-            #print("writing",name, tag)
 
             self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
 
@@ -248,22 +283,6 @@ class VlsvWriter(object):
       :returns: True if the data was written successfully
 
       '''
-      if(tag=="VARIABLE"):
-         warnings.warn("Please use write_variable_info instead for writing variables. Behaviour may be enforced in future.")
-
-      self.__write(data, name, tag, mesh, extra_attribs=extra_attribs)
-
-   def __write(self, data, name, tag, mesh, extra_attribs={}):
-      ''' Writes an array into the vlsv file
-
-      :param name: Name of the data array
-      :param tag:  Tag of the data array.
-      :param mesh: Mesh for the data array
-      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren't name, tag, or mesh
-
-      :returns: True if the data was written successfully
-
-      '''
 
       if data is None:
          warnings.warn("Trying to write `None` data for " + name + ". Skipping, but not raising an error in case there is yet some data remaining that the user doesn't want to fly to bit heaven.")
@@ -277,7 +296,7 @@ class VlsvWriter(object):
       # Add the data into the xml data:
       child = ET.SubElement(self.__xml_root, tag)
       child.attrib["name"] = name
-      if mesh is not None:
+      if mesh is not None and mesh != '':
          child.attrib["mesh"] = mesh
       child.attrib["arraysize"] = len(np.atleast_1d(data))
 
