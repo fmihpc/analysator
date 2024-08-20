@@ -1851,10 +1851,12 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pltxstr=r"$v_y$ "+velUnitStr
                 pltystr=r"$v_z$ "+velUnitStr
                 normvect=[1,0,0] # used just for cell size normalisation
+            normvect2=normvect
         elif normal is not None:
             if len(normal)==3:
                 slicetype="vecperp"
                 normvect=normal
+                normvect2=normvect
                 pltxstr=r"$v_1$ "+velUnitStr
                 pltystr=r"$v_2$ "+velUnitStr
             else:
