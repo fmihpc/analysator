@@ -41,7 +41,8 @@ import colormaps as cmaps
 
 import plot_helpers
 from plot_colormap import plot_colormap
-from plot_vdf import plot_vdf,plot_vdfdiff
+from plot_vdf import plot_vdf
+from plot_vdfdiff import plot_vdfdiff
 from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
