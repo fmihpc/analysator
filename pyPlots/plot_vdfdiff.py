@@ -41,7 +41,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
-from plot_vdf import getNearestCellWithVspace, verifyCellWithVspace, doHistogram, resampleReducer, vSpaceReducer
+from plot_vdf import verifyCellWithVspace, doHistogram, resampleReducer, vSpaceReducer
 
 def plot_vdfdiff(filename1=None, filename2=None,
              vlsvobj1=None, vlsvobj2=None,
@@ -383,7 +383,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             cidRequest = (np.int64)(vlsvReader1.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
             cidNearestVspace = -1
             if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader1,cidRequest)
+                cidNearestVspace = vlsvReader1.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)
             else:
                 print('ERROR: cell not found')
                 sys.exit()
@@ -919,14 +919,14 @@ def plot_vdfdiff(filename1=None, filename2=None,
             if cb_title_use is None:
                 if wflux is None:
                     if reducer == 'average':
-                        cb_title_use=r"$\Delta f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                        cb_title_use=r"$\Delta f(v)\,["+pt.plot.rmstring('m')+r"^{-6} \,"+pt.plot.rmstring('s')+r"^{3}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"$\Delta f(v)\,["+pt.plot.rmstring('m')+"^{-5} \,"+pt.plot.rmstring('s')+"^{2}]$"
+                        cb_title_use=r"$\Delta f(v)\,["+pt.plot.rmstring('m')+r"^{-5} \,"+pt.plot.rmstring('s')+r"^{2}]$"
                 else:
                     if reducer == 'average':
-                        cb_title_use=r"flux $\Delta F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $\Delta F\,["+pt.plot.rmstring('m')+r"^{-2} \,"+pt.plot.rmstring('s')+r"^{-1} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"flux $\Delta F\,["+pt.plot.rmstring('m')+"^{-1} \,"+pt.plot.rmstring('s')+"^{-2} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $\Delta F\,["+pt.plot.rmstring('m')+r"^{-1} \,"+pt.plot.rmstring('s')+r"^{-2} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
