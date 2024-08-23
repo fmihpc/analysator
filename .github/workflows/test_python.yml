@@ -8,6 +8,7 @@ on:
     branches: [ $default-branch CI_introduction]
   pull_request:
     branches: [ $default-branch CI_introduction]
+  workflow_dispatch:
 
 jobs:
   build:
