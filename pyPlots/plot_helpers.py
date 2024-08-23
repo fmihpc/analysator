@@ -1582,3 +1582,43 @@ def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     maxrank = int(np.amax(rank))
     levels = np.arange(minrank,maxrank)+0.5
     ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')
+
+def expr_gyrotropy_3D(pass_maps,requestvariables=False):
+# expression for plotting the gyrotropy
+    if requestvariables==True:
+        return ['vg_b_vol','proton/vg_ptensor_diagonal','proton/vg_ptensor_offdiagonal']
+
+    Pdiag_map = pass_maps['proton/vg_ptensor_diagonal']
+    Poffdiag_map = pass_maps['proton/vg_ptensor_offdiagonal']
+    B_map = pass_maps['vg_b_vol']
+    ny, nx = np.shape(Pdiag_map)[0], np.shape(Pdiag_map)[1]
+
+    Pdiag_vec = Pdiag_map.reshape((ny * nx, 3))
+    Poffdiag_vec = Poffdiag_map.reshape((ny * nx, 3))
+    B_vec = B_map.reshape((ny * nx, 3))
+
+    Q = gyrotropy(Pdiag_vec,Poffdiag_vec,B_vec)
+    Qmap = Q.reshape((ny, nx))
+    return Qmap
+
+def gyrotropy(Pdiag,Poffdiag,B):
+# see Appendix in Swisdak 2016: https://doi.org/10.1002/2015GL066980
+    Pxx=Pdiag[:,0]
+    Pyy=Pdiag[:,1]
+    Pzz=Pdiag[:,2]
+
+    Pxy = Poffdiag[:,0]
+    Pxz = Poffdiag[:,1]
+    Pyz = Poffdiag[:,2]
+
+    B_norm = B / np.sqrt(np.sum(np.asarray(B)**2,axis=-1)[:, np.newaxis])
+    bx,by,bz = B_norm[:,0],B_norm[:,1],B_norm[:,2]
+
+    I1 = Pxx + Pyy + Pzz
+    I2 = Pxx * Pyy + Pyy * Pzz + Pxx * Pzz  - 2 * (Pxy**2 + Pxz**2 + Pxz**2)
+
+    Ppar = (  bx**2 * Pxx + by**2 * Pyy + bz**2 * Pzz +     
+           2 * (bx * by * Pxy + bx * bz * Pxz + by * bz * Pyz ) )
+
+    Q = 1 - 4 * I2 / (  (I1 - Ppar)*(I1 + 3* Ppar)  )
+    return Q
