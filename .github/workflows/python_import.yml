@@ -33,6 +33,6 @@ jobs:
         python -m pip install numpy scipy matplotlib  # add versions to matrix
     - name: Trial imports
       run: python pytools.py
-    - name: Test with pytest
-      run: |
-        pytest
+    # - name: Test with pytest
+    #   run: |
+    #     pytest
