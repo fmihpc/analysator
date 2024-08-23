@@ -3,7 +3,7 @@
 #################################################
 
 # Install dependencies:
-sudo apt-get install mayavi2 python-matplotlib python-numpy python-scipy ipython
+sudo apt-get install python-matplotlib python-numpy python-scipy ipython
 
 # Set pythonpath environment variable:
 echo "export PYTHONPATH=$PYTHONPATH:$HOME/analysator" >> $HOME/.bashrc
@@ -41,6 +41,9 @@ export PTNOLATEX=1
 Some old plotting tools requiring the MayaVi2 visualization library can be activated
 by setting the environment variable:
 export PTMAYAVI2=1
+
+This naturally depends on mayavi, so:
+sudo apt-get install mayavi2
 
 # For setting the default output directory (default: $HOME/Plots)
 #################################################

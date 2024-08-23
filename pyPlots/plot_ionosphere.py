@@ -16,7 +16,8 @@ from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.cbook import get_sample_data
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
+
 
 def plot_ionosphere(filename=None,
                   vlsvobj=None,
@@ -93,7 +94,7 @@ def plot_ionosphere(filename=None,
 
     '''
 
-    IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
+    #IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
@@ -132,7 +133,10 @@ def plot_ionosphere(filename=None,
     if not colormap:
         # Default values
         colormap="bwr"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
@@ -258,6 +262,15 @@ def plot_ionosphere(filename=None,
 
     # Read ionosphere mesh node coordinates
     coords = f.get_ionosphere_node_coords()
+    
+    # Read the ionosphere radius from the VLSV file
+    try:
+        ionosphere_radius = f.read_parameter("ionosphere_radius")
+    except:
+        # Recalculate the radius of the ionospheric grid
+        ionosphere_radius = np.max(np.linalg.norm(coords, axis=-1))
+
+
     # Read ionosphere mesh connectivity
     elements = f.get_ionosphere_element_corners()
     # Read selected variable valus
@@ -277,12 +290,12 @@ def plot_ionosphere(filename=None,
 
     # Add unit to colorbar title
     if datamap_unit_latex:
-       cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
+       cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
     if viewdir > 0:
-        r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+        r=np.degrees(np.arccos(coords[:,2]/ionosphere_radius))
     else:
-        r=np.degrees(np.arccos(-coords[:,2]/IONOSPHERE_RADIUS))
+        r=np.degrees(np.arccos(-coords[:,2]/ionosphere_radius))
     theta=np.arctan2(coords[:,1],coords[:,0])
 
     # Project nodes and elements into view plane
@@ -357,7 +370,7 @@ def plot_ionosphere(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
@@ -430,7 +443,14 @@ def plot_ionosphere(filename=None,
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
     #contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)
-    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading='gouraud')
+    if(len(values) == len(tri.triangles)):
+        shading = 'flat'
+    elif(len(values) == len(tri.x)):
+        shading = 'gouraud'
+    else:
+        raise ValueError("Number of values ("+str(len(values))+") matches neither number of elements ("+str(len(tri.triangles))+") or number of points ("+str(len(tri.x))+")")
+    
+    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading=shading)
     ax_cartesian.add_patch(clippingcircle)
 
     # Draw polar grid over it
@@ -502,11 +522,11 @@ def plot_ionosphere(filename=None,
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
-            cb.ax.tick_params(labelsize=fontsize)
+            cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
         # Ensure minor tick marks are off
         if lin is not None:
@@ -564,7 +584,7 @@ def plot_ionosphere(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace(r'\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
                 if not labeltext:
                     continue
                 firstdigit = labeltext[0]
@@ -606,7 +626,8 @@ def plot_ionosphere(filename=None,
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             print("Error attempting to save figure: ", sys.exc_info())
-        print('...Done!') 
+        print(outputfile+"\n")
+        plt.close()
     elif draw is not None and axes is None:
         # Draw on-screen
         plt.draw()
