@@ -1615,10 +1615,10 @@ def gyrotropy(Pdiag,Poffdiag,B):
     bx,by,bz = B_norm[:,0],B_norm[:,1],B_norm[:,2]
 
     I1 = Pxx + Pyy + Pzz
-    I2 = Pxx * Pyy + Pyy * Pzz + Pxx * Pzz  - 2 * (Pxy**2 + Pxz**2 + Pxz**2)
+    I2 = Pxx * Pyy + Pyy * Pzz + Pxx * Pzz  - (Pxy**2 + Pxz**2 + Pyz**2)
 
     Ppar = (  bx**2 * Pxx + by**2 * Pyy + bz**2 * Pzz +     
            2 * (bx * by * Pxy + bx * bz * Pxz + by * bz * Pyz ) )
-
+    
     Q = 1 - 4 * I2 / (  (I1 - Ppar)*(I1 + 3* Ppar)  )
     return Q
