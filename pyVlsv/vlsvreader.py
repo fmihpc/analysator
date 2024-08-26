@@ -149,7 +149,8 @@ class VlsvReader(object):
 
    file_name=""
    def __del__(self):
-      self.__fptr.close()
+      if (hasattr(self, "__fptr")) and self.__fptr is not None:
+         self.__fptr.close()
 
    def __init__(self, file_name, fsGridDecomposition=None):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
