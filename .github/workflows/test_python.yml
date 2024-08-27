@@ -11,13 +11,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  import:
+
+  latest:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python #${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      # with:
+      #   python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install numpy scipy matplotlib scikit-image # add versions to matrix
+    - name: Trial imports
+      run: python -c 'import pytools as pt'
+
+  import-matrix:
 
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.7", "3.9", "3.10", "3.11"]
+        matplotlib-version: ["3.5", "3.6", "3.8","3.9"]
 
     steps:
     - uses: actions/checkout@v4
@@ -30,7 +53,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        python -m pip install numpy scipy matplotlib scikit-image # add versions to matrix
+        python -m pip install numpy scipy matplotlib==${{ matrix.matplotlib-version }} scikit-image # add versions to matrix
     - name: Trial imports
       run: python pytools.py
     # - name: Test with pytest
@@ -48,7 +71,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python #${{ matrix.python-version }}
+    - name: Set up Python  # ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       # with:
       #   python-version: ${{ matrix.python-version }}
