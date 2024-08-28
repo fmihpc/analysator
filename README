@@ -36,6 +36,10 @@ export PTBACKEND=Qt5Agg
 #################################################
 export PTNOLATEX=1
 
+#Analysator is using logging. It is controlled by setting the enviroment variable ANALYSATOR_LOG_LEVEL
+#################################################
+Supported: INFO (default)
+
 # MayaVi2 support (deprecated)
 #################################################
 Some old plotting tools requiring the MayaVi2 visualization library can be activated
