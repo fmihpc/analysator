@@ -37,9 +37,9 @@ def extract_file(filename):
         f.optimize_open_file()
         t=f.read_parameter("time")
         if t == None:
-	    t=f.read_parameter("t")
-            if t == None:	    
-		print("Unknown time format in file " + filename)
+            t=f.read_parameter("t")
+        if t == None:	    
+            print("Unknown time format in file " + filename)
         
         for coord in coords:
             if(args.re):

@@ -96,7 +96,7 @@ regularcalls = [
 "pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='E', biglabloc=3, coordre=REPLACECOORDRE)",
 
 # title, axes, noborders
-"pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$', coordre=REPLACECOORDRE)",
+r"pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$', coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='', coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1, coordre=REPLACECOORDRE)",

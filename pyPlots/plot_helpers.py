@@ -25,6 +25,7 @@ import pytools as pt
 import numpy as np
 import sys
 from rotation import rotateTensorToVector
+import warnings
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
@@ -1197,8 +1198,11 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     elif PLANE=="YZ":
         V = vectmap[::step,::step,0]
     C = colors[::step,::step]
-    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
-                       headaxislength=2, scale_units='dots', pivot='middle')
+
+    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots',
+              #scale=0.03/scale, # scale not defined - if you need to use this, adjust as necessary!
+              headlength=2, headwidth=2,
+              headaxislength=2, scale_units='dots', pivot='middle')
 
 
 def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):

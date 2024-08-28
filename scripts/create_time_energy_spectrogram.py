@@ -257,7 +257,7 @@ def doSpectra(vlsvFile):
  locs = vlsvReader.get_cellid_locations()
  cellids = list(locs.keys())
  # sort variable array according to cell ids
- locs_sorted = sorted(locs.items()), key=oper.itemgetter(0))
+ locs_sorted = sorted(locs.items(), key=oper.itemgetter(0))
  fileNameStr = os.path.basename(vlsvFile)
  spectraStr = [] # spectra file contents
  bulkStr = [] # bulk parameter file contents

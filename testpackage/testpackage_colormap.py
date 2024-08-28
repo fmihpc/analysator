@@ -303,7 +303,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
 
 # title, axes, noborders
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
+r"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
@@ -558,7 +558,7 @@ v5regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
 
 # title, axes, noborders
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
+r"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",

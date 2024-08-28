@@ -100,16 +100,16 @@ def ulf_filter(
         data_arr,
         "{:s}_move_ave_{:d}".format(var_to_filter, windowlength),
         units="T",
-        latex="$B_{\mathrm{ave}}$",
-        latexunits="$\mathrm{T}$",
+        latex=r"$B_{\mathrm{ave}}$",
+        latexunits=r"$\mathrm{T}$",
     )
     writer.write_variable_info(varinfo, "SpatialGrid", unitConversion=1)
     varinfo = pt.calculations.VariableInfo(
         delta_var,
         "{:s}_move_ave_{:d}_delta".format(var_to_filter, windowlength),
         units="T",
-        latex="$\delta{}B_{\mathrm{ave}}$",
-        latexunits="$\mathrm{T}$",
+        latex=r"$\delta{}B_{\mathrm{ave}}$",
+        latexunits=r"$\mathrm{T}$",
     )
     writer.write_variable_info(varinfo, "SpatialGrid", unitConversion=1)
     # window_pad =50 see above this refers to the target file (centered file)
@@ -117,8 +117,8 @@ def ulf_filter(
         filtered_dataPc2[window_pad, rev_sorti, :],
         "vg_b_vol_{:s}_{:d}_xyz".format(target_wave, windowlength),
         units="T^2Hz^-1",
-        latex="$\delta{}B_{\mathrm{ave}}$",
-        latexunits="$\mathrm{T}^2\,\mathrm{Hz}^{-1}\mathrm{orsomething}$",
+        latex=r"$\delta{}B_{\mathrm{ave}}$",
+        latexunits=r"$\mathrm{T}^2\,\mathrm{Hz}^{-1}\mathrm{orsomething}$",
     )
     writer.write_variable_info(varinfo, "SpatialGrid", unitConversion=1)
     del reader

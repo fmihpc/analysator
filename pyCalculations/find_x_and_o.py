@@ -62,7 +62,7 @@ if len(sys.argv)==2:
 elif len(sys.argv)==3:
    indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]))
 elif len(sys.argv)==4:
-   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),,int(sys.argv[3]))
+   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
 else:
    sys.stderr.write("Syntax: size.py <index>\n")
    sys.stderr.write("or: size.py <starting_index> <final_index+1>\n")

@@ -62,8 +62,8 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
    # Read the cell lengths:
    ##################################################
    # Get xmax, xmin and xcells_ini
-   mesh_limits = f.get_spatial_mesh_extent()
-   mesh_size = f.get_spatial_mesh_size()
+   mesh_limits = vlsvReader.get_spatial_mesh_extent()
+   mesh_size = vlsvReader.get_spatial_mesh_size()
    xmax = mesh_limits[3]
    xmin = mesh_limits[0]
    xcells = mesh_size[0]
