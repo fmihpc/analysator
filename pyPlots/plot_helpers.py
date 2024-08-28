@@ -1583,21 +1583,3 @@ def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     levels = np.arange(minrank,maxrank)+0.5
     ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')
 
-def expr_gyrotropy_3D(pass_maps,requestvariables=False):
-# expression for plotting the gyrotropy
-    if requestvariables==True:
-        return ['vg_b_vol','proton/vg_ptensor_diagonal','proton/vg_ptensor_offdiagonal']
-
-    Pdiag_map = pass_maps['proton/vg_ptensor_diagonal']
-    Poffdiag_map = pass_maps['proton/vg_ptensor_offdiagonal']
-    B_map = pass_maps['vg_b_vol']
-    ny, nx = np.shape(Pdiag_map)[0], np.shape(Pdiag_map)[1]
-
-    Pdiag_vec = Pdiag_map.reshape((ny * nx, 3))
-    Poffdiag_vec = Poffdiag_map.reshape((ny * nx, 3))
-    B_vec = B_map.reshape((ny * nx, 3))
-
-    Q = gyrotropy(Pdiag_vec,Poffdiag_vec,B_vec)
-    Qmap = Q.reshape((ny, nx))
-    return Qmap
-
