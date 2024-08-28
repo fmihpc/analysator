@@ -29,6 +29,7 @@ Example usage (plot magnetopause for run 'EGI'):
 '''
 
 import numpy as np
+import logging
 
 def _f_shue_parametrized(theta_polar, r_0, alpha):
     '''
@@ -70,7 +71,7 @@ def _f_shue_parameters(run):
         B_z = 0
         n_p = 1
         v_sw = 500
-        print('VLASIATOR RUN NOT SPECIFIED!!!')     # error message
+        logging.info('VLASIATOR RUN NOT SPECIFIED!!!')     # error message
     return B_z, n_p, v_sw
 
 

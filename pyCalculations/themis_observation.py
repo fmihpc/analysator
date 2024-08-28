@@ -28,6 +28,7 @@ from rotation import rotateVectorToVector
 from scipy.interpolate import griddata
 from scipy.signal import sepfir2d
 from packaging.version import Version
+import logging
 
 # Detector data obtained from the Themis ESA instrument paper
 # http://dx.doi.org/10.1007/s11214-008-9440-2
@@ -114,7 +115,7 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
 
     matrix = spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
 
-    print("Getting phasespace data...")
+    logging.info("Getting phasespace data...")
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader,
                 cellid=cellID, matrix=matrix, binOffset=[-0.5,-0.5],pop=pop)
     if vmin == 0:
@@ -127,7 +128,7 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
     grid_r, grid_theta = np.meshgrid(energies,angles)
     fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
     ax.set_title("Detector view at cell " + str(cellID))
-    print("Plotting...")
+    logging.info("Plotting...")
     cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
     ax.grid(True)
     fig.colorbar(cax)
@@ -318,7 +319,7 @@ def themis_observation(velocity_cell_data, velocity_coordinates, matrix, dv=30e3
    for i in range(0,v_abs.shape[0]):
        if equator_angles[i] > detector_opening_angle:
            continue
-       #print("Using cell with velocities " + str(v_rotated[i,:]) + ", phi = " + str(phi_angles[i]) + ", theta = " + str(theta_angles[i]))
+       #logging.info("Using cell with velocities " + str(v_rotated[i,:]) + ", phi = " + str(phi_angles[i]) + ", theta = " + str(theta_angles[i]))
 
        if energy_bins[i] >= detector_energy_bins-1:
            continue

@@ -22,6 +22,7 @@
 # 
 
 import numpy as np
+import logging
 
 
 def rotateTensorToVector( Tensor, vector ):

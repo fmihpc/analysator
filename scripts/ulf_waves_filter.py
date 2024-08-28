@@ -4,12 +4,13 @@ import pytools as pt  # nopep8
 import glob
 from scipy.signal import butter, filtfilt
 import numpy as np
+import logging
 
 
 # fileNames={i : "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk/dense_cold_hall1e5_afterRestart374/bulk1.{:07d}.vlsv".format(i) for i in range(662,1506)}
 # fileNames={i : "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.{:07d}.vlsv".format(i) for i in range(501,1612)}
 # fileNames={i :'/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/bulk/bulk1.egl.{:07d}.vlsv'.format(i) for i in range(621,1760)}
-# print(fileNames)
+# logging.info(fileNames)
 
 
 def ulf_filter(
@@ -48,12 +49,12 @@ def ulf_filter(
     nelems = len(f0.read_variable(var_to_filter, [1]))
     windowlength = 2 * window_pad + 1
     B_all = np.zeros((windowlength, ncells, nelems))
-    print(B_all.shape)
+    logging.info(B_all.shape)
     # timestate = 1000 # this can take from 713 to 1450 ( for example for EGI)
     average_range = (timestate - window_pad, timestate + window_pad)
     # collecting data for moving_averaging based on the window_pad/average_range
     for i, t in enumerate(range(average_range[0], average_range[1] + 1)):
-        print("loading in ", (i, t), fileNames[t-run_start])
+        logging.info("loading in ", (i, t), fileNames[t-run_start])
         reader = pt.vlsvfile.VlsvReader(fileNames[t-run_start])
         cids = reader.read_variable("CellID")
         sorti = np.argsort(cids)
@@ -70,7 +71,7 @@ def ulf_filter(
         lowcut = 0.006
         highcut = 0.02
     else:
-        print("no defined band filter")
+        logging.info("no defined band filter")
     b, a = butter(filter_order, [lowcut, highcut], fs=fs, btype="band")
     # b, a = butter(filter_order, 0.05, btype='high', fs=fs)
     filtered_dataPc2 = filtfilt(b, a, B_all, axis=0)

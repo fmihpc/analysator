@@ -22,6 +22,7 @@
 # 
 
 # Function for taking 1d and 2d fourier transforms here.
+import logging
 
 def fourier( t, y, kaiserwindowparameter=0 ):
    ''' Function for returning fourier series and frequencies of some given arrays t and y
@@ -54,7 +55,7 @@ def fourier( t, y, kaiserwindowparameter=0 ):
 
    #for i in xrange(len(get_data(t))-1):
    #   if t != get_data(t)[i+1] - get_data(t)[i]:
-   #      print "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
+   #      logging.info "Gave bad timestep to plot_fourier, the time step in array t must be constant (for now)"
    # Use kaiser window on y
    import numpy as np
    y_tmp = get_data(y) * np.kaiser(len(get_data(y)), kaiserwindowparameter)

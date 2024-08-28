@@ -25,6 +25,7 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import logging
     
 
 def cartesian_to_spherical(x, y, z):
@@ -155,7 +156,7 @@ if __name__ == '__main__':
             ig_B_ionosphere = f.read_variable('ig_B_ionosphere')
             ig_B_ionosphere_arr[:,:,i-nmin] = ig_B_ionosphere
         except:
-            print("couldn't read ionospheric data") # for runs without an ionosphere, leave as zeros
+            logging.info("couldn't read ionospheric data") # for runs without an ionosphere, leave as zeros
         ig_B_inner = f.read_variable('ig_b_inner')
         ig_B_inner_arr[:,:,i-nmin] = ig_B_inner
         ig_B_outer = f.read_variable('ig_b_outer')
@@ -165,13 +166,13 @@ if __name__ == '__main__':
     for arr in [ig_B_ionosphere_arr]:
         try:
             ind = np.where(arr[0,0,:] != 0)[0]
-            print("Time interpolation: {} points removed".format(arr.shape[2] - ind.size))
+            logging.info("Time interpolation: {} points removed".format(arr.shape[2] - ind.size))
             interp_arr = arr[:,:, ind]  # only keep the non-zero times to conduct the interpolation
             for i in range(arr.shape[0]): # positions
                 for j in range(3): # vector components
                     arr[i, j, :] = np.interp(time, time[ind], interp_arr[i, j, :], left=None, right=None, period=None)
         except:
-            print("error with interpolation. zeroing out array...")
+            logging.info("error with interpolation. zeroing out array...")
     
     ig_B_arr =  ig_B_ionosphere_arr + ig_B_inner_arr + ig_B_outer_arr
     
@@ -265,6 +266,6 @@ if __name__ == '__main__':
             plt.savefig(filename)
             plt.close()
         except:
-            print("can't plot components!")
+            logging.info("can't plot components!")
     
     

@@ -35,6 +35,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 import os
+import logging
 
 global R_EARTH
 R_EARTH = 6.371e6
@@ -195,18 +196,18 @@ def graded_mesh(x, y, z, dV, ns = np.array([8, 4, 2]), Rs = np.array([R_EARTH, R
     r = np.sqrt(x**2 + y**2 + z**2)
 
     for i in range(ns.size):
-        print('i:', i)
+        logging.info('i:', i)
         if i < ns.size - 1:
             ind, = np.where((r > Rs[i]) & (r <= Rs[i+1]))
         elif i == ns.size -1:
             ind, = np.where(r > Rs[i])
-        print('ind size', ind.size)
+        logging.info('ind size', ind.size)
         x_ref, y_ref, z_ref, dV_ref = refine_mesh(x[ind], y[ind], z[ind], dV[ind], ns[i])
         x_out = np.concatenate((x_out, x_ref))
         y_out = np.concatenate((y_out, y_ref))
         z_out = np.concatenate((z_out, z_ref))
         dV_out = np.concatenate((dV_out, dV_ref))
-    print("graded mesh has" + str(x_out.size) + " elements")
+    logging.info("graded mesh has" + str(x_out.size) + " elements")
     return x_out, y_out, z_out, dV_out
 
 
@@ -273,7 +274,7 @@ def fac_map(f, vg_x, vg_y, vg_z, dx, f_J_sidecar = None, r_C = 5 * 6.371e6, mag_
             vg_J_eval[inner[i], :] = (vg_b_vol[inner[i],:] / b0[inner[i]]) * ig_fac[ind_min]  # J \propto B. Mapping UP from the FACs evaluated at the ground 
     else: # (use sidecar containing current density "vg_J" in non-ionospheric runs, e.g. EGL)
         # map: initial point -> some point in the simulation domain near the inner boundary (~5 R_E) according to dipole formula
-        print('NOTE: Downmapping FACs along constant L-shell via dipole formula!')
+        logging.info('NOTE: Downmapping FACs along constant L-shell via dipole formula!')
         r_up = r_C
         lat_up = np.arccos( np.sqrt(r_up / L) ) # latitude at r=r_up
         theta_up = (np.pi / 2) - lat_up
@@ -444,7 +445,7 @@ def B_ionosphere(f, coord_list = None, ig_r = None, method = 'integrate'):
             # B = (mu_0 / 2) * r_hat x J_s , where J_s vector is current per unit length
             ig_r_hat = vec_unit(ig_r)   # approximate (technically |ig_r| not exactly R_IONO)
             if coord_list is not None:
-                print('infinite plane approximation not yet implemented for input coord_list!')
+                logging.info('infinite plane approximation not yet implemented for input coord_list!')
                 return dummy
             else:
                 B_iono = (mu_0 / 2) * np.cross(ig_r_hat, ig_inplanecurrent)
@@ -562,7 +563,7 @@ if __name__ == '__main__':
     pool = Pool(int(ARGS.nproc))
     start = first + (int(ARGS.task) * int(ARGS.nproc))
     stop = start + int(ARGS.nproc)
-    print('start:, ', start, ', stop: ', stop)
+    logging.info('start:, ', start, ', stop: ', stop)
     input_list = [(run, i) for i in range(start, stop)]
     f_out = pool.map(save_B_vlsv, input_list)
     pool.close()
