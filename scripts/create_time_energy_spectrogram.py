@@ -91,6 +91,11 @@ outBulkFilePrefix = 'bulk_parameters'
 # bin edges of kinetic energy in electron volts (energies below and above the last and first and )
 EkinBinEdges = np.logspace(np.log10(100),np.log10(80e3),66)
 
+# Initialize as none
+xReq = None
+yReq = None
+zReq = None
+
 # give a list of cids
 cids = (4502051,4951951,5551701)
 
@@ -152,7 +157,7 @@ vlsvReader = pt.vlsvfile.VlsvReader(vlsvFiles[0])
 cidsTemp = []
 if 'cids' not in locals():
  print('Finding nearest cells with vspace from given coordinates')
- if ('xReq' not in locals()) or ('yReq' not in locals()) or ('zReq' not in locals()):
+ if (xReq is None) or (yReq is None) or (zReq is None):
   print('ERROR: cids or (xReq,yReq,zReq) coordinates must be given')
   quit()
  if xReq.shape == yReq.shape == zReq.shape:
