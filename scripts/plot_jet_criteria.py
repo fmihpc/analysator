@@ -145,7 +145,7 @@ for j in timetot:
                           vmin=0.8, vmax=5, 
                           external=jetcontours,
                           boxre=[8,16,-6,6],
-                          cbtitle='$n_\mathrm{p}$ [cm$^{-3}$]', 
+                          cbtitle=r'$n_\mathrm{p}$ [cm$^{-3}$]', 
                           title='', usesci=0, thick=1.2)
 
 

@@ -105,7 +105,7 @@ def simulation_to_observation_frame(x_axis,y_axis):
     z_axis = np.cross(x_axis,y_axis)
     return np.array([x_axis,y_axis,z_axis])
 
-def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
+def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), pop="proton"):
     ''' Plots a view of the detector countrates using matplotlib
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
@@ -134,7 +134,7 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0])):
     fig.colorbar(cax)
     pl.show()
 
-def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy"):
+def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
     ''' Plots a contour view of phasespace, as seen by a themis detector, at the given cellID
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`

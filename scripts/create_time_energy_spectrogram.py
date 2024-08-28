@@ -92,6 +92,11 @@ outBulkFilePrefix = 'bulk_parameters'
 # bin edges of kinetic energy in electron volts (energies below and above the last and first and )
 EkinBinEdges = np.logspace(np.log10(100),np.log10(80e3),66)
 
+# Initialize as none
+xReq = None
+yReq = None
+zReq = None
+
 # give a list of cids
 cids = (4502051,4951951,5551701)
 
@@ -153,7 +158,7 @@ vlsvReader = pt.vlsvfile.VlsvReader(vlsvFiles[0])
 cidsTemp = []
 if 'cids' not in locals():
  logging.info('Finding nearest cells with vspace from given coordinates')
- if ('xReq' not in locals()) or ('yReq' not in locals()) or ('zReq' not in locals()):
+ if (xReq is None) or (yReq is None) or (zReq is None):
   logging.info('ERROR: cids or (xReq,yReq,zReq) coordinates must be given')
   quit()
  if xReq.shape == yReq.shape == zReq.shape:
@@ -258,7 +263,7 @@ def doSpectra(vlsvFile):
  locs = vlsvReader.get_cellid_locations()
  cellids = list(locs.keys())
  # sort variable array according to cell ids
- locs_sorted = sorted(locs.items()), key=oper.itemgetter(0))
+ locs_sorted = sorted(locs.items(), key=oper.itemgetter(0))
  fileNameStr = os.path.basename(vlsvFile)
  spectraStr = [] # spectra file contents
  bulkStr = [] # bulk parameter file contents
