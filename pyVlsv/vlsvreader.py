@@ -1715,6 +1715,28 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+
+      # Handle custom variable names
+      # ex. (x-component unit vector Bx/|B|): name = '{vg_b_vol.x} / {vg_b_vol.magnitude}'
+      if '{' in name:
+         name_split = re.split(r"(\{.*?\})", name)
+         var_dct = {}
+         var_count = 0
+         for i, n in enumerate(name_split):
+             if '{' in n:
+                 varname_x = 'var_{}'.format(var_count)
+                 var_op = n[1:-1].split('.')
+                 if len(var_op) == 2:
+                    op = var_op[1]   # note: overrides operator keyword
+                 else:
+                    op = operator
+                 # Recursion: Evaluate variables in '{}'
+                 var_dct[varname_x] = self.read_variable(var_op[0], cellids = cellids, operator = op)
+                 var_count += 1
+                 name_split[i] = varname_x
+         expr = ''.join(name_split)
+         return eval(expr, None, var_dct)
+
       cellids = get_data(cellids)
 
       # Wrapper, check if requesting an fsgrid variable
