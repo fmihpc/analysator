@@ -486,6 +486,8 @@ def expr_timeavg(pass_maps, requestvariables=False):
         var = next(listofkeys)
         if var!="dstep": break
     ntimes = len(pass_maps)
+
+    warnings.warn("expr_timeavg cleaned to not produce undefined variable errors, see commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e for applied changes and check the output!")
     thismap = pass_maps[var]
     avgmap = np.zeros(np.array(thismap.shape))
     for i in range(ntimes):
@@ -1149,6 +1151,7 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     thesemaps = pass_maps[curri]
     pastmaps = pass_maps[previ]
 
+    warnings.warn("expr_dLstardt cleaned to not produce undefined variable errors, see commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e for applied changes and check the output!")
     thisV = TransposeVectorArray(thesemaps['V'])
     pastV = TransposeVectorArray(pastmaps['V'])
     dVdt = (thisV-pastV)/DT
