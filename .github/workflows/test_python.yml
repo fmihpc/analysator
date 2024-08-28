@@ -61,7 +61,7 @@ jobs:
   lint:
 
     runs-on: ubuntu-latest
-    continue-on-error: true
+    #continue-on-error: true
     strategy:
       fail-fast: false
 
