@@ -3017,8 +3017,8 @@ class VlsvReader(object):
             self.__set_cell_offset_and_blocks(pop) 
          # Check that cells has vspace
          if not cellid in self.__fileindex_for_cellid_blocks[pop]:
-            print("Cell does not have velocity distribution")
-            return []
+            warnings.warn("Cell(s) does not have velocity distribution")
+            return {}
          # Navigate to the correct position:
          offset = self.__fileindex_for_cellid_blocks[pop][cellid][0]
          num_of_blocks = self.__fileindex_for_cellid_blocks[pop][cellid][1]
@@ -3030,8 +3030,8 @@ class VlsvReader(object):
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
          except:
-            print("Cell does not have velocity distribution")
-            return []
+            warnings.warn("Cell(s) does not have velocity distribution")
+            return {}
          # Navigate to the correct position:
          offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
          num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
@@ -3074,8 +3074,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print("Error! Bad data type in blocks!")
-               return
+               raise TypeError("Error! Bad data type in blocks! datatype found was "+datatype)
 
          if (pop=="avgs") and (child.tag == "BLOCKIDS"): # Old avgs files did not have the name set for BLOCKIDS
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
@@ -3091,8 +3090,7 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print("Error! Bad data type in blocks!")
-               return
+               raise TypeError("Error! Bad data type in blocks! datatype found was "+datatype)
 
             data_block_ids = data_block_ids.reshape(num_of_blocks, vector_size)
 
@@ -3100,7 +3098,7 @@ class VlsvReader(object):
 
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
-         print("BAD DATA SIZES")
+         raise ValueError("BAD DATA SIZES")
       # Make a dictionary (hash map) out of velocity cell ids and avgs:
       velocity_cells = {}
       array_size = len(data_avgs)
