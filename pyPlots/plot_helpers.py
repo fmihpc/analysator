@@ -25,6 +25,7 @@ import pytools as pt
 import numpy as np
 import sys
 from rotation import rotateTensorToVector
+import warnings
 
 PLANE = 'XY'
 # or alternatively, 'XZ'
@@ -485,7 +486,9 @@ def expr_timeavg(pass_maps, requestvariables=False):
         var = next(listofkeys)
         if var!="dstep": break
     ntimes = len(pass_maps)
-    thismap = thesemaps[var]
+
+    warnings.warn("expr_timeavg cleaned to not produce undefined variable errors, see commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e for applied changes and check the output!")
+    thismap = pass_maps[var]
     avgmap = np.zeros(np.array(thismap.shape))
     for i in range(ntimes):
         avgmap = np.add(avgmap, pass_maps[i][var])
@@ -1134,7 +1137,7 @@ def expr_ja(pass_maps, requestvariables=False):
 
 def expr_dLstardt(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','E']
+        return ['B','E','V']
 
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
@@ -1148,9 +1151,10 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     thesemaps = pass_maps[curri]
     pastmaps = pass_maps[previ]
 
-    thisB = TransposeVectorArray(thesemaps['B'])
-    pastB = TransposeVectorArray(pastmaps['B'])
-    Vddt = (thisV-pastV)/DT
+    warnings.warn("expr_dLstardt cleaned to not produce undefined variable errors, see commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e for applied changes and check the output!")
+    thisV = TransposeVectorArray(thesemaps['V'])
+    pastV = TransposeVectorArray(pastmaps['V'])
+    dVdt = (thisV-pastV)/DT
 
     Bmap = TransposeVectorArray(thesemaps['B'])
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
@@ -1184,7 +1188,8 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     step = int(np.sqrt(colors.shape[0] * colors.shape[1]/100.))
 
     # inplane unit length vectors
-    vectmap = pt.plot.plot_helpers.inplanevec(vectmap)
+    warnings.warn("usage of inplanevec(vf) is unverified! Used to be inplanevec(vectmap), with vectmap undefined. See changes in commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e and check if results are as expected!")
+    vectmap = pt.plot.plot_helpers.inplanevec(vf)
     vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
 
     X = XmeshXY[::step,::step]
@@ -1197,8 +1202,11 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     elif PLANE=="YZ":
         V = vectmap[::step,::step,0]
     C = colors[::step,::step]
-    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots', scale=0.03/scale, headlength=2, headwidth=2,
-                       headaxislength=2, scale_units='dots', pivot='middle')
+
+    ax.quiver(X,Y,U,V,C, cmap='gray', units='dots',
+              #scale=0.03/scale, # scale not defined - if you need to use this, adjust as necessary!
+              headlength=2, headwidth=2,
+              headaxislength=2, scale_units='dots', pivot='middle')
 
 
 def overplotstreamlines(ax, XmeshXY,YmeshXY, pass_maps):

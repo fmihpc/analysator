@@ -584,10 +584,11 @@ def main():
 
 
     if plotting[2]: #plot Poynting vetors (not working!)
-        coords = np.array(coords)
-        poynting = np.array(poynting)
+        raise NotImplementedError("Poynting vector plotting not implemented!")
+        # coords = np.array(coords)
+        # poynting = np.array(poynting)
 
-        ax.quiver(coords[:,0], coords[:,1], coords[:,2], P[:,0], P[:,1], P[:,2])
+        # ax.quiver(coords[:,0], coords[:,1], coords[:,2], P[:,0], P[:,1], P[:,2])
 
 
     if plotting[3]: #plot surface

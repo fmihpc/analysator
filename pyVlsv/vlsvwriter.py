@@ -209,7 +209,7 @@ class VlsvWriter(object):
             if 'mesh' in child.attrib:
                 mesh = child.attrib['mesh']
             else:
-               if tag in ['VARIABLE']:
+               if child.tag in ['VARIABLE']:
                   print('MESH required')
                   return
                mesh = None
