@@ -21,6 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+from loguru import logger
 import struct
 import xml.etree.ElementTree as ET
 import ast
@@ -166,7 +167,7 @@ class VlsvReader(object):
       try:
          self.__fptr = PicklableFile(open(self.file_name,"rb"))
       except FileNotFoundError as e:
-         print("File not found: ", self.file_name)
+         logger.info("File not found: ", self.file_name)
          raise e
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
@@ -338,7 +339,7 @@ class VlsvReader(object):
 
               self.__meshes[popname]=pop
               if not os.getenv('PTNONINTERACTIVE'):
-                 print("Found population " + popname)
+                 logger.info("Found population " + popname)
               
               # Precipitation energy bins
               i = 0
@@ -428,7 +429,7 @@ class VlsvReader(object):
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
          except:
-            print("Cell does not have velocity distribution")
+            logger.info("Cell does not have velocity distribution")
             return []
          offset = self.__blocks_per_cell_offsets[pop][cells_with_blocks_index]
          num_of_blocks = self.__blocks_per_cell[pop][cells_with_blocks_index]
@@ -476,8 +477,8 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               print("Error! Bad block id data!")
-               print("Data type: " + datatype + ", element size: " + str(element_size))
+               logger.info("Error! Bad block id data!")
+               logger.info("Data type: " + datatype + ", element size: " + str(element_size))
                return
 
             data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
@@ -485,9 +486,9 @@ class VlsvReader(object):
       fptr.close()
 
       # Check to make sure the sizes match (just some extra debugging)
-      print("data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids))
+      logger.info("data_avgs = " + str(data_avgs) + ", data_block_ids = " + str(data_block_ids))
       if len(data_avgs) != len(data_block_ids):
-         print("BAD DATA SIZES")
+         logger.info("BAD DATA SIZES")
 
       return [data_block_ids, data_avgs]
 
@@ -496,7 +497,7 @@ class VlsvReader(object):
           every cell with blocks into a private dictionary.
           Deprecated in favor of below version.
       '''
-      print("Getting offsets for population " + pop)
+      logger.info("Getting offsets for population " + pop)
       if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
@@ -524,7 +525,7 @@ class VlsvReader(object):
          # There's stuff already saved into the dictionary, don't save it again
          return
 
-      print("Getting offsets for population " + pop)
+      logger.info("Getting offsets for population " + pop)
 
       self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
       self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
@@ -550,35 +551,35 @@ class VlsvReader(object):
          other=False
       '''
       if parameter:
-         print("tag = PARAMETER")
+         logger.info("tag = PARAMETER")
          for child in self.__xml_root:
             if child.tag == "PARAMETER" and "name" in child.attrib:
-               print("   ", child.attrib["name"])
+               logger.info("   ", child.attrib["name"])
       if variable:
-         print("tag = VARIABLE")
+         logger.info("tag = VARIABLE")
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
-               print("   ", child.attrib["name"])
+               logger.info("   ", child.attrib["name"])
       if mesh:
-         print("tag = MESH")
+         logger.info("tag = MESH")
          for child in self.__xml_root:
             if child.tag == "MESH" and "name" in child.attrib:
-               print("   ", child.attrib["name"])
+               logger.info("   ", child.attrib["name"])
       if datareducer:
-         print("Datareducers:")
+         logger.info("Datareducers:")
          for name in datareducers:
-            print("   ",name, " based on ", datareducers[name].variables)
+            logger.info("   ",name, " based on ", datareducers[name].variables)
       if operator:
-         print("Data operators:")
+         logger.info("Data operators:")
          for name in data_operators:
             if type(name) is str:
                if not name.isdigit():
-                  print("   ",name)
+                  logger.info("   ",name)
       if other:
-         print("Other:")
+         logger.info("Other:")
          for child in self.__xml_root:
             if child.tag != "PARAMETER" and child.tag != "VARIABLE" and child.tag != "MESH":
-               print("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
+               logger.info("    tag = ", child.tag, " mesh = ", child.attrib["mesh"])
 
    def check_parameter( self, name ):
       ''' Checks if a given parameter is in the vlsv reader
@@ -716,7 +717,7 @@ class VlsvReader(object):
             return True
 
       #if we end up here the file does not contain any version info
-      print("File ",self.file_name," contains no version information")
+      logger.info("File ",self.file_name," contains no version information")
       return False
   
    def get_config_string(self):
@@ -797,11 +798,11 @@ class VlsvReader(object):
       '''
       config_string = self.get_config_string()
       if config_string is not None:
-         print(config_string)
+         logger.info(config_string)
          return True
       else:
          #if we end up here the file does not contain any config info
-         print("File ",self.file_name," contains no config information")
+         logger.info("File ",self.file_name," contains no config information")
          return False
 
    def read_variable_vectorsize(self, name):
@@ -829,7 +830,7 @@ class VlsvReader(object):
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
       if tag == "" and name == "":
-         print("Bad (empty) arguments at VlsvReader.read")
+         logger.info("Bad (empty) arguments at VlsvReader.read")
          raise ValueError()
 
       # Force lowercase name for internal checks
@@ -867,7 +868,7 @@ class VlsvReader(object):
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
       if tag == "" and name == "":
-         print("Bad (empty) arguments at VlsvReader.read")
+         logger.info("Bad (empty) arguments at VlsvReader.read")
          raise ValueError()
 
       if mesh == None:
@@ -990,7 +991,7 @@ class VlsvReader(object):
             
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
-               print("Data variable with vector size 1: Changed magnitude operation to absolute")
+               logger.info("Data variable with vector size 1: Changed magnitude operation to absolute")
                operator="absolute"
 
             if result_size == 1:
@@ -1021,7 +1022,7 @@ class VlsvReader(object):
 
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
-            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            logger.info("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
 
          # Return the output of the datareducer
@@ -1040,10 +1041,10 @@ class VlsvReader(object):
                   tmp_vars.append( self.read( i, tag, mesh, "pass", singlecellid ) )
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
-               print(index,"/",len(actualcellids))
+               logger.info(index,"/",len(actualcellids))
             
             if reducer.useReader:
-               print("Combined useVspace and useReader reducers not implemented!")
+               logger.info("Combined useVspace and useReader reducers not implemented!")
                raise NotImplementedError()
             else:
                return data_operators[operator](output)
@@ -1062,11 +1063,11 @@ class VlsvReader(object):
          reducer = reducer_multipop['pop/'+varname]
          # If variable vector size is 1, and requested magnitude, change it to "absolute"
          if reducer.vector_size == 1 and operator=="magnitude":
-            print("Data reducer with vector size 1: Changed magnitude operation to absolute")
+            logger.info("Data reducer with vector size 1: Changed magnitude operation to absolute")
             operator="absolute"
 
          if reducer.useVspace:
-            print("Error: useVspace flag is not implemented for multipop datareducers!") 
+            logger.info("Error: useVspace flag is not implemented for multipop datareducers!") 
             return
 
          # sum over populations
@@ -1110,7 +1111,7 @@ class VlsvReader(object):
       '''
 
       if tag == "" and name == "":
-         print("Bad arguments at read")
+         logger.info("Bad arguments at read")
 
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -1153,7 +1154,7 @@ class VlsvReader(object):
          return unit, unitLaTeX, variableLaTeX, unitConversion
             
       if name!="":
-         print("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
+         logger.info("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       fptr.close()
       return -1
          
@@ -1274,8 +1275,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
-      # At this stage, this function has not yet been implemented -- print a warning and exit
-      print('Interpolation of ionosphere variables has not yet been implemented; exiting.')
+      # At this stage, this function has not yet been implemented -- logger.info a warning and exit
+      logger.info('Interpolation of ionosphere variables has not yet been implemented; exiting.')
       return -1
 
    # These are the 8 cells that span the upper corner vertex on a regular grid
@@ -1556,15 +1557,15 @@ class VlsvReader(object):
        if self.__fsGridDecomposition is None:
          self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
          if self.__fsGridDecomposition is not None:
-            print("Found FsGrid decomposition from vlsv file: ", self.__fsGridDecomposition)
+            logger.info("Found FsGrid decomposition from vlsv file: ", self.__fsGridDecomposition)
          else:
-            print("Did not find FsGrid decomposition from vlsv file.")
+            logger.info("Did not find FsGrid decomposition from vlsv file.")
        
        # If decomposition is None even after reading, we need to calculate it:
        if self.__fsGridDecomposition is None:
-          print("Calculating fsGrid decomposition from the file")
+          logger.info("Calculating fsGrid decomposition from the file")
           self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
-          print("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
+          logger.info("Computed FsGrid decomposition to be: ", self.__fsGridDecomposition)
        else:
           # Decomposition is a list (or fail assertions below) - use it instead
           pass
@@ -1623,7 +1624,7 @@ class VlsvReader(object):
          try:
             centering = known_centerings[name.lower()]
          except KeyError:
-            print("A variable ("+name+") with unknown centering! Aborting.")
+            logger.info("A variable ("+name+") with unknown centering! Aborting.")
             return False
          
       #vector variable
@@ -1638,10 +1639,10 @@ class VlsvReader(object):
             celldata[:,:,:,1] = (fgdata[:,:,:,1] + np.roll(fgdata[:,:,:,1],-1, 0) + np.roll(fgdata[:,:,:,1],-1, 2) + np.roll(fgdata[:,:,:,1],-1, (0,2)))/4.0
             celldata[:,:,:,2] = (fgdata[:,:,:,2] + np.roll(fgdata[:,:,:,2],-1, 0) + np.roll(fgdata[:,:,:,2],-1, 1) + np.roll(fgdata[:,:,:,2],-1, (0,1)))/4.0
          else:
-            print("Unknown centering ('" +centering+ "')! Aborting.")
+            logger.info("Unknown centering ('" +centering+ "')! Aborting.")
             return False
       else:
-         print("A scalar variable! I don't know what to do with this! Aborting.")
+         logger.info("A scalar variable! I don't know what to do with this! Aborting.")
          return False
       return celldata
 
@@ -1720,14 +1721,14 @@ class VlsvReader(object):
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
          if not cellids == -1:
-            print("Warning, CellID requests not supported for FSgrid variables! Aborting.")
+            logger.info("Warning, CellID requests not supported for FSgrid variables! Aborting.")
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
 
       #if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
       if name.lower()[0:3]=="ig_":
          if not cellids == -1:
-            print("Warning, CellID requests not supported for ionosphere variables! Aborting.")
+            logger.info("Warning, CellID requests not supported for ionosphere variables! Aborting.")
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
       
@@ -1859,7 +1860,7 @@ class VlsvReader(object):
          np.add(AMR_count, 1, out = AMR_count, where = mask)
          iters = iters+1
          if(iters > self.get_max_refinement_level()+1):
-            print("Can't have that large refinements. Something broke.")
+            logger.info("Can't have that large refinements. Something broke.")
             break
 
       if stack:
@@ -2163,7 +2164,7 @@ class VlsvReader(object):
       N_in = coords_in.shape[0]; N_w_vdf = len(cid_w_vdf)
 
       if N_w_vdf==0:
-         print("Error: No velocity distributions found!")
+         logger.info("Error: No velocity distributions found!")
          sys.exit()
 
       # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells, 
@@ -2187,7 +2188,7 @@ class VlsvReader(object):
       except MemoryError:
       '''
       # Loop approach:
-      print('Not enough memory to broadcast arrays! Using a loop instead...')
+      logger.info('Not enough memory to broadcast arrays! Using a loop instead...')
       ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
       for ind in ind_emptycell:
          this_coord = coords_in[ind, :]
@@ -3002,13 +3003,13 @@ class VlsvReader(object):
       random_index = 4 # Just some index
       random_velocity_cell_id = velocity_cell_ids[random_index]
 
-      print "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + ": " + str(velocity_cell_map[random_velocity_cell_id])
+      logger.info "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + ": " + str(velocity_cell_map[random_velocity_cell_id])
 
       # Getting the corresponding coordinates might be more useful than having the velocity cell id so:
       velocity_cell_coordinates = vlsvReader.get_velocity_cell_coordinates(velocity_cell_ids) # Get velocity cell coordinates corresponding to each velocity cell id
 
       random_velocity_cell_coordinates = velocity_cell_ids[random_index]
-      print "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + "and coordinates " + str(random_velocity_cell_coordinates) + ": " + str(velocity_cell_map[random_velocity_cell_id])
+      logger.info "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + "and coordinates " + str(random_velocity_cell_coordinates) + ": " + str(velocity_cell_map[random_velocity_cell_id])
 
       .. seealso:: :func:`read_blocks`
       '''
@@ -3189,7 +3190,7 @@ class VlsvReader(object):
       ri = np.floor(r0/dx).astype(int)
       sz = self.get_fsgrid_mesh_size()
       if (ri < 0).any() or (ri>sz-1).any():
-         print("get_fsgrid_indices: Resulting index out of bounds, returning None")
+         logger.info("get_fsgrid_indices: Resulting index out of bounds, returning None")
          return None
       return tuple(ri)
 
@@ -3249,7 +3250,7 @@ class VlsvReader(object):
          domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
          return [domainsizes[0], domainsizes[2]]
       except:
-         print("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
+         logger.info("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
          return [0,0]
 
    def get_ionosphere_node_coords(self):
@@ -3261,7 +3262,7 @@ class VlsvReader(object):
          coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
          return coords
       except:
-         print("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
+         logger.info("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
          return []
 
    def get_ionosphere_latlon_coords(self):
@@ -3290,7 +3291,7 @@ class VlsvReader(object):
          # - Corner index 3
          return meshdata[:,2:5]
       except:
-         print("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
+         logger.info("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
          return []
 
    def get_ionosphere_mesh_area(self):
@@ -3403,10 +3404,10 @@ class VlsvReader(object):
              # Open a list of vlsv files
              for i in range(1000):
                 vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
-             # Go through vlsv readers and print info:
+             # Go through vlsv readers and logger.info info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen
-                print vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
+                logger.info vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
                 # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
                 vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
 
@@ -3428,10 +3429,10 @@ class VlsvReader(object):
              # Open a list of vlsv files
              for i in range(1000):
                 vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
-             # Go through vlsv readers and print info:
+             # Go through vlsv readers and logger.info info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen
-                print vlsvReader.read_variable("B", cellids=2) # Stores info into a private variable
+                logger.info vlsvReader.read_variable("B", cellids=2) # Stores info into a private variable
                 # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
                 vlsvReader.optimize_clear_fileindex_for_cellid()
 

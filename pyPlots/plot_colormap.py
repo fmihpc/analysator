@@ -23,6 +23,7 @@
 
 import matplotlib
 import pytools as pt
+from loguru import logger
 import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
@@ -119,7 +120,7 @@ def plot_colormap(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
     :kword Earth:       If set, draws an earth at (0,0)
-    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logger.info). 
 
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
@@ -259,7 +260,7 @@ def plot_colormap(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        logger.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
     # Flux function files
@@ -275,11 +276,11 @@ def plot_colormap(filename=None,
                 if not os.path.exists(fluxfile):
                     fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
             else:
-                print("Requested flux lines via directory but working from vlsv object, cannot find step.")
+                logger.info("Requested flux lines via directory but working from vlsv object, cannot find step.")
 
     if fluxfile:
         if not os.path.exists(fluxfile):
-            print("Error locating flux function file!")
+            logger.info("Error locating flux function file!")
             fluxfile=None
                 
     if operator is None:
@@ -341,7 +342,7 @@ def plot_colormap(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator!='magnitude' and not operator.isdigit():
-            print("Unknown operator "+operator)
+            logger.info("Unknown operator "+operator)
             operator=None
         if operator in 'xyz':
             # For components, always use linear scale, unless symlog is set
@@ -377,8 +378,8 @@ def plot_colormap(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-             print("attempted to perform diff with one of the following active:")
-             print("expression or external or pass_vars or pass_times or pass_full. Exiting.")
+             logger.info("attempted to perform diff with one of the following active:")
+             logger.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
              return -1
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
@@ -409,16 +410,16 @@ def plot_colormap(filename=None,
                 pass
 
         if not os.access(outputdir, os.W_OK):
-            print("No write access for directory "+outputdir+"! Exiting.")
+            logger.info("No write access for directory "+outputdir+"! Exiting.")
             return
 
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                print("Found existing file "+outputfile+". Skipping.")
+                logger.info("Found existing file "+outputfile+". Skipping.")
                 return
             else:
-                print("Found existing file "+outputfile+" of size zero. Re-rendering.")
+                logger.info("Found existing file "+outputfile+" of size zero. Re-rendering.")
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -442,7 +443,7 @@ def plot_colormap(filename=None,
         sizes=[xsize,ysize]
         pt.plot.plot_helpers.PLANE = 'XY'
     if ysize!=1 and zsize!=1 and xsize!=1:
-        print("Mesh is not 2-D: Use plot_colormap3Dslice instead!")
+        logger.info("Mesh is not 2-D: Use plot_colormap3Dslice instead!")
         return
 
     # Select window to draw
@@ -497,7 +498,7 @@ def plot_colormap(filename=None,
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
         # Verify data shape
         if np.ndim(datamap)==0:
-            print("Error, read only single value from vlsv file!",datamap.shape)
+            logger.info("Error, read only single value from vlsv file!",datamap.shape)
             return -1
         # fsgrid reader returns array in correct shape but needs to be transposed
         if var.startswith('fg_'):
@@ -511,7 +512,7 @@ def plot_colormap(filename=None,
             elif np.ndim(datamap)==3:  # tensor variable
                 datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1],datamap.shape[2]])
             else:
-                print("Error in reshaping datamap!") 
+                logger.info("Error in reshaping datamap!") 
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring(expression.__name__.replace(r"_",r"\_")) +operatorstr))
@@ -587,7 +588,7 @@ def plot_colormap(filename=None,
             else:
                 pass_map = f.read_variable(mapval)
             if np.ndim(pass_map)==0:
-                print("Error, read only single value from vlsv file!",pass_map.shape)
+                logger.info("Error, read only single value from vlsv file!",pass_map.shape)
                 return -1
             # fsgrid reader returns array in correct shape.
             # For vlasov grid reader, reorder and reshape.
@@ -599,7 +600,7 @@ def plot_colormap(filename=None,
                 elif np.ndim(pass_map)==3:  # tensor variable
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                 else:
-                    print("Error in reshaping pass_map!")
+                    logger.info("Error in reshaping pass_map!")
             if np.ma.is_masked(maskgrid):
                 if np.ndim(pass_map)==2:
                     pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
@@ -611,21 +612,21 @@ def plot_colormap(filename=None,
                     pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                     pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                 else:
-                    print("Error in masking pass_maps!")
+                    logger.info("Error in masking pass_maps!")
             pass_maps[mapval] = pass_map # add to the dictionary
     else:
         # Or gather over a number of time steps
         # Note: pass_maps is now a list of dictionaries
         pass_maps = []
         if diff:
-            print("Comparing files "+filename+" and "+diff)
+            logger.info("Comparing files "+filename+" and "+diff)
         elif step is not None and filename:
             currstep = step
         else:
             if filename: # parse from filename
                 currstep = int(filename[-12:-5])
             else:
-                print("Error, cannot determine current step for time extent extraction!")
+                logger.info("Error, cannot determine current step for time extent extraction!")
                 return
         # define relative time step selection
         if np.ndim(pass_times)==0:
@@ -633,7 +634,7 @@ def plot_colormap(filename=None,
         elif np.ndim(pass_times)==1 and len(pass_times)==2:
             dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
         else:
-            print("Invalid value given to pass_times")
+            logger.info("Invalid value given to pass_times")
             return
         # Loop over requested times
         for ds in dsteps:
@@ -645,7 +646,7 @@ def plot_colormap(filename=None,
             else:
                 # Construct using known filename.
                 filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
-                print(filenamestep)
+                logger.info(filenamestep)
             fstep=pt.vlsvfile.VlsvReader(filenamestep)
             step_cellids = fstep.read_variable("CellID")
             # Append new dictionary as new timestep
@@ -660,7 +661,7 @@ def plot_colormap(filename=None,
                 else:
                     pass_map = fstep.read_variable(mapval)
                 if np.ndim(pass_map)==0:
-                    print("Error, read only single value from vlsv file!",pass_map.shape)
+                    logger.info("Error, read only single value from vlsv file!",pass_map.shape)
                     return -1
                 # fsgrid reader returns array in correct shape. 
                 # For vlasov grid reader, reorder and reshape.
@@ -672,7 +673,7 @@ def plot_colormap(filename=None,
                     elif np.ndim(pass_map)==3:  # tensor variable
                         pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                     else:
-                        print("Error in reshaping pass_map!") 
+                        logger.info("Error in reshaping pass_map!") 
                 if np.ma.is_masked(maskgrid):
                     if np.ndim(pass_map)==2:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
@@ -684,7 +685,7 @@ def plot_colormap(filename=None,
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     else:
-                        print("Error in masking pass_maps!") 
+                        logger.info("Error in masking pass_maps!") 
                 pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # colorbar title for diffs:
@@ -714,7 +715,7 @@ def plot_colormap(filename=None,
             if operator=='y': operator = '1'
             if operator=='z': operator = '2'
             if not operator.isdigit():
-                print("Error parsing operator for custom expression!")
+                logger.info("Error parsing operator for custom expression!")
                 return
             elif np.ndim(datamap)==3:
                 datamap = datamap[:,:,int(operator)]
@@ -723,23 +724,23 @@ def plot_colormap(filename=None,
     if np.ndim(datamap)==3: # vector
         if datamap.shape[2]!=3:
             # This may also catch 3D simulation fsgrid variables
-            print("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
+            logger.info("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
             return -1
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap)==4: # tensor
         if datamap.shape[2]!=3 or datamap.shape[3]!=3:
             # This may also catch 3D simulation fsgrid variables
-            print("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
+            logger.info("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
             return -1
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
     if np.ndim(datamap)>=5: # Too many dimensions
-        print("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+        logger.info("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
         return -1
     if np.ndim(datamap)!=2:
         # Array dimensions not as expected
-        print("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
+        logger.info("Error reading variable "+var+"! Found array of shape ",datamap.shape,". Exiting.")
         return -1
         
     # Scale final generated datamap if requested
@@ -808,7 +809,7 @@ def plot_colormap(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        print("Error, requested array is zero everywhere. Exiting.")
+        logger.info("Error, requested array is zero everywhere. Exiting.")
         return 0
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -844,7 +845,7 @@ def plot_colormap(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logger.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -992,7 +993,7 @@ def plot_colormap(filename=None,
             except:
                ff_b = f.read_variable("vg_b_vol", cellids=cid)
             if (ff_b.size!=3):
-               print("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
+               logger.info("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
 
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
@@ -1321,8 +1322,8 @@ def plot_colormap(filename=None,
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            print("Error with attempting to save figure.")
-        print(outputfile+"\n")
+            logger.info("Error with attempting to save figure.")
+        logger.info(outputfile+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen

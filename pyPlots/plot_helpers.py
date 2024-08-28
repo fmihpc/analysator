@@ -21,6 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+from loguru import logger
 import pytools as pt
 import numpy as np
 import sys
@@ -45,7 +46,7 @@ def inplane(inputarray):
     elif PLANE=='YZ':
         inputarray[:,:,0] = np.zeros(inputarray[:,:,0].shape)
     else:
-        print("Error defining plane!")
+        logger.info("Error defining plane!")
         return -1
     return inputarray
 
@@ -58,7 +59,7 @@ def inplanevec(inputarray):
     elif PLANE=='YZ':
         return inputarray[:,:,1:3]
     else:
-        print("Error defining plane!")
+        logger.info("Error defining plane!")
         return -1
 
 def numjacobian(inputarray):
@@ -78,7 +79,7 @@ def numjacobian(inputarray):
         jac[:,:,1,1], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
         jac[:,:,2,1], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
     else:
-        print("Error defining plane!")
+        logger.info("Error defining plane!")
         return -1
     # Output array is of format [nx,ny,3,3]
     #  :,:,component, derivativedirection
@@ -110,7 +111,7 @@ def numgradscalar(inputarray):
     elif PLANE=='YZ':
         grad[:,:,1],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
     else:
-        print("Error defining plane!")
+        logger.info("Error defining plane!")
         return -1
     # Output array is of format [nx,ny,3]
     return grad
@@ -277,7 +278,7 @@ def numcurllimited(inputarray):
         jac[:, :, 1, 1], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
         jac[:, :, 2, 1], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
     else:
-        print("Error defining plane!")
+        logger.info("Error defining plane!")
         return -1
     # Output array is of format [nx,ny,3,3]
     #  :,:,component, derivativedirection
@@ -297,7 +298,7 @@ def numvecdotdelvec(inputarray1, inputarray2):
     # (V1 dot Del)V2
     # Assumesinput arrays are of format [nx,ny,3]
     if inputarray1.shape!=inputarray2.shape:
-        print("Error: Input array shapes don't match!",inputarray1.shape,inputarray2.shape)
+        logger.info("Error: Input array shapes don't match!",inputarray1.shape,inputarray2.shape)
         return -1
     result = np.zeros(inputarray1.shape)
     jac = numjacobian(inputarray2)
@@ -503,10 +504,10 @@ def expr_Diff(pass_maps, requestvariables=False):
     map0=pass_maps[0][var]
     map1=pass_maps[1][var]
     if (map0.shape != map1.shape):
-        print("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
+        logger.info("Error with diff: incompatible map shapes! ",map0.shape,map1.shape)
         sys.exit(-1)
     if (map0.dtype in ['uint8','uint16','uint32','uint64']):
-        print("Diff: Converting from unsigned to signed integers")
+        logger.info("Diff: Converting from unsigned to signed integers")
         map0 = map0.astype('int64')
         map1 = map1.astype('int64')
     return (map0-map1) # use keyword absolute to get abs diff
@@ -781,7 +782,7 @@ def expr_Slippage(pass_maps, requestvariables=False):
         return ['E','B','V']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_Slippage expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_Slippage expected a single timestep, but got multiple. Exiting.")
         quit()
 
     expr_Slippage.__name__ = r"Slippage $[v_\mathrm{A}]$"
@@ -801,7 +802,7 @@ def expr_EcrossB(pass_maps, requestvariables=False):
         return ['E','B']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_EcrossB expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_EcrossB expected a single timestep, but got multiple. Exiting.")
         quit()
 
     E = pass_maps['E']
@@ -823,7 +824,7 @@ def expr_betatron(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        logger.info("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found. This should be 3, for a time derivative.
@@ -913,7 +914,7 @@ def expr_diamagnetic(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_diamagnetic expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        logger.info("expr_diamagnetic expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found. This should be 3, for a time derivative.
@@ -966,7 +967,7 @@ def expr_jc(pass_maps, requestvariables=False):
         return ['B','PParallel']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_jc expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_jc expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Pparallel = pass_maps['PParallel'].T #Pressure (scalar)
@@ -984,7 +985,7 @@ def expr_jg(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_jg expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_jg expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
@@ -1002,7 +1003,7 @@ def expr_jgyr(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_jgyr expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_jgyr expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
@@ -1032,7 +1033,7 @@ def expr_jring(pass_maps, requestvariables=False):
         return ['B','PParallel','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_jring expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_jring expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
@@ -1064,7 +1065,7 @@ def expr_jp(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_jp expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        logger.info("expr_jp expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found. This should be 3, for a time derivative.
@@ -1092,7 +1093,7 @@ def expr_jm(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_jm expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_jm expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
@@ -1111,7 +1112,7 @@ def expr_ja(pass_maps, requestvariables=False):
         return ['B','PTensorRotated']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_ja expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_ja expected a single timestep, but got multiple. Exiting.")
         quit()
 
     Ptensor = np.transpose(pass_maps['PTensorRotated'], (1,0,2,3))
@@ -1138,7 +1139,7 @@ def expr_dLstardt(pass_maps, requestvariables=False):
 
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        logger.info("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found. This should be 3, for a time derivative.
@@ -1225,7 +1226,7 @@ def expr_electronflow(pass_maps, requestvariables=False):
         return ['vg_b_vol','electron/vg_v','electron/vg_rho','proton/vg_v','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
         quit()
 
     unitcharge = 1.602177e-19
@@ -1242,13 +1243,13 @@ def expr_electronflow(pass_maps, requestvariables=False):
     reqjele = j - jprot
     reqjv = reqjele / erhomap[:,:,np.newaxis] / (-unitcharge)
 
-    print("mean jprot",np.mean(np.linalg.norm(jprot,axis=-1)),'mean jele',np.mean(np.linalg.norm(jele,axis=-1)))
-    print("min jprot",np.min(np.linalg.norm(jprot,axis=-1)),'min jele',np.min(np.linalg.norm(jele,axis=-1)))
-    print("max jprot",np.max(np.linalg.norm(jprot,axis=-1)),'max jele',np.max(np.linalg.norm(jele,axis=-1)))
+    logger.info("mean jprot",np.mean(np.linalg.norm(jprot,axis=-1)),'mean jele',np.mean(np.linalg.norm(jele,axis=-1)))
+    logger.info("min jprot",np.min(np.linalg.norm(jprot,axis=-1)),'min jele',np.min(np.linalg.norm(jele,axis=-1)))
+    logger.info("max jprot",np.max(np.linalg.norm(jprot,axis=-1)),'max jele',np.max(np.linalg.norm(jele,axis=-1)))
 
-    print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
-    print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
-    print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
 
     return np.swapaxes(reqjv, 0,1)
 
@@ -1260,7 +1261,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
         return ['vg_b_vol','electron/vg_v','electron/vg_rho','proton/vg_v','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
         quit()
 
     unitcharge = 1.602177e-19
@@ -1278,13 +1279,13 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
     reqjv = reqjele / erhomap[:,:,np.newaxis] / (-unitcharge)
 
     everror = evmap - reqjv
-    print("mean jprot",np.mean(np.linalg.norm(jprot,axis=-1)),'mean jele',np.mean(np.linalg.norm(jele,axis=-1)))
-    print("min jprot",np.min(np.linalg.norm(jprot,axis=-1)),'min jele',np.min(np.linalg.norm(jele,axis=-1)))
-    print("max jprot",np.max(np.linalg.norm(jprot,axis=-1)),'max jele',np.max(np.linalg.norm(jele,axis=-1)))
+    logger.info("mean jprot",np.mean(np.linalg.norm(jprot,axis=-1)),'mean jele',np.mean(np.linalg.norm(jele,axis=-1)))
+    logger.info("min jprot",np.min(np.linalg.norm(jprot,axis=-1)),'min jele',np.min(np.linalg.norm(jele,axis=-1)))
+    logger.info("max jprot",np.max(np.linalg.norm(jprot,axis=-1)),'max jele',np.max(np.linalg.norm(jele,axis=-1)))
 
-    print("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
-    print("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
-    print("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("mean reqjv",np.mean(np.linalg.norm(reqjv,axis=-1)),'mean reqjele',np.mean(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("min reqjv",np.min(np.linalg.norm(reqjv,axis=-1)),'min reqjele',np.min(np.linalg.norm(reqjele,axis=-1)))
+    logger.info("max reqjv",np.max(np.linalg.norm(reqjv,axis=-1)),'max reqjele',np.max(np.linalg.norm(reqjele,axis=-1)))
 
     return np.swapaxes(everror, 0,1)
 
@@ -1326,7 +1327,7 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     cavitons.fill_value = 0.
     cavitons[cavitons.mask == False] = 1.
 
-    print("cavitons",cavitons.sum())
+    logger.info("cavitons",cavitons.sum())
 
     # mask SHFAs
     SHFAs = np.ma.masked_greater_equal(B,level_B_caviton)
@@ -1334,7 +1335,7 @@ def cavitons(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     SHFAs.mask[beta < level_beta_SHFA_SW] = True
     SHFAs.fill_value = 0.
     SHFAs[SHFAs.mask == False] = 1.
-    print("SHFA",SHFAs.sum())
+    logger.info("SHFA",SHFAs.sum())
     # draw contours
     contour_shock = ax.contour(XmeshXY,YmeshXY,rho,[level_bow_shock],
                                linewidths=1.2, colors=color_BS,label='Bow shock')
@@ -1349,7 +1350,7 @@ def expr_numberdensitycheck(pass_maps, requestvariables=False):
         return ['electron/vg_rho','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
         quit()
 
     return pass_maps['electron/vg_rho']-pass_maps['proton/vg_rho']
@@ -1360,7 +1361,7 @@ def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronpressure_isothermal expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronpressure_isothermal expected a single timestep, but got multiple. Exiting.")
         quit()
 
     #rho_e = pass_maps['electron/rho'].T
@@ -1380,7 +1381,7 @@ def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
     upstream_x = nx-2
     upstream_y = ny//2
     T_0 = temp_p[upstream_x,upstream_y]
-    print("upstream temperature ",T_0)
+    logger.info("upstream temperature ",T_0)
     # E = - (T_0 * kb)/(n_e * e) * nabla dot n_e
     mult = - T_0 * kb / elementalcharge
     gradrho = numgradscalar(rho_p)
@@ -1399,7 +1400,7 @@ def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronpressure_polytropic expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronpressure_polytropic expected a single timestep, but got multiple. Exiting.")
         quit()
 
     #index (5/3 is adiabatic), 1 is isothermal
@@ -1426,7 +1427,7 @@ def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
     upstream_y = ny//2
     P_0 = pres_p[upstream_x,upstream_y]
     n_0 = rho_p[upstream_x,upstream_y]
-    print("upstream pressure ",P_0," upstream density ",n_0)
+    logger.info("upstream pressure ",P_0," upstream density ",n_0)
     # find the constant using upstream values
     const = P_0 * np.power(n_0, -index)
     # Now the electron pressure is const*n^index
@@ -1447,7 +1448,7 @@ def expr_electronpressure_ratio(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
         quit()
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
@@ -1464,7 +1465,7 @@ def expr_electronpressure_ratioHall(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
         quit()
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
@@ -1487,7 +1488,7 @@ def expr_electronpressure_check(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+        logger.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
         quit()
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
@@ -1506,7 +1507,7 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        print("expression expected a single timestep, but got multiple. Exiting.")
+        logger.info("expression expected a single timestep, but got multiple. Exiting.")
         quit()
 
     fg = np.ma.masked_invalid(pass_maps['fg_b_vol'])

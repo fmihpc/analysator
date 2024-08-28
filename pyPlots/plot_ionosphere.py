@@ -1,4 +1,5 @@
 import matplotlib
+from loguru import logger
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -123,7 +124,7 @@ def plot_ionosphere(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        logger.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
     if operator is None:
@@ -188,7 +189,7 @@ def plot_ionosphere(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
-            print("Unknown operator "+str(operator))
+            logger.info("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -236,16 +237,16 @@ def plot_ionosphere(filename=None,
             pass
 
     if axes is None and not os.access(outputdir, os.W_OK):
-        print(("No write access for directory "+outputdir+"! Exiting."))
+        logger.info(("No write access for directory "+outputdir+"! Exiting."))
         return
 
     # Check if target file already exists and overwriting is disabled
     if axes is None and (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            print(("Found existing file "+outputfile+". Skipping."))
+            logger.info(("Found existing file "+outputfile+". Skipping."))
             return
         else:
-            print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
+            logger.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure 
     if axes is None and str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -285,7 +286,7 @@ def plot_ionosphere(filename=None,
     vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
     values = datamap_info.data*vscale
     if np.ndim(values) == 0:
-        print("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
+        logger.info("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
         return -1
 
     # Add unit to colorbar title
@@ -337,7 +338,7 @@ def plot_ionosphere(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        print("Error, requested array is zero everywhere. Exiting.")
+        logger.info("Error, requested array is zero everywhere. Exiting.")
         return 0
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -372,7 +373,7 @@ def plot_ionosphere(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logger.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -625,11 +626,11 @@ def plot_ionosphere(filename=None,
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            print("Error attempting to save figure: ", sys.exc_info())
-        print(outputfile+"\n")
+            logger.info("Error attempting to save figure: ", sys.exc_info())
+        logger.info(outputfile+"\n")
         plt.close()
     elif draw is not None and axes is None:
         # Draw on-screen
         plt.draw()
         plt.show()
-        print('Draw complete!')
+        logger.info('Draw complete!')

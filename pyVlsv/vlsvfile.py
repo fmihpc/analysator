@@ -33,6 +33,7 @@
 
 '''
 
+from loguru import logger
 from vlsvreader import VlsvReader
 from vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
 from vlsvwriter import VlsvWriter

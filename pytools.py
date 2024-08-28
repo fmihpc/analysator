@@ -24,6 +24,7 @@
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
 import warnings
+from loguru import logger
 warnings.filterwarnings("once", category=DeprecationWarning)
 warnings.filterwarnings("once", category=PendingDeprecationWarning)
 warnings.filterwarnings("once", category=FutureWarning)
@@ -50,9 +51,9 @@ os.environ['MPLCONFIGDIR']=mpldir
 import numpy as np
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   print('Warning, according to loaded numpy and matplotlib versions, user appears to be')
-   print('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
-   print('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
+   logger.wanring('Warning, according to loaded numpy and matplotlib versions, user appears to be')
+   logger.wanring('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
+   logger.wanring('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
@@ -61,12 +62,12 @@ if not os.getenv('PTNOLATEX'):
    matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
    matplotlib.rcParams['mathtext.fontset'] = 'stix'
    matplotlib.rcParams['font.family'] = 'STIXGeneral'
-   print("Using LaTeX formatting")
+   logger.info("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
 # Set backends
 if matplotlib.get_backend()[:9] == 'module://':
-   print("Using backend "+matplotlib.get_backend())
+   logger.info("Using backend "+matplotlib.get_backend())
    backend_interactive = matplotlib.get_backend()
    backend_noninteractive = matplotlib.get_backend()
 elif not os.getenv('PTBACKEND'):
@@ -80,12 +81,12 @@ else:
 try:
    import calculations
 except ImportError as e:
-   print("Note: Did not import calculations module: ", e)
+   logger.info("Note: Did not import calculations module: ", e)
 
 try:
    import vlsvfile
 except ImportError as e:
-   print("Note: Did not import vlsvfile module: ", e)
+   logger.info("Note: Did not import vlsvfile module: ", e)
 
 import os
 import matplotlib.pyplot as plt
@@ -95,29 +96,29 @@ if os.getenv('PTNONINTERACTIVE') != None:
    try:
       plt.switch_backend(backend_noninteractive)
    except:
-      print("Note: Unable to switch to "+backend_noninteractive+" backend")
+      logger.info("Note: Unable to switch to "+backend_noninteractive+" backend")
 else:
    # Interactive plotting mode
    plt.ion()
    try:
       plt.switch_backend(backend_interactive)
    except:
-      print("Note: Unable to switch to "+backend_interactive+" backend")
+      logger.info("Note: Unable to switch to "+backend_interactive+" backend")
 
    #Only attempt loading MayaVi2 if requested
    if os.getenv('PTMAYAVI2') != None:
       try:
          import grid
       except ImportError as e:
-         print("Note: Did not import (outdated MayaVi2) grid module: ", e)
+         logger.info("Note: Did not import (outdated MayaVi2) grid module: ", e)
 
 try:
    import plot
 except ImportError as e:
-   print("Note: Did not import plot module: ", e)
+   logger.info("Note: Did not import plot module: ", e)
 
 try:
    import miscellaneous
 except ImportError as e:
-   print("Note: Did not import miscellaneous: ", e)
+   logger.info("Note: Did not import miscellaneous: ", e)
 

@@ -11,7 +11,7 @@
 #
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-
+from loguru import logger
 from matplotlib import __version__ as mpl_version
 from matplotlib.colors import LinearSegmentedColormap
 from packaging.version import Version
