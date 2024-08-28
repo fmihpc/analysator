@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from loguru import logger
+import logging
 import matplotlib
 import warnings
 import pytools as pt
@@ -188,12 +188,12 @@ def plot_vdfdiff(filename1=None, filename2=None,
     if filename1 is not None:
         vlsvReader1=pt.vlsvfile.VlsvReader(filename1)
     else:
-        logger.info("Error, needs a .vlsv file name")
+        logging.info("Error, needs a .vlsv file name")
         return
     if filename2 is not None:
         vlsvReader2=pt.vlsvfile.VlsvReader(filename2)
     else:
-        logger.info("Error, needs a .vlsv file name")
+        logging.info("Error, needs a .vlsv file name")
         return
 
     if colormap is None:
@@ -222,11 +222,11 @@ def plot_vdfdiff(filename1=None, filename2=None,
         plot_title = title
 
     if reducer == "average":
-        logger.info("V-space reduction via averages")
+        logging.info("V-space reduction via averages")
         warnings.warn('Average-reduction is kept for backward-compatibility for now; consider using "integrate"!')
         pass
     elif reducer == "integrate":
-        logger.info("V-space reduction via integration")
+        logging.info("V-space reduction via integration")
         pass
     else:
         raise ValueError("Unknown reducer ("+reducer+'), accepted values are "average", "integrate"')
@@ -289,7 +289,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            logger.info("No write access for directory "+outputdir2+"! Exiting.")
+            logging.info("No write access for directory "+outputdir2+"! Exiting.")
             return
 
 
@@ -300,13 +300,13 @@ def plot_vdfdiff(filename1=None, filename2=None,
        if not vlsvReader1.check_population(pop):
            if vlsvReader1.check_population("avgs"):
                pop="avgs"
-               #logger.info("Auto-switched to population avgs")
+               #logging.info("Auto-switched to population avgs")
            else:
-               logger.info("Unable to detect population "+pop+" in .vlsv file!")
+               logging.info("Unable to detect population "+pop+" in .vlsv file!")
                sys.exit()
     else:
         if not vlsvReader1.check_population(pop):
-            logger.info("Unable to detect population "+pop+" in .vlsv file!")
+            logging.info("Unable to detect population "+pop+" in .vlsv file!")
             sys.exit()
 
     #read in mesh size and cells in ordinary space
@@ -356,7 +356,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 plt.switch_backend(pt.backend_noninteractive)
 
     if (cellids is None and coordinates is None and coordre is None):
-        logger.info("Error: must provide either cell id's or coordinates")
+        logging.info("Error: must provide either cell id's or coordinates")
         return -1
 
     if coordre is not None:
@@ -374,10 +374,10 @@ def plot_vdfdiff(filename1=None, filename2=None,
         yReq = np.asarray(coordinates).T[1]
         zReq = np.asarray(coordinates).T[2]
         if xReq.shape == yReq.shape == zReq.shape:
-            #logger.info('Number of points: ' + str(xReq.shape[0]))
+            #logging.info('Number of points: ' + str(xReq.shape[0]))
             pass
         else:
-            logger.info('ERROR: bad coordinate variables given')
+            logging.info('ERROR: bad coordinate variables given')
             sys.exit()
         cidsTemp = []
         for ii in range(xReq.shape[0]):
@@ -386,26 +386,26 @@ def plot_vdfdiff(filename1=None, filename2=None,
             if cidRequest > 0:
                 cidNearestVspace = vlsvReader1.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)
             else:
-                logger.info('ERROR: cell not found')
+                logging.info('ERROR: cell not found')
                 sys.exit()
             if (cidNearestVspace <= 0):
-                logger.info('ERROR: cell with vspace not found')
+                logging.info('ERROR: cell with vspace not found')
                 sys.exit()
             xCid,yCid,zCid = vlsvReader1.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader1.get_cell_coordinates(cidNearestVspace)
-            logger.info('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
-            logger.info('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
-            logger.info('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
-            logger.info('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
+            logging.info('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
+            logging.info('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
+            logging.info('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
+            logging.info('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
             cidsTemp.append(cidNearestVspace)
         cellids = np.unique(cidsTemp).tolist()
-        logger.info('Unique cells with vspace found: ' + str(len(cidsTemp)))
+        logging.info('Unique cells with vspace found: ' + str(len(cidsTemp)))
     #else:
-    #    logger.info('Using given cell ids and assuming vspace is stored in them')
+    #    logging.info('Using given cell ids and assuming vspace is stored in them')
 
     # Ensure that we now have a list of cellids instead of just a single cellid
     if type(cellids) is not list:
-        logger.info("Converting given cellid to a single-element list of cellids.")
+        logging.info("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
     if type(cellids2) is not list:
         cellids2 = [cellids2]
@@ -414,10 +414,10 @@ def plot_vdfdiff(filename1=None, filename2=None,
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader1, cellid):
-                logger.info("Error, cellid "+str(cellid)+" in input file 1 does not contain a VDF!")
+                logging.info("Error, cellid "+str(cellid)+" in input file 1 does not contain a VDF!")
                 return
             if not verifyCellWithVspace(vlsvReader2, cellid):
-                logger.info("Error, cellid "+str(cellid)+" in input file 2 does not contain a VDF!")
+                logging.info("Error, cellid "+str(cellid)+" in input file 2 does not contain a VDF!")
                 return
 
 
@@ -426,22 +426,22 @@ def plot_vdfdiff(filename1=None, filename2=None,
         # Just handle the first cellid.
         if len(cellids) > 1:
             cellids = [cellids[0]]
-            logger.info("User requested on-screen display, only plotting first requested cellid!")
+            logging.info("User requested on-screen display, only plotting first requested cellid!")
 
     if cellids2 is None or cellids2[0] is None:
         cellids2 = cellids
 
-    logger.info("\n")
+    logging.info("\n")
     for cellid,cellid2 in list(map(list,zip(*(cellids,cellids2)))):
-      #   logger.info(cellid,cellid2, cellids, cellids2)
+      #   logging.info(cellid,cellid2, cellids, cellids2)
         # Initialise some values
         fminuse=None
         fmaxuse=None
 
         x,y,z = vlsvReader1.get_cell_coordinates(cellid)
-        logger.info('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
+        logging.info('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
         x,y,z = vlsvReader2.get_cell_coordinates(cellid2)
-        logger.info('cellid2 ' + str(cellid2) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
+        logging.info('cellid2 ' + str(cellid2) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
@@ -467,7 +467,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             Vbulk = vlsvReader1.read_variable('V',cellid)
             Vbulk2 = vlsvReader2.read_variable('V',cellid2)
         if Vbulk is None:
-            logger.info("Error in finding plasma bulk velocity!")
+            logging.info("Error in finding plasma bulk velocity!")
             sys.exit()
 
         # If necessary, find magnetic field
@@ -496,7 +496,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                     PERBB = vlsvReader1.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    logger.info("Error finding B vector direction!")
+                    logging.info("Error finding B vector direction!")
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -529,7 +529,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pltystr=r"$v_y$ "+velUnitStr
                 normvect=[0,0,1] # used just for cell size normalisation
             else:
-                logger.info("Problem finding default slice direction")
+                logging.info("Problem finding default slice direction")
                 yz=1
                 slicetype="yz"
                 pltxstr=r"$v_y$ "+velUnitStr
@@ -544,16 +544,16 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pltxstr=r"$v_1$ "+velUnitStr
                 pltystr=r"$v_2$ "+velUnitStr
             else:
-                logger.info("Error parsing slice normal vector!")
+                logging.info("Error parsing slice normal vector!")
                 sys.exit()
             if normalx is not None:
                 if len(normalx)==3:
                     normvectX=normalx
                     if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
-                        logger.info("Error, normalx dot normal is not zero!")
+                        logging.info("Error, normalx dot normal is not zero!")
                         sys.exit()
                 else:
-                    logger.info("Error parsing slice normalx vector!")
+                    logging.info("Error parsing slice normalx vector!")
                     sys.exit()
         elif xy is not None:
             slicetype="xy"
@@ -582,7 +582,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             # Ensure bulkV has some value
             if np.linalg.norm(Vbulk) < 1e-10:
                 Vbulk = [-1,0,0]
-                logger.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
+                logging.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
@@ -617,10 +617,10 @@ def plot_vdfdiff(filename1=None, filename2=None,
             # Check if target file already exists and overwriting is disabled
             if (nooverwrite is not None and os.path.exists(savefigname)):
                 if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    logger.info("Found existing file "+savefigname+". Skipping.")
+                    logging.info("Found existing file "+savefigname+". Skipping.")
                     return
                 else:
-                    logger.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
+                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -636,14 +636,14 @@ def plot_vdfdiff(filename1=None, filename2=None,
             center2 = np.zeros((3,))
         elif cbulk is not None or type(center) is str and center=='bulk':
             center=None # Finds the bulk velocity and places it in the center vector
-            logger.info("Transforming to plasma frame")
+            logging.info("Transforming to plasma frame")
             if type(cbulk) is str:
                 if vlsvReader1.check_variable(cbulk):
                     center = vlsvReader1.read_variable(cbulk,cellid)
-                    logger.info("Found bulk frame from variable "+cbulk)
+                    logging.info("Found bulk frame from variable "+cbulk)
                 if vlsvReader2.check_variable(cbulk):
                     center2 = vlsvReader2.read_variable(cbulk,cellid2)
-                    logger.info("Found bulk frame from variable "+cbulk)
+                    logging.info("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
                 center2 = Vbulk2
@@ -699,7 +699,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
         # Check that data is ok and not empty
         if checkOk == False or checkOk2 == False:
-            logger.info('ERROR: error from velocity space reducer. No velocity cells?')
+            logging.info('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # Perform swap of coordinate axes, if requested
@@ -740,7 +740,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             fminuse = -fextreme
             fmaxuse = fextreme
 
-        logger.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
+        logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
         norm = Normalize(vmin=fminuse,vmax=fmaxuse)
 
         ticks = LinearLocator()
@@ -1027,8 +1027,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
             except:
-                logger.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            logger.info(savefigname+"\n")
+                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            logging.info(savefigname+"\n")
         elif axes is None:
             # Draw on-screen
             plt.draw()

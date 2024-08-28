@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-from loguru import logger
+import logging
 import struct
 import xml.etree.ElementTree as ET
 import ast
@@ -86,10 +86,10 @@ class VlsvParticles(object):
       ''' Print out a description of the content of the file. Useful
          for interactive usage
       '''
-      logger.info("tag = MESH")
+      logging.info("tag = MESH")
       for child in self.__xml_root:
          if child.tag == "MESH" and "name" in child.attrib:
-            logger.info("   ", child.attrib["name"])
+            logging.info("   ", child.attrib["name"])
 
    def read_particles_all(self):
       ''' Read particle pusher data from the open vlsv file.

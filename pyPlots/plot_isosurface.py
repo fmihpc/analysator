@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-from loguru import logger
+import logging
 import matplotlib
 import pytools as pt
 import numpy as np
@@ -106,7 +106,7 @@ def plot_isosurface(filename=None,
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2.
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner.
-    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logger.info). 
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logging.info). 
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kword transparent: Set to False in order to make the surface opaque
     :kword scale:       Scale text size (default=1.0)
@@ -145,7 +145,7 @@ def plot_isosurface(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     else:
-        logger.info("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
                 
     # Scientific notation for colorbar ticks?
@@ -172,12 +172,12 @@ def plot_isosurface(filename=None,
     if timeval==None:
         timeval=f.read_parameter("t")
     if timeval==None:
-        logger.info("Unknown time format encountered")
+        logging.info("Unknown time format encountered")
 
     # Plot title with time
     if title==None:        
         if timeval == None:    
-            logger.info("Unknown time format encountered")
+            logging.info("Unknown time format encountered")
             plot_title = ''
         else:
             #plot_title = "t="+str(int(timeval))+' s'
@@ -203,7 +203,7 @@ def plot_isosurface(filename=None,
     color_opstr=''
     if color_op!=None:
         if color_op!='x' and color_op!='y' and color_op!='z':
-            logger.info("Unknown operator "+color_op+", defaulting to None/magnitude for a vector.")
+            logging.info("Unknown operator "+color_op+", defaulting to None/magnitude for a vector.")
             color_op=None            
         else:
             # For components, always use linear scale, unless symlog is set
@@ -213,7 +213,7 @@ def plot_isosurface(filename=None,
     # Verify validity of operator
     if surf_op!=None:
         if surf_op!='x' and surf_op!='y' and surf_op!='z':
-            logger.info("Unknown operator "+surf_op)
+            logging.info("Unknown operator "+surf_op)
             surf_op=None            
         else:
             surf_opstr='_'+surf_op
@@ -232,7 +232,7 @@ def plot_isosurface(filename=None,
         if os.stat(savefigname).st_size > 0:
             return
         else:
-            logger.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
+            logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -256,13 +256,13 @@ def plot_isosurface(filename=None,
         pt.plot.plot_helpers.CELLSIZE = cellsizefg
     except:
         if xsize!=1 and ysize!=1 and zsize!=1:
-            logger.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            logging.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
             [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
             [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logger.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
             return -1
 
     # sort the cellid and the datamap list
@@ -278,7 +278,7 @@ def plot_isosurface(filename=None,
 
 
     if (xsize==1) or (ysize==1) or (zsize==1):
-        logger.info("Error: isosurface plotting requires 3D spatial domain!")
+        logging.info("Error: isosurface plotting requires 3D spatial domain!")
         return
 
     simext=[xmin,xmax,ymin,ymax,zmin,zmax]
@@ -348,7 +348,7 @@ def plot_isosurface(filename=None,
 
     # Verify data shape
     if np.ndim(surf_datamap)==0:
-        logger.info("Error, read only single surface variable value from vlsv file!",surf_datamap.shape)
+        logging.info("Error, read only single surface variable value from vlsv file!",surf_datamap.shape)
         return -1
     
 
@@ -370,7 +370,7 @@ def plot_isosurface(filename=None,
     elif np.ndim(surf_datamap)==3:
         surf_data_in_box = ids3d.idmesh3d2(ids, surf_datamap, reflevel, xsize, ysize, zsize, (surf_datamap.shape[1],surf_datamap.shape[2]))
     else:
-        logger.info("Dimension error in constructing 2D AMR slice!")
+        logging.info("Dimension error in constructing 2D AMR slice!")
         return -1
 
     # Remove empty rows, columns and tubes
@@ -414,7 +414,7 @@ def plot_isosurface(filename=None,
 
         counter+=1
         if counter > 50:    # Failsafe
-            logger.info("Error with boundaries! Exiting.")
+            logging.info("Error with boundaries! Exiting.")
             return -1
         
         if np.all(zero_counts==0):
@@ -423,7 +423,7 @@ def plot_isosurface(filename=None,
 
     if surf_level==None:
         surf_level = 0.5*(np.amin(cropped_surf_data)+np.amax(cropped_surf_data))
-    logger.info("Minimum found surface value "+str(np.amin(cropped_surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(cropped_surf_data)))
+    logging.info("Minimum found surface value "+str(np.amin(cropped_surf_data))+" surface level "+str(surf_level)+" max "+str(np.amax(cropped_surf_data)))
 
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if draw is not None:
@@ -458,7 +458,7 @@ def plot_isosurface(filename=None,
     # Next find color variable values at vertices
     if color_var != None:
         nverts = len(verts[:,0])
-        logger.info("Extracting color values for "+str(nverts)+" vertices and "+str(len(faces[:,0]))+" faces.")
+        logging.info("Extracting color values for "+str(nverts)+" vertices and "+str(len(faces[:,0]))+" faces.")
         all_coords = np.empty((nverts, 3))
         for i in np.arange(nverts):            
             # # due to mesh generation, some coordinates may be outside simulation domain
@@ -501,7 +501,7 @@ def plot_isosurface(filename=None,
 
     if color_var==None:
         # dummy norm
-        logger.info("No surface color given, using dummy setup")
+        logging.info("No surface color given, using dummy setup")
         norm = BoundaryNorm([0,1], ncolors=cmapuse.N, clip=True)
         vminuse=0
         vmaxuse=1
@@ -520,7 +520,7 @@ def plot_isosurface(filename=None,
 
         # If both values are zero, we have an empty array
         if vmaxuse==vminuse==0:
-            logger.info("Error, requested array is zero everywhere. Exiting.")
+            logging.info("Error, requested array is zero everywhere. Exiting.")
             return 0            
 
         # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -555,7 +555,7 @@ def plot_isosurface(filename=None,
             if symlog is not None:
                 if Version(matplotlib.__version__) < Version("3.2.0"):
                     norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                    logger.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                    logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                     #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
                 else:
                     norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -576,7 +576,7 @@ def plot_isosurface(filename=None,
             norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
             ticks = np.linspace(vminuse,vmaxuse,num=lin)            
 
-        logger.info("Selected color range: "+str(vminuse)+" to "+str(vmaxuse))
+        logging.info("Selected color range: "+str(vminuse)+" to "+str(vmaxuse))
 
     # Create 300 dpi image of suitable size
     fig = plt.figure(figsize=[4.5,4.5],dpi=300)
@@ -776,14 +776,14 @@ def plot_isosurface(filename=None,
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        logger.info("Error:", sys.exc_info())
-                        logger.info("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
-                        logger.info("Usually removing the title should work, but this time even that failed.")                        
+                        logging.info("Error:", sys.exc_info())
+                        logging.info("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
+                        logging.info("Usually removing the title should work, but this time even that failed.")                        
                         savechange = -1
         if savechange>0:
-            logger.info("Due to rendering error, replaced image title with "+plot_title)
+            logging.info("Due to rendering error, replaced image title with "+plot_title)
         if savechange>=0:
-            logger.info(savefigname+"\n")
+            logging.info(savefigname+"\n")
     else:
         plt.draw()
         plt.show()
@@ -868,7 +868,7 @@ def plot_neutral_sheet(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
     :kword Earth:       If set, draws an earth at (0,0)
-    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logger.info). 
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logging.info). 
 
 
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)
@@ -1010,7 +1010,7 @@ def plot_neutral_sheet(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        logger.info("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
     
     if operator is None:
@@ -1071,7 +1071,7 @@ def plot_neutral_sheet(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
-            logger.info("Unknown operator "+str(operator))
+            logging.info("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -1105,8 +1105,8 @@ def plot_neutral_sheet(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-            logger.info("attempted to perform diff with one of the following active:")
-            logger.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
+            logging.info("attempted to perform diff with one of the following active:")
+            logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
             return -1
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
@@ -1137,16 +1137,16 @@ def plot_neutral_sheet(filename=None,
                 pass
 
         if not os.access(outputdir, os.W_OK):
-            logger.info(("No write access for directory "+outputdir+"! Exiting."))
+            logging.info(("No write access for directory "+outputdir+"! Exiting."))
             return
 
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logger.info(("Found existing file "+outputfile+". Skipping."))
+                logging.info(("Found existing file "+outputfile+". Skipping."))
                 return
             else:
-                logger.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
+                logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -1170,13 +1170,13 @@ def plot_neutral_sheet(filename=None,
         pt.plot.plot_helpers.CELLSIZE = cellsizefg
     except:
         if xsize!=1 and ysize!=1 and zsize!=1:
-            logger.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            logging.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
             [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
             [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logger.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
             return -1
 
     # sort the cellid and the datamap list
@@ -1195,7 +1195,7 @@ def plot_neutral_sheet(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logger.info("FSgrid and vlasov grid disagreement!")
+        logging.info("FSgrid and vlasov grid disagreement!")
         return -1
     
     # Plotting grid in the XY plane
@@ -1253,7 +1253,7 @@ def plot_neutral_sheet(filename=None,
     elif f.check_variable("rho"): #old non-AMR data, can still be 3D
         rhomap = f.read_variable("rho")
     else:
-        logger.info("error!")
+        logging.info("error!")
         quit
               
     rhomap = rhomap[indexids] # sort
@@ -1334,7 +1334,7 @@ def plot_neutral_sheet(filename=None,
 
         # Verify data shape
         if np.ndim(datamap)==0:
-            logger.info("Error, read only single value from vlsv file!",datamap.shape)
+            logging.info("Error, read only single value from vlsv file!",datamap.shape)
             return -1
         elif np.ndim(datamap)==3: # Vector variable
             datamap = np.linalg.norm(datamap, axis=-1)
@@ -1401,10 +1401,10 @@ def plot_neutral_sheet(filename=None,
                     pass_map = np.dstack(tuple(temporary_pass_map))
 
                 elif np.ndim(pass_map)==3:  # tensor variable
-                    logger.info("Tensor support has not been implemented yet! Aborting")
+                    logging.info("Tensor support has not been implemented yet! Aborting")
                     return -1
                 else:
-                    logger.info("Error in reshaping pass_maps!")
+                    logging.info("Error in reshaping pass_maps!")
 
 
                 pass_maps[mapval] = pass_map # add to the dictionary
@@ -1413,14 +1413,14 @@ def plot_neutral_sheet(filename=None,
             # Note: pass_maps is now a list of dictionaries
             pass_maps = []
             if diff:
-                logger.info("Comparing files "+filename+" and "+diff)
+                logging.info("Comparing files "+filename+" and "+diff)
             elif step is not None and filename:
                 currstep = step
             else:
                 if filename: # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
-                    logger.info("Error, cannot determine current step for time extent extraction!")
+                    logging.info("Error, cannot determine current step for time extent extraction!")
                     return
             # define relative time step selection
             if np.ndim(pass_times)==0:
@@ -1428,7 +1428,7 @@ def plot_neutral_sheet(filename=None,
             elif np.ndim(pass_times)==1 and len(pass_times)==2:
                 dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
             else:
-                logger.info("Invalid value given to pass_times")
+                logging.info("Invalid value given to pass_times")
                 return
             # Loop over requested times
             for ds in dsteps:
@@ -1440,7 +1440,7 @@ def plot_neutral_sheet(filename=None,
                 else:
                     # Construct using known filename.
                     filenamestep = filename[:-12]+str(currstep+ds).rjust(7,'0')+'.vlsv'
-                    logger.info(filenamestep)
+                    logging.info(filenamestep)
                 fstep=pt.vlsvfile.VlsvReader(filenamestep)
                 step_cellids = fstep.read_variable("CellID")
                 step_indexids = step_cellids.argsort()
@@ -1476,10 +1476,10 @@ def plot_neutral_sheet(filename=None,
                         pass_map = np.dstack(tuple(temporary_pass_map))
 
                     elif np.ndim(pass_map)==3:  # tensor variable
-                        logger.info("Tensor support has not been implemented yet! Aborting")
+                        logging.info("Tensor support has not been implemented yet! Aborting")
                         return -1
                     else:
-                        logger.info("Error in reshaping pass_maps!")
+                        logging.info("Error in reshaping pass_maps!")
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # colorbar title for diffs:
@@ -1513,7 +1513,7 @@ def plot_neutral_sheet(filename=None,
             if operator=='z': 
                 operator = '2'
             if not operator.isdigit():
-                logger.info("Error parsing operator for custom expression!")
+                logging.info("Error parsing operator for custom expression!")
                 return
             elif np.ndim(datamap)==3:
                 datamap = datamap[:,:,int(operator)]
@@ -1521,22 +1521,22 @@ def plot_neutral_sheet(filename=None,
     # Now, if map is a vector or tensor, reduce it down
     if np.ndim(datamap)==3: # vector
         if datamap.shape[2]!=3:
-            logger.info("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
+            logging.info("Error, expected array of 3-element vectors, found array of shape ",datamap.shape)
             return -1
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap)==4: # tensor
         if datamap.shape[2]!=3 or datamap.shape[3]!=3:
             # This may also catch 3D simulation fsgrid variables
-            logger.info("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
+            logging.info("Error, expected array of 3x3 tensors, found array of shape ",datamap.shape)
             return -1
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
     if np.ndim(datamap)>=5: # Too many dimensions
-        logger.info("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+        logging.info("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
         return -1
     if np.ndim(datamap)!=2: # Too many dimensions
-        logger.info("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
+        logging.info("Error, too many dimensions in datamap, found array of shape ",datamap.shape)
         return -1
 
     # Scale final generated datamap if requested
@@ -1581,7 +1581,7 @@ def plot_neutral_sheet(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logger.info("Error, requested array is zero everywhere. Exiting.")
+        logging.info("Error, requested array is zero everywhere. Exiting.")
         return 0
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -1616,7 +1616,7 @@ def plot_neutral_sheet(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logger.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -1744,7 +1744,7 @@ def plot_neutral_sheet(filename=None,
 
 
     if streamlines:
-        logger.info("Streamline support not implemented yet! Aborting")
+        logging.info("Streamline support not implemented yet! Aborting")
         return -1       
         
 
@@ -2002,8 +2002,8 @@ def plot_neutral_sheet(filename=None,
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            logger.info("Error with attempting to save figure.")
-        logger.info(outputfile+"\n")
+            logging.info("Error with attempting to save figure.")
+        logging.info(outputfile+"\n")
     elif not axes:
         # Draw on-screen
         plt.draw()
@@ -2032,13 +2032,13 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
         pt.plot.plot_helpers.CELLSIZE = cellsizefg
     except:
         if xsize!=1 and ysize!=1 and zsize!=1:
-            logger.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
+            logging.info("Did not find fsgrid data, but found 3D DCCRG mesh. Attempting to adapt.")
             [xsizefg, ysizefg, zsizefg] = [xsize * 2**f.get_max_refinement_level(), ysize * 2**f.get_max_refinement_level(), zsize * 2**f.get_max_refinement_level()]
             [xminfg, yminfg, zminfg, xmaxfg, ymaxfg, zmaxfg] = [xmin, ymin, zmin, xmax, ymax, zmax]
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logger.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
             return -1
 
     # Read Bx data
@@ -2048,7 +2048,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
     # Verify data shape
     if np.ndim(sheet_datamap)==0:
-        logger.info("Error, read only single Bx value from vlsv file!",sheet_datamap.shape)
+        logging.info("Error, read only single Bx value from vlsv file!",sheet_datamap.shape)
         return -1
     
 
@@ -2066,7 +2066,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
     if np.ndim(sheet_datamap)==1:
         sheet_data_in_box = ids3d.idmesh3d2(ids, sheet_datamap, reflevel, xsize, ysize, zsize,  None)
     else:
-        logger.info("Dimension error in constructing sheet!")
+        logging.info("Dimension error in constructing sheet!")
         return -1
 
     # Remove empty rows, columns and tubes
@@ -2110,7 +2110,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
         counter+=1
         if counter > 50:    # Failsafe
-            logger.info("Error reading sheet variable vg_b_vol! Exiting.")
+            logging.info("Error reading sheet variable vg_b_vol! Exiting.")
             return -1
         
         if np.all(zero_counts==0):

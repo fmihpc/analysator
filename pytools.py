@@ -24,7 +24,8 @@
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
 import warnings
-from loguru import logger
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 warnings.filterwarnings("once", category=DeprecationWarning)
 warnings.filterwarnings("once", category=PendingDeprecationWarning)
 warnings.filterwarnings("once", category=FutureWarning)
@@ -62,12 +63,12 @@ if not os.getenv('PTNOLATEX'):
    matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
    matplotlib.rcParams['mathtext.fontset'] = 'stix'
    matplotlib.rcParams['font.family'] = 'STIXGeneral'
-   logger.info("Using LaTeX formatting")
+   logging.info("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
 # Set backends
 if matplotlib.get_backend()[:9] == 'module://':
-   logger.info("Using backend "+matplotlib.get_backend())
+   logging.info("Using backend "+matplotlib.get_backend())
    backend_interactive = matplotlib.get_backend()
    backend_noninteractive = matplotlib.get_backend()
 elif not os.getenv('PTBACKEND'):
@@ -81,12 +82,12 @@ else:
 try:
    import calculations
 except ImportError as e:
-   logger.info("Note: Did not import calculations module: ", e)
+   logging.info("Note: Did not import calculations module: ", e)
 
 try:
    import vlsvfile
 except ImportError as e:
-   logger.info("Note: Did not import vlsvfile module: ", e)
+   logging.info("Note: Did not import vlsvfile module: ", e)
 
 import os
 import matplotlib.pyplot as plt
@@ -96,29 +97,29 @@ if os.getenv('PTNONINTERACTIVE') != None:
    try:
       plt.switch_backend(backend_noninteractive)
    except:
-      logger.info("Note: Unable to switch to "+backend_noninteractive+" backend")
+      logging.info("Note: Unable to switch to "+backend_noninteractive+" backend")
 else:
    # Interactive plotting mode
    plt.ion()
    try:
       plt.switch_backend(backend_interactive)
    except:
-      logger.info("Note: Unable to switch to "+backend_interactive+" backend")
+      logging.info("Note: Unable to switch to "+backend_interactive+" backend")
 
    #Only attempt loading MayaVi2 if requested
    if os.getenv('PTMAYAVI2') != None:
       try:
          import grid
       except ImportError as e:
-         logger.info("Note: Did not import (outdated MayaVi2) grid module: ", e)
+         logging.info("Note: Did not import (outdated MayaVi2) grid module: ", e)
 
 try:
    import plot
 except ImportError as e:
-   logger.info("Note: Did not import plot module: ", e)
+   logging.info("Note: Did not import plot module: ", e)
 
 try:
    import miscellaneous
 except ImportError as e:
-   logger.info("Note: Did not import miscellaneous: ", e)
+   logging.info("Note: Did not import miscellaneous: ", e)
 

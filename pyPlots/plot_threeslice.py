@@ -1,5 +1,5 @@
 import matplotlib
-from loguru import logger
+import logging
 import pytools as pt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -465,11 +465,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         limits = np.array([getattr(ax, 'get_{}lim'.format(axis))() for axis in 'xyz'])
         ax.set_box_aspect(np.ptp(limits, axis = 1))
     except:
-        logger.info("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
+        logging.info("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
         try:
             ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
         except:
-            logger.info("WARNING: ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
+            logging.info("WARNING: ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
 
     # Draw ticks
     if not fixedticks: # Ticks are relative to the triple point
@@ -717,7 +717,7 @@ def plot_threeslice(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     else:
-        logger.info("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
     if operator is None:
@@ -782,7 +782,7 @@ def plot_threeslice(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
-            logger.info("Unknown operator "+str(operator))
+            logging.info("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -833,16 +833,16 @@ def plot_threeslice(filename=None,
             pass
 
     if not os.access(outputdir, os.W_OK):
-        logger.info(("No write access for directory "+outputdir+"! Exiting."))
+        logging.info(("No write access for directory "+outputdir+"! Exiting."))
         return
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            logger.info(("Found existing file "+outputfile+". Skipping."))
+            logging.info(("Found existing file "+outputfile+". Skipping."))
             return
         else:
-            logger.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
+            logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
     if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -892,7 +892,7 @@ def plot_threeslice(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logger.info("FSgrid and vlasov grid disagreement!")
+        logging.info("FSgrid and vlasov grid disagreement!")
         return -1
 
     # Simulation domain outer boundaries
@@ -903,7 +903,7 @@ def plot_threeslice(filename=None,
         if cutpointre:
             cutpoint = np.asarray(cutpointre) * Re
         else: # default to [0,0,0]
-            logger.info('No cut point coordinates given, defaulting to origin')
+            logging.info('No cut point coordinates given, defaulting to origin')
             cutpoint = np.asarray([0.,0.,0.])
     else:
         cutpoint = np.asarray(cutpointm)
@@ -930,16 +930,16 @@ def plot_threeslice(filename=None,
     # If cutpoint is outside box coordinates, turn off that slice
     if (cutpoint[0]<boxcoords[0]) or (cutpoint[0]>boxcoords[1]):
         slices = slices.replace('x','')
-        logger.info("Note: adjusting box extents to include cut point (x)")
+        logging.info("Note: adjusting box extents to include cut point (x)")
     if (cutpoint[1]<boxcoords[2]) or (cutpoint[1]>boxcoords[3]):
         slices = slices.replace('y','')
-        logger.info("Note: adjusting box extents to include cut point (y)")
+        logging.info("Note: adjusting box extents to include cut point (y)")
     if (cutpoint[2]<boxcoords[4]) or (cutpoint[2]>boxcoords[5]):
         slices = slices.replace('z','')
-        logger.info("Note: adjusting box extents to include cut point (z)")
+        logging.info("Note: adjusting box extents to include cut point (z)")
 
     if len(slices)==0:
-        logger.info("Error: no active slices at cutpoint within box domain")
+        logging.info("Error: no active slices at cutpoint within box domain")
         return -1
 
     # Also, if necessary, adjust box coordinates to extend a bit beyond the cutpoint.
@@ -1059,7 +1059,7 @@ def plot_threeslice(filename=None,
 
         # Verify data shape
         if np.ndim(datamap)==0:
-            logger.info("Error, read only single value from vlsv file!",datamap.shape)
+            logging.info("Error, read only single value from vlsv file!",datamap.shape)
             return -1
 
         if var.startswith('fg_'):
@@ -1077,7 +1077,7 @@ def plot_threeslice(filename=None,
                 datamap_y = datamap[:,fgslice_y,:,:,:]
                 datamap_z = datamap[:,:,fgslice_z,:,:]
             else:
-                logger.info("Error in reshaping fsgrid datamap!") 
+                logging.info("Error in reshaping fsgrid datamap!") 
             datamap_x = np.squeeze(datamap_x)
             datamap_x = np.swapaxes(datamap_x, 0,1)
             datamap_y = np.squeeze(datamap_y)
@@ -1105,32 +1105,32 @@ def plot_threeslice(filename=None,
                 if 'y' in slices: datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, (datamap.shape[1],datamap.shape[2]))
                 if 'z' in slices: datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, (datamap.shape[1],datamap.shape[2]))
             else:
-                logger.info("Dimension error in constructing 2D AMR slice!")
+                logging.info("Dimension error in constructing 2D AMR slice!")
                 return -1
 
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__ + operatorstr
-        logger.info('WARNING: Expressions have not been implemented yet')
+        logging.info('WARNING: Expressions have not been implemented yet')
 
     # Now, if map is a vector or tensor, reduce it down
     if 'x' in slices:
         if np.ndim(datamap_x)==3: # vector
             if datamap_x.shape[2]!=3:
-                logger.info("Error, expected array of 3-element vectors, found array of shape ",datamap_x.shape)
+                logging.info("Error, expected array of 3-element vectors, found array of shape ",datamap_x.shape)
                 return -1
             datamap_x = np.linalg.norm(datamap_x, axis=-1)
         if np.ndim(datamap_x)==4: # tensor
             if datamap_x.shape[2]!=3 or datamap_x.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logger.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_x.shape)
+                logging.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_x.shape)
                 return -1
             datamap_x = datamap_x[:,:,0,0]+datamap_x[:,:,1,1]+datamap_x[:,:,2,2]
         if np.ndim(datamap_x)>=5: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
             return -1
         if np.ndim(datamap_x)!=2: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_x.shape)
             return -1
 
         # Scale final generated datamap if requested
@@ -1141,20 +1141,20 @@ def plot_threeslice(filename=None,
     if 'y' in slices:
         if np.ndim(datamap_y)==3: # vector
             if datamap_y.shape[2]!=3:
-                logger.info("Error, expected array of 3-element vectors, found array of shape ",datamap_y.shape)
+                logging.info("Error, expected array of 3-element vectors, found array of shape ",datamap_y.shape)
                 return -1
             datamap_y = np.linalg.norm(datamap_y, axis=-1)
         if np.ndim(datamap_y)==4: # tensor
             if datamap_y.shape[2]!=3 or datamap_y.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logger.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_y.shape)
+                logging.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_y.shape)
                 return -1
             datamap_y = datamap_y[:,:,0,0]+datamap_y[:,:,1,1]+datamap_y[:,:,2,2]
         if np.ndim(datamap_y)>=5: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
             return -1
         if np.ndim(datamap_y)!=2: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_y.shape)
             return -1
 
         # Scale final generated datamap if requested
@@ -1165,20 +1165,20 @@ def plot_threeslice(filename=None,
     if 'z' in slices:
         if np.ndim(datamap_z)==3: # vector
             if datamap_z.shape[2]!=3:
-                logger.info("Error, expected array of 3-element vectors, found array of shape ",datamap_z.shape)
+                logging.info("Error, expected array of 3-element vectors, found array of shape ",datamap_z.shape)
                 return -1
             datamap_z = np.linalg.norm(datamap_z, axis=-1)
         if np.ndim(datamap_z)==4: # tensor
             if datamap_z.shape[2]!=3 or datamap_z.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logger.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_z.shape)
+                logging.info("Error, expected array of 3x3 tensors, found array of shape ",datamap_z.shape)
                 return -1
             datamap_z = datamap_z[:,:,0,0]+datamap_z[:,:,1,1]+datamap_z[:,:,2,2]
         if np.ndim(datamap_z)>=5: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
             return -1
         if np.ndim(datamap_z)!=2: # Too many dimensions
-            logger.info("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
+            logging.info("Error, too many dimensions in datamap, found array of shape ",datamap_z.shape)
             return -1
 
         # Scale final generated datamap if requested
@@ -1217,7 +1217,7 @@ def plot_threeslice(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logger.info("Error, requested array is zero everywhere. Exiting.")
+        logging.info("Error, requested array is zero everywhere. Exiting.")
         return 0
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
@@ -1255,7 +1255,7 @@ def plot_threeslice(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logger.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -1745,15 +1745,15 @@ def plot_threeslice(filename=None,
 
     # Save output or draw on-screen
     if not draw:
-        logger.info('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
+        logging.info('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
-            logger.info("Error with attempting to save figure.")
-            logger.info('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+            logging.info("Error with attempting to save figure.")
+            logging.info('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
         plt.close()
     else:
         # Draw on-screen
         plt.draw()
         plt.show()
-        logger.info('Draw complete! Time since start = {:.2f} s'.format(time.time()-t0))
+        logging.info('Draw complete! Time since start = {:.2f} s'.format(time.time()-t0))
