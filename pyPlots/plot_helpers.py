@@ -1601,24 +1601,3 @@ def expr_gyrotropy_3D(pass_maps,requestvariables=False):
     Qmap = Q.reshape((ny, nx))
     return Qmap
 
-def gyrotropy(Pdiag,Poffdiag,B):
-# see Appendix in Swisdak 2016: https://doi.org/10.1002/2015GL066980
-    Pxx=Pdiag[:,0]
-    Pyy=Pdiag[:,1]
-    Pzz=Pdiag[:,2]
-
-    Pxy = Poffdiag[:,0]
-    Pxz = Poffdiag[:,1]
-    Pyz = Poffdiag[:,2]
-
-    B_norm = B / np.sqrt(np.sum(np.asarray(B)**2,axis=-1)[:, np.newaxis])
-    bx,by,bz = B_norm[:,0],B_norm[:,1],B_norm[:,2]
-
-    I1 = Pxx + Pyy + Pzz
-    I2 = Pxx * Pyy + Pyy * Pzz + Pxx * Pzz  - (Pxy**2 + Pxz**2 + Pyz**2)
-
-    Ppar = (  bx**2 * Pxx + by**2 * Pyy + bz**2 * Pzz +     
-           2 * (bx * by * Pxy + bx * bz * Pxz + by * bz * Pyz ) )
-    
-    Q = 1 - 4 * I2 / (  (I1 - Ppar)*(I1 + 3* Ppar)  )
-    return Q
