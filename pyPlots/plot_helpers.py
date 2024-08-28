@@ -1188,7 +1188,7 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     step = int(np.sqrt(colors.shape[0] * colors.shape[1]/100.))
 
     # inplane unit length vectors
-    warnings.warn("usage of inplanevec(vf) is unverified! Used to be inplanevec(vectmap), with vectmap undefined. Check if results are as expected!")
+    warnings.warn("usage of inplanevec(vf) is unverified! Used to be inplanevec(vectmap), with vectmap undefined. See changes in commit e1d2dd8ecaa7a0444ce56215f795a5237f792b1e and check if results are as expected!")
     vectmap = pt.plot.plot_helpers.inplanevec(vf)
     vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
 
