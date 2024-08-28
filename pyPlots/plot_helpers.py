@@ -486,7 +486,7 @@ def expr_timeavg(pass_maps, requestvariables=False):
         var = next(listofkeys)
         if var!="dstep": break
     ntimes = len(pass_maps)
-    thismap = thesemaps[var]
+    thismap = pass_maps[var]
     avgmap = np.zeros(np.array(thismap.shape))
     for i in range(ntimes):
         avgmap = np.add(avgmap, pass_maps[i][var])
@@ -1135,7 +1135,7 @@ def expr_ja(pass_maps, requestvariables=False):
 
 def expr_dLstardt(pass_maps, requestvariables=False):
     if requestvariables==True:
-        return ['B','E']
+        return ['B','E','V']
 
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
@@ -1149,9 +1149,9 @@ def expr_dLstardt(pass_maps, requestvariables=False):
     thesemaps = pass_maps[curri]
     pastmaps = pass_maps[previ]
 
-    thisB = TransposeVectorArray(thesemaps['B'])
-    pastB = TransposeVectorArray(pastmaps['B'])
-    Vddt = (thisV-pastV)/DT
+    thisV = TransposeVectorArray(thesemaps['V'])
+    pastV = TransposeVectorArray(pastmaps['V'])
+    dVdt = (thisV-pastV)/DT
 
     Bmap = TransposeVectorArray(thesemaps['B'])
     upBmag2 = np.linalg.norm(Bmap,axis=-1)**(-2)
@@ -1185,7 +1185,8 @@ def overplotvectors(ax, XmeshXY,YmeshXY, pass_maps):
     step = int(np.sqrt(colors.shape[0] * colors.shape[1]/100.))
 
     # inplane unit length vectors
-    vectmap = pt.plot.plot_helpers.inplanevec(vectmap)
+    warnings.warn("usage of inplanevec(vf) is unverified! Used to be inplanevec(vectmap), with vectmap undefined. Check if results are as expected!")
+    vectmap = pt.plot.plot_helpers.inplanevec(vf)
     vectmap = vectmap / np.linalg.norm(vectmap, axis=-1)[:,:,np.newaxis]
 
     X = XmeshXY[::step,::step]
