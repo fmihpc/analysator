@@ -39,8 +39,8 @@ class Point: #a 3D-point
 
         self.x, self.r, self.phi = np.array(cartesian_to_polar(x,y,z))
 
-    def logging.info(self):
-        logging.info(self.x, self.y, self.z)
+    def print(self):
+        print(self.x, self.y, self.z)
 
 
 class YZSlice: #a slice in yz-plane
