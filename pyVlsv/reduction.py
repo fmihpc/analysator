@@ -1286,3 +1286,20 @@ multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 
+# The dictionary with deprecated data reducers
+deprecated_datareducers = {}
+deprecated_datareducers['agyrotropy'] = "Previous agyrotropy reducers were broken, use gyrotropy instead. See link (https://github.com/fmihpc/analysator/pull/262) "
+deprecated_datareducers['agyrotropybackstream'] = "Previous agyrotropybackstream reducers were broken, use gyrotropybackstream instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['agyrotropynonbackstream'] = "Previous agyrotropynonbackstream reducers were broken, use gyrotropynonbackstream instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+
+deprecated_datareducers['pop/agyrotropy'] = "Previous pop/agyrotropy reducers were broken, use pop/gyrotropy instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['pop/agyrotropybackstream'] = "Previous pop/agyrotropybackstream reducers were broken, use pop/gyrotropybackstream instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['pop/agyrotropynonbackstream'] = "Previous pop/agyrotropynonbackstream reducers were broken, use pop/gyrotropynonbackstream instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+
+deprecated_datareducers['vg_agyrotropy'] = "Previous vg_agyrotropy reducers were broken, use vg_gyrotropy instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['vg_agyrotropy_nonthermal'] = "Previous vg_agyrotropy_nonthermal reducers were broken, use vg_gyrotropy_nonthermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['vg_agyrotropy_thermal'] = "Previous vg_agyrotropy_thermal reducers were broken, use vg_gyrotropy_thermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+
+deprecated_datareducers['pop/vg_agyrotropy'] = "Previous pop/vg_agyrotropy reducers were broken, use pop/vg_gyrotropy instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['pop/vg_agyrotropy_nonthermal'] = "Previous pop/vg_agyrotropy_nonthermal reducers were broken, use pop/vg_gyrotropy_nonthermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+deprecated_datareducers['pop/vg_agyrotropy_thermal'] = "Previous pop/vg_agyrotropy_thermal reducers were broken, use pop/vg_gyrotropy_thermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
