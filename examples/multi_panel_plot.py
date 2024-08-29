@@ -7,7 +7,7 @@ import os
 
 
 # Avoids opening a figure window
-if str(matplotlib.get_backend()) is not 'Agg':
+if str(matplotlib.get_backend()) != 'Agg':
     plt.switch_backend('Agg') 
 
 fileLocation="/proj/vlasov/2D/BCH/bulk/"

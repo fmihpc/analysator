@@ -289,7 +289,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+outputdir2+"! Exiting.")
+            logging.info("No write access for directory "+savefigdir+"! Exiting.")
             return
 
 

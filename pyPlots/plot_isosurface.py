@@ -590,14 +590,14 @@ def plot_isosurface(filename=None,
             highresscale = float(highres)
             if np.isclose(highresscale, 1.0):
                 highresscale = 2
-        figsize= [x * highresscale for x in figsize]
+        # figsize= [x * highresscale for x in figsize] # figsize not defined, neither used in this function
         fontsize=fontsize*highresscale
         fontsize2=fontsize2*highresscale
         fontsize3=fontsize3*highresscale
         scale=scale*highresscale
         thick=thick*highresscale
-        streamlinethick=streamlinethick*highresscale
-        vectorsize=vectorsize*highresscale
+        # streamlinethick=streamlinethick*highresscale # streamlinethick not defined, neither used in this function
+        # vectorsize=vectorsize*highresscale # vectorsize not defined, neither used in this function
 
     # Generate virtual bounding box to get equal aspect
     maxrange = np.array([boxcoords[1]-boxcoords[0], boxcoords[3]-boxcoords[2], boxcoords[5]-boxcoords[4]]).max() / 2.0
