@@ -434,7 +434,7 @@ def plot_vdf_profiles(filename=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            print("No write access for directory "+outputdir2+"! Exiting.")
+            print("No write access for directory "+savefigdir+"! Exiting.")
             return
 
 

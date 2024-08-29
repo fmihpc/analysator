@@ -636,15 +636,16 @@ def thermalvelocity( variables ):
    return thermalvelocity
 
 def Vstream( variables ):
-   rhoVstream = variables[0]
-   rhostream = variables[1]
-   rhoVNonBackstream = variables[2]
-   rhoNonBackstream = variables[3]
-   # get velocity of both populations:
-   vBackstream = v( [rhoVBackstream, rhoBackstream] )
-   vNonBackstream = v( [rhoVNonBackstream, rhoNonBackstream] )
-   vBeam = vBackstream - vNonBackstream
-   return vBeam # <- is a vector quantity
+   raise NotImplementedError("rhoVBackstream, rhoBackstream not defined here. Check implementaiton if required!")
+   # rhoVstream = variables[0]
+   # rhostream = variables[1]
+   # rhoVNonBackstream = variables[2]
+   # rhoNonBackstream = variables[3]
+   # # get velocity of both populations:
+   # vBackstream = v( [rhoVBackstream, rhoBackstream] )
+   # vNonBackstream = v( [rhoVNonBackstream, rhoNonBackstream] )
+   # vBeam = vBackstream - vNonBackstream
+   # return vBeam # <- is a vector quantity
 
 def v_beam( variables ):
    vBackstream = variables[0]
