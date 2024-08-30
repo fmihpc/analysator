@@ -13,6 +13,7 @@ from skimage import measure
 from yt.visualization.api import Streamlines
 
 import ids3d
+import logging
 
 '''
 Finds the magnetopause in 3D-run and plots it with matplotlib
@@ -63,7 +64,7 @@ class YZSlice: #a slice in yz-plane
         if (p_phi <= self.max_deg) and (p_phi >= self.min_deg):
             self.points.append(p)
         else:
-            print("point has wrong polar angle! (x, max_deg, p_phi):", self.x, " ", self.max_deg, " ", p_phi)
+            logging.info("point has wrong polar angle! (x, max_deg, p_phi):", self.x, " ", self.max_deg, " ", p_phi)
             exit()
 
 
@@ -113,7 +114,7 @@ class YZPlane: #an yz-plane at a certain x
             sl = self.slices[ind]
             sl.add_point(p)
         else:
-            print("point is in the wrong yz-plane!")
+            logging.info("point is in the wrong yz-plane!")
 
 
 
@@ -141,7 +142,7 @@ def get_slice_index(deg): #aux function for indexing arcDeg-degree slices
         j = i
         ind = ind + 1
 
-    print("Nope, degrees: ", deg, " ind: ", ind) #something's wrong
+    logging.info("Nope, degrees: ", deg, " ind: ", ind) #something's wrong
     exit()
 
 def to_Re(m): #meters to Re
@@ -253,7 +254,7 @@ def make_streamlines():
 
     #from m to Re
     V = np.array([[to_Re(i) for i in j ]for j in V])
-    #print(V)
+    #logging.info(V)
 
     V = V[indexids]
 
@@ -296,7 +297,7 @@ def make_streamlines():
 
     #get rid of lines that don't work
     #for s in np.arange(0, len(streamlines_pos.streamlines)):
-    #    print(streamlines_pos.streamlines[s])
+    #    logging.info(streamlines_pos.streamlines[s])
     #    stream_pos = streamlines_pos.streamlines[s]
     #    stream_pos = stream_pos[(np.all(stream_pos != 0.0) | (np.linalg.norm(stream_pos, axis = 1) > 4.7)) & (stream_pos[0,2] != 0.0)]
 
@@ -360,7 +361,7 @@ def get_magnetopause(streams, ignore, count):
         #add interpolated points to yz-planes
         for i in range(0, len(x_points)):
             if stream_points[0][i] != x_points[i]:
-                print("Something's very wrong")
+                logging.info("Something's very wrong")
                 exit()
             p = Point(stream_points[0][i], stream_points[1][i], stream_points[2][i])
             planes[i].add_point(p)
@@ -492,8 +493,8 @@ def make_surface(coords):
 
     #faces = np.array(faces, dtype=np.int32, order='C')
     #verts = np.array(verts)
-    #print(faces.max())
-    #print(len(verts[:,0]))
+    #logging.info(faces.max())
+    #logging.info(len(verts[:,0]))
 
     return verts, faces #verts is a list of coordinates, faces an array of arrays including indices of verts that make the triangles
 
@@ -592,7 +593,7 @@ def main():
 
 
     if plotting[3]: #plot surface
-        print('Making the surface...')
+        logging.info('Making the surface...')
         verts, faces = make_surface(pause_by_x)
         verts = np.array(verts)
 
@@ -606,7 +607,7 @@ def main():
     #plt.savefig('magnetopause3dprojection.png')
 
 
-    print('Ready!')
+    logging.info('Ready!')
 
 
 

@@ -22,6 +22,7 @@
 #
 import numpy as np
 import pytools
+import logging
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
 # Weighted by particle flux/none
 def get_spectrum_energy(vlsvReader,
@@ -49,7 +50,7 @@ def get_spectrum_energy(vlsvReader,
          if not vlsvReader.read_variable('vg_f_saved',cid):
             return (False,np.zeros(nBins), EkinBinEdges)
       else:
-         print("Error finding cells with VDFs!")
+         logging.info("Error finding cells with VDFs!")
 
    if vlsvReader.check_variable('MinValue'):
       fMin = vlsvReader.read_variable('MinValue',cid)
@@ -58,7 +59,7 @@ def get_spectrum_energy(vlsvReader,
    elif vlsvReader.check_variable(population+'/vg_effectivesparsitythreshold'):
       fMin = vlsvReader.read_variable(population+'/vg_effectivesparsitythreshold',cid)
 
-   #print('Cell ' + str(cid).zfill(9))
+   #logging.info('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)
@@ -176,7 +177,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
          if not vlsvReader.read_variable('vg_f_saved',cid):
             return (False,np.zeros(nBins), VBinEdges)
       else:
-         print("Error finding cells with VDFs!")
+         logging.info("Error finding cells with VDFs!")
 
    if vlsvReader.check_variable('MinValue'):
       fMin = vlsvReader.read_variable('MinValue',cid)
@@ -185,7 +186,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    elif vlsvReader.check_variable(population+'/vg_effectivesparsitythreshold'):
       fMin = vlsvReader.read_variable(population+'/vg_effectivesparsitythreshold',cid)
 
-   #print('Cell ' + str(cid).zfill(9))
+   #logging.info('Cell ' + str(cid).zfill(9))
    velcells = vlsvReader.read_velocity_cells(cid, population)
    V = vlsvReader.get_velocity_cell_coordinates(list(velcells.keys()), pop=population)
    V2 = np.sum(np.square(V),1)

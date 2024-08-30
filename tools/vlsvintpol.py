@@ -26,6 +26,7 @@ import pytools as pt
 import numpy as np
 import sys
 import argparse
+import logging
 
 
 def extract_file(filename):
@@ -39,7 +40,8 @@ def extract_file(filename):
         if t == None:
             t=f.read_parameter("t")
         if t == None:	    
-            print("Unknown time format in file " + filename)
+            logging.info("Unknown time format in file " + filename)
+
         
         for coord in coords:
             if(args.re):
@@ -99,9 +101,9 @@ else:
 coords = np.atleast_2d(coords)
 
 if(args.re):
-    print("#t X_RE Y_RE Z_RE CELLID " + " ".join(varnames))
+    logging.info("#t X_RE Y_RE Z_RE CELLID " + " ".join(varnames))
 else:
-    print("#t X Y Z CELLID " + " ".join(varnames))
+    logging.info("#t X Y Z CELLID " + " ".join(varnames))
 
 if args.n is None:
     numproc = 1
@@ -118,4 +120,4 @@ if __name__ == '__main__':
 
 for i in sorted(return_array):
     for j in i:
-        print(j[1])
+        logging.info(j[1])

@@ -23,6 +23,7 @@
 
 ''' A file for doing data reduction on variables
 '''
+import logging
 import numpy as np
 import pylab as pl
 from reducer import DataReducerVariable
@@ -67,7 +68,7 @@ def absolute( variable ):
 def sumv( variable ):
    # Note: this is used to sum over multipops, thus the summing axis is zero
    if np.ndim(variable) > 3:
-      print('Error: Number of dimensions is too large')
+      logging.info('Error: Number of dimensions is too large')
       return
    else:
       # First dimension: populations
@@ -97,7 +98,7 @@ def condition_matrix_array( condition, matrices ):
                        [0,  5, 2],
                        [1,  0, 5]]
                      ])
-          print condition_matrix_array( diagonal_condition, matrices )
+          logging.info condition_matrix_array( diagonal_condition, matrices )
           # Output:
           # array([[3,3,3], [5,5,5]])
 
@@ -141,7 +142,7 @@ def restart_V( variables ):
       elif len(moments)==6: # eVlasiator restart
          V = moments[1:4]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    else: # array of cells
       if len(moments[0,:])==4:  # pre-multipop restart
@@ -152,7 +153,7 @@ def restart_V( variables ):
       elif len(moments[0,:])==6: # eVlasiator restart
          V = moments[:,1:4]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    return V
 
@@ -165,13 +166,13 @@ def restart_rho( variables ):
       if len(moments)==4:  # pre-multipop restart
          rho = moments[0]
       else:
-         print("Unable to determine rho from moments!")
+         logging.info("Unable to determine rho from moments!")
          return None
    else: # array of cells
       if len(moments[0,:])==4:  # pre-multipop restart
          rho = moments[:,0]
       else:
-         print("Unable to determine rho from moments!")
+         logging.info("Unable to determine rho from moments!")
          return None
    return rho
 
@@ -189,7 +190,7 @@ def restart_rhom( variables ):
       elif len(moments)==6: # eVlasiator restart
          rhom = moments[0]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    else: # array of cells
       if len(moments[0,:])==4:  # pre-multipop restart
@@ -199,7 +200,7 @@ def restart_rhom( variables ):
       elif len(moments[0,:])==6: # eVlasiator restart
          rhom = moments[:,0]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    return rhom
 
@@ -217,7 +218,7 @@ def restart_rhoq( variables ):
       elif len(moments)==6: # eVlasiator restart
          rhoq = moments[4]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    else: # array of cells
       if len(moments[0,:])==4:  # pre-multipop restart
@@ -227,7 +228,7 @@ def restart_rhoq( variables ):
       elif len(moments[0,:])==6: # eVlasiator restart
          rhoq = moments[:,4]
       else:
-         print("Unrecognized length for moments!")
+         logging.info("Unrecognized length for moments!")
          return None
    return rhoq
 
@@ -482,7 +483,7 @@ def J( variables ):
       return J[0,:]
 
 
-   print("Error in J")
+   logging.info("Error in J")
    return -1
 
 def TensorFromScalars(variables):
@@ -572,7 +573,7 @@ def Temperature( variables ):
       elif np.ndim(Pressure)==3:
          return np.ma.divide(Pressure, divisor[:,np.newaxis,np.newaxis])
    # Should not reach here...
-   print("Error finding dimensions in calculating temperature!")
+   logging.info("Error finding dimensions in calculating temperature!")
    return -1
 
 
@@ -682,7 +683,7 @@ def Bz_linedipole_diff( variables ):
    # This reducer needs to be verified
    Bb = variables[0]
    Bzldp = variables[1]
-   print(Bzldp.shape)
+   logging.info(Bzldp.shape)
    divisor = np.ma.masked_less_equal( np.ma.masked_invalid(magnitude(Bb)),0)
    return np.ma.divide(np.abs(Bb[:,2] - Bzldp), divisor)
 

@@ -22,6 +22,7 @@
 # 
 
 import struct
+import logging
 import xml.etree.ElementTree as ET
 import ast
 import numpy as np
@@ -52,7 +53,7 @@ class VlsvWriter(object):
       try:
          self.__fptr = open(self.file_name,"wb")
       except FileNotFoundError as e:
-         print("No such path: ", self.file_name)
+         logging.info("No such path: ", self.file_name)
          raise e
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
@@ -73,13 +74,13 @@ class VlsvWriter(object):
       '''
       import shutil
       src=vlsvReader.file_name
-      print(f"Duplicating Reader File from {src} to {dst}")
+      logging.info(f"Duplicating Reader File from {src} to {dst}")
       shutil.copy2(src,dst)
       self.file_name = os.path.abspath(dst)
       try:
          self.__fptr = open(self.file_name,"ab")
       except Exception as e:
-         print("ERROR:",e)
+         logging.info("ERROR:",e)
          raise e
       #Get XML offset and copy over the xml tree from the vlsvreader 
       fptr_read = open(self.file_name,"rb")
@@ -136,7 +137,7 @@ class VlsvWriter(object):
             for i in child.attrib.items():
                if i[0] != 'name' and i[0] != 'mesh':
                   extra_attribs[i[0]] = i[1]
-            #print("writing",name, tag, mesh, extra_attribs)
+            #logging.info("writing",name, tag, mesh, extra_attribs)
             data = vlsvReader.read( name=name, tag=tag, mesh=mesh )
             # Write the data:
 
@@ -210,7 +211,7 @@ class VlsvWriter(object):
                 mesh = child.attrib['mesh']
             else:
                if child.tag in ['VARIABLE']:
-                  print('MESH required')
+                  logging.info('MESH required')
                   return
                mesh = None
             tag = child.tag
@@ -227,9 +228,9 @@ class VlsvWriter(object):
          try:
             varinfo = vlsvReader.read_variable_info(name)
          except Exception as e:
-            print('Could not obtain ' +name+' from file or datareduction, skipping.')
-            print('Original error was:')
-            print(e)
+            logging.info('Could not obtain ' +name+' from file or datareduction, skipping.')
+            logging.info('Original error was:')
+            logging.info(e)
             continue
          self.write_variable_info(varinfo, 'SpatialGrid', 1)
       return
@@ -400,9 +401,9 @@ class VlsvWriter(object):
 
    def write_fgarray_to_SpatialGrid(self, reader, data, name, extra_attribs={}):
       # get a reader for the target file
-      #print(data.shape[0:3], reader.get_fsgrid_mesh_size(), (data.shape[0:3] == reader.get_fsgrid_mesh_size()))
+      #logging.info(data.shape[0:3], reader.get_fsgrid_mesh_size(), (data.shape[0:3] == reader.get_fsgrid_mesh_size()))
       if not (data.shape[0:3] == reader.get_fsgrid_mesh_size()).all():
-         print("Data shape does not match target fsgrid mesh")
+         logging.info("Data shape does not match target fsgrid mesh")
          return
       vgdata = reader.fsgrid_array_to_vg(data)
       self.__write(vgdata, name, "VARIABLE", "SpatialGrid",extra_attribs)

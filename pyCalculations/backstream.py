@@ -22,6 +22,7 @@
 # 
 
 import numpy as np
+import logging
 
 def extract_velocity_cells_sphere( vlsvReader, cellid, origin, radius ):
    ''' Extracts the velocity cells inside some given sphere

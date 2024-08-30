@@ -35,6 +35,7 @@
 from plot_variables import plot_variables, plot_multiple_variables
 
 
+import logging
 import matplotlib.pyplot as plt
 import matplotlib
 import colormaps as cmaps
@@ -51,7 +52,7 @@ from plot_ionosphere import plot_ionosphere
 try:
     from plot_isosurface import plot_isosurface, plot_neutral_sheet
 except:
-    print("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
+    logging.info("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
 from packaging.version import Version
 
@@ -91,7 +92,7 @@ decimalprecision_cblin = 0
 cb_linear = False
 
 # Output matplotlib version
-print("Using matplotlib version "+matplotlib.__version__)
+logging.info("Using matplotlib version "+matplotlib.__version__)
 
 # Default output directory for plots
 defaultoutputdir=os.path.expandvars('$HOME/Plots/')

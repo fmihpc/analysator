@@ -24,6 +24,7 @@
 # This file contains static spacecraft function for fetching variable data from multiple vlsv files and looking at the data in time
 
 import numpy as np
+import logging
 
 def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
@@ -42,7 +43,7 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
           time_data = pt.calculations.cell_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
 
           # Check output
-          print time_data
+          logging.info time_data
 
           # Now plot the results:
           time = time_data[0]

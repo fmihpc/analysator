@@ -10,6 +10,7 @@ from yt.visualization.api import Streamlines
 
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap
+import logging
 
 
 '''
@@ -355,7 +356,7 @@ def interpolate(YTstream, points, axis):
         return stream_points, True
 
     else:
-        print('axis must be x or z!')
+        logging.info('axis must be x or z!')
         exit() 
 
 
@@ -387,7 +388,7 @@ def get_magnetopause(ignore, count):
             for i in range(0, len(x_points)): #for every YZ-plane
 
                 if stream_points[0][i] != x_points[i]: #check that values for x match
-                    print("Something's very wrong")
+                    logging.info("Something's very wrong")
                     exit()
 
                 p = Point(stream_points[0][i], stream_points[1][i])
