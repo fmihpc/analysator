@@ -31,7 +31,7 @@ import re
 import numbers
 
 import vlsvvariables
-from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers
+from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
 try:
    from collections.abc import Iterable
 except ImportError:
@@ -997,14 +997,24 @@ class VlsvReader(object):
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
-
+      
       # Check which set of datareducers to use
+      if '/' in name and popname in self.active_populations:
+         checkname = 'pop/'+varname
+      else:
+         checkname = varname
+
+      if checkname in deprecated_datareducers.keys():
+         raise ValueError(deprecated_datareducers[checkname] )
+
       if varname[0:3]=="vg_" or varname[0:3]=="ig_":
          reducer_reg = v5reducers
          reducer_multipop = multipopv5reducers
       else:
          reducer_reg = datareducers
          reducer_multipop = multipopdatareducers
+
+         
             
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
       if hasattr(self, 'active_populations') and len(self.active_populations) > 0 and self.check_variable(self.active_populations[0]+'/'+name):

@@ -1590,3 +1590,4 @@ def ranks(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     maxrank = int(np.amax(rank))
     levels = np.arange(minrank,maxrank)+0.5
     ax.contour(XmeshXY, YmeshXY, rank, levels, antialiased=False, linewidths=0.1, cmap='gray')
+
