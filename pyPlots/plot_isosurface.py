@@ -868,7 +868,7 @@ def plot_neutral_sheet(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
     :kword Earth:       If set, draws an earth at (0,0)
-    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for logging.info). 
+    :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
 
 
     :kword draw:        Set to nonzero in order to draw image on-screen instead of saving to file (requires x-windowing)

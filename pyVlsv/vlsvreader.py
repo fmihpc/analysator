@@ -3003,13 +3003,13 @@ class VlsvReader(object):
       random_index = 4 # Just some index
       random_velocity_cell_id = velocity_cell_ids[random_index]
 
-      logging.info "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + ": " + str(velocity_cell_map[random_velocity_cell_id])
+      print ("Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + ": " + str(velocity_cell_map[random_velocity_cell_id]))
 
       # Getting the corresponding coordinates might be more useful than having the velocity cell id so:
       velocity_cell_coordinates = vlsvReader.get_velocity_cell_coordinates(velocity_cell_ids) # Get velocity cell coordinates corresponding to each velocity cell id
 
       random_velocity_cell_coordinates = velocity_cell_ids[random_index]
-      logging.info "Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + "and coordinates " + str(random_velocity_cell_coordinates) + ": " + str(velocity_cell_map[random_velocity_cell_id])
+      print("Velocity cell value at velocity cell id " + str(random_velocity_cell_id) + "and coordinates " + str(random_velocity_cell_coordinates) + ": " + str(velocity_cell_map[random_velocity_cell_id]))
 
       .. seealso:: :func:`read_blocks`
       '''
@@ -3404,10 +3404,10 @@ class VlsvReader(object):
              # Open a list of vlsv files
              for i in range(1000):
                 vlsvReaders.append( VlsvReader("test" + str(i) + ".vlsv") )
-             # Go through vlsv readers and logging.info info:
+             # Go through vlsv readers and print info:
              for vlsvReader in vlsvReaders:
                 # Print something from the file on the screen
-                logging.info vlsvReader.read_blocks( cellid= 5021 ) # Stores info into a private variable
+                print( vlsvReader.read_blocks( cellid= 5021 )) # Stores info into a private variable
                 # Upon reading from vlsvReader a private variable that contains info on cells that have blocks has been saved -- now clear it to save memory
                 vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
 
