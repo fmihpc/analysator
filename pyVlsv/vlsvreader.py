@@ -998,8 +998,13 @@ class VlsvReader(object):
                return data_operators[operator](data)
       
       # Check which set of datareducers to use
-      if varname in deprecated_datareducers.keys():         
-         raise KeyError(deprecated_datareducers[varname] )
+      if '/' in name and popname in self.active_populations:
+         checkname = 'pop/'+varname
+      else:
+         checkname = varname
+
+      if checkname in deprecated_datareducers.keys():
+         raise ValueError(deprecated_datareducers[checkname] )
 
       if varname[0:3]=="vg_" or varname[0:3]=="ig_":
          reducer_reg = v5reducers
