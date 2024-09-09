@@ -61,8 +61,10 @@ if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
 if not os.getenv('PTNOLATEX'):
    matplotlib.rc('text', usetex=True)
    matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-   matplotlib.rcParams['mathtext.fontset'] = 'stix'
-   matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   # matplotlib.rcParams['mathtext.fontset'] = 'stix'
+   # matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   # Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.
+   matplotlib.rcParams['font.family'] = 'serif'
    logging.info("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
