@@ -155,7 +155,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
       logging.info("Nodal variables not implemented")
       return
    else:
-      logging.info("Unrecognized centering:", centering)
+      logging.info("Unrecognized centering: "+ str(centering))
       return
 
    #######################################################

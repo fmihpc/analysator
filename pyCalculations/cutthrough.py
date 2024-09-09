@@ -168,7 +168,7 @@ def cut_through_swath(vlsvReader, point1, point2, width, normal):
    init_cut = cut_through(vlsvReader, point1, point2)
    init_cids = init_cut[0].data
 
-   logging.info('swath initial CellIds', init_cids)
+   logging.info('swath initial CellIds' + str(init_cids))
 
    #find the other vector spanning the swath
    s = np.array(point2)-np.array(point1)
