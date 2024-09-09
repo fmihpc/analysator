@@ -82,12 +82,12 @@ else:
 try:
    import calculations
 except ImportError as e:
-   logging.info("Note: Did not import calculations module: ", e)
+   logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
    import vlsvfile
 except ImportError as e:
-   logging.info("Note: Did not import vlsvfile module: ", e)
+   logging.info("Note: Did not import vlsvfile module: " + str(e))
 
 import os
 import matplotlib.pyplot as plt
@@ -111,15 +111,15 @@ else:
       try:
          import grid
       except ImportError as e:
-         logging.info("Note: Did not import (outdated MayaVi2) grid module: ", e)
+         logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
    import plot
 except ImportError as e:
-   logging.info("Note: Did not import plot module: ", e)
+   logging.info("Note: Did not import plot module: " + str(e))
 
 try:
    import miscellaneous
 except ImportError as e:
-   logging.info("Note: Did not import miscellaneous: ", e)
+   logging.info("Note: Did not import miscellaneous: " + str(e))
 
