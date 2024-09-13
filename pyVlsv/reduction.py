@@ -609,7 +609,11 @@ def gyrotropy(variables):
     Q = 1 - 4 * I2 / (  (I1 - Ppar)*(I1 + 3* Ppar)  )
     return Q
 
-
+def MagneticPressure( variables ):
+   ''' Data reducer for finding the magnetic pressure
+   '''
+   Magneticfield = variables[0]
+   return np.sum(np.asarray(Magneticfield)**2,axis=-1) / 2.0 / mu_0
 
 def beta( variables ):
    ''' Data reducer for finding the plasma beta
@@ -923,6 +927,8 @@ datareducers["ejeperpendicular"] =         DataReducerVariable(["eje", "b"], Per
 datareducers["pdyn"] =            DataReducerVariable(["v", "rhom"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"$\mathrm{Pa}$")
 datareducers["pdynx"] =            DataReducerVariable(["v", "rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"$\mathrm{Pa}$")
 
+datareducers["p_magnetic"] =            DataReducerVariable(["b"], MagneticPressure, "Pa", 1, latex=r"$P_\mathrm{mag}$",latexunits=r"$\mathrm{Pa}$")
+
 datareducers["poynting"] = DataReducerVariable(["e", "b"], Poynting, "W/m2", 3, latex=r"$S$", latexunits=r"\mathrm{W}\,\mathrm{m}^{-2}$")
 datareducers["hallterm"] = DataReducerVariable(["e", "v", "b"], Hallterm, "V/m", 3, latex=r"$E_\mathrm{Hall}$", latexunits=r"\mathrm{V}\,\mathrm{m}^{-1}$")
 datareducers["firstadiabatic"] =    DataReducerVariable(["tperpendicular","b"], firstadiabatic, "K/T", 1, latex=r"$T_\perp B^{-1}$",latexunits=r"$\mathrm{K}\,\mathrm{T}^{-1}$")
@@ -1135,6 +1141,8 @@ v5reducers["vg_egradpe_perpendicular"] =         DataReducerVariable(["vg_e_grad
 
 v5reducers["vg_pdyn"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdyn, "Pa", 1, latex=r"$P_\mathrm{dyn}$",latexunits=r"$\mathrm{Pa}$")
 v5reducers["vg_pdynx"] =            DataReducerVariable(["vg_v", "vg_rhom"], Pdynx, "Pa", 1, latex=r"$P_\mathrm{dyn,x}$",latexunits=r"$\mathrm{Pa}$")
+
+v5reducers["vg_p_magnetic"] =            DataReducerVariable(["vg_b_vol"], MagneticPressure, "Pa", 1, latex=r"$P_\mathrm{mag}$",latexunits=r"$\mathrm{Pa}$")
 
 v5reducers["vg_di"] =              DataReducerVariable(["proton/vg_rho"], ion_inertial, "m", 1, latex=r"$d_\mathrm{i}$",latexunits=r"$\mathrm{m}$")
 
