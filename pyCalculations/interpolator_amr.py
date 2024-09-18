@@ -233,7 +233,7 @@ class AMRInterpolator(object):
 
    '''
 
-   def __init__(self, reader, method = "Trilinear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
+   def __init__(self, reader, method = "Linear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
       self.__reader = reader
       self.__cellids = np.array(list(set(cellids)),dtype=np.int64)
       self.duals = {}
@@ -248,12 +248,17 @@ class AMRInterpolator(object):
       return self.__reader.get_cell_coordinates(self.__cellids)
    
    def get_interpolator(self, name, operator, coords, 
-                        method="Trilinear", 
+                        method="Linear", 
                         methodargs={
                            "RBF":{"neighbors":64}, # Harrison-Stetson number of neighbors
                            "Delaunay":{"qhull_options":"QJ"}
                            }):
-      methodargs["Trilinear"] = {"reader":self.__reader, "var" : name, "op":operator}
+      # Check for old aliases
+      if method == "Trilinear":
+         warnings.warn("'Trilinear' interpolator method renamed to 'Linear' for consistency")
+         method = "Linear"
+
+      methodargs["Linear"] = {"reader":self.__reader, "var" : name, "op":operator}
 
       pts = self.__reader.get_cell_coordinates(self.__cellids)
       vals = self.__reader.read_variable(name, self.__cellids, operator=operator)
@@ -265,7 +270,7 @@ class AMRInterpolator(object):
             return RBFInterpolator(pts, vals, **methodargs[method])
          except Exception as e:
             warnings.warn("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class. Falling back to Hexahedral trilinear interpolator. Error given was " + str(e))
-            return HexahedralTrilinearInterpolator(pts, vals, **methodargs["Trilinear"])
-      elif method == "Trilinear":
+            return HexahedralTrilinearInterpolator(pts, vals, **methodargs["Linear"])
+      elif method == "Linear":
          return HexahedralTrilinearInterpolator(pts, vals, **methodargs[method])
 

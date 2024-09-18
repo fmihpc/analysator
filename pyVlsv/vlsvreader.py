@@ -43,6 +43,7 @@ import time
 from interpolator_amr import AMRInterpolator
 from operator import itemgetter
 
+interp_method_aliases = {"Trilinear":"Linear"}
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
@@ -1133,7 +1134,7 @@ class VlsvReader(object):
       return -1
          
 
-   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True]):
+   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="Linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
       Note that this does not account for varying centerings of fsgrid data.
       Arguments:
@@ -1146,6 +1147,9 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
+      if method != "Linear":
+         raise NotImplementedError("interpolation method "+method+" not implemented for read_interpolated_fsgrid_variable, only Linear supported so far.")
+      
       warnings.warn("read_interpolated_fsgrid_variable: face- vs. edge- centered variables not accounted for!")
 
       if name[0:3] != 'fg_':
@@ -1238,12 +1242,13 @@ class VlsvReader(object):
          ret.append(interpolateSingle(r))
       return np.asarray(ret)
 
-   def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass"):
+   def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass", method="Linear"):
       ''' Read a linearly interpolated ionosphere variable value from the open vlsv file.
       Arguments:
       :param name: Name of the (ionosphere) variable
       :param coords: Coordinates (x,y,z) from which to read data 
       :param operator: Datareduction operator. "pass" does no operation on data
+      :param method: Interpolation method. Not implemented; barycentric interp would fall under Linear.
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -1284,13 +1289,15 @@ class VlsvReader(object):
       
       return cellid_neighbors
 
-   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Trilinear"):
+   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Linear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
       :param coords: Coordinates from which to read data 
       :param periodic: Periodicity of the system. Default is periodic in all dimension
       :param operator: Datareduction operator. "pass" does no operation on data
+      :param method: Interpolation method, default "Linear", options: ["Nearest", "Linear"]
+                     
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -1301,11 +1308,17 @@ class VlsvReader(object):
       if (len(periodic)!=3):
             raise ValueError("Periodic must be a list of 3 booleans.")
 
+      if method in interp_method_aliases.keys():
+         warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method])
+         method = interp_method_aliases[method]
+
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
-         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic)
+         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+
+      # case vg
 
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
@@ -1328,6 +1341,16 @@ class VlsvReader(object):
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       closest_cell_ids = self.get_cellid(coordinates)
+
+      if method == "Nearest":
+         final_values = self.read_variable(name, cellids=closest_cell_ids, operator=operator)
+         if stack:
+            return final_values.squeeze()
+         else:
+            if value_length == 1:
+               return final_values.squeeze()[()] # The only special case to return a scalar instead of an array
+            else:
+               return final_values.squeeze()
 
       batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
       
@@ -1408,7 +1431,7 @@ class VlsvReader(object):
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
-                                            method="Trilinear",
+                                            method="Linear",
                                             methodargs={
                                              "RBF":{"neighbors":64},
                                              "Delaunay":{"qhull_options":"QJ"}
@@ -1419,7 +1442,7 @@ class VlsvReader(object):
       :param coords:       Coordinates from which to read data 
       :param periodic:     Periodicity of the system. Default is periodic in all dimension
       :param operator:     Datareduction operator. "pass" does no operation on data
-      :param method:       Method for interpolation, default "RBF" ("Delaunay" is available)
+      :param method:       Method for interpolation, default "Linear" ("RBF, "Delaunay")
       :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "RBF", "Delaunay";
                            see scipy.interpolate.RBFInterpolator for RBF and scipy.interpolate.LinearNDInterpolator for Delaunay
       :returns: numpy array with the data
@@ -1435,20 +1458,45 @@ class VlsvReader(object):
       if (len(periodic)!=3):
             raise ValueError("Periodic must be a list of 3 booleans.")
 
+      if method in interp_method_aliases.keys():
+         warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method])
+         method = interp_method_aliases[method]
+
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
-         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic)
+         return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+
+      # Default case: AMR grid
 
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
+
       
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       cellids = self.get_cellid(coordinates)
-      # containing_cells = self.get_unique_cellids(coordinates)
+
+      if method == "Nearest":
+         # Check one value for the length
+         test_variable = self.read_variable(name,cellids=[1],operator=operator)
+         if isinstance(test_variable,np.ma.core.MaskedConstant):
+            value_length=1
+         elif isinstance(test_variable, Iterable):
+            value_length=len(test_variable)
+         else:
+            value_length=1
+         final_values = self.read_variable(name, cellids=cellids, operator=operator)
+         if stack:
+            return final_values.squeeze()
+         else:
+            if value_length == 1:
+               return final_values.squeeze()[()] # The only special case to return a scalar instead of an array
+            else:
+               return final_values.squeeze()      # Other methods
+
       containing_cells = np.unique(cellids)
       self.build_duals(containing_cells)
       duals = self.get_duals(containing_cells)
