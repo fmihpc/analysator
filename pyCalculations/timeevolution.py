@@ -60,8 +60,8 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)
    cellids = np.atleast_1d(cellids)
-   parameters = ["t"]#,"tstep","fileIndex"]
-   parameter_units=["s"]#,"",""]
+   parameters = ["t","tstep","fileIndex"]
+   parameter_units=["s","",""]
    #construct empty units, if none are given
    if (units == "") or (len(units) != len(variables)):
       units=[ "" for i in range(len(variables))]
