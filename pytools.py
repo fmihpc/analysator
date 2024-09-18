@@ -24,6 +24,8 @@
 import filemanagement
 import socket, re, os, tempfile, atexit, shutil
 import warnings
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 warnings.filterwarnings("once", category=DeprecationWarning)
 warnings.filterwarnings("once", category=PendingDeprecationWarning)
 warnings.filterwarnings("once", category=FutureWarning)
@@ -50,23 +52,25 @@ os.environ['MPLCONFIGDIR']=mpldir
 import numpy as np
 import matplotlib
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   print('Warning, according to loaded numpy and matplotlib versions, user appears to be')
-   print('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
-   print('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
+   logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
+   logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
+   logging.info('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
 if not os.getenv('PTNOLATEX'):
    matplotlib.rc('text', usetex=True)
    matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-   matplotlib.rcParams['mathtext.fontset'] = 'stix'
-   matplotlib.rcParams['font.family'] = 'STIXGeneral'
-   print("Using LaTeX formatting")
+   # matplotlib.rcParams['mathtext.fontset'] = 'stix'
+   # matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   # Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.
+   matplotlib.rcParams['font.family'] = 'serif'
+   logging.info("Using LaTeX formatting")
    # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
 
 # Set backends
 if matplotlib.get_backend()[:9] == 'module://':
-   print("Using backend "+matplotlib.get_backend())
+   logging.info("Using backend "+matplotlib.get_backend())
    backend_interactive = matplotlib.get_backend()
    backend_noninteractive = matplotlib.get_backend()
 elif not os.getenv('PTBACKEND'):
@@ -80,12 +84,12 @@ else:
 try:
    import calculations
 except ImportError as e:
-   print("Note: Did not import calculations module: ", e)
+   logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
    import vlsvfile
 except ImportError as e:
-   print("Note: Did not import vlsvfile module: ", e)
+   logging.info("Note: Did not import vlsvfile module: " + str(e))
 
 import os
 import matplotlib.pyplot as plt
@@ -95,29 +99,29 @@ if os.getenv('PTNONINTERACTIVE') != None:
    try:
       plt.switch_backend(backend_noninteractive)
    except:
-      print("Note: Unable to switch to "+backend_noninteractive+" backend")
+      logging.info("Note: Unable to switch to "+backend_noninteractive+" backend")
 else:
    # Interactive plotting mode
    plt.ion()
    try:
       plt.switch_backend(backend_interactive)
    except:
-      print("Note: Unable to switch to "+backend_interactive+" backend")
+      logging.info("Note: Unable to switch to "+backend_interactive+" backend")
 
    #Only attempt loading MayaVi2 if requested
    if os.getenv('PTMAYAVI2') != None:
       try:
          import grid
       except ImportError as e:
-         print("Note: Did not import (outdated MayaVi2) grid module: ", e)
+         logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
    import plot
 except ImportError as e:
-   print("Note: Did not import plot module: ", e)
+   logging.info("Note: Did not import plot module: " + str(e))
 
 try:
    import miscellaneous
 except ImportError as e:
-   print("Note: Did not import miscellaneous: ", e)
+   logging.info("Note: Did not import miscellaneous: " + str(e))
 

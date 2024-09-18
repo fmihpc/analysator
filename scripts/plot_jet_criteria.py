@@ -24,6 +24,7 @@
 import pytools as pt
 import sys, os, socket
 import numpy as np
+import logging
 
 # Custom expression function                                                                                            
 def exprPlaschke(exprmaps):
@@ -67,7 +68,7 @@ def jetcontours(ax, XmeshXY,YmeshXY, pass_maps):
     # format of the incoming data.
     if type(pass_maps[0]) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expected a list of timesteps to average from, but got a single timestep. Exiting.")
+        logging.info("expected a list of timesteps to average from, but got a single timestep. Exiting.")
         quit()
 
     # Multiple time steps were found
@@ -107,9 +108,9 @@ def jetcontours(ax, XmeshXY,YmeshXY, pass_maps):
     Plaschke = thisrho*(thisvx**2)/(swrho*(swvx**2))
     ArcherHorbury = np.divide(thispdyn,avgpdyn)
     Karlsson = np.divide(thisrho,avgrho)
-    print("Plaschke ",np.amin(Plaschke), np.amax(Plaschke))
-    print("ArcherHorbury ",np.amin(ArcherHorbury), np.amax(ArcherHorbury))
-    print("Karlsson ",np.amin(Karlsson), np.amax(Karlsson))
+    logging.info("Plaschke " + str(np.amin(Plaschke)) + " " + str(np.amax(Plaschke)))
+    logging.info("ArcherHorbury " + str(np.amin(ArcherHorbury)) + " " + str(np.amax(ArcherHorbury)))
+    logging.info("Karlsson " + str(np.amin(Karlsson)) + " " + str(np.amax(Karlsson)))
 
     # draw contours                                                                                                     
     contour_cr1 = ax.contour(XmeshXY,YmeshXY,Plaschke,[0.25],
@@ -131,7 +132,7 @@ timetot = [611]
 for j in timetot:
     # Source data file                                                                                                  
     bulkname = "bulk."+str(j).rjust(7,'0')+".vlsv"
-    print(bulkname)
+    logging.info(bulkname)
 
     pt.plot.plot_colormap(filename=fileLocation+bulkname,
                           run="ABA",
@@ -144,7 +145,7 @@ for j in timetot:
                           vmin=0.8, vmax=5, 
                           external=jetcontours,
                           boxre=[8,16,-6,6],
-                          cbtitle='$n_\mathrm{p}$ [cm$^{-3}$]', 
+                          cbtitle=r'$n_\mathrm{p}$ [cm$^{-3}$]', 
                           title='', usesci=0, thick=1.2)
 
 

@@ -4,6 +4,7 @@ from scipy.interpolate import LinearNDInterpolator
 from operator import itemgetter
 # from time import time
 import warnings
+import logging
 
 importerror = None
 
@@ -61,15 +62,15 @@ def f(ksii, fii):
 # does not handle scalars?
 def df(ksii, fii):
    ksi = np.atleast_2d(ksii)
-   # print(fii.shape)
+   # logging.info(fii.shape)
    if(fii.ndim == 1):
       fi = fii[np.newaxis,:,np.newaxis]
    elif(fii.ndim == 2):
       fi = np.atleast_3d(fii)#fii[:,:,np.newaxis]
    else:
       fi = fii
-   # print(fi)
-   # print(fi.shape)
+   # logging.info(fi)
+   # logging.info(fi.shape)
    d0 =  -1 * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,0,:] + \
           1 * (1-ksi[:,1,None]) * (1-ksi[:,2,None]) * fi[:,1,:] + \
          -1 *    ksi[:,1,None]  * (1-ksi[:,2,None]) * fi[:,2,:] + \
@@ -105,12 +106,12 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
    v_coords = np.atleast_3d(v_coords)
    ksi0 = np.full_like(p, 0.5)
    J = df(ksi0, v_coords)
-   # print("J", J)
+   # logging.info("J", J)
    ksi_n = ksi0
    ksi_n1 = np.full_like(ksi0, np.nan)
    f_n =  f(ksi_n,v_coords)
-   # print(f_n.shape, p.shape)
-   # print(f_n)
+   # logging.info(f_n.shape, p.shape)
+   # logging.info(f_n)
    f_n = f_n - p
 
    resolved = np.full((p.shape[0],),False, dtype=bool)
@@ -131,12 +132,12 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
          break
          # diverged = np.linalg.norm(ksi_n1,axis=1) > 1e2
          # ksi_n1[diverged,:] = np.nan
-         # # print("All converged in ", i, "iterations")
+         # # logging.info("All converged in ", i, "iterations")
          # return ksi_n1
       
 
    if np.all(resolved):
-      # print("Converged after ", i, "iterations")
+      # logging.info("Converged after ", i, "iterations")
       diverged = np.linalg.norm(ksi_n1,axis=1) > 1e2
       ksi_n1[diverged,:] = np.nan
       return ksi_n1
@@ -178,14 +179,14 @@ class HexahedralTrilinearInterpolator(object):
          else:
             val_len = 1
          ksis = np.array(ksis).squeeze() # n x 1 x 3 ...... fix
-         # print(ksis.shape, fi.shape)
+         # logging.info(ksis.shape, fi.shape)
          if(val_len == 1):
             fi = fi.reshape((-1,8))
          else:
             fi = fi.reshape((-1,8,val_len))
-         # print('fi reshaped', fi.shape)
+         # logging.info('fi reshaped', fi.shape)
          vals = f(ksis, fi)
-         # print("irregular interpolator __call__ done in", time()-t0,"s")
+         # logging.info("irregular interpolator __call__ done in", time()-t0,"s")
          return vals
       
          # the following loop is not reached, kept for reference
@@ -193,10 +194,10 @@ class HexahedralTrilinearInterpolator(object):
             # dual, ksi = self.reader.get_dual(np.atleast_2d(p))
             # dual = dual[0]
             # ksi = ksi[0]
-            # print("regular:",i,dual, ksi)
+            # logging.info("regular:",i,dual, ksi)
             dual = duals[i]
             ksi = ksis[i]
-            # print("from batch:", dual, ksi)
+            # logging.info("from batch:", dual, ksi)
             if dual is None:
                vals.append(np.nan)
             else:

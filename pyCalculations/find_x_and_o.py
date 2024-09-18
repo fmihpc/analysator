@@ -9,6 +9,7 @@ from scipy.ndimage import convolve
 from scipy.signal import convolve2d
 from shapely import geometry
 from numpy import linalg as LA
+import logging
 
 ## This script searches for the x and o points from the 2D simulations. It assumes polar plane. If you use equatorial plane change the z_array to y_array and it's limits.
 ## It uses the contours of grad(flux_function) to find the extrema and Hessian matrix to define the type of the point (minima, maxima, saddle)
@@ -62,7 +63,7 @@ if len(sys.argv)==2:
 elif len(sys.argv)==3:
    indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]))
 elif len(sys.argv)==4:
-   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),,int(sys.argv[3]))
+   indexes = np.arange(int(sys.argv[1]),int(sys.argv[2]),int(sys.argv[3]))
 else:
    sys.stderr.write("Syntax: size.py <index>\n")
    sys.stderr.write("or: size.py <starting_index> <final_index+1>\n")

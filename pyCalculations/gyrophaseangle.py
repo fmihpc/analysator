@@ -24,6 +24,7 @@
 import numpy as np
 import pylab as pl
 from rotation import rotateVectorToVector
+import logging
 
 def gyrophase_angles_from_file( vlsvReader, cellid):
    ''' Calculates the gyrophase angle angle distribution for a given cell with a given file

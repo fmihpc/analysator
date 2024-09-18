@@ -2,6 +2,7 @@ import pytools as pt
 import sys, os, socket
 import numpy as np
 import math
+import logging
 
 # Script for attempting to estimate AMR 6D run costs for the FRODO GC run
 # MCB 2.5.2018
@@ -59,7 +60,7 @@ timetot = [4070]
 for j in timetot:
     # Source data file                                                                                                  
     bulkname = "bulk."+str(j).rjust(7,'0')+".vlsv"
-    print(bulkname)
+    logging.info(bulkname)
     BCHf = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
 
     pt.plot.plot_colormap(vlsvobj=BCHf,
@@ -177,19 +178,19 @@ else:
 # dynamicMinValue2 = 1.0e-15
 # So with adjusting the sparsity, block counts can be decreased somewhat even if vAMR isn't available.
 
-print("   Volumes       c-widths    c-counts  blocks pc  tot blocks")
-print("   [R_E^3]           [km]")
-print("L0 %10.5e %10d %10.5e %10d %10.5e " % (V_l0c, cw_l0*1.e-3, cells_l0, avgblocks_l0, cells_l0*avgblocks_l0))
-print("L1 %10.5e %10d %10.5e %10d %10.5e " % (V_l1c, cw_l1*1.e-3, cells_l1, avgblocks_l1, cells_l1*avgblocks_l1))
-print("L2 %10.5e %10d %10.5e %10d %10.5e " % (V_l2c, cw_l2*1.e-3, cells_l2, avgblocks_l2, cells_l2*avgblocks_l2))
+logging.info("   Volumes       c-widths    c-counts  blocks pc  tot blocks")
+logging.info("   [R_E^3]           [km]")
+logging.info("L0 %10.5e %10d %10.5e %10d %10.5e " % (V_l0c, cw_l0*1.e-3, cells_l0, avgblocks_l0, cells_l0*avgblocks_l0))
+logging.info("L1 %10.5e %10d %10.5e %10d %10.5e " % (V_l1c, cw_l1*1.e-3, cells_l1, avgblocks_l1, cells_l1*avgblocks_l1))
+logging.info("L2 %10.5e %10d %10.5e %10d %10.5e " % (V_l2c, cw_l2*1.e-3, cells_l2, avgblocks_l2, cells_l2*avgblocks_l2))
 
 blockcount = (cells_l0*avgblocks_l0 + cells_l1*avgblocks_l1 + cells_l2*avgblocks_l2)
 psccount = blockcount*64 # phase-space cells
 memuse = psccount*22*(1./(1024**3)) # estimated memory use due to ghost cells and intermediate arrays
 nodes = memuse / 60 # each sisu node has about 60 GB for use
-print("Total block count %10.5e " % blockcount)
-print("Total psc count %10.5e " % psccount)
-print("Total memory use [GiB] %10.5f " % memuse)
-print("Sisu nodes required %10.5f " % nodes)
+logging.info("Total block count %10.5e " % blockcount)
+logging.info("Total psc count %10.5e " % psccount)
+logging.info("Total memory use [GiB] %10.5f " % memuse)
+logging.info("Sisu nodes required %10.5f " % nodes)
 
 

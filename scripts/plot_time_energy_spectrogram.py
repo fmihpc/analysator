@@ -38,6 +38,7 @@ import matplotlib.colors as colors
 import pytools as pt
 import numpy as np
 
+import logging
 # font size and linewidth
 matplotlib.rcParams.update({'font.size': 26})
 matplotlib.rcParams['lines.linewidth'] = 2
@@ -91,7 +92,7 @@ def doPlots(folder):
    bulkFiles.append(f)
  # check
  if not len(bulkFiles) == len(spectraFiles):
-  print('ERROR: different number of spectra and bulk files')
+  logging.info('ERROR: different number of spectra and bulk files')
   return
  Nt = len(bulkFiles)
  # read bulk files
@@ -111,12 +112,12 @@ def doPlots(folder):
   cids_b = np.int64(bulk[:,0,ii])
   cids_s = np.int64(spectra[:,0,ii])
   if not np.all(cids == cids_b) and np.all(cids == cids_s):
-   print('ERROR: different cells in spectra and bulk files')
+   logging.info('ERROR: different cells in spectra and bulk files')
    return
   t_b = bulk[:,1,ii]
   t_s = spectra[:,1,ii]
   if not np.all(t == t_b) and np.all(t == t_s):
-   print('ERROR: different simulation times in spectra and bulk files')
+   logging.info('ERROR: different simulation times in spectra and bulk files')
    return
  # indices of bulk parameters
  #i_rho,i_rhovx,i_rho_vy,i_rho_vz,i_Bx,i_By,i_Bz,i_Ex,i_Ey,i_Ez,i_Pxx,i_Pyy,i_Pzz,i_POff1,i_POff2,i_POff3,i_Ttot,i_Tpar,i_Tperp1,i_Tper2 = np.array(range(20))+2

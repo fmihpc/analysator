@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import scipy.optimize
+import logging
 
 # Script for calculating shock crossing values from Rankine-Hugoniot relations
 # Feed it upstream and shock values in given reference frame, outputs the dHT state
@@ -26,7 +27,7 @@ def newtonmethod(theta, V1sq, beta1, vA1sq, Gamma, vs1sq):
     cos12 = np.cos(theta)**2
     sin12 = np.sin(theta)**2
     MA2=V1sq/vA1sq
-    print("MA ",np.sqrt(MA2))
+    logging.info("MA: " + str(np.sqrt(MA2)))
     Ztry = max( ((0.5/cos12)*(calctemp1 + np.sqrt(calctemp1**2 - 2.*Gamma*beta1*cos12)) -1.),
                 ((0.5/cos12)*(calctemp1 - np.sqrt(calctemp1**2 - 2.*Gamma*beta1*cos12)) -1.), 0.)
     # First (root for M**2) -1
@@ -80,15 +81,15 @@ def rankine(Tu, rhou, V, B, n, Vsh):
     
     pu = rhou * k * Tu
     vHT = np.cross(n, np.cross(Vu, Bu)) / np.dot(n,Bu)
-    #print("The de Hoffmann Teller transformation velocity is ", vHT)
+    #logging.info("The de Hoffmann Teller transformation velocity is ", vHT)
 
     VuHT = Vu - vHT
     BuHT = Bu #+ 1/c**2 * np.cross(vHT, np.cross(-Vu,Bu)) # Eu = -Vu X Bu
     #BuHT2 = Bu + 1/c**2 * np.cross(vHT, np.cross(-Vu,Bu)) # Eu = -Vu X Bu
-    #print("BuHT "+str(BuHT)+" alt "+str(BuHT2))
+    #logging.info("BuHT "+str(BuHT)+" alt "+str(BuHT2))
     
     Emotional = -np.cross(VuHT,BuHT)
-    #print("Verify: Motional E-field in HT frame: ", Emotional)
+    #logging.info("Verify: Motional E-field in HT frame: ", Emotional)
 
     theta = np.arccos(np.dot(BuHT,n)/np.linalg.norm(BuHT))
 
@@ -108,7 +109,7 @@ def rankine(Tu, rhou, V, B, n, Vsh):
     X = sol.x
     # Alternative own Newton method
     X2 = newtonmethod(theta, np.dot(Vu,Vu), beta1, vAusq, Gamma, vsusq)
-    print("X ",X," X2 ",X2)
+    logging.info("X " +str(X) + " X2 " + str(X2))
     
     VuHTsq = np.dot(VuHT,VuHT)
     VndHT = VnuHT / X
@@ -129,7 +130,7 @@ def rankine(Tu, rhou, V, B, n, Vsh):
     
     Bd = BdHT #- 1/c**2 * cross(vHT, cross(-Vu,Bu))
     #Bd2 = BdHT - 1/c**2 * np.cross(vHT, np.cross(-Vu,Bu))
-    #print("Bd "+str(Bd)+" alt "+str(Bd2))
+    #logging.info("Bd "+str(Bd)+" alt "+str(Bd2))
 
     Vd = VdHT + vHT + Vshvect
     XB = np.linalg.norm(Bd)/np.linalg.norm(Bu)
@@ -137,23 +138,23 @@ def rankine(Tu, rhou, V, B, n, Vsh):
     #//Td = pd / (Gamma * rhod * k)
     Td = pd / (rhod * k)
                       
-    print("Gas compression ratio ",X[0])
-    print("Magnetic compression ratio ",XB)
+    logging.info("Gas compression ratio " + str(X[0]))
+    logging.info("Magnetic compression ratio " + str(XB))
 
-    print("")
-    print("This determines the dHT upstream state")
-    print("Density ",rhou)
-    print("Temperature ",Tu)
-    #print("Thermal pressure ",pu[0])
-    print(" V ",VuHT)
-    print(" B ",BuHT)
+    logging.info("")
+    logging.info("This determines the dHT upstream state")
+    logging.info("Density " + str(rhou))
+    logging.info("Temperature " + str(Tu))
+    #logging.info("Thermal pressure ",pu[0])
+    logging.info(" V " + str(VuHT))
+    logging.info(" B " + str(BuHT))
 
-    print("")
-    print("This determines the dHT downstream state")
-    print("Density ",rhod[0])
-    print("Temperature ",Td[0])
-    #print("Thermal pressure ",pd[0])
-    print(" V ",VdHT)
-    print(" B ",BdHT)
+    logging.info("")
+    logging.info("This determines the dHT downstream state")
+    logging.info("Density " + str(rhod[0]))
+    logging.info("Temperature " + str(Td[0]))
+    #logging.info("Thermal pressure ",pd[0])
+    logging.info(" V " + str(VdHT))
+    logging.info(" B " + str(BdHT))
 
     return X[0], XB

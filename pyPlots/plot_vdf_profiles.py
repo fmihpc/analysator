@@ -21,6 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+import logging
 import matplotlib
 import pytools as pt
 import numpy as np
@@ -116,7 +117,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     vzsize = widval*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
-    print("Input velocity grid cell size "+str(inputcellsize))
+    logging.info("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     velcellslist = list(zip(*velcells.items()))
@@ -127,40 +128,40 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     
     f = np.asarray(velcellslist[1])
     V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
-    print("Found "+str(len(V))+" v-space cells")
+    logging.info("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
     if center == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
-        print(peakindex)
-        print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
+        logging.info(peakindex)
+        logging.info("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
         if len(center)==3: # assumes it's a vector
-            print("Transforming to frame travelling at speed "+str(center))
+            logging.info("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
-            print("Error in shape of center vector! Give in form (vx,vy,vz).")
+            logging.info("Error in shape of center vector! Give in form (vx,vy,vz).")
 
     if setThreshold==None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
         # cells as well.
         if vlsvReader.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
             setThreshold = vlsvReader.read_variable('MinValue',cid)
-            print("Found a vlsv file MinValue of "+str(setThreshold))
+            logging.info("Found a vlsv file MinValue of "+str(setThreshold))
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
-            print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+            logging.info("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
         elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
-            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
+            logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
-            print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
-            print("Using a default value of 1.e-16. Override with setThreshold=value.")
+            logging.info("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+            logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
             setThreshold = 1.e-16
     ii_f = np.where(f >= setThreshold)
-    print("Dropping velocity cells under setThreshold value "+str(setThreshold))
+    logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
     if len(ii_f) < 1:
         return (False,0,0,0)
     f = f[ii_f]
@@ -224,17 +225,17 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
         testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
         testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
         if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
-            print("Error in rotation: NXrot not a unit vector")
+            logging.info("Error in rotation: NXrot not a unit vector")
         if abs(NXrot[2]) > 1.e-3:
-            print("Error in rotation: NXrot not in x-y-plane")
+            logging.info("Error in rotation: NXrot not in x-y-plane")
         for count,testvect in enumerate(testrot2):
             if abs(1.0-np.linalg.norm(testvect))>1.e-3:
-                print("Error in rotation: testvector ",count,testvect," not a unit vector")
+                logging.info("Error in rotation: testvector " + str((count,testvect)) + " not a unit vector")
             if abs(1.0-np.amax(testvect))>1.e-3:
-                print("Error in rotation: testvector ",count,testvect," largest component is not unity")
+                logging.info("Error in rotation: testvector " + str((count,testvect)) + " largest component is not unity")
 
     else:
-        print("Error finding rotation of v-space!")
+        logging.info("Error finding rotation of v-space!")
         return (False,0,0,0)
 
     # create three 1-dimensional profiles across VDF
@@ -359,7 +360,7 @@ def plot_vdf_profiles(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
     scale=1
@@ -434,7 +435,7 @@ def plot_vdf_profiles(filename=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            print("No write access for directory "+outputdir2+"! Exiting.")
+            logging.info("No write access for directory "+savefigdir+"! Exiting.")
             return
 
 
@@ -445,13 +446,13 @@ def plot_vdf_profiles(filename=None,
        if not vlsvReader.check_population(pop):
            if vlsvReader.check_population("avgs"):
                pop="avgs"
-               #print("Auto-switched to population avgs")
+               #logging.info("Auto-switched to population avgs")
            else:
-               print("Unable to detect population "+pop+" in .vlsv file!")
+               logging.info("Unable to detect population "+pop+" in .vlsv file!")
                sys.exit()
     else:
         if not vlsvReader.check_population(pop):
-            print("Unable to detect population "+pop+" in .vlsv file!")
+            logging.info("Unable to detect population "+pop+" in .vlsv file!")
             sys.exit()       
 
     #read in mesh size and cells in ordinary space
@@ -495,7 +496,7 @@ def plot_vdf_profiles(filename=None,
                 plt.switch_backend(pt.backend_noninteractive)  
 
     if (cellids==None and coordinates==None and coordre==None):
-        print("Error: must provide either cell id's or coordinates")
+        logging.info("Error: must provide either cell id's or coordinates")
         return -1
 
     if coordre!=None:
@@ -513,10 +514,10 @@ def plot_vdf_profiles(filename=None,
         yReq = np.asarray(coordinates).T[1]
         zReq = np.asarray(coordinates).T[2]
         if xReq.shape == yReq.shape == zReq.shape:
-            #print('Number of points: ' + str(xReq.shape[0]))
+            #logging.info('Number of points: ' + str(xReq.shape[0]))
             pass
         else:
-            print('ERROR: bad coordinate variables given')
+            logging.info('ERROR: bad coordinate variables given')
             sys.exit()
         cidsTemp = []
         for ii in range(xReq.shape[0]):
@@ -525,33 +526,33 @@ def plot_vdf_profiles(filename=None,
             if cidRequest > 0:
                 cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop = pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
-                print('ERROR: cell not found')
+                logging.info('ERROR: cell not found')
                 sys.exit()
             if (cidNearestVspace <= 0):
-                print('ERROR: cell with vspace not found')
+                logging.info('ERROR: cell with vspace not found')
                 sys.exit()
             xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
-            print('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
-            print('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
-            print('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
-            print('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
+            logging.info('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
+            logging.info('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
+            logging.info('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
+            logging.info('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
             cidsTemp.append(cidNearestVspace)
         cellids = np.unique(cidsTemp).tolist()
-        print('Unique cells with vspace found: ' + str(len(cidsTemp)))
+        logging.info('Unique cells with vspace found: ' + str(len(cidsTemp)))
     #else:
-    #    print('Using given cell ids and assuming vspace is stored in them')
+    #    logging.info('Using given cell ids and assuming vspace is stored in them')
 
     # Ensure that we now have a list of cellids instead of just a single cellid
     if type(cellids) is not list:
-        print("Converting given cellid to a single-element list of cellids.")
+        logging.info("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
 
     if coordinates==None and coordre==None:
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
-                print("Error, cellid "+str(cellid)+" does not contain a VDF!")
+                logging.info("Error, cellid "+str(cellid)+" does not contain a VDF!")
                 return
 
 
@@ -560,16 +561,16 @@ def plot_vdf_profiles(filename=None,
         # Just handle the first cellid.
         if len(cellids) > 1:
             cellids = [cellids[0]]
-            print("User requested on-screen display, only plotting first requested cellid!")
+            logging.info("User requested on-screen display, only plotting first requested cellid!")
 
-    print("\n")
+    logging.info("\n")
     for cellid in cellids:
         # Initialise some values
         fminuse=None
         fmaxuse=None
 
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
-        print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
+        logging.info('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
@@ -589,7 +590,7 @@ def plot_vdf_profiles(filename=None,
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
         # if Vbulk is None:
-        #     print("Error in finding plasma bulk velocity!")
+        #     logging.info("Error in finding plasma bulk velocity!")
         #     sys.exit()
 
         # If necessary, find magnetic field
@@ -620,7 +621,7 @@ def plot_vdf_profiles(filename=None,
                     PERBB = vlsvReader.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    print("Error finding B vector direction!")
+                    logging.info("Error finding B vector direction!")
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -652,7 +653,7 @@ def plot_vdf_profiles(filename=None,
                 pltzstr=r"$v_z$"
                 normvect=[0,0,1] # used just for cell size normalisation
             else:
-                print("Problem finding default slice direction")
+                logging.info("Problem finding default slice direction")
                 yz=1
                 slicetype="yz"
                 pltxstr=r"$v_y$"
@@ -667,7 +668,7 @@ def plot_vdf_profiles(filename=None,
                 pltystr=r"$v_2$"
                 pltzstr=r"$v_3$"
             else:
-                print("Error parsing slice normal vector!")
+                logging.info("Error parsing slice normal vector!")
                 sys.exit()
         elif xy!=None:
             slicetype="xy"
@@ -729,10 +730,10 @@ def plot_vdf_profiles(filename=None,
             # Check if target file already exists and overwriting is disabled
             if (nooverwrite!=None and os.path.exists(savefigname)):            
                 if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    print("Found existing file "+savefigname+". Skipping.")
+                    logging.info("Found existing file "+savefigname+". Skipping.")
                     return
                 else:
-                    print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -746,11 +747,11 @@ def plot_vdf_profiles(filename=None,
             center='peak'
         if cbulk!=None or center == 'bulk':
             center=None # Finds the bulk velocity and places it in the center vector
-            print("Transforming to plasma frame")
+            logging.info("Transforming to plasma frame")
             if type(cbulk) is str:
                 if vlsvReader.check_variable(cbulk):
                     center = vlsvReader.read_variable(cbulk,cellid)
-                    print("Found bulk frame from variable "+cbulk)
+                    logging.info("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
 
@@ -761,7 +762,7 @@ def plot_vdf_profiles(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            print('ERROR: error from velocity space reducer. No velocity cells?')
+            logging.info('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # If no other plotting fmin fmax values are given, take min and max of array
@@ -775,7 +776,7 @@ def plot_vdf_profiles(filename=None,
         else:
             #fmaxuse=np.nanmax(np.concatenate((bins1,np.concatenate((bins2,bins3)))))
             fmaxuse=np.nanmax(np.concatenate((bins1,bins2,bins3)))*1.5
-        print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
+        logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
 
         # If no other plotting fmin fmax values are given, take min and max of array
         if vmin!=None:
@@ -794,7 +795,7 @@ def plot_vdf_profiles(filename=None,
                 vmaxuse = vmaxuse*0.8
             else:
                 vmaxuse = vmaxuse*1.2
-        print("Active v range is "+str(vminuse)+" to "+str(vmaxuse))
+        logging.info("Active v range is "+str(vminuse)+" to "+str(vmaxuse))
 
         axis1=np.array(axis1)/velUnit
         axis2=np.array(axis2)/velUnit
@@ -928,8 +929,8 @@ def plot_vdf_profiles(filename=None,
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
-                print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            print(savefigname+"\n")
+                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            logging.info(savefigname+"\n")
             plt.close()
         elif axes==None:
             # Draw on-screen

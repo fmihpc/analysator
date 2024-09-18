@@ -26,6 +26,7 @@ import scipy as sp
 import pytools as pt
 import warnings
 from scipy import interpolate
+import logging
 
 def dynamic_field_tracer( vlsvReader_list, x0, max_iterations, dx):
    ''' Field tracer in a dynamic time frame
@@ -119,7 +120,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
       coordinates = np.array([x,y,z])
       # Debug:
       if( len(x) != sizes[0] ):
-         print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
+         logging.info("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
 
       # Create grid interpolation
       interpolator_face_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]] - 0.5*dcell[indices[0]], coordinates[indices[1]], face_B[indices[0]], kx=2, ky=2, s=0)
@@ -144,17 +145,17 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
       coordinates = np.array([x,y,z])
       # Debug:
       if( len(x) != sizes[0] ):
-         print("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
+         logging.info("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
 
       # Create grid interpolation
       interpolator_vol_B_0 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]], vol_B[indices[0]], kx=2, ky=2, s=0)
       interpolator_vol_B_1 = interpolate.RectBivariateSpline(coordinates[indices[0]], coordinates[indices[1]], vol_B[indices[1]], kx=2, ky=2, s=0)
       interpolators = [interpolator_vol_B_0, interpolator_vol_B_1]#, interpolator_face_B_2]
    elif centering == 'node':
-      print("Nodal variables not implemented")
+      logging.info("Nodal variables not implemented")
       return
    else:
-      print("Unrecognized centering:", centering)
+      logging.info("Unrecognized centering: "+ str(centering))
       return
 
    #######################################################
@@ -217,7 +218,7 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
    z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
 
    if centering is None:
-      print("centering keyword not set! Aborting.")
+      logging.info("centering keyword not set! Aborting.")
       return False
   
    # Create grid interpolation object for vector field (V). Feed the object the component data and locations of measurements.
