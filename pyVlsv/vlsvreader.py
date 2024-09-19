@@ -1716,16 +1716,30 @@ class VlsvReader(object):
       # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
       self.__read_fileindex_for_cellid()
 
-   def read_variable(self, name, cellids=-1,operator="pass"):
+   def read_variable(self, name, cellids=-1,operator="pass",sorted=False):
       ''' Read variables from the open vlsv file. 
       Arguments:
       :param name: Name of the variable
       :param cellids: a value of -1 reads all data
       :param operator: Datareduction operator. "pass" does no operation on data
+      :param sorted: Return values sorted by CellID (default: file order for vg, 3D array for fsgrid)
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
+
+      import inspect
+      # print(inspect.stack())
+      stck = inspect.stack()
+      # print(stck[1])
+      for i,fr in enumerate(stck):
+         mod = inspect.getmodule(fr[0])
+         print('frame '+str(i)+" module: "+ str(mod))
+      
+
+      if(inspect.getmodule(stck[1][0]) is None or (inspect.getmodule(stck[1][0]) is not None and inspect.getmodule(stck[1][0]).__name__ != 'main')):
+         warnings.warn("Calling read_variable returns data in file layout order. Remember to argsort with CellID or consider using read_variable_info instead!")
+      
       cellids = get_data(cellids)
 
       # Wrapper, check if requesting an fsgrid variable
