@@ -1172,7 +1172,7 @@ class VlsvReader(object):
       return -1
          
 
-   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="Linear"):
+   def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
       Note that this does not account for varying centerings of fsgrid data.
       Arguments:
@@ -1186,7 +1186,7 @@ class VlsvReader(object):
       '''
 
       if method != "Linear":
-         raise NotImplementedError("interpolation method "+method+" not implemented for read_interpolated_fsgrid_variable, only Linear supported so far.")
+         raise NotImplementedError("interpolation method "+method+" not implemented for read_interpolated_fsgrid_variable, only linear supported so far.")
       
       warnings.warn("read_interpolated_fsgrid_variable: face- vs. edge- centered variables not accounted for!")
 
@@ -1280,21 +1280,20 @@ class VlsvReader(object):
          ret.append(interpolateSingle(r))
       return np.asarray(ret)
 
-   def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass", method="Linear"):
+   def read_interpolated_ionosphere_variable(self, name, coordinates, operator="pass", method="linear"):
       ''' Read a linearly interpolated ionosphere variable value from the open vlsv file.
       Arguments:
       :param name: Name of the (ionosphere) variable
       :param coords: Coordinates (x,y,z) from which to read data 
       :param operator: Datareduction operator. "pass" does no operation on data
-      :param method: Interpolation method. Not implemented; barycentric interp would fall under Linear.
+      :param method: Interpolation method. Not implemented; barycentric interp would fall under linear.
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
 
       # At this stage, this function has not yet been implemented -- logging.info a warning and exit
-      logging.info('Interpolation of ionosphere variables has not yet been implemented; exiting.')
-      return -1
+      raise NotImplementedError('Interpolation of ionosphere variables has not yet been implemented; exiting.')
 
    # These are the 8 cells that span the upper corner vertex on a regular grid
    def get_vg_regular_interp_neighbors(self, cellids):
