@@ -1445,7 +1445,7 @@ class VlsvReader(object):
       refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(-1,8))
       if np.any(np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)):
          irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)[unique_cell_indices]
-         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method),(-1,value_length))
+         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method.lower()),(-1,value_length))
          # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
 
       if stack:
@@ -1549,7 +1549,7 @@ class VlsvReader(object):
 
       cells_set.discard(0)
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
-      intp = intp_wrapper.get_interpolator(name,operator, coords, method=method, methodargs=methodargs)
+      intp = intp_wrapper.get_interpolator(name,operator, coords, method=method.lower(), methodargs=methodargs)
       
       final_values = intp(coords, cellids=cellids)[:,np.newaxis]
 
