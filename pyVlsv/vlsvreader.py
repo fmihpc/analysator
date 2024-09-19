@@ -1732,9 +1732,9 @@ class VlsvReader(object):
       # print(inspect.stack())
       stck = inspect.stack()
       # print(stck[1])
-      for i,fr in enumerate(stck):
-         mod = inspect.getmodule(fr[0])
-         print('frame '+str(i)+" module: "+ str(mod))
+      # for i,fr in enumerate(stck):
+      #    mod = inspect.getmodule(fr[0])
+      #    print('frame '+str(i)+" module: "+ str(mod))
       
 
       if(inspect.getmodule(stck[1][0]) is None or (inspect.getmodule(stck[1][0]) is not None and inspect.getmodule(stck[1][0]).__name__ != 'main')):
