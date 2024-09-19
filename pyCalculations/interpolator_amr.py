@@ -213,28 +213,30 @@ class HexahedralTrilinearInterpolator(object):
          return fp
 
 
+supported_amr_interpolators = {'linear','rbf','delaunay'}
+
 class AMRInterpolator(object):
    ''' Wrapper class for interpolators, esp. at refinement interfaces.
    Supported methods:
-   Trilinear
+   linear
       - (nearly) C0 continuous, regular-grid trilinear interpolant extended to collapsed hexahedral cells.
       - Non-parametric
       - Exact handling of multiply-degenerate hexahedra is missing, with the enabling hack causing errors in trilinear coordinate on the order of 1m
 
 
-   Radial Basis Functions, RBF
+   Radial Basis Functions, `rbf`
       - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.
       - Not continuous with regular-grid trilinear interpolants, needs to be used in the entire interpolation domain.
       - kword options: "neighbors" for number of neighbors (64)
       - basis function uses SciPy default. A free parameter.
 
-   Delaunay (not recommended)
+   delaunay (not recommended)
       - Choice of triangulation is not unique with regular grids, including refinement interfaces.
       - kword options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
 
    '''
 
-   def __init__(self, reader, method = "Linear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
+   def __init__(self, reader, method = "linear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
       self.__reader = reader
       self.__cellids = np.array(list(set(cellids)),dtype=np.int64)
       self.duals = {}
@@ -249,29 +251,29 @@ class AMRInterpolator(object):
       return self.__reader.get_cell_coordinates(self.__cellids)
    
    def get_interpolator(self, name, operator, coords, 
-                        method="Linear", 
+                        method="linear", 
                         methodargs={
                            "RBF":{"neighbors":64}, # Harrison-Stetson number of neighbors
                            "Delaunay":{"qhull_options":"QJ"}
                            }):
       # Check for old aliases
-      if method == "Trilinear":
-         warnings.warn("'Trilinear' interpolator method renamed to 'Linear' for consistency")
-         method = "Linear"
+      if method.lower() == "trilinear":
+         warnings.warn("'trilinear' interpolator method renamed to 'linear' for consistency")
+         method = "linear"
 
-      methodargs["Linear"] = {"reader":self.__reader, "var" : name, "op":operator}
+      methodargs["linear"] = {"reader":self.__reader, "var" : name, "op":operator}
 
       pts = self.__reader.get_cell_coordinates(self.__cellids)
       vals = self.__reader.read_variable(name, self.__cellids, operator=operator)
-      if method == "Delaunay":
+      if method == "delaunay":
          self.__Delaunay = Delaunay(self.reader.get_cell_coordinates(self.__cellids),**methodargs[method])
          return LinearNDInterpolator(self.__Delaunay, vals)
-      elif method == "RBF":
+      elif method == "rbf":
          try:
             return RBFInterpolator(pts, vals, **methodargs[method])
          except Exception as e:
             warnings.warn("RBFInterpolator could not be imported. SciPy >= 1.7 is required for this class. Falling back to Hexahedral trilinear interpolator. Error given was " + str(e))
-            return HexahedralTrilinearInterpolator(pts, vals, **methodargs["Linear"])
-      elif method == "Linear":
+            return HexahedralTrilinearInterpolator(pts, vals, **methodargs["linear"])
+      elif method == "linear":
          return HexahedralTrilinearInterpolator(pts, vals, **methodargs[method])
 

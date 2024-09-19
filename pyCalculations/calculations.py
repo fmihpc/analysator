@@ -59,4 +59,4 @@ import fit
 from fieldtracer import static_field_tracer, static_field_tracer_3d
 from fieldtracer import dynamic_field_tracer
 from non_maxwellianity import epsilon_M
-from interpolator_amr import AMRInterpolator
+from interpolator_amr import AMRInterpolator, supported_amr_interpolators

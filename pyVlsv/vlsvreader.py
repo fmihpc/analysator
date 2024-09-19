@@ -42,11 +42,11 @@ from vlsvwriter import VlsvWriter
 from variable import get_data
 import warnings
 import time
-from interpolator_amr import AMRInterpolator
+from interpolator_amr import AMRInterpolator, supported_amr_interpolators
 from operator import itemgetter
 
 
-interp_method_aliases = {"Trilinear":"Linear"}
+interp_method_aliases = {"trilinear":"linear"}
 
 class PicklableFile(object):
    def __init__(self, fileobj):
@@ -1327,14 +1327,14 @@ class VlsvReader(object):
       
       return cellid_neighbors
 
-   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="Linear"):
+   def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="linear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
       :param coords: Coordinates from which to read data 
       :param periodic: Periodicity of the system. Default is periodic in all dimension
       :param operator: Datareduction operator. "pass" does no operation on data
-      :param method: Interpolation method, default "Linear", options: ["Nearest", "Linear"]
+      :param method: Interpolation method, default "linear", options: ["nearest", "linear"]
                      
       :returns: numpy array with the data
 
@@ -1346,9 +1346,9 @@ class VlsvReader(object):
       if (len(periodic)!=3):
             raise ValueError("Periodic must be a list of 3 booleans.")
 
-      if method in interp_method_aliases.keys():
-         warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method])
-         method = interp_method_aliases[method]
+      if method.lower() in interp_method_aliases.keys():
+         warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method.lower()])
+         method = interp_method_aliases[method.lower()]
 
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
@@ -1380,7 +1380,7 @@ class VlsvReader(object):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       closest_cell_ids = self.get_cellid(coordinates)
 
-      if method == "Nearest":
+      if method.lower() == "nearest":
          final_values = self.read_variable(name, cellids=closest_cell_ids, operator=operator)
          if stack:
             return final_values.squeeze()
@@ -1389,6 +1389,8 @@ class VlsvReader(object):
                return final_values.squeeze()[()] # The only special case to return a scalar instead of an array
             else:
                return final_values.squeeze()
+      elif method.lower() != 'linear':
+         raise NotImplementedError(method + ' is not a valid interpolation method')
 
       batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
       
@@ -1469,10 +1471,10 @@ class VlsvReader(object):
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
-                                            method="Linear",
+                                            method="linear",
                                             methodargs={
-                                             "RBF":{"neighbors":64},
-                                             "Delaunay":{"qhull_options":"QJ"}
+                                             "rbf":{"neighbors":64},
+                                             "delaunay":{"qhull_options":"QJ"}
                                              }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
@@ -1480,9 +1482,9 @@ class VlsvReader(object):
       :param coords:       Coordinates from which to read data 
       :param periodic:     Periodicity of the system. Default is periodic in all dimension
       :param operator:     Datareduction operator. "pass" does no operation on data
-      :param method:       Method for interpolation, default "Linear" ("RBF, "Delaunay")
-      :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "RBF", "Delaunay";
-                           see scipy.interpolate.RBFInterpolator for RBF and scipy.interpolate.LinearNDInterpolator for Delaunay
+      :param method:       Method for interpolation, default "linear" ("nearest", "rbf, "delaunay")
+      :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "rbf", "delaunay";
+                           see scipy.interpolate.RBFInterpolator for rbf and scipy.interpolate.LinearNDInterpolator for delaunay
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -1496,9 +1498,10 @@ class VlsvReader(object):
       if (len(periodic)!=3):
             raise ValueError("Periodic must be a list of 3 booleans.")
 
-      if method in interp_method_aliases.keys():
+      if method.lower() in interp_method_aliases.keys():
          warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method])
          method = interp_method_aliases[method]
+      
 
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
@@ -1517,7 +1520,7 @@ class VlsvReader(object):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
       cellids = self.get_cellid(coordinates)
 
-      if method == "Nearest":
+      if method == "nearest":
          # Check one value for the length
          test_variable = self.read_variable(name,cellids=[1],operator=operator)
          if isinstance(test_variable,np.ma.core.MaskedConstant):
@@ -1534,6 +1537,9 @@ class VlsvReader(object):
                return final_values.squeeze()[()] # The only special case to return a scalar instead of an array
             else:
                return final_values.squeeze()      # Other methods
+      else:
+         if method.lower() not in supported_amr_interpolators:
+            raise NotImplementedError(method + ' is not a valid interpolation method for AMR grids')
 
       containing_cells = np.unique(cellids)
       self.build_duals(containing_cells)
