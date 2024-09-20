@@ -1729,18 +1729,9 @@ class VlsvReader(object):
       '''
 
       import inspect
-      # print(inspect.stack())
+      
       stck = inspect.stack()
-      print("inspect.currentframe from read_variable\n",inspect.currentframe())
-      print("inspect.currentframe.f_back from read_variable\n",inspect.currentframe().f_back)
-      # print(stck[1])
-      # for i,fr in enumerate(stck):
-      #    mod = inspect.getmodule(fr[0])
-      #    print('frame '+str(i)+" module: "+ str(mod))
-      print("inspect.stack from read_variable\n", inspect.getmodule(stck))
-
-
-      if(inspect.getmodule(stck[1][0]) is None or (inspect.getmodule(stck[1][0]) is not None and inspect.getmodule(stck[1][0]).__name__ != 'main')):
+      if(inspect.getmodule(stck[1][0]) is None or (inspect.getmodule(stck[1][0]) is not None and inspect.getmodule(stck[1][0]).__name__ == '__main__')):
          warnings.warn("Calling read_variable returns data in file layout order. Remember to argsort with CellID or consider using read_variable_info instead!")
       
       cellids = get_data(cellids)

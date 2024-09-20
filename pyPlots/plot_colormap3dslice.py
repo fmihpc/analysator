@@ -224,8 +224,6 @@ def plot_colormap3dslice(filename=None,
 
     '''
 
-    import inspect
-    print('inspect.stack from plot_colormap3dslice\n',inspect.stack())
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
@@ -433,11 +431,7 @@ def plot_colormap3dslice(filename=None,
     zsize = int(zsize)    
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     cellsize = (xmax-xmin)/xsize
-    print("cellids")
-    print("inspect.currentframe from plot\n",inspect.currentframe())
-    print("inspect.currentframe.f_back from plot\n",inspect.currentframe().f_back)
     cellids = f.read_variable("CellID")
-    print("out cellids")
 
     # Read the FSgrid mesh
     try:
