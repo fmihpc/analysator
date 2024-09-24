@@ -189,6 +189,8 @@ class VlsvReader(object):
 
       self.variable_cache = {} # {(varname, operator):data}
 
+      self.__pops_init = False
+
       self.__read_xml_footer()
                               # vertex-indices is a 3-tuple of integers
       self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
@@ -261,9 +263,25 @@ class VlsvReader(object):
 
       self.__meshes = {}
 
+
+      self.active_populations=[]
+
+      vlsvvariables.cellsize = self.__dx
+
+      if self.check_parameter("j_per_b_modifier"):
+         vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
+
+      self.__fptr.close()
+
+
+   def __init_populations(self):
+
       # Iterate through the XML tree, find all populations
       # (identified by their BLOCKIDS tag)
-      self.active_populations=[]
+      if self.__pops_init:
+         return
+      
+      self.__pops_init = True
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if "name" in child.attrib:
@@ -357,13 +375,6 @@ class VlsvReader(object):
               if i > 1:
                  pop.__precipitation_centre_energy = np.asarray(energybins)
                  vlsvvariables.speciesprecipitationenergybins[popname] = energybins
-
-      vlsvvariables.cellsize = self.__dx
-
-      if self.check_parameter("j_per_b_modifier"):
-         vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
-
-      self.__fptr.close()
 
 
    def __read_xml_footer(self):
