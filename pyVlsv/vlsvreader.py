@@ -2892,13 +2892,13 @@ class VlsvReader(object):
       WID=self.get_WID()
       WID2=WID*WID
       WID3=WID2*WID
-      vmin = np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin])
-      dv = np.array([self.__meshes[pop].__dvx, self.__meshes[pop].__dvy, self.__meshes[pop].__dvz])
+      vmin = np.array([self.__popmesh(pop).__vxmin, self.__popmesh(pop).__vymin, self.__popmesh(pop).__vzmin])
+      dv = np.array([self.__popmesh(pop).__dvx, self.__popmesh(pop).__dvy, self.__popmesh(pop).__dvz])
       block_index = np.floor((vcellcoord - vmin) / (WID * dv))
       cell_index = np.floor(np.remainder(vcellcoord - vmin, WID * dv) / dv)
       vcellid = int(block_index[0])
-      vcellid += int(block_index[1] * self.__meshes[pop].__vxblocks)
-      vcellid += int(block_index[2] * self.__meshes[pop].__vxblocks * self.__meshes[pop].__vyblocks)
+      vcellid += int(block_index[1] * self.__popmesh(pop).__vxblocks)
+      vcellid += int(block_index[2] * self.__popmesh(pop).__vxblocks * self.__popmesh(pop).__vyblocks)
       vcellid *= WID3
       vcellid += int(cell_index[0])
       vcellid += int(cell_index[1] * WID)
@@ -2921,21 +2921,21 @@ class VlsvReader(object):
       # Get block ids:
       blocks = vcellids.astype(int) // WID3
       # Get block coordinates:
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
-      blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * WID + self.__meshes[pop].__vxmin
-      blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * WID + self.__meshes[pop].__vymin
-      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * WID + self.__meshes[pop].__vzmin
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__popmesh(pop).__vxblocks))
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks), (int)(self.__popmesh(pop).__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks*self.__popmesh(pop).__vyblocks)
+      blockCoordinatesX = blockIndicesX.astype(float) * self.__popmesh(pop).__dvx * WID + self.__popmesh(pop).__vxmin
+      blockCoordinatesY = blockIndicesY.astype(float) * self.__popmesh(pop).__dvy * WID + self.__popmesh(pop).__vymin
+      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__popmesh(pop).__dvz * WID + self.__popmesh(pop).__vzmin
       # Get cell indices:
       cellids = np.remainder(vcellids.astype(int), (int)(WID3))
       cellIndicesX = np.remainder(cellids.astype(int), (int)(WID))
       cellIndicesY = np.remainder((cellids.astype(int)//(int)(WID)).astype(int), (int)(WID))
       cellIndicesZ = cellids.astype(int)//(int)(WID2)
       # Get cell coordinates:
-      cellCoordinates = np.array([blockCoordinatesX.astype(float) + (cellIndicesX.astype(float) + 0.5) * self.__meshes[pop].__dvx,
-                                  blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__meshes[pop].__dvy,
-                                  blockCoordinatesZ.astype(float) + (cellIndicesZ.astype(float) + 0.5) * self.__meshes[pop].__dvz])
+      cellCoordinates = np.array([blockCoordinatesX.astype(float) + (cellIndicesX.astype(float) + 0.5) * self.__popmesh(pop).__dvx,
+                                  blockCoordinatesY.astype(float) + (cellIndicesY.astype(float) + 0.5) * self.__popmesh(pop).__dvy,
+                                  blockCoordinatesZ.astype(float) + (cellIndicesZ.astype(float) + 0.5) * self.__popmesh(pop).__dvz])
 
       return cellCoordinates.transpose()
 
@@ -2948,9 +2948,9 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_block_coordinates`
       '''
       WID=self.get_WID()
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__popmesh(pop).__vxblocks))
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks), (int)(self.__popmesh(pop).__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks*self.__popmesh(pop).__vyblocks)
       # Return the indices:
       return np.array([blockIndicesX,
                        blockIndicesY,
@@ -2963,7 +2963,7 @@ class VlsvReader(object):
       bIY = blockindices[:,1]
       bIZ = blockindices[:,2]
 
-      GIDs = bIZ + bIY*self.__meshes[pop].__vzblocks + bIX*self.__meshes[pop].__vzblocks*self.__meshes[pop].__vyblocks
+      GIDs = bIZ + bIY*self.__popmesh(pop).__vzblocks + bIX*self.__popmesh(pop).__vzblocks*self.__popmesh(pop).__vyblocks
       return GIDs
 
    def get_velocity_block_coordinates( self, blocks, pop="proton"):
@@ -2975,12 +2975,12 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_cell_coordinates`
       '''
       WID=self.get_WID()
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks))
-      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks))
-      blockIndicesZ = blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)
-      blockCoordinatesX = blockIndicesX.astype(float) * self.__meshes[pop].__dvx * WID + self.__meshes[pop].__vxmin
-      blockCoordinatesY = blockIndicesY.astype(float) * self.__meshes[pop].__dvy * WID + self.__meshes[pop].__vymin
-      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__meshes[pop].__dvz * WID + self.__meshes[pop].__vzmin
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__popmesh(pop).__vxblocks))
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks), (int)(self.__popmesh(pop).__vyblocks))
+      blockIndicesZ = blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks*self.__popmesh(pop).__vyblocks)
+      blockCoordinatesX = blockIndicesX.astype(float) * self.__popmesh(pop).__dvx * WID + self.__popmesh(pop).__vxmin
+      blockCoordinatesY = blockIndicesY.astype(float) * self.__popmesh(pop).__dvy * WID + self.__popmesh(pop).__vymin
+      blockCoordinatesZ = blockIndicesZ.astype(float) * self.__popmesh(pop).__dvz * WID + self.__popmesh(pop).__vzmin
       # Return the coordinates:
       return np.array([blockCoordinatesX.astype(float),
                        blockCoordinatesY.astype(float),
@@ -2995,9 +2995,9 @@ class VlsvReader(object):
           .. seealso:: :func:`get_velocity_block_coordinates`
       '''
       WID=self.get_WID()
-      mins = np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin]).astype(float)
-      dvs = np.array([WID*self.__meshes[pop].__dvx, WID*self.__meshes[pop].__dvy, WID*self.__meshes[pop].__dvz]).astype(float)
-      multiplier = np.array([1, self.__meshes[pop].__vxblocks, self.__meshes[pop].__vxblocks * self.__meshes[pop].__vyblocks]).astype(float)
+      mins = np.array([self.__popmesh(pop).__vxmin, self.__popmesh(pop).__vymin, self.__popmesh(pop).__vzmin]).astype(float)
+      dvs = np.array([WID*self.__popmesh(pop).__dvx, WID*self.__popmesh(pop).__dvy, WID*self.__popmesh(pop).__dvz]).astype(float)
+      multiplier = np.array([1, self.__popmesh(pop).__vxblocks, self.__popmesh(pop).__vxblocks * self.__popmesh(pop).__vyblocks]).astype(float)
       velocity_block_ids = np.sum(np.floor(((blockCoordinates.astype(float) - mins) / dvs)) * multiplier, axis=-1)
       return velocity_block_ids
 
@@ -3036,9 +3036,9 @@ class VlsvReader(object):
       WID2=WID*WID
       WID3=WID2*WID
       # Get block coordinates:
-      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__meshes[pop].__vxblocks)).astype(np.uint16)
-      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__meshes[pop].__vxblocks), (int)(self.__meshes[pop].__vyblocks)).astype(np.uint16)
-      blockIndicesZ = (blocks.astype(np.uint64)//(int)(self.__meshes[pop].__vxblocks*self.__meshes[pop].__vyblocks)).astype(np.uint16)
+      blockIndicesX = np.remainder(blocks.astype(int), (int)(self.__popmesh(pop).__vxblocks)).astype(np.uint16)
+      blockIndicesY = np.remainder(blocks.astype(int)//(int)(self.__popmesh(pop).__vxblocks), (int)(self.__popmesh(pop).__vyblocks)).astype(np.uint16)
+      blockIndicesZ = (blocks.astype(np.uint64)//(int)(self.__popmesh(pop).__vxblocks*self.__popmesh(pop).__vyblocks)).astype(np.uint16)
 
       cellsPerDirection = WID
       cellsPerBlock = WID3
@@ -3078,7 +3078,7 @@ class VlsvReader(object):
          nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
 
          # Transform indices into unique keys
-         nodeKeys = np.sum(nodeIndices * np.array([1, cellsPerDirection*self.__meshes[pop].__vxblocks+1, (cellsPerDirection*self.__meshes[pop].__vxblocks+1)*(cellsPerDirection*self.__meshes[pop].__vyblocks+1)]), axis=1)
+         nodeKeys = np.sum(nodeIndices * np.array([1, cellsPerDirection*self.__popmesh(pop).__vxblocks+1, (cellsPerDirection*self.__popmesh(pop).__vxblocks+1)*(cellsPerDirection*self.__popmesh(pop).__vyblocks+1)]), axis=1)
          # Sort the keys and delete duplicates
          return np.unique(nodeKeys)
       #nodeIndices = calculate_node_indices( blockIndicesX, blockIndicesY, blockIndicesZ, nodeIndices_local, nodesPerBlock, cellsPerDirection )
@@ -3110,7 +3110,7 @@ class VlsvReader(object):
          globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
          globalCellIndices = np.transpose(globalCellIndices)
          # Transform cell indices into unique keys
-         globalCellIndices = np.sum(globalCellIndices * np.array([1, cellsPerDirection*self.__meshes[pop].__vxblocks+1, (cellsPerDirection*self.__meshes[pop].__vxblocks+1)*(cellsPerDirection*self.__meshes[pop].__vyblocks+1)]), axis=1)
+         globalCellIndices = np.sum(globalCellIndices * np.array([1, cellsPerDirection*self.__popmesh(pop).__vxblocks+1, (cellsPerDirection*self.__popmesh(pop).__vxblocks+1)*(cellsPerDirection*self.__popmesh(pop).__vyblocks+1)]), axis=1)
          # Return cell nodes' indexes in the nodeKeys list
          return np.searchsorted(nodeKeys, globalCellIndices)
 
@@ -3132,9 +3132,9 @@ class VlsvReader(object):
 
       # We now have all the cell keys and avgs values! (avgs is in the same order as cell keys)
       # Now transform node indices back into real indices
-      nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1)).astype(np.float32) * self.__meshes[pop].__dvx + self.__meshes[pop].__vxmin
-      nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__meshes[pop].__vxblocks+1), cellsPerDirection*self.__meshes[pop].__vyblocks+1).astype(np.float32) * self.__meshes[pop].__dvy + self.__meshes[pop].__vymin
-      nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__meshes[pop].__vxblocks+1) * (cellsPerDirection*self.__meshes[pop].__vyblocks+1)) ).astype(np.float32) * self.__meshes[pop].__dvz + self.__meshes[pop].__vzmin
+      nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*self.__popmesh(pop).__vxblocks+1)).astype(np.float32) * self.__popmesh(pop).__dvx + self.__popmesh(pop).__vxmin
+      nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*self.__popmesh(pop).__vxblocks+1), cellsPerDirection*self.__popmesh(pop).__vyblocks+1).astype(np.float32) * self.__popmesh(pop).__dvy + self.__popmesh(pop).__vymin
+      nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*self.__popmesh(pop).__vxblocks+1) * (cellsPerDirection*self.__popmesh(pop).__vyblocks+1)) ).astype(np.float32) * self.__popmesh(pop).__dvz + self.__popmesh(pop).__vzmin
       
       # Nodekeyss is no longer needed
       del nodeKeys
@@ -3401,28 +3401,28 @@ class VlsvReader(object):
       
       :returns: Size of mesh in number of blocks, array with three elements
       '''
-      return np.array([self.__meshes[pop].__vxblocks, self.__meshes[pop].__vyblocks, self.__meshes[pop].__vzblocks])
+      return np.array([self.__popmesh(pop).__vxblocks, self.__popmesh(pop).__vyblocks, self.__popmesh(pop).__vzblocks])
 
    def get_velocity_block_size(self, pop="proton"):
       ''' Read velocity mesh block size
       
       :returns: Size of block in number of cells, array with three elements
       '''
-      return np.array([self.__meshes[pop].__vxblock_size, self.__meshes[pop].__vyblock_size, self.__meshes[pop].__vzblock_size])
+      return np.array([self.__popmesh(pop).__vxblock_size, self.__popmesh(pop).__vyblock_size, self.__popmesh(pop).__vzblock_size])
 
    def get_velocity_mesh_extent(self, pop="proton"):
       ''' Read velocity mesh extent
       
       :returns: Maximum and minimum coordinates of the mesh, [vxmin, vymin, vzmin, vxmax, vymax, vzmax]
       '''
-      return np.array([self.__meshes[pop].__vxmin, self.__meshes[pop].__vymin, self.__meshes[pop].__vzmin, self.__meshes[pop].__vxmax, self.__meshes[pop].__vymax, self.__meshes[pop].__vzmax])
+      return np.array([self.__popmesh(pop).__vxmin, self.__popmesh(pop).__vymin, self.__popmesh(pop).__vzmin, self.__popmesh(pop).__vxmax, self.__popmesh(pop).__vymax, self.__popmesh(pop).__vzmax])
 
    def get_velocity_mesh_dv(self, pop="proton"):
       ''' Read velocity mesh cell size
       
       :returns: Velocity mesh cell size, array with three elements [dvx, dvy, dvz]
       '''
-      return np.array([self.__meshes[pop].__dvx, self.__meshes[pop].__dvy, self.__meshes[pop].__dvz])
+      return np.array([self.__popmesh(pop).__dvx, self.__popmesh(pop).__dvy, self.__popmesh(pop).__dvz])
 
    def get_ionosphere_mesh_size(self):
       ''' Read size of the ionosphere mesh, if there is one.
@@ -3536,7 +3536,7 @@ class VlsvReader(object):
 
       :returns: Array of centre energies
       '''
-      return self.__meshes[pop].__precipitation_centre_energy
+      return self.__popmesh(pop).__precipitation_centre_energy
 
    def optimize_open_file(self):
       '''Opens the vlsv file for reading
