@@ -271,8 +271,112 @@ class VlsvReader(object):
       if self.check_parameter("j_per_b_modifier"):
          vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
+      # This does not incur extra reads from disk -> list and store all populations
+      for child in self.__xml_root:
+          if child.tag == "BLOCKIDS":
+              if "name" in child.attrib:
+                  popname = child.attrib["name"] 
+              else:
+                  popname = "avgs"
+              
+              # Update list of active populations
+              if not popname in self.active_populations: self.active_populations.append(popname)
+
+
       self.__fptr.close()
 
+   def __popmesh(self, popname):
+      if popname in self.__meshes.keys():
+         return self.__meshes[popname]
+      else:
+         return self.__init_population(popname)
+
+   def __init_population(self,popname):
+
+      bbox = self.read(tag="MESH_BBOX", mesh=popname)
+      pop = self.MeshInfo()
+      if bbox is None:
+         if self.read_parameter("vxblocks_ini") is not None:
+            #read in older vlsv files where the mesh is defined with
+            #parameters (only one possible)
+            pop.__vxblocks = (int)(self.read_parameter("vxblocks_ini"))
+            pop.__vyblocks = (int)(self.read_parameter("vyblocks_ini"))
+            pop.__vzblocks = (int)(self.read_parameter("vzblocks_ini"))
+            pop.__vxblock_size = 4 # Old files will always have WID=4, newer files read it from bbox
+            pop.__vyblock_size = 4
+            pop.__vzblock_size = 4
+            pop.__vxmin = self.read_parameter("vxmin")
+            pop.__vymin = self.read_parameter("vymin")
+            pop.__vzmin = self.read_parameter("vzmin")
+            pop.__vxmax = self.read_parameter("vxmax")
+            pop.__vymax = self.read_parameter("vymax")
+            pop.__vzmax = self.read_parameter("vzmax")
+            # Velocity cell lengths
+            pop.__dvx = ((pop.__vxmax - pop.__vxmin) / (float)(pop.__vxblocks)) / (float)(pop.__vxblock_size)
+            pop.__dvy = ((pop.__vymax - pop.__vymin) / (float)(pop.__vyblocks)) / (float)(pop.__vyblock_size)
+            pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
+
+         else:
+            #no velocity space in this file, e.g., file not written by Vlasiator 
+            pop.__vxblocks = 0
+            pop.__vyblocks = 0
+            pop.__vzblocks = 0
+            pop.__vxblock_size = 4
+            pop.__vyblock_size = 4
+            pop.__vzblock_size = 4
+            pop.__vxmin = 0
+            pop.__vymin = 0
+            pop.__vzmin = 0
+            pop.__vxmax = 0
+            pop.__vymax = 0
+            pop.__vzmax = 0
+            # Velocity cell lengths
+            pop.__dvx = 1
+            pop.__dvy = 1
+            pop.__dvz = 1
+
+      else:
+         #new style vlsv file with bounding box
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)   
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)   
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)   
+         pop.__vxblocks = bbox[0]
+         pop.__vyblocks = bbox[1]
+         pop.__vzblocks = bbox[2]
+         pop.__vxblock_size = bbox[3]
+         pop.__vyblock_size = bbox[4]
+         pop.__vzblock_size = bbox[5]
+         pop.__vxmin = nodeCoordinatesX[0]
+         pop.__vymin = nodeCoordinatesY[0]
+         pop.__vzmin = nodeCoordinatesZ[0]
+         pop.__vxmax = nodeCoordinatesX[-1]
+         pop.__vymax = nodeCoordinatesY[-1]
+         pop.__vzmax = nodeCoordinatesZ[-1]
+         # Velocity cell lengths
+         pop.__dvx = ((pop.__vxmax - pop.__vxmin) / (float)(pop.__vxblocks)) / (float)(pop.__vxblock_size)
+         pop.__dvy = ((pop.__vymax - pop.__vymin) / (float)(pop.__vyblocks)) / (float)(pop.__vyblock_size)
+         pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
+
+      self.__meshes[popname]=pop
+      if not os.getenv('PTNONINTERACTIVE'):
+         logging.info("Found population " + popname)
+      
+      # Precipitation energy bins
+      i = 0
+      energybins = []
+      binexists = True
+      while binexists:
+         binexists = self.check_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+         if binexists:
+            binvalue = self.read_parameter("{}_PrecipitationCentreEnergy{}".format(popname,i))
+            energybins.append(binvalue)
+         i = i + 1
+      if i > 1:
+         pop.__precipitation_centre_energy = np.asarray(energybins)
+         vlsvvariables.speciesprecipitationenergybins[popname] = energybins
+
+      return self.__meshes[popname]
+      
 
    def __init_populations(self):
 
@@ -294,6 +398,9 @@ class VlsvReader(object):
               
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
+
+              pop = self.__init_population(popname)
+              continue
 
               bbox = self.read(tag="MESH_BBOX", mesh=popname)
               if bbox is None:
