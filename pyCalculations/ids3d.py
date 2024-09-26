@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 # finds the cell ids which are needed to plot a 2d cut through out of a 3d mesh # WARNING! works only if cellids is sorted
 def ids3d(cellids, depth, reflevel,
@@ -21,7 +22,7 @@ def ids3d(cellids, depth, reflevel,
   for i in range(reflevel+1):
     depth = int(pro*size*2**i) + 1 # goes from 1 to Nmax
     if depth > int(size*2**i):
-      print("depth error ",depth,i)
+      logging.info("depth error, depth = " +str(depth) +"; i = "+str(i))
       depth -= 1
     depths.append(depth)
 
@@ -91,7 +92,7 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
   elif np.ndim(datadimension) == 1:
     dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
-    print("Error finding data dimension in idmesh3d")
+    logging.info("Error finding data dimension in idmesh3d")
     return -1
 
   ######################
@@ -171,7 +172,7 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   elif np.ndim(datadimension) == 1:
     dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
-    print("Error finding data dimension in idmesh3d")
+    logging.info("Error finding data dimension in idmesh3d")
     return -1
 
   ######################

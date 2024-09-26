@@ -1,6 +1,7 @@
 import pytools as pt
 import numpy as np
 import scipy
+import logging
 
 def classify_alpha(exprmaps, requestvariables=False):
     if requestvariables==True:
@@ -70,13 +71,13 @@ for i in np.arange(maxRefLevel):
 # Not sure if magic number 22 is correct here
 nBlocks = np.sum(blocks)
 newBlocks = np.sum(blocks * 8.0**(data_class - reflevel))
-print(f'Original blocks: {nBlocks}')
-print(f'Original mem: {nBlocks * 64 * 22 / 1024**3}')
-print(f'Original nodes: {nBlocks * 64 * 22 / 1024**3 / 60}')
-print(f'New blocks: {newBlocks}')
-print(f'New mem: {newBlocks * 64 * 22 / 1024**3}')
-print(f'New nodes: {newBlocks * 64 * 22 / 1024**3 / 60}')
-print(f'Ratio: {newBlocks/nBlocks}')
+logging.info(f'Original blocks: {nBlocks}')
+logging.info(f'Original mem: {nBlocks * 64 * 22 / 1024**3}')
+logging.info(f'Original nodes: {nBlocks * 64 * 22 / 1024**3 / 60}')
+logging.info(f'New blocks: {newBlocks}')
+logging.info(f'New mem: {newBlocks * 64 * 22 / 1024**3}')
+logging.info(f'New nodes: {newBlocks * 64 * 22 / 1024**3 / 60}')
+logging.info(f'Ratio: {newBlocks/nBlocks}')
 
 # Change these as you wish
 pt.plot.plot_colormap3dslice(filename=filename, expression=classify_alpha, colormap='viridis_r')

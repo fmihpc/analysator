@@ -25,6 +25,7 @@
 
 import numpy as np
 import sys
+import logging
 
 def lineout( vlsvReader, point1, point2, variable, operator="pass",interpolation_order=1, points=100 ):
    ''' Returns a line cut-through from a given VLSV file for distance, coordinates and variable values. The main difference between this and cut_through is that this function interpolates a given variable.
@@ -59,9 +60,9 @@ def lineout( vlsvReader, point1, point2, variable, operator="pass",interpolation
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
-      print("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
    if vlsvReader.get_cellid(point2) == 0:
-      print("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
 
    value_len=len(np.atleast_1d(vlsvReader.read_interpolated_variable( variable, point1, operator)))
    

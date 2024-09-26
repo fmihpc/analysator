@@ -26,6 +26,7 @@
 #NOT IMPLEMENTED YET
 
 import numpy as np
+import logging
 
 def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="pass", trim_array=False ):
    ''' Retrieves variables for the given 3d cut
@@ -62,8 +63,8 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
    # Read the cell lengths:
    ##################################################
    # Get xmax, xmin and xcells_ini
-   mesh_limits = f.get_spatial_mesh_extent()
-   mesh_size = f.get_spatial_mesh_size()
+   mesh_limits = vlsvReader.get_spatial_mesh_extent()
+   mesh_size = vlsvReader.get_spatial_mesh_size()
    xmax = mesh_limits[3]
    xmin = mesh_limits[0]
    xcells = mesh_size[0]
@@ -102,7 +103,7 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
                                    min_coordinates[1] + j*cell_lengths[1],
                                    min_coordinates[2] + k*cell_lengths[2]
                                    ])
-            #print str(k) + " " + str(j) + " " + str(i) + " " + str(np.shape(array))
+            #logging.info str(k) + " " + str(j) + " " + str(i) + " " + str(np.shape(array))
             array[k][j][i] = vlsvReader.read_variable(variable, cellids=vlsvReader.get_cellid(coordinates), operator=operator)
 
    # Close optimization

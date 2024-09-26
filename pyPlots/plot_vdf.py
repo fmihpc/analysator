@@ -1,26 +1,27 @@
-# 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2018 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
+import logging
 import matplotlib
 import warnings
 import pytools as pt
@@ -31,9 +32,9 @@ import os, sys, math
 import re
 import glob
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
+from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm,Normalize
 from matplotlib.ticker import MaxNLocator
-from matplotlib.ticker import LogLocator
+from matplotlib.ticker import LogLocator,LinearLocator
 import matplotlib.ticker as mtick
 import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
@@ -41,21 +42,11 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 from rotation import rotateVectorToVector,rotateVectorToVector_X
 
+from packaging.version import Version
+
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
-
-# find nearest spatial cell with vspace to cid
-def getNearestCellWithVspace(vlsvReader,cid):
-    cell_candidates = vlsvReader.read(mesh='SpatialGrid',tag='CELLSWITHBLOCKS')
-    if len(cell_candidates)==0:
-        print("Error: No velocity distributions found!")
-        sys.exit()
-    cell_candidate_coordinates = [vlsvReader.get_cell_coordinates(cell_candidate) for cell_candidate in cell_candidates]
-    cell_coordinates = vlsvReader.get_cell_coordinates(cid)
-    norms = np.sum((cell_candidate_coordinates - cell_coordinates)**2, axis=-1)**(1./2)
-    norm, i = min((norm, idx) for (idx, norm) in enumerate(norms))
-    return cell_candidates[i]
 
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
@@ -79,10 +70,10 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     # Select cells which are within slice area
     if vthick!=0:
         indexes = [(abs(Voutofslice) <= 0.5*vthick) &
-                   (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+                   (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
     else:
-        indexes = [(VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) & 
+        indexes = [(VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
 
     # Gather histogram of values
@@ -97,7 +88,7 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
         nVhist[nonzero] = np.divide(nVhist[nonzero],Chist[nonzero])
 
     dV = np.abs(vxBinEdges[-1] - vxBinEdges[-2]) # assumes constant bin size
-    
+
     if vthick==0:
         # slickethick=0, perform a projection. This is done by taking averages for each sampled stack of cells (above)
         # (in order to deal with rotated sampling issues) and then rescaling the resultant 2D VDF with the unsampled
@@ -114,14 +105,14 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
     # and y values on the ordinate axis. Rather, x is histogrammed along the first dimension of the array (vertical),
     # and y along the second dimension of the array (horizontal). This ensures compatibility with histogramdd.
     nVhist = nVhist.transpose()
-    
+
     # Rotation contributions are already normalized, this is just to rescaling to correct units
     # nb: maybe not great for finite slices...?
     if reducer == "integrate":
         nVhist = nVhist*initial_dV**3/dV**2 # normalization
 
     return (nVhist,VXEdges,VYEdges)
-  
+
 def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer="integrate", wflux=None):
 
     if wflux is not None:
@@ -140,7 +131,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         R = np.stack((NY, NX, NZ)).T
     elif slicetype=="vecperp":
         R = np.stack((NY, NX, NZ)).T
-    #print(R)
+    #logging.info(R)
     vmins = np.amin(V,axis=0)
     vmaxs = np.amax(V,axis=0)
 
@@ -163,17 +154,17 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     szs = np.trunc((vmaxs-vmins)/inputcellsize+1).astype(int)
 
     pivot = -vmins/inputcellsize+leftpads #assumes a previously centered V-space wrt. rotations, just need this in cellwidth units
-    
+
     #Form a dense array of the initial data
     basearray, edges = np.histogramdd(V, bins=tuple(szs),
-        range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)), 
+        range=list(zip(vmins-0.5*inputcellsize,vmaxs+0.5*inputcellsize)),
         density=False,weights=fw*inputcellsize**3)
-    
+
     newedges = [np.linspace(vminsR[d],vmaxsR[d], num=(szs+leftpads+rightpads)[d]+1) for d in [0,1,2]]
     #need to expand the array a bit to not chop off anything
     basearray = np.pad(basearray,tuple(zip(leftpads,rightpads)))
-    
-    
+
+
     nonzero = basearray > 0
 
 
@@ -184,7 +175,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     else:
         newarray = np.zeros_like(basearray)
         newarray[nonzero] = basearray[nonzero]
-    
+
     newarray = scipy.ndimage.affine_transform(newarray,R,
                                             mode='constant',cval=np.log(setThreshold/10),
                                             order=1,
@@ -194,7 +185,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         newarray = np.exp(newarray)
         newarray[np.logical_not(np.isfinite(newarray))] = 0
 
-    newarray[newarray<setThreshold*inputcellsize**3] = 0    
+    newarray[newarray<setThreshold*inputcellsize**3] = 0
     #better not to force conservation - values under threshold get folded into the distribution!
     #newarray = np.multiply(newarray,basearray.sum()/newarray.sum())
 
@@ -208,7 +199,7 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         if zeroIndHi <= zeroIndLow:
             zeroIndHi = zeroIndLow+1
         dind = zeroIndHi-zeroIndLow
-        print("slicethick", slicethick, "dind", dind, "zeroIndLow", zeroIndLow, "dnew", dnew)
+        # logging.info("slicethick " + slicethick +  ", dind " + dind +", zeroIndLow " + str(zeroIndLow) + ", dnew "+ str(dnew))
         result = newarray[:,zeroIndLow:zeroIndHi].sum(axis=1).T
         if reducer == "average":
             result = np.divide(result,dind*inputcellsize**3)
@@ -221,20 +212,20 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         return (True, newarray.sum(axis=1).T/((newedges[0][0]-newedges[0][1])*(newedges[2][0]-newedges[2][1])),
             newedges[0],newedges[2])
 
-    print("resampleReducer failure")
+    logging.info("resampleReducer failure")
     return (False,0,0,0)
 
 # analyze velocity space in a spatial cell (velocity space reducer)
-def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton", 
+def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="proton",
                   slicethick=None, reducer="integrate", resampler=True, wflux=None, center=None, setThreshold=None,normvectX=None):
     # check if velocity space exists in this cell
-    if vlsvReader.check_variable('fSaved'): #restart files will not have this value        
+    if vlsvReader.check_variable('fSaved'): #restart files will not have this value
         if vlsvReader.read_variable('fSaved',cid) != 1.0:
             return (False,0,0,0)
-    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value        
+    if vlsvReader.check_variable('vg_f_saved'): #restart files will not have this value
         if vlsvReader.read_variable('vg_f_saved',cid) != 1.0:
             return (False,0,0,0)
-        
+
     # Assume velocity cells are cubes
     [vxsize, vysize, vzsize] = vlsvReader.get_velocity_mesh_size(pop=pop)
     vxsize = int(vxsize)
@@ -249,11 +240,11 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     vzsize = widval*vzsize
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
     inputcellsize=(vxmax-vxmin)/vxsize
-    print("Input velocity grid cell size "+str(inputcellsize))
+    logging.info("Input velocity grid cell size "+str(inputcellsize))
 
     velcells = vlsvReader.read_velocity_cells(cid, pop=pop)
     velcellslist = list(zip(*velcells.items()))
-    
+
     if slicethick is not None and slicethick !=0:
         if slicethick < 0:
             warnings.warn("Slicethick < 0. This may cause bad behaviour.")
@@ -265,43 +256,46 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     # check that velocity space has cells
     if(len(velcellslist) <= 0):
         return (False,0,0,0)
-    
+
     f = np.asarray(velcellslist[1])
     V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
-    print("Found "+str(len(V))+" v-space cells")
+    logging.info("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center == "peak":
-        peakindex = np.argmax(f)
-        Vpeak = V[peakindex,:]
-        V = V - Vpeak
-        print(peakindex)
-        print("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
+
+    if type(center) == str:
+      if center == "peak":
+         peakindex = np.argmax(f)
+         Vpeak = V[peakindex,:]
+         V = V - Vpeak
+         logging.info(peakindex)
+         logging.info("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
-        if len(center)==3: # assumes it's a vector
-            print("Transforming to frame travelling at speed "+str(center))
+        # assumes it's a vector, either provided or extracted from bulk velocity
+        if len(center)==3:
+            logging.info("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
-            print("Error in shape of center vector! Give in form (vx,vy,vz).")
+            logging.info("error in shape of center vector! give in form (vx,vy,vz).")
 
     if setThreshold is None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
         # cells as well.
         if vlsvReader.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
             setThreshold = vlsvReader.read_variable('MinValue',cid)
-            print("Found a vlsv file MinValue of "+str(setThreshold))
+            logging.info("Found a vlsv file MinValue of "+str(setThreshold))
         elif vlsvReader.check_variable(pop+"/EffectiveSparsityThreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/EffectiveSparsityThreshold",cid)
-            print("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+            logging.info("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
         elif vlsvReader.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
             setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
-            print("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
+            logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
-            print("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
-            print("Using a default value of 1.e-16. Override with setThreshold=value.")
+            logging.info("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+            logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
             setThreshold = 1.e-16
     ii_f = np.where(f >= setThreshold)
-    print("Dropping velocity cells under setThreshold value "+str(setThreshold))
+    logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
     if len(ii_f) < 1:
         return (False,0,0,0)
     f = f[ii_f]
@@ -324,9 +318,9 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
     else:
         slicethick=inputcellsize*slicethick
     if slicethick!=0:
-        print("Performing slice with a counting thickness of "+str(slicethick))
+        logging.info("Performing slice with a counting thickness of "+str(slicethick))
     else:
-        print("Projecting total VDF to a single plane")
+        logging.info("Projecting total VDF to a single plane")
 
     if slicetype=="xy":
         VX = V[:,0]
@@ -359,7 +353,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
                 warnings.warn("Please provide a normvectX for the resampler!")
                 return(False,0,0,0)
             return resampleReducer(V,f, inputcellsize,setThreshold, normvect, normvectX, slicetype, slicethick, reducer=reducer, wflux=wflux)
-        
+
     elif slicetype=="Bperp" or slicetype=="Bpara" or slicetype=="Bpara1":
          if resampler is False:
             # Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X
@@ -388,18 +382,18 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
             testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
             if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
-                  print("Error in rotation: NXrot not a unit vector")
+                  logging.info("Error in rotation: NXrot not a unit vector")
             if abs(NXrot[2]) > 1.e-3:
-                  print("Error in rotation: NXrot not in x-y-plane")
+                  logging.info("Error in rotation: NXrot not in x-y-plane")
             for count,testvect in enumerate(testrot2):
                   if abs(1.0-np.linalg.norm(testvect))>1.e-3:
-                     print("Error in rotation: testvector ",count,testvect," not a unit vector")
+                     logging.info("Error in rotation: testvector "+ str((count,testvect)) + " not a unit vector")
                   if abs(1.0-np.amax(testvect))>1.e-3:
-                     print("Error in rotation: testvector ",count,testvect," largest component is not unity")
+                     logging.info("Error in rotation: testvector " + str((count,testvect)) + " largest component is not unity")
          else:
             return resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer=reducer, wflux=wflux)
     else:
-        print("Error finding rotation of v-space!")
+        logging.info("Error finding rotation of v-space!")
         return (False,0,0,0)
 
     # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
@@ -411,14 +405,14 @@ def plot_vdf(filename=None,
              vlsvobj=None,
              filedir=None, step=None,
              cellids=None, pop="proton",
-             coordinates=None, coordre=None, 
+             coordinates=None, coordre=None,
              outputdir=None, outputfile=None,
              nooverwrite=None,
              draw=None,axisunit=None,axiskmps=None,title=None, cbtitle=None,
              tickinterval=None,
              colormap=None, box=None, nocb=None, internalcb=None,
              run=None, thick=1.0,
-             wmark=None, wmarkb=None, 
+             wmark=None, wmarkb=None,
              fmin=None, fmax=None, slicethick=None, reducer='integrate', resampler=True,
              cellsize=None,
              xy=None, xz=None, yz=None,
@@ -426,7 +420,7 @@ def plot_vdf(filename=None,
              bpara=None, bpara1=None, bperp=None,
              coordswap=None,
              bvector=None,bvectorscale=0.2,
-             cbulk=None, center=None, wflux=None, setThreshold=None,
+             cbulk=None, cpeak=None,center=None, wflux=None, setThreshold=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
@@ -443,8 +437,8 @@ def plot_vdf(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
-     
+    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
+
     :kword cellids:     LIST of cell IDs to plot VDF for
     :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
     :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
@@ -467,7 +461,7 @@ def plot_vdf(filename=None,
     :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
     :kword axiskmps:    Plot v-axes using 10^{axiskmps} km/s (default: km/s, when the kword has a value)
     :kword tickinterval: Interval at which to have ticks on axes
-   
+
     :kword xy:          Perform slice in x-y-direction
     :kword xz:          Perform slice in x-z-direction
     :kword yz:          Perform slice in y-z-direction
@@ -485,6 +479,8 @@ def plot_vdf(filename=None,
 
     :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
+    :kword cpeak:       Center plot on velocity associated with highest (peak) phase-space density for
+                        this population)
     :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
                         If set instead to "bulk" will center on bulk velocity
                         If set instead to "peak" will center on velocity with highest phase-space density
@@ -523,7 +519,7 @@ def plot_vdf(filename=None,
     :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
     :kword scale_label: Big label text additional scale factor (default=12.0)
     :kword thick:       line and axis thickness, default=1.0
-    
+
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -553,7 +549,7 @@ def plot_vdf(filename=None,
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
-    
+
     # Input file or object
     if filename is not None:
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
@@ -564,12 +560,15 @@ def plot_vdf(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
+        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
         return
 
     if colormap is None:
         colormap="hot_desaturated"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) < Version("3.5.0"):
+        cmapuse=matplotlib.cm.get_cmap(name=colormap)
+    else:
+        cmapuse=matplotlib.colormaps.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
@@ -580,8 +579,8 @@ def plot_vdf(filename=None,
     timeval=vlsvReader.read_parameter("time")
 
     # Plot title with time
-    if title is None or title=="msec" or title=="musec":        
-        if timeval == None:    
+    if title is None or title=="msec" or title=="musec":
+        if timeval == None:
             plot_title = ''
         else:
             timeformat='{:4.1f}'
@@ -593,11 +592,11 @@ def plot_vdf(filename=None,
         plot_title = title
 
     if reducer == "average":
-        print("V-space reduction via averages")
+        logging.info("V-space reduction via averages")
         warnings.warn('Average-reduction is kept for backward-compatibility for now; consider using "integrate"!')
         pass
     elif reducer == "integrate":
-        print("V-space reduction via integration")
+        logging.info("V-space reduction via integration")
         pass
     else:
         raise ValueError("Unknown reducer ("+reducer+'), accepted values are "average", "integrate"')
@@ -623,7 +622,7 @@ def plot_vdf(filename=None,
                 if type(filename) is str:
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
-        
+
         # Indicate projection in file name
         projstr=""
         if slicethick==0:
@@ -637,12 +636,12 @@ def plot_vdf(filename=None,
                 savefigdir=outputdir
             # Sub-directories can still be defined in the "run" variable
             savefigname = savefigdir+run
-        else: 
+        else:
             if outputdir is not None:
                 savefigname = outputdir+outputfile
             else:
                 savefigname = outputfile
-            
+
         # Re-check to find actual target sub-directory
         savefigprefixind = savefigname.rfind('/')
         if savefigprefixind >= 0:
@@ -660,25 +659,25 @@ def plot_vdf(filename=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            print("No write access for directory "+outputdir2+"! Exiting.")
+            logging.info("No write access for directory "+savefigdir+"! Exiting.")
             return
 
 
 
-    # If population isn't defined i.e. defaults to protons, check if 
+    # If population isn't defined i.e. defaults to protons, check if
     # instead should use old version "avgs"
     if pop=="proton":
        if not vlsvReader.check_population(pop):
            if vlsvReader.check_population("avgs"):
                pop="avgs"
-               #print("Auto-switched to population avgs")
+               #logging.info("Auto-switched to population avgs")
            else:
-               print("Unable to detect population "+pop+" in .vlsv file!")
+               logging.info("Unable to detect population "+pop+" in .vlsv file!")
                sys.exit()
     else:
         if not vlsvReader.check_population(pop):
-            print("Unable to detect population "+pop+" in .vlsv file!")
-            sys.exit()       
+            logging.info("Unable to detect population "+pop+" in .vlsv file!")
+            sys.exit()
 
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
@@ -720,14 +719,14 @@ def plot_vdf(filename=None,
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
-            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg': 
+            if str(matplotlib.get_backend()) is not pt.backend_interactive: #'TkAgg':
                 plt.switch_backend(pt.backend_interactive)
         else:
             if str(matplotlib.get_backend()) is not pt.backend_noninteractive: #'Agg':
-                plt.switch_backend(pt.backend_noninteractive)  
+                plt.switch_backend(pt.backend_noninteractive)
 
     if (cellids is None and coordinates is None and coordre is None):
-        print("Error: must provide either cell id's or coordinates")
+        logging.info("Error: must provide either cell id's or coordinates")
         return -1
 
     if coordre is not None:
@@ -740,68 +739,68 @@ def plot_vdf(filename=None,
         if type(coordinates[0]) is not list:
             coordinates = [coordinates]
 
-        # Calculate cell IDs from given coordinates        
+        # Calculate cell IDs from given coordinates
         xReq = np.asarray(coordinates).T[0]
         yReq = np.asarray(coordinates).T[1]
         zReq = np.asarray(coordinates).T[2]
         if xReq.shape == yReq.shape == zReq.shape:
-            #print('Number of points: ' + str(xReq.shape[0]))
+            #logging.info('Number of points: ' + str(xReq.shape[0]))
             pass
         else:
-            print('ERROR: bad coordinate variables given')
+            logging.info('ERROR: bad coordinate variables given')
             sys.exit()
         cidsTemp = []
         for ii in range(xReq.shape[0]):
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
             cidNearestVspace = -1
             if cidRequest > 0:
-                cidNearestVspace = getNearestCellWithVspace(vlsvReader,cidRequest)
+                cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
-                print('ERROR: cell not found')
+                logging.info('ERROR: cell not found')
                 sys.exit()
             if (cidNearestVspace <= 0):
-                print('ERROR: cell with vspace not found')
+                logging.info('ERROR: cell with vspace not found')
                 sys.exit()
             xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
-            print('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
-            print('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
-            print('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
-            print('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
+            logging.info('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
+            logging.info('Requested coordinates : ' + str(xReq[ii]/Re) + ', ' + str(yReq[ii]/Re) + ', ' + str(zReq[ii]/Re))
+            logging.info('Nearest spatial cell  : ' + str(xCid/Re)    + ', ' + str(yCid/Re)    + ', ' + str(zCid/Re))
+            logging.info('Nearest vspace        : ' + str(xVCid/Re)   + ', ' + str(yVCid/Re)   + ', ' + str(zVCid/Re))
             cidsTemp.append(cidNearestVspace)
         cellids = np.unique(cidsTemp).tolist()
-        print('Unique cells with vspace found: ' + str(len(cidsTemp)))
+        logging.info('Unique cells with vspace found: ' + str(len(cidsTemp)))
     #else:
-    #    print('Using given cell ids and assuming vspace is stored in them')
+    #    logging.info('Using given cell ids and assuming vspace is stored in them')
 
     # Ensure that we now have a list of cellids instead of just a single cellid
     if type(cellids) is not list:
-        print("Converting given cellid to a single-element list of cellids.")
+        logging.info("Converting given cellid to a single-element list of cellids.")
         cellids = [cellids]
 
     if coordinates is None and coordre is None:
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
-                print("Error, cellid "+str(cellid)+" does not contain a VDF!")
+                logging.info("Error, cellid "+str(cellid)+" does not contain a VDF!")
                 return
 
 
     if draw is not None or axes is not None:
-        # Program was requested to draw to screen or existing axes instead of saving to a file. 
+        # Program was requested to draw to screen or existing axes instead of saving to a file.
         # Just handle the first cellid.
         if len(cellids) > 1:
             cellids = [cellids[0]]
-            print("User requested on-screen display, only plotting first requested cellid!")
+            logging.info("User requested on-screen display, only plotting first requested cellid!")
 
-    print("\n")
+    logging.info("\n")
     for cellid in cellids:
         # Initialise some values
         fminuse=None
         fmaxuse=None
 
         x,y,z = vlsvReader.get_cell_coordinates(cellid)
-        print('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
+        logging.info('cellid ' + str(cellid) + ', x = ' + str(x) + ', y = ' + str(y)  + ', z = ' + str(z))
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
@@ -821,7 +820,7 @@ def plot_vdf(filename=None,
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
             Vbulk = vlsvReader.read_variable('V',cellid)
         if Vbulk is None:
-            print("Error in finding plasma bulk velocity!")
+            logging.info("Error in finding plasma bulk velocity!")
             sys.exit()
 
         # If necessary, find magnetic field
@@ -839,7 +838,7 @@ def plot_vdf(filename=None,
                     cellidlist = [cellid,cellid+1,cellid+xsize]
                 else:
                     cellidlist = [cellid,cellid+1,cellid+xsize,cellid+xsize*ysize]
-                # Read raw data for the required cells    
+                # Read raw data for the required cells
                 if vlsvReader.check_variable("B"):
                     Braw = vlsvReader.read_variable("B", cellidlist)
                 elif (vlsvReader.check_variable("background_B") and vlsvReader.check_variable("perturbed_B")):
@@ -848,7 +847,7 @@ def plot_vdf(filename=None,
                     PERBB = vlsvReader.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    print("Error finding B vector direction!")
+                    logging.info("Error finding B vector direction!")
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -878,7 +877,7 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_y$ "+velUnitStr
                 normvect=[0,0,1] # used just for cell size normalisation
             else:
-                print("Problem finding default slice direction")
+                logging.info("Problem finding default slice direction")
                 yz=1
                 slicetype="yz"
                 pltxstr=r"$v_y$ "+velUnitStr
@@ -891,16 +890,16 @@ def plot_vdf(filename=None,
                 pltxstr=r"$v_1$ "+velUnitStr
                 pltystr=r"$v_2$ "+velUnitStr
             else:
-                print("Error parsing slice normal vector!")
+                logging.info("Error parsing slice normal vector!")
                 sys.exit()
             if normalx is not None:
                 if len(normalx)==3:
                     normvectX=normalx
                     if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
-                        print("Error, normalx dot normal is not zero!")
+                        logging.info("Error, normalx dot normal is not zero!")
                         sys.exit()
                 else:
-                    print("Error parsing slice normalx vector!")
+                    logging.info("Error parsing slice normalx vector!")
                     sys.exit()
         elif xy is not None:
             slicetype="xy"
@@ -925,7 +924,7 @@ def plot_vdf(filename=None,
             # Ensure bulkV has some value
             if np.linalg.norm(Vbulk) < 1e-10:
                 Vbulk = [-1,0,0]
-                print("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
+                logging.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
@@ -958,12 +957,12 @@ def plot_vdf(filename=None,
             else:
                 savefigname=outputfile
             # Check if target file already exists and overwriting is disabled
-            if (nooverwrite is not None and os.path.exists(savefigname)):            
+            if (nooverwrite is not None and os.path.exists(savefigname)):
                 if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    print("Found existing file "+savefigname+". Skipping.")
+                    logging.info("Found existing file "+savefigname+". Skipping.")
                     return
                 else:
-                    print("Found existing file "+savefigname+" of size zero. Re-rendering.")
+                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -972,17 +971,19 @@ def plot_vdf(filename=None,
             normvectX = np.array(normvectX)
             normvectX = normvectX/np.linalg.norm(normvectX)
 
-
-        if cbulk is not None or center=='bulk':
-            center=None # Finds the bulk velocity and places it in the center vector
-            print("Transforming to plasma frame")
+        if (cpeak is not None):
+            center='peak'
+        if (cbulk is not None) or (str(center)=='bulk'):
+            center = None # Fallthrough handling
+            # Finds the bulk velocity and places it in the center vector
+            logging.info("Transforming to plasma frame")
             if type(cbulk) is str:
                 if vlsvReader.check_variable(cbulk):
                     center = vlsvReader.read_variable(cbulk,cellid)
-                    print("Found bulk frame from variable "+cbulk)
+                    logging.info("Found bulk frame from variable "+cbulk)
             else:
                 center = Vbulk
-
+        # Note: center can still be equal to vector, or to the string "peak" and be valid
 
         # Geometric magic to stretch the grid to assure that each cell has some velocity grid points inside it.
         # Might still be incorrect, erring on the side of caution.
@@ -1018,8 +1019,8 @@ def plot_vdf(filename=None,
 
         # num must be vxsize+1 or vysize+1 in order to do both edges for each cell
         VXBins = np.linspace(vxmin*gridratio,vxmax*gridratio,num=vxsize+1)
-        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)            
-        
+        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)
+
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
                                                        slicethick=slicethick, reducer=reducer, resampler=resampler, wflux=wflux,
@@ -1027,7 +1028,7 @@ def plot_vdf(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            print('ERROR: error from velocity space reducer. No velocity cells?')
+            logging.info('ERROR: error from velocity space reducer. No velocity cells?')
             continue
 
         # Perform swap of coordinate axes, if requested
@@ -1062,7 +1063,7 @@ def plot_vdf(filename=None,
             else:
                 fmaxuse = 1e-10 # No valid values! use extreme default.
 
-        print("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
+        logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
 
         ticks = LogLocator(base=10,subs=list(range(0,10)))#,
@@ -1099,21 +1100,21 @@ def plot_vdf(filename=None,
             xvalsrange = [ edgesX[xindexrange[0]] , edgesX[xindexrange[1]] ]
             yvalsrange = [ edgesY[yindexrange[0]] , edgesY[yindexrange[1]] ]
 
-        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit       
+        boxcoords = np.array([xvalsrange[0],xvalsrange[1],yvalsrange[0],yvalsrange[1]])/velUnit
         # Set required decimal precision
         precision_a, precision_b = '{:.1e}'.format(np.amax(abs(np.array(boxcoords)))).split('e')
         pt.plot.decimalprecision_ax = '0'
-        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))        
+        if int(precision_b)<1: pt.plot.decimalprecision_ax = str(abs(-1-int(precision_b)))
 
         # TODO make plot area square if it's almost square?
 
-        # Define figure size        
+        # Define figure size
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
         # default for square figure is figsize=[4.0,3.15]
         figsize = [4.0,3.15*ratio]
 
-        # Plot the slice         
-        [XmeshXY,YmeshXY] = scipy.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
+        # Plot the slice
+        [XmeshXY,YmeshXY] = np.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
             # Create 300 dpi image of suitable size
@@ -1143,13 +1144,13 @@ def plot_vdf(filename=None,
         for axiss in ['top','bottom','left','right']:
             ax1.spines[axiss].set_linewidth(thick)
 
-        ax1.xaxis.set_tick_params(width=thick,length=4)
-        ax1.yaxis.set_tick_params(width=thick,length=4)
-        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
-        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2)
+        ax1.xaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.yaxis.set_tick_params(width=thick,length=4*thick)
+        ax1.xaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
+        ax1.yaxis.set_tick_params(which='minor',width=thick*0.8,length=2*thick)
 
         if len(plot_title)>0:
-            plot_title = pt.plot.textbfstring(plot_title)            
+            plot_title = pt.plot.textbfstring(plot_title)
             ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
         #fig.canvas.draw() # draw to get tick positions
@@ -1170,7 +1171,7 @@ def plot_vdf(filename=None,
             for t in ticklabs: # note that the tick labels haven't yet been populated with text
                 t.set_fontweight("black")
                 # If label has >3 numbers, tilt it
-                if tickmaxlens[axisi]>3: 
+                if tickmaxlens[axisi]>3:
                     t.set_rotation(30)
                     t.set_verticalalignment('top')
                     t.set_horizontalalignment('right')
@@ -1190,7 +1191,7 @@ def plot_vdf(filename=None,
 
         if biglabel is not None:
             if biglabloc is None:
-                biglabloc = 0 # default top-left corner               
+                biglabloc = 0 # default top-left corner
             if biglabloc==0:
                 BLcoords=[0.02,0.98]
                 BLha = "left"
@@ -1244,14 +1245,14 @@ def plot_vdf(filename=None,
             if cb_title_use is None:
                 if wflux is None:
                     if reducer == 'average':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-6} \,"+pt.plot.rmstring('s')+"^{3}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-6} \,"+pt.plot.rmstring('s')+r"^{3}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+"^{-5} \,"+pt.plot.rmstring('s')+"^{2}]$"
+                        cb_title_use=r"$f(v)\,["+pt.plot.rmstring('m')+r"^{-5} \,"+pt.plot.rmstring('s')+r"^{2}]$"
                 else:
                     if reducer == 'average':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-2} \,"+pt.plot.rmstring('s')+"^{-1} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-2} \,"+pt.plot.rmstring('s')+r"^{-1} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
                     elif reducer == 'integrate':
-                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+"^{-1} \,"+pt.plot.rmstring('s')+"^{-2} \,"+pt.plot.rmstring('sr')+"^{-1}]$"
+                        cb_title_use=r"flux $F\,["+pt.plot.rmstring('m')+r"^{-1} \,"+pt.plot.rmstring('s')+r"^{-2} \,"+pt.plot.rmstring('sr')+r"^{-1}]$"
 
             if cbaxes is not None:
                 cax = cbaxes
@@ -1273,19 +1274,19 @@ def plot_vdf(filename=None,
                         cbloc=2
                         cbdir="right"
                         horalign="left"
-                    if internalcb=="SW": 
+                    if internalcb=="SW":
                         cbloc=3
                         cbdir="right"
                         horalign="left"
-                    if internalcb=="SE": 
+                    if internalcb=="SE":
                         cbloc=4
                         cbdir="left"
                         horalign="right"
-                cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc, 
+                cax = inset_axes(ax1, width="5%", height="35%", loc=cbloc,
                                  bbox_transform=ax1.transAxes, borderpad=1.0)
                 # borderpad default value is 0.5, need to increase it to make room for colorbar title
 
-            # Colourbar title             
+            # Colourbar title
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
@@ -1293,13 +1294,13 @@ def plot_vdf(filename=None,
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
-                cb.ax.tick_params(labelsize=fontsize)
+                cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
-                    
+
 
 
         if noxlabels is not None:
@@ -1307,9 +1308,9 @@ def plot_vdf(filename=None,
                 label.set_visible(False)
         if noylabels is not None:
             for label in ax1.yaxis.get_ticklabels():
-                label.set_visible(False)       
+                label.set_visible(False)
 
-        # Adjust layout. Uses tight_layout() but in fact this ensures 
+        # Adjust layout. Uses tight_layout() but in fact this ensures
         # that long titles and tick labels are still within the plot area.
         if axes is not None:
             savefig_pad=0.01
@@ -1351,8 +1352,9 @@ def plot_vdf(filename=None,
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
             except:
-                print("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            print(savefigname+"\n")
+                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            logging.info(savefigname+"\n")
+            plt.close()
         elif axes is None:
             # Draw on-screen
             plt.draw()

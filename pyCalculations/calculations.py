@@ -37,6 +37,7 @@ pt.calculations.fourier?
 '''
 
 # List of functions and classes that should be imported into the interface
+import logging
 from intpol_file import vlsv_intpol_file
 from intpol_points import vlsv_intpol_points
 from cutthrough import cut_through, cut_through_step, cut_through_curve, cut_through_swath
@@ -55,8 +56,8 @@ from themis_observation import themis_plot_phasespace_helistyle
 from cut3d import cut3d
 from lineout import lineout
 import fit
-from fieldtracer import static_field_tracer
+from fieldtracer import static_field_tracer, static_field_tracer_3d
 from fieldtracer import dynamic_field_tracer
+from non_maxwellianity import epsilon_M
 from null_lines import LMN_null_lines_FOTE
-from interpolator_amr import AMRInterpolator
-
+from interpolator_amr import AMRInterpolator, supported_amr_interpolators

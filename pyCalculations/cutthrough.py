@@ -25,6 +25,7 @@
 
 import numpy as np
 import sys
+import logging
 
 def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 ):
    ''' Calculates coordinates to be used in the cut_through. The coordinates are calculated so that every cell gets picked in the coordinates.
@@ -59,7 +60,7 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       # Get the cell id
       cellid = vlsvReader.get_cellid(iterator)
       if cellid == 0:
-         print("ERROR, invalid cell id!")
+         logging.info("ERROR, invalid cell id!")
          return
       # Get the max and min boundaries:
       min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
@@ -127,8 +128,8 @@ def cut_through( vlsvReader, point1, point2 ):
           cut_through = cut_through(vlsvReader, [0,0,0], [2,5e6,0])
           cellids = cut_through[0]
           distances = cut_through[1]
-          print \"Cell ids: \" + str(cellids)
-          print \"Distance from point 1 for every cell: \" + str(distances)
+          logging.info \"Cell ids: \" + str(cellids)
+          logging.info \"Distance from point 1 for every cell: \" + str(distances)
    '''
    # Transform point1 and point2 into numpy array:
    point1 = np.array(point1)
@@ -151,9 +152,9 @@ def cut_through( vlsvReader, point1, point2 ):
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
-      print("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
    if vlsvReader.get_cellid(point2) == 0:
-      print("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
 
    #Calculate cell lengths:
    cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
@@ -167,7 +168,7 @@ def cut_through_swath(vlsvReader, point1, point2, width, normal):
    init_cut = cut_through(vlsvReader, point1, point2)
    init_cids = init_cut[0].data
 
-   print('swath initial CellIds', init_cids)
+   logging.info('swath initial CellIds' + str(init_cids))
 
    #find the other vector spanning the swath
    s = np.array(point2)-np.array(point1)
@@ -183,7 +184,7 @@ def cut_through_swath(vlsvReader, point1, point2, width, normal):
       out_cids.append(temp_cut[0].data)
 
    init_cut[0] = np.array(out_cids)
-   print(init_cut[0])
+   logging.info(init_cut[0])
    return init_cut
 
 def cut_through_step( vlsvReader, point1, point2 ):
@@ -203,8 +204,8 @@ def cut_through_step( vlsvReader, point1, point2 ):
           cut_through = cut_through_step(vlsvReader, [0,0,0], [2,5e6,0])
           cellids = cut_through[0]
           distances = cut_through[1]
-          print \"Cell ids: \" + str(cellids)
-          print \"Distance from point 1 for every cell: \" + str(distances)
+          logging.info \"Cell ids: \" + str(cellids)
+          logging.info \"Distance from point 1 for every cell: \" + str(distances)
    '''
    # Transform point1 and point2 into numpy array:
    point1 = np.array(point1)
@@ -212,9 +213,9 @@ def cut_through_step( vlsvReader, point1, point2 ):
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
-      print("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
    if vlsvReader.get_cellid(point2) == 0:
-      print("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
+      logging.info("ERROR, POINT2 IN CUT-THROUGH OUT OF BOUNDS!")
    
    # Find path
    distances = point2-point1
@@ -223,9 +224,9 @@ def cut_through_step( vlsvReader, point1, point2 ):
    derivative = distances/abs(distances[largestindex])
 
    # Re=6371000.
-   # print("distances",distances/Re)
-   # print("largestindex",largestindex)
-   # print("derivative",derivative)
+   # logging.info("distances",distances/Re)
+   # logging.info("largestindex",largestindex)
+   # logging.info("derivative",derivative)
 
    # Get parameters from the file to determine a good length between points (step length):
    # Get xmax, xmin and xcells_ini   
@@ -241,7 +242,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
    cellids = [vlsvReader.get_cellid(point1)]
    coordinates = [point1]
    finalcellid = vlsvReader.get_cellid(point2)
-   #print(" cellids init ",cellids,finalcellid)
+   #logging.info(" cellids init ",cellids,finalcellid)
 
    # Loop until final cellid is reached
    while True:
@@ -251,7 +252,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
       distances.append( np.linalg.norm( newcoordinate - point1 ) )
       coordinates.append(newcoordinate)
       cellids.append(newcellid)
-      #print(distances[-1]/Re,np.array(coordinates[-1])/Re,cellids[-1])
+      #logging.info(distances[-1]/Re,np.array(coordinates[-1])/Re,cellids[-1])
 
       if newcellid==finalcellid:
          break
@@ -280,8 +281,8 @@ def cut_through_curve(vlsvReader, curve):
           cut_through_curve = cut_through(vlsvReader, [[0,0,0], [2,5e6,0]])
           cellids = cut_through[0]
           distances = cut_through[1]
-          print \"Cell ids: \" + str(cellids)
-          print \"Distance from point 1 for every cell: \" + str(distances)
+          logging.info \"Cell ids: \" + str(cellids)
+          logging.info \"Distance from point 1 for every cell: \" + str(distances)
    '''
    # init cut_through static values, then do what cut_through does for each segment
    # Get parameters from the file to determine a good length between points (step length):
@@ -305,7 +306,7 @@ def cut_through_curve(vlsvReader, curve):
    cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
 
    if(len(curve) < 2):
-      print("ERROR, less than 2 points in a curve")
+      logging.info("ERROR, less than 2 points in a curve")
       return None
 
    cellIds = []
@@ -316,9 +317,9 @@ def cut_through_curve(vlsvReader, curve):
      point2 = np.array(curve[i+1])
      # Make sure point1 and point2 are inside bounds
      if vlsvReader.get_cellid(point1) == 0:
-       print("ERROR, POINT1 IN CUT-THROUGH-CURVE OUT OF BOUNDS!")
+       logging.info("ERROR, POINT1 IN CUT-THROUGH-CURVE OUT OF BOUNDS!")
      if vlsvReader.get_cellid(point2) == 0:
-       print("ERROR, POINT2 IN CUT-THROUGH-CURVE OUT OF BOUNDS!")
+       logging.info("ERROR, POINT2 IN CUT-THROUGH-CURVE OUT OF BOUNDS!")
      cut = get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2)
      ccid = cut[0].data
      cedges = cut[1].data
@@ -331,7 +332,7 @@ def cut_through_curve(vlsvReader, curve):
        edges.append(edgestart+cedges[ci])
        coords.append(cut[2].data[ci])
 
-   #print('sum of diffs', np.sum(np.diff(edges)))
+   #logging.info('sum of diffs', np.sum(np.diff(edges)))
    #reduce the cellIDs and edges
    reduct = True
    if reduct:
@@ -351,7 +352,7 @@ def cut_through_curve(vlsvReader, curve):
        cid0 = c1
      rEdges.append(edges[-1])
      rCoords.append(coords[-1])
-     #print('sum of r-diffs', np.sum(np.diff(rEdges)))
+     #logging.info('sum of r-diffs', np.sum(np.diff(rEdges)))
    else:
      rCellIds = cellIds
      rEdges = edges

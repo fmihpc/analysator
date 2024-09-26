@@ -22,6 +22,7 @@
 # 
 
 # File that creates the output format for arrays
+import logging
 
 def output_1d( arrays, names, units="" ):
    ''' Creates an output out of 1d arrays
@@ -44,7 +45,7 @@ def output_1d( arrays, names, units="" ):
    if units == "":
       units = ["" for i in range(len(arrays))]
    if( (len(arrays) != len(names)) or (len(arrays) != len(units)) ):
-      print("BAD ARRAY AND NAME LENGTH IN OUTPUT_1D (pyCalculations/output.py)")
+      logging.info("BAD ARRAY AND NAME LENGTH IN OUTPUT_1D (pyCalculations/output.py)")
       return []
    new_format = []
    from variable import VariableInfo

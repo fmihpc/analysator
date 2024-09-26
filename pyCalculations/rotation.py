@@ -22,6 +22,7 @@
 # 
 
 import numpy as np
+import logging
 
 
 def rotateTensorToVector( Tensor, vector ):
@@ -33,6 +34,10 @@ def rotateTensorToVector( Tensor, vector ):
       :returns: rotated tensor
    '''
    vector_u = np.cross(vector, np.array([0,0,1]))
+
+   if np.linalg.norm(vector_u) == 0.0:
+      return Tensor
+
    vector_u = vector_u / np.linalg.norm(vector_u)
    angle = np.arccos( vector.dot(np.array([0,0,1])) / np.linalg.norm(vector) )
    # A unit vector version of the given vector
