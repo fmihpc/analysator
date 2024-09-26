@@ -1036,7 +1036,7 @@ def LMN_nullpoint_distance( variables ):
    L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
    L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
    M_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
-   M_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+   M_zero_intercept = M_zero_intercept*np.broadcast_to(sM,(3,n_cells)).transpose()/dxs
    N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
    N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
 
@@ -1639,12 +1639,12 @@ v5reducers["vg_restart_rhom"] =           DataReducerVariable(["moments"], resta
 v5reducers["vg_restart_rhoq"] =           DataReducerVariable(["moments"], restart_rhoq, "C/m3", 1, latex=r"$\rho_q$",latexunits=r"$\mathrm{C}\,\mathrm{m}^{-3}$")
 v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jperb"], JPerB_criteria, "", 1, latex=r"$\log_2 (J/B_{\perp} \cdot \Delta x_0)$",latexunits=r"1")
 
-v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "T^2/m^2", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
-v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "T^2/m^2", 1, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{T^2}\,\mathrm{m}^{-2}$")
-v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 1, latex=r"$\mathrm{MGA}$",latexunits=r"")
-v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 1, latex=r"$\mathrm{MDD}$",latexunits=r"")
-v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 1, latex=r"$\\mathrm{D}_{i}$",latexunits=r"")
-v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 1, latex=r"$\mathrm{LMN}$",latexunits=r"")
+v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "T^2/m^2", 9, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
+v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "T^2/m^2", 9, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{T^2}\,\mathrm{m}^{-2}$")
+v5reducers["vg_mga"] =                    DataReducerVariable(["vg_gtg"], MGA, "-", 9, latex=r"$\mathrm{MGA}$",latexunits=r"")
+v5reducers["vg_mdd"] =                    DataReducerVariable(["vg_ggt"], MDD, "-", 9, latex=r"$\mathrm{MDD}$",latexunits=r"")
+v5reducers["vg_mdd_dimensionality"] =     DataReducerVariable(["vg_ggt"], MDD_dimensionality, "-", 3, latex=r"$\\mathrm{D}_{i}$",latexunits=r"")
+v5reducers["vg_lmn"] =                    DataReducerVariable(["vg_mga","vg_mdd", "vg_j"], LMN, "-", 9, latex=r"$\mathrm{LMN}$",latexunits=r"")
 v5reducers["vg_lmn_neutral_line_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx", "vg_coordinates"], LMN_xoline_distance, "dx", 1, latex=r"$\mathrm{LMN}_\mathrm{SDF,FOTE}$",latexunits=r"$\Delta x$")
 v5reducers["vg_lmn_l_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx"], L_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
 v5reducers["vg_lmn_m_flip_distance"] =  DataReducerVariable(["vg_lmn","vg_jacobian_b", "vg_b_vol", "vg_dx"], N_flip_distance, "dx", 1, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\Delta x$")
