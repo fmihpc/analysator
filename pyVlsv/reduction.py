@@ -1213,8 +1213,8 @@ v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, 
 v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_reflevel"] =            DataReducerVariable(["CellID"], vg_reflevel, "", 1, latex=r"reflevel", latexunits=r"", useReader=True)
 
-v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
-v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_derivatives/vg_dbxvoldx","vg_derivatives/vg_dbxvoldy","vg_derivatives/vg_dbxvoldz","vg_derivatives/vg_dbyvoldx","vg_derivatives/vg_dbyvoldy","vg_derivatives/vg_dbyvoldz","vg_derivatives/vg_dbzvoldx","vg_derivatives/vg_dbzvoldy","vg_derivatives/vg_dbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_derivatives/vg_dperbxvoldx","vg_derivatives/vg_dperbxvoldy","vg_derivatives/vg_dperbxvoldz","vg_derivatives/vg_dperbyvoldx","vg_derivatives/vg_dperbyvoldy","vg_derivatives/vg_dperbyvoldz","vg_derivatives/vg_dperbzvoldx","vg_derivatives/vg_dperbzvoldy","vg_derivatives/vg_dperbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 3, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 
 # Not the most elegant alias setup - could refine to fetch upstream metadata
