@@ -76,6 +76,7 @@ def sumv( variable ):
       # Third dimension: components
       return np.sum(np.array(variable),axis=0)
 
+# This just returns the upstream variable for passing forwards under a new datareducer name
 def Alias( variable ):
    return variable[0]
 
