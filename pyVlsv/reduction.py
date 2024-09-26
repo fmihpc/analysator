@@ -915,14 +915,17 @@ def LMN( variables ):
 
    LxJ = np.cross(Ls,Js,axis=-1)
    
-   mask = np.array([np.sum(Ns*LxJ,axis=-1) < 0])
-   mrep =  np.repeat(mask,(3,),axis=0).transpose()
+   
 
-   np.multiply(Ns, -1, out=Ns, where=mrep)
+   
 
    #projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
    projs = np.sum(Ns*Ls,axis=-1)[:,np.newaxis]
    Ns = Ns - Ls*projs
+
+   mask = np.array([np.sum(Ns*LxJ,axis=-1) < 0])
+   mrep =  np.repeat(mask,(3,),axis=0).transpose()
+   np.multiply(Ns, -1, out=Ns, where=mrep)
    norms = np.linalg.norm(Ns,axis=-1)
    np.divide(Ns, norms[:,np.newaxis], out = Ns, where = (norms != 0)[:,np.newaxis])
    Ns[norms==0,:] = np.nan
