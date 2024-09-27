@@ -633,11 +633,19 @@ class VlsvReader(object):
       if datareducer:
          print("Datareducers (replace leading pop with a population name):")
 
+         reducer_max_len = 0
+         units_max_len = 0
+         for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+            for k in reducer_reg.keys():
+               reducer_max_len = max(reducer_max_len, len(k))
+               units_max_len = max(units_max_len, len(reducer_reg[k].units))
+
+
          for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
             for name, reducer in reducer_reg.items():
                self.__current_reducer_tree_nodes.clear()
                if self.__check_datareducer(name,reducer):
-                  print("   ",name, " based on ", reducer_reg[name].variables)
+                  print((("    %-"+str(reducer_max_len)+"s")% name) + ("\t%-"+str(units_max_len+2)+"s")%("["+reducer.units+"]")+"\t based on " + str(reducer_reg[name].variables))
 
       if operator:
          print("Data operators:")
