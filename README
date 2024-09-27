@@ -38,7 +38,10 @@ export PTNOLATEX=1
 
 #Analysator is using logging. It is controlled by setting the enviroment variable ANALYSATOR_LOG_LEVEL
 #################################################
-Supported: INFO (default)
+Supported: DEBUG, INFO (default), WARNING, ERROR, CRITICAL
+
+For example, disable INFO prints via:
+`export ANALYSATOR_LOG_LEVEL='WARNING'`
 
 # MayaVi2 support (deprecated)
 #################################################
