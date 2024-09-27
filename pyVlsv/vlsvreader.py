@@ -624,7 +624,7 @@ class VlsvReader(object):
          print("tag = VARIABLE")
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
-               print("   ", child.attrib["name"], "check_variable ", self.check_variable( child.attrib["name"]))
+               print("   ", child.attrib["name"])
       if mesh:
          print("tag = MESH")
          for child in self.__xml_root:
