@@ -189,6 +189,10 @@ class VlsvReader(object):
 
       self.variable_cache = {} # {(varname, operator):data}
 
+      self.__available_reducers = set() # Set of strings of datareducer names
+      self.__unavailable_reducers = set() # Set of strings of datareducer names
+      self.__current_reducer_tree_nodes = set() # Set of strings of datareducer names
+
       self.__read_xml_footer()
                               # vertex-indices is a 3-tuple of integers
       self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
@@ -540,6 +544,64 @@ class VlsvReader(object):
       for index,cellid in enumerate(self.__cells_with_blocks[pop]):
          self.__order_for_cellid_blocks[pop][cellid]=index
 
+   def __check_datareducer(self, name, reducer):
+
+      reducer_ok = True
+      if name in self.__available_reducers: return True
+      if name in self.__unavailable_reducers: return False
+      if name in self.__current_reducer_tree_nodes: raise RuntimeError("Cyclical datareduction deteced with "+name+", this is weird and undefined!")
+
+      self.__current_reducer_tree_nodes.add(name)
+
+      for var in reducer.variables:
+         if len(var) > 3 and var[0:3] == "pop":
+            in_vars = False
+            for pop in self.active_populations:
+               popvar = pop+var[3:]
+               if popvar in self.__available_reducers:
+                  in_vars = True
+               elif popvar in self.__unavailable_reducers:
+                  in_vars = False
+               else:
+                  in_vars = self.check_variable(popvar)
+
+               # print(popvar," is in vars: ",in_vars)
+               if in_vars:
+                  self.__available_reducers.add(popvar)
+                  break
+               else:
+                  self.__unavailable_reducers.add(popvar)
+         else:
+            in_vars = self.check_variable(var)
+
+         reducer_ok = reducer_ok and in_vars
+         if in_vars:
+            continue
+
+         in_reducers = ((var in datareducers.keys()) or
+                        (var in multipopdatareducers.keys()) or
+                        (var in v5reducers.keys()) or
+                        (var in multipopv5reducers.keys()))
+         if in_reducers:
+            reducer = None
+            for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+               try:
+                  reducer = reducer_reg[var]
+               except:
+                  pass
+            if reducer is None: # Not in variables not in datareducers, break
+               reducer_ok = False
+               break
+            reducer_ok = reducer_ok and self.__check_datareducer(var, reducer)
+
+         if not reducer_ok: break
+
+      if reducer_ok: self.__available_reducers.add(name)
+      else: self.__unavailable_reducers.add(name)
+
+      return reducer_ok
+
+
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
       ''' Print out a description of the content of the file. Useful
          for interactive usage. Default is to list parameters and variables, query selection can be adjusted with keywords:
@@ -569,9 +631,22 @@ class VlsvReader(object):
             if child.tag == "MESH" and "name" in child.attrib:
                print("   ", child.attrib["name"])
       if datareducer:
-         print("Datareducers:")
-         for name in datareducers:
-            print("   ",name, " based on ", datareducers[name].variables)
+         print("Datareducers (replace leading pop with a population name):")
+
+         reducer_max_len = 0
+         units_max_len = 0
+         for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+            for k in reducer_reg.keys():
+               reducer_max_len = max(reducer_max_len, len(k))
+               units_max_len = max(units_max_len, len(reducer_reg[k].units))
+
+
+         for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+            for name, reducer in reducer_reg.items():
+               self.__current_reducer_tree_nodes.clear()
+               if self.__check_datareducer(name,reducer):
+                  print((("    %-"+str(reducer_max_len)+"s")% name) + ("\t%-"+str(units_max_len+2)+"s")%("["+reducer.units+"]")+"\t based on " + str(reducer_reg[name].variables))
+
       if operator:
          print("Data operators:")
          for name in data_operators:
