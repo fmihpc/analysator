@@ -913,17 +913,11 @@ def LMN( variables ):
    Ns[zeroJs, :] = MGA_vecs[zeroJs,:,1]
    #Ns = MGA_vecs[:,:,2]
 
-   LxJ = np.cross(Ls,Js,axis=-1)
-   
-   
-
-   
-
-   #projs = np.repeat(np.array([np.sum(Ns*Ls, axis=-1)]),(3,),axis=0).transpose()
    projs = np.sum(Ns*Ls,axis=-1)[:,np.newaxis]
    Ns = Ns - Ls*projs
+   NxL = np.cross(Ns,Ls,axis=-1)
 
-   mask = np.array([np.sum(Ns*LxJ,axis=-1) < 0])
+   mask = np.array([np.sum(Js*NxL,axis=-1) < 0])
    mrep =  np.repeat(mask,(3,),axis=0).transpose()
    np.multiply(Ns, -1, out=Ns, where=mrep)
    norms = np.linalg.norm(Ns,axis=-1)
