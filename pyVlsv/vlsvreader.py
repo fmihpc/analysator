@@ -889,6 +889,10 @@ class VlsvReader(object):
       # Force lowercase name for internal checks
       name = name.lower()
 
+      if tag == "VARIABLE":
+         if (name,operator) in self.variable_cache.keys():
+            return self.read_variable_from_cache(name, cellids, operator)
+
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
          if isinstance(cellids, numbers.Number): # single or all cells
@@ -2039,9 +2043,10 @@ class VlsvReader(object):
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
+         reshaped_mapping = np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size)
          for i in range(numel):
-            sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
-                                  weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
+            wgts = np.reshape(array[:,:,:,i],array[:,:,:,i].size)
+            sums = np.bincount(reshaped_mapping, weights=wgts)
             vgarr[:,i] = np.divide(sums,counts)
       else:
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
