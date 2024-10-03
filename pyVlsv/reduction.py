@@ -915,13 +915,14 @@ def LMN( variables ):
 
    projs = np.sum(Ns*Ls,axis=-1)[:,np.newaxis]
    Ns = Ns - Ls*projs
+   norms = np.linalg.norm(Ns,axis=-1)
+   np.divide(Ns, norms[:,np.newaxis], out = Ns, where = (norms != 0)[:,np.newaxis])
    NxL = np.cross(Ns,Ls,axis=-1)
 
    mask = np.array([np.sum(Js*NxL,axis=-1) < 0])
    mrep =  np.repeat(mask,(3,),axis=0).transpose()
    np.multiply(Ns, -1, out=Ns, where=mrep)
-   norms = np.linalg.norm(Ns,axis=-1)
-   np.divide(Ns, norms[:,np.newaxis], out = Ns, where = (norms != 0)[:,np.newaxis])
+   
    Ns[norms==0,:] = np.nan
    
    Ms = np.cross(Ns,Ls,axis=-1) # Y = Z x X
@@ -972,7 +973,7 @@ def LMN_xoline_distance( variables ):
       return s_line[0]
 
 # not finished
-def LMN_nullpoint_distance( variables ):
+def nullpoint_distance( variables ):
    ''' Datareducer that uses a linear approximation of B from B and its Jacobian
    in the LMN coordinates to get an approximate distance to the neutral line.
    inputs:
@@ -992,54 +993,49 @@ def LMN_nullpoint_distance( variables ):
       outside of the cell.
    '''
 
-   LMNs = variables[0]
+   Bs = variables[0]
    jacobs = variables[1]
-   Bs = variables[2]
-   dxs = variables[3]
-   coords = variables[4]
+   dxs = variables[2]
+   coords = variables[3]
    stack = True
    if(Bs.shape == (3,)):  # I want these to be stacks
       stack = False
-      LMNs = np.array([LMNs])
       jacobs = np.array([jacobs])
       dxs = np.array(dxs)
       Bs = np.array([Bs])
 
    jacobs = np.reshape(jacobs,(jacobs.shape[0],3,3))
-   Ls = LMNs[:,:,0]
-   Ms = LMNs[:,:,1]
-   Ns = LMNs[:,:,2]
    n_cells = Bs.shape[0]
    #rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]
    #so basically just LMN
    # rotate the jacobians
-   jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
+   # jacobs = np.transpose(LMNs,(0, 2,1)) @ jacobs @ LMNs
 
-   BL = np.sum(Ls*Bs, axis=-1)
-   BM = np.sum(Ms*Bs, axis=-1)
-   BN = np.sum(Ns*Bs, axis=-1)
-   gradBL = jacobs[:, 0,:]
-   gradBM = jacobs[:, 1,:]
-   gradBN = jacobs[:, 2,:]
+   Bx = Bs[:,0] #np.sum(Ls*Bs, axis=-1)
+   By = Bs[:,1] #np.sum(Ms*Bs, axis=-1)
+   Bz = Bs[:,2] #np.sum(Ns*Bs, axis=-1)
+   gradBx = jacobs[:, 0,:]
+   gradBy = jacobs[:, 1,:]
+   gradBz = jacobs[:, 2,:]
 
-   gradBLn = np.linalg.norm(gradBL,axis=-1)
-   gradBMn = np.linalg.norm(gradBN,axis=-1)
-   gradBNn = np.linalg.norm(gradBN,axis=-1)
+   gradBxn = np.linalg.norm(gradBx,axis=-1)
+   gradByn = np.linalg.norm(gradBz,axis=-1)
+   gradBzn = np.linalg.norm(gradBz,axis=-1)
 
    # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
-   sL = BL/(gradBLn)
-   sM = BM/(gradBMn)
-   sN = BN/(gradBNn)
-   L_zero_intercept = gradBL/np.broadcast_to(gradBLn,(3,n_cells)).transpose()
-   L_zero_intercept = L_zero_intercept*np.broadcast_to(sL,(3,n_cells)).transpose()/dxs
-   M_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
-   M_zero_intercept = M_zero_intercept*np.broadcast_to(sM,(3,n_cells)).transpose()/dxs
-   N_zero_intercept = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
-   N_zero_intercept = N_zero_intercept*np.broadcast_to(sN,(3,n_cells)).transpose()/dxs
+   sx = Bx/(gradBxn)
+   sy = By/(gradByn)
+   sz = Bz/(gradBzn)
+   x_zero_intercept = gradBx/np.broadcast_to(gradBxn,(3,n_cells)).transpose()
+   x_zero_intercept = x_zero_intercept*np.broadcast_to(sx,(3,n_cells)).transpose()/dxs
+   y_zero_intercept = gradBz/np.broadcast_to(gradByn,(3,n_cells)).transpose()
+   y_zero_intercept = y_zero_intercept*np.broadcast_to(sy,(3,n_cells)).transpose()/dxs
+   z_zero_intercept = gradBz/np.broadcast_to(gradBzn,(3,n_cells)).transpose()
+   z_zero_intercept = z_zero_intercept*np.broadcast_to(sz,(3,n_cells)).transpose()/dxs
 
-   n_line = np.cross(L_zero_intercept,N_zero_intercept, axis=-1)
+   n_line = np.cross(x_zero_intercept,z_zero_intercept, axis=-1)
    #Find a line intercept point and its norm
-   n_line_intercept = (L_zero_intercept + N_zero_intercept)
+   n_line_intercept = (x_zero_intercept + z_zero_intercept)
 
 
    #rotate the n_line_intercept to xyz instead of LMN

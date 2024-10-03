@@ -92,9 +92,8 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
    gradBN = gradBN/np.broadcast_to(gradBNn,(3,n_cells)).transpose()
    dots = np.sum(gradBL*gradBN, axis=-1)
    mask = mask & (dots != 1)
-   # Distance to zero plane for BL an BN; nb. jacobian in nT/m..
+   # Distance to zero plane for BL an BN
    sL = -BL/(gradBLn)
-   #sM = BM/(gradBMn*1e-9)
    sN = -BN/(gradBNn)
 
    n_line = np.full(gradBL.shape,np.nan)
