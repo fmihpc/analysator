@@ -40,3 +40,5 @@ from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
 
 from vlsvparticles import VlsvParticles
+import reduction
+import reduction_sidecar
