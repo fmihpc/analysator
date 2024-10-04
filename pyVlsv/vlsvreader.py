@@ -574,7 +574,7 @@ class VlsvReader(object):
          else:
             in_vars = self.check_variable(var)
 
-         reducer_ok = reducer_ok and in_vars
+         # reducer_ok = reducer_ok and in_vars
          if in_vars:
             continue
 
@@ -589,10 +589,11 @@ class VlsvReader(object):
                   reducer = reducer_reg[var]
                except:
                   pass
-            if reducer is None: # Not in variables not in datareducers, break
-               reducer_ok = False
-               break
+
             reducer_ok = reducer_ok and self.__check_datareducer(var, reducer)
+         else: # Not in variables not in datareducers, break
+            reducer_ok = False
+            break
 
          if not reducer_ok: break
 
