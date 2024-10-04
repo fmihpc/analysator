@@ -79,17 +79,21 @@ def mkdir_path(path):
     if not(os.path.exists(filedir)):
          os.system('mkdir -p {}'.format(filedir))
 
-def E_horizontal(dB_dt, pos, time, sigma = 1e-3):
+def E_horizontal(dB_dt, pos, time, sigma = 1e-3, method = 'liu'):
     '''
-        Calculate the horizontal electric field by integrating components of dB/dt 
+        Calculate the horizontal electric field by integrating components of dB/dt
             References: Cagniard et al 1952 (eq. 12), Pulkinnen et al 2006 (eq. 19)
         Inputs:
-            dB_dt: cartesian dB/dt    [T/s] array dimension [len(time), 2]
-            x: cartesian position [m]       2-element array
-            time: 1D array of times [s]
+            dB_dt: cartesian dB/dt    [T/s] array dimension [3, len(time)]
+            pos: cartesian position [m] 1D 3-element array, vector position
+            time: 1D array of times [s], monotonically increasing
 
         Keywords:
             sigma = ground conductivity (siemens/meter)
+            method:
+                'liu': use integration method described in Liu et al., (2009) doi:10.1029/2008SW000439, 2009
+                       this method is exact for piecewise linear B (i.e., piecewise constant dB/dt)
+                'RH-riemann': use right-handed Riemann sum.
     '''
     mu_0 = 1.25663706e-6    # permeability of free space
     E_north = np.zeros(time.size)
@@ -97,15 +101,22 @@ def E_horizontal(dB_dt, pos, time, sigma = 1e-3):
     dB_dt_r, dB_dt_theta, dB_dt_phi = cartesian_to_spherical_vector(dB_dt[0,:], dB_dt[1,:], dB_dt[2,:], pos[0], pos[1], pos[2])
     dB_dt_north = -dB_dt_theta; dB_dt_east = dB_dt_phi
     t0 = time[1] - time[0]
-    for i in range(1, time.size):
-        t = time[i]
-        tp = time[1:i+1]          
+    for i in range(0, time.size):
+        t = time[i]   # monotonically increasing from t[0]
+        tp = time[1:i+1]
         dt = tp - time[0:i]
-        # general equation for E (e.g., Pulkinnen et al. 2005, eq. 19. Note in their formula there is a typo (comparing with Cagniard 1952): should be dB/dt not dB/dt')
-        E_north[i] = -(1. / np.sqrt(np.pi * mu_0 * sigma)) * np.sum(dt * dB_dt_east[1:i+1] / np.sqrt(t-tp + t0))
-        E_east[i] = (1. / np.sqrt(np.pi * mu_0 * sigma)) * np.sum(dt * dB_dt_north[1:i+1] / np.sqrt(t-tp + t0))  # note the sign
+        if method == 'liu':  # implement Liu et al (2009), eq. 5
+            t_1 = t - tp
+            t_2 = t - time[0:i]   # elementwise, t_2 > t_1
+            dB_north = dB_dt_north[0:i] * dt[0:i]
+            dB_east = dB_dt_east[0:i] * dt[0:i]
+            E_north[i] = np.sum(-(2. / np.sqrt(np.pi * mu_0 * sigma * dt[0:i])) * dB_east * (np.sqrt(t_2) - np.sqrt(t_1) ) )
+            E_east[i] = np.sum((2. / np.sqrt(np.pi * mu_0 * sigma * dt[0:i])) * dB_north * (np.sqrt(t_2) - np.sqrt(t_1) ) )
+        elif method == 'RH-riemann':
+            if i != 0:
+                E_north[i] = -(1. / np.sqrt(np.pi * mu_0 * sigma)) * np.sum(dt * dB_dt_east[1:i+1] / np.sqrt(t-tp + t0))
+                E_east[i] = (1. / np.sqrt(np.pi * mu_0 * sigma)) * np.sum(dt * dB_dt_north[1:i+1] / np.sqrt(t-tp + t0))  # note the sign
     return E_north, E_east
-
 
 if __name__ == '__main__':    
     '''
@@ -187,7 +198,7 @@ if __name__ == '__main__':
 
     # Integrate dB/dt to find induced geoelectric field, by Cagniard's formula. See E_horizontal()
     for i_pos in range(ig_dB_dt_arr.shape[0]):
-        E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3)
+        E_north, E_east = E_horizontal(ig_dB_dt_arr[i_pos,:,:], pos[i_pos,:], time, sigma = 1e-3, method = 'liu')
         E_north_arr[i_pos,:] = E_north
         E_east_arr[i_pos,:] = E_east
     
@@ -234,7 +245,8 @@ if __name__ == '__main__':
         plt.title('dB/dt Lat. = {} deg., noon, {}'.format(int(lat_deg[i]), run))
         plt.xlabel('time [sec]')
         plt.ylabel(r'Ground magnetic field [nT/s]]')
-        dB_dt_r, dB_dt_theta, dB_dt_phi = cartesian_to_spherical_vector(ig_dB_dt_arr[ind_min, 0,:], ig_dB_dt_arr[ind_min,1,:], ig_dB_dt_arr[ind_min, 2,:], pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
+        dB_dt_r, dB_dt_theta, dB_dt_phi = cartesian_to_spherical_vector(ig_dB_dt_arr[ind_min, 0,:], ig_dB_dt_arr[ind_min,1,:], ig_dB_dt_arr[ind_min, 2,:], 
+                                                                        pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
         dB_dt_north = -dB_dt_theta; dB_dt_east = dB_dt_phi
         plt.plot(time, 1e9 * dB_dt_north, label = r'northward dB/dt [nT/s]')
         plt.plot(time, 1e9 * dB_dt_east, label = r'eastward dB/dt [nT/s]')
@@ -249,11 +261,14 @@ if __name__ == '__main__':
             plt.title('dB/dt Lat. = {} deg., noon, {}'.format(int(lat_deg[i]), run))
             plt.xlabel('time [sec]')
             plt.ylabel(r'Ground magnetic field [nT/s]]')
-            dB_dt_r_ionosphere, dB_dt_theta_ionosphere, dB_dt_phi_ionosphere = cartesian_to_spherical_vector(ig_dB_dt_ionosphere_arr[ind_min, 0,:], ig_dB_dt_arr[ind_min,1,:], ig_dB_dt_arr[ind_min, 2,:], pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
+            dB_dt_r_ionosphere, dB_dt_theta_ionosphere, dB_dt_phi_ionosphere = cartesian_to_spherical_vector(ig_dB_dt_ionosphere_arr[ind_min, 0,:], ig_dB_dt_arr[ind_min,1,:], ig_dB_dt_arr[ind_min, 2,:], 
+                                                                                                             pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
             dB_dt_north_ionosphere = -dB_dt_theta_ionosphere; dB_dt_east_ionosphere = dB_dt_phi_ionosphere
-            dB_dt_r_inner, dB_dt_theta_inner, dB_dt_phi_inner = cartesian_to_spherical_vector(ig_dB_dt_inner_arr[ind_min, 0,:], ig_dB_dt_inner_arr[ind_min,1,:], ig_dB_dt_inner_arr[ind_min, 2,:], pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
+            dB_dt_r_inner, dB_dt_theta_inner, dB_dt_phi_inner = cartesian_to_spherical_vector(ig_dB_dt_inner_arr[ind_min, 0,:], ig_dB_dt_inner_arr[ind_min,1,:], ig_dB_dt_inner_arr[ind_min, 2,:], 
+                                                                                              pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
             dB_dt_north_inner = -dB_dt_theta_inner; dB_dt_east_inner = dB_dt_phi_inner
-            dB_dt_r_outer, dB_dt_theta_outer, dB_dt_phi_outer = cartesian_to_spherical_vector(ig_dB_dt_outer_arr[ind_min, 0,:], ig_dB_dt_outer_arr[ind_min,1,:], ig_dB_dt_outer_arr[ind_min, 2,:], pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
+            dB_dt_r_outer, dB_dt_theta_outer, dB_dt_phi_outer = cartesian_to_spherical_vector(ig_dB_dt_outer_arr[ind_min, 0,:], ig_dB_dt_outer_arr[ind_min,1,:], ig_dB_dt_outer_arr[ind_min, 2,:], 
+                                                                                              pos[ind_min, 0], pos[ind_min,1], pos[ind_min, 2])
             dB_dt_north_outer = -dB_dt_theta_outer; dB_dt_east_outer = dB_dt_phi_outer
             plt.plot(time, np.abs(1e9 * np.sqrt(dB_dt_north**2 + dB_dt_east**2) ), label = r'total |dB/dt| [nT/s]')
             plt.plot(time, np.abs(1e9 * np.sqrt(dB_dt_north_ionosphere**2 + dB_dt_east_ionosphere**2) ), label = r'ionospheric |dB/dt| [nT/s]')
