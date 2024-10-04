@@ -25,6 +25,10 @@
 A file for doing data reduction on variables. This file contains datareducers
 that mainly operate on sidecar (containing auxiliary/cached derived quantities)
 files. Imported at the end of reduction.py.
+
+Specifically, the GTG-GGT -derived operations here require the full magnetic field jacobian,
+which is not part of the default Vlasiator outputs and requires extra steps to acquire with
+high precision.
 '''
 
 from null_lines import LMN_null_lines_FOTE
