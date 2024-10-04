@@ -584,14 +584,13 @@ class VlsvReader(object):
                         (var in multipopv5reducers.keys()))
          if in_reducers:
             reducer = None
-            for i,reducer_reg in enumerate([datareducers, multipopdatareducers, v5reducers, multipopv5reducers]):
+            for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
                try:
                   reducer = reducer_reg[var]
                except:
                   pass
 
-            ok = self.__check_datareducer(var, reducer)
-            reducer_ok = reducer_ok and ok
+            reducer_ok = reducer_ok and self.__check_datareducer(var, reducer)
          else: # Not in variables not in datareducers, break
             reducer_ok = False
             break
