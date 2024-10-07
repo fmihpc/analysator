@@ -689,10 +689,15 @@ def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
 
 def vspace_dummy( variables, velocity_cell_data, velocity_coordinates ):
    # This reducer needs to be verified
-   B = variables[0]
-   print('B: ', B.shape)
-   print('vcelldata: ', list(velocity_cell_data.keys())[0], list(velocity_cell_data.values())[0])
-   print('vcoord: ', velocity_coordinates.shape)
+   #B = variables[0]
+   #print('B: ', B.shape)
+   velocity_cellids = np.array(list(velocity_cell_data.keys()))
+   psd = np.array(list(velocity_cell_data.values()))
+   print(velocity_cellids.shape)
+   print(psd.shape)
+   print(velocity_coordinates.shape)
+   #print('vcelldata: ', list(velocity_cell_data.keys())[0], list(velocity_cell_data.values())[0])
+   #print('vcoord: ', velocity_coordinates.shape)
    return np.sum(velocity_coordinates)
 
 def Dng( variables ):
@@ -1204,7 +1209,7 @@ v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx",
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 
 #reducers with useVspace
-v5reducers["vg_vspace_dummy"] =    DataReducerVariable(["vg_b_vol"], vspace_dummy, "", 1, useVspace=True) # I think this has vector length 1?
+v5reducers["vg_vspace_dummy"] =    DataReducerVariable([], vspace_dummy, "", 1, useVspace=True)
 
 #multipopv5reducers
 multipopv5reducers = {}

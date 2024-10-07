@@ -853,7 +853,7 @@ class VlsvReader(object):
       raise ValueError("Variable or attribute not found")
 
 
-   def read(self, name="", tag="", mesh="", operator="pass", cellids=-1, pop='proton'):
+   def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
       
       :param name: Name of the data array
@@ -1030,7 +1030,7 @@ class VlsvReader(object):
             output = np.zeros(len(actualcellids))
             index = 0
             for singlecellid in actualcellids:
-               velocity_cell_data = self.read_velocity_cells(singlecellid, pop=pop)
+               velocity_cell_data = self.read_velocity_cells(singlecellid)
                # Get cells:
                vcellids = list(velocity_cell_data.keys())
                # Get coordinates:
