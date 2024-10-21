@@ -141,7 +141,7 @@ def vg_vol_perb_jacobian(reader):
 
 f.map_vg_onto_fg()
 print('vg mapped to fg, elapsed:', time.time()-t)
-argsorti=f.read_variable("CellID").argsort()
+argsorti=cellIds.argsort()
 rev_argosorti=argsorti.argsort()
 
 fg_b_jacob = fg_vol_jacobian(f)

@@ -2121,10 +2121,6 @@ class VlsvReader(object):
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
             
          self.__vg_indexes_on_fg = map_vg_onto_fg_loop(self.__vg_indexes_on_fg,vg_cellids, refined_ids_start, refined_ids_end)
-         # for i in range(vg_cellids.shape[0]): #this loop to jit
-         #    self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
-         #                            refined_ids_start[i,1]:refined_ids_end[i,1],
-         #                            refined_ids_start[i,2]:refined_ids_end[i,2]] = i
 
       return self.__vg_indexes_on_fg
 

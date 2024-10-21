@@ -25,6 +25,7 @@
 '''
 import numpy as np
 import sys
+import logging
 
 # Box: correct distance to corners hg_sdf
 def fBox(pp, bb=np.array([0.5,0.5,0.5])):
@@ -103,12 +104,10 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
 
    #Find a line intercept point and its norm
    n_line_intercept = np.ones_like(gradBL)#(L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp
-   print("Shape of n_line_intercept", n_line_intercept.shape)
    n_line_intercept.fill(np.inf)
 
    c1 = sL - sN*(dots)/(1 - dots**2)
    c2 = sN - sL*(dots)/(1 - dots**2)
-   print(len(mask) - np.sum(mask), "bad points")
    n_line_intercept[mask,:] = (((gradBL*np.broadcast_to(c1,(3,n_cells)).transpose() + gradBN*np.broadcast_to(c2,(3,n_cells)).transpose())/dxs))[mask,:]
 
    #rotate the n_line_intercept to xyz instead of LMN
@@ -219,9 +218,10 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
 
       in_stepping = in_stepping & ((c - a) > tolerance)
       niter = niter+1
-      print(niter,"iterations, remaining: ", np.sum(in_stepping), 
-            "right ", np.sum(bracket_dir[in_stepping] ==1), "left ", np.sum(bracket_dir[in_stepping]==-1))
+      # print(niter,"iterations, remaining: ", np.sum(in_stepping), 
+      #       "right ", np.sum(bracket_dir[in_stepping] ==1), "left ", np.sum(bracket_dir[in_stepping]==-1))
       if(niter >= maxiters):
+         logging.warning("Golden section search in LMN_null_lines_FOTE in "+ __file__ +" reached max iterations - some cell failed to converge?")
          break
 
    # Construct a line segment of local dx length where the neutral line is approximated to be
