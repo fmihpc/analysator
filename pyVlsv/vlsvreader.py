@@ -2036,6 +2036,13 @@ class VlsvReader(object):
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
+      ''' Downsample, via averaging, an fsgrid array to the Vlasov grid
+      of this reader.
+
+      :param array:  array with first three dimensions corresponding to the
+      dimensions of the fsgrid associated with this reader.
+      :returns: Vlasov grid data (in file order) of array averaged to Vlasov Grid.
+      '''
       cellIds=self.read_variable("CellID")
 
       self.map_vg_onto_fg()
@@ -2052,18 +2059,6 @@ class VlsvReader(object):
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
          vgarr = np.divide(sums,counts)
       return vgarr
-
-   def apply_fsgrid_averaging_on_vg(self, array):
-
-      self.map_vg_onto_fg()
-      counts = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size))
-      if array.ndim == 4:
-         numel = array.shape[3]
-         for i in range(numel):
-            array[:,i] = np.divide(array[:,i],counts)
-      else:
-         array = np.divide(array,counts)
-      return array
 
    def vg_uniform_grid_process(self, variable, expr, exprtuple):
       cellIds=self.read_variable("CellID")

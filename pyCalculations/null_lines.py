@@ -27,10 +27,19 @@ import numpy as np
 import sys
 import logging
 
-# Box: correct distance to corners hg_sdf
-def fBox(pp, bb=np.array([0.5,0.5,0.5])):
-   p = np.atleast_2d(pp)
-   b = np.atleast_2d(bb)
+# Box: correct distance to corners hg_sdf, see https://mercury.love/hg_sdf/
+def fBox(query_points, box_corner=np.array([0.5,0.5,0.5])):
+   ''' Function that finds the signed distance function from query points to
+   a Cartesian axis-aligned box. The box centroids are assumed to be at the origin,
+   and the default side length is 1. Default broadcasts the box_corner array
+   to match the number of query points.
+
+   :param query_points:  n-by-3 ndarray (or single 3-vector) of coordinates (x,y,z)
+   :param box_corner:    Specify the top corner(s) of the box(es) - symmetric around origin
+   :returns: a numpy array of signed distance functions.
+   '''
+   p = np.atleast_2d(query_points)
+   b = np.atleast_2d(box_corner)
    b = np.broadcast_to(b, p.shape)
    d = np.abs(p) - b
    vec30 = np.zeros_like(d)

@@ -218,12 +218,10 @@ def LMN_xoline_distance( variables ):
    * Jacobian of B in 9-element vector stack
    * vg_b_vol
 
-   return a measure for closeness to the cell center for a neutral line. For 
-   the point d closest to the cell center on the line:
-      case a: d within the cube, return -1/d
-      case b: d outside the cube, return d
-      This keeps a monotonous measure with return values < 0 having certainly the line within 
-      the cells, while values > 0 showing how far off a linear model places the line.
+   Return the minimum signed distance (SD) to the cell for a neutral line in the FOTE
+   approximation. For the point d with minimal SD to the cell on the neutral line:
+      case a: d within the cube: d < 0; at the origin, for a unit cube centered at the origin d = -0.5
+      case b: d outside the cube: d > 0, d being the minimal distance to the surface of the cube
    '''
 
    LMNs = variables[0]
@@ -246,22 +244,17 @@ def LMN_xoline_distance( variables ):
 # not finished
 def nullpoint_distance( variables ):
    ''' Datareducer that uses a linear approximation of B from B and its Jacobian
-   in the LMN coordinates to get an approximate distance to the neutral line.
+   to calculate the distance to a magnetic null point (B == [0,0,0]).
    inputs:
    * LMN basis vectors stack
    * Jacobian of B in 9-element vector stack
    * vg_b_vol
 
-   return a measure for closeness to the cell center for a neutral line. For 
+   Return a signed distance function to the cell for a null point. For 
    the point d closest to the cell center on the line:
-      case a: d within the cube, return -1/d
-      case b: d outside the cube, return d
-      This keeps a monotonous measure with return values < 0 having certainly the line within 
-      the cells, while values > 0 showing how far off a linear model places the line.
-      Todo:
-      Split b into cases where the line intersects with the cell or does not, and return -1/d for the case
-      where the line intersect a cell corner - in the meantime, return value > 0.5*sqrt(3) = are certainly
-      outside of the cell.
+      case a: d within the cube: d < 0; at the origin, for a unit cube centered at the origin d = -0.5
+      case b: d outside the cube: d > 0, d being the minimal distance to the surface of the cube
+
    '''
 
    Bs = variables[0]
