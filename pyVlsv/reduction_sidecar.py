@@ -256,7 +256,7 @@ def nullpoint_distance( variables ):
       case b: d outside the cube: d > 0, d being the minimal distance to the surface of the cube
 
    '''
-
+   raise NotImplementedError("This function is not finished, but there is demand for it. Someone might get around to implementing this sooner rather than later.")
    Bs = variables[0]
    jacobs = variables[1]
    dxs = variables[2]
