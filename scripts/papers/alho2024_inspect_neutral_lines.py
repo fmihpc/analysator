@@ -21,6 +21,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+# This script is used to produce sliced plots in the local LMN coordinates,
+# as used in Alho+2024 https://doi.org/10.5194/angeo-42-145-2024 (Figures
+# 8b, 8c, 10c, 10d).
+# 
+
 import pytools as pt
 import numpy as np
 import sys
@@ -30,7 +35,35 @@ from multiprocessing import shared_memory
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
-import time
+import os
+
+
+if len(sys.argv) < 3:
+   print("Usage: python alho2024_inspect_neutral_lines.py file_bulk out_dir 1 2 3")
+   print("Script expects the following arguments:")
+   print(" param file_bulk: file to analyse; see required variables below")
+   print(" param out_dir: output directory, will create subfolders")
+   print(" param cellids: -1 (all) or ")
+
+else:
+   try:
+      fn = sys.argv[1]
+      assert os.path.isfile(fn), "file " + fn + " does not exist"
+   except:
+      raise ValueError("Error reading file_bulk " + fn + " from arguments")
+   try:
+      outfolder = sys.argv[2]
+      assert os.path.isdir(outfolder), "folder " + outfolder + " does not exist"
+   except:
+      raise ValueError("Error reading out_dir " + outfolder + " from arguments")
+   try:
+      cid0 = int(sys.argv[3])
+      if cid0 > 0:
+         cids_analyse = []
+         for i in range(3,len(sys.argv)):
+            cids_analyse.append(int(sys.argv[i]))
+   except:
+      raise ValueError("Error while reading CellIDs")
 
 # https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
 def set_axes_equal(ax):
@@ -63,30 +96,26 @@ def set_axes_equal(ax):
 
 RE = 6371e3
 
-file_id = 1267
-path = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk_sidecars/lmn/protos/"
-#fn = "jlsidecar_mva_bulk1.{:07d}.vlsv".format(file_id)
-fn = "EGI_lmn_{:07d}.vlsv".format(file_id)
-flmn = pt.vlsvfile.VlsvReader(path+fn)
-fxo = flmn #pt.vlsvfile.VlsvReader(path+"pyXO3/pyXO_bulk1.{:07d}.vlsv".format(file_id))
-
-
+flmn = pt.vlsvfile.VlsvReader(fn)
 
 Ls = flmn.read_variable("LMN_magnetopause/vg_L")
 Ms = flmn.read_variable("LMN_magnetopause/vg_M")
 Ns = flmn.read_variable("LMN_magnetopause/vg_N")
-ds = fxo.read_variable("vg_LMN_neutral_line_distance").squeeze()
+ds = flmn.read_variable("vg_LMN_neutral_line_distance").squeeze()
 Js = flmn.read_variable("vg_J")
 d = flmn.read_variable("LMN_magnetopause/vg_jacobian_b")
-Dimn = fxo.read_variable("vg_MDD_dimensionality")
+Dimn = flmn.read_variable("vg_MDD_dimensionality")
 CellIds = flmn.read_variable("CellID")
-allcoords = flmn.read_variable("vg_coordinates_cell_center")
-t0 = time.time()
+
 B = flmn.read_variable_as_fg("vg_b_vol")
-print("B.shape", B.shape)
-print(time.time() - t0, "for read_variable_as_fg")
+allcoords = flmn.read_variable("vg_coordinates_cell_center")
 dxs = flmn.read_variable_as_fg("vg_dxs")
-# picklefn ="/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/visualizations/lmn/1267-coords.npz"
+
+# Example file caching system for slow operations - mapping to fg can be rather slow...
+# but notably, the allcoords assignment used to be a list comprehension over CellIds,
+# which is even slower. So here this caching is likely not even needed.
+
+# picklefn ="inspect_neutrals_cache.npz"
 # try:
 #    loads = np.load(picklefn)
 #    B = loads['B']
@@ -96,28 +125,18 @@ dxs = flmn.read_variable_as_fg("vg_dxs")
 # except:
 #    B = flmn.read_variable_as_fg("vg_b_vol")
 #    dxs = flmn.read_variable_as_fg("vg_dxs")
-#    allcoords = np.array([flmn.get_cell_coordinates(cid) for cid in CellIds])
+#    allcoords = flmn.read_variable("vg_coordinates_cell_center")
 #    np.savez(picklefn, B=B, dxs=dxs,allcoords=allcoords)
 
-# allcoords = np.array([flmn.get_cell_coordinates(cid) for cid in CellIds])
 
-
-outfolder = "/proj/mjalho/analysator/scripts/1267/"
-# dB = pt.calculations.idmesh3d2(CellIds, B, flmn.get_max_refinement_level(), *flmn.get_spatial_mesh_size(), 3)
-# ds = pt.calculations.idmesh3d2(CellIds, ds, flmn.get_max_refinement_level(), *flmn.get_spatial_mesh_size(), None)
 boxed = np.all(np.abs(allcoords) < 40*6371e3,axis=-1) & (np.sum(allcoords**2,axis=-1) > (5.5*RE)**2)
 
-# these are weird.
-sus_cellids = [354515492]
 
 hits = np.array(ds < 0.36) & boxed
 scatterpts = allcoords[hits,:]
-# print(np.max(dB),np.max(ds))
-# cid = 355282688
-# cid = 41099615
 
-cids_analyse = [4961682,4961414]
-for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
+cids_analyse = CellIds[hits]
+for ci,cid in enumerate(cids_analyse):
    i = np.argwhere(CellIds == cid)
    if(ds[i] > 0.36):
      continue
@@ -134,32 +153,22 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    low = coords - dx*nd
    hi = coords + dx*nd
    cp = np.dot(coords/RE,M)
-   # l0 = np.dot(cp - dx*L, L)
-   # l1 = np.dot(cp + dx*L, L)
-   # n0 = np.dot(cp - dx*N, N)
-   # n1 = np.dot(cp + dx*N, N)
-   # m0
-   # m1
-   # print(coords/6371e3, cp, cid, reflevel)
-   
-   # try:
+
+
    lowi, upi = flmn.get_bbox_fsgrid_slicemap(low,hi)
-   print(lowi, upi)
+
    Bsub = flmn.get_bbox_fsgrid_subarray(low,hi,B)
-   print("Bsub.shape", Bsub.shape)
+
    dsub = dxs[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1,0]
-   print("dsub.shape", dsub.shape)
-   # except Exception as e:
-   #    print(cid, "failed at get_bbox_fsgrid_subarray with exception:")
-   #    print(e)
-   #    continue   
+
+
    l0 = -np.min(dx)*nd
    l1 = +np.min(dx)*nd
    n0 = -np.min(dx)*nd
    n1 = +np.min(dx)*nd
-   # print(Ls[i])
+
    rot = np.stack([L,M,N])
-   # print(rot)
+
    nfg = Bsub[:,:,:,0].shape
    [XmeshXY,YmeshXY] = np.meshgrid(np.linspace(l0/1e3,l1/1e3,num=nfg[0]+1),np.linspace(n0/1e3,n1/1e3,num=nfg[2]+1),indexing='xy')
    XmeshCentres = XmeshXY[:-1,:-1] + 0.5*(XmeshXY[0,1]-XmeshXY[0,0])
@@ -170,18 +179,13 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    Bn = np.dot(Bsub,N)
    Bmag = np.linalg.norm(Bsub,axis=-1)
 
-   # Bx = scipy.ndimage.affine_transform(Bsub[:,:,:,0],np.linalg.inv(rot),mode='constant',order=1,offset=(2*nd+1)/2.-np.matmul(np.linalg.inv(rot),np.array([11/2.,11/2.,11/2.])))
-   # By = scipy.ndimage.affine_transform(Bsub[:,:,:,1],np.linalg.inv(rot),mode='constant',order=1,offset=(2*nd+1)/2.-np.matmul(np.linalg.inv(rot),np.array([11/2.,11/2.,11/2.])))
-   # Bz = scipy.ndimage.affine_transform(Bsub[:,:,:,2],np.linalg.inv(rot),mode='constant',order=1,offset=(2*nd+1)/2.-np.matmul(np.linalg.inv(rot),np.array([11/2.,11/2.,11/2.])))
-   # Bxyz = np.stack([Bx,By,Bz],axis=-1)
-   #offset = np.array([(2*nd+1)/2.,(2*nd+1)/2.,(2*nd+1)/2.])
+
    c_in=0.5*np.array(Bl.shape)
    c_out = c_in
    offset=c_in-rot.T@c_out
    Bl = scipy.ndimage.affine_transform(Bl,np.linalg.inv(rot),mode='nearest',order=1,offset=offset)
    Bm = scipy.ndimage.affine_transform(Bm,np.linalg.inv(rot),mode='nearest',order=1,offset=offset)
    Bn = scipy.ndimage.affine_transform(Bn,np.linalg.inv(rot),mode='nearest',order=1,offset=offset)
-   # Bmag = scipy.ndimage.affine_transform(Bmag,np.linalg.inv(rot),mode='nearest',order=1,offset=offset)
    Bmag = (Bl**2 + Bn**2)**0.5
    dxsln = scipy.ndimage.affine_transform(dsub,np.linalg.inv(rot),mode='nearest',order=1,offset=offset)
    
@@ -194,11 +198,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    ax_3d_overview = fig.add_subplot(4,2,(2,4), projection="3d")
    ax_LM = fig.add_subplot(4,2,7)
    ax_3d_detail = fig.add_subplot(4,2,(6,8), projection="3d")
-   # try:
-   # lic_result = lic.lic(1e9*Bl[:,nfg[1]//2,:],1e9*Bn[:,nfg[1]//2,:], length=20)
-   # plt.imshow(lic_result, origin='lower', cmap='gray',extent=(np.min(XmeshXY), np.max(XmeshXY), np.min(YmeshXY), np.max(YmeshXY)))
-   # ax1.streamplot(XmeshCentres,YmeshCentres,Bl[:,int(nfg[1]//2+1.1*dx[1]/1e6),:].transpose(),Bn[:,int(nfg[1]//2+1.1*dx[1]/1e6),:].transpose(), linewidth=2,arrowsize=0, color="silver")
-   # ax1.streamplot(XmeshCentres,YmeshCentres,Bl[:,int(nfg[1]//2-1.1*dx[1]/1e6),:].transpose(),Bn[:,int(nfg[1]//2-1.1*dx[1]/1e6),:].transpose(), linewidth=2,arrowsize=0, color="gray")
    
    Nslice = (nfg[2]//4,-nfg[2]//4)
    Mslice = int(nfg[1]//2 - dx[1]/1e6)
@@ -213,7 +212,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
 
    ax_LN_down.set_xlabel("L/km")
    ax_LN_down.set_ylabel("M = {:2.0f} km\nN/km".format(-dx[1]/1e3))
-   #ax_LN_down.set_title("M = {:2.0f} km".format(-dx[1]/1e3))
    ax_LN_down.grid()
    cmap = mpl.cm.get_cmap("bam",256)
    custom_lines = [Line2D([0], [0], color="tab:blue", lw=2, label="$B_{LN}$"),
@@ -235,7 +233,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
 
    ax_LN_mid.set_xlabel("L/km")
    ax_LN_mid.set_ylabel("M = 0 km\nN/km")
-   #ax_LN_mid.set_title("M = 0 km")
    ax_LN_mid.legend(handles=custom_lines,loc="upper right")
    ax_LN_mid.grid()
 
@@ -251,17 +248,12 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
 
    ax_LN_up.set_xlabel("L/km")
    ax_LN_up.set_ylabel("M = {:2.0f} km\nN/km".format(dx[1]/1e3))
-   #ax_LN_up.set_title("M = {:2.0f} km".format(dx[1]/1e3))
    ax_LN_up.grid()
    custom_lines = [Line2D([0], [0], color="tab:blue", lw=2, label="$B_{LN}$"),
                      Line2D([0], [0], color=cmap(0.0), lw=2, label="$B_L = 0$"),
                      Line2D([0], [0], color=cmap(1.), lw=2, label="$B_N = 0$"),
                      Line2D([0], [0], color="gray", lw=2,label="$\Delta{}X_{vg}$")]
    ax_LN_up.legend(handles=custom_lines,loc="upper right")
-
-   # except:
-   #    print(cid, "failed at plotting")
-   #    continue
 
    ax_LM.streamplot(XmeshCentres,YmeshCentres,Bl[:,:,nfg[2]//2].transpose(),Bm[:,:,nfg[2]//2].transpose())
    pcm = ax_LM.pcolormesh(XmeshXY,YmeshXY, 1e9*Bm[:,:,nfg[2]//2].transpose(),norm=mpl.colors.CenteredNorm(),cmap="vik")
@@ -272,7 +264,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    ax_LM.contour(XmeshCentres,YmeshCentres,Bn[:,:,nfg[2]//2].transpose(),cmap="bam_r",levels=[0.0])
    ax_LM.set_xlabel("L/km")
    ax_LM.set_ylabel("N = 0 km\nM/km")
-   #ax_LM.set_title("N = 0 km")
    ax_LM.grid()
    ax_LM.legend(handles=custom_lines,loc="upper right")
 
@@ -286,7 +277,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    sc = ax_3d_overview.scatter(allcoords[hits,0]/RE,allcoords[hits,1]/RE,allcoords[hits,2]/RE, c=d[hits,6], s=1, alpha=0.3, marker=',', cmap="roma_r",vmin=-1e-15,vmax=1e-15,label="X/O")
    cb = plt.colorbar(sc,ax=ax_3d_overview, pad=0.2)
    cb.set_label("$\partial{}_LB_N / \mathrm{Tm}^-1$ (positive is X)")
-   #ax2.set_aspect('equal')
    ax_3d_overview.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, L.squeeze()[0], L.squeeze()[1], L.squeeze()[2], color="r", length=20, label="L")
    ax_3d_overview.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, M.squeeze()[0], M.squeeze()[1], M.squeeze()[2], color="g", length=20, label="M")
    ax_3d_overview.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, N.squeeze()[0], N.squeeze()[1], N.squeeze()[2], color="b", length=20, label="N")
@@ -305,10 +295,6 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
    sc = ax_3d_detail.scatter(ncoords[hits_small_o,0]/RE,ncoords[hits_small_o,1]/RE,ncoords[hits_small_o,2]/RE, c=d[hits_small_o,6], s=10, marker='o', cmap="roma_r",norm=mpl.colors.CenteredNorm(),label="O")
    cb = plt.colorbar(sc,ax=ax_3d_detail, pad=0.2)
    cb.set_label("$\partial{}_LB_N / \mathrm{Tm}^-1$ (positive is X)")
-   #ax2.set_aspect('equal')
-   # ax_3d_detail.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, L.squeeze()[0], L.squeeze()[1], L.squeeze()[2], color="r", length=3, label="L")
-   # ax_3d_detail.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, M.squeeze()[0], M.squeeze()[1], M.squeeze()[2], color="g", length=3, label="M")
-   # ax_3d_detail.quiver(coords[0]/RE,coords[1]/RE,coords[2]/RE, N.squeeze()[0], N.squeeze()[1], N.squeeze()[2], color="b", length=3, label="N")
    Ll = rot@L
    Mm = rot@M
    Nn = rot@N
@@ -347,13 +333,7 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
       else:
          folder = "O_low"
    folder = ""
-   #plt.title(["r = {0:3f}".format(*tuple(coords/RE)), "\n (LNM) = (" + str(L) +", "+ str(M) + "," +str(N)])
-   print(cid)
-   print(Js[i,:])
-   print(coords)
-   print(d[i,6])
-   print(ds[i].squeeze())
-   print(Dimn[i,:],Dimn[i,:].squeeze())
+
    plt.suptitle("CellID {:d}".format(cid) + 
                ", J = ({:3e},{:3e},{:3e}), {:3e} A".format(*tuple(Js[i,:].squeeze()),np.linalg.norm(Js[i,:].squeeze())) +
                "\nr/RE = [{0:.1f}, {1:.1f}, {2:.1f}]; dBNdL = {3:.3e}".format(*tuple(coords/RE),d[i,6].squeeze()) +
@@ -362,25 +342,3 @@ for ci,cid in enumerate(cids_analyse): #[355282688]):#,355282689]):
                "\n LMN: ({0:.2f},{1:.2f},{2:.2f}),({3:.2f},{4:.2f},{5:.2f}),({6:.2f},{7:.2f},{8:.2f})".format(*tuple(L),*tuple(M),*tuple(N)))
    
    plt.savefig(outfolder+folder+"/fig{:012d}.png".format(cid), dpi=150)
-   # print(rot @ np.array([[1,0,0],[0,1,0],[0,0,1]]))
-
-# print(lowi,upi)
-
-# pt.plot.plot_colormap3dslice(path+fn,
-#                               outputdir=outfolder,
-#                               var='vg_J',
-#                               streamlines='vg_b_vol',
-#                               normal = M,#N,
-#                               up = N,
-#                               useimshow=True,
-#                               cutpointre = cp,
-#                               #boxm=[x0, x1, y0, y1 ] )
-   #   fig1 = ax1.imshow(datamap,
-   #                     cmap=colormap,
-   #                     norm=norm,
-   #                     interpolation=imshowinterp,
-   #                     origin='lower',
-   #                     extent=(np.min(XmeshPass), np.max(XmeshPass), np.min(YmeshPass), np.max(YmeshPass))
-   #                    )
-                              #streamplot
-   

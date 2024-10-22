@@ -3432,8 +3432,6 @@ class VlsvReader(object):
       # Uses new format
       return self.__read_blocks(cellid,pop)
 
-      return []
-
    def get_precipitation_centre_energy(self, pop="proton"):
       ''' Read precipitation energy bins
 
