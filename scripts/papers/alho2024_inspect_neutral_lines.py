@@ -38,24 +38,25 @@ from matplotlib.lines import Line2D
 import os
 
 
-if len(sys.argv) < 3:
-   print("Usage: python alho2024_inspect_neutral_lines.py file_bulk out_dir 1 2 3")
+if len(sys.argv) < 4:
+   print("Usage: python alho2024_inspect_neutral_lines.py file_bulk out_dir ")
    print("Script expects the following arguments:")
    print(" param file_bulk: file to analyse; see required variables below")
-   print(" param out_dir: output directory, will create subfolders")
-   print(" param cellids: -1 (all) or ")
+   print(" param out_dir: output directory")
+   print(" param cellids: -1 (all) or a whitespace-separated list of cellids")
+   sys.exit()
 
 else:
    try:
       fn = sys.argv[1]
-      assert os.path.isfile(fn), "file " + fn + " does not exist"
    except:
-      raise ValueError("Error reading file_bulk " + fn + " from arguments")
+      raise ValueError("Error reading file_bulk from arguments")
+   assert os.path.isfile(fn), "file " + fn + " does not exist"
    try:
       outfolder = sys.argv[2]
-      assert os.path.isdir(outfolder), "folder " + outfolder + " does not exist"
    except:
-      raise ValueError("Error reading out_dir " + outfolder + " from arguments")
+      raise ValueError("Error reading out_dir from arguments")
+   assert os.path.isdir(outfolder), "folder " + outfolder + " does not exist"
    try:
       cid0 = int(sys.argv[3])
       if cid0 > 0:
@@ -64,6 +65,8 @@ else:
             cids_analyse.append(int(sys.argv[i]))
    except:
       raise ValueError("Error while reading CellIDs")
+
+threshold = 0.36
 
 # https://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to
 def set_axes_equal(ax):
@@ -132,19 +135,21 @@ dxs = flmn.read_variable_as_fg("vg_dxs")
 boxed = np.all(np.abs(allcoords) < 40*6371e3,axis=-1) & (np.sum(allcoords**2,axis=-1) > (5.5*RE)**2)
 
 
-hits = np.array(ds < 0.36) & boxed
+hits = np.array(ds < threshold) & boxed
 scatterpts = allcoords[hits,:]
 
-cids_analyse = CellIds[hits]
+if cid0 == -1:
+   cids_analyse = CellIds[hits]
+
 for ci,cid in enumerate(cids_analyse):
+   print(cid)
    i = np.argwhere(CellIds == cid)
-   if(ds[i] > 0.36):
-     continue
+   # if(ds[i] > 0.36):
+   #   continue
    dx = flmn.get_cell_dx(cid)
    reflevel = flmn.get_amr_level(cid)
    coords = allcoords[i,:].squeeze()
-   if(np.any(np.abs(coords)/6371e3 > 40) or np.linalg.norm(coords) < 5.5*RE):
-       continue
+
    M = (Ms[i,:]/np.linalg.norm(Ms[i,:])).squeeze()
    L = (Ls[i,:]/np.linalg.norm(Ls[i,:])).squeeze()
    N = (Ns[i,:]/np.linalg.norm(Ns[i,:])).squeeze()
@@ -213,7 +218,8 @@ for ci,cid in enumerate(cids_analyse):
    ax_LN_down.set_xlabel("L/km")
    ax_LN_down.set_ylabel("M = {:2.0f} km\nN/km".format(-dx[1]/1e3))
    ax_LN_down.grid()
-   cmap = mpl.cm.get_cmap("bam",256)
+   # cmap = mpl.cm.get_cmap("bam",256)
+   cmap = mpl.colormaps.get_cmap("bam")
    custom_lines = [Line2D([0], [0], color="tab:blue", lw=2, label="$B_{LN}$"),
                      Line2D([0], [0], color=cmap(0.0), lw=2, label="$B_L = 0$"),
                      Line2D([0], [0], color=cmap(1.), lw=2, label="$B_N = 0$"),
@@ -308,27 +314,29 @@ for ci,cid in enumerate(cids_analyse):
    set_axes_equal(ax_3d_detail)
 
    xostr = ""
+   # Unused, but you can sort hits by gradient strengths to different folder here
+   # (create the folders)
    if (d[i,6].squeeze()> 0):
       xostr = " (X)"
-      if (d[i,6].squeeze()*dx[0] > 1e-6*1e6):
+      if (d[i,6].squeeze()*dx[0] > 1e-14):
          folder = "X_1e-0"
-      elif (d[i,6].squeeze()*dx[0] > 1e-7*1e6):
+      elif (d[i,6].squeeze()*dx[0] > 1e-15):
          folder = "X_1e-1"
-      elif (d[i,6].squeeze()*dx[0] > 1e-8*1e6):
+      elif (d[i,6].squeeze()*dx[0] > 1e-16):
          folder = "X_1e-2"
-      elif (d[i,6].squeeze()*dx[0] > 1e-9*1e6):
+      elif (d[i,6].squeeze()*dx[0] > 1e-17):
          folder = "X_1e-3"
       else:
          folder = "X_low"
    else:
       xostr = " (O)"
-      if (d[i,6].squeeze()*dx[0] < -1e-6*1e6):
+      if (d[i,6].squeeze()*dx[0] < -1e-14):
          folder = "O_1e-0"
-      elif (d[i,6].squeeze()*dx[0] < -1e-7*1e6):
+      elif (d[i,6].squeeze()*dx[0] < -1e-15):
          folder = "O_1e-1"
-      elif (d[i,6].squeeze()*dx[0] < -1e-8*1e6):
+      elif (d[i,6].squeeze()*dx[0] < -1e-16):
          folder = "O_1e-2"
-      elif (d[i,6].squeeze()*dx[0] < -1e-9*1e6):
+      elif (d[i,6].squeeze()*dx[0] < -1e-17):
          folder = "O_1e-3"
       else:
          folder = "O_low"
@@ -341,4 +349,5 @@ for ci,cid in enumerate(cids_analyse):
                ", Di = ({0:.2f},{1:.2f},{2:.2f})".format(*tuple(Dimn[i,:].squeeze())) +
                "\n LMN: ({0:.2f},{1:.2f},{2:.2f}),({3:.2f},{4:.2f},{5:.2f}),({6:.2f},{7:.2f},{8:.2f})".format(*tuple(L),*tuple(M),*tuple(N)))
    
-   plt.savefig(outfolder+folder+"/fig{:012d}.png".format(cid), dpi=150)
+   plt.savefig(outfolder+'/'+folder+"/fig{:012d}.png".format(cid), dpi=150)
+   plt.close()
