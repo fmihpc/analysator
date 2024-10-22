@@ -31,9 +31,7 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import scipy
-from multiprocessing import shared_memory
 import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
 import os
 
