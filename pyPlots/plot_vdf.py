@@ -818,7 +818,8 @@ def plot_vdf(filename=None,
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
         else:
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
-            Vbulk = vlsvReader.read_variable('V',cellid)
+            # Vbulk = vlsvReader.read_variable('V',cellid)
+            Vbulk = [0,0,-1]
         if Vbulk is None:
             logging.info("Error in finding plasma bulk velocity!")
             sys.exit()
