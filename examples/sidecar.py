@@ -33,6 +33,10 @@ after which fg_b (a face-centered field) is re-centered as volumetric. J is
 then calculated on fsgrid from the volumetric B, which is then downsampled 
 onto SpatialGrid via averaging and written into the sidecar file.
 
+Specific to this script is the combining of data from two vlsv files: one containing
+the run-time data, and another containing the constant background magnetic field and
+its Jacobian. 
+
 A Script like this can be adapted for personal use, and
 passed to a job submission system for generating a multitude of sidecars
 via e.g. array jobs.
@@ -41,38 +45,12 @@ via e.g. array jobs.
 import pytools as pt
 import numpy as np
 import sys
+import time
 
 q = 1.60217662e-19
 me = 9.10938356e-31
 mp = 1.6726219e-27
 eps0 = 8.854e-12 
-
-import time
-file_id = int(sys.argv[1])
-# Change filenames and paths to your liking
-path = '/wrk-vakka/users/mjalho/xo-paper/KomarRepro/theta150/'
-#fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/EGI/bulk/dense_cold_hall1e5_afterRestart374/bulk1.0001450.vlsv'
-#fn = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.{:07d}.vlsv'.format(file_id)
-fn=path+"bgb.0000000.vlsv"
-f = pt.vlsvfile.VlsvReader(fn)
-fperb = pt.vlsvfile.VlsvReader(path+"bulk.0000001.vlsv")
-#outfn = '/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/pysidecar_bulk1.{:07d}.vlsv'.format(file_id)
-outpath = path
-outfn = "jacobs.vlsv"
-writer = pt.vlsvfile.VlsvWriter(f, outpath+outfn)
-
-print(f.get_all_variables())
-print(f)
-cellIds=f.read_variable("CellID")
-
-
-fgsize=f.get_fsgrid_mesh_size()
-fgext=f.get_fsgrid_mesh_extent()
-t = time.time()
-print("copy_var_list")
-#writer.copy_variables_list(f, ["CellID","vg_b_vol"])
-writer.copy_variables_list(f, ["CellID"])
-print('writer init and var copy, elapsed:', time.time()-t)
 
 
 def fg_vol_curl(reader, array):
@@ -133,36 +111,76 @@ def vg_vol_perb_jacobian(reader):
                      dFz_dx, dFz_dy, dFz_dz]
                    ),
                    axis=-1)
-# print('Processing for J, elapsed', time.time()-t)
-# fg_b_vol=f.read_fg_variable_as_volumetric('fg_b')
-# print('fgbvol read, shape ', fg_b_vol.shape, 'elapsed:', time.time()-t)
 
-# fg_J = fg_vol_curl(f, fg_b_vol)/1.25663706144e-6
-# print('fgbvol curled, elapsed:', time.time()-t)
 
-f.map_vg_onto_fg()
-print('vg mapped to fg, elapsed:', time.time()-t)
-argsorti=cellIds.argsort()
-rev_argosorti=argsorti.argsort()
+def main():
 
-fg_b_jacob = fg_vol_jacobian(f)
-fg_b_vol = f.read_fsgrid_variable("fg_b_background_vol")
+   f_bgb = pt.vlsvfile.VlsvReader(fn_bgb)
+   f_perb = pt.vlsvfile.VlsvReader(fn_perb)
 
-vg_bgb_jacobian = f.fsgrid_array_to_vg(fg_b_jacob)
-vg_bgb_jacobian = np.reshape(vg_bgb_jacobian, (vg_bgb_jacobian.shape[0],9))
-fooids = fperb.read_variable("CellID")
-# vg_bgb_jacobian = vg_bgb_jacobian[fooids.argsort()]
-# vg_bgb_jacobian = vg_bgb_jacobian[rev_argosorti]
-print('fg_J mapped to vg, elapsed:', time.time()-t)
+   writer = pt.vlsvfile.VlsvWriter(f_bgb, fnout)
 
-vg_perb_jacobian = vg_vol_perb_jacobian(fperb)
-vg_perb_jacobian = np.reshape(vg_perb_jacobian, (vg_perb_jacobian.shape[0],9))
-vg_perb_jacobian = vg_perb_jacobian[fooids.argsort()]
-vg_perb_jacobian = vg_perb_jacobian[rev_argosorti]
+   print(f_bgb.get_all_variables())
+   print(f_bgb)
+   cellIds=f_bgb.read_variable("CellID")
 
-writer.write(vg_bgb_jacobian+vg_perb_jacobian,'vg_jacobian_B','VARIABLE','SpatialGrid')
 
-vg_b_vol = f.fsgrid_array_to_vg(fg_b_vol)
-writer.write(vg_b_vol,'vg_b_vol','VARIABLE','SpatialGrid')
 
-print('J written, elapsed:', time.time()-t)
+   t = time.time()
+   print("copy_var_list")
+   #writer.copy_variables_list(f, ["CellID","vg_b_vol"])
+   writer.copy_variables_list(f_bgb, ["CellID"])
+   print('writer init and var copy, elapsed:', time.time()-t)
+
+
+   # print('Processing for J, elapsed', time.time()-t)
+   # fg_b_vol=f.read_fg_variable_as_volumetric('fg_b')
+   # print('fgbvol read, shape ', fg_b_vol.shape, 'elapsed:', time.time()-t)
+
+   # fg_J = fg_vol_curl(f, fg_b_vol)/1.25663706144e-6
+   # print('fgbvol curled, elapsed:', time.time()-t)
+
+   f_bgb.map_vg_onto_fg()
+   print('vg mapped to fg, elapsed:', time.time()-t)
+   argsorti=cellIds.argsort()
+   rev_argosorti=argsorti.argsort()
+
+   fg_b_jacob = fg_vol_jacobian(f_bgb)
+   fg_b_vol = f_bgb.read_fsgrid_variable("fg_b_background_vol")
+
+   vg_bgb_jacobian = f_bgb.fsgrid_array_to_vg(fg_b_jacob)
+   vg_bgb_jacobian = np.reshape(vg_bgb_jacobian, (vg_bgb_jacobian.shape[0],9))
+   fooids = f_perb.read_variable("CellID")
+   # vg_bgb_jacobian = vg_bgb_jacobian[fooids.argsort()]
+   # vg_bgb_jacobian = vg_bgb_jacobian[rev_argosorti]
+   print('fg_J mapped to vg, elapsed:', time.time()-t)
+
+   vg_perb_jacobian = vg_vol_perb_jacobian(f_perb)
+   vg_perb_jacobian = np.reshape(vg_perb_jacobian, (vg_perb_jacobian.shape[0],9))
+   vg_perb_jacobian = vg_perb_jacobian[fooids.argsort()]
+   vg_perb_jacobian = vg_perb_jacobian[rev_argosorti]
+
+   writer.write(vg_bgb_jacobian+vg_perb_jacobian,'vg_jacobian_B','VARIABLE','SpatialGrid')
+
+   vg_b_vol = f_bgb.fsgrid_array_to_vg(fg_b_vol)
+   writer.write(vg_b_vol,'vg_b_vol','VARIABLE','SpatialGrid')
+
+   print('J written, elapsed:', time.time()-t)
+
+
+if __name__ == "__main__":
+    
+    if len(sys.argv) != 4:
+        print("Usage: python neutral_lines.py file_in file_out ")
+        print("Script expects the following arguments:")
+        print(" param file_in_bgb: input vlsv file with background b and its jacobians")
+        print(" param file_in: input vlsv file with the perturbed b-fields")
+        print(" param file_out: output vlsv file")
+        sys.exit()
+    
+
+    fn_bgb = sys.argv[1]
+    fn_perb = sys.argv[2]
+    fnout = sys.argv[3]
+
+    main()
