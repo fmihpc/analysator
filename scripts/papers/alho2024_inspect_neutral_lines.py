@@ -21,10 +21,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-# This script is used to produce sliced plots in the local LMN coordinates,
-# as used in Alho+2024 https://doi.org/10.5194/angeo-42-145-2024 (Figures
-# 8b, 8c, 10c, 10d).
-# 
+""" This script is used to produce sliced plots in the local LMN coordinates,
+as used in Alho+2024 https://doi.org/10.5194/angeo-42-145-2024 (Figures
+8b, 8c, 10c, 10d).
+
+   Usage: python alho2024_inspect_neutral_lines.py file_bulk out_dir
+   Script expects the following arguments:
+    param file_bulk: file to analyse; see required variables below
+    param out_dir: output directory
+    param cellids: -1 (all) or a whitespace-separated list of cellids
+
+"""
 
 import pytools as pt
 import numpy as np

@@ -143,12 +143,14 @@ def MDD_dimensionality( variables ):
    MDD_eigenvalues = np.linalg.eigvalsh(GGT)
    MDD_eigenvalues = MDD_eigenvalues[:,::-1]
 
+   orig_err = np.seterr(all='ignore')
    MDD_eigenvalues = np.sqrt(MDD_eigenvalues) # to (n)T/m
 
    Ds = np.zeros_like(MDD_eigenvalues)
    Ds[:,0] = (MDD_eigenvalues[:,0] - MDD_eigenvalues[:,1])/MDD_eigenvalues[:,0]
    Ds[:,1] = (MDD_eigenvalues[:,1] - MDD_eigenvalues[:,2])/MDD_eigenvalues[:,0]
    Ds[:,2] = MDD_eigenvalues[:,2]/MDD_eigenvalues[:,0]
+   np.seterr(**orig_err)
 
    if stack:
       return Ds
