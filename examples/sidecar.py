@@ -20,22 +20,23 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+'''
+This file contains an example on how to use the vlsvReader and vlsvWriter
+functionalities to derive quantities (especially differential operations 
+on an AMR mesh via uniform grid resampling) from .vlsv variables and store
+them to a sidecar file AMR grid.
 
-# This file contains an example on how to use the vlsvReader and vlsvWriter
-# functionalities to derive quantities (especially differential operations 
-# on an AMR mesh via uniform grid resampling) from .vlsv variables and store
-# them to a sidecar file AMR grid.
-#
-# The file first defines a reader for input data and a writer for the output,
-# and copies over a list of variables desired for the output (CellID is 
-# definitely worth copying over). A definition for curl on fsgrid is given,
-# after which fg_b (a face-centered field) is re-centered as volumetric. J is
-# then calculated on fsgrid from the volumetric B, which is then downsampled 
-# onto SpatialGrid via averaging and written into the sidecar file.
-#
-# A Script like this can be adapter for personal use, and
-# passed to a job submission system for generating a multitude of sidecars
-# via e.g. array jobs.
+The file first defines a reader for input data and a writer for the output,
+and copies over a list of variables desired for the output (CellID is 
+definitely worth copying over). A definition for curl on fsgrid is given,
+after which fg_b (a face-centered field) is re-centered as volumetric. J is
+then calculated on fsgrid from the volumetric B, which is then downsampled 
+onto SpatialGrid via averaging and written into the sidecar file.
+
+A Script like this can be adapted for personal use, and
+passed to a job submission system for generating a multitude of sidecars
+via e.g. array jobs.
+'''
 
 import pytools as pt
 import numpy as np

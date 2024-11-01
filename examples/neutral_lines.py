@@ -22,54 +22,60 @@
 # 
 
 ''' This is an example file to produce LMN coordinates and FOTE null line
-metrics as in Alho+2024.
+metrics as in Alho+2024. Thresholding the output data with ``vg_lmn_neutral_line_distance ~< 0.2`` 
+is the suggested way of detecting neutral lines with the FOTE method.
 
 Usage:
     python neutral_lines.py file_in file_out
 
+    file_in:
+        Input vlsv file with at least the following data: ``CellID``, ``vg_b_vol``, ``vg_jacobian_b``, and perturbed
+        B jacobian components ``vg_dperbxvoldx``
+    
+    file_out:
+        Output vlsv file (will be overwritten). 
+
+
     
 Input parameters:
-    file_in: Input vlsv file with at least the following data: CellID, vg_b_vol, vg_jacobian_b
+    file_in: 
 
 '''
 
 import pytools as pt
 import numpy as np
-import sys,time
+import sys
 
 
 def main():
     f = pt.vlsvfile.VlsvReader(fn)
 
-
     cids = f.read_variable("CellID")
-
-
-
-    t = time.time()
 
     fw = pt.vlsvfile.VlsvWriter(f, fnout, copy_meshes="SpatialGrid")
 
-    fw.copy_variables(f,["CellID","vg_b_vol"])
-    fw.write(f.read_variable("vg_j"),"vg_j","VARIABLE", "SpatialGrid")
-    fw.write(f.read_variable("vg_dxs"), "vg_dxs", "VARIABLE", "SpatialGrid")
+    # Some foundational variables to copy over
+    fw.copy_variables(f,["CellID",
+                         "vg_b_vol",
+                         "vg_jacobian_B"])
+    
+    # These come nicely via the reduction pipelines
+    fw.copy_variables(f, ["vg_j",
+                          "vg_mdd_dimensionality",
+                           "vg_lmn_neutral_line_distance",
+                           "vg_lmn_L_flip_distance"])
+
     LMNs = f.read_variable("vg_lmn",cids)
     fw.write(LMNs.reshape((-1,9)), "vg_LMN", "VARIABLE","SpatialGrid")
-    fw.write(f.read_variable("vg_mdd_dimensionality"), "vg_MDD_dimensionality", "VARIABLE", "SpatialGrid")
-    fw.write(f.read_variable("vg_lmn_neutral_line_distance"), "vg_LN_null_line_distance", "VARIABLE", "SpatialGrid")
-    fw.write(f.read_variable("vg_lmn_L_flip_distance"), "vg_L_flip_distance", "VARIABLE", "SpatialGrid")
 
-    # print(f.read_variable("vg_lmn_neutral_line_distance",cids))
+    # Read and rotate the B jacobian to the local LMN coordinates.
     LMN_jacob = f.read_variable("vg_jacobian_B", cids)
     LMN_jacob = np.reshape(LMN_jacob,(LMN_jacob.shape[0],3,3))
     LMN_jacob = np.transpose(LMNs,(0, 2, 1)) @ LMN_jacob @ LMNs
 
+    # Extract and write the X/O discriminating partial derivative
     dBNdL = LMN_jacob[:,2,0]
     fw.write(dBNdL, "vg_dBNdL", "VARIABLE", "SpatialGrid")
-
-    dBLdN = LMN_jacob[:,0,2]
-    fw.write(dBLdN, "vg_dBLdN", "VARIABLE", "SpatialGrid")
-    print('things written, elapsed:', time.time()-t)
 
 if __name__ == "__main__":
 
@@ -78,8 +84,10 @@ if __name__ == "__main__":
         print("Script expects the following arguments:")
         print(" param file_in: input vlsv file")
         print(" param file_out: output vlsv file")
+        sys.exit()
+    
 
-    fn = int(sys.argv[1])
-    fnout = int(sys.argv[2])
+    fn = sys.argv[1]
+    fnout = sys.argv[2]
 
     main()
