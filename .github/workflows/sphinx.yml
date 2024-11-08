@@ -80,6 +80,7 @@ jobs:
       - name: Build Sphinx docs (dirhtml)
         # SPHINXOPTS used via environment variables
         run: |
+          cd Documentation/sphinx/
           make dirhtml
           # This fixes broken copy button icons, as explained in
           #   https://github.com/coderefinery/sphinx-lesson/issues/50
