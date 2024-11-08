@@ -80,10 +80,7 @@ jobs:
       - name: Build Sphinx docs (dirhtml)
         # SPHINXOPTS used via environment variables
         run: |
-          ls
           cd Documentation/sphinx/
-          echo 'in sphinx'
-          ls
           make dirhtml
           # This fixes broken copy button icons, as explained in
           #   https://github.com/coderefinery/sphinx-lesson/issues/50
@@ -114,7 +111,7 @@ jobs:
       - name: Copy deployment data to _gh-pages/
         if: ${{ github.event_name == 'push' }}
         run:
-          rsync -a _build/dirhtml/ _gh-pages/
+          rsync -a Documentation/sphinx/_build/dirhtml/ _gh-pages/
 
       # Use gh-pages-multibranch to multiplex different branches into
       # one deployment. See
