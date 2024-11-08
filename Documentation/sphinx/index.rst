@@ -27,6 +27,7 @@ documentation for details.
    vlsvfile
    miscellaneous
    scripts
+   about
 
 .. automodule:: pytools 
    :members:

@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path('..', '..', 'scripts').resolve()))
 print(str(Path('..','..').resolve()))
 print(str(Path('..','..', 'scripts').resolve()))
 project = 'analysator'
-copyright = '2024, sameli'
-author = 'sameli'
+copyright = '2024, University of Helsinki'
+author = 'Sameli'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
