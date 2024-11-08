@@ -362,6 +362,7 @@ class VlsvWriter(object):
 
    def write_variable_info(self, varinfo, mesh, unitConversion, extra_attribs={}):
       ''' Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader
+      
       :param varinfo: VariableInfo object containing
          -data: The variable data (array)
          -name: Name of the data array

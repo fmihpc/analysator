@@ -311,12 +311,18 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
       Code uses forward Euler method to conduct the tracing.
       Based on Analysator's static_field_tracer()
       :Inputs:
+       
        param vlsvReader:      A vlsvReader object (~an open .vlsv file)
-       param coord_list:      a list of 3-element array-like initial coordinates [ [x1,y1,z1], [x2,y2,z2], ... ]
+
+       param coord_list:      a list of 3-element array-like initial coordinates [ [x1,y1,z1], [x2,y2,z2], ... ] ::
                               if considering just a single starting point, the code accepts a 3-element array-like object [x1,y1,z1]
+
        param max_iterations:  The maximum number of iterations (int) before the algorithm stops. Total traced length is dx*max_iterations
+
        param dx:              One iteration step length [meters] (ex. dx=1e4 for typical applications)
+
        keyword direction:     '+' or '-' or '+-' Follow field in the plus direction, minus direction, or both
+       
        keyword grid_var:      Variable to be traced (A string)
                               options include:
                                   grid_var = some string
@@ -328,14 +334,19 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
                                       ex. fg = vlsvobj.read_variable('fg_b')
                                       field grid data is already loaded externally using read_variable() method (see vlsvreader.py).
                                       If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)
-                                        keyword stop_condition: Boolean array (seed_coords.shape[0],)
+
+                                          keyword stop_condition: Boolean array (seed_coords.shape[0],)
+
                               Determine when the iteration stop, for the vg trace only
                               If not specified, it will always be True for each seed points.
                               eg. def my_stop(points):
+                              
                                     distances = np.linalg.norm(points[:,:],axis = 1)
                                     return (distances <= lower_bound) | (distances >= upper_bound)
+
       :returns:               points_traced --- a 3d numpy array [len(seed_coords),max_iterations (or 2*max_iterations-1 for '+-'),3]
                               Non-traced sections (e.g. iterations after reaching outer boundaries) filled with np.nan
+
       keyword centering:     Set to a string ('face' or 'edge') indicating whether the fg variable is face- or edge-centered
                               If keyword fg == 'fg_b', then centering = 'face' (overriding input)
                               If keyword fg == 'fg_e', then centering = 'edge' (overriding input)
