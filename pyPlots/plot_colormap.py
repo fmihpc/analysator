@@ -202,24 +202,24 @@ def plot_colormap(filename=None,
 
         .. code-block:: python
 
-        # Example usage:
-        plot_colormap(filename=fileLocation, var="MA", run="BCQ",
-                    colormap='nipy_spectral',step=j, outputdir=outputLocation,
-                    lin=True, wmark=1, vmin=2.7, vmax=10, 
-                    external=cavitoncontours, pass_vars=['rho','B','beta'])
-        # Where cavitoncontours is an external function which receives the arguments
-        #  ax, XmeshXY,YmeshXY, pass_maps
-        # where pass_maps is a dictionary of maps for the requested variables.
+            # Example usage:
+            plot_colormap(filename=fileLocation, var="MA", run="BCQ",
+                        colormap='nipy_spectral',step=j, outputdir=outputLocation,
+                        lin=True, wmark=1, vmin=2.7, vmax=10, 
+                        external=cavitoncontours, pass_vars=['rho','B','beta'])
+            # Where cavitoncontours is an external function which receives the arguments
+            #  ax, XmeshXY,YmeshXY, pass_maps
+            # where pass_maps is a dictionary of maps for the requested variables.
 
-        # example (simple) use of expressions:
-        def exprMA_cust(exprmaps, requestvariables=False):
-            if requestvariables==True:
-            return ['va']
-            custombulkspeed=750000. # m/s
-            va = exprmaps['va'][:,:]
-            MA = custombulkspeed/va
-            return MA
-        plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
+            # example (simple) use of expressions:
+            def exprMA_cust(exprmaps, requestvariables=False):
+                if requestvariables==True:
+                return ['va']
+                custombulkspeed=750000. # m/s
+                va = exprmaps['va'][:,:]
+                MA = custombulkspeed/va
+                return MA
+            plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
 
     '''
 
