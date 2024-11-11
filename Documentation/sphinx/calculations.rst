@@ -1,4 +1,4 @@
-calculations module documentation
+calculations
 =================================
 
 .. automodule:: pytools.calculations

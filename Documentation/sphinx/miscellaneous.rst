@@ -1,4 +1,4 @@
-miscellaneous module documentation
+miscellaneous
 ==================================
 
 .. automodule:: pytools.miscellaneous

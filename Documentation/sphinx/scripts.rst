@@ -1,5 +1,7 @@
-scripts documentation
+scripts
 =====================
+
+Scripts are not included in the main Analysator module import; instead, these are separate scripts utilising Analysator to some purpose.
 
 biot_savart
 -----------
