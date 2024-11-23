@@ -1,4 +1,4 @@
-plotting tools documentation
+plot
 ============================
 
 .. automodule:: pytools.plot
