@@ -748,6 +748,7 @@ class VlsvReader(object):
       ''' Returns all variables in the vlsv reader and the data reducer
           :returns:                List of variable is in the vlsv file
           .. code-block:: python
+
              # Example usage:
              vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
              vars = vlsvReader.get_variables()
@@ -842,8 +843,10 @@ class VlsvReader(object):
 
       EXAMPLE:
       if the config contains these lines:
+      
          [proton_precipitation]
          nChannels = 9
+
       then the following returns ['9']:
       vlsvReader.get_config()['proton_precipitation']['nChannels']
       '''
@@ -1553,12 +1556,20 @@ class VlsvReader(object):
                                              }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
+
       :param name:         Name of the variable
+
       :param coords:       Coordinates from which to read data 
+
       :param periodic:     Periodicity of the system. Default is periodic in all dimension
+
       :param operator:     Datareduction operator. "pass" does no operation on data
+
+
       :param method:       Method for interpolation, default "linear" ("nearest", "rbf, "delaunay")
+
       :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "rbf", "delaunay";
+
                            see scipy.interpolate.RBFInterpolator for rbf and scipy.interpolate.LinearNDInterpolator for delaunay
       :returns: numpy array with the data
 
@@ -2193,7 +2204,9 @@ class VlsvReader(object):
    def get_unique_cellids(self, coords):
       ''' Returns a list of cellids containing all the coordinates in coords,
           with no duplicate cellids. Relative order of elements is conserved.
+
       :param coords:         A list of coordinates
+
       :returns: a list of unique cell ids
       '''
       # cids = [int(self.get_cellid(coord)) for coord in coords]
@@ -2468,9 +2481,10 @@ class VlsvReader(object):
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid, prune_unique=False):
       ''' Builds, caches and returns the vertices that lie on the surfaces of CellIDs cid.
+      
       :parameter cid: numpy array of CellIDs
       :parameter prune_unique: bool [False], if you suspect you might be calling the function many times with the 
-      same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
+                               same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
 
       :returns: Dictionary of cell c (int) : set of vertex indices (3-tuple) that touch the cell c.
 

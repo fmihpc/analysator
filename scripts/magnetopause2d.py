@@ -1,3 +1,13 @@
+'''
+running:
+-takes two (or zero) commad line arguments: how many inner streamlines to ignore and from how many next to count the magnetopause position
+
+Some issues: 
+-Nose part unstable and slows the whole thing down, also requires lots of streamlines to work
+-Bulk file change is hard and must be done by hand
+-Everything else must also be done by changing the code by hand
+'''
+
 import pytools as pt
 import plot_colormap #gives error but doesn't work without 
 import sys, os, socket
@@ -13,15 +23,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import logging
 
 
-'''
-running:
--takes two (or zero) commad line arguments: how many inner streamlines to ignore and from how many next to count the magnetopause position
 
-Some issues: 
--Nose part unstable and slows the whole thing down, also requires lots of streamlines to work
--Bulk file change is hard and must be done by hand
--Everything else must also be done by changing the code by hand
-'''
 
 
 

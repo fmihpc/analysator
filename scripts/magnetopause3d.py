@@ -1,3 +1,10 @@
+'''
+Finds the magnetopause in 3D-run and plots it with matplotlib
+Accepts 2 (or 0) command line arguments: 1) how many streamlines to ignore,  2) how many streamlines to count after the ignored ones
+
+output:
+saves png-image to the current folder 
+'''
 
 import os
 import socket
@@ -14,15 +21,6 @@ from yt.visualization.api import Streamlines
 
 import ids3d
 import logging
-
-'''
-Finds the magnetopause in 3D-run and plots it with matplotlib
-Accepts 2 (or 0) command line arguments: 1) how many streamlines to ignore,  2) how many streamlines to count after the ignored ones
-
-output:
-saves png-image to the current folder 
-'''
-
 
 
 
@@ -431,6 +429,7 @@ def make_surface(coords):
 
     How it works:
     Three points make a triangle, triangles make the surface.
+    
     For every two planes next to each other:
         take every other point from plane1, every other from plane2 (in order!)
         from list of points: every three points closest to each other make a surface
@@ -440,6 +439,7 @@ def make_surface(coords):
         plane 2: [v5, v6, v7, v8]
 
         -> list: [v1, v5, v2, v6, v3,...]
+
         -> triangles:
             v1 v5 v2
             v5 v2 v6

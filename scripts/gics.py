@@ -91,8 +91,10 @@ def E_horizontal(dB_dt, pos, time, sigma = 1e-3, method = 'liu'):
         Keywords:
             sigma = ground conductivity (siemens/meter)
             method:
+            
                 'liu': use integration method described in Liu et al., (2009) doi:10.1029/2008SW000439, 2009
                        this method is exact for piecewise linear B (i.e., piecewise constant dB/dt)
+
                 'RH-riemann': use right-handed Riemann sum.
     '''
     mu_0 = 1.25663706e-6    # permeability of free space
