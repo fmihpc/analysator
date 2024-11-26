@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -59,4 +59,5 @@ import fit
 from fieldtracer import static_field_tracer, static_field_tracer_3d
 from fieldtracer import dynamic_field_tracer
 from non_maxwellianity import epsilon_M
+from null_lines import LMN_null_lines_FOTE
 from interpolator_amr import AMRInterpolator, supported_amr_interpolators

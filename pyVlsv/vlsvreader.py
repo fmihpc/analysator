@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -139,6 +139,15 @@ def fsDecompositionFromGlobalIds(reader):
    ys = np.unique(lows[:,1])
    zs = np.unique(lows[:,2])
    return [xs.size, ys.size, zs.size]
+
+def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
+   #arr = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+
+   for i in range(vg_cellids.shape[0]):
+      arr[refined_ids_start[i,0]:refined_ids_end[i,0],
+                           refined_ids_start[i,1]:refined_ids_end[i,1],
+                           refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+   return arr
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
@@ -959,6 +968,10 @@ class VlsvReader(object):
       # Force lowercase name for internal checks
       name = name.lower()
 
+      if tag == "VARIABLE":
+         if (name,operator) in self.variable_cache.keys():
+            return self.read_variable_from_cache(name, cellids, operator)
+
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
          if isinstance(cellids, numbers.Number): # single or all cells
@@ -1770,6 +1783,9 @@ class VlsvReader(object):
          singletons = [i for i, sz in enumerate(fssize) if sz == 1]
          for dim in singletons:
             fgdata=np.expand_dims(fgdata, dim)
+      return self.fg_array_to_volumetric(fgdata, name, centering=centering, operator=operator)
+
+   def fg_array_to_volumetric(self, fgdata, name, centering=None,operator="pass"):
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if centering is None:
@@ -2107,6 +2123,13 @@ class VlsvReader(object):
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
+      ''' Downsample, via averaging, an fsgrid array to the Vlasov grid
+      of this reader.
+
+      :param array:  array with first three dimensions corresponding to the
+      dimensions of the fsgrid associated with this reader.
+      :returns: Vlasov grid data (in file order) of array averaged to Vlasov Grid.
+      '''
       cellIds=self.read_variable("CellID")
 
       self.map_vg_onto_fg()
@@ -2114,9 +2137,10 @@ class VlsvReader(object):
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
+         reshaped_mapping = np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size)
          for i in range(numel):
-            sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
-                                  weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
+            wgts = np.reshape(array[:,:,:,i],array[:,:,:,i].size)
+            sums = np.bincount(reshaped_mapping, weights=wgts)
             vgarr[:,i] = np.divide(sums,counts)
       else:
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
@@ -2145,11 +2169,11 @@ class VlsvReader(object):
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
 
-   def read_variable_as_fg(self, var):
+   def read_variable_as_fg(self, var, operator='pass'):
       vg_cellids = self.read_variable('CellID')
       sz = self.get_fsgrid_mesh_size()
       sz_amr = self.get_spatial_mesh_size()
-      vg_var = self.read_variable(var)
+      vg_var = self.read_variable(var, operator=operator)
       varsize = vg_var[0].size
       if(varsize > 1):
          fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
@@ -2158,6 +2182,7 @@ class VlsvReader(object):
       self.map_vg_onto_fg()
       fg_var = vg_var[self.__vg_indexes_on_fg]
       return fg_var
+
 
    # Builds fsgrid array that contains indices to the SpatialGrid data that are colocated with the fsgrid cells.
    # Many fsgrid cells may map to the same index of SpatialGrid data.
@@ -2177,11 +2202,7 @@ class VlsvReader(object):
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
             
-         
-         for i in range(vg_cellids.shape[0]):
-            self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
-                                    refined_ids_start[i,1]:refined_ids_end[i,1],
-                                    refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+         self.__vg_indexes_on_fg = map_vg_onto_fg_loop(self.__vg_indexes_on_fg,vg_cellids, refined_ids_start, refined_ids_end)
 
       return self.__vg_indexes_on_fg
 
@@ -3500,8 +3521,6 @@ class VlsvReader(object):
       '''
       # Uses new format
       return self.__read_blocks(cellid,pop)
-
-      return []
 
    def get_precipitation_centre_energy(self, pop="proton"):
       ''' Read precipitation energy bins

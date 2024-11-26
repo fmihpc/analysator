@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -233,6 +233,7 @@ class VlsvWriter(object):
             logging.info(e)
             continue
          self.write_variable_info(varinfo, 'SpatialGrid', 1)
+
       return
 
    def write_velocity_space( self, vlsvReader, cellid, blocks_and_values ):
