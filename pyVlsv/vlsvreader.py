@@ -1,4 +1,4 @@
-# 
+#s 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
@@ -2382,7 +2382,7 @@ class VlsvReader(object):
       :returns: bool 
       '''
       if not pop in self.__cells_with_blocks:
-         return False
+         self.__set_cell_offset_and_blocks_nodict(pop)
       cid_w_vdf = self.__cells_with_blocks[pop]
       return cid in cid_w_vdf
 
