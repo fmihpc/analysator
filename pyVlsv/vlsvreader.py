@@ -2375,6 +2375,16 @@ class VlsvReader(object):
          return output
       else:
          return output[0]
+      
+   def cellid_has_vdf(self, cid, pop = 'proton')->bool:
+      ''' Returns whether the cid in question has a vdf or not
+      :param coords:    the cellid to test for
+      :returns: bool 
+      '''
+      if not pop in self.__cells_with_blocks:
+         return False
+      cid_w_vdf = self.__cells_with_blocks[pop]
+      return cid in cid_w_vdf
 
    def get_vertex_indices(self, coordinates):
       ''' Get dual grid vertex indices for all coordinates.
