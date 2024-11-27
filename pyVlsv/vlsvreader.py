@@ -1,4 +1,4 @@
-# 
+#s 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
@@ -2375,6 +2375,15 @@ class VlsvReader(object):
          return output
       else:
          return output[0]
+      
+   def cellid_has_vdf(self, cid, pop = 'proton')->bool:
+      ''' Returns whether the cid in question has a vdf or not
+      :param coords:    the cellid to test for
+      :returns: bool 
+      '''
+      self.__set_cell_offset_and_blocks_nodict(pop)
+      cid_w_vdf = self.__cells_with_blocks[pop]
+      return cid in cid_w_vdf
 
    def get_vertex_indices(self, coordinates):
       ''' Get dual grid vertex indices for all coordinates.
