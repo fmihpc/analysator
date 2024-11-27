@@ -2381,8 +2381,7 @@ class VlsvReader(object):
       :param coords:    the cellid to test for
       :returns: bool 
       '''
-      if not pop in self.__cells_with_blocks:
-         self.__set_cell_offset_and_blocks_nodict(pop)
+      self.__set_cell_offset_and_blocks_nodict(pop)
       cid_w_vdf = self.__cells_with_blocks[pop]
       return cid in cid_w_vdf
 
