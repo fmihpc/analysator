@@ -1,11 +1,11 @@
 '''
- Follow Welling et al. (2020) calculate the magnetic field at Earth's surface.
+    Follow Welling et al. (2020) calculate the magnetic field at Earth's surface.
 
  Integrate Biot-Savart over:
- 1. All currents within the Vlasov domain
- 2. Birkeland currents (FACs) in the “gap region” between the MHD inner boundary and the ionosphere, 
-     mapped (assuming J \propto B) along the field lines connecting ionosphere radius R_IONO to coupling radius r_C
- 3. Horizontal Ionospheric currents (altitude 100 km)
+
+    1. All currents within the Vlasov domain
+    2. Birkeland currents (FACs) in the “gap region” between the MHD inner boundary and the ionosphere, mapped (assuming J \\propto B) along the field lines connecting ionosphere radius R_IONO to coupling radius r_C
+    3. Horizontal Ionospheric currents (altitude 100 km)
 
  The integration is a discrete summation over the 3 domains.
 
@@ -46,13 +46,9 @@ mu_0 = 4e-7 * np.pi
 
 # Input parameters
 import argparse
-parser = argparse.ArgumentParser()
-    
-parser.add_argument('-run', default='FHA', help="run name" )
-parser.add_argument('-task', default=0, help="task no." )
-parser.add_argument('-nproc', default=1, help="number of processors to use " )
+
 global ARGS 
-ARGS = parser.parse_args()
+
 
 
 def mkdir_path(path):
@@ -122,6 +118,7 @@ def b_dip_direction(x, y, z, mag_mom_vector = np.array([0., 0., -8e22])):
     '''
     Inputs: cartesian coordinates x,y,z [m]
         keyword mag_mom_vector: Earth's vector magnetic dipole moment
+        
     Outputs: dipole magnetic field unit vector
     '''
     B = b_dip(x, y, z, mag_mom_vector = mag_mom_vector)
@@ -131,6 +128,7 @@ def b_dip(x, y, z, mag_mom_vector = np.array([0., 0., -8e22])):
     '''
     Inputs: cartesian coordinates x,y,z [m]
         keyword mag_mom_vector: Earth's vector magnetic dipole moment
+
     Outputs: dipole magnetic field
     '''
     N = x.size
@@ -226,21 +224,25 @@ def nearest_node_index(f, x, y, z, node_coords_iono = None):
 
 def fac_map(f, vg_x, vg_y, vg_z, dx, f_J_sidecar = None, r_C = 5 * 6.371e6, mag_mom_vector = np.array([0., 0., -8e22])):
     '''
-     Map the FACs along magnetic field lines (J \propto B).
+     Map the FACs along magnetic field lines (J \\propto B).
 
      Inputs:
         f: VlsvReader object
         f_J_sidecar: vlsvReader object that contains pre-computed current 'vg_J'
-            if f_J_sidecar = None:
+
+            ``if f_J_sidecar = None:``
                 here is assumed the data reducer 'ig_fac' exists (such as for runs FHA and FIA)
-                In this case, the currents in the FAC region (domain #2) will be mapped UP from the ionosphere 'ig_' grid
-            otherwise (f_J_sidecar = a *.vlsv string, for a file containing the current density J in the vlasov 'vg_' grid)
-                for run EGL, see files at /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/*.vlsv
-                In this case, the currents in the FAC region (domain #2) will be mapped DOWN from the vg_ grid
+                In this case, the currents in the FAC region (domain #2) will be mapped UP from the ionosphere 'ig\\_' grid
+            otherwise (f_J_sidecar = a \\*.vlsv string, for a file containing the current density J in the vlasov 'vg\\_' grid)
+                for run EGL, see files at /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/\\*.vlsv
+                In this case, the currents in the FAC region (domain #2) will be mapped DOWN from the vg\\_ grid
+
         vg_x,vg_y,vg_z position [m], 1D numpy arrays. 
-            note: these coordinates do not have to correspond with Vlasiator's vg_ grid,
+            note: these coordinates do not have to correspond with Vlasiator's vg\\_ grid,
             This is relevant when fac_map() is called by biot_savart(), with keyword mesh='refined' or mesh='graded'
+
         dx is grid resolution [m], 1D numpy array, This is for the input cells which can be defined arbitrarily---not necessarily same as vg cells.
+
      ***  coordinates, not just coordinates on the vg_ grid ***
 
     Returns:
@@ -304,9 +306,11 @@ def biot_savart(coord_list, f, f_J_sidecar = None, r_C = 5 * 6.371e6, mesh = 'gr
     '''
     param coord_list:   a list of 3-element arrays of coordinates [ [x1,y1,z1], [x2,y2,z2], ... ], SI units
                         if considering just a single starting point, the code accepts a 3-element array-like object [x1,y1,z1]
+
     f: vlsvReader object
     f_J_sidecar: vlsvReader object that contains pre-computed current 'vg_J'
-        e.g., for EGL, files at: /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/*.vlsv
+
+        e.g., for EGL, files at: /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/\\*.vlsv
 
     runtime (FHA): overhead of about 200 sec (setup), plus 0.2 sec for each element of coord_list
 
@@ -383,17 +387,20 @@ def integrate_biot_savart(coord_list, x, y, z, J, delta):
     '''
      integration of the Biot-savart law
      magnetic field is evaluated at coordinates specified in coord_list (for example, the ionospheric coordinates)
+
      Inputs:
         x,y,z (1D array, size n): Cartesian coordinates
         delta (1D array, size n): the volume or area of the element being integrated
         J (2D array, size [3, n]): current density
+
       all units SI
      Outputs:
       magnetic field evaluated at coord_list
 
      Note: the units of J and delta depend on the type of integral (volume or surface), but the equation form is unchanged
-     Biot-Savart (volume): B = (mu_0 / 4 * pi) \int { J x r' / |r'|^3 } dV  ([J] = A/m^2, delta == dV)
-                (surface): B = (mu_0 / 4 * pi) \int { J x r' / |r'|^3 } dA  ([J] = A/m, delta = dS)
+
+     Biot-Savart (volume): B = (mu_0 / 4 * pi) \\int { J x r' / \\|r'\\|^3 } dV  ([J] = A/m^2, delta == dV)
+                (surface): B = (mu_0 / 4 * pi) \\int { J x r' / \\|r'\\|^3 } dA  ([J] = A/m, delta = dS)
     '''
     B = np.zeros((len(coord_list), 3))
     r_p = np.zeros((3, x.size))
@@ -425,11 +432,17 @@ def B_ionosphere(f, coord_list = None, ig_r = None, method = 'integrate'):
 
      Inputs:
         f: VlsvReader object
+
         keyword coord_list: locations where B-field is calculated
+
         keyword ig_r: the ionospheric mesh
+
         keyword method:
+
             ='integrate' (default): integrate over the whole ionosphere using Biot-Savart law 
+
             ='local': ionosphere produces magnetic field locally, as by an infinite plane of current overhead
+
      Outputs:
         Magnetic field evaluated at coord_list
     '''
@@ -479,6 +492,7 @@ def save_B_vlsv(input_tuple):
             ig_r: Cartesian ionospheric grid locations (radius R_EARTH + 100km)
                 note that B_iono, B_inner, B_outer are in fact evaluated at radius R_EARTH
                 ig_r is a copy of the Vlasiator ionosphere mesh, to enable combination with other data reducers
+
             B_iono: Ionospheric (Domain #3) contribution to ground magnetic field (radius R_EARTH)
             B_inner: Ionospheric (Domain #2) contribution to ground magnetic field (radius R_EARTH)
             B_outer: Ionospheric (Domain #1) contribution to ground magnetic field (radius R_EARTH)
@@ -542,6 +556,13 @@ def save_B_vlsv(input_tuple):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('-run', default='FHA', help="run name" )
+    parser.add_argument('-task', default=0, help="task no." )
+    parser.add_argument('-nproc', default=1, help="number of processors to use " )
+    ARGS = parser.parse_args()
+    
     run = ARGS.run
     if run == 'EGL':
         first = 621

@@ -32,7 +32,9 @@ def vlsv_intpol_file(file_vlsv,file_orbit,varlist,file_output):
        :param varlist:               Variable list
        :param file_output:           Output ascii file (columns: x,y,z,cellid,var1,var2,var3,...)
        :returns: none
+
        .. code-block:: python
+       
           # Example:
           import pytools as pt
           pt.calculations.vlsv_intpol_file("state00040000.vlsv","orbit.dat",["cellB","n_H+sw_ave"],"output.dat")
