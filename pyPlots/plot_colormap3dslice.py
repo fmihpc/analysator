@@ -1328,8 +1328,6 @@ def plot_colormap3dslice(filename=None,
     # Optional external additional plotting routine overlayed on color plot
     # Uses the same pass_maps variable as expressions
     if external:
-        if 'pass_maps' not in vars():
-            pass_maps = []
         #extresult=external(ax1, XmeshXY,YmeshXY, pass_maps)
         if not axes:
             extresult=external(ax1, XmeshCentres,YmeshCentres, pass_maps)

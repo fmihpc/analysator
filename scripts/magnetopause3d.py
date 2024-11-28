@@ -8,6 +8,11 @@ import math
 from mpl_toolkits import mplot3d
 from yt.visualization.api import Streamlines
 
+'''
+Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs
+Needs the yt package
+'''
+
 
 def to_Re(m): #meters to Re
     return m/6371000
@@ -311,8 +316,10 @@ def main():
     #2D plots
     # analysator 3dcolormapslice y=0
     if True:
-        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None):
-            ax.plot(xz_slice[:,0], xz_slice[:,2], color='limegreen', linewidth=1.5)
+        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None, requestvariables=False):
+            if requestvariables==True:
+                return ['vg_v']
+            ax.plot(xz_slice[:,0], xz_slice[:,2],  color='limegreen', linewidth=1.5)
 
 
         plot_colormap3dslice.plot_colormap3dslice(
@@ -330,7 +337,9 @@ def main():
 
     # analysator 3dcolormapslice z=0
     if True:
-        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None):
+        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None, requestvariables=False):
+            if requestvariables==True:
+                return ['vg_v']
             ax.plot(xy_slice[:,0], xy_slice[:,1], color='limegreen', linewidth=1.5)
 
         plot_colormap3dslice.plot_colormap3dslice(
@@ -348,7 +357,7 @@ def main():
 
     # 3D plot
     # matplotlib 3d surface plot for single image
-    if True:
+    if False:
         verts, faces = make_surface(magnetopause)
         verts = np.array(verts)
         
