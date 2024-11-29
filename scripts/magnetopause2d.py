@@ -1,3 +1,7 @@
+'''
+Finds the magnetopause position by tracing steamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
+'''
+
 import matplotlib.pylab as plt
 import numpy as np
 import pytools as pt
@@ -6,9 +10,7 @@ import yt
 from yt.visualization.api import Streamlines
 
 
-'''
-Finds the magnetopause position by tracing steamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
-'''
+
 
 def interpolate(streamline, x_points):
 

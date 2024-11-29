@@ -1,3 +1,6 @@
+'''
+Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
+'''
 from pyCalculations import ids3d
 import matplotlib.pylab as plt
 import numpy as np
@@ -8,9 +11,7 @@ import math
 from mpl_toolkits import mplot3d
 from yt.visualization.api import Streamlines
 
-'''
-Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
-'''
+
 
 
 def to_Re(m): #meters to Re
