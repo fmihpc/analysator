@@ -25,6 +25,13 @@ extensions = [
     ]
 
 templates_path = ['_templates']
+# Create a dummy _templates folder if it does not exist
+try:
+    os.mkdir("_templates")
+except:
+    pass
+
+
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
@@ -36,5 +43,8 @@ html_theme = 'sphinx_rtd_theme'
 html_logo = "logo_color.png"
 html_static_path = ['_static']
 
-os.mkdir('_static')
-
+# Create a dummy _static folder if it does not exist
+try:
+    os.mkdir("_static")
+except:
+    pass
