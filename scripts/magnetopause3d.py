@@ -9,8 +9,7 @@ from mpl_toolkits import mplot3d
 from yt.visualization.api import Streamlines
 
 '''
-Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs
-Needs the yt package
+Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
 '''
 
 
