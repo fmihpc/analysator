@@ -2127,7 +2127,7 @@ class VlsvReader(object):
       of this reader.
 
       :param array:  array with first three dimensions corresponding to the
-      dimensions of the fsgrid associated with this reader.
+                     dimensions of the fsgrid associated with this reader.
       :returns: Vlasov grid data (in file order) of array averaged to Vlasov Grid.
       '''
       cellIds=self.read_variable("CellID")

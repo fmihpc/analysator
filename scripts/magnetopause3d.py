@@ -1,3 +1,6 @@
+'''
+Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
+'''
 from pyCalculations import ids3d
 import matplotlib.pylab as plt
 import numpy as np
@@ -8,10 +11,7 @@ import math
 from mpl_toolkits import mplot3d
 from yt.visualization.api import Streamlines
 
-'''
-Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs
-Needs the yt package
-'''
+
 
 
 def to_Re(m): #meters to Re
@@ -64,21 +64,21 @@ def make_surface(coords):
     How it works:
     Three points make a triangle, triangles make the surface.
     For every two planes next to each other:
-        take every other point from plane1, every other from plane2 (in order!)
-        from list of points: every three points closest to each other make a surface
+    - take every other point from plane1, every other from plane2 (in order!)
+    - from list of points: every three points closest to each other make a surface
 
-        Example:
-        plane 1: [v1, v2, v3, v4]
-        plane 2: [v5, v6, v7, v8]
+    Example:
+    plane 1: [v1, v2, v3, v4]
+    plane 2: [v5, v6, v7, v8]
 
-        -> list: [v1, v5, v2, v6, v3,...]
-        -> triangles:
-            v1 v5 v2
-            v5 v2 v6
-            v2 v6 v3
-            .
-            .
-            .
+    -> list: [v1, v5, v2, v6, v3,...]
+    -> triangles:
+    v1 v5 v2
+    v5 v2 v6
+    v2 v6 v3
+    .
+    .
+    .
 
     '''
     verts = [] #points
