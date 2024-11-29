@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import sys
+import sys, os
 from pathlib import Path
 
 sys.path.insert(0, str(Path('..', '..').resolve()))
@@ -35,3 +35,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'sphinx_rtd_theme'
 html_logo = "logo_color.png"
 html_static_path = ['_static']
+
+os.mkdir('_static')
+
