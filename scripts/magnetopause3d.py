@@ -72,12 +72,12 @@ def make_surface(coords):
 
     -> list: [v1, v5, v2, v6, v3,...]
     -> triangles:
-        v1 v5 v2
-        v5 v2 v6
-        v2 v6 v3
-        .
-        .
-        .
+    v1 v5 v2
+    v5 v2 v6
+    v2 v6 v3
+    .
+    .
+    .
 
     '''
     verts = [] #points
