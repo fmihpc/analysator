@@ -14,7 +14,7 @@ env:
   DEFAULT_BRANCH: "master"
   # If these SPHINXOPTS are enabled, then be strict about the
   # builds and fail on any warnings.
-  #SPHINXOPTS: "-W --keep-going -T"
+  SPHINXOPTS: "-W --keep-going -T"
   GENERATE_PDF: false          # to enable, must be 'true' lowercase
   GENERATE_SINGLEHTML: false   # to enable, must be 'true' lowercase
   PDF_FILENAME: lesson.pdf
