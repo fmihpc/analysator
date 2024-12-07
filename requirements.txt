@@ -1,1 +1,5 @@
-numpy scipy matplotlib scikit-image vtk
+numpy
+scipy
+matplotlib
+scikit-image
+vtk
