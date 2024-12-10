@@ -33,8 +33,10 @@ import numbers
 
 import vtk.numpy_interface
 import vtk.numpy_interface.dataset_adapter
-from vlsvreader import VlsvReader
-
+if __name__ != "__main__":
+   from vlsvreader import VlsvReader
+else:
+   import pytools as pt
 try:
    import vtk
 except Exception as e:
@@ -296,3 +298,110 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       # the file/a buffer, we do not need to do fancy recursive
       # traversal downsampling.
    
+from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
+
+class VlsvVtkReader(VTKPythonAlgorithmBase):
+   def __init__(self):
+      VTKPythonAlgorithmBase.__init__(self, nInputPorts = 0, nOutputPorts=1, outputType='vtkHyperTreeGrid')
+      self.__FileName = None
+      self.__htg = None
+      self.__reader = None
+
+   def SetFileName(self, filename):
+      if filename != self.__FileName:
+         self.Modified()
+         self.__FileName = filename
+         self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
+      
+      
+   def GetFileName(self):
+        return self.__FileName
+
+   '''
+   def FillOutputPortInformation(self, port, info):
+      pass
+
+   def RequestDataObject(self, request, inInfo, outInfo):
+      #This is where you can create output data objects if the output DATA_TYPE_NAME() is not a concrete type.
+      pass
+   '''
+
+   def RequestInformation(self, request, inInfo, outInfo):
+
+      info = outInfo.GetInformationObject(0)
+      print("VlsvVtkReader RequestInformation:")
+      print(info)
+      if self.__htg is None:
+         self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
+         self.__htg.addArrayFromVlsv("vg_beta_star")
+         self.__htg.GetCellData().SetActiveScalars("vg_beta_star")
+
+      dims = self.__htg.GetExtent()
+      info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(), *dims)
+
+      return 1
+   
+   '''
+   def RequestUpdateExtent(self, request, inInfo, outInfo):
+      pass
+   '''
+   
+   def RequestData(self, request, inInfo, outInfo):
+
+      print("VlsvVtkReader RequestData:")
+      print(outInfo)
+
+      if self.__htg is None:
+         self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
+
+      output = vtk.vtkHyperTreeGrid.GetData(outInfo)
+
+      output.ShallowCopy(self.__htg)
+
+      return 1
+
+
+
+def __main__():
+   import pytools as pt
+   # This initializes a hypertreegrid from the given reader.
+   reader = VlsvVtkReader()
+   reader.SetFileName("../../bulk.0002189.vlsv")
+   
+   cf = vtk.vtkHyperTreeGridContour()
+   cf.SetInputConnection(reader.GetOutputPort())
+   cf.SetValue(0, 1)
+
+   m = vtk.vtkPolyDataMapper()
+   m.SetInputConnection(cf.GetOutputPort())
+
+   a = vtk.vtkActor()
+   a.SetMapper(m)
+
+   ren = vtk.vtkRenderer()
+   ren.AddActor(a)
+
+   renWin = vtk.vtkRenderWindow()
+   renWin.AddRenderer(ren)
+   renWin.SetSize(600, 600)
+
+   renWin.Render()
+   import time
+   time.sleep(10)
+   htg = reader.GetOutputDataObject(0)
+   # htg.__vtkVlsvHyperTreeGrid_VlsvAddArray('vg_b_vol')
+   # htg = reader.GetOutputData()
+   # print(htg)
+   # These functions grab one SpatialGrid variable and map that to 
+   # the hypertreegrid. Variable vector sizes of 1,2,3,4,9 supported.
+   # htg.addArrayFromVlsv("vg_b_vol")
+   # htg.addArrayFromVlsv("vg_beta_star")
+
+   writer = vtk.vtkXMLHyperTreeGridWriter()
+   writer.SetFileName("output_EGE.htg")
+   writer.SetInputData(htg)
+   writer.Write()
+
+
+if __name__ == "__main__":
+   __main__()
