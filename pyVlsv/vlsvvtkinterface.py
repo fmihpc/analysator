@@ -278,9 +278,14 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       
 
 
-   def findVariablesFromVlsv(self):
+   def findVariablesFromVlsv(self, getReducers = False):
 
       vars = self.vlsvreader.get_variables()
+      if getReducers:
+         reducers = self.vlsvreader.get_reducers()
+         vars_set = set(vars)
+         vars_set.update(reducers)
+         vars = list(vars_set)
 
       # for var in vars:
       #    array = vtk.vtkDoubleArray()
@@ -299,10 +304,22 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       data = self.vlsvreader.read_variable(varname)
       
       test_var = data[0]
+      if test_var is None:
+         logging.warning("varname " + varname + "returned None; skipping")
+         return False
       if np.isscalar(test_var):
          varlen = 1
+      elif test_var.ndim == 1:
+         varlen = len(test_var)         
+      elif test_var.ndim > 1:
+         varlen = np.prod(test_var.shape)
       else:
-         varlen = len(test_var)
+         logging.warning("Weird output from " + varname)
+         return False
+         # varlen = 0
+         # print("test var is ", test_var, 'for', varname)
+
+      
       # varlen = data[:,np.newaxis].shape[1]
       # print(varlen)
       array.SetNumberOfComponents(varlen)
@@ -324,12 +341,13 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             array.SetTuple4(idx, *data[fileIndex])
       elif varlen == 9:
          for idx,fileIndex in self.idxToFileIndex.items():
-            array.SetTuple9(idx, *data[fileIndex])
+            array.SetTuple9(idx, *np.reshape(data[fileIndex],(9)))
       else:
          raise RuntimeError("No vtk SetTuple wrapper function for varlen = " + str(varlen))
       
       
       self.GetCellData().AddArray(array)
+      return True
       
       # vtk.numpy_interface.numpy_to_vtk(newdata)
       # cidArray2.SetData(newdata, len(self.idxToFileIndex), 1)
@@ -397,7 +415,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       print(info)
       if self.__htg is None:
          self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
-         vars = self.__htg.findVariablesFromVlsv()
+         vars = self.__htg.findVariablesFromVlsv(getReducers=True)
          for name in vars:
             if "vg" in name:
                # print(name)
@@ -426,7 +444,9 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       
       for name in self.__cellarrays:
          if self._arrayselection.ArrayIsEnabled(name):
-            self.__htg.addArrayFromVlsv(name)
+            success = self.__htg.addArrayFromVlsv(name)
+            if not success:
+               self._arrayselection.RemoveArrayByName(name)
 
 
       output = vtk.vtkHyperTreeGrid.GetData(outInfo)
