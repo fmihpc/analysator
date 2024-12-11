@@ -22,19 +22,14 @@
 # 
 
 import logging
-import struct
-import xml.etree.ElementTree as ET
-import ast
 import numpy as np
-import os
-import sys
-import re
-import numbers
+import cProfile
 
 import vtk.numpy_interface
 import vtk.numpy_interface.dataset_adapter
 if __name__ != "__main__":
    from vlsvreader import VlsvReader
+   import pytools as pt
 else:
    import pytools as pt
 try:
@@ -42,7 +37,6 @@ try:
 except Exception as e:
    logging.error("VTK import did not succeed")
    raise(e)
-
 
 
 '''Extend vtkHyperTreeGrid with a vlsvReader wrapper.
@@ -111,15 +105,15 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          isum = isum + 2**(3*i) * xc * yc * zc
          cid_offsets[i+1] = isum
 
-      print(cid_offsets)
-
-      xcells = np.zeros((f.get_max_refinement_level()+1), dtype=np.int64)
-      ycells = np.zeros((f.get_max_refinement_level()+1), dtype=np.int64)
-      zcells = np.zeros((f.get_max_refinement_level()+1), dtype=np.int64)
-      for r in range(f.get_max_refinement_level()+1):
-         xcells[r] = f._VlsvReader__xcells*2**(r)
-         ycells[r] = f._VlsvReader__ycells*2**(r)
-         zcells[r] = f._VlsvReader__zcells*2**(r)
+      # print(cid_offsets)
+      max_ref_level = f.get_max_refinement_level()
+      xcells = np.zeros((max_ref_level+1), dtype=np.int64)
+      ycells = np.zeros((max_ref_level+1), dtype=np.int64)
+      zcells = np.zeros((max_ref_level+1), dtype=np.int64)
+      for r in range(max_ref_level+1):
+         xcells[r] = xc*2**(r)
+         ycells[r] = yc*2**(r)
+         zcells[r] = zc*2**(r)
       mins = np.array([f._VlsvReader__xmin,f._VlsvReader__ymin,f._VlsvReader__zmin])
 
       f._VlsvReader__read_fileindex_for_cellid()
@@ -137,53 +131,78 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       f.read_variable_to_cache("CellID")
 
       cursor = vtk.vtkHyperTreeGridNonOrientedCursor()
-      offsetIndex = 0
-      numvalues = 0
       self.idxToFileIndex = {}
 
+      xmin,xmax,ymin,ymax,zmin,zmax = f._VlsvReader__xmin,f._VlsvReader__xmax,f._VlsvReader__ymin,f._VlsvReader__ymax,f._VlsvReader__zmin,f._VlsvReader__zmax,
+      
+      fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
+      delta = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
+               [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
+      
+      def get_cell_indices(cellids, reflevels):
+         ''' Single-cellid specialization with external constants.
+         Returns a given cell's indices as a numpy array
+
+         :param cellid:            The cell's ID, numpy array
+         :param reflevel:          The cell's refinement level in the AMR
+         :returns: a numpy array with the coordinates
+
+         .. seealso:: :func:`get_cellid`
+
+         .. note:: The cell ids go from 1 .. max not from 0
+         '''
+
+         # # Calculating the index of the first cell at this reflevel
+         # index_at_reflevel = np.zeros(max_refinement_level+1, dtype=np.int64)
+         # isum = 0
+         # for i in range(0,max_refinement_level):
+         #    isum = isum + 2**(3*i) * xcells * ycells * zcells
+         #    index_at_reflevel[i+1] = isum
+
+         # Get cell indices
+         # print(cellids, reflevels, cid_offsets)
+         
+         cellids = cellids - 1 - cid_offsets[reflevels]
+         cellindices = np.full(3, -1)
+         cellindices[0] = (cellids)%(xcells[reflevels])
+         cellindices[1] = ((cellids)//(xcells[reflevels]))%(ycells[reflevels])
+         cellindices[2] = (cellids)//(xcells[reflevels]*ycells[reflevels])
+
+         # print(cellindices, f.get_cell_indices(cellids,reflevels))
+
+         return cellindices
+
+      cell_lengths_levels = []
+      for level in range(max_ref_level+1):
+          cell_lengths_levels.append(np.array([(xmax - xmin)/(xcells[level]),
+                                               (ymax - ymin)/(ycells[level]),
+                                               (zmax - zmin)/(zcells[level])]))
+
       def refine_cell(cid, level):
-         # ave = np.array([0.0,0.0,0.0,0.0])
-         # print(cid, f.get_cell_indices(cid, reflevels = 0), cid in f._VlsvReader__fileindex_for_cellid.keys())
-         cell_lengths = np.array([(f._VlsvReader__xmax - f._VlsvReader__xmin)/(xcells[level]),
-                                 (f._VlsvReader__ymax - f._VlsvReader__ymin)/(ycells[level]),
-                                 (f._VlsvReader__zmax - f._VlsvReader__zmin)/(zcells[level])])
-         # print(f.get_cell_coordinates(cid-1))
-         cellind = f.get_cell_indices(cid, reflevels = level)
 
-         # print(mins, cellind, cell_lengths)
-         cellcoordinates = mins + (cellind + 0.25)*cell_lengths
-         # print(cellind,cellcoordinates)
+         cellind = get_cell_indices(cid, level)
+         cellcoordinates = mins + (cellind + 0.25)*cell_lengths_levels[level]
 
-         cell_lengths = np.array([(f._VlsvReader__xmax - f._VlsvReader__xmin)/(xcells[level+1]),
-                                 (f._VlsvReader__ymax - f._VlsvReader__ymin)/(ycells[level+1]),
-                                 (f._VlsvReader__zmax - f._VlsvReader__zmin)/(zcells[level+1])])
-         # print(cell_lengths)
-         cellind = np.array((cellcoordinates - mins)/cell_lengths, dtype = np.int32)
-         # print(cellind)
-         # print(xcells[level],xcells[level+1])
-         # print(xcells)
-         # sys.exit()
-         # delta = [[0,0,0],[0,0,1],[0,1,0],[0,1,1],
-         #          [1,0,0],[1,0,1],[1,1,0],[1,1,1]]
-         delta = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],
-                  [0,0,1],[1,0,1],[0,1,1],[1,1,1]]
+         cellind = np.array(np.divide((cellcoordinates - mins),cell_lengths_levels[level+1]), dtype = np.int32)
+
 
          for c in range(8):
                cursor.ToChild(c)  # cell 0/0
                # print(cellind, delta[c])
                ci = cellind + delta[c]
                # print(ci)
-               cellid = int(cid_offsets[level+1] + ci[0] + 2**(level+1)*ci[1]*xc + 4**(level+1)*ci[2]*xc*yc + 1)
+               cellid = int(cid_offsets[level+1] + ci[0] + xcells[level+1]*ci[1] + ci[2]*xcells[level+1]*ycells[level+1] + 1)
                # print(f.get_cell_indices(cid, reflevels = level))
-               if (cellid in f._VlsvReader__fileindex_for_cellid.keys()):
+               if (cellid in fileindex_for_cellid.keys()):
                   # Assigns an index for the value of the cell pointed to by the current cursor state 
                   idx = cursor.GetGlobalNodeIndex()
+                  # print(idx, cellid)
                   self.GetCellData().SetActiveScalars('CellID')
                   cidArray.InsertTuple1(idx, cellid)
                   self.GetCellData().SetActiveScalars('fileIndex')
-                  self.fileIndexArray.InsertTuple1(idx, f._VlsvReader__fileindex_for_cellid[cellid])
+                  self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])
                   # numvalues += 1
-                  self.idxToFileIndex[idx] = f._VlsvReader__fileindex_for_cellid[cellid]
+                  self.idxToFileIndex[idx] = fileindex_for_cellid[cellid]
                   # ave += np.array([var_x(cellid, 'proton/vg_v'),*var(cellid, 'vg_b_vol')])
                else:
                   # print(cellid)
@@ -203,25 +222,25 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
          return #ave/8
 
-
-      def handle_cell(cid):
+      def handle_cell(cellid):
          # Leaf cell, just add
-         if (cid in f._VlsvReader__fileindex_for_cellid.keys()):
+         if (cellid in fileindex_for_cellid.keys()):
                # Assigns an index for the value of the cell pointed to by the current cursor state 
                idx = cursor.GetGlobalNodeIndex()
                self.GetCellData().SetActiveScalars('CellID')
-               cidArray.InsertTuple1(idx, cid)
+               # print(idx, cid)
+               cidArray.InsertTuple1(idx, cellid)
                self.GetCellData().SetActiveScalars('fileIndex')
-               self.fileIndexArray.InsertTuple1(idx, f._VlsvReader__fileindex_for_cellid[cid])
+               self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])
                # numvalues += 1
-               self.idxToFileIndex[idx] = f._VlsvReader__fileindex_for_cellid[cid]
+               self.idxToFileIndex[idx] = fileindex_for_cellid[cellid]
          # Cell not in list -> must be refined (assume cid is in basegrid)
          else:
                idx = cursor.GetGlobalNodeIndex()
 
                # print(cid , "not found, refining")
                cursor.SubdivideLeaf()  # cell 0
-               refine_cell(cid, 0)
+               refine_cell(cellid, 0)
                # self.GetCellData().SetActiveScalars('vg_v')
                #scalarArray.InsertTuple1(idx, ave[0])
                # self.GetCellData().SetActiveVectors('vg_b_vol')
@@ -231,20 +250,45 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
                # idx = cursor.GetGlobalNodeIndex()
                # scalarArray.InsertTuple1(idx, vardummy(cid))
 
-      nc = 0
-      for basegridIdx in range(int(np.prod(basegridsize))):
-         cid = basegridIdx +1
-         # Set cursor on cell #0 and set the start index
-         self.InitializeNonOrientedCursor(cursor, basegridIdx, True)
-         cursor.SetGlobalIndexStart(offsetIndex)  # cell 0
-         # print("handling ",cid)
-         handle_cell(cid)
 
-         offsetIndex += cursor.GetTree().GetNumberOfVertices()
-         nc += 1
-         if cid > np.prod(basegridsize):
-            print("tried to go over")
-            break
+      def loop():
+         offsetIndex = 0
+
+         for basegridIdx in range(int(np.prod(basegridsize))):
+            cid = basegridIdx +1
+            # Set cursor on cell #0 and set the start index
+            self.InitializeNonOrientedCursor(cursor, basegridIdx, True)
+            cursor.SetGlobalIndexStart(offsetIndex)  # cell 0
+            # print("handling ",cid)
+            handle_cell(cid)
+
+            offsetIndex += cursor.GetTree().GetNumberOfVertices()
+            if cid > np.prod(basegridsize):
+               print("tried to go over")
+               break
+
+      import pstats
+      from pstats import SortKey
+      with cProfile.Profile() as pr:
+         loop()
+         ps = pstats.Stats(pr).sort_stats().reverse_order()
+         ps.print_stats()
+      
+      # loop()
+      
+
+
+   def findVariablesFromVlsv(self):
+
+      vars = self.vlsvreader.get_variables()
+
+      # for var in vars:
+      #    array = vtk.vtkDoubleArray()
+      #    array.SetName(var)
+      #    self.GetCellData().AddArray(array)
+
+      return vars
+
 
    '''This function adds one SpatialGrid variable from the reader object and maps
    that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
@@ -260,7 +304,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       else:
          varlen = len(test_var)
       # varlen = data[:,np.newaxis].shape[1]
-      print(varlen)
+      # print(varlen)
       array.SetNumberOfComponents(varlen)
       array.SetNumberOfTuples(self.fileIndexArray.GetNumberOfTuples())
       array.SetName(varname)
@@ -300,12 +344,29 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
    
 from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
+
+def createModifiedCallback(anobject):
+    import weakref
+    weakref_obj = weakref.ref(anobject)
+    anobject = None
+    def _markmodified(*args, **kwars):
+        o = weakref_obj()
+        if o is not None:
+            o.Modified()
+    return _markmodified
+
+# Should implement these, more or less:
+# https://vtk.org/doc/nightly/html/classvtkXMLHyperTreeGridReader.html
+
 class VlsvVtkReader(VTKPythonAlgorithmBase):
    def __init__(self):
       VTKPythonAlgorithmBase.__init__(self, nInputPorts = 0, nOutputPorts=1, outputType='vtkHyperTreeGrid')
       self.__FileName = None
       self.__htg = None
       self.__reader = None
+      self.__cellarrays = []
+      self._arrayselection = vtk.vtkDataArraySelection()
+      self._arrayselection.AddObserver("ModifiedEvent", createModifiedCallback(self))
 
    def SetFileName(self, filename):
       if filename != self.__FileName:
@@ -316,6 +377,9 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       
    def GetFileName(self):
         return self.__FileName
+
+
+
 
    '''
    def FillOutputPortInformation(self, port, info):
@@ -333,8 +397,14 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       print(info)
       if self.__htg is None:
          self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
-         self.__htg.addArrayFromVlsv("vg_beta_star")
-         self.__htg.GetCellData().SetActiveScalars("vg_beta_star")
+         vars = self.__htg.findVariablesFromVlsv()
+         for name in vars:
+            if "vg" in name:
+               # print(name)
+               self._arrayselection.AddArray(name)
+               self.__cellarrays.append(name)
+         # self.__htg.addArrayFromVlsv("vg_beta_star")
+         # self.__htg.GetCellData().SetActiveScalars("vg_beta_star")
 
       dims = self.__htg.GetExtent()
       info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(), *dims)
@@ -353,26 +423,44 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
       if self.__htg is None:
          self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
+      
+      for name in self.__cellarrays:
+         if self._arrayselection.ArrayIsEnabled(name):
+            self.__htg.addArrayFromVlsv(name)
+
 
       output = vtk.vtkHyperTreeGrid.GetData(outInfo)
+
+
 
       output.ShallowCopy(self.__htg)
 
       return 1
+   
+   def ReadAllScalarsOn(self):
+      self._arrayselection.EnableAllArrays()
+      # for name in self.__cellarrays:
+         
+      #    self.__htg.addArrayFromVlsv(name)
 
+
+   def GetDataArraySelection(self):
+      return self._arrayselection
 
 
 def __main__():
    import pytools as pt
    # This initializes a hypertreegrid from the given reader.
    reader = VlsvVtkReader()
-   reader.SetFileName("../../bulk.0002189.vlsv")
-   
+   reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
+   reader.ReadAllScalarsOn()
+   reader.Update()
    cf = vtk.vtkHyperTreeGridContour()
    cf.SetInputConnection(reader.GetOutputPort())
    cf.SetValue(0, 1)
 
    m = vtk.vtkPolyDataMapper()
+   
    m.SetInputConnection(cf.GetOutputPort())
 
    a = vtk.vtkActor()
@@ -385,10 +473,12 @@ def __main__():
    renWin.AddRenderer(ren)
    renWin.SetSize(600, 600)
 
-   renWin.Render()
+   # renWin.Render()
    import time
    time.sleep(10)
+   
    htg = reader.GetOutputDataObject(0)
+   print(htg)
    # htg.__vtkVlsvHyperTreeGrid_VlsvAddArray('vg_b_vol')
    # htg = reader.GetOutputData()
    # print(htg)
@@ -399,6 +489,7 @@ def __main__():
 
    writer = vtk.vtkXMLHyperTreeGridWriter()
    writer.SetFileName("output_EGE.htg")
+   
    writer.SetInputData(htg)
    writer.Write()
 

@@ -611,6 +611,41 @@ class VlsvReader(object):
 
       return reducer_ok
 
+   def get_variables(self):
+
+      varlist = []
+
+      for child in self.__xml_root:
+         if child.tag == "VARIABLE" and "name" in child.attrib:
+            name = child.attrib["name"]
+            varlist.append(name)
+
+      return varlist
+   
+   def get_reducers(self):
+
+      varlist = []
+
+      reducer_max_len = 0
+      
+      for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+         for k in reducer_reg.keys():
+            reducer_max_len = max(reducer_max_len, len(k))
+      
+
+
+      for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+         for name, reducer in reducer_reg.items():
+            self.__current_reducer_tree_nodes.clear()
+            if self.__check_datareducer(name,reducer):
+               if name[:3] == 'pop':
+                  for pop in self.active_populations:
+                     varlist.append(pop+'/'+name[4:])
+               else:
+                  varlist.append(name)
+
+      return varlist
+
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
       ''' Print out a description of the content of the file. Useful
