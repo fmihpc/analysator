@@ -10,8 +10,8 @@ echo "export PYTHONPATH=$PYTHONPATH:$HOME/analysator" >> $HOME/.bashrc
 
 # Using Analysator:
 #################################################
-ipython               # Start ipython
-import pytools as pt  # Import Analysator
+ipython                  # Start ipython
+import analysator as pt  # Import Analysator
 
 
 # Navigating functions:

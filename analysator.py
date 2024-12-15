@@ -26,9 +26,6 @@ import socket, re, os, tempfile, atexit, shutil
 import warnings
 import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
-warnings.filterwarnings("once", category=DeprecationWarning)
-warnings.filterwarnings("once", category=PendingDeprecationWarning)
-warnings.filterwarnings("once", category=FutureWarning)
 
 # Input current folder's path
 filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))

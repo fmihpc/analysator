@@ -22,8 +22,13 @@
 # 
 
 from os import path as __path
-root = __path.dirname(__file__)
+import warnings
 
+
+warnings.warn("Please update your import command to `import analysator as pt`. `pytools.py` has been renamed as `analysator.py` for consistency and eventual package publication. `import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools.py` until some time in the future (v.1 release/package publication?).")
+
+# Slurp and exec the analysator.py file here to get all functionalities under the pytools alias if needed
+root = __path.dirname(__file__)
 with open(__path.join(root,'analysator.py'),'r') as f:
     source = f.read()
     exec(source)
