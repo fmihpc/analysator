@@ -1170,6 +1170,12 @@ _SCMfiles = glob.glob(_fpath+"/SCM8/*.txt")
 for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
+    if Version(mpl_version) > Version("3.5.0"):
+        if _cm_name in mcm:
+            continue
+    else:
+        if _cm_name in matplotlib.cm._cmap_registry:
+            continue
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
     if Version(mpl_version) > Version("3.5.0"):
