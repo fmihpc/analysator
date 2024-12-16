@@ -1172,9 +1172,13 @@ for _f in _SCMfiles:
     _cm_name = _cm_name[:-4]
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
-    if Version(mpl_version) > Version("3.5.0"):
-        mcm.register(_cm)
-        mcm.register(_cm.reversed())
-    else:
-        plt.register_cmap(cmap=_cm)
-        plt.register_cmap(cmap=_cm.reversed())
+    try:
+        if Version(mpl_version) > Version("3.5.0"):
+            mcm.register(_cm)
+            mcm.register(_cm.reversed())
+        else:
+            plt.register_cmap(cmap=_cm)
+            plt.register_cmap(cmap=_cm.reversed())
+    except Exception as e:
+        logging.warning("Problem registering colormap " + _cm_name + ". Produced exception was:\n"+str(e))
+
