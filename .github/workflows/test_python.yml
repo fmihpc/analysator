@@ -33,9 +33,9 @@ jobs:
     - name: Trial imports
       run: python -c 'import pytools as pt'
 
-  import-matrix:
+  ubuntu_22_04_versions:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
