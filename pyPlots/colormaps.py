@@ -1170,6 +1170,9 @@ _SCMfiles = glob.glob(_fpath+"/SCM8/*.txt")
 for _f in _SCMfiles:
     (_dummypath, _cm_name) = os.path.split(_f)
     _cm_name = _cm_name[:-4]
+    if Version(mpl_version) >= Version("3.10.0"): # MPL 3.10.0 included these colormaps, skip
+        if _cm_name in ["berlin","vanimo","managua"]: 
+            continue
     _cm_data = np.loadtxt(_f)
     _cm = LinearSegmentedColormap.from_list(_cm_name, _cm_data)
     try:
