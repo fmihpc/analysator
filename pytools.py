@@ -21,104 +21,26 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-import filemanagement
-import socket, re, os, tempfile, atexit, shutil
+from os import path as __path
 import warnings
+import sys
 import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
-
-# Input current folder's path
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
-# Input folder paths
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "miscellaneous")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCalculations")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyPlots")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
-if os.getenv('PTMAYAVI2') != None:
-   filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyMayaVi")
 
 
-# Make sure matplotlib has a unique temp directory
-mpldir = tempfile.mkdtemp()
-atexit.register(shutil.rmtree, mpldir)
-os.environ['MPLCONFIGDIR']=mpldir
 
-# Check if user is on taito.csc.fi without loading the mayavi2 module
-import numpy as np
-import matplotlib
-if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
-   logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
-   logging.info('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-if not os.getenv('PTNOLATEX'):
-   matplotlib.rc('text', usetex=True)
-   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-   # matplotlib.rcParams['mathtext.fontset'] = 'stix'
-   # matplotlib.rcParams['font.family'] = 'STIXGeneral'
-   # Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.
-   matplotlib.rcParams['font.family'] = 'serif'
-   logging.info("Using LaTeX formatting")
-   # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
-
-# Set backends
-if matplotlib.get_backend()[:9] == 'module://':
-   logging.info("Using backend "+matplotlib.get_backend())
-   backend_interactive = matplotlib.get_backend()
-   backend_noninteractive = matplotlib.get_backend()
-elif not os.getenv('PTBACKEND'):
-   backend_interactive = 'TkAgg'
-   backend_noninteractive = 'Agg'
+# Slurp and exec the analysator.py file here to get all functionalities under the pytools alias if needed
+if 'analysator' not in sys.modules.keys():
+   warnings.warn("Please update your import command to `import analysator as pt`. `pytools.py` has been renamed as `analysator.py` for consistency and eventual package publication. `import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools.py` until some time in the future (v.1 release/package publication?).")
+   logging.info("Importing analysator.py to pytools")
+   root = __path.dirname(__file__)
+   # with open(__path.join(root,'src/analysator/__init__.py'),'r') as f:
+   #    source = f.read()
+   #    exec(source)
+   #    f.close()
+   #    del f
+   sys.path.append(__path.join(root,"src/"))
+   from analysator import *
 else:
-   backend_interactive = os.getenv('PTBACKEND')
-   backend_noninteractive = os.getenv('PTBACKEND')
-
-# Import modules
-try:
-   import calculations
-except ImportError as e:
-   logging.info("Note: Did not import calculations module: " + str(e))
-
-try:
-   import vlsvfile
-except ImportError as e:
-   logging.info("Note: Did not import vlsvfile module: " + str(e))
-
-import os
-import matplotlib.pyplot as plt
-
-if os.getenv('PTNONINTERACTIVE') != None:
-   # Non-interactive plotting mode
-   try:
-      plt.switch_backend(backend_noninteractive)
-   except:
-      logging.info("Note: Unable to switch to "+backend_noninteractive+" backend")
-else:
-   # Interactive plotting mode
-   plt.ion()
-   try:
-      plt.switch_backend(backend_interactive)
-   except:
-      logging.info("Note: Unable to switch to "+backend_interactive+" backend")
-
-   #Only attempt loading MayaVi2 if requested
-   if os.getenv('PTMAYAVI2') != None:
-      try:
-         import grid
-      except ImportError as e:
-         logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
-
-try:
-   import plot
-except ImportError as e:
-   logging.info("Note: Did not import plot module: " + str(e))
-
-try:
-   import miscellaneous
-except ImportError as e:
-   logging.info("Note: Did not import miscellaneous: " + str(e))
-
+   logging.info("Analysator imported already. Pointing pytools to analysator.")
+   sys.modules['pytools'] = sys.modules['analysator']

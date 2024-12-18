@@ -1,0 +1,1 @@
+from analysator import *
