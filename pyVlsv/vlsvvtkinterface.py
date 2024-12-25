@@ -289,7 +289,8 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       from pstats import SortKey
       print("Walking HTG")
       # with cProfile.Profile() as pr:
-      loop()
+      if True:
+         loop()
          # print("loop done")
          # writer = vtk.vtkXMLHyperTreeGridWriter()
          # writer.SetFileName("output_FID_1.htg")
@@ -297,8 +298,8 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          # writer.SetInputPort(src.GetOutputPort())
          # self.fileIndexArray.SetNumberOfValues(1)
          # self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))
-      for idx,fileIndex in self.idxToFileIndex.items():
-         self.fileIndexArray.InsertTuple1(idx, fileIndex)
+         for idx,fileIndex in self.idxToFileIndex.items():
+            self.fileIndexArray.InsertTuple1(idx, fileIndex)
          # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
          # ps.print_stats()
          # self >> writer
@@ -307,9 +308,9 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       
 
 
-      print("Adding CellID array")
-      with cProfile.Profile() as pr:
-         self.addArrayFromVlsv("CellID")
+         print("Adding CellID array")
+         with cProfile.Profile() as pr:
+            self.addArrayFromVlsv("CellID")
          # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
          # ps.print_stats()
       
@@ -355,7 +356,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
                                              dimensions=(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1)),
                                              grid_scale = (f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz),
                                              branch_factor = 2,
-                                             descriptor = self.__descriptor)
+                                             descriptor = descr.getvalue())#self.__descriptor)
 
             # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
             # ps.print_stats()
@@ -430,6 +431,11 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
    that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
    '''
    def addArrayFromVlsv(self, varname):
+
+      # Do not re-add an already existing array
+      if self.GetCellData().HasArray(varname):
+         return True
+
       array = vtk.vtkDoubleArray()
       # cidArray2.DeepCopy(fileIndexArray)
       data = self.vlsvreader.read_variable(varname)
