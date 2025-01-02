@@ -128,10 +128,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       # cidArray.SetNumberOfValues(0)
       # self.GetCellData().AddArray(cidArray)
 
-      self.fileIndexArray = vtk.vtkDoubleArray()
-      self.fileIndexArray.SetName('fileIndex')
-      
-      self.GetCellData().AddArray(self.fileIndexArray)
 
       f.read_variable_to_cache("CellID")
 
@@ -299,7 +295,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       from pstats import SortKey
       
       # with cProfile.Profile() as pr:
-      reinit = True
+      reinit = False
 
       try:
          if reinit:
@@ -329,9 +325,9 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          writer.Write()
          
 
-      if not reinit:
-         for idx,fileIndex in self.idxToFileIndex.items():
-            self.fileIndexArray.InsertTuple1(idx, fileIndex)
+      # if not reinit:
+      #    for idx,fileIndex in self.idxToFileIndex.items():
+      #       self.fileIndexArray.InsertTuple1(idx, fileIndex)
       # else:
 
             
@@ -350,9 +346,10 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       
       print("pre-calling the jit function to pre-compile")
       children(1,0)
-      self.idxToCellID = {}
-      self.idxToFileIndex = {}
+      
       if reinit:
+         self.idxToCellID = {}
+         self.idxToFileIndex = {}
          t0 = time.time()
          from io import StringIO
          descr = StringIO()
@@ -491,6 +488,14 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       # self.
       # if not reinit:
+      self.fileIndexArray = vtk.vtkDoubleArray()
+      self.fileIndexArray.SetName('fileIndex')
+      
+      self.GetCellData().AddArray(self.fileIndexArray)
+
+      # self.fileIndexArray.SetNumberOfValues(1)
+      # self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))
+
       for idx,fileIndex in self.idxToFileIndex.items():
          self.fileIndexArray.InsertTuple1(idx, fileIndex)
       # self.addArrayFromVlsv("CellID")
