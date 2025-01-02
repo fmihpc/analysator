@@ -29,7 +29,7 @@
 ###############################
 
 
-import pylab as pl
+import matplotlib.pyplot as pl
 import logging
 import numpy as np
 from matplotlib.ticker import MaxNLocator
@@ -135,7 +135,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
    length_of_list = len(variables_x_list)
 
    if figure != []:
-      fig = pl.figure
+      fig = pl.figure()
       if len(fig.get_axes()) < length_of_list:
          for i in (np.arange(length_of_list-len(fig.get_axes())) + len(fig.get_axes())):
             fig.add_subplot(length_of_list,1,i)

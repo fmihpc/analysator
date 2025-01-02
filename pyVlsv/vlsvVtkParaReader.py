@@ -35,6 +35,8 @@ class PythonPvVLSVReader(pt.vlsvfile.VlsvVtkReader):
     @smhint.filechooser(extensions="vlsv", file_description="Vlasiator VLSV files")
     def SetFileName(self, filename):
         """Specify filename for the file to read."""
+        if filename is None or filename == "None":
+            return
         print(filename)
         super().SetFileName(filename)
 

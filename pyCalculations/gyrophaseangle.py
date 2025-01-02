@@ -22,7 +22,7 @@
 # 
 
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 from rotation import rotateVectorToVector
 import logging
 
@@ -39,7 +39,7 @@ def gyrophase_angles_from_file( vlsvReader, cellid):
    vlsvReader = VlsvReader("fullf.0001.vlsv")
    result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924)
    # Plot the data
-   import pylab as pl
+   import matplotlib.pyplot as pl
    pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
    '''
    # Read the velocity cells:
@@ -95,7 +95,7 @@ def gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordin
    vlsvReader = VlsvReader("fullf.0001.vlsv")
    result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
    # Plot the data
-   import pylab as pl
+   import matplotlib.pyplot as pl
    pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
    '''
    

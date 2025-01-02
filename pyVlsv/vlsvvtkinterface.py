@@ -24,16 +24,22 @@
 import logging
 import numpy as np
 import cProfile
+import os.path
+import pickle
 
 import vtk.numpy_interface
 import vtk.numpy_interface.dataset_adapter
+import vtk.vtkCommonColor
+import vtkmodules.vtkCommonColor
+import vtkmodules.vtkCommonColor
+import vtkmodules.vtkCommonColor
 import pytools as pt
 try:
    import vtk
 except Exception as e:
    logging.error("VTK import did not succeed")
    raise(e)
-
+import time
 from numba import jit
 '''Extend vtkHyperTreeGrid with a vlsvReader wrapper.
 
@@ -53,8 +59,10 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
    def __init__(self, vlsvFile, *args, **kwargs):
       self.vlsvreader = vlsvFile #VlsvReader(vlsvFile)
       f = self.vlsvreader
-      vtk.vtkHyperTreeGrid.__init__(self, args, kwargs)
+      vtk.vtkHyperTreeGrid.__init__(self)#, args, kwargs)
       self.Initialize()
+      self.metafile = self.vlsvreader.file_name[:-5]+"_meta"
+
       basegridsize = f.get_spatial_mesh_size()
       ext = f.get_fsgrid_mesh_extent()
       nodeCoordinatesX = f.read(tag="MESH_NODE_CRDS_X", mesh='SpatialGrid')
@@ -175,6 +183,8 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
           cell_lengths_levels.append(np.array([(xmax - xmin)/(xcells[level]),
                                                (ymax - ymin)/(ycells[level]),
                                                (zmax - zmin)/(zcells[level])],np.int32))
+          
+         
       @jit(nopython=True)
       def children(cid, level):
          # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
@@ -287,19 +297,44 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       import pstats
       from pstats import SortKey
-      print("Walking HTG")
+      
       # with cProfile.Profile() as pr:
-      if True:
+      reinit = True
+
+      try:
+         if reinit:
+            raise Exception("reinit = True")
+         with open(self.metafile,'rb') as mfile:
+            data = pickle.load(mfile)
+            # print(data)
+            self.idxToFileIndex = data['idxToFileIndexMap']
+            self.__descriptor = data['descr']
+      except Exception as e:
+         print("Re-initializing HTG, no metadata accessible because of ", e)
+         reinit = True
+
+
+      if False:
+         t0 = time.time()
+         print("Walking HTG")
          loop()
-         # print("loop done")
-         # writer = vtk.vtkXMLHyperTreeGridWriter()
-         # writer.SetFileName("output_FID_1.htg")
-         
-         # writer.SetInputPort(src.GetOutputPort())
-         # self.fileIndexArray.SetNumberOfValues(1)
-         # self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))
+         print("loop done")
+         writer = vtk.vtkXMLHyperTreeGridWriter()
+         writer.SetFileName("output_FID_1.htg")
+         self.fileIndexArray.SetNumberOfValues(1)
+         self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))
          for idx,fileIndex in self.idxToFileIndex.items():
             self.fileIndexArray.InsertTuple1(idx, fileIndex)
+         writer.SetInputData(self)
+         writer.Write()
+         
+
+      if not reinit:
+         for idx,fileIndex in self.idxToFileIndex.items():
+            self.fileIndexArray.InsertTuple1(idx, fileIndex)
+      # else:
+
+            
          # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
          # ps.print_stats()
          # self >> writer
@@ -307,56 +342,88 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          
       
 
-
-         print("Adding CellID array")
-         with cProfile.Profile() as pr:
-            self.addArrayFromVlsv("CellID")
+         t1 = time.time()
+         
          # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
          # ps.print_stats()
+         # print("Actual time elapsed:", time.time()-t0, "of which", time.time()-t1, "spent adding an array")
       
-      if False:
-
+      print("pre-calling the jit function to pre-compile")
+      children(1,0)
+      self.idxToCellID = {}
+      self.idxToFileIndex = {}
+      if reinit:
+         t0 = time.time()
          from io import StringIO
          descr = StringIO()
          print("Building descriptor")
          subdivided = [[] for l in range(max_ref_level+1)]
-         with cProfile.Profile() as pr:
-            for c in range(1,int(np.prod(basegridsize))+1):
-               if c in fileindex_for_cellid.keys():
-                  # self.__descriptor += "."
-                  descr.write(".")
-               else:
-                  # self.__descriptor += "R"
-                  descr.write("R")
-                  subdivided[0].append(c)
+         idx = 0
+         # with cProfile.Profile() as pr:
+         for c in range(1,int(np.prod(basegridsize))+1):
+            if c in fileindex_for_cellid.keys():
+               # self.__descriptor += "."
+               descr.write(".")
+               self.idxToFileIndex[idx] = fileindex_for_cellid[c]
+               self.idxToCellID[idx] = c
+            else:
+               # self.__descriptor += "R"
+               descr.write("R")
+               subdivided[0].append(c)
+            idx += 1
 
-            # self.__descriptor += "|"
-            descr.write("|")
-            for l in range(1,max_ref_level+1):
-               for c in subdivided[l-1]:
-                  for child in children(c, l-1):
-                     if child in fileindex_for_cellid.keys():
-                        # self.__descriptor += "."
-                        descr.write(".")
-                     else:
-                        # self.__descriptor += "R"
-                        descr.write("R")
-                        subdivided[l].append(child)
-               if l < max_ref_level:
-                  # self.__descriptor += "|"
-                  descr.write("|")
-            self.__descriptor = descr.getvalue()
-            ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
-            ps.print_stats()
+         # self.__descriptor += "|"
+         descr.write("|")
+         for l in range(1,max_ref_level+1):
+            for c in subdivided[l-1]:
+               for child in children(c, l-1):
+                  if child in fileindex_for_cellid.keys():
+                     # self.__descriptor += "."
+                     descr.write(".")
+                     self.idxToFileIndex[idx] = fileindex_for_cellid[child]
+                     self.idxToCellID[idx] = c
+                  else:
+                     # self.__descriptor += "R"
+                     descr.write("R")
+                     subdivided[l].append(child)
+                  idx += 1
+            if l < max_ref_level:
+               # self.__descriptor += "|"
+               descr.write("|")
+         self.__descriptor = descr.getvalue()
+            # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE)
+            # ps.print_stats()
+         print("Actual time spent:",time.time()-t0)
          # self.SetDimensions([len(nodeCoordinatesX),len(nodeCoordinatesY),len(nodeCoordinatesZ)])
          # self.SetBranchFactor(2)
          print("Building with vtkHyperTreeGridSource and descriptor, len ", len(self.__descriptor))
+
+      if reinit:
+         with open(self.metafile,'wb') as mfile:
+            pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.idxToFileIndex}, mfile)
+
+      if True:
          with cProfile.Profile() as pr:
-            src = vtk.vtkHyperTreeGridSource(max_depth = max_ref_level,
-                                             dimensions=(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1)),
-                                             grid_scale = (f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz),
-                                             branch_factor = 2,
-                                             descriptor = descr.getvalue())#self.__descriptor)
+            # src = vtk.vtkHyperTreeGridSource(max_depth = max_ref_level+1,
+            #                                  dimensions=(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1)),
+            #                                  grid_scale = (f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz),
+            #                                  branch_factor = 2,)
+            src = vtk.vtkHyperTreeGridSource()
+            src.SetMaxDepth(max_ref_level+1)
+            src.SetDimensions(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1))
+            src.SetGridScale(f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz)
+            src.SetBranchFactor(2)
+            self.__descriptor = src.ConvertDescriptorStringToBitArray(self.__descriptor)
+            src.SetDescriptorBits(self.__descriptor)
+            # src.SetDescriptor(self.__descriptor)
+
+            src.Update()
+
+            htg = src.GetHyperTreeGridOutput()
+            htg.SetXCoordinates(xValues)
+            htg.SetYCoordinates(yValues)
+            htg.SetZCoordinates(zValues)
+   
 
             # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
             # ps.print_stats()
@@ -365,48 +432,69 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             print("foo")
             writer = vtk.vtkXMLHyperTreeGridWriter()
             writer.SetFileName("output_FID_2.htg")
+            writer.SetInputData(htg)
             
-            # # writer.SetInputPort(src.GetOutputPort())
-            src.Update()
+            print("foois")
+            # src >> writer
+            writer.Write()
+            print("Stats after write")
             ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
             ps.print_stats()
-            # src >> writer
-            # writer.Write()
-            # print("Stats after write")
+            print("foo2")
+            self.CopyStructure(htg)
             
-               # Hyper tree grid to unstructured grid filter.
+            
+            
+            # #    # Hyper tree grid to unstructured grid filter.
             # htg2ug = vtk.vtkHyperTreeGridToUnstructuredGrid()
-            # # data = src.RequestData()
+            # # # # data = src.RequestData()
             
 
-            # shrink = vtk.vtkShrinkFilter(shrink_factor=0.5)
+            # # # shrink = vtk.vtkShrinkFilter(shrink_factor=0.5)
 
-            # mapper = vtk.vtkDataSetMapper(scalar_visibility=False)
+            # mapper = vtk.vtkDataSetMapper()
 
-            # # src >> htg2ug >> shrink >> mapper
+            # # # # src >> htg2ug >> shrink >> mapper
             # src >> htg2ug >> mapper
+            # # htg2ug.SetInputData(src.GetHyperTreeGridOutput())
+            # # htg2ug.SetInputData(self)
+            # # mapper.SetInputData(htg2ug.GetOutput())
 
-            # actor = vtk.vtkActor(mapper=mapper)
-            # # actor.property.diffuse_color = vtk.colors.GetColor3d('Burlywood')
+            # actor = vtk.vtkActor()#(mapper=mapper)
+            # actor.SetMapper(mapper)
+            
+            # #actor.property.diffuse_color = vtk.colors.GetColor3d('Burlywood')
+            # import vtkmodules.vtkCommonColor as vtkCommonColor
+            # colors = vtkCommonColor.vtkNamedColors()
+            
+            # actor.property.diffuse_color = colors.GetColor3d('Burlywood')
 
             # renderer = vtk.vtkRenderer()#background=vtk.colors.GetColor3d('SlateGray'))
-            # render_window = vtk.vtkRenderWindow(size=(640, 480), window_name='HyperTreeGridSource')
+            # renderer.background = colors.GetColor3d('SlateGray')
+            # render_window = vtk.vtkRenderWindow()#(size=(640, 480), window_name='HyperTreeGridSource')
+            # render_window.SetSize(640,480)
             # render_window.AddRenderer(renderer)
             # interactor = vtk.vtkRenderWindowInteractor()
             # interactor.render_window = render_window
 
             # renderer.AddActor(actor)
             # renderer.ResetCamera()
-            # renderer.active_camera.Azimuth(150)
-            # renderer.active_camera.Elevation(30)
+            # renderer.GetActiveCamera().Azimuth(150)
+            # renderer.GetActiveCamera().Elevation(30)
             # renderer.ResetCameraClippingRange()
 
             # render_window.Render()
             # interactor.Start()
+            # time.sleep(20)
             # render_window.Close()
 
 
-         
+      # self.
+      # if not reinit:
+      for idx,fileIndex in self.idxToFileIndex.items():
+         self.fileIndexArray.InsertTuple1(idx, fileIndex)
+      # self.addArrayFromVlsv("CellID")
+
       # print(ahtg)
 
 
@@ -426,6 +514,8 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       return vars
 
+   def getDecriptor():
+      return self.__descriptor
 
    '''This function adds one SpatialGrid variable from the reader object and maps
    that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
@@ -434,6 +524,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       # Do not re-add an already existing array
       if self.GetCellData().HasArray(varname):
+         print("skipped existing array")
          return True
 
       array = vtk.vtkDoubleArray()
@@ -527,7 +618,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       if filename != self.__FileName:
          self.Modified()
          self.__FileName = filename
-         self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
+         if self.__FileName is not None:
+            self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
       
       
    def GetFileName(self):
@@ -551,6 +643,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       # print("VlsvVtkReader RequestInformation:")
       # print(info)
       if self.__htg is None:
+         print("Creating htg via RequestInformation")
          self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
          vars = self.__htg.findVariablesFromVlsv(getReducers=True)
          for name in vars:
@@ -578,6 +671,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       # print(outInfo)
 
       if self.__htg is None:
+         print("Creating htg via RequestData")
          self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
       
       for name in self.__cellarrays:
@@ -633,8 +727,8 @@ def __main__():
    renWin.SetSize(600, 600)
 
    # renWin.Render()
-   import time
-   time.sleep(10)
+   
+   # time.sleep(10)
    
    htg = reader.GetOutputDataObject(0)
    # print(htg)

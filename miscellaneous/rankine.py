@@ -23,7 +23,7 @@
 
 # Rankine-Hugoniot conditions to determine the right state from the left state of an MHD oblique shock
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 import sys
 from scipy import optimize
 from cutthrough import cut_through

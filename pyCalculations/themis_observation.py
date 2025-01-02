@@ -22,7 +22,7 @@
 # 
 
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 import matplotlib
 from rotation import rotateVectorToVector
 from scipy.interpolate import griddata
