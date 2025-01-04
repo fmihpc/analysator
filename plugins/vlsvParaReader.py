@@ -1,4 +1,9 @@
-"""This module demonstrates various ways of adding
+""" A rudimentary wrapper from the vlsvVtkInterface. Add and load from Paraview
+plugins menu.
+
+Built on Kitware example:
+https://github.com/Kitware/ParaView/blob/master/Examples/Plugins/PythonAlgorithm/PythonAlgorithmExamples.py
+This module demonstrates various ways of adding
 VTKPythonAlgorithmBase subclasses as filters, sources, readers,
 and writers in ParaView"""
 
@@ -150,7 +155,7 @@ class PreserveInputTypeFilter(VTKPythonAlgorithmBase):
 '''
 
 def test_PythonVLSVReader(fname):
-    reader = PythonVLSVReader()
+    reader = PythonPvVLSVReader()
     reader.SetFileName(fname)
     reader.Update()
     assert reader.GetOutputDataObject(0).GetNumberOfRows() > 0

@@ -41,7 +41,10 @@ except Exception as e:
    raise(e)
 import time
 from numba import jit
-'''Extend vtkHyperTreeGrid with a vlsvReader wrapper.
+'''Extend vtkHyperTreeGrid.
+This class is not used right now: makes probably more sense to have
+most of the features in the reader class below, esp. since the
+vtkHyperTreeGridSource is the fast way of constructing the HTG object.
 
 The extension consists of automatic mapping of a vlsv
 SpatialGrid to the HTG structure. Functions are provided
@@ -519,8 +522,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       return vars
 
-   def getDecriptor():
-      return self.__descriptor
+   
 
    '''This function adds one SpatialGrid variable from the reader object and maps
    that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
@@ -609,6 +611,15 @@ def createModifiedCallback(anobject):
 # Should implement these, more or less:
 # https://vtk.org/doc/nightly/html/classvtkXMLHyperTreeGridReader.html
 
+'''Experimental Python wrapper to expose VLSV files as VTK. SpatialGrid supported for now.
+
+This will create an internal VlsvReader object and cache the HTG descriptor and
+a corresponding file layout mapping to disk for repeated accesses:
+building the descriptor takes ~30s (with Python; maybe the whole loop could be @jit-ted)
+
+This class functions like a VTK source. Calling `addArrayFromVlsv` is necessary
+to load and map data from the VLSV to HTG.
+'''
 class VlsvVtkReader(VTKPythonAlgorithmBase):
    def __init__(self):
       VTKPythonAlgorithmBase.__init__(self, nInputPorts = 0, nOutputPorts=1, outputType='vtkHyperTreeGrid')
@@ -625,13 +636,154 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          self.__FileName = filename
          if self.__FileName is not None:
             self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
-      
-      
+            self.__metafile = self.__FileName[:-5]+"_meta"
+
    def GetFileName(self):
-        return self.__FileName
+      return self.__FileName
+
+   def buildDescriptor(self):
+      f = self.__reader
+      f._VlsvReader__read_fileindex_for_cellid()
+      fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
+      xc = f._VlsvReader__xcells
+      yc = f._VlsvReader__ycells
+      zc = f._VlsvReader__zcells
+      max_ref_level = f.get_max_refinement_level()
+
+      cid_offsets = np.zeros(max_ref_level+1, dtype=np.int64)
+      isum = 0
+      for i in range(0,max_ref_level):
+         isum = isum + 2**(3*i) * xc * yc * zc
+         cid_offsets[i+1] = isum
 
 
+      xcells = np.zeros((max_ref_level+1), dtype=np.int64)
+      ycells = np.zeros((max_ref_level+1), dtype=np.int64)
+      zcells = np.zeros((max_ref_level+1), dtype=np.int64)
+      for r in range(max_ref_level+1):
+         xcells[r] = xc*2**(r)
+         ycells[r] = yc*2**(r)
+         zcells[r] = zc*2**(r)
+      delta = np.array([[0,0,0],[1,0,0],[0,1,0],[1,1,0],
+               [0,0,1],[1,0,1],[0,1,1],[1,1,1]],dtype=np.int32)
 
+
+      idxToFileIndex = {}
+      from io import StringIO
+      descr = StringIO()
+      print("Building descriptor")
+      subdivided = [[] for l in range(max_ref_level+1)]
+      idx = 0
+      for c in range(1,int(np.prod(f.get_spatial_mesh_size()))+1):
+         if c in fileindex_for_cellid.keys():
+            descr.write(".")
+            idxToFileIndex[idx] = fileindex_for_cellid[c]
+         else:
+            descr.write("R")
+            subdivided[0].append(c)
+         idx += 1
+
+      @jit(nopython=True)
+      def children(cid, level):
+         # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
+         cellids = cid - 1 - cid_offsets[level]
+         cellind = np.full(3, -1,dtype=np.int32)
+         cellind[0] = (cellids)%(xcells[level])
+         cellind[1] = ((cellids)//(xcells[level]))%(ycells[level])
+         cellind[2] = (cellids)//(xcells[level]*ycells[level])
+
+         cellind = cellind*2
+         out = np.zeros((8,),dtype=np.int64)
+         out[:] = cid_offsets[level+1] + (cellind[0] + delta[:,0]) + xcells[level+1]*(cellind[1] + delta[:,1]) + (cellind[2] + delta[:,2])*xcells[level+1]*ycells[level+1] + 1
+         return out           
+
+      
+      descr.write("|")
+      for l in range(1,max_ref_level+1):
+         for c in subdivided[l-1]:
+            for child in children(c, l-1):
+               if child in fileindex_for_cellid.keys():
+                  descr.write(".")
+                  idxToFileIndex[idx] = fileindex_for_cellid[child]
+               else:
+                  descr.write("R")
+                  subdivided[l].append(child)
+               idx += 1
+         if l < max_ref_level:
+            descr.write("|")
+
+      return descr.getvalue(), idxToFileIndex
+
+
+   def getDescriptor(self, reinit=False):
+
+      try:
+         if reinit:
+            raise Exception("reinit = True")
+         with open(self.__metafile,'rb') as mfile:
+            data = pickle.load(mfile)
+            # print(data)
+            self.__idxToFileIndex = data['idxToFileIndexMap']
+            self.__descriptor = data['descr']
+      except Exception as e:
+         print("Re-initializing HTG, no metadata accessible because of ", e)
+         self.__descriptor, self.__idxToFileIndex = self.buildDescriptor()
+         with open(self.__metafile,'wb') as mfile:
+            pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.idxToFileIndex}, mfile)
+
+      return self.__descriptor, self.__idxToFileIndex
+
+   def getHTG(self):
+      f = self.__reader
+
+      descr, idxToFileIndex = self.getDescriptor()
+      basegridsize = f.get_spatial_mesh_size()
+
+      src = vtk.vtkHyperTreeGridSource()
+      src.SetMaxDepth(f.get_max_refinement_level()+1)
+      src.SetDimensions(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1))
+      src.SetGridScale(f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz)
+      src.SetBranchFactor(2)
+      
+      #descr = src.ConvertDescriptorStringToBitArray(descr)
+      #src.SetDescriptorBits(descr)
+      src.SetDescriptor(descr)
+
+      src.Update()
+      htg = src.GetHyperTreeGridOutput()
+
+      xValues = vtk.vtkDoubleArray()
+      xValues.SetNumberOfValues(int(basegridsize[0]+1))
+      nodeCoordinatesX = f.read(tag="MESH_NODE_CRDS_X", mesh='SpatialGrid')
+      nodeCoordinatesY = f.read(tag="MESH_NODE_CRDS_Y", mesh='SpatialGrid')
+      nodeCoordinatesZ = f.read(tag="MESH_NODE_CRDS_Z", mesh='SpatialGrid')
+
+
+      for i,x in enumerate(nodeCoordinatesX):
+         xValues.SetValue(i, x)
+      htg.SetXCoordinates(xValues)
+
+      yValues = vtk.vtkDoubleArray()
+      yValues.SetNumberOfValues(int(basegridsize[1]+1))
+      for i,x in enumerate(nodeCoordinatesY):
+         yValues.SetValue(i, x)
+      htg.SetYCoordinates(yValues)
+
+      zValues = vtk.vtkDoubleArray()
+      zValues.SetNumberOfValues(int(basegridsize[2]+1))
+      for i,x in enumerate(nodeCoordinatesZ):
+         zValues.SetValue(i, x)
+      htg.SetZCoordinates(zValues)
+
+      htg.fileIndexArray = vtk.vtkDoubleArray()
+      htg.fileIndexArray.SetName('fileIndex')
+
+      for idx,fileIndex in self.__idxToFileIndex.items():
+         htg.fileIndexArray.InsertTuple1(idx, fileIndex)
+      htg.GetCellData().AddArray(htg.fileIndexArray)
+
+
+      return htg
 
    '''
    def FillOutputPortInformation(self, port, info):
@@ -641,6 +793,16 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       #This is where you can create output data objects if the output DATA_TYPE_NAME() is not a concrete type.
       pass
    '''
+   def findVariablesFromVlsv(self, getReducers = False):
+
+      vars = self.__reader.get_variables()
+      if getReducers:
+         reducers = self.__reader.get_reducers()
+         vars_set = set(vars)
+         vars_set.update(reducers)
+         vars = list(vars_set)
+
+      return vars
 
    def RequestInformation(self, request, inInfo, outInfo):
 
@@ -649,8 +811,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       # print(info)
       if self.__htg is None:
          print("Creating htg via RequestInformation")
-         self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
-         vars = self.__htg.findVariablesFromVlsv(getReducers=True)
+         self.__htg = self.getHTG()
+         vars = self.findVariablesFromVlsv(getReducers=True)
          for name in vars:
             if "vg" in name:
                # print(name)
@@ -669,7 +831,60 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def RequestUpdateExtent(self, request, inInfo, outInfo):
       pass
    '''
-   
+
+   '''This function adds one SpatialGrid variable from the reader object and maps
+   that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
+   '''
+   def addArrayFromVlsv(self, htg, varname):
+
+      # Do not re-add an already existing array
+      if htg.GetCellData().HasArray(varname):
+         print("skipped existing array")
+         return True
+
+      array = vtk.vtkDoubleArray()
+      # cidArray2.DeepCopy(fileIndexArray)
+      data = self.__reader.read_variable(varname)
+      
+      test_var = data[0]
+      if test_var is None:
+         logging.warning("varname " + varname + "returned None; skipping")
+         return False
+      if np.isscalar(test_var):
+         varlen = 1
+      elif test_var.ndim == 1:
+         varlen = len(test_var)         
+      elif test_var.ndim > 1:
+         varlen = np.prod(test_var.shape)
+      else:
+         logging.warning("Weird output from " + varname)
+         return False
+
+      array.SetNumberOfComponents(varlen)
+      array.SetNumberOfTuples(htg.fileIndexArray.GetNumberOfTuples())
+      array.SetName(varname)
+      if varlen == 1:
+         for idx,fileIndex in self.__idxToFileIndex.items():
+            array.SetTuple1(idx, data[fileIndex])
+      elif varlen == 2:
+         for idx,fileIndex in self.__idxToFileIndex.items():
+            array.SetTuple2(idx, *data[fileIndex])
+      elif varlen == 3:
+         for idx,fileIndex in self.__idxToFileIndex.items():
+            array.SetTuple3(idx, *data[fileIndex])
+      elif varlen == 4:
+         for idx,fileIndex in self.__idxToFileIndex.items():
+            array.SetTuple4(idx, *data[fileIndex])
+      elif varlen == 9:
+         for idx,fileIndex in self.__idxToFileIndex.items():
+            array.SetTuple9(idx, *np.reshape(data[fileIndex],(9)))
+      else:
+         raise RuntimeError("No vtk SetTuple wrapper function for varlen = " + str(varlen))
+      
+      
+      htg.GetCellData().AddArray(array)
+      return True
+
    def RequestData(self, request, inInfo, outInfo):
 
       # print("VlsvVtkReader RequestData:")
@@ -677,11 +892,11 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
       if self.__htg is None:
          print("Creating htg via RequestData")
-         self.__htg = vtkVlsvHyperTreeGrid(self.__reader)
+         self.__htg = self.getHTG()
       
       for name in self.__cellarrays:
          if self._arrayselection.ArrayIsEnabled(name):
-            success = self.__htg.addArrayFromVlsv(name)
+            success = self.addArrayFromVlsv(self.__htg, name)
             if not success:
                self._arrayselection.RemoveArrayByName(name)
 
