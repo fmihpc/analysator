@@ -24,7 +24,7 @@
 import logging
 import matplotlib
 import warnings
-import pytools as pt
+import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy

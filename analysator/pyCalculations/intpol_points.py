@@ -38,7 +38,7 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
        .. code-block:: python
        
           # Example:
-          import pytools as pt
+          import analysator as pt
           import numpy as np
           f=pt.vlsvfile.VlsvReader(file_name="state00040000.vlsv")
           mesh_limits = f.get_spatial_mesh_extent()

@@ -1,3 +1,4 @@
+
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
@@ -25,20 +26,17 @@ from os import path as __path
 import warnings
 import sys
 import logging
+import traceback
 
+print("`import pytools` called - please use `import analysator` instead!\n Below, the stack to trace where this came from:\n")
+traceback.print_stack()
 
+warnings.warn("Please update your import command to `import analysator`. `analysator.py` has been renamed as `analysator.py` for consistency and eventual package publication.\n\n`import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools.py` until some time in the future (v.1 release/package publication?).\n")
 
-
-# Slurp and exec the analysator.py file here to get all functionalities under the pytools alias if needed
+# Slurp and exec the analysator package here to get all functionalities under the pytools module if needed
 if 'analysator' not in sys.modules.keys():
-   warnings.warn("Please update your import command to `import analysator`. `pytools.py` has been renamed as `analysator.py` for consistency and eventual package publication.\n\n`import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools.py` until some time in the future (v.1 release/package publication?).\n")
    logging.info("Importing analysator.py to pytools")
    root = __path.dirname(__file__)
-   # with open(__path.join(root,'src/analysator/__init__.py'),'r') as f:
-   #    source = f.read()
-   #    exec(source)
-   #    f.close()
-   #    del f
    sys.path.append(__path.join(root,"src/"))
    from analysator import *
 else:

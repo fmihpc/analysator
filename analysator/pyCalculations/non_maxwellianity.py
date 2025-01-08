@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.constants import k, m_e, m_p
-import pytools as pt
+import analysator as pt
 import warnings
 import logging
 

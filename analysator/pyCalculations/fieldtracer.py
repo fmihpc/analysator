@@ -23,7 +23,7 @@
 
 import numpy as np
 import scipy as sp
-import pytools as pt
+import analysator as pt
 import warnings
 from scipy import interpolate
 import logging
@@ -351,7 +351,7 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
                               If keyword fg == 'fg_b', then centering = 'face' (overriding input)
                               If keyword fg == 'fg_e', then centering = 'edge' (overriding input)
 
-      EXAMPLE:            vlsvobj = pytools.vlsvfile.VlsvReader(vlsvfile) 
+      EXAMPLE:            vlsvobj = analysator.vlsvfile.VlsvReader(vlsvfile) 
                           fg_b = vlsvobj.read_variable('fg_b')
                           traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction='+', fg = fg_b )
    '''

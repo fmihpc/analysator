@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-import pytools as pt
+import analysator as pt
 import numpy as np
 import pylab as pl
 import matplotlib.pyplot as plt

@@ -35,7 +35,7 @@ Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["./analysator","src/pytools"]
+packages = ["./analysator","./pytools"]
 
 [tool.hatch.build.targets.sdist]
-packages = ["./analysator","src/pytools"]
+packages = ["./analysator","./pytools"]

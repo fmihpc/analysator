@@ -1,6 +1,6 @@
 import matplotlib
 import logging
-import pytools as pt
+import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
@@ -51,7 +51,7 @@ def plot_ionosphere(filename=None,
     :kword outputfile:  Singular output file name
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
     :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
-                        E, B, v, V or others. Accepts any variable known by analysator/pytools.
+                        E, B, v, V or others. Accepts any variable known by analysator.
                         Per-population variables are simply given as "proton/rho" etc
     :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
@@ -374,7 +374,7 @@ def plot_ionosphere(filename=None,
             if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
                 logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
-                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))

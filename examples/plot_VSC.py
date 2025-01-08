@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pylab as pl
 import numpy as np
 import sys
-import pytools as pt
+import analysator as pt
 from variable import get_data, get_name, get_units
 
 # initialize lists for gathering values

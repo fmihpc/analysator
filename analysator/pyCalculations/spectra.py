@@ -21,7 +21,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import numpy as np
-import pytools
+import analysator
 import logging
 # Function to reduce the velocity space in a spatial cell to an omnidirectional energy spectrum
 # Weighted by particle flux/none
@@ -40,7 +40,7 @@ def get_spectrum_energy(vlsvReader,
 
    EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins+1, endpoint=True)
    dE = EkinBinEdges[1:] - EkinBinEdges[:-1]
-   vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
+   vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
    # check if velocity space exists in this cell
    if not vlsvReader.check_variable("moments"): # restart files have VDFs everywhere
       if vlsvReader.check_variable("fSaved"):
@@ -128,7 +128,7 @@ def get_spectrum_energy(vlsvReader,
    if (bindifferential): # finish differential flux per d(eV)
       nhist = np.divide(nhist,dE)
 
-   vari = pytools.calculations.VariableInfo(nhist,
+   vari = analysator.calculations.VariableInfo(nhist,
                                        name="Omnidirectional differential energy spectrum "+population+' ('+weight+')',
                                        units=units,
                                        latex=latex,
@@ -150,7 +150,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                                bindifferential=False, # weigh by d(velocity)
                                restart=True):
 
-   vlsvReader = pytools.vlsvfile.VlsvReader(vlsvReader)
+   vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
 
    if vectorVar is not None and vector is None:
       if vlsvReader.check_variable(vectorVar):
@@ -238,7 +238,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
    elif (bindifferential): # differential flux per d[m/s]
       nhist = np.divide(nhist,dv)
 
-   vari = pytools.calculations.VariableInfo(nhist,
+   vari = analysator.calculations.VariableInfo(nhist,
                                     name="Parallel distribution of "+population+' ('+weight+')',
                                     units=units,
                                     latex=latex,
