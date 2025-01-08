@@ -23,7 +23,7 @@
 
 # Rankine-Hugoniot conditions to determine the right state from the left state of an MHD oblique shock
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as plt
 import sys
 from scipy import optimize
 from cutthrough import cut_through
@@ -222,7 +222,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
    numberOfVariables = len(variables)
 
    fig = plot_variables( distances, variables, figure=[] )
-   pl.show()
+   plt.show()
 
    return fig
 

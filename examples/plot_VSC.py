@@ -3,7 +3,6 @@ import matplotlib
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 import matplotlib.pyplot as plt
-import pylab as pl
 import numpy as np
 import sys
 import pytools as pt
@@ -63,7 +62,7 @@ for i,time in enumerate(times):
     profiles_T.append(f.read_variable("Temperature", cellids=cellid)*1e-6) #to MK
 
 # Init figure    
-fig = pl.figure()
+fig = plt.figure()
 fig.set_size_inches(6,9)
 
 fig.add_subplot(4,1,1)
