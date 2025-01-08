@@ -118,7 +118,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
    :param point1: The first point of interest along the bow-shock
    :param point2: The second point of interest along the bow-shock
 
-   :returns: pylab figure
+   :returns: matplotlib figure
    '''
    # Get spatial grid sizes:
    xcells = (int)(vlsvReader.read_parameter("xcells_ini"))

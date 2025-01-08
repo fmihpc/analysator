@@ -32,7 +32,7 @@ from mayavi.tools.mlab_scene_model import \
 from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvfile
 from numpy import mgrid, empty, sin, pi, ravel
-import pylab as pl
+
 from tvtk.api import tvtk
 import traits.api
 import mayavi.api
