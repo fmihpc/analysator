@@ -2,7 +2,7 @@
 Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
 '''
 from pyCalculations import ids3d
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pytools as pt
 import plot_colormap3dslice

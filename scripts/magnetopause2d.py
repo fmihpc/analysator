@@ -2,7 +2,6 @@
 Finds the magnetopause position by tracing steamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
 '''
 
-import matplotlib.pylab as plt
 import numpy as np
 import pytools as pt
 import plot_colormap
