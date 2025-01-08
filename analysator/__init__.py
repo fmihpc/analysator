@@ -1,5 +1,4 @@
 
-import analysator.filemanagement as filemanagement
 import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging

@@ -25,7 +25,6 @@
 
 '''
 
-import os, sys
 
 def sorted_filenames(name="*.vlsv"):
    '''Gets the file names in the current directory and sorts them.
