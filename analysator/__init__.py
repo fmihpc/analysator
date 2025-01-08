@@ -10,9 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Input folder paths
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "miscellaneous")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCalculations")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyPlots")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVisit")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVlsv")
 if os.getenv('PTMAYAVI2') != None:
    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyMayaVi")
