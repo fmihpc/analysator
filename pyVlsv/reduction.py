@@ -25,7 +25,7 @@
 '''
 import logging
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as plt
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector, rotateArrayTensorToVector
 from gyrophaseangle import gyrophase_angles
@@ -698,7 +698,7 @@ def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
    B_unit = B / np.linalg.norm(B)
    
    gyrophase_data = gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
-   histo = pl.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
+   histo = plt.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
    return np.std(histo[0])/np.mean(histo[0])
 
 def Dng( variables ):
