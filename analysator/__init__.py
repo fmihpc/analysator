@@ -1,21 +1,21 @@
 
 import analysator.filemanagement as filemanagement
-import socket, re, os, tempfile, atexit, shutil
+import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging
 logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 
 # Input current folder's path
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Input folder paths
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "miscellaneous")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCalculations")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyPlots")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVisit")
-filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyVlsv")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "miscellaneous")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCalculations")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCellDataReduction")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyPlots")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVisit")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVlsv")
 if os.getenv('PTMAYAVI2') != None:
-   filemanagement.sys.path.insert(0, filemanagement.os.path.dirname(filemanagement.os.path.abspath(__file__)) + "/" + "pyMayaVi")
+   sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyMayaVi")
 
 
 # Make sure matplotlib has a unique temp directory
