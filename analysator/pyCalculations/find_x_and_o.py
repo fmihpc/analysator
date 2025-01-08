@@ -2,7 +2,6 @@
 #
 import analysator as pt
 import numpy as np
-import pylab as pl
 import matplotlib.pyplot as plt
 import sys
 from scipy.ndimage import convolve
@@ -102,7 +101,7 @@ for index in indexes:
    dfdx,dfdz=np.gradient(flux_function)
 
    #calculate the 0 contours of df/dx and df/dz
-   pl.figure(1)
+   plt.figure(1)
    contour1=plt.contour(x_array,z_array, dfdx, [0])
    contour1_paths=contour1.collections[0].get_paths()
    contour2=plt.contour(x_array,z_array, dfdz, [0])
@@ -180,7 +179,7 @@ for index in indexes:
             o_point_location.append(coords)
             o_point_fluxes.append(interpolated_flux)
 
-   pl.close('all')
+   plt.close('all')
 
    np.savetxt(path_to_save+"/o_point_location_"+str(index)+".txt", o_point_location)
    np.savetxt(path_to_save+"/o_point_location_and_fluxes_"+str(index)+".txt", np.concatenate( (o_point_location,np.array(o_point_fluxes)[:,np.newaxis]), axis=1))
