@@ -1,5 +1,3 @@
-# __all__ = ["filemanagement"]
-print("__init__ invoked")
 
 import analysator.filemanagement as filemanagement
 import socket, re, os, tempfile, atexit, shutil
