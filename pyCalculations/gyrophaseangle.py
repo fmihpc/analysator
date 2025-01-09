@@ -22,7 +22,7 @@
 # 
 
 import numpy as np
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 from rotation import rotateVectorToVector
 import logging
 
@@ -39,8 +39,8 @@ def gyrophase_angles_from_file( vlsvReader, cellid):
    vlsvReader = VlsvReader("fullf.0001.vlsv")
    result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924)
    # Plot the data
-   import matplotlib.pyplot as pl
-   pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
+   import matplotlib.pyplot as plt
+   plt.hist(result[0].data, weights=result[1].data, bins=100, log=False)
    '''
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid)
@@ -95,8 +95,8 @@ def gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordin
    vlsvReader = VlsvReader("fullf.0001.vlsv")
    result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )
    # Plot the data
-   import matplotlib.pyplot as pl
-   pl.hist(result[0].data, weights=result[1].data, bins=100, log=False)
+   import matplotlib.pyplot as plt
+   plt.hist(result[0].data, weights=result[1].data, bins=100, log=False)
    '''
    
    # Get avgs data:
@@ -118,5 +118,5 @@ def gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordin
    # Return the gyrophase angles and avgs values:
    from output import output_1d
    return output_1d([gyro_angles, avgs], ["Gyrophase_angle", "avgs"], [units, ""])
-   #pl.hist(gyro_angles, weights=avgs, bins=bins, log=log)
+   #plt.hist(gyro_angles, weights=avgs, bins=bins, log=log)
 

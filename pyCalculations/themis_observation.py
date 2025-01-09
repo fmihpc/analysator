@@ -22,7 +22,7 @@
 # 
 
 import numpy as np
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import matplotlib
 from rotation import rotateVectorToVector
 from scipy.interpolate import griddata
@@ -126,13 +126,13 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), po
     values = abs(values);
 
     grid_r, grid_theta = np.meshgrid(energies,angles)
-    fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
+    fig,ax=plt.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
     ax.set_title("Detector view at cell " + str(cellID))
     logging.info("Plotting...")
     cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
     ax.grid(True)
     fig.colorbar(cax)
-    pl.show()
+    plt.show()
 
 def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
     ''' Plots a contour view of phasespace, as seen by a themis detector, at the given cellID
@@ -167,7 +167,7 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
         blurkernel = np.exp(-.17*np.power([6,5,4,3,2,1,0,1,2,3,4,5,6],2))
         vi = sepfir2d(vi, blurkernel, blurkernel) / 4.2983098411528502
 
-    fig,ax=pl.subplots(figsize=(12,10))
+    fig,ax=plt.subplots(figsize=(12,10))
     ax.set_aspect('equal')
     ax.set_title("Phasespace at cell " + str(cellID))
     ax.set_xlabel(xlabel+" (km/s)")
@@ -175,7 +175,7 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     cax = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
     ax.grid(True)
     fig.colorbar(cax)
-    pl.show()
+    plt.show()
 
 def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy"):
     ''' Plots a view of phasespace, as seen by a themis detector, at the given cellID, in the style that heli likes.
@@ -210,7 +210,7 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
         blurkernel = np.exp(-.17*np.power([6,5,4,3,2,1,0,1,2,3,4,5,6],2))
         vi = sepfir2d(vi, blurkernel, blurkernel) / 4.2983098411528502
 
-    fig,ax=pl.subplots(figsize=(12,10))
+    fig,ax=plt.subplots(figsize=(12,10))
     ax.set_aspect('equal')
     ax.set_title("Phasespace at cell " + str(cellID))
     ax.set_xlabel(xlabel+" (km/s)")
@@ -224,7 +224,7 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     #cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap("binary"))
     ax.grid(True)
     fig.colorbar(cax)
-    pl.show()
+    plt.show()
 def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.],pop='proton'):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
