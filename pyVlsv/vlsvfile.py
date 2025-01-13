@@ -38,7 +38,7 @@ from vlsvreader import VlsvReader
 from vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
 from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
-from vlsvvtkinterface import vtkVlsvHyperTreeGrid,VlsvVtkReader
+from vlsvvtkinterface import VlsvVtkReader
 
 from vlsvparticles import VlsvParticles
 import reduction

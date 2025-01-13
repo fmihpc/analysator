@@ -2032,9 +2032,9 @@ class VlsvReader(object):
       if self.__max_spatial_amr_level < 0:
          # Read the file index for cellid
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         maxcellid = np.amax([cellids])
+         maxcellid = np.int64(np.amax([cellids]))
 
-         AMR_count = 0
+         AMR_count = np.int64(0)
          while (maxcellid > 0):
             maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
             AMR_count += 1

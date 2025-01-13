@@ -40,7 +40,7 @@ except Exception as e:
    logging.error("VTK import did not succeed")
    raise(e)
 import time
-from numba import jit
+# from numba import jit
 '''Extend vtkHyperTreeGrid.
 This class is not used right now: makes probably more sense to have
 most of the features in the reader class below, esp. since the
@@ -184,7 +184,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
                                                (zmax - zmin)/(zcells[level])],np.int32))
           
          
-      @jit(nopython=True)
+      # @jit(nopython=True)
       def children(cid, level):
          # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
          cellids = cid - 1 - cid_offsets[level]
@@ -636,7 +636,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          self.__FileName = filename
          if self.__FileName is not None:
             self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
-            self.__metafile = self.__FileName[:-5]+"_meta"
+            self.__metafile = os.path.join(os.path.dirname(self.__FileName),"vlsvmeta",self.__FileName[:-5]+"_meta")
 
    def GetFileName(self):
       return self.__FileName
@@ -683,7 +683,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             subdivided[0].append(c)
          idx += 1
 
-      @jit(nopython=True)
+      # @jit(nopython=True)
       def children(cid, level):
          # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
          cellids = cid - 1 - cid_offsets[level]
@@ -728,6 +728,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       except Exception as e:
          print("Re-initializing HTG, no metadata accessible because of ", e)
          self.__descriptor, self.__idxToFileIndex = self.buildDescriptor()
+         if not os.path.isdir(os.path.dirname(self.__metafile)):
+            os.mkdir(os.path.dirname(self.__metafile))
          with open(self.__metafile,'wb') as mfile:
             pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.idxToFileIndex}, mfile)
 
@@ -924,8 +926,8 @@ def __main__():
    import pytools as pt
    # This initializes a hypertreegrid from the given reader.
    reader = VlsvVtkReader()
-   # reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
-   reader.SetFileName("/home/mjalho/bulk1.0001418.vlsv")
+   reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
+   # reader.SetFileName("/home/mjalho/bulk1.0001418.vlsv")
    # reader.ReadAllScalarsOn()
    reader.Update()
    cf = vtk.vtkHyperTreeGridContour()

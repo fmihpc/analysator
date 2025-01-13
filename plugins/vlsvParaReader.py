@@ -60,112 +60,11 @@ class PythonPvVLSVReader(pt.vlsvfile.VlsvVtkReader):
 
 
 #------------------------------------------------------------------------------
-# A writer example.
+# Todo: some tests
 #------------------------------------------------------------------------------
-'''
-@smproxy.writer(extensions="npz", file_description="NumPy Compressed Arrays", support_reload=False)
-@smproperty.input(name="Input", port_index=0)
-@smdomain.datatype(dataTypes=["vtkTable"], composite_data_supported=False)
-class NumpyWriter(VTKPythonAlgorithmBase):
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self, nInputPorts=1, nOutputPorts=0, inputType='vtkTable')
-        self._filename = None
-
-    @smproperty.stringvector(name="FileName", panel_visibility="never")
-    @smdomain.filelist()
-    def SetFileName(self, fname):
-        """Specify filename for the file to write."""
-        if self._filename != fname:
-            self._filename = fname
-            self.Modified()
-
-    def RequestData(self, request, inInfoVec, outInfoVec):
-        from vtkmodules.vtkCommonDataModel import vtkTable
-        from vtkmodules.numpy_interface import dataset_adapter as dsa
-
-        table = dsa.WrapDataObject(vtkTable.GetData(inInfoVec[0], 0))
-        kwargs = {}
-        for aname in table.RowData.keys():
-            kwargs[aname] = table.RowData[aname]
-
-        import numpy
-        numpy.savez_compressed(self._filename, **kwargs)
-        return 1
-
-    def Write(self):
-        self.Modified()
-        self.Update()
-'''
-#------------------------------------------------------------------------------
-# A filter example.
-#------------------------------------------------------------------------------
-'''
-@smproxy.filter()
-@smproperty.input(name="InputTable", port_index=1)
-@smdomain.datatype(dataTypes=["vtkTable"], composite_data_supported=False)
-@smproperty.input(name="InputDataset", port_index=0)
-@smdomain.datatype(dataTypes=["vtkDataSet"], composite_data_supported=False)
-class ExampleTwoInputFilter(VTKPythonAlgorithmBase):
-    def __init__(self):
-        VTKPythonAlgorithmBase.__init__(self, nInputPorts=2, nOutputPorts=1, outputType="vtkPolyData")
-
-    def FillInputPortInformation(self, port, info):
-        if port == 0:
-            info.Set(self.INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet")
-        else:
-            info.Set(self.INPUT_REQUIRED_DATA_TYPE(), "vtkTable")
-        return 1
-
-    def RequestData(self, request, inInfoVec, outInfoVec):
-        from vtkmodules.vtkCommonDataModel import vtkTable, vtkDataSet, vtkPolyData
-        input0 = vtkDataSet.GetData(inInfoVec[0], 0)
-        input1 = vtkDataSet.GetData(inInfoVec[1], 0)
-        output = vtkPolyData.GetData(outInfoVec, 0)
-        # do work
-        print("Pretend work done!")
-        return 1
-
-@smproxy.filter()
-@smproperty.input(name="Input")
-@smdomain.datatype(dataTypes=["vtkDataSet"], composite_data_supported=False)
-class PreserveInputTypeFilter(VTKPythonAlgorithmBase):
-    """
-    Example filter demonstrating how to write a filter that preserves the input
-    dataset type.
-    """
-    def __init__(self):
-        super().__init__(nInputPorts=1, nOutputPorts=1, outputType="vtkDataSet")
-
-    def RequestDataObject(self, request, inInfo, outInfo):
-        inData = self.GetInputData(inInfo, 0, 0)
-        outData = self.GetOutputData(outInfo, 0)
-        assert inData is not None
-        if outData is None or (not outData.IsA(inData.GetClassName())):
-            outData = inData.NewInstance()
-            outInfo.GetInformationObject(0).Set(outData.DATA_OBJECT(), outData)
-        return super().RequestDataObject(request, inInfo, outInfo)
-
-    def RequestData(self, request, inInfo, outInfo):
-        inData = self.GetInputData(inInfo, 0, 0)
-        outData = self.GetOutputData(outInfo, 0)
-        print("input type =", inData.GetClassName())
-        print("output type =", outData.GetClassName())
-        assert outData.IsA(inData.GetClassName())
-        return 1
-'''
 
 def test_PythonVLSVReader(fname):
-    reader = PythonPvVLSVReader()
-    reader.SetFileName(fname)
-    reader.Update()
-    assert reader.GetOutputDataObject(0).GetNumberOfRows() > 0
+    pass
 
 if __name__ == "__main__":
-    #test_PythonSuperquadricSource()
-    test_PythonVLSVReader("/tmp/data.csv")
-
-    from paraview.detail.pythonalgorithm import get_plugin_xmls
-    from xml.dom.minidom import parseString
-    for xml in get_plugin_xmls(globals()):
-        dom = parseString(xml)
-        print(dom.toprettyxml(" ","\n"))
+    pass
