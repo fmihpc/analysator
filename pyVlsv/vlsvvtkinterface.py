@@ -636,7 +636,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          self.__FileName = filename
          if self.__FileName is not None:
             self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
-            self.__metafile = os.path.join(os.path.dirname(self.__FileName),"vlsvmeta",self.__FileName[:-5]+"_meta")
+            fn = os.path.basename(self.__FileName)
+            self.__metafile = os.path.join(os.path.dirname(self.__FileName),"vlsvmeta",fn[:-5]+"_meta")
 
    def GetFileName(self):
       return self.__FileName
@@ -731,7 +732,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          if not os.path.isdir(os.path.dirname(self.__metafile)):
             os.mkdir(os.path.dirname(self.__metafile))
          with open(self.__metafile,'wb') as mfile:
-            pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.idxToFileIndex}, mfile)
+            pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.__idxToFileIndex}, mfile)
 
       return self.__descriptor, self.__idxToFileIndex
 
