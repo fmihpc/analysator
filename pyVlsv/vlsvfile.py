@@ -38,7 +38,11 @@ from vlsvreader import VlsvReader
 from vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
 from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
-from vlsvvtkinterface import VlsvVtkReader
+try:
+   from vlsvvtkinterface import VlsvVtkReader
+except ModuleNotFoundError:
+   logging.info("VlsvVtkReader not imported. To access it, you need vtk>=9.2.0")
+
 
 from vlsvparticles import VlsvParticles
 import reduction
