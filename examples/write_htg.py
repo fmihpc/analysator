@@ -2,7 +2,7 @@ import vtk
 import pytools as pt
 
 # This initializes a hypertreegrid from the given reader.
-reader = VlsvVtkReader()
+reader = pt.vlsvfile.VlsvVtkReader()
 reader.SetFileName("../../bulk.0002189.vlsv")
 
 # These functions grab one SpatialGrid variable and map that to 
