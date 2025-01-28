@@ -1110,6 +1110,8 @@ multipopdatareducers["pop/plasmaperiod"] =    DataReducerVariable(["pop/rho"], p
 multipopdatareducers["pop/beta"] =                   DataReducerVariable(["pop/pressure", "b"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
 multipopdatareducers["pop/betaparallel"] =           DataReducerVariable(["pop/pparallel", "b"], beta ,"", 1, latex=r"$\beta_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"")
 multipopdatareducers["pop/betaperpendicular"] =      DataReducerVariable(["pop/pperpendicular", "b"], beta ,"", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"")
+multipopdatareducers["pop/beta_star"] =              DataReducerVariable(["pop/pressure", "pop/pdyn", "b"], beta_star ,"", 1, latex=r"$\beta^\star_\mathrm{REPLACEPOP}$", latexunits=r"")
+
 
 multipopdatareducers["pop/rmirror"] =                DataReducerVariable(["pop/ptensor", "b"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopdatareducers["pop/dng"] =                    DataReducerVariable(["pop/ptensor", "pop/pparallel", "pop/pperpendicular", "b"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
@@ -1296,9 +1298,11 @@ multipopv5reducers["pop/vg_precipitationintegralenergyflux"] = DataReducerVariab
 multipopv5reducers["pop/vg_precipitationmeanenergy"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationmeanenergy, "keV", 1, latex=r"$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$",latexunits=r"$\mathrm{keV}$")
 
 # Do these betas make sense per-population?
-multipopv5reducers["pop/vg_beta"] =                   DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
+multipopv5reducers["pop/vg_beta"] =                    DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_parallel"] =           DataReducerVariable(["pop/vg_p_parallel", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop/vg_p_perpendicular", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"")
+multipopv5reducers["pop/vg_beta_star"] =               DataReducerVariable(["pop/vg_pressure", "pop/vg_pdyn", "vg_b_vol"], beta_star ,"", 1, latex=r"$\beta^\star_\mathrm{REPLACEPOP}$", latexunits=r"")
+
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
