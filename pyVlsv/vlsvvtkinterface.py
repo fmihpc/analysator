@@ -838,8 +838,9 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    '''This function adds one SpatialGrid variable from the reader object and maps
    that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.
    '''
-   def addArrayFromVlsv(self, htg, varname):
+   def addArrayFromVlsv(self, varname):
 
+      htg = self.__htg
       # Do not re-add an already existing array
       if htg.GetCellData().HasArray(varname):
          print("skipped existing array")
@@ -899,7 +900,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       
       for name in self.__cellarrays:
          if self._arrayselection.ArrayIsEnabled(name):
-            success = self.addArrayFromVlsv(self.__htg, name)
+            success = self.addArrayFromVlsv(name)
             if not success:
                self._arrayselection.RemoveArrayByName(name)
 
