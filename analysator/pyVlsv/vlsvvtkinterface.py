@@ -33,7 +33,7 @@ import vtk.vtkCommonColor
 import vtkmodules.vtkCommonColor
 import vtkmodules.vtkCommonColor
 import vtkmodules.vtkCommonColor
-import pytools as pt
+import analysator as pt
 try:
    import vtk
 except Exception as e:
@@ -925,7 +925,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
 
 def __main__():
-   import pytools as pt
+   import analysator as pt
    # This initializes a hypertreegrid from the given reader.
    reader = VlsvVtkReader()
    reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
