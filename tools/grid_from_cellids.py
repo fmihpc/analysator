@@ -33,7 +33,7 @@ def get_amr_level(cellid):
       np.add(AMR_count, 1, out = AMR_count, where = mask)
       iters = iters+1
       if(iters > 10):
-         logging.info("Can't have 10 levels of refinement, can we?")
+         print("Can't have 10 levels of refinement, can we?")
          break
 
    if stack:
