@@ -9,7 +9,7 @@
 import sys, os
 from pathlib import Path
 
-sys.path.insert(0, str(Path('..', '..', 'analysator').resolve()))
+sys.path.insert(0, str(Path('..', '..').resolve()))
 sys.path.insert(0, str(Path('..', '..', 'scripts').resolve()))
 print(str(Path('..','..','analysator').resolve()))
 print(str(Path('..','..', 'scripts').resolve()))
