@@ -11,6 +11,9 @@ and install via `pip` from the cloned path. Dependency handling is via pip. Usin
 pip install -e ./analysator
 ```
 
+## Backward compatibility
+
+The packaged analysator is (should be!) backwards-compatible with previous analysator versions: `import pytools` will import analysator onto the pytools name, and emits a deprecation warning. `$PYTHONPATH` installation is also supported.
 
 # Using Analysator:
 ```python
