@@ -33,7 +33,7 @@ documentation for details.
    scripts
    about
 
-.. automodule:: pytools 
+.. automodule:: analysator 
    :members:
    :imported-members:
    :undoc-members:

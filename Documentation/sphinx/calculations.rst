@@ -1,6 +1,6 @@
 calculations
 =================================
 
-.. automodule:: pytools.calculations
+.. automodule:: analysator.calculations
    :members:
    :imported-members:
