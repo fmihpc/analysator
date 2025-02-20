@@ -63,7 +63,7 @@ def plot_colormap(filename=None,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fluxfile=None, fluxdir=None, flux_levels=None,
-                  fluxthick=1.0, fluxlines=1,
+                  fluxthick=1.0, fluxlines=1,fluxlinecolor='k',
                   fsaved=None,
                   nomask=False,
                   Earth=None,
@@ -176,6 +176,7 @@ def plot_colormap(filename=None,
     :kword fluxdir:     Directory in which fluxfunction files can be found
     :kword fluxthick:   Scale fluxfunction line thickness
     :kword fluxlines:   Relative density of fluxfunction contours
+    :kword fluxlinecolor: Set flux line color (default black)
     :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
     :kword nomask:      Do not mask plotting based on proton density
 
@@ -1017,7 +1018,7 @@ def plot_colormap(filename=None,
             flux_levels = np.linspace(-10,10,fluxlines*60)
         else:
             pass #This was given, do nothing
-        fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+        fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors=fluxlinecolor,linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
     if fsaved:
