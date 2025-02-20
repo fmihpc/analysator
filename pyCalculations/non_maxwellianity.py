@@ -29,7 +29,7 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     :returns:           scalar, non-Maxwellianity parameter for given model and norm
 
     The definition is given by Graham et al. (2021):
-    (1/2n) * integral(|f_i - g_M|) d^3v    
+    (1/2n) * integral(\\|f_i - g_M\\|) d^3v    
     
     valued between 0 (bi-Maxwellian) and 1 (complete deviation from a bi-Maxwellian).
     

@@ -30,8 +30,11 @@ def tsyganenko_trace(x0, y0, z0, Txx = 't01', InternalB='dipole', Dst = -30, Kp 
         z0: initial z-coordinate (GSE) of field tracing [R_E]  (float)
 
         --Keywords--
-        Txx: (external) field model, by Tsyganenko publication year. options: 't89', 't96', 't01'
+
+        Txx:
+          (external) field model, by Tsyganenko publication year. options: 't89', 't96', 't01'
             Need to test: does 't04' work? Is geomagnetic activity estimated with Kp or Dst in that case?
+
         InternalB: internal model. options: 'dipole', 'igrf'
         Dst: Dst index in nT (geomagnetic activity), used for Txx= 't96', 't01' ('t04'?)
         Kp: Kp index 0-9 (geomagnetic activity), used for Txx='T89'
@@ -42,9 +45,11 @@ def tsyganenko_trace(x0, y0, z0, Txx = 't01', InternalB='dipole', Dst = -30, Kp 
         Bz_imf: driving solar wind GSE imf Bz [nT] (GSE)
         R_inner: inner radius [R_E] of the tracing, if the tracing goes r<R_inner it stops
         R_outer: outer radius [R_E] of the tracing, if the tracing goes r>R_outer it stops
+
         dir: direction of the tracing relative to the magnetic field direction (parallel: dir= 1, anti-parallel: dir= -1)
              If unspecified (dir=None), dir traces against the field when z0>0 with the field when z0<0
-             *** this is the opposite convention used by geopack's trace() function?
+
+             \\*\\*\\* this is the opposite convention used by geopack's trace() function?
                  From geopack.py docs: "dir: Direction of tracing. dir = -1 for parallel; dir = 1 for anti-parallel."
     
     Returns:
@@ -68,6 +73,7 @@ def tsyganenko_trace(x0, y0, z0, Txx = 't01', InternalB='dipole', Dst = -30, Kp 
         Default solar wind and IMF parameters are for the EGI Vlasiator run, see Grandin et al. (2022?)
     
             Other runs:
+            
             EGL (note: pulse arrives at magnetopause at roughly t=857 sec)
              (~before pulse arrival): Dst = -30 (Grandin et al. 2022), N_sw = 1, Bz_imf = -5
              (~after pulse arrival):  Dst = -80 (Horaites et al.), N_sw = 4, Bz_imf = -10
@@ -201,6 +207,7 @@ def tsyganenko_ocb(phi, lat_range=[0,90], nsteps = 10, **kwargs):
     Inputs:
         phi: ~longitude, in degrees                                                     -180<=phi<=180
         lat_range: 2-element list or numpy array, 
+
                    containing min. and max. latidues [degrees] to search within         -90<=lat<=90
 
         kwargs are passed to tsyanenko_open()
@@ -254,8 +261,10 @@ def tsyganenko_b(x, y, z, Txx = 't01', InternalB='dipole', Dst = -30, Kp = 4, Vx
         z0: z-coordinate(s) (GSE) to evaluate the field [R_E]  (float)
 
         --Keywords--
+
         Txx: (external) field model, by Tsyganenko publication year. options: 't89', 't96', 't01'
             Need to test: does 't04' work? Is geomagnetic activity estimated with Kp or Dst in that case?
+
         InternalB: internal model. options: 'dipole', 'igrf'
         Dst: Dst index in nT (geomagnetic activity), used for Txx= 't96', 't01' ('t04'?)
         Kp: Kp index 0-9 (geomagnetic activity), used for Txx='T89'
@@ -266,9 +275,11 @@ def tsyganenko_b(x, y, z, Txx = 't01', InternalB='dipole', Dst = -30, Kp = 4, Vx
         Bz_imf: driving solar wind GSE imf Bz [nT] (GSE)
         R_inner: inner radius [R_E] of the tracing, if the tracing goes r<R_inner it stops
         R_outer: outer radius [R_E] of the tracing, if the tracing goes r>R_outer it stops
+
         dir: direction of the tracing relative to the magnetic field direction (parallel: dir= 1, anti-parallel: dir= -1)
              If unspecified (dir=None), dir traces against the field when z0>0 with the field when z0<0
-             *** this is the opposite convention used by geopack's trace() function?
+
+             \\*\\*\\* this is the opposite convention used by geopack's trace() function?
                  From geopack.py docs: "dir: Direction of tracing. dir = -1 for parallel; dir = 1 for anti-parallel."
     
     Returns:
@@ -293,6 +304,7 @@ def tsyganenko_b(x, y, z, Txx = 't01', InternalB='dipole', Dst = -30, Kp = 4, Vx
         Default solar wind and IMF parameters are for the EGI Vlasiator run, see Grandin et al. (2022?)
     
             Other runs:
+
             EGL (note: pulse arrives at magnetopause at roughly t=857 sec)
              (~before pulse arrival): Dst = -30 (Grandin et al. 2022), N_sw = 1, Bz_imf = -5
              (~after pulse arrival):  Dst = -80 (Horaites et al.), N_sw = 4, Bz_imf = -10

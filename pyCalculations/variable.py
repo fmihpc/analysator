@@ -89,8 +89,6 @@ class VariableInfo:
           :param vscale:       float, factor to scale the variable with
           :returns: (norming factor, scaledUnits, scaledLatexUnits)
 
-          .. note::
-
       '''
 
      #
@@ -217,7 +215,6 @@ class VariableInfo:
           :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
           :returns: self, with scaled units with pre-formatted units included in the varinfo.
 
-          .. note::
 
       '''
 

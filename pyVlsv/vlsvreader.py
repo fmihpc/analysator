@@ -1,7 +1,7 @@
-# 
+#s 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -140,6 +140,15 @@ def fsDecompositionFromGlobalIds(reader):
    zs = np.unique(lows[:,2])
    return [xs.size, ys.size, zs.size]
 
+def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
+   #arr = np.zeros(sz, dtype=np.int64) + 1000000000 # big number to catch errors in the latter code, 0 is not good for that
+
+   for i in range(vg_cellids.shape[0]):
+      arr[refined_ids_start[i,0]:refined_ids_end[i,0],
+                           refined_ids_start[i,1]:refined_ids_end[i,1],
+                           refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+   return arr
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -188,6 +197,10 @@ class VlsvReader(object):
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
       self.variable_cache = {} # {(varname, operator):data}
+
+      self.__available_reducers = set() # Set of strings of datareducer names
+      self.__unavailable_reducers = set() # Set of strings of datareducer names
+      self.__current_reducer_tree_nodes = set() # Set of strings of datareducer names
 
       self.__read_xml_footer()
                               # vertex-indices is a 3-tuple of integers
@@ -358,10 +371,10 @@ class VlsvReader(object):
                  pop.__precipitation_centre_energy = np.asarray(energybins)
                  vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
-              vlsvvariables.cellsize = self.__dx
+      vlsvvariables.cellsize = self.__dx
 
-              if self.check_parameter("j_per_b_modifier"):
-                 vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
+      if self.check_parameter("j_per_b_modifier"):
+         vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
       self.__fptr.close()
 
@@ -540,6 +553,100 @@ class VlsvReader(object):
       for index,cellid in enumerate(self.__cells_with_blocks[pop]):
          self.__order_for_cellid_blocks[pop][cellid]=index
 
+   def __check_datareducer(self, name, reducer):
+
+      reducer_ok = True
+      if name in self.__available_reducers: return True
+      if name in self.__unavailable_reducers: return False
+      if name in self.__current_reducer_tree_nodes: raise RuntimeError("Cyclical datareduction deteced with "+name+", this is weird and undefined!")
+
+      self.__current_reducer_tree_nodes.add(name)
+
+      for var in reducer.variables:
+         if len(var) > 3 and var[0:3] == "pop":
+            in_vars = False
+            for pop in self.active_populations:
+               popvar = pop+var[3:]
+               if popvar in self.__available_reducers:
+                  in_vars = True
+               elif popvar in self.__unavailable_reducers:
+                  in_vars = False
+               else:
+                  in_vars = self.check_variable(popvar)
+
+               # print(popvar," is in vars: ",in_vars)
+               if in_vars:
+                  self.__available_reducers.add(popvar)
+                  break
+               else:
+                  self.__unavailable_reducers.add(popvar)
+         else:
+            in_vars = self.check_variable(var)
+
+         # reducer_ok = reducer_ok and in_vars
+         if in_vars:
+            continue
+
+         in_reducers = ((var in datareducers.keys()) or
+                        (var in multipopdatareducers.keys()) or
+                        (var in v5reducers.keys()) or
+                        (var in multipopv5reducers.keys()))
+         if in_reducers:
+            reducer = None
+            for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+               try:
+                  reducer = reducer_reg[var]
+               except:
+                  pass
+
+            reducer_ok = reducer_ok and self.__check_datareducer(var, reducer)
+         else: # Not in variables not in datareducers, break
+            reducer_ok = False
+            break
+
+         if not reducer_ok: break
+
+      if reducer_ok: self.__available_reducers.add(name)
+      else: self.__unavailable_reducers.add(name)
+
+      return reducer_ok
+
+   def get_variables(self):
+
+      varlist = []
+
+      for child in self.__xml_root:
+         if child.tag == "VARIABLE" and "name" in child.attrib:
+            name = child.attrib["name"]
+            varlist.append(name)
+
+      return varlist
+   
+   def get_reducers(self):
+
+      varlist = []
+
+      reducer_max_len = 0
+      
+      for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+         for k in reducer_reg.keys():
+            reducer_max_len = max(reducer_max_len, len(k))
+      
+
+
+      for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+         for name, reducer in reducer_reg.items():
+            self.__current_reducer_tree_nodes.clear()
+            if self.__check_datareducer(name,reducer):
+               if name[:3] == 'pop':
+                  for pop in self.active_populations:
+                     varlist.append(pop+'/'+name[4:])
+               else:
+                  varlist.append(name)
+
+      return varlist
+
+
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
       ''' Print out a description of the content of the file. Useful
          for interactive usage. Default is to list parameters and variables, query selection can be adjusted with keywords:
@@ -569,9 +676,22 @@ class VlsvReader(object):
             if child.tag == "MESH" and "name" in child.attrib:
                print("   ", child.attrib["name"])
       if datareducer:
-         print("Datareducers:")
-         for name in datareducers:
-            print("   ",name, " based on ", datareducers[name].variables)
+         print("Datareducers (replace leading pop with a population name):")
+
+         reducer_max_len = 0
+         units_max_len = 0
+         for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+            for k in reducer_reg.keys():
+               reducer_max_len = max(reducer_max_len, len(k))
+               units_max_len = max(units_max_len, len(reducer_reg[k].units))
+
+
+         for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
+            for name, reducer in reducer_reg.items():
+               self.__current_reducer_tree_nodes.clear()
+               if self.__check_datareducer(name,reducer):
+                  print((("    %-"+str(reducer_max_len)+"s")% name) + ("\t%-"+str(units_max_len+2)+"s")%("["+reducer.units+"]")+"\t based on " + str(reducer_reg[name].variables))
+
       if operator:
          print("Data operators:")
          for name in data_operators:
@@ -672,6 +792,7 @@ class VlsvReader(object):
       ''' Returns all variables in the vlsv reader and the data reducer
           :returns:                List of variable is in the vlsv file
           .. code-block:: python
+
              # Example usage:
              vlsvReader = pt.vlsvfile.VlsvReader("test.vlsv")
              vars = vlsvReader.get_variables()
@@ -766,8 +887,10 @@ class VlsvReader(object):
 
       EXAMPLE:
       if the config contains these lines:
+      
          [proton_precipitation]
          nChannels = 9
+
       then the following returns ['9']:
       vlsvReader.get_config()['proton_precipitation']['nChannels']
       '''
@@ -879,6 +1002,10 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
+
+      if tag == "VARIABLE":
+         if (name,operator) in self.variable_cache.keys():
+            return self.read_variable_from_cache(name, cellids, operator)
 
       if (len( self.__fileindex_for_cellid ) == 0):
          # Do we need to construct the cellid index?
@@ -1477,12 +1604,20 @@ class VlsvReader(object):
                                              }):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
+
       :param name:         Name of the variable
+
       :param coords:       Coordinates from which to read data 
+
       :param periodic:     Periodicity of the system. Default is periodic in all dimension
+
       :param operator:     Datareduction operator. "pass" does no operation on data
+
+
       :param method:       Method for interpolation, default "linear" ("nearest", "rbf, "delaunay")
+
       :param methodargs:   Dict of dicts to pass kwargs to interpolators. Default values for "rbf", "delaunay";
+
                            see scipy.interpolate.RBFInterpolator for rbf and scipy.interpolate.LinearNDInterpolator for delaunay
       :returns: numpy array with the data
 
@@ -1683,6 +1818,9 @@ class VlsvReader(object):
          singletons = [i for i, sz in enumerate(fssize) if sz == 1]
          for dim in singletons:
             fgdata=np.expand_dims(fgdata, dim)
+      return self.fg_array_to_volumetric(fgdata, name, centering=centering, operator=operator)
+
+   def fg_array_to_volumetric(self, fgdata, name, centering=None,operator="pass"):
       celldata = np.zeros_like(fgdata)
       known_centerings = {"fg_b":"face", "fg_e":"edge"}
       if centering is None:
@@ -1894,9 +2032,9 @@ class VlsvReader(object):
       if self.__max_spatial_amr_level < 0:
          # Read the file index for cellid
          cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         maxcellid = np.amax([cellids])
+         maxcellid = np.int64(np.amax([cellids]))
 
-         AMR_count = 0
+         AMR_count = np.int64(0)
          while (maxcellid > 0):
             maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
             AMR_count += 1
@@ -2020,6 +2158,13 @@ class VlsvReader(object):
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
+      ''' Downsample, via averaging, an fsgrid array to the Vlasov grid
+      of this reader.
+
+      :param array:  array with first three dimensions corresponding to the
+                     dimensions of the fsgrid associated with this reader.
+      :returns: Vlasov grid data (in file order) of array averaged to Vlasov Grid.
+      '''
       cellIds=self.read_variable("CellID")
 
       self.map_vg_onto_fg()
@@ -2027,9 +2172,10 @@ class VlsvReader(object):
       if array.ndim == 4:
          numel = array.shape[3]
          vgarr = np.zeros((len(cellIds),numel))
+         reshaped_mapping = np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size)
          for i in range(numel):
-            sums = np.bincount(np.reshape(self.__vg_indexes_on_fg,self.__vg_indexes_on_fg.size),
-                                  weights=np.reshape(array[:,:,:,i],array[:,:,:,i].size))
+            wgts = np.reshape(array[:,:,:,i],array[:,:,:,i].size)
+            sums = np.bincount(reshaped_mapping, weights=wgts)
             vgarr[:,i] = np.divide(sums,counts)
       else:
          sums = np.bincount(np.reshape(self.__vg_indexes_on_fg, self.__vg_indexes_on_fg.size), weights=np.reshape(array,array.size))
@@ -2058,11 +2204,11 @@ class VlsvReader(object):
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
       return
 
-   def read_variable_as_fg(self, var):
+   def read_variable_as_fg(self, var, operator='pass'):
       vg_cellids = self.read_variable('CellID')
       sz = self.get_fsgrid_mesh_size()
       sz_amr = self.get_spatial_mesh_size()
-      vg_var = self.read_variable(var)
+      vg_var = self.read_variable(var, operator=operator)
       varsize = vg_var[0].size
       if(varsize > 1):
          fg_var = np.zeros([sz[0], sz[1], sz[2], varsize], dtype=vg_var.dtype)
@@ -2071,6 +2217,7 @@ class VlsvReader(object):
       self.map_vg_onto_fg()
       fg_var = vg_var[self.__vg_indexes_on_fg]
       return fg_var
+
 
    # Builds fsgrid array that contains indices to the SpatialGrid data that are colocated with the fsgrid cells.
    # Many fsgrid cells may map to the same index of SpatialGrid data.
@@ -2090,11 +2237,7 @@ class VlsvReader(object):
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
             
-         
-         for i in range(vg_cellids.shape[0]):
-            self.__vg_indexes_on_fg[refined_ids_start[i,0]:refined_ids_end[i,0],
-                                    refined_ids_start[i,1]:refined_ids_end[i,1],
-                                    refined_ids_start[i,2]:refined_ids_end[i,2]] = i
+         self.__vg_indexes_on_fg = map_vg_onto_fg_loop(self.__vg_indexes_on_fg,vg_cellids, refined_ids_start, refined_ids_end)
 
       return self.__vg_indexes_on_fg
 
@@ -2117,7 +2260,9 @@ class VlsvReader(object):
    def get_unique_cellids(self, coords):
       ''' Returns a list of cellids containing all the coordinates in coords,
           with no duplicate cellids. Relative order of elements is conserved.
+
       :param coords:         A list of coordinates
+
       :returns: a list of unique cell ids
       '''
       # cids = [int(self.get_cellid(coord)) for coord in coords]
@@ -2265,6 +2410,15 @@ class VlsvReader(object):
          return output
       else:
          return output[0]
+      
+   def cellid_has_vdf(self, cid, pop = 'proton')->bool:
+      ''' Returns whether the cid in question has a vdf or not
+      :param coords:    the cellid to test for
+      :returns: bool 
+      '''
+      self.__set_cell_offset_and_blocks_nodict(pop)
+      cid_w_vdf = self.__cells_with_blocks[pop]
+      return cid in cid_w_vdf
 
    def get_vertex_indices(self, coordinates):
       ''' Get dual grid vertex indices for all coordinates.
@@ -2392,9 +2546,10 @@ class VlsvReader(object):
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid, prune_unique=False):
       ''' Builds, caches and returns the vertices that lie on the surfaces of CellIDs cid.
+      
       :parameter cid: numpy array of CellIDs
       :parameter prune_unique: bool [False], if you suspect you might be calling the function many times with the 
-      same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
+                               same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
 
       :returns: Dictionary of cell c (int) : set of vertex indices (3-tuple) that touch the cell c.
 
@@ -3410,8 +3565,6 @@ class VlsvReader(object):
       '''
       # Uses new format
       return self.__read_blocks(cellid,pop)
-
-      return []
 
    def get_precipitation_centre_energy(self, pop="proton"):
       ''' Read precipitation energy bins

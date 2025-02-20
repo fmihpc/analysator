@@ -32,7 +32,7 @@ from mayavi.tools.mlab_scene_model import \
 from mayavi.core.ui.mayavi_scene import MayaviScene
 import vlsvfile
 from numpy import mgrid, empty, sin, pi, ravel
-import pylab as pl
+import matplotlib.pyplot as plt
 from tvtk.api import tvtk
 import traits.api
 import mayavi.api
@@ -373,8 +373,8 @@ class MayaviGrid(HasTraits):
          from pitchangle import pitch_angles
          result = pitch_angles( vlsvReader=self.vlsvReader, cellid=cellid, cosine=True, plasmaframe=True )
          # plot:
-         pl.hist(result[0].data, weights=result[1].data, bins=50, log=False)
-         pl.show()
+         plt.hist(result[0].data, weights=result[1].data, bins=50, log=False)
+         plt.show()
       elif (self.picker == "Gyrophase_angle"):
          # Find the nearest cell id with distribution:
          # Read cell ids with velocity distribution in:
@@ -400,8 +400,8 @@ class MayaviGrid(HasTraits):
          from gyrophaseangle import gyrophase_angles_from_file
          result = gyrophase_angles_from_file( vlsvReader=self.vlsvReader, cellid=cellid)
          # plot:
-         pl.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
-         pl.show()
+         plt.hist(result[0].data, weights=result[1].data, bins=36, range=[-180.0,180.0], log=True, normed=1)
+         plt.show()
       elif (self.picker == "Cut_through"):
          # Get the cut-through points
          point1 = self.__last_pick
@@ -446,7 +446,7 @@ class MayaviGrid(HasTraits):
                self.draw_streamline( point1, point2 )
                from plot import plot_multiple_variables
                fig = plot_multiple_variables( distances, variables, figure=[] )
-               pl.show()
+               plt.show()
             # Close the optimized file read:
             self.vlsvReader.optimize_close_file()
             # Read in the necessary variables:

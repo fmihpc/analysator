@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -25,7 +25,7 @@
 '''
 import logging
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as plt
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector, rotateArrayTensorToVector
 from gyrophaseangle import gyrophase_angles
@@ -698,7 +698,7 @@ def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
    B_unit = B / np.linalg.norm(B)
    
    gyrophase_data = gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
-   histo = pl.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
+   histo = plt.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
    return np.std(histo[0])/np.mean(histo[0])
 
 def Dng( variables ):
@@ -763,11 +763,16 @@ def firstadiabatic( variables ):
    B = np.ma.masked_less_equal(np.ma.masked_invalid(B),0)
    return np.ma.divide(Tperp,B)
 
+def vg_e_vol( variables, reader):
+   fg_e = reader.read_fg_variable_as_volumetric("fg_e")
+   return reader.fsgrid_array_to_vg(fg_e)
+
 def JPerB_criteria( variables ):
    ''' Data reducer function for calculating J/B refinement criterion as it is done in Vlasiator
    '''
    J_per_B = variables[0]
    return np.log2(J_per_B * vlsvvariables.cellsize + 1E-30)# + vlsvvariables.J_per_B_modifier
+
 
 def vg_coordinates_cellcenter( variables, reader):
    cellids = variables[0]
@@ -1105,6 +1110,8 @@ multipopdatareducers["pop/plasmaperiod"] =    DataReducerVariable(["pop/rho"], p
 multipopdatareducers["pop/beta"] =                   DataReducerVariable(["pop/pressure", "b"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
 multipopdatareducers["pop/betaparallel"] =           DataReducerVariable(["pop/pparallel", "b"], beta ,"", 1, latex=r"$\beta_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"")
 multipopdatareducers["pop/betaperpendicular"] =      DataReducerVariable(["pop/pperpendicular", "b"], beta ,"", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"")
+multipopdatareducers["pop/beta_star"] =              DataReducerVariable(["pop/pressure", "pop/pdyn", "b"], beta_star ,"", 1, latex=r"$\beta^\star_\mathrm{REPLACEPOP}$", latexunits=r"")
+
 
 multipopdatareducers["pop/rmirror"] =                DataReducerVariable(["pop/ptensor", "b"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopdatareducers["pop/dng"] =                    DataReducerVariable(["pop/ptensor", "pop/pparallel", "pop/pperpendicular", "b"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
@@ -1129,6 +1136,8 @@ v5reducers["vg_mms"] =                    DataReducerVariable(["vg_v", "vg_vms"]
 
 v5reducers["vg_v_parallel"] =              DataReducerVariable(["vg_v", "vg_b_vol"], ParallelVectorComponent, "m/s", 1, latex=r"$V_\parallel$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_v_perpendicular"] =         DataReducerVariable(["vg_v", "vg_b_vol"], PerpendicularVectorComponent, "m/s", 1, latex=r"$V_\perp$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
+
+v5reducers["vg_e_vol"] =              DataReducerVariable([], vg_e_vol, "V/m", 1, latex=r"$E_\mathrm{vol,vg}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$",useReader=True)
 
 v5reducers["vg_e_parallel"] =              DataReducerVariable(["vg_e_vol", "vg_b_vol"], ParallelVectorComponent, "V/m", 1, latex=r"$E_\parallel$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
 v5reducers["vg_e_perpendicular"] =         DataReducerVariable(["vg_e_vol", "vg_b_vol"], PerpendicularVectorComponent, "V/m", 1, latex=r"$E_\perp$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$")
@@ -1206,15 +1215,15 @@ v5reducers["vg_amr_jperb_criteria"] =           DataReducerVariable(["vg_amr_jpe
 
 v5reducers["vg_coordinates"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_coordinates_cell_center"] =            DataReducerVariable(["CellID"], vg_coordinates_cellcenter, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
-v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dxs"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["vg_coordinates_cell_lowcorner"] =            DataReducerVariable(["CellID","vg_dx"], vg_coordinates_lowcorner, "m", 3, latex=r"$\vec{r}_\mathrm{cc}$", latexunits=r"$\mathrm{m}$", useReader=True)
 
 v5reducers["vg_dx"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_dxs"] =            DataReducerVariable(["CellID"], vg_dx, "m", 3, latex=r"$\Delta{}\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["vg_reflevel"] =            DataReducerVariable(["CellID"], vg_reflevel, "", 1, latex=r"reflevel", latexunits=r"", useReader=True)
 
-v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
-v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
-v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_dbxvoldx","vg_dbxvoldy","vg_dbxvoldz","vg_dbyvoldx","vg_dbyvoldy","vg_dbyvoldz","vg_dbzvoldx","vg_dbzvoldy","vg_dbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_dperbxvoldx","vg_dperbxvoldy","vg_dperbxvoldz","vg_dperbyvoldx","vg_dperbyvoldy","vg_dperbyvoldz","vg_dperbzvoldx","vg_dperbzvoldy","vg_dperbzvoldz"], TensorFromScalars, "T/m", 9, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 3, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 
 #multipopv5reducers
 multipopv5reducers = {}
@@ -1292,9 +1301,11 @@ multipopv5reducers["pop/vg_precipitationintegralenergyflux"] = DataReducerVariab
 multipopv5reducers["pop/vg_precipitationmeanenergy"] = DataReducerVariable(["pop/vg_precipitationdifferentialflux"],precipitationmeanenergy, "keV", 1, latex=r"$<E_{\mathrm{prec},\mathrm{REPLACEPOP}}>$",latexunits=r"$\mathrm{keV}$")
 
 # Do these betas make sense per-population?
-multipopv5reducers["pop/vg_beta"] =                   DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
+multipopv5reducers["pop/vg_beta"] =                    DataReducerVariable(["pop/vg_pressure", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_\mathrm{REPLACEPOP}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_parallel"] =           DataReducerVariable(["pop/vg_p_parallel", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_{\parallel,\mathrm{REPLACEPOP}}$", latexunits=r"")
 multipopv5reducers["pop/vg_beta_perpendicular"] =      DataReducerVariable(["pop/vg_p_perpendicular", "vg_b_vol"], beta ,"", 1, latex=r"$\beta_{\perp,\mathrm{REPLACEPOP}}$", latexunits=r"")
+multipopv5reducers["pop/vg_beta_star"] =               DataReducerVariable(["pop/vg_pressure", "pop/vg_pdyn", "vg_b_vol"], beta_star ,"", 1, latex=r"$\beta^\star_\mathrm{REPLACEPOP}$", latexunits=r"")
+
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
@@ -1316,3 +1327,5 @@ deprecated_datareducers['vg_agyrotropy_thermal'] = "Previous vg_agyrotropy_therm
 deprecated_datareducers['pop/vg_agyrotropy'] = "Previous pop/vg_agyrotropy reducers were broken, use pop/vg_gyrotropy instead. See link (https://github.com/fmihpc/analysator/pull/262)"
 deprecated_datareducers['pop/vg_agyrotropy_nonthermal'] = "Previous pop/vg_agyrotropy_nonthermal reducers were broken, use pop/vg_gyrotropy_nonthermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
 deprecated_datareducers['pop/vg_agyrotropy_thermal'] = "Previous pop/vg_agyrotropy_thermal reducers were broken, use pop/vg_gyrotropy_thermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
+
+import reduction_sidecar
