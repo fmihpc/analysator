@@ -23,7 +23,7 @@
 
 # Rankine-Hugoniot conditions to determine the right state from the left state of an MHD oblique shock
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as plt
 import sys
 from scipy import optimize
 from cutthrough import cut_through
@@ -118,7 +118,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
    :param point1: The first point of interest along the bow-shock
    :param point2: The second point of interest along the bow-shock
 
-   :returns: pylab figure
+   :returns: matplotlib figure
    '''
    # Get spatial grid sizes:
    xcells = (int)(vlsvReader.read_parameter("xcells_ini"))
@@ -222,7 +222,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
    numberOfVariables = len(variables)
 
    fig = plot_variables( distances, variables, figure=[] )
-   pl.show()
+   plt.show()
 
    return fig
 

@@ -616,8 +616,8 @@ def plot_ionosphere(filename=None,
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    if axes is None:
-        plt.tight_layout(pad=0.01)
+    # if axes is None: # This causes a matplotlib warning, and the following "bbox_inches='tight'" should anyway do the same thing
+    #     plt.tight_layout(pad=0.01)
     savefig_pad=0.01
     bbox_inches='tight'
 
@@ -625,8 +625,10 @@ def plot_ionosphere(filename=None,
     if not draw and axes is None:
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            logging.info("Error attempting to save figure: " + str(sys.exc_info()))
+        except Exception as e:
+            print("Encountered the following exception from Matplotlib while trying to save a figure:")
+            print(e)
+            raise RuntimeError("Error attempting to save figure: " + str(sys.exc_info())+"\n\n There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!")
         logging.info(outputfile+"\n")
         plt.close()
     elif draw is not None and axes is None:
