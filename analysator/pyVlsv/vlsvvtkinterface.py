@@ -817,7 +817,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          self.__htg = self.getHTG()
          vars = self.findVariablesFromVlsv(getReducers=True)
          for name in vars:
-            if "vg" in name:
+            if ("vg" in name.lower()) or (name.lower() == "cellid"):
                # print(name)
                self._arrayselection.AddArray(name)
                self._arrayselection.DisableArray(name)
@@ -845,6 +845,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       if htg.GetCellData().HasArray(varname):
          print("skipped existing array")
          return True
+      
+      print("varname ", varname)
 
       array = vtk.vtkDoubleArray()
       # cidArray2.DeepCopy(fileIndexArray)
@@ -891,8 +893,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
    def RequestData(self, request, inInfo, outInfo):
 
-      # print("VlsvVtkReader RequestData:")
-      # print(outInfo)
+      print("VlsvVtkReader RequestData:")
+      print(outInfo)
 
       if self.__htg is None:
          print("Creating htg via RequestData")
