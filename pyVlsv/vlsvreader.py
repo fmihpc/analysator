@@ -287,13 +287,23 @@ class VlsvReader(object):
       self.__fptr.close()
 
    def __popmesh(self, popname):
+      ''' Get the population-specific vspace mesh info object, and initialize it if it does not exist
+
+      :param popname: String, name of population to fetch info of
+      :returns MeshInfo object containing velocity mesh info for the population
+      '''
       if popname in self.__meshes.keys():
          return self.__meshes[popname]
       else:
          return self.__init_population(popname)
 
    def __init_population(self,popname):
+      ''' Initialize metadata for a population. Incurs several small reads to the vlsv file,
+          and initializes also the vlsvvariables.speciesprecipitationenergybins dict entry for this pop.
 
+      :param popname: String, name of population to initialze
+      :returns MeshInfo object containing velocity mesh info for the population
+      '''
       bbox = self.read(tag="MESH_BBOX", mesh=popname)
       pop = self.MeshInfo()
       if bbox is None:
@@ -380,6 +390,10 @@ class VlsvReader(object):
       
 
    def __init_populations(self):
+      ''' Initialize all populations contained in the file.
+
+      ..seealso:: :func:`__init_population`
+      '''
 
       if self.__pops_init:
          return
