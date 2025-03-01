@@ -16,5 +16,7 @@ module purge
 module load python-env/3.5.3
 
 export PTNONINTERACTIVE=1
+export PTOUTPUTDIR=/wrk-vakka/users/mjalho/analysator_testpackage/testpackage_colormap/
+
 python testpackage_vdf.py $jobcount $index
 echo Job $SLURM_ARRAY_TASK_ID complete.
