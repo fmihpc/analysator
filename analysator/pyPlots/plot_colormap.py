@@ -63,7 +63,7 @@ def plot_colormap(filename=None,
                   symmetric=False,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fluxfile=None, fluxdir=None, flux_levels=None,
-                  fluxthick=1.0, fluxlines=1,
+                  fluxthick=1.0, fluxlines=1,fluxlinecolor='k',
                   fsaved=None,
                   nomask=False,
                   Earth=None,
@@ -176,6 +176,7 @@ def plot_colormap(filename=None,
         :kword fluxdir:     Directory in which fluxfunction files can be found
         :kword fluxthick:   Scale fluxfunction line thickness
         :kword fluxlines:   Relative density of fluxfunction contours
+        :kword fluxlinecolor: Set flux line color (default black)
         :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
         :kword nomask:      Do not mask plotting based on proton density
 
@@ -220,7 +221,6 @@ def plot_colormap(filename=None,
                 MA = custombulkspeed/va
                 return MA
             plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=True)
-
     '''
 
     # Switch None-keywords to empty lists (this way subsequent calls get correct empty default values
@@ -801,11 +801,17 @@ def plot_colormap(filename=None,
     if vmin is not None:
         vminuse=vmin
     else: 
-        vminuse=np.ma.amin(datamap)
+        # Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        testarr = np.ma.masked_where((~np.isfinite(datamap)) | np.ma.getmaskarray(datamap), datamap, copy=True)
+        vminuse=np.ma.amin(testarr)
     if vmax is not None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.ma.amax(datamap)
+        # Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        testarr = np.ma.masked_where((~np.isfinite(datamap)) | np.ma.getmaskarray(datamap), datamap, copy=True)
+        vmaxuse=np.ma.amax(testarr)
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
@@ -823,7 +829,9 @@ def plot_colormap(filename=None,
     # Ensure that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
-        vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
+        # Also Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        vminuse = np.ma.amin(np.ma.masked_where((datamap<=0)|(~np.isfinite(datamap)),datamap, copy=True))
 
     # Special case of very small vminuse values
     if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
@@ -1017,7 +1025,7 @@ def plot_colormap(filename=None,
             flux_levels = np.linspace(-10,10,fluxlines*60)
         else:
             pass #This was given, do nothing
-        fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors='k',linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
+        fluxcont = ax1.contour(XmeshCentres,YmeshCentres,flux_function,flux_levels,colors=fluxlinecolor,linestyles='solid',linewidths=0.5*fluxthick,zorder=2)
 
     # add fSaved identifiers
     if fsaved:

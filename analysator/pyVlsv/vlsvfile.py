@@ -40,8 +40,8 @@ from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
 try:
    from vlsvvtkinterface import VlsvVtkReader
-except ModuleNotFoundError:
-   logging.info("VlsvVtkReader not imported. To access it, you need vtk>=9.2.0")
+except Exception as e:
+   logging.info("VlsvVtkReader not imported due to "+str(e))
 
 
 from vlsvparticles import VlsvParticles

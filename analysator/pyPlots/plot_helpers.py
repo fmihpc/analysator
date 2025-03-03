@@ -550,6 +550,66 @@ def expr_J(pass_maps, requestvariables=False):
     Jmap = vec_currentdensity(Bmap)
     return np.swapaxes(Jmap, 0,1)
 
+def expr_Jx(pass_maps,requestvariables=False):
+
+    # Allows plotting the x component of the current density
+    # calculated from the curl of B in a 2D simulation
+
+    if requestvariables == True:
+        if 'B' in pass_maps:
+            return ['B']
+        else:
+            return ['vg_b_vol']
+
+    if 'B' in pass_maps:
+        Bmap = TransposeVectorArray(pass_maps['B'])
+    else:
+        Bmap = TransposeVectorArray(pass_maps['vg_b_vol'])
+    Jmap = vec_currentdensity(Bmap)
+
+    return Jmap[:,:,0].T
+
+def expr_Jy(pass_maps,requestvariables=False):
+
+    # Allows plotting the y component of the current density
+    # calculated from the curl of B in a 2D simulation
+
+    if requestvariables == True:
+        if 'B' in pass_maps:
+            return ['B']
+        else:
+            return ['vg_b_vol']
+
+    if 'B' in pass_maps:
+        Bmap = TransposeVectorArray(pass_maps['B'])
+    else:
+        Bmap = TransposeVectorArray(pass_maps['vg_b_vol'])
+
+    Jmap = vec_currentdensity(Bmap)
+
+    return Jmap[:,:,1].T
+
+def expr_Jz(pass_maps,requestvariables=False):
+
+    # Allows plotting the z component of the current density
+    # calculated from the curl of B in a 2D simulation
+
+    if requestvariables == True:
+        if 'B' in pass_maps:
+            return ['B']
+        else:
+            return ['vg_b_vol']
+
+    if 'B' in pass_maps:
+        Bmap = TransposeVectorArray(pass_maps['B'])
+    else:
+        Bmap = TransposeVectorArray(pass_maps['vg_b_vol'])
+
+    Jmap = vec_currentdensity(Bmap)
+
+    return Jmap[:,:,2].T
+
+
 def expr_JperBperp(pass_maps, requestvariables=False):
     if requestvariables==True:
         return ['B']
