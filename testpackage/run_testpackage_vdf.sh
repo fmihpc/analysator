@@ -13,7 +13,7 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 source /wrk-vakka/group/spacephysics/proj/analysator_testpackage/pyvenv.sh
 
 export PTNONINTERACTIVE=1
-export PTOUTPUTDIR=/wrk-vakka/users/mjalho/analysator_testpackage/
+export PTOUTPUTDIR=$PWD/
 
 python testpackage_vdf.py $jobcount $index
 echo Job $SLURM_ARRAY_TASK_ID complete.
