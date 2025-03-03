@@ -32,6 +32,10 @@ isosurface = [
 vtk = [
     "vtk==9.2.6",
 ]
+all = [
+    "analysator[isosurface]",
+    "analysator[vtk]",
+]
 
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
