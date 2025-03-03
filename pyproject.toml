@@ -26,15 +26,20 @@ dependencies = [
     "matplotlib",
 ]
 [project.optional-dependencies]
+none = [
+]
 isosurface = [
     "scikit-image",
 ]
 vtk = [
-    "vtk==9.2.6",
+    "vtk>=9.2",
 ]
 all = [
     "analysator[isosurface]",
     "analysator[vtk]",
+]
+bvtk = [
+    "vtk==9.2.6",
 ]
 
 [project.urls]
