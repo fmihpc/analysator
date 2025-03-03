@@ -14,7 +14,7 @@ hostname
 source /wrk-vakka/group/spacephysics/proj/analysator_testpackage/pyvenv.sh
 
 export PTNONINTERACTIVE=1
-export PTOUTPUTDIR=/wrk-vakka/users/mjalho/analysator_testpackage_2/
+export PTOUTPUTDIR=$PWD/
 
 python testpackage_colormap.py $jobcount $index
 echo Job $SLURM_ARRAY_TASK_ID complete.
