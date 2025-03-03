@@ -801,11 +801,17 @@ def plot_colormap(filename=None,
     if vmin is not None:
         vminuse=vmin
     else: 
-        vminuse=np.ma.amin(datamap)
+        # Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        testarr = np.ma.masked_where((~np.isfinite(datamap)) | np.ma.getmaskarray(datamap), datamap, copy=True)
+        vminuse=np.ma.amin(testarr)
     if vmax is not None:
         vmaxuse=vmax
     else:
-        vmaxuse=np.ma.amax(datamap)
+        # Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        testarr = np.ma.masked_where((~np.isfinite(datamap)) | np.ma.getmaskarray(datamap), datamap, copy=True)
+        vmaxuse=np.ma.amax(testarr)
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
@@ -823,7 +829,9 @@ def plot_colormap(filename=None,
     # Ensure that lower bound is valid for logarithmic plots
     if (vminuse <= 0) and (lin is None) and (symlog is None):
         # Drop negative and zero values
-        vminuse = np.ma.amin(np.ma.masked_less_equal(datamap,0))
+        # Also Mask non-finite values from consideration - do not touch the mask to allow potential nan/inf values 
+        # to be plotted with over/under/bad colors
+        vminuse = np.ma.amin(np.ma.masked_where((datamap<=0)|(~np.isfinite(datamap)),datamap, copy=True))
 
     # Special case of very small vminuse values
     if ((vmin is None) or (vmax is None)) and (vminuse > 0) and (vminuse < vmaxuse*1.e-5):
