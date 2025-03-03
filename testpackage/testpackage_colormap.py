@@ -776,7 +776,8 @@ v5multipopcalls = [
 
 # For handier debugging, uncomment these to overwrite call lists and include only relevant calls
 # regularcalls = []
-# nonrestartcalls = ["pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PParallelBackstream')"]
+# nonrestartcalls = ["pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)","pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
+# ]
 # multipopcalls = []
 # v5regularcalls = []
 # v5nonrestartcalls = []

@@ -10,11 +10,7 @@
 jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
-#module load mayavi2
-# module purge
-# module load python-env/3.5.3
-
-source ~/pyvenv
+source /wrk-vakka/group/spacephysics/proj/analysator_testpackage/pyvenv.sh
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=/wrk-vakka/users/mjalho/analysator_testpackage/
