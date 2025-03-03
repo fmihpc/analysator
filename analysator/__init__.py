@@ -2,7 +2,7 @@
 import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
+logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 
 # Input current folder's path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +22,9 @@ os.environ['MPLCONFIGDIR']=mpldir
 
 # Check if user is on taito.csc.fi without loading the mayavi2 module
 import numpy as np
+logging.getLogger('matplotlib').setLevel(os.environ.get('ANALYSATOR_MPL_LOG_LEVEL', 'WARNING').upper())
 import matplotlib
+
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
    logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
    logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')

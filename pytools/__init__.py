@@ -22,22 +22,24 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-from os import path as __path
+import os
 import warnings
 import sys
 import logging
 import traceback
 
-print("`import pytools` called - please use `import analysator` instead!\n Below, the stack to trace where this came from:\n")
-traceback.print_stack()
-
-warnings.warn("Please update your import command to `import analysator`. `analysator.py` has been renamed as `analysator.py` for consistency and eventual package publication.\n\n`import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools.py` until some time in the future (v.1 release/package publication?).\n")
+logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
+if logging.root.level <= logging.DEBUG:
+   print("`import pytools` called from the script below - `import analysator` works as well!")
+   traceback.print_stack()
+else:
+   logging.info("You can now also use `import analysator` instead of `import pytools`! Analysator has been renamed to... analysator(!) for consistency.\n\n`import pytools` and `import pytools as pt` will work via the dirty hack here in `pytools/__init__.py` until some time in the future (v.1 release?).\n Use `export ANALYSATOR_LOG_LEVEL=DEBUG` to find out where `import pytools` was called.")
 
 # Slurp and exec the analysator package here to get all functionalities under the pytools module if needed
 if 'analysator' not in sys.modules.keys():
-   logging.info("Importing analysator.py to pytools")
-   root = __path.dirname(__file__)
-   sys.path.append(__path.join(root,"src/"))
+   logging.info("Importing analysator to pytools")
+   root = os.path.dirname(__file__)
+   sys.path.append(os.path.join(root,"src/"))
    from analysator import *
 else:
    logging.info("Analysator imported already. Pointing pytools to analysator.")
