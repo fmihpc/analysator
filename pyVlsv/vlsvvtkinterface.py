@@ -27,17 +27,16 @@ import cProfile
 import os.path
 import pickle
 
-import vtk.numpy_interface
-import vtk.numpy_interface.dataset_adapter
-import vtk.vtkCommonColor
-import vtkmodules.vtkCommonColor
-import vtkmodules.vtkCommonColor
-import vtkmodules.vtkCommonColor
 import pytools as pt
 try:
    import vtk
+   import vtk.numpy_interface
+   import vtk.numpy_interface.dataset_adapter
+   import vtk.vtkCommonColor
+   import vtkmodules.vtkCommonColor
+   from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 except Exception as e:
-   logging.error("VTK import did not succeed")
+   logging.error("VTK import (VTK >= 9.2.0 required) did not succeed due to "+str(e))
    raise(e)
 import time
 # from numba import jit
@@ -595,7 +594,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       # the file/a buffer, we do not need to do fancy recursive
       # traversal downsampling.
    
-from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 
 
 def createModifiedCallback(anobject):

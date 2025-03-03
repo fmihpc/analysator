@@ -6,25 +6,25 @@ import traceback
 runs = []
 runs.append( { 'name': 'ABC',
                  'verifydir': 'testpackage_vdf/ABC/', 
-                 'fileLocation': '/proj/vlasov/2D/ABC/distributions/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/ABC/distributions/',
                  'pops': ['avgs'],
                  'time': 100,
                  'filename': None} )
 runs.append( { 'name': 'BCQ',
                  'verifydir': 'testpackage_vdf/BCQ/', 
-                 'fileLocation': '/proj/vlasov/2D/BCQ/bulk/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BCQ/bulk/',
                  'pops': ['avgs'],
                  'time': 1600,
                  'filename': None } )
 runs.append( { 'name': 'BED', 
                  'verifydir': 'testpackage_vdf/BED/', 
-                 'fileLocation': '/proj/vlasov/2D/BED/bulk/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BED/bulk/',
                  'pops': ['avgs'],
                  'time': 2000,
                  'filename': None } )
 runs.append( { 'name': 'BFD',
                  'verifydir': 'testpackage_vdf/BFD/', 
-                 'fileLocation': '/proj/vlasov/2D/BFD/bulk/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BFD/bulk/',
                  'pops': ['proton','helium'],
                  'time': 1000,
                  'filename': None } )
@@ -36,7 +36,7 @@ runs.append( { 'name': 'BCQr',
                  'filename': 'restart.0001361.vlsv' } )
 runs.append( { 'name': 'BFDr',
                  'verifydir': 'testpackage_vdf/BFDr/', 
-                 'fileLocation': '/proj/vlasov/2D/BFD/restart/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BFD/restart/',
                  'pops': ['avgs'],
                  'time': 0,
                  'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv' } )
