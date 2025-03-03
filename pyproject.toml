@@ -29,6 +29,9 @@ dependencies = [
 isosurface = [
     "scikit-image",
 ]
+vtk = [
+    "vtk==9.2.6",
+]
 
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
