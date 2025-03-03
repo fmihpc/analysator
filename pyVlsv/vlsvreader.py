@@ -317,8 +317,13 @@ class VlsvReader(object):
       :param popname: String, name of population to initialze
       :returns MeshInfo object containing velocity mesh info for the population
       '''
+
+      if popname in self.__meshes.keys():
+         return self.__meshes[popname]
+
       bbox = self.read(tag="MESH_BBOX", mesh=popname)
       pop = self.MeshInfo()
+      
       if bbox is None:
          if self.read_parameter("vxblocks_ini") is not None:
             #read in older vlsv files where the mesh is defined with
