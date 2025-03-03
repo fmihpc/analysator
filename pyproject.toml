@@ -39,7 +39,6 @@ all = [
     "analysator[vtk]",
 ]
 bvtk = [
-    "python_version<3.12"
     "vtk==9.2.6",
 ]
 
