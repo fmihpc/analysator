@@ -29,7 +29,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest
         python -m pip install --editable ../analysator[all]
     - name: Trial imports
       run: python -c 'import analysator as pt'
@@ -57,14 +56,13 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest
         python -m pip install --editable ../analysator[${{ matrix.extras }}]
     - name: Trial imports
       run: python -c 'import analysator as pt'
 
-  ubuntu_20_04_versions:
+  legacy_versions:
 
-        runs-on: ubuntu-20.04
+        runs-on: carrington
         strategy:
           fail-fast: false
           matrix:
@@ -85,7 +83,6 @@ jobs:
         - name: Install dependencies
           run: |
             python -m pip install --upgrade pip
-            python -m pip install pytest
             python -m pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
           run: python -c 'import analysator as pt'
