@@ -98,8 +98,8 @@ cb_linear = False
 logging.info("Using matplotlib version "+matplotlib.__version__)
 
 def get_cmap(colormap):
-    if Version(matplotlib.__version__) < Version("3.6"):
-        return  matplotlib.cm.get_cmap(name=colormap)
+    if Version(matplotlib.__version__) <= Version("3.6"):
+        return matplotlib.cm.get_cmap(name=colormap)
     else:
         return matplotlib.colormaps.get_cmap(colormap)
 

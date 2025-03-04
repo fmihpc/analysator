@@ -198,7 +198,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
     if colormap is None:
         colormap="seismic"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+        
+    cmapuse = pt.plot.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
