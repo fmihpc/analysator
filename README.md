@@ -8,12 +8,21 @@ git clone https://github.com/fmihpc/analysator.git
 and install via `pip` from the cloned path. Dependency handling is via pip. Using the editable flag is recommended for getting updates via `git pull origin`:
 
 ```bash
-pip install -e ./analysator
+pip install --editable ./analysator
 ```
+
+For installing the correct VTK depencies, especially BVTKnodes support, use either of
+```bash
+pip install --editable ./analysator[vtk]
+```
+```bash
+pip install --editable ./analysator[bvtk]
+```
+respectively.
 
 ## Backward compatibility
 
-The packaged analysator is (should be!) backwards-compatible with previous analysator versions: `import pytools` will import analysator onto the pytools name, and emits a deprecation warning. `$PYTHONPATH` installation is also supported.
+The packaged analysator is (should be!) backwards-compatible with previous analysator versions: `import pytools` will import analysator onto the pytools name, and emits a deprecation warning. `export PYTHONPATH=[path-to-analysator-repo]` installation as before is also supported. If `--editable` flag is not available, regular `pip install` should work, but in that case using `export PYTHONPATH=[path-to-analysator]` is recommended if you wish to contribute to Analysator (and who wouldn't!).
 
 # Using Analysator:
 ```python
