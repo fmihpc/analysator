@@ -52,7 +52,7 @@ from plot_ionosphere import plot_ionosphere
 try:
     from plot_isosurface import plot_isosurface, plot_neutral_sheet
 except:
-    logging.info("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
+    logging.warning("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
 
 from packaging.version import Version
 

@@ -41,7 +41,7 @@ from vlasiatorreader import VlasiatorReader
 try:
    from vlsvvtkinterface import VlsvVtkReader
 except Exception as e:
-   logging.info("VlsvVtkReader not imported due to "+str(e))
+   logging.warning("VlsvVtkReader not imported due to "+str(e))
 
 
 from vlsvparticles import VlsvParticles

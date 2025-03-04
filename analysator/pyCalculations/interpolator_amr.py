@@ -12,6 +12,7 @@ try:
    from scipy.interpolate import RBFInterpolator
 except Exception as e:
    importerror = e
+   logging.warning("Could not import scipy.interpolate.RBFInterpolator. Requires scipy>=1.7 and Python>=3.7.")
    class RBFInterpolator(object):
       def __init__(self, pts, vals, **kwargs):
          raise importerror #Exception("Module load error")

@@ -14,7 +14,7 @@ maintainters = [
 ]
 description = "Tools for reading and analysing Vlasiator .vlsv output files."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.6"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
@@ -24,6 +24,7 @@ dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
+    "packaging",
 ]
 [project.optional-dependencies]
 none = [
