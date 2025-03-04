@@ -60,26 +60,20 @@ jobs:
     - name: Trial imports
       run: python -c 'import analysator as pt'
 
-  legacy_versions:
+  turso_system:
 
         runs-on: carrington
         strategy:
           fail-fast: false
           matrix:
-            python-version: ["3.6"]
             extras: ["none", "vtk", "all", "bvtk"]
-            exclude:
-              - extras: bvtk
-                python-version: "3.12"
-              - extras: bvtk
-                python-version: "3.13"
     
         steps:
         - uses: actions/checkout@v4
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v3
-          with:
-            python-version: ${{ matrix.python-version }}
+        - name: Set up Python 
+          run: |
+            python -m venv test_venv
+            source ./test_venv/bin/activate
         - name: Install dependencies
           run: |
             python -m pip install --upgrade pip
