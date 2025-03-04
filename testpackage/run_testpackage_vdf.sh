@@ -2,6 +2,7 @@
 #SBATCH -t 00:20:00
 #SBATCH -J analysator_testpackage_vdf
 #SBATCH -p short
+#SBATCH -M carrington
 #SBATCH -n 1
 #SBATCH --array=1
 #SBATCH --no-requeue
