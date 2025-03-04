@@ -29,7 +29,6 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest
         python -m pip install --editable ../analysator[all]
     - name: Trial imports
       run: python -c 'import analysator as pt'
@@ -57,38 +56,32 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install pytest
         python -m pip install --editable ../analysator[${{ matrix.extras }}]
     - name: Trial imports
       run: python -c 'import analysator as pt'
 
-  ubuntu_20_04_versions:
+  turso_system:
 
-        runs-on: ubuntu-20.04
+        runs-on: carrington
         strategy:
           fail-fast: false
           matrix:
-            python-version: ["3.6"]
             extras: ["none", "vtk", "all", "bvtk"]
-            exclude:
-              - extras: bvtk
-                python-version: "3.12"
-              - extras: bvtk
-                python-version: "3.13"
     
         steps:
         - uses: actions/checkout@v4
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v3
-          with:
-            python-version: ${{ matrix.python-version }}
+        - name: Set up Python 
+          run: |
+            python3 -m venv test_venv
         - name: Install dependencies
           run: |
+            source ./test_venv/bin/activate
             python -m pip install --upgrade pip
-            python -m pip install pytest
             python -m pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
-          run: python -c 'import analysator as pt'
+          run: |
+            source ./test_venv/bin/activate
+            python -c 'import analysator as pt'
     
 
   lint:
