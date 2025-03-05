@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -38,5 +38,12 @@ from vlsvreader import VlsvReader
 from vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
 from vlsvwriter import VlsvWriter
 from vlasiatorreader import VlasiatorReader
+try:
+   from vlsvvtkinterface import VlsvVtkReader
+except Exception as e:
+   logging.info("VlsvVtkReader not imported due to "+str(e))
+
 
 from vlsvparticles import VlsvParticles
+import reduction
+import reduction_sidecar

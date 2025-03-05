@@ -34,7 +34,9 @@ def vlsv_intpol_points(vlsvReader,points,varlist,operator="pass",interpolation_o
        :param operator:              The operator for the variable, for example "x" for x-component or "magnitude" for magnitude
        :param interpolation_order:   Order of interpolation (0 or 1), defaults to 1
        :returns: A tuple with output: (coordinates,variable_values,header_string)
+
        .. code-block:: python
+       
           # Example:
           import pytools as pt
           import numpy as np

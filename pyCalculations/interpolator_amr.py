@@ -218,6 +218,7 @@ supported_amr_interpolators = {'linear','rbf','delaunay'}
 class AMRInterpolator(object):
    ''' Wrapper class for interpolators, esp. at refinement interfaces.
    Supported methods:
+
    linear
       - (nearly) C0 continuous, regular-grid trilinear interpolant extended to collapsed hexahedral cells.
       - Non-parametric

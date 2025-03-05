@@ -45,7 +45,7 @@ speciescharge ={
     'oxygen': 1,
     'electron': -1,
 }
-speciesprecipitationenergybins ={ # values updated when opening the vlsvreader object
+speciesprecipitationenergybins ={ # values updated when the vlsvreader object initializes the population
     'avgs': -1,
     'proton': -1,
     'helium': -1,
