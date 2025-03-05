@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path('..', '..').resolve()))
 sys.path.insert(0, str(Path('..', '..', 'scripts').resolve()))
-print(str(Path('..','..').resolve()))
+print(str(Path('..','..','analysator').resolve()))
 print(str(Path('..','..', 'scripts').resolve()))
 project = 'analysator'
 copyright = '2024, University of Helsinki'
@@ -32,7 +32,7 @@ except:
     pass
 
 
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'pytools']
 
 
 
