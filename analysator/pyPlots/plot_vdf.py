@@ -816,10 +816,20 @@ def plot_vdf(filename=None,
         elif vlsvReader.check_variable(pop+'/vg_v'):
             # multipop V5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
-        else:
+        elif vlsvReader.check_variable('V'):
             # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
-            # Vbulk = vlsvReader.read_variable('V',cellid)
-            Vbulk = [0,0,-1]
+            Vbulk = vlsvReader.read_variable('V',cellid)
+        elif vlsvReader.check_variable('vg_v'):
+            # regular bulk file, v5 analysator supports pre- and post-multipop files with "vg_v"
+            Vbulk = vlsvReader.read_variable('vg_v',cellid)
+        else:
+            # fallback: get bulkV from the VDF itself
+            velcells = vlsvReader.read_velocity_cells(cellid, pop=pop)
+            velcellslist = list(zip(*velcells.items()))
+            f = np.asarray(velcellslist[1])
+            V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
+            Vbulk = np.average(V, axis=0, weights=f)
+
         if Vbulk is None:
             logging.info("Error in finding plasma bulk velocity!")
             sys.exit()
