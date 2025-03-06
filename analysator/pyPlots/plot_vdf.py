@@ -807,6 +807,12 @@ def plot_vdf(filename=None,
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
+        elif vlsvReader.check_variable('V'):
+            # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
+            Vbulk = vlsvReader.read_variable('V',cellid)
+        elif vlsvReader.check_variable('vg_v'):
+            # regular bulk file, v5 analysator supports pre- and post-multipop files with "vg_v"
+            Vbulk = vlsvReader.read_variable('vg_v',cellid)
         elif vlsvReader.check_variable(pop+'/vg_v'):
             # multipop v5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
@@ -816,12 +822,6 @@ def plot_vdf(filename=None,
         elif vlsvReader.check_variable(pop+'/vg_v'):
             # multipop V5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
-        elif vlsvReader.check_variable('V'):
-            # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
-            Vbulk = vlsvReader.read_variable('V',cellid)
-        elif vlsvReader.check_variable('vg_v'):
-            # regular bulk file, v5 analysator supports pre- and post-multipop files with "vg_v"
-            Vbulk = vlsvReader.read_variable('vg_v',cellid)
         else:
             # fallback: get bulkV from the VDF itself
             velcells = vlsvReader.read_velocity_cells(cellid, pop=pop)
