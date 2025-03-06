@@ -25,7 +25,6 @@
 '''
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
 from reducer import DataReducerVariable
 from rotation import rotateTensorToVector, rotateArrayTensorToVector
 from gyrophaseangle import gyrophase_angles
@@ -697,12 +696,13 @@ def Bz_linedipole_diff( variables ):
 
 def gyrophase_relstddev( variables, velocity_cell_data, velocity_coordinates ):
    # This reducer needs to be verified
+   logging.warning("gyrophase_relstddev reducer called - please verify before use!")
    bulk_velocity = variables[0]
    B = variables[1]
    B_unit = B / np.linalg.norm(B)
    
    gyrophase_data = gyrophase_angles(bulk_velocity, B_unit, velocity_cell_data, velocity_coordinates)
-   histo = plt.hist(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], log=False, normed=1)
+   histo = np.histogram(gyrophase_data[0].data, weights=gyrophase_data[1].data, bins=36, range=[-180.0,180.0], density=True)
    return np.std(histo[0])/np.mean(histo[0])
 
 def Dng( variables ):
