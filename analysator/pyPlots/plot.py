@@ -48,13 +48,16 @@ from plot_vdf_profiles import plot_vdf_profiles
 from plot_colormap3dslice import plot_colormap3dslice
 from plot_threeslice import plot_threeslice
 from plot_ionosphere import plot_ionosphere
+import platform
+from packaging.version import Version
 
 try:
     from plot_isosurface import plot_isosurface, plot_neutral_sheet
+    if Version(platform.python_version()) < Version("3.7"):
+       raise ImportError("Python>=3.7 required for RBFInterpolator.")
 except:
-    logging.info("plot_isosurface not imported. To access it, use Python version >3.8 and install scikit-image.")
+    logging.warning("plot_isosurface not imported. To access it, use Python version >=3.7 and install scikit-image.")
 
-from packaging.version import Version
 
 import numpy as np, os
 
@@ -93,6 +96,13 @@ cb_linear = False
 
 # Output matplotlib version
 logging.info("Using matplotlib version "+matplotlib.__version__)
+
+def get_cmap(colormap):
+    if Version(matplotlib.__version__) <= Version("3.6"):
+        return matplotlib.cm.get_cmap(name=colormap)
+    else:
+        return matplotlib.colormaps.get_cmap(colormap)
+
 
 # Default output directory for plots
 defaultoutputdir=os.path.expandvars('$HOME/Plots/')

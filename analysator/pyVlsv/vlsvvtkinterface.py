@@ -36,7 +36,7 @@ try:
    import vtkmodules.vtkCommonColor
    from vtk.util.vtkAlgorithm import VTKPythonAlgorithmBase
 except Exception as e:
-   logging.error("VTK import (VTK >= 9.2.0 required) did not succeed due to "+str(e))
+   logging.warning("VTK import (VTK >= 9.2.0 required) did not succeed due to "+str(e))
    raise(e)
 import time
 # from numba import jit
