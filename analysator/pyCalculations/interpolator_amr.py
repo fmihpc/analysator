@@ -122,7 +122,7 @@ def find_ksi(p, v_coords, tol= .1, maxiters = 200):
       
       J[~resolved,:,:] = df(ksi_n[~resolved,:], v_coords[~resolved,:,:])
       f_n[~resolved,:] = f(ksi_n[~resolved,:],v_coords[~resolved,:,:])-p[~resolved,:]
-      step = np.linalg.solve(J[~resolved,:,:], -f_n[~resolved,:])
+      step = np.linalg.solve(J[~resolved,:,:], -f_n[~resolved,:,np.newaxis]).reshape(f_n[~resolved,:].shape)
       ksi_n1[~resolved,:] = step + ksi_n[~resolved,:] # r_(n+1) 
       ksi_n[~resolved,:] = ksi_n1[~resolved,:]
       
