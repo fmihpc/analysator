@@ -30,6 +30,7 @@ import os
 import sys
 import re
 import numbers
+import pickle # for caching linked readers, swtich to VLSV/XML at some point
 
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
@@ -185,6 +186,18 @@ class VlsvReader(object):
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 
+      self.__linked_files = set()
+      self.__linked_readers = set()
+      
+      if(os.path.isfile(self.get_linked_readers_filename())):
+         with open(self.get_linked_readers_filename(), 'rb') as f:
+            l = pickle.load(f)
+            logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+            self.__linked_files.update(l)
+         for f in self.__linked_files:
+            self.add_linked_file(f)
+            pass
+
       self.__max_spatial_amr_level = -1
       self.__fsGridDecomposition = fsGridDecomposition
 
@@ -298,6 +311,29 @@ class VlsvReader(object):
 
 
       self.__fptr.close()
+
+   def get_linked_readers_filename(self):
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_linked_readers.pkl")
+      return s
+      
+   def add_linked_file(self, fname):
+      if os.path.exists(fname):
+         self.__linked_files.add(fname)
+         self.__linked_readers.add(VlsvReader(fname))
+      else:
+         logging.warning("Could not link "+fname+" (path does not exist)")
+
+   def save_linked_readers_file(self):
+      fn = self.get_linked_readers_filename()
+      logging.info("Saving linked readers to "+fn)
+      dn = os.path.dirname(fn)
+      if not os.path.isdir(dn):
+            os.mkdir(dn)
+      with open(fn,'wb') as f:
+         pickle.dump(self.__linked_files, f)
+
 
    def __popmesh(self, popname):
       ''' Get the population-specific vspace mesh info object, and initialize it if it does not exist
@@ -657,18 +693,24 @@ class VlsvReader(object):
 
    def get_variables(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(set(reader.get_variables()))
 
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             name = child.attrib["name"]
-            varlist.append(name)
+            varlist.add(name)
 
-      return varlist
+      return list(varlist)
    
    def get_reducers(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(reader.get_reducers())
 
       reducer_max_len = 0
       
@@ -684,11 +726,11 @@ class VlsvReader(object):
             if self.__check_datareducer(name,reducer):
                if name[:3] == 'pop':
                   for pop in self.active_populations:
-                     varlist.append(pop+'/'+name[4:])
+                     varlist.add(pop+'/'+name[4:])
                else:
-                  varlist.append(name)
+                  varlist.add(name)
 
-      return varlist
+      return list(varlist)
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -773,6 +815,27 @@ class VlsvReader(object):
                return True
       return False
 
+   def linked_readers_check_variable(self, name):
+      ''' Test all linked variables if any of them returns True on test function
+      
+      :param fun: Function to pass to linked readers (VlsvReader member function/first param VlsvReader)
+      :param args: arguments to pass to fun
+      :param kwargs: keyword arguments to pass to fun
+      '''
+
+      ret = False
+      for reader in self.__linked_readers:
+         try:
+            ret = reader.check_variable(name)
+         except Exception as e: # Let's not care if a sidecar file does not contain something
+            pass
+         if ret:
+            return ret
+         else:
+            continue
+
+      return False
+
    def check_variable( self, name ):
       ''' Checks if a given variable is in the vlsv reader
 
@@ -792,6 +855,9 @@ class VlsvReader(object):
                 # Variable not in the vlsv file
                 plot_B_vol()
       '''
+      if self.linked_readers_check_variable(name):
+         return True
+
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             if child.attrib["name"].lower() == name.lower():
@@ -1280,7 +1346,7 @@ class VlsvReader(object):
 
       fptr.close()
       if name!="":
-         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
+         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name) 
 
 
 
@@ -1984,6 +2050,14 @@ class VlsvReader(object):
       
       if((name,operator) in self.variable_cache.keys()):
          return self.read_variable_from_cache(name,cellids,operator)
+
+      for reader in self.__linked_readers:
+         try:
+            res = reader.read_variable(name=name, cellids=cellids, operator=operator)
+            print(self.file_name, 'read_variable', name, res)
+            return res
+         except:
+            pass
 
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
@@ -3256,7 +3330,6 @@ class VlsvReader(object):
       if name=="t":
          if self.check_parameter(name="time"):
             return self.read(name="time", tag="PARAMETER")
-
       return self.read(name=name, tag="PARAMETER")
 
 
