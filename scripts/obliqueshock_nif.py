@@ -1,0 +1,103 @@
+import numpy as np
+import math
+import scipy.optimize
+import logging
+
+# Script for calculating shock crossing values from Rankine-Hugoniot relations
+# Feed it upstream and shock values in NIF frame, outputs downstream state
+# intput example:
+# obliqueshock.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
+# where T_upstream = 500 kK
+#       n_upstream = 1/cc
+#       inflow plasma speed is 750 km/s in -X
+#       upstream magnetic field is 5 nT at 45 degree angle
+#       Shock front points in +X direction and is stationary in input frame
+
+mu0 = 4*math.pi*1.e-7
+mp = 1.67e-27
+c = 299792458
+k = 1.3806506e-23
+Gamma = 5.0/3.0
+
+def polynome(X, theta, beta1, MA1):
+    return (np.cos(theta)**2)*(2*(MA1**2) + 5*beta1*(np.cos(theta)**2))*(X**3) + (MA1**2)*(MA1**2 - (np.cos(theta)**2)*(5*(MA1**2) + 8 + 10*beta1))*(X**2) + (MA1**4)*(11*(np.cos(theta)**2) + 2*(MA1**2) + 5 + 5*beta1)*X - 8*(MA1**6)
+
+def rankine(Tu, rhou, V, B):
+    # V, B, n are vectors
+    V = np.array(V)
+    B = np.array(B)
+
+    # normal and tangential vectors
+    n = np.array([1, 0, 0])
+    nPlane = np.cross(V, B)/np.linalg.norm(np.cross(V, B)); # normal to the plane containing B and V
+    t = np.cross(n, nPlane)/np.linalg.norm(np.cross(n, nPlane));
+
+    # upstream parameters
+    Vu = V
+    Bu = B
+    pu = rhou * k * Tu
+
+    Vnu = np.dot(Vu, n)
+    Vtu = np.dot(Vu, t)
+
+    Bnu = np.dot(Bu, n)
+    Btu = np.dot(Bu, t)
+
+    # compute relevant variables: Upstream beta, vA, MA and shock angle (theta)
+    theta = np.arccos(np.dot(Bu,n)/np.linalg.norm(Bu))
+    logging.info("Theta [degree]: " + str(np.rad2deg(theta)))
+
+    betau = 2.0*mu0*pu / np.dot(Bu,Bu)
+    vAu = np.sqrt(np.dot(Bu,Bu) / (mu0*mp*rhou))
+    MAu = np.linalg.norm(Vu) / vAu
+
+    logging.info("vAu [km/s]: " + str(vAu/1e3))
+    logging.info("Shock MA: " + str(np.linalg.norm(Vu)/vAu))
+    logging.info("Upstream plasma beta: " + str(betau))
+    # compression ratio
+    sol = scipy.optimize.root(polynome, 2., args=(theta, betau, MAu))
+    X = sol.x
+
+    # get downstrean parameters
+    Z1 = (MAu**2-np.cos(theta)**2) / (MAu**2-X*np.cos(theta)**2)
+    Z2 = np.sin(theta)*np.cos(theta)*(X-1) / (MAu**2-X*np.cos(theta)**2)
+    Z3 = (betau/MAu**2 + 2*(X-1)/X + np.sin(theta)**2*(1 - (X*Z1)**2 )/MAu**2) / (2*X)
+
+    rhod = rhou * X
+
+    Vnd = (Vnu/X)
+    Vnt = Z2*Vnu
+    Vd = (Vnd * n) + (Vnt * t)
+
+    Bnd = Bnu
+    Btd = X*Z1*Btu
+    Bd = (Bnu * n) + (Btd * t)
+
+    vTHd_sq = Z3*Vu[0]**2;
+    Td = (mp*vTHd_sq/k);
+
+    XB = np.linalg.norm(Bd)/np.linalg.norm(Bu)
+    # print compression ratios and upstream/downstream state
+    logging.info("Gas compression ratio " + str(X[0]))
+    logging.info("Magnetic compression ratio " + str(XB))
+
+    logging.info("")
+    logging.info("This determines the NIF upstream state")
+    logging.info("Density " + str(rhou/1e6))
+    logging.info("Temperature " + str(Tu))
+    logging.info(" V " + str(Vu/1e3))
+    logging.info(" B " + str(Bu*1e9))
+    logging.info(" |V| [km/s] " + str(np.linalg.norm(Vu)/1e3))
+    logging.info(" |B| [nT] " + str(np.linalg.norm(Bu)*1e9))
+
+    logging.info("")
+    logging.info("This determines the NIF downstream state")
+    logging.info("Density " + str(rhod[0]/1e6))
+    logging.info("Temperature " + str(Td[0]))
+    logging.info(" V " + str(Vd/1e3))
+    logging.info(" B " + str(Bd*1e9))
+    logging.info(" |V| [km/s] " + str(np.linalg.norm(Vd)/1e3))
+    logging.info(" |B| [nT] " + str(np.linalg.norm(Bd)*1e9))
+
+    return X[0]
+
