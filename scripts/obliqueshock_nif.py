@@ -6,7 +6,7 @@ import logging
 # Script for calculating shock crossing values from Rankine-Hugoniot relations
 # Feed it upstream and shock values in NIF frame, outputs downstream state
 # intput example:
-# obliqueshock.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
+# obliqueshock_nif.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
 # where T_upstream = 500 kK
 #       n_upstream = 1/cc
 #       inflow plasma speed is 750 km/s in -X
@@ -28,10 +28,12 @@ def rankine(Tu, rhou, V, B):
     B = np.array(B)
 
     # normal and tangential vectors
-    n = np.array([1, 0, 0])
+    n = -V/np.linalg.norm(V)
     nPlane = np.cross(V, B)/np.linalg.norm(np.cross(V, B)); # normal to the plane containing B and V
     t = np.cross(n, nPlane)/np.linalg.norm(np.cross(n, nPlane));
 
+    logging.info("Normal vector n: " + str(n))
+    logging.info("Tangential vector t: " + str(t))
     # upstream parameters
     Vu = V
     Bu = B
@@ -77,27 +79,28 @@ def rankine(Tu, rhou, V, B):
     Td = (mp*vTHd_sq/k);
 
     XB = np.linalg.norm(Bd)/np.linalg.norm(Bu)
+
     # print compression ratios and upstream/downstream state
-    logging.info("Gas compression ratio " + str(X[0]))
-    logging.info("Magnetic compression ratio " + str(XB))
+    logging.info("Gas compression ratio: " + str(X[0]))
+    logging.info("Magnetic compression ratio: " + str(XB))
 
     logging.info("")
     logging.info("This determines the NIF upstream state")
-    logging.info("Density " + str(rhou/1e6))
-    logging.info("Temperature " + str(Tu))
-    logging.info(" V " + str(Vu/1e3))
-    logging.info(" B " + str(Bu*1e9))
-    logging.info(" |V| [km/s] " + str(np.linalg.norm(Vu)/1e3))
-    logging.info(" |B| [nT] " + str(np.linalg.norm(Bu)*1e9))
+    logging.info("Density [1/cm3]: " + str(rhou/1e6))
+    logging.info("Temperature [K]: " + str(Tu))
+    logging.info(" V [km/s]: " + str(Vu/1e3))
+    logging.info(" B [nT]: " + str(Bu*1e9))
+    logging.info(" |V| [km/s]: " + str(np.linalg.norm(Vu)/1e3))
+    logging.info(" |B| [nT]: " + str(np.linalg.norm(Bu)*1e9))
 
     logging.info("")
     logging.info("This determines the NIF downstream state")
-    logging.info("Density " + str(rhod[0]/1e6))
-    logging.info("Temperature " + str(Td[0]))
-    logging.info(" V " + str(Vd/1e3))
-    logging.info(" B " + str(Bd*1e9))
-    logging.info(" |V| [km/s] " + str(np.linalg.norm(Vd)/1e3))
-    logging.info(" |B| [nT] " + str(np.linalg.norm(Bd)*1e9))
+    logging.info("Density [1/cm3]: " + str(rhod[0]/1e6))
+    logging.info("Temperature [K]: " + str(Td[0]))
+    logging.info(" V [km/s]: " + str(Vd/1e3))
+    logging.info(" B [nT]: " + str(Bd*1e9))
+    logging.info(" |V| [km/s]: " + str(np.linalg.norm(Vd)/1e3))
+    logging.info(" |B| [nT]: " + str(np.linalg.norm(Bd)*1e9))
 
-    return X[0]
+    return X[0], XB
 
