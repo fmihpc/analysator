@@ -60,8 +60,19 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)
    cellids = np.atleast_1d(cellids)
-   parameters = ["t","tstep","fileIndex"]
-   parameter_units=["s","",""]
+   reader_0 = vlsvReader_list[0]
+
+   # Check against legacy files with tstep instead of timestep:
+   if reader_0.check_parameter("tstep"):
+      parameters = ["t","tstep","fileIndex"]
+      parameter_units=["s","",""]
+   elif reader_0.check_parameter("timestep"):
+      parameters = ["t","timestep","fileIndex"]
+      parameter_units=["s","",""]
+   else:
+      logging.warning("Could not obtain tstep or timestep from readers. Returning only t and fileIndex.")
+      parameters = ["t","fileIndex"]
+      parameter_units=["s",""]
    #construct empty units, if none are given
    if (units == "") or (len(units) != len(variables)):
       units=[ "" for i in range(len(variables))]
@@ -137,8 +148,18 @@ def point_time_evolution( vlsvReader_list, variables, coordinates, units="", met
    if coordinates.ndim == 1:
       coordinates = coordinates[np.newaxis,:]
    reader_0 = vlsvReader_list[0]
-   parameters = ["t","tstep","fileIndex"]
-   parameter_units=["s","",""]
+
+   # Check against legacy files with tstep instead of timestep:
+   if reader_0.check_parameter("tstep"):
+      parameters = ["t","tstep","fileIndex"]
+      parameter_units=["s","",""]
+   elif reader_0.check_parameter("timestep"):
+      parameters = ["t","timestep","fileIndex"]
+      parameter_units=["s","",""]
+   else:
+      logging.warning("Could not obtain tstep or timestep from readers. Returning only t and fileIndex.")
+      parameters = ["t","fileIndex"]
+      parameter_units=["s",""]
    #construct empty units, if none are given
    if (units == "") or (len(units) != len(variables)):
       units=[ "" for i in range(len(variables))]
