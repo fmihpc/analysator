@@ -114,7 +114,7 @@ def point_time_evolution( vlsvReader_list, variables, coordinates, units="", met
 
           import pytools as pt; import pylab as pl
           # Example of usage:
-          time_data = pt.calculations.cell_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], cellids=[2,4], units=["N", "Pascal", "T"] )
+          time_data = pt.calculations.point_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], coordinates=[[1e8,0,0],[1.2e8,0,0]], units=["N", "Pascal", "T"] )
 
           # Check output
           logging.info time_data
@@ -136,6 +136,7 @@ def point_time_evolution( vlsvReader_list, variables, coordinates, units="", met
    coordinates = np.array(coordinates)
    if coordinates.ndim == 1:
       coordinates = coordinates[np.newaxis,:]
+   reader_0 = vlsvReader_list[0]
    parameters = ["t","tstep","fileIndex"]
    parameter_units=["s","",""]
    #construct empty units, if none are given
