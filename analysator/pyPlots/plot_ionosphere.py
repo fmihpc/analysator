@@ -142,7 +142,12 @@ def plot_ionosphere(filename=None,
     fontsize3=8*scale # Colour bar ticks and title
 
     # Plot title with time
-    timeval=f.read_parameter("time")
+    try:
+        timeval=f.read_parameter("time")
+    except:
+        # The ionosphere solver miniApp writes outputfiles without a valid
+        # time value.
+        timeval=None
 
     # Plot title with time
     if title is None or title=="msec" or title=="musec":        
