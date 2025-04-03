@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "h5py",
 ]
 [project.optional-dependencies]
 none = [
