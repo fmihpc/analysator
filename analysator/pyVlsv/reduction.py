@@ -31,6 +31,7 @@ from gyrophaseangle import gyrophase_angles
 import vlsvvariables
 import sys
 import math
+import analysator as pt
 
 mp = 1.672622e-27
 elementalcharge = 1.6021773e-19
@@ -795,12 +796,50 @@ def vg_reflevel(variables, reader):
    cellids = variables[0]
    return reader.get_amr_level(cellids)
 
+def mlt(variables):
+    # return MLT values for give coordinates
+    coords = np.atleast_2d(variables[0])
+    # print(coords)
+    xx, yy = coords[:,0], coords[:,1]
+    angles = np.arctan2(yy,xx)
+    
+    MLT_values = 12 + angles *(12/np.pi)
+
+    MLT_values = np.where((xx == 0) & (yy > 0), 18, MLT_values)
+    MLT_values = np.where((xx == 0) & (yy < 0), 6, MLT_values)
+
+
+    return MLT_values
+
+
+def open_closed(variables, reader):
+    # open :1, closed: 0
+    position = np.atleast_2d(variables[0])
+    oc_vals = np.zeros((position.shape[0]))
+    Re = 6371000
+    mask = np.linalg.norm(position, axis = 1) > 5.1 * Re
+    oc_vals[~ mask] = 0  # the field lines that inside inner boundary should be closed
+    if np.any(mask):
+        trace_result = pt.calculations.static_field_tracer_3d(reader ,position[mask], 40000, 4e4, direction = '+-')
+        distances = np.linalg.norm(trace_result[:, -1, :], axis=1)
+        oc_vals[mask] = 1-(distances <= 5.1 * Re).astype(int)
+
+    return oc_vals
+
+    
+    
+
+
 def _normalize(vec):
    '''
       (private) helper function, normalizes a multidimensinonal array of vectors
       assume [...., 3] array
    '''
    return vec / np.linalg.norm(vec, axis = -1)[:, np.newaxis]
+
+def ig_coords(variables, reader):
+    return reader.get_ionosphere_node_coords() 
+
 
 def ig_E( variables, reader ):
    ''' calculate in-plane ionospheric electric field from the ionospheric potential 'ig_potential'
@@ -1130,8 +1169,14 @@ v5reducers = {}
 # IONOSPHERE ('ig_')
 v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurrent, "A/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-1}$", useReader=True)
 v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
+v5reducers["ig_node_coordinates"] = DataReducerVariable([],ig_coords,"m",3, latex=r"$\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
+v5reducers["ig_mlt"] =  DataReducerVariable(["ig_node_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
+
+
 
 # MAGNETOSPHERE ('vg_')
+v5reducers["vg_mlt"] =                    DataReducerVariable(["vg_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
+v5reducers["vg_oc"] =                   DataReducerVariable(["vg_coordinates"], open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
 v5reducers["vg_vms"] =                    DataReducerVariable(["vg_pressure", "vg_rhom", "vg_b_vol"], vms, "m/s", 1, latex=r"$v_\mathrm{ms}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_vs"] =                     DataReducerVariable(["vg_pressure", "vg_rhom"], vs, "m/s", 1, latex=r"$v_\mathrm{s}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_va"] =                     DataReducerVariable(["vg_rhom", "vg_b_vol"], va, "m/s", 1, latex=r"$v_\mathrm{A}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
