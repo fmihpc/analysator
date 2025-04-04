@@ -805,10 +805,6 @@ def mlt(variables):
     
     MLT_values = 12 + angles *(12/np.pi)
 
-    MLT_values = np.where((xx == 0) & (yy > 0), 18, MLT_values)
-    MLT_values = np.where((xx == 0) & (yy < 0), 6, MLT_values)
-
-
     return MLT_values
 
 
@@ -837,8 +833,6 @@ def _normalize(vec):
    '''
    return vec / np.linalg.norm(vec, axis = -1)[:, np.newaxis]
 
-def ig_coords(variables, reader):
-    return reader.get_ionosphere_node_coords() 
 
 
 def ig_E( variables, reader ):
@@ -1169,8 +1163,9 @@ v5reducers = {}
 # IONOSPHERE ('ig_')
 v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurrent, "A/m", 1, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-1}$", useReader=True)
 v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
-v5reducers["ig_node_coordinates"] = DataReducerVariable([],ig_coords,"m",3, latex=r"$\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
-v5reducers["ig_mlt"] =  DataReducerVariable(["ig_node_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
+v5reducers["ig_mlt"] =  DataReducerVariable(["ig_upmappednodecoords"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
+
+
 
 
 
