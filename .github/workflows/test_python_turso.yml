@@ -22,20 +22,23 @@ jobs:
           matrix:
             extras: ["none", "vtk", "all", "bvtk"]
         env:
-          TMPDIR: ${{ runner.temp }}
+          TMPDIR: 
         steps:
         - uses: actions/checkout@v4
         - name: Set up Python 
           run: |
+            export TMPDIR=$RUNNER_TEMP
             python3 -m venv test_venv
         - name: Install dependencies
           run: |
+            export TMPDIR=$RUNNER_TEMP
             source ./test_venv/bin/activate
             python -m ensurepip
             python -m pip install --upgrade pip
             python -m pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
           run: |
+            export TMPDIR=$RUNNER_TEMP
             source ./test_venv/bin/activate
             python -c 'import analysator as pt'
     
