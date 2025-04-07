@@ -5,9 +5,9 @@ name: Python import test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, dev ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, dev ]
   schedule:
     - cron: '0 8 * * MON'
   workflow_dispatch:
@@ -59,31 +59,6 @@ jobs:
         python -m pip install --editable ../analysator[${{ matrix.extras }}]
     - name: Trial imports
       run: python -c 'import analysator as pt'
-
-  turso_system:
-
-        runs-on: carrington
-        strategy:
-          fail-fast: false
-          matrix:
-            extras: ["none", "vtk", "all", "bvtk"]
-    
-        steps:
-        - uses: actions/checkout@v4
-        - name: Set up Python 
-          run: |
-            python3 -m venv test_venv
-        - name: Install dependencies
-          run: |
-            source ./test_venv/bin/activate
-            python -m ensurepip
-            python -m pip install --upgrade pip
-            python -m pip install --editable ../analysator[${{ matrix.extras }}]
-        - name: Trial imports
-          run: |
-            source ./test_venv/bin/activate
-            python -c 'import analysator as pt'
-    
 
   lint:
 
