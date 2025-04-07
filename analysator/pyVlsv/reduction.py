@@ -1188,6 +1188,8 @@ v5reducers["ig_oc"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_cl
 
 
 
+
+
 # MAGNETOSPHERE ('vg_')
 v5reducers["vg_mlt"] =                    DataReducerVariable(["vg_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
 v5reducers["vg_vms"] =                    DataReducerVariable(["vg_pressure", "vg_rhom", "vg_b_vol"], vms, "m/s", 1, latex=r"$v_\mathrm{ms}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
