@@ -805,26 +805,41 @@ def mlt(variables):
     
     MLT_values = 12 + angles *(12/np.pi)
 
-    MLT_values = np.where((xx == 0) & (yy > 0), 18, MLT_values)
-    MLT_values = np.where((xx == 0) & (yy < 0), 6, MLT_values)
-
-
     return MLT_values
 
 
-def open_closed(variables, reader):
+def ig_coords(variables, reader):
+    return reader.get_ionosphere_node_coords() 
+
+
+def ig_open_closed(variables, reader):
     # open :1, closed: 0
-    position = np.atleast_2d(variables[0])
-    oc_vals = np.zeros((position.shape[0]))
-    Re = 6371000
-    mask = np.linalg.norm(position, axis = 1) > 5.1 * Re
-    oc_vals[~ mask] = 0  # the field lines that inside inner boundary should be closed
-    if np.any(mask):
-        trace_result = pt.calculations.static_field_tracer_3d(reader ,position[mask], 40000, 4e4, direction = '+-')
-        distances = np.linalg.norm(trace_result[:, -1, :], axis=1)
-        oc_vals[mask] = 1-(distances <= 5.1 * Re).astype(int)
+    positions = np.atleast_2d(variables[0])
+    io_rad = float(reader.get_config()['ionosphere']['radius'][0])
+
+    oc_vals = np.zeros((positions.shape[0]))
+
+    n_idx, s_idx = np.where(positions[:,-1]>0)[0], np.where(positions[:,-1]<0)[0]
+
+    def last_valid(traced_single):
+        valid_idx = ~np.isnan(traced_single).any(axis = 1)
+        return traced_single[np.where(valid_idx)[0][-1]]
+
+    if len(n_idx) > 0:
+        traced_north = pt.calculations.static_field_tracer_3d(reader, positions[n_idx], 40000, 4e4, direction='-' )
+        last_north = np.array([last_valid(trace) for trace in traced_north])
+        dist_n = np.linalg.norm(last_north, axis=1)
+        print(dist_n/6371000)
+        oc_vals[n_idx] = (dist_n > io_rad).astype(int)
+
+    if len(s_idx) > 0:
+        traced_south = pt.calculations.static_field_tracer_3d(reader, positions[s_idx], 40000, 4e4, direction='+')
+        last_south = np.array([last_valid(trace) for trace in traced_south])
+        dist_s = np.linalg.norm(last_south, axis=1)
+        oc_vals[s_idx] = (dist_s > io_rad).astype(int)
 
     return oc_vals
+
 
     
     
@@ -837,8 +852,6 @@ def _normalize(vec):
    '''
    return vec / np.linalg.norm(vec, axis = -1)[:, np.newaxis]
 
-def ig_coords(variables, reader):
-    return reader.get_ionosphere_node_coords() 
 
 
 def ig_E( variables, reader ):
@@ -1171,12 +1184,12 @@ v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurren
 v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
 v5reducers["ig_node_coordinates"] = DataReducerVariable([],ig_coords,"m",3, latex=r"$\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["ig_mlt"] =  DataReducerVariable(["ig_node_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
+v5reducers["ig_oc"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
 
 
 
 # MAGNETOSPHERE ('vg_')
 v5reducers["vg_mlt"] =                    DataReducerVariable(["vg_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
-v5reducers["vg_oc"] =                   DataReducerVariable(["vg_coordinates"], open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
 v5reducers["vg_vms"] =                    DataReducerVariable(["vg_pressure", "vg_rhom", "vg_b_vol"], vms, "m/s", 1, latex=r"$v_\mathrm{ms}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_vs"] =                     DataReducerVariable(["vg_pressure", "vg_rhom"], vs, "m/s", 1, latex=r"$v_\mathrm{s}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
 v5reducers["vg_va"] =                     DataReducerVariable(["vg_rhom", "vg_b_vol"], va, "m/s", 1, latex=r"$v_\mathrm{A}$",latexunits=r"$\mathrm{m}\,\mathrm{s}^{-1}$")
