@@ -1184,7 +1184,7 @@ v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurren
 v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
 v5reducers["ig_node_coordinates"] = DataReducerVariable([],ig_coords,"m",3, latex=r"$\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["ig_mlt"] =  DataReducerVariable(["ig_node_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
-v5reducers["ig_oc"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
+v5reducers["ig_openclosed"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
 
 
 
