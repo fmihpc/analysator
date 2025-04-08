@@ -813,7 +813,7 @@ def ig_coords(variables, reader):
 
 
 def ig_open_closed(variables, reader):
-    # open :1, closed: 0
+    # open: 2, closed: 1
     positions = np.atleast_2d(variables[0])
     io_rad = float(reader.get_config()['ionosphere']['radius'][0])
 
@@ -831,13 +831,13 @@ def ig_open_closed(variables, reader):
         traced_north = pt.calculations.static_field_tracer_3d(reader, positions[n_idx], 40000, 4e4, direction='-' )
         last_north = last_valid(traced_north)
         dist_n = np.linalg.norm(last_north, axis=1)
-        oc_vals[n_idx] = (dist_n > io_rad).astype(int)
+        oc_vals[n_idx] = (dist_n > io_rad).astype(int) + 1
 
     if len(s_idx) > 0:
         traced_south = pt.calculations.static_field_tracer_3d(reader, positions[s_idx], 40000, 4e4, direction='+')
         last_south = last_valid(traced_south)
         dist_s = np.linalg.norm(last_south, axis=1)
-        oc_vals[s_idx] = (dist_s > io_rad).astype(int)
+        oc_vals[s_idx] = (dist_s > io_rad).astype(int) + 1
 
     return oc_vals
 
