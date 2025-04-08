@@ -821,20 +821,21 @@ def ig_open_closed(variables, reader):
 
     n_idx, s_idx = np.where(positions[:,-1]>0)[0], np.where(positions[:,-1]<0)[0]
 
-    def last_valid(traced_single):
-        valid_idx = ~np.isnan(traced_single).any(axis = 1)
-        return traced_single[np.where(valid_idx)[0][-1]]
+    def last_valid(traced_all):
+        valid_idx = ~np.isnan(traced_all).any(axis = 2)  # shape: (N, iter)
+        last_valid_idx = np.argmax(valid_idx == 0, axis=1) - 1 # shape: (iter,)
+        N_idx = np.arange(traced_all.shape[0])
+        return traced_all[N_idx, last_valid_idx, :]
 
     if len(n_idx) > 0:
         traced_north = pt.calculations.static_field_tracer_3d(reader, positions[n_idx], 40000, 4e4, direction='-' )
-        last_north = np.array([last_valid(trace) for trace in traced_north])
+        last_north = last_valid(traced_north)
         dist_n = np.linalg.norm(last_north, axis=1)
-        print(dist_n/6371000)
         oc_vals[n_idx] = (dist_n > io_rad).astype(int)
 
     if len(s_idx) > 0:
         traced_south = pt.calculations.static_field_tracer_3d(reader, positions[s_idx], 40000, 4e4, direction='+')
-        last_south = np.array([last_valid(trace) for trace in traced_south])
+        last_south = last_valid(traced_south)
         dist_s = np.linalg.norm(last_south, axis=1)
         oc_vals[s_idx] = (dist_s > io_rad).astype(int)
 
@@ -1184,7 +1185,7 @@ v5reducers["ig_inplanecurrent"] = DataReducerVariable(["ig_e"], ig_inplanecurren
 v5reducers["ig_e"] = DataReducerVariable(["ig_potential"], ig_E, "V/m", 1, latex=r"$\vec{E}$",latexunits=r"$\mathrm{V}\,\mathrm{m}^{-1}$", useReader=True)
 v5reducers["ig_node_coordinates"] = DataReducerVariable([],ig_coords,"m",3, latex=r"$\vec{r}$", latexunits=r"$\mathrm{m}$", useReader=True)
 v5reducers["ig_mlt"] =  DataReducerVariable(["ig_node_coordinates"], mlt, "h", 1, latex=r"$\mathrm{MLT}$",latexunits=r"$\mathrm{h}$")
-v5reducers["ig_oc"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
+v5reducers["ig_openclosed"] =  DataReducerVariable(["ig_upmappednodecoords"], ig_open_closed, "", 1, latex = r"$\mathrm{oc}$", latexunits=r"",useReader = True)
 
 
 
