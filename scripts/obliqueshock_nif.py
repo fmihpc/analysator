@@ -1,17 +1,20 @@
+"""
+Script calculates shock crossing values from Rankine-Hugoniot relations
+in the normal incidence frame (NIF). Feed it upstream values.
+Give the plasma velocity relative to the shock speed which is set to zero.
+
+Example:
+        obliqueshock_nif.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
+        where T_upstream = 500 kK
+        n_upstream = 1/cc
+        inflow plasma speed is 750 km/s in -X relative to the shock which is stationary in the initial frame
+        upstream magnetic field is 5 nT at 45 degree angle
+"""
+
 import numpy as np
 import math
 import scipy.optimize
 import logging
-
-# Script for calculating shock crossing values from Rankine-Hugoniot relations
-# Feed it upstream and shock values in NIF frame, outputs downstream state
-# intput example:
-# obliqueshock_nif.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
-# where T_upstream = 500 kK
-#       n_upstream = 1/cc
-#       inflow plasma speed is 750 km/s in -X
-#       upstream magnetic field is 5 nT at 45 degree angle
-#       Shock front points in +X direction and is stationary in input frame
 
 mu0 = 4*math.pi*1.e-7
 mp = 1.67e-27
