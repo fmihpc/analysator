@@ -1,15 +1,7 @@
-"""
+'''
 Script calculates shock crossing values from Rankine-Hugoniot relations
-in the normal incidence frame (NIF). Feed it upstream values.
-Give the plasma velocity relative to the shock speed which is set to zero.
-
-Example:
-        obliqueshock_nif.rankine(5e5,1.0e6,[-750e3,0,0],[3.5355e-9,0,-3.5355e-9])
-        where T_upstream = 500 kK
-        n_upstream = 1/cc
-        inflow plasma speed is 750 km/s in -X relative to the shock which is stationary in the initial frame
-        upstream magnetic field is 5 nT at 45 degree angle
-"""
+in the normal incidence frame (NIF).
+'''
 
 import numpy as np
 import math
@@ -26,6 +18,24 @@ def polynome(X, theta, beta1, MA1):
     return (np.cos(theta)**2)*(2*(MA1**2) + 5*beta1*(np.cos(theta)**2))*(X**3) + (MA1**2)*(MA1**2 - (np.cos(theta)**2)*(5*(MA1**2) + 8 + 10*beta1))*(X**2) + (MA1**4)*(11*(np.cos(theta)**2) + 2*(MA1**2) + 5 + 5*beta1)*X - 8*(MA1**6)
 
 def rankine(Tu, rhou, V, B):
+    '''
+    Call obliqueshock_nif.rankine(Tu, rhou, V, B, n, Vsh) to compute the shock crossing values
+
+        Inputs:
+            Tu: upstream proton temperature [K] rhou: upstream proton number density [1/m3] V: 3-element upstream proton inflow velocity vector [m/s]
+            B: 3-element upstream magnetic field vector [T]\n
+            Note: Give the plasma velocity relative to the shock speed, which is set to zero in the script.
+
+        Returns:
+            The shock compression ratio
+            X: Plasma compression ratio XB: Magnetic field compression ratio
+
+        Example:
+            obliqueshock_nif.rankine(5e5, 1.0e6, [-750e3,0,0], [3.5355e-9,0,-3.5355e-9])\n
+            -> Computes the shock crossing for Tu = 500 kK, rhou = 1/cc, V = [-750,0,0]km/s (inflow plasma speed is 750 km/s in -X),
+            B = [3.5355e,0,-3.5355e]nT (upstream magnetic field is 5 nT at 45 degree angle),
+    '''
+
     # V, B, n are vectors
     V = np.array(V)
     B = np.array(B)
