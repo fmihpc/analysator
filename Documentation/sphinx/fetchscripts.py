@@ -1,7 +1,7 @@
 import glob
 import os
 
-files = glob.glob('C:/Users/samel/OneDrive/Tiedostot/TET/analysator/scripts/*.py')
+files = glob.glob('../scripts/*.py')
 
 for file in files:
     file = os.path.basename(file)[:-3]

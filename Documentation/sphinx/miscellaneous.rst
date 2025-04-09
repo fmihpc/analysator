@@ -1,6 +1,6 @@
 miscellaneous
 ==================================
 
-.. automodule:: pytools.miscellaneous
+.. automodule:: miscellaneous
    :members:
    :imported-members:
