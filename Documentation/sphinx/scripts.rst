@@ -39,6 +39,24 @@ magnetopause3d
 
 ------------
 
+obliqueshock
+------------
+:doc:`obliqueshock`
+
+.. automodule:: obliqueshock
+    :no-index:
+
+------------
+
+obliqueshock_nif
+----------------
+:doc:`obliqueshock_nif`
+
+.. automodule:: obliqueshock_nif
+    :no-index:
+
+----------------
+
 shue
 --------------
 :doc:`shue`
@@ -65,6 +83,8 @@ tsyganenko
    gics
    magnetopause2d
    magnetopause3d
+   obliqueshock
+   obliqueshock_nif
    shue
    tsyganenko
 
