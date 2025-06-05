@@ -1,24 +1,27 @@
 '''
-Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
+Finds the magnetopause position by tracing streamlines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
 '''
 from pyCalculations import ids3d
 import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
-import plot_colormap3dslice
 import yt
 import math
 from mpl_toolkits import mplot3d
 from yt.visualization.api import Streamlines
 
 
-
-
-def to_Re(m): #meters to Re
+def to_Re(m):
+    """Converts units from meters to R_E (Earth's radius, 6371000m)"""
     return m/6371000
 
 
 def cartesian_to_polar(cartesian_coords): # for segments of plane
+    """Converts cartesian coordinates to polar (for the segments of the yz-planes).
+
+        :param cartesian_coords: (y,z) coordinates as list or array
+        :returns: the polar coordinates r, phi (angle in degrees)
+    """
     y,z = cartesian_coords[0], cartesian_coords[1]
     r = np.sqrt(z**2 + y**2)
     phi = np.arctan2(z, y)
@@ -27,6 +30,12 @@ def cartesian_to_polar(cartesian_coords): # for segments of plane
     return(r, phi)
 
 def polar_to_cartesian(r, phi):
+    """Converts polar coordinates of the yz-plane to cartesian coordinates.
+
+        :param r: radius of the segment (distance from the x-axis)
+        :param phi: the angle coordinate in degrees
+        :returns: y, z -coordinates
+    """
     phi = np.deg2rad(phi)
     y = r * np.cos(phi)
     z = r * np.sin(phi)
@@ -34,6 +43,12 @@ def polar_to_cartesian(r, phi):
 
 
 def interpolate(streamline, x_points):
+    """IInterpolates a single streamline for make_magnetopause(). 
+
+        :param streamline: a single streamline to be interpolated
+        :param x_points: points in the x-axis to use for interpolation
+        :returns: the streamline as numpy array of coordinate points where the x-axis coordinates are the points given to the function
+    """
     arr = np.array(streamline)
 
     # set arrays for interpolation
@@ -53,32 +68,31 @@ def interpolate(streamline, x_points):
 
 
 def make_surface(coords):
+    '''Defines a surface constructed of input coordinates as triangles.
 
-    '''
-    Defines surface constructed of input coordinates as triangles
-    Returns list of verts and vert indices of surface triangles
+        :param coords: points that make the surface
+        :returns: list of verts and vert indices of surface triangles
 
-    coordinates must be in form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...
-    where cij = [xij, yij, zij], i marks slice, j marks yz-plane (x_coord) index 
+        input coordinates must be in form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...
+        where cij = [xij, yij, zij], i marks sector, j marks yz-plane (x_coord) index 
 
-    How it works:
-    Three points make a triangle, triangles make the surface.
-    For every two planes next to each other:
-    - take every other point from plane1, every other from plane2 (in order!)
-    - from list of points: every three points closest to each other make a surface
+        Three points make a triangle, triangles make the surface.
+        For every two planes next to each other:
+        - take every other point from plane1, every other from plane2 (in order!)
+        - from list of points: every three points closest to each other make a surface
 
-    Example:
-    plane 1: [v1, v2, v3, v4]
-    plane 2: [v5, v6, v7, v8]
+        Example:
+        plane 1: [v1, v2, v3, v4]
+        plane 2: [v5, v6, v7, v8]
 
-    -> list: [v1, v5, v2, v6, v3,...]
-    -> triangles:
-    v1 v5 v2
-    v5 v2 v6
-    v2 v6 v3
-    .
-    .
-    .
+        -> list: [v1, v5, v2, v6, v3,...]
+        -> triangles:
+        v1 v5 v2
+        v5 v2 v6
+        v2 v6 v3
+        .
+        .
+        .
 
     '''
     verts = [] #points
@@ -123,6 +137,11 @@ def make_surface(coords):
 
 
 def make_streamlines(vlsvFileName):
+    """Traces streamlines of velocity field from outside the magnetosphere to magnetotail using the yt-package.
+
+        :param vlsvFileName: directory and file name of .vlsv data file to use for VlsvReader
+        :returns: streamlines as numpy array
+    """
     ## make streamlines
     boxre = [0]
                             
@@ -206,6 +225,12 @@ def make_streamlines(vlsvFileName):
 
 
 def make_magnetopause(streams):
+    """Finds the mangetopause location based on streamlines.
+
+        :param streams: streamlines
+        :returns: the magnetopause position as coordinate points in numpy array
+    """
+
     streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array
     
     ## find the subsolar dayside point in the x-axis
@@ -322,7 +347,7 @@ def main():
             ax.plot(xz_slice[:,0], xz_slice[:,2],  color='limegreen', linewidth=1.5)
 
 
-        plot_colormap3dslice.plot_colormap3dslice(
+        pt.plot.plot_colormap3dslice(
         filename=fileLocation+fileN,
         outputdir=outdir,
         run=run,
@@ -342,7 +367,7 @@ def main():
                 return ['vg_v']
             ax.plot(xy_slice[:,0], xy_slice[:,1], color='limegreen', linewidth=1.5)
 
-        plot_colormap3dslice.plot_colormap3dslice(
+        pt.plot.plot_colormap3dslice(
         filename=fileLocation+fileN,
         outputdir=outdir,
         run=run,
