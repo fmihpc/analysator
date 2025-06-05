@@ -1,17 +1,20 @@
 '''
-Finds the magnetopause position by tracing steamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
+Finds the magnetopause position by tracing streamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
 '''
 
 import numpy as np
 import analysator as pt
-import plot_colormap
 import yt
 from yt.visualization.api import Streamlines
 
 
-
-
 def interpolate(streamline, x_points):
+    """Interpolates a single streamline for make_magnetopause().
+
+        :param streamline: a single streamline to be interpolated
+        :param x_points: points in the x-axis to use for interpolation
+        :returns: the streamline as numpy array of x,z coordinate points where the x-axis coordinates are the points given to the function
+    """
 
     arr = np.array(streamline)
 
@@ -26,6 +29,11 @@ def interpolate(streamline, x_points):
 
 
 def make_streamlines(vlsvFileName):
+    """Traces streamlines of velocity field from outside the magnetosphere to magnetotail using the yt-package.
+
+        :param vlsvFileName: directory and file name of vlsv file, to be given to VlsvReader
+        :returns: streamlines as numpy array
+    """
     ## make streamlines
     boxre = [0,0]
                             
@@ -81,6 +89,11 @@ def make_streamlines(vlsvFileName):
     return np.array(streamlines_pos.streamlines)
 
 def make_magnetopause(streams):
+    """Finds the mangetopause location based on streamlines.
+
+        :param streams: streamlines
+        :returns: magnetopause as coordinate points from tail on positive x-axis to tail on negative x-axis
+    """
 
     streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array
     
@@ -126,6 +139,12 @@ def make_magnetopause(streams):
 
 
 def polar_to_cartesian(r, phi):
+    """Converts polar coordinates to cartesian.
+
+        :param r: radius
+        :param phi: angular coordinate in degrees
+        :returns: y, z -coordinates in cartesian system
+    """
     phi = np.deg2rad(phi)
     y = r * np.cos(phi)
     z = r * np.sin(phi)
@@ -166,7 +185,7 @@ def main():
                 ax.plot(magnetopause[:,0], magnetopause[:,1], color='cyan', linewidth=1.0) 
 
 
-    plot_colormap.plot_colormap(
+    pt.plot.plot_colormap(
         filename=fileLocation+fileN,
         outputdir=outdir,
         nooverwrite=None,
