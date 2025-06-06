@@ -1,20 +1,10 @@
 '''
-Finds the magnetopause position by tracing streamlines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
+Finds the magnetopause position by tracing streamlines of the plasma flow for three-dimensional Vlasiator runs.
 '''
-from pyCalculations import ids3d
+
 import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
-import yt
-import math
-from mpl_toolkits import mplot3d
-from yt.visualization.api import Streamlines
-
-
-def to_Re(m):
-    """Converts units from meters to R_E (Earth's radius, 6371000m)"""
-    return m/6371000
-
 
 def cartesian_to_polar(cartesian_coords): # for segments of plane
     """Converts cartesian coordinates to polar (for the segments of the yz-planes).
@@ -34,7 +24,7 @@ def polar_to_cartesian(r, phi):
 
         :param r: radius of the segment (distance from the x-axis)
         :param phi: the angle coordinate in degrees
-        :returns: y, z -coordinates
+        :returns:  y, z -coordinates in cartesian system
     """
     phi = np.deg2rad(phi)
     y = r * np.cos(phi)
@@ -135,65 +125,19 @@ def make_surface(coords):
     return verts, faces
 
 
-
 def make_streamlines(vlsvFileName):
-    """Traces streamlines of velocity field from outside the magnetosphere to magnetotail using the yt-package.
+    """Traces streamlines of velocity field from outside the magnetosphere to magnetotail.
 
         :param vlsvFileName: directory and file name of .vlsv data file to use for VlsvReader
         :returns: streamlines as numpy array
     """
-    ## make streamlines
-    boxre = [0]
-                            
-    # bulk file
+
     f = pt.vlsvfile.VlsvReader(file_name=vlsvFileName)
 
-    #get box coordinates from data
-    [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
-    [xsize, ysize, zsize] = f.get_spatial_mesh_size()
-    [xsizefs, ysizefs, zsizefs] = f.get_fsgrid_mesh_size()
-    simext_m =[xmin,xmax,ymin,ymax,zmin,zmax]
-    sizes = np.array([xsize,ysize,zsize])
-    sizesfs = np.array([xsizefs,ysizefs,zsizefs])
-
-    simext = list(map(to_Re, simext_m))
-    boxcoords=list(simext)
-
-    cellids = f.read_variable("CellID")
-    indexids = cellids.argsort()
-    cellids = cellids[indexids]
-
-    reflevel = ids3d.refinement_level(xsize, ysize, zsize, cellids[-1])
-
-
-    #Read the data from vlsv-file
-    V = f.read_variable("vg_v")
-
-    #from m to Re
-    V = np.array([[to_Re(i) for i in j ]for j in V])
-
-
-    V = V[indexids]
-
-    if np.ndim(V)==1:
-        shape = None
-    elif np.ndim(V)==2: # vector variable
-        shape = V.shape[1]
-    elif np.ndim(V)==3:  # tensor variable
-        shape = (V.shape[1], V.shape[2])
-
-
-    Vdpoints = ids3d.idmesh3d2(cellids, V, reflevel, xsize, ysize, zsize, shape)
-
-
-    Vxs = Vdpoints[:,:,:,0]
-    Vys = Vdpoints[:,:,:,1]
-    Vzs = Vdpoints[:,:,:,2]
-
-    data=dict(Vx=Vxs,Vy=Vys,Vz=Vzs)
+    RE = 6371000
 
     #Create streamline seeds (starting points for streamlines)
-    seedN = 50 #seeds per row, final seed count will be seedN*seedN !
+    seedN = 25 #seeds per row, final seed count will be seedN*seedN !
     streamline_seeds = np.zeros([seedN**2, 3])
 
     #range: np.arange(from, to, step)
@@ -204,24 +148,18 @@ def make_streamlines(vlsvFileName):
             streamline_seeds[k] = [20, i, j]
             k = k+1
 
+    dx = 0.4
+    iterations = int(50/(dx)) # iterations so that final step is at max -30 RE (in practice less)
 
-    #dataset in yt-form
-    yt_dataset = yt.load_uniform_grid(
-        data,
-        sizesfs,
-        bbox=np.array([[boxcoords[0], boxcoords[1]],
-                    [boxcoords[2],boxcoords[3]],
-                    [boxcoords[4],boxcoords[5]]]))
-                                    
+    streams = pt.calculations.static_field_tracer_3d(
+        vlsvReader=f,
+        seed_coords=streamline_seeds*RE,
+        max_iterations=iterations,
+        dx=dx*RE,
+        direction='+',
+        grid_var='vg_v')
 
-    # data, seeds, dictionary positions, length of streamlines
-    streamlines_pos = yt.visualization.api.Streamlines(yt_dataset, streamline_seeds,
-                                                    "Vx", "Vy", "Vz", length=50, direction=1)
-
-    # make the streamlines
-    streamlines_pos.integrate_through_volume()
-
-    return np.array(streamlines_pos.streamlines)
+    return streams*(1/RE)
 
 
 def make_magnetopause(streams):
