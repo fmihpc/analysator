@@ -1,11 +1,10 @@
 '''
-Finds the magnetopause position by tracing streamines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
+Finds the magnetopause position by tracing streamlines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.
 '''
 
 import numpy as np
 import analysator as pt
 import yt
-from yt.visualization.api import Streamlines
 
 
 def interpolate(streamline, x_points):
@@ -28,28 +27,24 @@ def interpolate(streamline, x_points):
     return np.array([x_points, z_points])
 
 
-def make_streamlines(vlsvFileName):
-    """Traces streamlines of velocity field from outside the magnetosphere to magnetotail using the yt-package.
+def make_streamlines(vlsvfile, streamline_seeds=None, streamline_length=40*6371000):
+    """Traces streamlines of velocity field using the yt package.
 
-        :param vlsvFileName: directory and file name of vlsv file, to be given to VlsvReader
+        :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
+        :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kword streamline_length: streamline length
+
         :returns: streamlines as numpy array
     """
-    ## make streamlines
-    boxre = [0,0]
-                            
+     
     # bulk file
-    f = pt.vlsvfile.VlsvReader(file_name=vlsvFileName)
+    f = pt.vlsvfile.VlsvReader(file_name=vlsvfile)
 
-    #get box coordinates from data
+    # get box coordinates from data
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
-    simext_m =[xmin,xmax,ymin,ymax,zmin,zmax]
+    simext =[xmin,xmax,ymin,ymax,zmin,zmax]
     sizes = np.array([xsize,ysize,zsize])
-
-    def to_Re(m): #meters to Re
-        return m/6371000
-
-    simext = list(map(to_Re, simext_m))
     boxcoords=list(simext)
 
     cellids = f.read_variable("CellID")
@@ -66,9 +61,9 @@ def make_streamlines(vlsvFileName):
 
     data=dict(Vx=Vxs,Vy=Vys,Vz=Vzs)
 
-    #Create streamline seeds (starting points for streamlines)
-    seedN = 200 # number of streamlines wanted
-    streamline_seeds = np.array([[20, 0 ,i] for i in  np.linspace(-4, 4, seedN)])
+    #Create starting points for streamlines if they are not given
+    if streamline_seeds == None:
+        streamline_seeds = np.array([[20*6371000, 0 ,i] for i in  np.linspace(-5*6371000, 5*6371000, 200)])
 
     #streamline_seeds = np.array(streamline_seeds)
     #dataset in yt-form
@@ -80,40 +75,45 @@ def make_streamlines(vlsvFileName):
                     [boxcoords[4],boxcoords[5]]]))
                                     
 
-    #data, seeds, dictionary positions, lenght of lines
-    streamlines_pos = yt.visualization.api.Streamlines(yt_dataset, streamline_seeds,
-                                                    "Vx", "Vy", "Vz", length=40, direction=1)
+    #data, seeds, dictionary positions, step size
+    streamlines = yt.visualization.api.Streamlines(yt_dataset, streamline_seeds,
+                                                    "Vx", "Vy", "Vz", length=streamline_length, direction=1)
 
-    #where the magic happens
-    streamlines_pos.integrate_through_volume()
-    return np.array(streamlines_pos.streamlines)
+    #trace the streamlines with yt
+    streamlines.integrate_through_volume()
+    # return streamline positions
+    return np.array(streamlines.streamlines)
 
-def make_magnetopause(streams):
+
+def make_magnetopause(streamlines, end_x=-15*6371000, x_point_n=50):
     """Finds the mangetopause location based on streamlines.
 
-        :param streams: streamlines
-        :returns: magnetopause as coordinate points from tail on positive x-axis to tail on negative x-axis
+        :param streams: streamlines (coordinates in m)
+        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        
+        :returns:   the magnetopause position as coordinate points in numpy array
     """
 
-    streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array
-    
+    RE = 6371000
+
+    streampoints = np.reshape(streamlines, (streamlines.shape[0]*streamlines.shape[1], 3)) #all the points in one array
+
     ## find the subsolar dayside point in the positive x-axis
     ## do this by finding a stremline point on positive x axis closest to the Earth
-    x_axis_points = streampoints[np.floor(streampoints[:,2])==0]
-    x_axis_points[x_axis_points<0] = 800
+    x_axis_points = streampoints[(streampoints[:,2]< RE) & (streampoints[:,2]> -RE) & (streampoints[:,0]> 0)]
     subsolar_x =np.min(x_axis_points[:,0])
 
     ## define points in the x axis where to find magnetopause points on the yz-plane
-    x_points = np.arange(subsolar_x, -10, -0.2)
+    x_points = np.linspace(subsolar_x, end_x, x_point_n)
     
     ## interpolate more exact points for streamlines at exery x_point
-    new_streampoints = np.zeros((len(x_points), len(streams), 1)) # new array for keeping interpolated streamlines in form streamlines_new[x_point, streamline, z-coordinate] 
-    i=0
-    for stream in streams:
+    new_streampoints = np.zeros((len(x_points), len(streamlines), 1)) # new array for keeping interpolated streamlines in form streamlines_new[x_point, streamline, z-coordinate] 
+
+    for i,stream in enumerate(streamlines):
         interpolated_streamline = interpolate(stream, x_points)
         for j in range(0, len(x_points)):
             new_streampoints[j, i,:] = interpolated_streamline[1,j]
-        i += 1
 
 
     ## start making the magnetopause
@@ -138,67 +138,19 @@ def make_magnetopause(streams):
     return magnetopause
 
 
-def polar_to_cartesian(r, phi):
-    """Converts polar coordinates to cartesian.
+def find_magnetopause(vlsvfile, streamline_seeds=None, streamline_length=45*6371000, end_x=-15*6371000, x_point_n=50):
+    """Finds the magnetopause position by tracing streamlines of the velocity field for 2d runs.
 
-        :param r: radius
-        :param phi: angular coordinate in degrees
-        :returns: y, z -coordinates in cartesian system
+        :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
+        :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kword streamline_length: streamline length for tracing
+        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+
+        :returns:   the magnetopause position as coordinate points in numpy array
     """
-    phi = np.deg2rad(phi)
-    y = r * np.cos(phi)
-    z = r * np.sin(phi)
-    return(y, z)
 
+    streamlines = make_streamlines(vlsvfile, streamline_seeds, streamline_length)
+    magnetopause = make_magnetopause(streamlines, end_x, x_point_n)
 
-
-def main():
-
-    ## get bulk data
-    run = 'BFD'
-    num =  '2000'
-
-    fileLocation="/wrk-vakka/group/spacephysics/vlasiator/2D/"+run+"/bulk/"
-    fileN = "bulk.000"+num+".vlsv"
-    
-    
-    ## STREAMLINES
-    streams = make_streamlines(fileLocation+fileN)
-
-    ## MAGNETOPAUSE
-    magnetopause = make_magnetopause(streams)
-    
-
-    ## PLOTTING
-    outdir=""
-
-    # plot the magnetopause (and streamlines if needed) on top of colormap
-    def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None):
-            plot_magnetopause = True
-            plot_streamlines = False
-        
-            if plot_streamlines:
-                for stream in streams:
-                    ax.plot(stream[:,0], stream[:,2], color='paleturquoise', alpha=0.2)
-
-            if plot_magnetopause:
-                ax.plot(magnetopause[:,0], magnetopause[:,1], color='cyan', linewidth=1.0) 
-
-
-    pt.plot.plot_colormap(
-        filename=fileLocation+fileN,
-        outputdir=outdir,
-        nooverwrite=None,
-        var="rho", #var="beta_star",
-        boxre = [-21,21,-21,21],
-        title=None,
-        draw=None, usesci=True, Earth=True,
-        external = external_plot,
-        run=run,
-        colormap='inferno',
-        )
-
-
-
-if __name__ == "__main__":
-    main()
+    return magnetopause
