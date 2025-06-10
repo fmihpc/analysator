@@ -1018,8 +1018,8 @@ def plot_vdf(filename=None,
             gridratio = cellsize
 
         # num must be vxsize+1 or vysize+1 in order to do both edges for each cell
-        VXBins = np.linspace(vxmin*gridratio,vxmax*gridratio,num=vxsize+1)
-        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)
+        VXBins = np.linspace((vxmin-0.5*inputcellsize)*gridratio,(vxmax+0.5*inputcellsize)*gridratio,num=vxsize+2)
+        VYBins = np.linspace((vymin-0.5*inputcellsize)*gridratio,(vymax+0.5*inputcellsize)*gridratio,num=vysize+2)
 
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
