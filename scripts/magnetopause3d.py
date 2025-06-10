@@ -33,7 +33,7 @@ def polar_to_cartesian(r, phi):
 
 
 def interpolate(streamline, x_points):
-    """IInterpolates a single streamline for make_magnetopause(). 
+    """Interpolates a single streamline for make_magnetopause(). 
 
         :param streamline: a single streamline to be interpolated
         :param x_points: points in the x-axis to use for interpolation
@@ -61,7 +61,7 @@ def make_surface(coords):
     '''Defines a surface constructed of input coordinates as triangles.
 
         :param coords: points that make the surface
-        :returns: list of verts and vert indices of surface triangles
+        :returns: list of verts and vert indices of surface triangles as numpy arrays
 
         input coordinates must be in form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...
         where cij = [xij, yij, zij], i marks sector, j marks yz-plane (x_coord) index 
@@ -122,62 +122,73 @@ def make_surface(coords):
         next_triangles = [x + slices_in_plane*area_index for x in first_triangles]
         faces.extend(next_triangles)
 
-    return verts, faces
+    return np.array(verts), np.array(faces)
 
 
-def make_streamlines(vlsvFileName):
+def make_streamlines(vlsvfile, streamline_seeds=None, dl=2e6, iterations=200):
     """Traces streamlines of velocity field from outside the magnetosphere to magnetotail.
 
-        :param vlsvFileName: directory and file name of .vlsv data file to use for VlsvReader
+        :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
+
+        :kword streamline_seeds: optional streamline starting points in numpy array
+        :kword dl: streamline iteration step length in m
+        :kword iterations: int, number of iteration steps
+
         :returns: streamlines as numpy array
     """
 
-    f = pt.vlsvfile.VlsvReader(file_name=vlsvFileName)
+    f = pt.vlsvfile.VlsvReader(file_name=vlsvfile)
 
-    RE = 6371000
+    # Create streamline starting points if they have not been given
+    if streamline_seeds == None:
+        streamline_seeds = np.zeros([25**2, 3])
 
-    #Create streamline seeds (starting points for streamlines)
-    seedN = 25 #seeds per row, final seed count will be seedN*seedN !
-    streamline_seeds = np.zeros([seedN**2, 3])
+        t = np.linspace(-5*6371000, 5*6371000, 25)
+        k = 0
+        for i in t:
+            for j in t:
+                streamline_seeds[k] = [20*6371000, i, j]
+                k = k+1
 
-    #range: np.arange(from, to, step)
-    t = np.linspace(-5, 5, seedN)
-    k = 0
-    for i in t:
-        for j in t:
-            streamline_seeds[k] = [20, i, j]
-            k = k+1
-
-    dx = 0.4
-    iterations = int(50/(dx)) # iterations so that final step is at max -30 RE (in practice less)
-
+    # Trace the streamlines
     streams = pt.calculations.static_field_tracer_3d(
         vlsvReader=f,
-        seed_coords=streamline_seeds*RE,
+        seed_coords=streamline_seeds,
         max_iterations=iterations,
-        dx=dx*RE,
+        dx=dl,
         direction='+',
         grid_var='vg_v')
 
-    return streams*(1/RE)
+    return streams
 
 
-def make_magnetopause(streams):
+def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     """Finds the mangetopause location based on streamlines.
 
-        :param streams: streamlines
-        :returns: the magnetopause position as coordinate points in numpy array
+        :param streams: streamlines (coordinates in m)
+
+        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
+
+        :returns:   the magnetopause position as coordinate points in numpy array, form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...
+                    where cij = [xij, yij, zij], i marks sector, j marks yz-plane (x-coordinate) index 
     """
 
-    streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array
+    RE = 6371000
+
+    #streams = streams*(1/RE) # streamlines in rE
+    streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array)
     
     ## find the subsolar dayside point in the x-axis
-    ## do this by finding a stremline point on positive x axis closest to the Earth
-    x_axis_points = streampoints[(np.floor(streampoints[:,1])==0) & (np.floor(streampoints[:,2])==0)]
+    ## do this by finding a streamline point on positive x axis closest to the Earth
+    # streampoints closer than ~1 rE to positive x-axis:
+    x_axis_points = streampoints[(streampoints[:,1]<RE) & (streampoints[:,2]<RE) & (streampoints[:,1]>-RE) & (streampoints[:,2]>-RE) & (streampoints[:,0]>0) & (streampoints[:,0]>0)] 
     subsolar_x =np.min(x_axis_points[:,0])
 
+
     ## define points in the x axis where to find magnetopause points on the yz-plane
-    x_points = np.arange(subsolar_x, -15, -0.5)
+    x_points = np.linspace(subsolar_x, end_x, x_point_n)
     
     ## interpolate more exact points for streamlines at exery x_point
     new_streampoints = np.zeros((len(x_points), len(streams), 2)) # new array for keeping interpolated streamlines in form new_streampoints[x_point, streamline, y and z -coordinates] 
@@ -202,7 +213,6 @@ def make_magnetopause(streams):
 
     ## now start making the magnetopause
     ## in each x_point, divide the plane into sectors and look for the closest streamline to x-axis in the sector
-    sector_n = 36
 
     ## if given sector number isn't divisible by 4, make it so because we want to have magnetopause points at exactly y=0 and z=0 for 2d slices of the whole thing
     while sector_n%4 != 0:
@@ -249,91 +259,22 @@ def make_magnetopause(streams):
     return magnetopause
 
 
+def find_magnetopause(vlsvfile, streamline_seeds=None, dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36):
+    """Finds the magnetopause position by tracing streamlines of the velocity field.
 
+        :param vlsvfile: path to .vlsv bulk file to use for VlsvReader
+        :kword streamline_seeds: optional streamline starting points in numpy array
+        :kword dl: streamline iteration step length in m
+        :kword iterations: int, number of iteration steps
+        :kword end_x: tail end x-coordinate (how far along the x-axis the magnetopause is calculated)
+        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
 
-def main():
+        :returns:   vertices, faces of the magnetopause triangle mesh as numpy arrays
+    """
 
-    ## get bulk data
-    run =  'EGI'
-    fileLocation="/wrk-vakka/group/spacephysics/vlasiator/3D/"+run+"/bulk/"
-    fileN = "bulk5.0000070.vlsv" 
+    streams = make_streamlines(vlsvfile, streamline_seeds, dl, iterations)
+    magnetopause = make_magnetopause(streams, end_x, x_point_n, sector_n)
+    vertices, faces = make_surface(magnetopause)
 
-    ## STREAMLINES
-    streams = make_streamlines(fileLocation+fileN)
-    ## MAGNETOPAUSE
-    magnetopause = make_magnetopause(streams)
-
-
-    ## PLOTTING
-    outdir=""
-
-    ## take separate arrays for different 2d slice plots
-    slices = magnetopause.shape[1]
-    quarter_slice = int(slices/4)
-    # xy plane: z=0
-    xy_slice = np.concatenate((magnetopause[:,0][::-1], magnetopause[:,2*quarter_slice]))
-    # xz plane: y=0
-    xz_slice = np.concatenate((magnetopause[:,quarter_slice][::-1], magnetopause[:,3*quarter_slice]))
-
-
-    #2D plots
-    # analysator 3dcolormapslice y=0
-    if True:
-        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None, requestvariables=False):
-            if requestvariables==True:
-                return ['vg_v']
-            ax.plot(xz_slice[:,0], xz_slice[:,2],  color='limegreen', linewidth=1.5)
-
-
-        pt.plot.plot_colormap3dslice(
-        filename=fileLocation+fileN,
-        outputdir=outdir,
-        run=run,
-        nooverwrite=None,
-        boxre = [-21,21,-21,21],
-        title=None,
-        draw=None, usesci=True, Earth=True,
-        external = external_plot,
-        colormap='inferno',
-        normal='y'
-        )
-
-    # analysator 3dcolormapslice z=0
-    if True:
-        def external_plot(ax,XmeshXY=None, YmeshXY=None, pass_maps=None, requestvariables=False):
-            if requestvariables==True:
-                return ['vg_v']
-            ax.plot(xy_slice[:,0], xy_slice[:,1], color='limegreen', linewidth=1.5)
-
-        pt.plot.plot_colormap3dslice(
-        filename=fileLocation+fileN,
-        outputdir=outdir,
-        run=run,
-        nooverwrite=None,
-        boxre = [-21,21,-21,21],
-        title=None,
-        draw=None, usesci=True, Earth=True,
-        external = external_plot,
-        colormap='inferno',
-        normal='z'
-        )
-
-    # 3D plot
-    # matplotlib 3d surface plot for single image
-    if False:
-        verts, faces = make_surface(magnetopause)
-        verts = np.array(verts)
-        
-        fig = plt.figure()
-        ax2 = fig.add_subplot(projection='3d')
-        ax2.plot_trisurf(verts[:, 0], verts[:,1], faces, verts[:, 2], linewidth=0.2, antialiased=True)
-        ax2.view_init(azim=-60, elev=5)
-        ax2.set_xlabel('X')
-        ax2.set_ylabel('Y')
-        ax2.set_zlabel('Z')
-        fig.tight_layout()
-        plt.savefig(outdir+run+'_3d_magnetopause.png')
-
-
-if __name__ == "__main__":
-    main()
+    return vertices, faces
