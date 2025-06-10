@@ -269,6 +269,8 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
          Vpeak = V[peakindex,:]
          V = V - Vpeak
          logging.info(peakindex)
+         VXBins -= 0.5*inputcellsize
+         VYBins -= 0.5*inputcellsize
          logging.info("Transforming to frame of peak f-value, travelling at speed "+str(Vpeak))
     elif not center is None:
         # assumes it's a vector, either provided or extracted from bulk velocity
@@ -689,7 +691,7 @@ def plot_vdf(filename=None,
     vysize = int(vysize)
     vzsize = int(vzsize)
     [vxmin, vymin, vzmin, vxmax, vymax, vzmax] = vlsvReader.get_velocity_mesh_extent(pop=pop)
-    inputcellsize=(vxmax-vxmin)/vxsize
+    
 
     # Account for WID3 cells per block
     widval=4 #default WID=4
@@ -698,6 +700,9 @@ def plot_vdf(filename=None,
     vxsize = widval*vxsize
     vysize = widval*vysize
     vzsize = widval*vzsize
+
+    inputcellsize=(vxmax-vxmin)/(vxsize)
+    # print(inputcellsize)
 
     Re = 6.371e+6 # Earth radius in m
     # unit of velocity
@@ -1018,8 +1023,8 @@ def plot_vdf(filename=None,
             gridratio = cellsize
 
         # num must be vxsize+1 or vysize+1 in order to do both edges for each cell
-        VXBins = np.linspace((vxmin-0.5*inputcellsize)*gridratio,(vxmax+0.5*inputcellsize)*gridratio,num=vxsize+2)
-        VYBins = np.linspace((vymin-0.5*inputcellsize)*gridratio,(vymax+0.5*inputcellsize)*gridratio,num=vysize+2)
+        VXBins = np.linspace(vxmin*gridratio,vxmax*gridratio,num=vxsize+1)
+        VYBins = np.linspace(vymin*gridratio,vymax*gridratio,num=vysize+1)
 
         # Read velocity data into histogram
         (checkOk,binsXY,edgesX,edgesY) = vSpaceReducer(vlsvReader,cellid,slicetype,normvect,VXBins, VYBins,pop=pop,
