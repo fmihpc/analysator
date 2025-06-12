@@ -27,11 +27,14 @@ def interpolate(streamline, x_points):
     return np.array([x_points, z_points])
 
 
-def make_streamlines(vlsvfile, streamline_seeds=None, streamline_length=40*6371000):
+def make_streamlines(vlsvfile, streamline_seeds=None,seeds_n=200, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], streamline_length=40*6371000):
     """Traces streamlines of velocity field using the yt package.
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
         :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
         :kword streamline_length: streamline length
 
         :returns: streamlines as numpy array
@@ -63,7 +66,7 @@ def make_streamlines(vlsvfile, streamline_seeds=None, streamline_length=40*63710
 
     #Create starting points for streamlines if they are not given
     if streamline_seeds == None:
-        streamline_seeds = np.array([[20*6371000, 0 ,i] for i in  np.linspace(-5*6371000, 5*6371000, 200)])
+        streamline_seeds = np.array([[seeds_x0, 0 ,i] for i in  np.linspace(seeds_range[0], seeds_range[1], seeds_n)])
 
     #streamline_seeds = np.array(streamline_seeds)
     #dataset in yt-form
@@ -138,11 +141,14 @@ def make_magnetopause(streamlines, end_x=-15*6371000, x_point_n=50):
     return magnetopause
 
 
-def find_magnetopause(vlsvfile, streamline_seeds=None, streamline_length=45*6371000, end_x=-15*6371000, x_point_n=50):
+def find_magnetopause_2d(vlsvfile, streamline_seeds=None, seeds_n=200, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], streamline_length=45*6371000, end_x=-15*6371000, x_point_n=50):
     """Finds the magnetopause position by tracing streamlines of the velocity field for 2d runs.
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
         :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
         :kword streamline_length: streamline length for tracing
         :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
         :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
@@ -150,7 +156,7 @@ def find_magnetopause(vlsvfile, streamline_seeds=None, streamline_length=45*6371
         :returns:   the magnetopause position as coordinate points in numpy array
     """
 
-    streamlines = make_streamlines(vlsvfile, streamline_seeds, streamline_length)
+    streamlines = make_streamlines(vlsvfile, streamline_seeds, seeds_n, seeds_x0, seeds_range, streamline_length)
     magnetopause = make_magnetopause(streamlines, end_x, x_point_n)
 
     return magnetopause
