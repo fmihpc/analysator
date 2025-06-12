@@ -122,7 +122,13 @@ def make_surface(coords):
         next_triangles = [x + slices_in_plane*area_index for x in first_triangles]
         faces.extend(next_triangles)
 
-    return np.array(verts), np.array(faces)
+    # Change every other face triangle normal direction so that all face the same way
+    faces = np.array(faces)
+    for i in range(len(faces)):
+        if i%2==0:
+            faces[i,1], faces[i,2] =  faces[i,2], faces[i,1]
+
+    return np.array(verts), faces
 
 
 def make_streamlines(vlsvfile, streamline_seeds=None, dl=2e6, iterations=200):
