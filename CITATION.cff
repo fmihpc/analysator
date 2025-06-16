@@ -68,7 +68,7 @@ authors:
 - family-names: "Reimi"
   given-names: "Johanna"
 title: "Analysator"
-version: 0.9.5
+version: 0.9.6
 doi: 10.5281/zenodo.4462514
 date-released: 2024-11-26
 url: "https://github.com/fmihpc/analysator"
