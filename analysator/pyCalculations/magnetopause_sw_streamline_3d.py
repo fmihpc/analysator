@@ -2,7 +2,6 @@
 Finds the magnetopause position by tracing streamlines of the plasma flow for three-dimensional Vlasiator runs.
 '''
 
-import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
 
