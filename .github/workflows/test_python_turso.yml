@@ -1,0 +1,42 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Turso import test
+
+on:
+  push:
+    branches: [ master, dev ]
+  pull_request:
+    branches: [ master, dev ]
+  schedule:
+    - cron: '0 8 * * MON'
+  workflow_dispatch:
+
+jobs:
+
+  turso_system:
+        if: github.repository_owner == 'fmihpc'
+        runs-on: carrington
+        strategy:
+          fail-fast: false
+          matrix:
+            extras: ["none", "vtk", "all", "bvtk"]
+        steps:
+        - uses: actions/checkout@v4
+        - name: Set up Python 
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            python3 -m venv test_venv
+        - name: Install dependencies
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            source ./test_venv/bin/activate
+            python -m ensurepip
+            python -m pip install --upgrade pip
+            python -m pip install --editable ../analysator[${{ matrix.extras }}]
+        - name: Trial imports
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            source ./test_venv/bin/activate
+            python -c 'import analysator as pt'
+    
