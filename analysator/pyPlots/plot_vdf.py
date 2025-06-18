@@ -809,6 +809,7 @@ def plot_vdf(filename=None,
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
+        warn_bulk_centering = False
         if vlsvReader.check_variable('moments'):
             # This should be a restart file
             Vbulk = vlsvReader.read_variable('restart_V',cellid)
@@ -821,12 +822,15 @@ def plot_vdf(filename=None,
         elif vlsvReader.check_variable(pop+'/vg_v'):
             # multipop v5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
+            warn_bulk_centering = True
         elif vlsvReader.check_variable(pop+'/V'):
             # multipop bulk file
             Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
+            warn_bulk_centering = True
         elif vlsvReader.check_variable(pop+'/vg_v'):
             # multipop V5 bulk file
             Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
+            warn_bulk_centering = True
         else:
             # fallback: get bulkV from the VDF itself
             velcells = vlsvReader.read_velocity_cells(cellid, pop=pop)
@@ -834,6 +838,10 @@ def plot_vdf(filename=None,
             f = np.asarray(velcellslist[1])
             V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
             Vbulk = np.average(V, axis=0, weights=f)
+            warn_bulk_centering = True
+
+        if(warn_bulk_centering):
+           logging.warning("Bulk V centering based on population bulkV, not total plasma center-of-mass bulkV")
 
         if Vbulk is None:
             logging.info("Error in finding plasma bulk velocity!")
