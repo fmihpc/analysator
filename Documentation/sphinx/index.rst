@@ -23,15 +23,24 @@ Add your content using ``reStructuredText`` syntax. See the
 documentation for details.
 
 .. toctree::
+   :maxdepth: 1
+   :caption: Introduction
+
+   analysator
+   analysator_exercises
+   analysator_supported
+   about
+
+
+.. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Analysator reference
 
    plot
    calculations
    vlsvfile
    miscellaneous
    scripts
-   about
 
 .. automodule:: analysator 
    :members:
