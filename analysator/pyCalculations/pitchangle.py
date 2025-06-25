@@ -209,6 +209,7 @@ def pitch_angles( vlsvReader,
 
    # Wrap the data into a custon format
    result = output_1d([angles, weights], ["Pitch_angle", "sum_avgs"], [units, "1/m3"])
+   
 
    rho_summed    = np.sum(avgs)
    rho_nonsphere = np.sum(avgs_nonsphere)
@@ -254,4 +255,4 @@ def pitch_angles( vlsvReader,
       outfilewrite.close()
 
    # Return the histogram
-   return result
+   return [angles, weights]

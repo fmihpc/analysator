@@ -371,7 +371,7 @@ def plot_colormap3dslice(filename=None,
     #   xyz = (slice normal direction, 0:x, 1:y, 2:z
     slicestr='_slice'
     if not isinstance(normal, str):
-        if len(normal!=3):
+        if len(normal)!=3:
             logging.info("Error in interpreting normal " + str(normal))
             exit
     else:
