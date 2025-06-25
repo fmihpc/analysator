@@ -75,7 +75,8 @@ def plot_colormap3dslice(filename=None,
                   useimshow=False, imshowinterp='none',
                   ):
 
-    ''' Plots a coloured plot with axes and a colour bar.
+    ''' Plots a coloured plot with axes and a colour bar, slicing through a 3D domain. Currently only supports axis-
+        aligned slices.
 
         :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
         :kword vlsvobj:     Optionally provide a python vlsvfile object instead
@@ -192,7 +193,7 @@ def plot_colormap3dslice(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-        :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
+        :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector along x,y, or z)
         :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
         :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
         :kword useimshow:   Use imshow for raster background instead (default: False)
@@ -371,7 +372,7 @@ def plot_colormap3dslice(filename=None,
     #   xyz = (slice normal direction, 0:x, 1:y, 2:z
     slicestr='_slice'
     if not isinstance(normal, str):
-        if len(normal!=3):
+        if len(normal)!=3:
             logging.info("Error in interpreting normal " + str(normal))
             exit
     else:
