@@ -121,10 +121,18 @@ def make_surface(coords):
         next_triangles = [x + slices_in_plane*area_index for x in first_triangles]
         faces.extend(next_triangles)
 
-    # Change every other face triangle normal direction so that all face the same way
-    faces = np.array(faces)
-    for i in range(len(faces)):
+    # From last triangles remove every other triangle
+    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
+    removed = 0
+    for i in range(len(faces)-slices_in_plane, len(faces)):
         if i%2==0:
+            faces.pop(i-removed)
+            removed += 1
+
+    # Change every other face triangle (except for last slice triangles) normal direction so that all face the same way
+    faces = np.array(faces)
+    for i in range(len(faces)-int(slices_in_plane/2)):
+        if i%2!=0:
             faces[i,1], faces[i,2] =  faces[i,2], faces[i,1]
 
     return np.array(verts), faces
@@ -196,7 +204,10 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
 
 
     ## define points in the x axis where to find magnetopause points on the yz-plane
-    x_points = np.linspace(subsolar_x, end_x, x_point_n)
+    #dx = (subsolar_x-end_x)/x_point_n
+    next_from_subsolar_x = subsolar_x-1e3 # start making the magnetopause from a point slightly inwards from subsolar point
+    x_point_n = x_point_n-1
+    x_points = np.linspace(next_from_subsolar_x, end_x, x_point_n)
     
     ## interpolate more exact points for streamlines at exery x_point
     new_streampoints = np.zeros((len(x_points), len(streams), 2)) # new array for keeping interpolated streamlines in form new_streampoints[x_point, streamline, y and z -coordinates] 
@@ -249,7 +260,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
             # discard 'points' with r=0 and check that there's at least one streamline point in the sector
             sector_points = sector_points[sector_points[:,0] != 0.0]
             if sector_points.size == 0:
-                raise ValueError('No streamlines found in the sector')
+                raise ValueError('No streamlines found in the sector, x_i=',i)
 
             # find the points closest to the x-axis
             closest_point_radius = sector_points[sector_points[:,0].argmin(), 0] # smallest radius
