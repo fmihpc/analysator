@@ -1051,21 +1051,20 @@ class VlsvReader(object):
          if (name,operator) in self.variable_cache.keys():
             return self.read_variable_from_cache(name, cellids, operator)
 
-      if (len( self.__fileindex_for_cellid ) == 0):
-         # Do we need to construct the cellid index?
-         if isinstance(cellids, numbers.Number): # single or all cells
-            if cellids >= 0: # single cell
-               self.__read_fileindex_for_cellid()
-         else: # list of cellids
-            self.__read_fileindex_for_cellid()
-               
-      if self.__fptr.closed:
-         fptr = open(self.file_name,"rb")
+      if isinstance(cellids, numbers.Number):
+         if cellids >= 0:
+            read_filelayout = True
+         else: # cellids = -1
+            read_filelayout = False
       else:
-         fptr = self.__fptr
+         read_filelayout = True
+         # Here could be a conditional optimization for unique CellIDs,
+         # but it actually makes a very large query slower.
 
-
-         
+      if (len( self.__fileindex_for_cellid ) == 0) and read_filelayout:
+         # Do we need to construct the cellid index?
+         self.__read_fileindex_for_cellid()
+        
       # Get population and variable names from data array name 
       if '/' in name:
          popname = name.split('/')[0]
@@ -1104,14 +1103,16 @@ class VlsvReader(object):
             variable_offset = ast.literal_eval(child.text)
 
             # Define efficient method to read data in
+            reorder_data = False
+            arraydata = []
             try: # try-except to see how many cellids were given
                lencellids=len(cellids) 
                # Read multiple specified cells
                # If we're reading a large amount of single cells, it'll be faster to just read all
                # data from the file system and sort through it. For the CSC disk system, this
                # becomes more efficient for over ca. 5000 cellids.
-               arraydata = []
                if lencellids>5000: 
+                  reorder_data = True
                   result_size = len(cellids)
                   read_size = array_size
                   read_offsets = [0]
@@ -1128,7 +1129,12 @@ class VlsvReader(object):
                   result_size = 1
                   read_size = 1
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-                  
+            
+            if self.__fptr.closed:
+               fptr = open(self.file_name,"rb")
+            else:
+               fptr = self.__fptr
+
             for r_offset in read_offsets:
                use_offset = int(variable_offset + r_offset)
                fptr.seek(use_offset)
@@ -1146,20 +1152,23 @@ class VlsvReader(object):
                   data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
                if len(read_offsets)!=1:
                   arraydata.append(data)
-            
-            if len(read_offsets)==1 and result_size<read_size:
+
+            fptr.close()
+
+            if len(read_offsets)==1 and reorder_data:
                # Many single cell id's requested
                # Pick the elements corresponding to the requested cells
-               for cid in cellids:
-                  append_offset = self.__fileindex_for_cellid[cid]*vector_size
-                  arraydata.append(data[append_offset:append_offset+vector_size])
-               data = np.squeeze(np.array(arraydata))
+               arraydata = np.array(data)
+               if vector_size > 1:
+                  arraydata=arraydata.reshape(-1, vector_size)
+                  
+               append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids]
+               data = arraydata[append_offsets,...]
+               data = np.squeeze(data)
 
             if len(read_offsets)!=1:
                # Not-so-many single cell id's requested
                data = np.squeeze(np.array(arraydata))
-
-            fptr.close()
 
             if vector_size > 1:
                data=data.reshape(result_size, vector_size)
