@@ -57,9 +57,10 @@ def jplots(
         bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
     cut = cut_through(fobj, point1, point2)
-    print(cut)
-    cellids = cut["CellID"][:-1]
-    distances = cut["distances"]
+    cellids = cut[0].data[:-1]
+    distances = cut[1].data
+    print(cellids)
+    print(distances)
     distances = np.array(distances) / r_e
 
     data_arr = np.zeros((fnr_arr.size, distances.size), dtype=float)
