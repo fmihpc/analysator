@@ -34,8 +34,8 @@ r_e = 6.371e6
 
 def jplots(
     var,
-    fnr0,
     fnr1,
+    fnr2,
     bulkpath,
     bulkprefix,
     point1,
@@ -47,14 +47,14 @@ def jplots(
     cmap="viridis",
 ):
 
-    fnr_arr = np.arange(fnr0, fnr1 + 0.1, 1, dtype=int)
+    fnr_arr = np.arange(fnr1, fnr2 + 0.1, 1, dtype=int)
     t_arr = np.zeros_like(fnr_arr).astype(float)
 
     if bulkpath[-1] != "/":
         bulkpath += "/"
 
     fobj = pt.vlsvfile.VlsvReader(
-        bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr0).zfill(7))
+        bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
     cut = cut_through(fobj, point1, point2)
     cellids = cut["CellID"][:-1]
