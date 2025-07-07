@@ -57,10 +57,8 @@ def jplots(
         bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
     cut = cut_through(fobj, point1, point2)
-    cellids = cut[0].data
-    distances = cut[1].data
-    print(cellids)
-    print(distances)
+    cellids = cut[0].data[:-1]
+    distances = cut[1].data[:-1]
     distances = np.array(distances) / r_e
 
     data_arr = np.zeros((fnr_arr.size, distances.size), dtype=float)
@@ -158,8 +156,8 @@ def main():
         fnr2=args.fnr[1],
         bulkpath=args.bulkpath,
         bulkprefix=args.bulkprefix,
-        point1=[args.point[0],args.point[1],args.point[2]],
-        point2=[args.point[3],args.point[4],args.point[5]],
+        point1=[args.point[0], args.point[1], args.point[2]],
+        point2=[args.point[3], args.point[4], args.point[5]],
         outputdir=args.outputdir,
         outputname=args.outputname,
         filt=args.filt,
