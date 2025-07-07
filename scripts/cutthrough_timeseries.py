@@ -13,7 +13,7 @@ r_e = 6.371e6
 
     This script takes 12 parameters, example usage:
     
-    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap> -point <point1> <point2>
+    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -point <point1_x> <point1_y> <point1_z> <point2_x> <point2_y> <point2_z> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap>
 
     
     Parameter descriptions:
@@ -132,9 +132,9 @@ def main():
     )
     parser.add_argument(
         "-point",
-        nargs=2,
-        help="First and last point on the line to plot",
-        type=list,
+        nargs=6,
+        help="x y z of first and x y z of last point on the line to plot",
+        type=float,
         required=True,
     )
     parser.add_argument("-outputdir", help="Output file directory", type=str)
@@ -156,8 +156,8 @@ def main():
         fnr2=args.fnr[1],
         bulkpath=args.bulkpath,
         bulkprefix=args.bulkprefix,
-        point1=args.point[0],
-        point2=args.point[1],
+        point1=[args.point[0],args.point[1],args.point[2]],
+        point2=[args.point[3],args.point[4],args.point[5]],
         outputdir=args.outputdir,
         outputname=args.outputname,
         filt=args.filt,
