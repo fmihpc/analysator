@@ -1,0 +1,17 @@
+FSgrid variables,Corresponding Vlasov grid variable in older versions
+fg\_b,B
+fg\_b\_background,background\_B
+fg\_b\_perturbed,perturbed\_B
+fg\_b\_vol,B\_vol
+fg\_e,E
+fg\_e\_hall\_??,EXHALL\_???\_???
+fg\_e\_vol,E\_vol
+fg\_rhom,Rhom
+fg\_rhoq,Rhoq
+fg\_v,V
+fg\_pressure,Pressure
+fg\_maxdt\_fieldsolver,max\_fields\_dt
+fg\_rank,FSgrid\_rank
+fg\_amr\_level,
+fg\_boundarytype,FSgrid\_boundaryType
+fg\_boundarylayer,Boundary\_layerx
