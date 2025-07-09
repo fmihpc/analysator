@@ -1287,7 +1287,6 @@ class VlsvReader(object):
                tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
          return data_operators[operator](reducer.operation( tmp_vars ))
 
-      fptr.close()
       if name!="":
          raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
 
