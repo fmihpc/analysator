@@ -51,6 +51,7 @@ from operator import itemgetter
 
 interp_method_aliases = {"trilinear":"linear"}
 
+neighbors_cache_file = "neighbors_cache.pkl"
 
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
@@ -144,17 +145,19 @@ class VlsvReader(object):
       if (hasattr(self, "__fptr")) and self.__fptr is not None:
          self.__fptr.close()
 
-   def __init__(self, file_name, fsGridDecomposition=None):
+   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
-          :param fsGridDecomposition: Either None or a len-3 list of ints.
+          :kword fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
+          :kword file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
       '''
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
+      self.file_cache = file_cache
       try:
          self.__fptr = vlsvcache.PicklableFile(open(self.file_name,"rb"))
       except FileNotFoundError as e:
@@ -202,6 +205,9 @@ class VlsvReader(object):
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
       self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
       self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8,) np.array of cellids)
+      self.__neighbors_cache_len = 0
+      self.__neighbors_cache_available = os.path.isfile(os.path.join(self.get_cache_folder(),neighbors_cache_file))
+      self.__neighbors_cache_loaded = False
 
       # Start calling functions only after initializing trivial members
       self.get_linked_readers()
@@ -2120,6 +2126,7 @@ class VlsvReader(object):
       self.variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
       # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
       self.__read_fileindex_for_cellid()
+      return self.variable_cache[(name,operator)]
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
@@ -2132,6 +2139,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
+      if((name,operator) in self.variable_cache.keys()):
+         return self.read_variable_from_cache(name,cellids,operator)
 
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
@@ -2147,8 +2156,6 @@ class VlsvReader(object):
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
       
-      if((name,operator) in self.variable_cache.keys()):
-         return self.read_variable_from_cache(name,cellids,operator)
 
       for reader in self.__linked_readers:
          try:
@@ -2830,12 +2837,14 @@ class VlsvReader(object):
 
       '''
 
-      mask = ~dict_keys_exist(self.__cell_vertices,cids,prune_unique=False)
-      coords = self.get_cell_coordinates(cids[mask])
-      vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
+      mask = ~dict_keys_exist(self.__cell_corner_vertices,cids,prune_unique=False)
+      
       cell_vertex_sets = {}
 
       if(len(cids[mask]) > 0): 
+         coords = self.get_cell_coordinates(cids[mask])
+         vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
+
          ii = 0
          for x in [-1,1]:
             for y in [-1,1]:
@@ -2852,7 +2861,7 @@ class VlsvReader(object):
             
          self.__cell_corner_vertices.update(cell_vertex_sets)
 
-      for i, c in enumerate(cids[~mask]):
+      for c in cids[~mask]:
          cell_vertex_sets[c] = self.__cell_corner_vertices[c]
 
       return cell_vertex_sets
@@ -2862,20 +2871,23 @@ class VlsvReader(object):
    def build_cell_neighborhoods(self, cids):
 
       mask = ~dict_keys_exist(self.__cell_neighbours, cids, prune_unique=False)
-      cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
-
-      cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
-      vertices_todo = set().union(*cell_vertex_sets.values())
-      neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
-      for c,verts in cell_vertex_sets.items():
-         # neighbor_tuples = self.build_dual_from_vertices(verts)
-         # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
-         cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
       
-      self.__cell_neighbours.update(cell_neighbor_sets)
+      cell_neighbor_sets = {}
+      
+      if len(cids[mask]) > 0:
+         cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
+         cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
+         vertices_todo = set().union(*cell_vertex_sets.values())
+         neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
+         for c in cell_vertex_sets.keys():
+            # neighbor_tuples = self.build_dual_from_vertices(verts)
+            # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
+            cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
+         
+         self.__cell_neighbours.update(cell_neighbor_sets)
 
       for c in cids[~mask]:
-         cell_neighbor_sets[c] = self.__cell_neighbors[c]
+         cell_neighbor_sets[c] = self.__cell_neighbours[c]
 
       return cell_neighbor_sets
 
@@ -3921,4 +3933,63 @@ class VlsvReader(object):
          
       else:
          raise ValueError
+   
+   def get_cache_folder(self):
 
+      fn = self.file_name
+
+      head,tail = os.path.split(fn)
+      path = head
+      numslist = re.findall(r'\d+(?=\.vlsv)', tail)
+
+      if(len(numslist) == 0):
+         path = os.path.join(path,"vlsvcache",tail[:-5])
+      else:
+         nums = numslist[-1]
+         head, tail = tail.split(nums)
+
+         leading_zero = True
+         path = os.path.join(path,"vlsvcache",head[:-1])
+         for i,n in enumerate(nums):
+            if n == '0' and leading_zero: continue
+            if leading_zero:
+               fmt = "{:07d}"
+            else:
+                fmt = "{:0"+str(7-i)+"d}"
+            path = os.path.join(path, fmt.format(int(n)*10**(len(nums)-i-1)))
+            leading_zero = False
+
+      # print(path)
+      return path
+
+   def cache_neighbor_stencils(self):
+      self.load_neighbor_stencils_from_filecache()
+      path = self.get_cache_folder()
+      os.makedirs(path,exist_ok=True) 
+      cache_file_neighbors = "neighbors_cache.pkl"
+      with open(os.path.join(path,cache_file_neighbors),'wb') as cache:
+            pickle.dump({
+               "cell_neighbours": self._VlsvReader__cell_neighbours,
+               "cell_vertices":self._VlsvReader__cell_vertices,
+               "cell_corner_vertices":self._VlsvReader__cell_corner_vertices}
+               ,cache)
+
+   def load_neighbor_stencils_from_filecache(self):
+      if self.__neighbors_cache_available and not self.__neighbors_cache_loaded:
+         path = self.get_cache_folder()
+         cache_file_neighbors = "neighbors_cache.pkl"
+         if(os.path.isfile(os.path.join(path,cache_file_neighbors))):
+            with open(os.path.join(path,cache_file_neighbors),'rb') as cache:
+               loaded = pickle.load(cache)
+               
+               self._VlsvReader__cell_neighbours.update(loaded["cell_neighbours"])
+               self._VlsvReader__cell_vertices.update(loaded["cell_vertices"])
+               self._VlsvReader__cell_corner_vertices.update(loaded["cell_corner_vertices"])
+               self.__neighbors_cache_len = len(self._VlsvReader__cell_neighbours)
+         else:
+            self.__neighbors_cache_loaded = True
+
+   def clear_cache_folder(self):
+      path = self.get_cache_folder()
+      import shutil
+      shutil.rmtree(path)

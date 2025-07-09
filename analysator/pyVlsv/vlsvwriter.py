@@ -29,7 +29,6 @@ import numpy as np
 import os
 import warnings
 from reduction import datareducers,data_operators
-import warnings
 
 class VlsvWriter(object):
    ''' Class for reading VLSV files
@@ -155,7 +154,7 @@ class VlsvWriter(object):
          if mesh == "SpatialGrid":
             if "MESH_DOMAIN_EXTENTS" not in tags:
                extents = vlsvReader.get_mesh_domain_extents(mesh)
-               print(extents)
+               # print(extents)
                self.__write( data = extents, name='', tag="MESH_DOMAIN_EXTENTS", mesh=mesh)
 
 
