@@ -13,7 +13,7 @@ file_name="/wrk-vakka/group/spacephysics/vlasiator/3D/"+run+"/bulk/bulk5.0000070
 ## magnetopause
 x_point_n = 50 # number needed for 2d slice plots, default is 50
 
-vertices, faces = pt.calculations.find_magnetopause_3d(
+vertices, faces = pt.calculations.find_magnetopause_sw_streamline_3d(
     file_name, 
     streamline_seeds=None,
     seeds_n=25,
