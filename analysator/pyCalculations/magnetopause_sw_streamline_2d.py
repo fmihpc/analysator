@@ -141,7 +141,7 @@ def make_magnetopause(streamlines, end_x=-15*6371000, x_point_n=50):
     return magnetopause
 
 
-def find_magnetopause_2d(vlsvfile, streamline_seeds=None, seeds_n=200, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], streamline_length=45*6371000, end_x=-15*6371000, x_point_n=50):
+def find_magnetopause_sw_streamline_2d(vlsvfile, streamline_seeds=None, seeds_n=200, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], streamline_length=45*6371000, end_x=-15*6371000, x_point_n=50):
     """Finds the magnetopause position by tracing streamlines of the velocity field for 2d runs.
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader

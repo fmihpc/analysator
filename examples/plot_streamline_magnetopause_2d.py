@@ -9,7 +9,7 @@ file_name="/wrk-vakka/group/spacephysics/vlasiator/2D/"+run+"/bulk/bulk.0002000.
 outdir= ""
 
 # magnetopause points
-magnetopause = pt.calculations.find_magnetopause_2d(
+magnetopause = pt.calculations.find_magnetopause_sw_streamline_2d(
         file_name,
         streamline_seeds=None,
         seeds_n=200,

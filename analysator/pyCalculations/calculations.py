@@ -61,5 +61,5 @@ from fieldtracer import dynamic_field_tracer
 from non_maxwellianity import epsilon_M
 from null_lines import LMN_null_lines_FOTE
 from interpolator_amr import AMRInterpolator, supported_amr_interpolators
-from magnetopause2d import find_magnetopause_2d
-from magnetopause3d import find_magnetopause_3d, make_surface
+from magnetopause_sw_streamline_2d import find_magnetopause_sw_streamline_2d
+from magnetopause_sw_streamline_3d import find_magnetopause_sw_streamline_3d

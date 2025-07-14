@@ -268,7 +268,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     return magnetopause
 
 
-def find_magnetopause_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36):
+def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36):
     """Finds the magnetopause position by tracing streamlines of the velocity field.
 
         :param vlsvfile: path to .vlsv bulk file to use for VlsvReader
