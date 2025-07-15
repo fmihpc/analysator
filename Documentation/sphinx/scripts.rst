@@ -12,6 +12,15 @@ biot_savart
 
 ------------
 
+cutthrough_timeseries
+---------------------
+:doc:`cutthrough_timeseries`
+
+.. automodule:: cutthrough_timeseries
+    :no-index:
+
+---------------------
+
 gics
 ----
 :doc:`gics`
@@ -80,6 +89,7 @@ tsyganenko
    :caption: Scripts:
 
    biot_savart
+   cutthrough_timeseries
    gics
    magnetopause2d
    magnetopause3d
