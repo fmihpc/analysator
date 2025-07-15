@@ -22,10 +22,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-import pytools as pt
+import analysator as pt
 import numpy as np
 import sys
 import argparse
+import logging
 
 
 def extract_file(filename):
@@ -37,9 +38,10 @@ def extract_file(filename):
         f.optimize_open_file()
         t=f.read_parameter("time")
         if t == None:
-	    t=f.read_parameter("t")
-            if t == None:	    
-		print("Unknown time format in file " + filename)
+            t=f.read_parameter("t")
+        if t == None:	    
+            logging.info("Unknown time format in file " + filename)
+
         
         for coord in coords:
             if(args.re):
