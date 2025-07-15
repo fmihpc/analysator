@@ -30,20 +30,20 @@ gics
  
 ------------
 
-magnetopause2d
---------------
-:doc:`magnetopause2d`
+magnetopause_sw_streamline_2d
+-----------------------------
+:doc:`magnetopause_sw_streamline_2d`
 
-.. automodule:: magnetopause2d
+.. automodule:: magnetopause_sw_streamline_2d
     :no-index:
 
 ------------
 
-magnetopause3d
---------------
-:doc:`magnetopause3d`
+magnetopause_sw_streamline_3d
+-----------------------------
+:doc:`magnetopause_sw_streamline_3d`
 
-.. automodule:: magnetopause3d
+.. automodule:: magnetopause_sw_streamline_3d
     :no-index:
 
 ------------
