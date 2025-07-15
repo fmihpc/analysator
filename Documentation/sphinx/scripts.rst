@@ -91,8 +91,8 @@ tsyganenko
    biot_savart
    cutthrough_timeseries
    gics
-   magnetopause2d
-   magnetopause3d
+   magnetopause_sw_streamline_2d
+   magnetopause_sw_streamline_3d
    obliqueshock
    obliqueshock_nif
    shue
