@@ -124,14 +124,28 @@ def make_surface(coords):
     # From last triangles remove every other triangle
     # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
     removed = 0
-    for i in range(len(faces)-slices_in_plane, len(faces)):
-        if i%2==0:
+    for i in range(len(faces)-slices_in_plane*2, len(faces)):
+        if i%2!=0:
             faces.pop(i-removed)
             removed += 1
 
-    # Change every other face triangle (except for last slice triangles) normal direction so that all face the same way
+    # From last triangles remove every other triangle
+    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
+    # Also fix the last triangles so that they only point to one subsolar point and have normals towards outside
+    subsolar_index = int(len(verts)-slices_in_plane)
+
+    for i,triangle in enumerate(reversed(faces)):
+        if i > (slices_in_plane): # faces not in last plane (we're going backwards) 
+            break
+
+        faces[len(faces)-i-1] = np.clip(triangle, a_min=0, a_max=subsolar_index)
+
+    # this would remove duplicate subsolar points from vertices but makes 2d slicing harder
+    #verts = verts[:int(len(verts)-slices_in_plane+1)]
+
+    # Change every other face triangle (except for last slice triangles) normal direction so that all face the same way (hopefully)
     faces = np.array(faces)
-    for i in range(len(faces)-int(slices_in_plane/2)):
+    for i in range(len(faces)-int(slices_in_plane)):
         if i%2!=0:
             faces[i,1], faces[i,2] =  faces[i,2], faces[i,1]
 

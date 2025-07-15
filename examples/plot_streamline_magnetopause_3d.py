@@ -1,5 +1,5 @@
 """
-An example of using find_magnetopause_3d() and plotting the output.
+An example of using find_find_magnetopause_3d_sw_streamline() and plotting the output.
 """
 
 import numpy as np
@@ -40,7 +40,7 @@ plt.close()
 ### 2D slice plots ###
 
 vertices = vertices/6371000 # to RE
-magnetopause = np.array(np.split(vertices, x_point_n+1)) # magnetopause points grouped by x-axis coordinate
+magnetopause = np.array(np.split(vertices, x_point_n)) # magnetopause points grouped by x-axis coordinate
 
 ## take separate arrays for different 2d slice plots
 
