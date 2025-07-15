@@ -89,6 +89,7 @@ tsyganenko
    :caption: Scripts:
 
    biot_savart
+   cutthrough_timeseries
    gics
    magnetopause2d
    magnetopause3d
