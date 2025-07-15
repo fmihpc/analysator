@@ -1,5 +1,5 @@
 """
-An example of using find_magnetopause_2d() and plotting the output over colormap.
+An example of using find_magnetopause_2d_sw_streamline() and plotting the output over colormap.
 """
 
 import analysator as pt
