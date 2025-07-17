@@ -32,14 +32,16 @@ gics
 
 plot_streamline_magnetopause_2d
 -------------------------------
+:doc:`plot_streamline_magnetopause_2d`
 
 .. automodule:: plot_streamline_magnetopause_2d
 	:no-index:
-    
+
 ------------
 
 plot_streamline_magnetopause_3d
 -------------------------------
+:doc:`plot_streamline_magnetopause_3d`
 
 .. automodule:: plot_streamline_magnetopause_3d
 	:no-index:
