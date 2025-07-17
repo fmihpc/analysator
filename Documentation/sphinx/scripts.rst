@@ -35,6 +35,7 @@ plot_streamline_magnetopause_2d
 
 .. automodule:: plot_streamline_magnetopause_2d
 	:no-index:
+    
 ------------
 
 plot_streamline_magnetopause_3d
