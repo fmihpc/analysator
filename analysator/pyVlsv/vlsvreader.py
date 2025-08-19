@@ -3919,7 +3919,6 @@ class VlsvReader(object):
             lowcorners = lowcorners_all[start:end,:]
             dxs = dxs_all[start:end,:]
             highcorners = lowcorners+dxs
-            print(np.sum(n_domain_cells), ncells, start, end,lowcorners)
             mins = np.min(lowcorners,axis=0)
             maxs = np.max(highcorners,axis=0)
 
