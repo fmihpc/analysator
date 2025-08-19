@@ -60,8 +60,19 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    vlsvReader_list = np.atleast_1d(vlsvReader_list)
    variables = np.atleast_1d(variables)
    cellids = np.atleast_1d(cellids)
-   parameters = ["t","tstep","fileIndex"]
-   parameter_units=["s","",""]
+   reader_0 = vlsvReader_list[0]
+
+   # Check against legacy files with tstep instead of timestep:
+   if reader_0.check_parameter("tstep"):
+      parameters = ["t","tstep","fileIndex"]
+      parameter_units=["s","",""]
+   elif reader_0.check_parameter("timestep"):
+      parameters = ["t","timestep","fileIndex"]
+      parameter_units=["s","",""]
+   else:
+      logging.warning("Could not obtain tstep or timestep from readers. Returning only t and fileIndex.")
+      parameters = ["t","fileIndex"]
+      parameter_units=["s",""]
    #construct empty units, if none are given
    if (units == "") or (len(units) != len(variables)):
       units=[ "" for i in range(len(variables))]
@@ -86,6 +97,95 @@ def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
          # Save the data into the right slot in the data array:
          for i in range(len(cellids)):
             data[len(parameters)+i*len(variables)+j].append(vlsvReader.read_variable( variable, cellids[i] ))
+            #TODO Use vectorization over cellids!
+
+      # For optimization purposes we are now freeing vlsvReader's memory
+      # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
+      vlsvReader.optimize_clear_fileindex_for_cellid()
+      # Close the vlsv reader's file:
+      vlsvReader.optimize_close_file()
+   from output import output_1d
+   return output_1d( data, 
+                     parameters +  [variables[(int)(i)%(int)(len(variables))] for i in range(len(data)-len(parameters))], 
+                     parameter_units + [units[(int)(i)%(int)(len(units))] for i in range(len(data)-len(parameters))] )
+
+
+def point_time_evolution( vlsvReader_list, variables, coordinates, units="", method='nearest'):
+   ''' Returns variable data from a time evolution of some certain cell ids
+
+       :param vlsvReader_list:         List containing VlsvReaders with a file open
+       :type vlsvReader_list:          :class:`vlsvfile.VlsvReader`
+       :param variables:               Name of the variables
+       :param coordinates:             List of coordinates [n,3]
+       :param units:                   List of units for the variables (OPTIONAL)
+       :param method:                  name of interpolation method ['nearest','linear']
+       :returns: an array containing the data for the time evolution for every coordinate
+
+       .. code-block:: python
+
+          import pytools as pt; import pylab as pl
+          # Example of usage:
+          time_data = pt.calculations.point_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], coordinates=[[1e8,0,0],[1.2e8,0,0]], units=["N", "Pascal", "T"] )
+
+          # Check output
+          logging.info time_data
+
+          # Now plot the results:
+          time = time_data[0]
+          rho = time_data[3]
+          pt.plot.plot_variables(time, rho)
+          pl.show()
+
+          # Do post processing:
+          rho_data = rho.data
+          non_existing_example_function(rho_data)
+   
+
+   '''
+   vlsvReader_list = np.atleast_1d(vlsvReader_list)
+   variables = np.atleast_1d(variables)
+   coordinates = np.array(coordinates)
+   if coordinates.ndim == 1:
+      coordinates = coordinates[np.newaxis,:]
+   reader_0 = vlsvReader_list[0]
+
+   # Check against legacy files with tstep instead of timestep:
+   if reader_0.check_parameter("tstep"):
+      parameters = ["t","tstep","fileIndex"]
+      parameter_units=["s","",""]
+   elif reader_0.check_parameter("timestep"):
+      parameters = ["t","timestep","fileIndex"]
+      parameter_units=["s","",""]
+   else:
+      logging.warning("Could not obtain tstep or timestep from readers. Returning only t and fileIndex.")
+      parameters = ["t","fileIndex"]
+      parameter_units=["s",""]
+   #construct empty units, if none are given
+   if (units == "") or (len(units) != len(variables)):
+      units=[ "" for i in range(len(variables))]
+   #construct data 
+   data = [[] for i in range(len(parameters)+coordinates.shape[0]*len(variables))]
+   for t in range(len(vlsvReader_list)):
+      # Get the vlsv reader
+      vlsvReader = vlsvReader_list[t]
+      # Open the vlsv reader's file:
+      vlsvReader.optimize_open_file()
+      #go through parameters
+      for j in range(len(parameters)):
+         # Read the parameter
+         # Save the data into the right slot in the data array:
+         data[j].append(vlsvReader.read_parameter( parameters[j]))
+
+      # Go through variables:
+      for j in range(len(variables)):
+         variable = variables[j]
+         # Read the variable for all cell ids
+         #variables_for_cellids = vlsvReader.read_variables_for_cellids( variable, cellids )
+         # Save the data into the right slot in the data array:
+         for i in range(coordinates.shape[0]):
+            data[len(parameters)+i*len(variables)+j].append(vlsvReader.read_interpolated_variable( variable, coordinates[i,:], method=method ))
+            #TODO Use vectorization over coordinates!
+
       # For optimization purposes we are now freeing vlsvReader's memory
       # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
       vlsvReader.optimize_clear_fileindex_for_cellid()
