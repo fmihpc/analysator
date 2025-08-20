@@ -195,7 +195,7 @@ def plot_colormap3dslice(filename=None,
         :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
         :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
         :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
-        :kword flipxaxis:   Invert x-axis so that the Sun is on the left (default: False)
+        :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
         :kword useimshow:   Use imshow for raster background instead (default: False)
         :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
 
