@@ -1,4 +1,4 @@
-#s 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
@@ -34,6 +34,7 @@ import pickle # for caching linked readers, switch to VLSV/XML at some point - h
 import h5py
 
 import vlsvvariables
+import vlsvcache
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
 try:
    from collections.abc import Iterable
