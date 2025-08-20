@@ -568,7 +568,7 @@ def plot_colormap(filename=None,
             reqvariables = external(None,None,None,None,True)
             for i in reqvariables:
                 if not (i in pass_vars): pass_vars.append(i)
-        except:
+        except Exception as e:
             logging.warning("External "+ str(external)+ " failed with the following exception:" + str(e))
             pass
     # If expression or external routine need variables, read them from the file.
