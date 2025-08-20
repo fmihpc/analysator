@@ -30,21 +30,21 @@ gics
  
 ------------
 
-magnetopause2d
---------------
-:doc:`magnetopause2d`
+plot_streamline_magnetopause_2d
+-------------------------------
+:doc:`plot_streamline_magnetopause_2d`
 
-.. automodule:: magnetopause2d
-    :no-index:
+.. automodule:: plot_streamline_magnetopause_2d
+	:no-index:
 
 ------------
 
-magnetopause3d
---------------
-:doc:`magnetopause3d`
+plot_streamline_magnetopause_3d
+-------------------------------
+:doc:`plot_streamline_magnetopause_3d`
 
-.. automodule:: magnetopause3d
-    :no-index:
+.. automodule:: plot_streamline_magnetopause_3d
+	:no-index:
 
 ------------
 
@@ -91,8 +91,8 @@ tsyganenko
    biot_savart
    cutthrough_timeseries
    gics
-   magnetopause2d
-   magnetopause3d
+   plot_streamline_magnetopause_2d
+   plot_streamline_magnetopause_3d
    obliqueshock
    obliqueshock_nif
    shue
