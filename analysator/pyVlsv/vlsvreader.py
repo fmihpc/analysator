@@ -350,8 +350,8 @@ class VlsvReader(object):
       return the given default value.
 
       :param data: str, a key to stored metadata.
-      :param default
-      
+      :param default: value to return if key does not exist
+
       '''
 
       if type(key) == type(("a tuple",)):
@@ -378,7 +378,7 @@ class VlsvReader(object):
       return the given default value.
 
       :param data: str, a key to stored metadata.
-      :param default
+      :param default: value to return if key does not exist
 
       '''
       
