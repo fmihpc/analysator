@@ -29,8 +29,6 @@ documentation for details.
    analysator
    analysator_exercises
    analysator_supported
-   about
-
 
 .. toctree::
    :maxdepth: 2
@@ -47,3 +45,8 @@ documentation for details.
    :imported-members:
    :undoc-members:
 
+.. toctree::
+   :maxdepth: 1
+   :caption: About 
+
+   about
