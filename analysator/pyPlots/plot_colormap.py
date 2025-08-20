@@ -198,7 +198,7 @@ def plot_colormap(filename=None,
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
         :kword useimshow:   Use imshow for raster background instead (default: False)
         :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
-        :kword flipxaxis:   Invert output plot x-axis so that the Sun is on the left (default: False)
+        :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
 
         :returns:           Outputs an image to a file or to the screen.
 
