@@ -1711,7 +1711,7 @@ class VlsvReader(object):
          coordinates = np.atleast_2d(coordinates)
 
       # Check one value for the length
-      test_variable = self.read_variable(name,cellids=[1],operator=operator)
+      test_variable = self.read_variable(name,cellids=[self.get_cellid(coordinates[0,:])],operator=operator)
       if isinstance(test_variable,np.ma.core.MaskedConstant):
          value_length=1
       elif isinstance(test_variable, Iterable):
