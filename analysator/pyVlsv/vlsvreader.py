@@ -351,7 +351,9 @@ class VlsvReader(object):
 
       :param data: str, a key to stored metadata.
       :param default
+      
       '''
+
       if type(key) == type(("a tuple",)):
          print("tuple reader not implemented")
       elif type(key) == type("a string"):
@@ -377,6 +379,7 @@ class VlsvReader(object):
 
       :param data: str, a key to stored metadata.
       :param default
+
       '''
       
 
