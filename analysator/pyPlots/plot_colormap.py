@@ -70,7 +70,7 @@ def plot_colormap(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
-                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none',
+                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none', flipxaxis=False,
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -198,6 +198,7 @@ def plot_colormap(filename=None,
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
         :kword useimshow:   Use imshow for raster background instead (default: False)
         :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+        :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
 
         :returns:           Outputs an image to a file or to the screen.
 
@@ -1308,6 +1309,10 @@ def plot_colormap(filename=None,
     if noylabels:
         for label in ax1.yaxis.get_ticklabels():
             label.set_visible(False)
+
+    # Flip x-axis if desired
+    if flipxaxis:
+        ax1.xaxis.set_inverted(bool(flipxaxis))
     
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
