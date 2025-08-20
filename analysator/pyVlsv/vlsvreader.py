@@ -1953,9 +1953,10 @@ class VlsvReader(object):
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
          pass
-          
+      
+      numWritingRanks = self.read_parameter("numWritingRanks")
       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
-      assert np.prod(self.__fsGridDecomposition) == self.read_parameter("numWritingRanks"), "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
+      assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
       
       self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
 
