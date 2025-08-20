@@ -51,31 +51,7 @@ from operator import itemgetter
 
 interp_method_aliases = {"trilinear":"linear"}
 
-class PicklableFile(object):
-   def __init__(self, fileobj):
-      self.fileobj = fileobj
 
-   def __getattr__(self, key):
-      return getattr(self.fileobj, key)
-
-   def __getstate__(self):
-      ret = self.__dict__.copy()
-      ret['_file_name'] = self.fileobj.name
-      ret['_file_mode'] = self.fileobj.mode
-      if self.fileobj.closed:
-         ret['_file_pos'] = 0
-      else:
-         ret['_file_pos'] = self.fileobj.tell()
-      del ret['fileobj']
-      return ret
-
-   def __setstate__(self, dict):
-      self.fileobj = open(dict['_file_name'], dict['_file_mode'])
-      self.fileobj.seek(dict['_file_pos'])
-      del dict['_file_name']
-      del dict['_file_mode']
-      del dict['_file_pos']
-      self.__dict__.update(dict)
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
@@ -180,13 +156,15 @@ class VlsvReader(object):
 
       self.file_name = file_name
       try:
-         self.__fptr = PicklableFile(open(self.file_name,"rb"))
+         self.__fptr = vlsvcache.PicklableFile(open(self.file_name,"rb"))
       except FileNotFoundError as e:
          logging.info("File not found: " + self.file_name)
          raise e
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
+
+      self.__metadata_cache = vlsvcache.MetadataFileCache()
 
       self.__metadata_read = False  
       self.__metadata_dict = {} # Used for reading in and storing derived/other metadata such as linked file paths

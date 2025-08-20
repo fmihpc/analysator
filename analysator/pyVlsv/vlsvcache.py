@@ -25,3 +25,87 @@ import logging
 import os
 import sys
 import warnings
+import numbers
+import numpy as np
+from operator import itemgetter
+import h5py
+
+class VariableCache:
+    ''' Class for handling in-memory variable/reducer caching.
+    '''
+    def __init__(self, reader):
+        self.__varcache = {} # {(varname, operator):data}
+        self.__reader = reader
+
+    def keys(self):
+        return self.__varcache.keys()
+
+    def read_variable_from_cache(self, name, cellids, operator):
+      ''' Read variable from cache instead of the vlsv file.
+         :param name: Name of the variable
+         :param cellids: a value of -1 reads all data
+         :param operator: Datareduction operator. "pass" does no operation on data
+         :returns: numpy array with the data, same format as read_variable
+
+         .. seealso:: :func:`read_variable`
+      '''
+
+      var_data = self.__varcache[(name,operator)]
+      if var_data.ndim == 2:
+         value_len = var_data.shape[1]
+      else:
+         value_len = 1
+         
+      if isinstance(cellids, numbers.Number):
+         if cellids == -1:
+            return var_data
+         else:
+            return var_data[self.__reader.get_cellid_locations()[cellids]]
+      else:
+         if(len(cellids) > 0):
+            indices = np.array(itemgetter(*cellids)(self.__reader.get_cellid_locations()),dtype=np.int64)
+         else:
+            indices = np.array([],dtype=np.int64)
+         if value_len == 1:
+            return var_data[indices]
+         else:
+            return var_data[indices,:]
+
+class FileCache:
+   ''' Top-level class for caching to file.
+   '''
+   pass
+
+class MetadataFileCache(FileCache):
+   pass
+
+class VariableFileCache(FileCache):
+   pass
+
+class PicklableFile(object):
+   ''' Picklable file pointer object.
+   '''
+   def __init__(self, fileobj):
+      self.fileobj = fileobj
+
+   def __getattr__(self, key):
+      return getattr(self.fileobj, key)
+
+   def __getstate__(self):
+      ret = self.__dict__.copy()
+      ret['_file_name'] = self.fileobj.name
+      ret['_file_mode'] = self.fileobj.mode
+      if self.fileobj.closed:
+         ret['_file_pos'] = 0
+      else:
+         ret['_file_pos'] = self.fileobj.tell()
+      del ret['fileobj']
+      return ret
+
+   def __setstate__(self, dict):
+      self.fileobj = open(dict['_file_name'], dict['_file_mode'])
+      self.fileobj.seek(dict['_file_pos'])
+      del dict['_file_name']
+      del dict['_file_mode']
+      del dict['_file_pos']
+      self.__dict__.update(dict)
