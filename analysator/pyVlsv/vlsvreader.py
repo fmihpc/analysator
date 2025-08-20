@@ -30,6 +30,8 @@ import os
 import sys
 import re
 import numbers
+import pickle # for caching linked readers, switch to VLSV/XML at some point - h5py?
+import h5py
 
 import vlsvvariables
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
@@ -185,6 +187,14 @@ class VlsvReader(object):
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
 
+      self.__metadata_read = False  
+      self.__metadata_dict = {} # Used for reading in and storing derived/other metadata such as linked file paths
+      self.__linked_files = set()
+      self.__linked_readers = set()
+      
+      
+      
+
       self.__max_spatial_amr_level = -1
       self.__fsGridDecomposition = fsGridDecomposition
 
@@ -204,7 +214,7 @@ class VlsvReader(object):
       self.__unavailable_reducers = set() # Set of strings of datareducer names
       self.__current_reducer_tree_nodes = set() # Set of strings of datareducer names
 
-      self.__read_xml_footer()
+      
                               # vertex-indices is a 3-tuple of integers
       self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
@@ -213,6 +223,10 @@ class VlsvReader(object):
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
       self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
       self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8,) np.array of cellids)
+
+      # Start calling functions only after initializing trivial members
+      self.get_linked_readers()
+      self.__read_xml_footer()
 
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -298,6 +312,128 @@ class VlsvReader(object):
 
 
       self.__fptr.close()
+
+   def get_linked_readers_filename(self):
+      '''Need to go to a consolidated metadata handler'''
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_linked_readers.pkl")
+      return s
+
+   def get_linked_readers(self, reload=False):
+      self.__linked_files = self.get_reader_metadata("linked_reader_files", set())
+      if len(self.__linked_files)==0 or reload:
+         if(os.path.isfile(self.get_linked_readers_filename())):
+            with open(self.get_linked_readers_filename(), 'rb') as f:
+               l = pickle.load(f)
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+               self.__linked_files.update(l)
+               print(l)
+
+      else:
+         self.add_linked_readers()
+
+         self.add_metadata("linked_reader_files",self.__linked_files)
+
+
+
+      return self.__linked_readers
+
+   def get_metadata_filename(self):
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_metadata.pkl")
+      return s
+
+   def get_h5_metadata(self, key, default):
+      ''' Read metadata from hdf5 metadata file, and if not available,
+      return the given default value.
+
+      :param data: str, a key to stored metadata.
+      :param default: value to return if key does not exist
+
+      '''
+
+      if type(key) == type(("a tuple",)):
+         print("tuple reader not implemented")
+      elif type(key) == type("a string"):
+         print("Reading str-keyed data")
+      else:
+         raise TypeError("key must be str or tuple")      
+
+      if not self.__metadata_read:
+         try:
+            fn = self.get_metadata_filename()
+            with open(fn,'rb') as f:
+               self.__metadata_dict = pickle.load(f)
+         except:
+            logging.debug("No metadata file found.")
+         self.__metadata_read = True
+      
+      return self.__metadata_dict.get(key,default)   
+
+
+   def get_reader_metadata(self, key, default):
+      ''' Read metadata from metadata file, and if not available,
+      return the given default value.
+
+      :param data: str, a key to stored metadata.
+      :param default: value to return if key does not exist
+
+      '''
+      
+
+      if not self.__metadata_read:
+         try:
+            fn = self.get_metadata_filename()
+            with open(fn,'rb') as f:
+               self.__metadata_dict = pickle.load(f)
+         except:
+            logging.debug("No metadata file found.")
+         self.__metadata_read = True
+      
+      return self.__metadata_dict.get(key,default)
+   
+   def add_metadata(self, key, value):
+      self.__metadata_dict[key] = value
+      self.save_metadata()
+
+   def save_metadata(self):
+      fn = self.get_metadata_filename()
+      try:
+         with open(fn,'wb') as f:
+            pickle.dump(self.__metadata_dict,f)
+      except Exception as e:
+         logging.warning("Could not save metadata file, error: "+str(e))
+
+   def add_linked_file(self, fname):
+      if os.path.exists(fname):
+         self.__linked_files.add(VlsvReader(fname))
+      else:
+         logging.warning("Could not link "+fname+" (path does not exist)")
+
+   def add_linked_reader(self, fname):
+      if os.path.exists(fname):
+         for reader in self.__linked_readers:
+            if fname == reader.file_name:
+               return
+         self.__linked_readers.add(VlsvReader(fname))
+      else:
+         logging.warning("Could not link "+fname+" (path does not exist)")
+
+   def add_linked_readers(self):
+      for fname in self.__linked_files:
+         self.add_linked_reader(fname)
+
+   def save_linked_readers_file(self):
+      fn = self.get_linked_readers_filename()
+      logging.info("Saving linked readers to "+fn)
+      dn = os.path.dirname(fn)
+      if not os.path.isdir(dn):
+            os.mkdir(dn)
+      with open(fn,'wb') as f:
+         pickle.dump(self.__linked_files, f)
+
 
    def __popmesh(self, popname):
       ''' Get the population-specific vspace mesh info object, and initialize it if it does not exist
@@ -657,18 +793,24 @@ class VlsvReader(object):
 
    def get_variables(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(set(reader.get_variables()))
 
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             name = child.attrib["name"]
-            varlist.append(name)
+            varlist.add(name)
 
-      return varlist
+      return list(varlist)
    
    def get_reducers(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(reader.get_reducers())
 
       reducer_max_len = 0
       
@@ -684,11 +826,11 @@ class VlsvReader(object):
             if self.__check_datareducer(name,reducer):
                if name[:3] == 'pop':
                   for pop in self.active_populations:
-                     varlist.append(pop+'/'+name[4:])
+                     varlist.add(pop+'/'+name[4:])
                else:
-                  varlist.append(name)
+                  varlist.add(name)
 
-      return varlist
+      return list(varlist)
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -773,6 +915,27 @@ class VlsvReader(object):
                return True
       return False
 
+   def linked_readers_check_variable(self, name):
+      ''' Test all linked variables if any of them returns True on test function
+      
+      :param fun: Function to pass to linked readers (VlsvReader member function/first param VlsvReader)
+      :param args: arguments to pass to fun
+      :param kwargs: keyword arguments to pass to fun
+      '''
+
+      ret = False
+      for reader in self.__linked_readers:
+         try:
+            ret = reader.check_variable(name)
+         except Exception as e: # Let's not care if a sidecar file does not contain something
+            pass
+         if ret:
+            return ret
+         else:
+            continue
+
+      return False
+
    def check_variable( self, name ):
       ''' Checks if a given variable is in the vlsv reader
 
@@ -792,6 +955,9 @@ class VlsvReader(object):
                 # Variable not in the vlsv file
                 plot_B_vol()
       '''
+      if self.linked_readers_check_variable(name):
+         return True
+
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             if child.attrib["name"].lower() == name.lower():
@@ -1288,7 +1454,7 @@ class VlsvReader(object):
          return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
+         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name) 
 
 
 
@@ -1548,7 +1714,7 @@ class VlsvReader(object):
          coordinates = np.atleast_2d(coordinates)
 
       # Check one value for the length
-      test_variable = self.read_variable(name,cellids=[1],operator=operator)
+      test_variable = self.read_variable(name,cellids=[self.get_cellid(coordinates[0,:])],operator=operator)
       if isinstance(test_variable,np.ma.core.MaskedConstant):
          value_length=1
       elif isinstance(test_variable, Iterable):
@@ -1769,6 +1935,37 @@ class VlsvReader(object):
       else:
          return [self.downsample_fsgrid_subarray(cid, var) for cid in cellids]
 
+   def get_fsgrid_decomposition(self):
+      # Try if in metadata
+      self.__fsGridDecomposition = self.get_reader_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+      if(self.__fsGridDecomposition is not None):
+         print("read ",self.__fsGridDecomposition)
+
+      if self.__fsGridDecomposition is None:
+         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
+         if self.__fsGridDecomposition is not None:
+            logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
+         else:
+            logging.info("Did not find FsGrid decomposition from vlsv file.")
+       
+      # If decomposition is None even after reading, we need to calculate it:
+      if self.__fsGridDecomposition is None:
+         logging.info("Calculating fsGrid decomposition from the file")
+         self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
+         logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
+      else:
+         # Decomposition is a list (or fail assertions below) - use it instead
+         pass
+      
+      numWritingRanks = self.read_parameter("numWritingRanks")
+      assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
+      assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
+      
+      self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+
+      return self.__fsGridDecomposition
+               
+
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
@@ -1809,26 +2006,7 @@ class VlsvReader(object):
                return n_per_task
 
        currentOffset = 0;
-       if self.__fsGridDecomposition is None:
-         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
-         if self.__fsGridDecomposition is not None:
-            logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
-         else:
-            logging.info("Did not find FsGrid decomposition from vlsv file.")
-       
-       # If decomposition is None even after reading, we need to calculate it:
-       if self.__fsGridDecomposition is None:
-          logging.info("Calculating fsGrid decomposition from the file")
-          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
-          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-       else:
-          # Decomposition is a list (or fail assertions below) - use it instead
-          pass
-          
-       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
-       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
-               
-          
+       self.get_fsgrid_decomposition()
 
        for i in range(0,numWritingRanks):
            x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
@@ -1992,6 +2170,14 @@ class VlsvReader(object):
       
       if((name,operator) in self.variable_cache.keys()):
          return self.read_variable_from_cache(name,cellids,operator)
+
+      for reader in self.__linked_readers:
+         try:
+            res = reader.read_variable(name=name, cellids=cellids, operator=operator)
+            print(self.file_name, 'read_variable', name, res)
+            return res
+         except:
+            pass
 
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
@@ -3264,7 +3450,6 @@ class VlsvReader(object):
       if name=="t":
          if self.check_parameter(name="time"):
             return self.read(name="time", tag="PARAMETER")
-
       return self.read(name=name, tag="PARAMETER")
 
 
@@ -3724,4 +3909,37 @@ class VlsvReader(object):
       '''
       self.__fileindex_for_cellid = {}
 
+   def get_mesh_domain_extents(self, mesh):
+      if (mesh == 'fsgrid'):
+         raise NotImplementedError
+      elif (mesh == 'ionosphere'):
+         raise NotImplementedError
+      elif (mesh == 'SpatialGrid'):
+         MESH_DOMAIN_SIZES = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh="SpatialGrid")
+         n_domain_cells = MESH_DOMAIN_SIZES[:,0]-MESH_DOMAIN_SIZES[:,1]
+         cids_all = self.read_variable("CellID")
+         lowcorners_all = self.read_variable("vg_coordinates_cell_lowcorner")
+         dxs_all = self.read_variable("vg_dx")
+         
+
+         extents = np.zeros((MESH_DOMAIN_SIZES.shape[0],6))
+         start = 0
+         end = 0
+         for i, ncells in enumerate(n_domain_cells):
+            end = start+ncells
+            cids = cids_all[start:end]
+            lowcorners = lowcorners_all[start:end,:]
+            dxs = dxs_all[start:end,:]
+            highcorners = lowcorners+dxs
+            mins = np.min(lowcorners,axis=0)
+            maxs = np.max(highcorners,axis=0)
+
+            extents[i,:] = [mins[0],maxs[0],mins[1],maxs[1],mins[2],maxs[2]]
+
+            start = end
+
+         return extents.reshape((-1),order="C")
+         
+      else:
+         raise ValueError
 
