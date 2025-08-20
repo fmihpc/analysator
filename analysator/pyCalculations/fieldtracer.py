@@ -294,7 +294,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
 
       points_traced_unique[mask_update,i,:] = next_points[mask_update,:]
       # distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
-      mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:])] = False
+      mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:], var_unit)] = False
 
       # points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
 
@@ -302,7 +302,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
    return points_traced
 
 # Default stop tracing condition for the vg tracing, (No stop until max_iteration)
-def default_stopping_condition(vlsvReader, points):
+def default_stopping_condition(vlsvReader, points, last_unit_v):
    [xmin, ymin, zmin, xmax, ymax, zmax] = vlsvReader.get_spatial_mesh_extent()
    x = points[:, 0]
    y = points[:, 1]

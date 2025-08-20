@@ -2,8 +2,10 @@
 Finds the magnetopause position by tracing streamlines of the plasma flow for three-dimensional Vlasiator runs.
 '''
 
+import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
+import vtk
 
 def cartesian_to_polar(cartesian_coords): # for segments of plane
     """Converts cartesian coordinates to polar (for the segments of the yz-planes).
@@ -31,6 +33,25 @@ def polar_to_cartesian(r, phi):
     return(y, z)
 
 
+def cartesian_to_spherical(cartesian_coords):
+    """ Cartesian to spherical coordinates (Note: axes are swapped!)"""
+    x, y, z = cartesian_coords[0], cartesian_coords[1], cartesian_coords[2]
+    r = np.sqrt(x**2+y**2+z**2)
+    theta = np.arctan2(np.sqrt(y**2+z**2), x) #inclination
+    phi = np.arctan2(z, y)+np.pi # azimuth
+
+    return [r, theta, phi]
+
+
+
+def spherical_to_cartesian(sphe_coords):
+    r, theta, phi = sphe_coords[0], sphe_coords[1], sphe_coords[2]
+    y = r*np.sin(theta)*np.cos(phi)
+    z = r*np.sin(theta)*np.sin(phi)
+    x = r*np.cos(theta)
+    return [x, y, z]
+
+
 def interpolate(streamline, x_points):
     """Interpolates a single streamline for make_magnetopause(). 
 
@@ -46,9 +67,9 @@ def interpolate(streamline, x_points):
     zp = arr[:,2][::-1]
 
     #interpolate z from xz-plane
-    z_points = np.interp(x_points, xp, zp, left=np.NaN, right=np.NaN)
+    z_points = np.interp(x_points, xp, zp, left=np.nan, right=np.nan)
     #interpolate y from xy-plane
-    y_points = np.interp(x_points, xp, yp, left=np.NaN, right=np.NaN)
+    y_points = np.interp(x_points, xp, yp, left=np.nan, right=np.nan)
 
 
     return np.array([x_points, y_points, z_points])
@@ -121,35 +142,56 @@ def make_surface(coords):
         next_triangles = [x + slices_in_plane*area_index for x in first_triangles]
         faces.extend(next_triangles)
 
-    # From last triangles remove every other triangle
-    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
-    removed = 0
-    for i in range(len(faces)-slices_in_plane*2, len(faces)):
-        if i%2!=0:
-            faces.pop(i-removed)
-            removed += 1
-
-    # From last triangles remove every other triangle
-    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
-    # Also fix the last triangles so that they only point to one subsolar point and have normals towards outside
-    subsolar_index = int(len(verts)-slices_in_plane)
-
-    for i,triangle in enumerate(reversed(faces)):
-        if i > (slices_in_plane): # faces not in last plane (we're going backwards) 
-            break
-
-        faces[len(faces)-i-1] = np.clip(triangle, a_min=0, a_max=subsolar_index)
-
-    # this would remove duplicate subsolar points from vertices but makes 2d slicing harder
-    #verts = verts[:int(len(verts)-slices_in_plane+1)]
-
-    # Change every other face triangle (except for last slice triangles) normal direction so that all face the same way (hopefully)
+    # Change every other face triangle normal direction so that all face the same way
     faces = np.array(faces)
-    for i in range(len(faces)-int(slices_in_plane)):
-        if i%2!=0:
+    for i in range(len(faces)):
+        if i%2==0:
             faces[i,1], faces[i,2] =  faces[i,2], faces[i,1]
 
     return np.array(verts), faces
+
+
+def make_vtk_surface(vertices, faces):
+    """Makes a vtk DataSetSurfaceFilter from vertices and faces of a triangulated surface.
+
+        :param vertices: vertex points of triangles in shape [[x0, y0, z0], [x1, y1, z1],...]
+        :param faces: face connectivities as indices of vertices so that triangle normals point outwards
+        :returns: a vtkDataSetSurfaceFilter object
+    """
+
+    points = vtk.vtkPoints()
+
+    for vert in vertices:
+        points.InsertNextPoint(vert)
+
+    # make vtk PolyData object
+
+    triangles = vtk.vtkCellArray()
+    for face in faces:
+        triangle = vtk.vtkTriangle()
+        triangle.GetPointIds().SetId(0, face[0])
+        triangle.GetPointIds().SetId(1, face[1])
+        triangle.GetPointIds().SetId(2, face[2])
+        triangles.InsertNextCell(triangle)
+
+    polydata = vtk.vtkPolyData()
+    polydata.SetPoints(points)
+    polydata.Modified()
+    polydata.SetPolys(triangles)
+    polydata.Modified()
+
+    surface = vtk.vtkDataSetSurfaceFilter()
+    surface.SetInputData(polydata)
+    surface.Update()
+
+    return surface
+
+def streamline_stopping_condition(vlsvReader, points, value):
+   [xmin, ymin, zmin, xmax, ymax, zmax] = vlsvReader.get_spatial_mesh_extent()
+   x = points[:, 0]
+   y = points[:, 1]
+   z = points[:, 2]
+   return (x < xmin)|(x > xmax) | (y < ymin)|(y > ymax) | (z < zmin)|(z > zmax)|(value[:,0] > 0)
 
 
 def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000],  dl=2e6, iterations=200):
@@ -187,7 +229,9 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
         max_iterations=iterations,
         dx=dl,
         direction='+',
-        grid_var='vg_v')
+        grid_var='vg_v',
+        stop_condition=streamline_stopping_condition
+        )
 
     return streams
 
@@ -206,6 +250,11 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     """
 
     RE = 6371000
+    ignore = 0
+    
+    ## if given sector number isn't divisible by 4, make it so because we want to have magnetopause points at exactly y=0 and z=0 for 2d slices of the whole thing
+    while sector_n%4 != 0:
+        sector_n +=1
 
     #streams = streams*(1/RE) # streamlines in rE
     streampoints = np.reshape(streams, (streams.shape[0]*streams.shape[1], 3)) #all the points in one array)
@@ -214,14 +263,63 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     ## do this by finding a streamline point on positive x axis closest to the Earth
     # streampoints closer than ~1 rE to positive x-axis:
     x_axis_points = streampoints[(streampoints[:,1]<RE) & (streampoints[:,2]<RE) & (streampoints[:,1]>-RE) & (streampoints[:,2]>-RE) & (streampoints[:,0]>0) & (streampoints[:,0]>0)] 
-    subsolar_x =np.min(x_axis_points[:,0])
+    if ignore == 0:
+        subsolar_x =np.min(x_axis_points[:,0])
+    else:
+        subsolar_x = np.partition(x_axis_points[:,0], ignore)[ignore] # take the nth point as subsolar point
+
+    ### dayside magnetopause ###
+    # for x > 0, look for magnetopause radially
+    dayside_points = streampoints[streampoints[:,0] > 0]
+
+    phi_slices = sector_n
+    theta_slices = 10
+    phi_step = 2*np.pi/phi_slices
+    theta_step = np.pi/(2*theta_slices) # positive x-axis only
+
+    def cartesian_to_spherical_grid(cartesian_coords):
+        # Only for x > 0
+        r, theta, phi = cartesian_to_spherical(cartesian_coords)
+        theta_idx = int(theta/theta_step)
+        phi_idx = int(phi/phi_step)
+        return [theta_idx, phi_idx, r]
+
+    def grid_mid_point(theta_idx, phi_idx):
+        return (theta_idx+0.5)*theta_step, (phi_idx+0.5)*phi_step
+    
+    # make a dictionary based on spherical areas by theta index and phi index
+    sph_points = {}
+    for point in dayside_points:
+        sph_gridpoint = cartesian_to_spherical_grid(point)
+        idxs = (sph_gridpoint[0],sph_gridpoint[1]) # key is (theta_i, phi_i)
+        if idxs not in sph_points:
+            sph_points[idxs] = [sph_gridpoint[2]]
+        else:
+            sph_points[idxs].append(sph_gridpoint[2])
+    
+    # dayside magetopause from subsolar point towards origo
+    dayside_magnetopause = np.zeros((theta_slices, phi_slices, 3))
+    for ring_idx in range(theta_slices):
+        ring_points = np.zeros((phi_slices, 3))
+        for phi_idx in range(phi_slices):
+            if (ring_idx, phi_idx) in sph_points:
+                if ignore == 0:
+                    nth_min_r = np.min(np.array(sph_points[(ring_idx, phi_idx)])) # point in area with smallest radius
+                else:
+                    nth_min_r = np.partition(np.array(sph_points[(ring_idx, phi_idx)]), ignore)[ignore]
+            else:
+                print("no ", (ring_idx, phi_idx))
+                exit() # something wrong
+            midpoint_theta, midpoint_phi = grid_mid_point(ring_idx, phi_idx) # the smallest radius will be assigned to a point in the middle-ish of the area
+            ring_points[phi_idx] = np.array(spherical_to_cartesian([nth_min_r, midpoint_theta, midpoint_phi]))
+            
+        dayside_magnetopause[ring_idx] = ring_points
 
 
+    ### x < 0 magnetopause ###
+    # rest: look for magnetopause in yz-planes
     ## define points in the x axis where to find magnetopause points on the yz-plane
-    #dx = (subsolar_x-end_x)/x_point_n
-    next_from_subsolar_x = subsolar_x-1e3 # start making the magnetopause from a point slightly inwards from subsolar point
-    x_point_n = x_point_n-1
-    x_points = np.linspace(next_from_subsolar_x, end_x, x_point_n)
+    x_points = np.linspace(subsolar_x, end_x, x_point_n)
     
     ## interpolate more exact points for streamlines at exery x_point
     new_streampoints = np.zeros((len(x_points), len(streams), 2)) # new array for keeping interpolated streamlines in form new_streampoints[x_point, streamline, y and z -coordinates] 
@@ -247,10 +345,6 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     ## now start making the magnetopause
     ## in each x_point, divide the plane into sectors and look for the closest streamline to x-axis in the sector
 
-    ## if given sector number isn't divisible by 4, make it so because we want to have magnetopause points at exactly y=0 and z=0 for 2d slices of the whole thing
-    while sector_n%4 != 0:
-        sector_n +=1
-
     sector_width = 360/sector_n
     magnetopause = np.zeros((len(x_points), sector_n, 3))
 
@@ -274,20 +368,29 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
             # discard 'points' with r=0 and check that there's at least one streamline point in the sector
             sector_points = sector_points[sector_points[:,0] != 0.0]
             if sector_points.size == 0:
-                raise ValueError('No streamlines found in the sector, x_i=',i)
+                raise ValueError('No streamlines found in the sector')
 
             # find the points closest to the x-axis
-            closest_point_radius = sector_points[sector_points[:,0].argmin(), 0] # smallest radius
-            
+            if ignore == 0:
+                nth_closest_point_radius = sector_points[sector_points[:,0].argmin(), 0] # smallest radius
+            else:
+                nth_closest_point_radius = np.partition(sector_points[:,0], ignore)[ignore]
+
+            #closest_point_radius = np.median(sector_points[:,0]) # median radius
+            #if x_point < subsolar_x-2e6:
+            #        closest_point_radius = np.median(sector_points[:,0]) # median radius
+            #else:
+            #    closest_point_radius = sector_points[sector_points[:,0].argmin(), 0] # smallest radius
+        
             # return to cartesian coordinates and save as a magnetopause point at the middle of the sector
-            y,z = polar_to_cartesian(closest_point_radius, mean_sector_angle)
+            y,z = polar_to_cartesian(nth_closest_point_radius, mean_sector_angle)
             magnetopause[i,j,:] = [x_point, y, z]
 
 
     # make a tip point for the magnetopause for prettier 3d plots 
     tip = np.array([subsolar_x, 0, 0])
     tips = np.tile(tip, (magnetopause.shape[1],1))
-    magnetopause = np.vstack(([tips], magnetopause))
+    magnetopause = np.vstack(([tips], dayside_magnetopause, magnetopause))
     
     return magnetopause
 
@@ -306,11 +409,15 @@ def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=
         :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
         :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
 
-        :returns:   vertices, faces of the magnetopause triangle mesh as numpy arrays
+        :returns:   vertices, surface where vertices are numpy arrays in shape [[x0,y0,z0], [x1,y1,z1],...] and surface is a vtk vtkDataSetSurfaceFilter object
     """
 
     streams = make_streamlines(vlsvfile, streamline_seeds, seeds_n, seeds_x0, seeds_range, dl, iterations)
     magnetopause = make_magnetopause(streams, end_x, x_point_n, sector_n)
     vertices, faces = make_surface(magnetopause)
+    surface = make_vtk_surface(vertices, faces)
 
-    return vertices, faces
+    return vertices, surface
+
+
+   
