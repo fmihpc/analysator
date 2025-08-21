@@ -165,8 +165,9 @@ class VlsvReader(object):
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
+      self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
 
-      self.__metadata_cache = vlsvcache.MetadataFileCache()
+      self.__metadata_cache = vlsvcache.MetadataFileCache(self)
 
       self.__metadata_read = False  
       self.__metadata_dict = {} # Used for reading in and storing derived/other metadata such as linked file paths
@@ -175,7 +176,7 @@ class VlsvReader(object):
       
       
       
-
+      self.__mesh_domain_sizes = {}
       self.__max_spatial_amr_level = -1
       self.__fsGridDecomposition = fsGridDecomposition
 
@@ -188,6 +189,7 @@ class VlsvReader(object):
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
       self.variable_cache = {} # {(varname, operator):data}
+      self.__params_cache = {} # {name:data}
 
       self.__pops_init = False
 
@@ -1004,6 +1006,49 @@ class VlsvReader(object):
       self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
 
+   def get_mesh_domain_sizes(self, mesh):
+
+      if mesh not in self.__mesh_domain_sizes.keys():
+         self.__mesh_domain_sizes[mesh] = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh=mesh)
+      return self.__mesh_domain_sizes[mesh]
+      
+
+   def __read_fileindex_for_cellid_rank(self, rank):
+      """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
+      """
+      # print("filling rank",rank)
+
+      if rank > self.read_parameter("numWritingRanks"):
+         raise ValueError("Tried to read rank "+rank+" out of "+self.read_parameter("numWritingRanks"))
+         
+      if not self.__rankwise_fileindex_for_cellid.get(rank,{}) == {}:
+         return
+      
+      mesh_domain_sizes = self.get_mesh_domain_sizes("SpatialGrid")
+      n_domain_cells = mesh_domain_sizes[:,0]-mesh_domain_sizes[:,1]
+      domain_offsets = np.cumsum(np.hstack((np.array([0]),n_domain_cells[:-1])))
+
+      cellids = self.read_cellids_with_offset(domain_offsets[rank],n_domain_cells[rank])
+
+      #Check if it is not iterable. If it is a scale then make it a list
+      if(not isinstance(cellids, Iterable)):
+         cellids=[ cellids ]
+      self.__rankwise_fileindex_for_cellid[rank] = {cellid: domain_offsets[rank]+index for index,cellid in enumerate(cellids)}
+
+
+   def get_cellid_locations_rank(self, rank):
+      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. 
+
+         :param rank: Find (and initialize) fileindex for cells contained by this rank
+
+      '''
+      # if len( self.__fileindex_for_cellid ) == 0:
+      self.__read_fileindex_for_cellid_rank(rank)
+      return self.__rankwise_fileindex_for_cellid[rank]
+
+
+
+
    def print_version(self):
       '''
       Prints version information from VLSV file.
@@ -1173,6 +1218,33 @@ class VlsvReader(object):
          
       raise ValueError("Variable or attribute not found")
 
+   def read_with_offset(self, datatype,variable_offset, read_size, read_offsets, element_size, vector_size):
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+      if len(read_offsets) !=1:
+         arraydata = []
+      for r_offset in read_offsets:
+         use_offset = int(variable_offset + r_offset)
+         fptr.seek(use_offset)
+         if datatype == "float" and element_size == 4:
+            data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
+         if datatype == "float" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.float64, count=vector_size*read_size)
+         if datatype == "int" and element_size == 4:
+            data = np.fromfile(fptr, dtype=np.int32, count=vector_size*read_size)
+         if datatype == "int" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.int64, count=vector_size*read_size)
+         if datatype == "uint" and element_size == 4:
+            data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*read_size)
+         if datatype == "uint" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
+         if len(read_offsets)!=1:
+            arraydata.append(data)
+      if len(read_offsets) !=1:
+         data = np.array(arraydata)
+      return data
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
@@ -1254,7 +1326,6 @@ class VlsvReader(object):
 
             # Define efficient method to read data in
             reorder_data = False
-            arraydata = []
             try: # try-except to see how many cellids were given
                lencellids=len(cellids) 
                # Read multiple specified cells
@@ -1280,30 +1351,7 @@ class VlsvReader(object):
                   read_size = 1
                   read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
             
-            if self.__fptr.closed:
-               fptr = open(self.file_name,"rb")
-            else:
-               fptr = self.__fptr
-
-            for r_offset in read_offsets:
-               use_offset = int(variable_offset + r_offset)
-               fptr.seek(use_offset)
-               if datatype == "float" and element_size == 4:
-                  data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
-               if datatype == "float" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.float64, count=vector_size*read_size)
-               if datatype == "int" and element_size == 4:
-                  data = np.fromfile(fptr, dtype=np.int32, count=vector_size*read_size)
-               if datatype == "int" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.int64, count=vector_size*read_size)
-               if datatype == "uint" and element_size == 4:
-                  data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*read_size)
-               if datatype == "uint" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
-               if len(read_offsets)!=1:
-                  arraydata.append(data)
-
-            fptr.close()
+            data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
 
             if len(read_offsets)==1 and reorder_data:
                # Many single cell id's requested
@@ -1318,7 +1366,7 @@ class VlsvReader(object):
 
             if len(read_offsets)!=1:
                # Not-so-many single cell id's requested
-               data = np.squeeze(np.array(arraydata))
+               data = np.squeeze(np.array(data))
 
             if vector_size > 1:
                data=data.reshape(result_size, vector_size)
@@ -1440,7 +1488,47 @@ class VlsvReader(object):
       if name!="":
          raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name) 
 
+   def read_cellids_with_offset(self, start, ncells):
+      import ast
+      tag="VARIABLE"
+      name="cellid"
+      mesh="SpatialGrid"
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
 
+    # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if tag != "":
+            if child.tag != tag:
+               continue
+         # Verify that any requested name or mesh matches those of the data
+         if name != "":
+            if not "name" in child.attrib:
+               continue
+            if child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if not "mesh" in child.attrib:
+               continue
+            if child.attrib["mesh"] != mesh:
+               continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+            variable_offset = ast.literal_eval(child.text)
+
+            result_size = ncells
+            read_size = ncells
+            read_offsets = [start*element_size*vector_size]
+                  
+            data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
+
+            return data
 
    def read_metadata(self, name="", tag="", mesh=""):
       ''' Read variable metadata from the open vlsv file. 
@@ -3432,15 +3520,20 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
-      
-      # Special handling for time
-      if name=="time":
-         if self.check_parameter(name="t"):
-            return self.read(name="t", tag="PARAMETER")
-      if name=="t":
-         if self.check_parameter(name="time"):
-            return self.read(name="time", tag="PARAMETER")
-      return self.read(name=name, tag="PARAMETER")
+
+      if name in self.__params_cache.keys():
+         return self.__params_cache[name]
+      else:
+         # Special handling for time
+         if name=="time":
+            if self.check_parameter(name="t"):
+               return self.read(name="t", tag="PARAMETER")
+         if name=="t":
+            if self.check_parameter(name="time"):
+               return self.read(name="time", tag="PARAMETER")
+         val = self.read(name=name, tag="PARAMETER")
+         self.__params_cache[name] = val
+         return val
 
 
    def read_velocity_cells(self, cellid, pop="proton"):

@@ -21,6 +21,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
+''' Utilities for caching VLSV data and metadata.
+'''
+
 import logging
 import os
 import sys
@@ -29,6 +32,7 @@ import numbers
 import numpy as np
 from operator import itemgetter
 import h5py
+import re
 
 class VariableCache:
     ''' Class for handling in-memory variable/reducer caching.
@@ -74,13 +78,58 @@ class VariableCache:
 class FileCache:
    ''' Top-level class for caching to file.
    '''
-   pass
+
+   def __init__(self, reader) -> None:
+      self.__reader = reader
+
+   def get_cache_folder(self):
+      fn = self.__reader.file_name
+
+      head,tail = os.path.split(fn)
+      path = head
+      numslist = re.findall(r'\d+(?=\.vlsv)', tail)
+
+      if(len(numslist) == 0):
+         path = os.path.join(path,"vlsvcache",tail[:-5])
+      else:
+         nums = numslist[-1]
+         head, tail = tail.split(nums)
+
+         leading_zero = True
+         path = os.path.join(path,"vlsvcache",head[:-1])
+         for i,n in enumerate(nums):
+            if n == '0' and leading_zero: continue
+            if leading_zero:
+               fmt = "{:07d}"
+            else:
+                fmt = "{:0"+str(7-i)+"d}"
+            path = os.path.join(path, fmt.format(int(n)*10**(len(nums)-i-1)))
+            leading_zero = False
+
+      return path
+
+   def clear_cache_folder(self):
+      path = self.get_cache_folder()
+      import shutil
+      shutil.rmtree(path)
 
 class MetadataFileCache(FileCache):
+   ''' File caching class for storing "lightweight" metadata.
+   '''
    pass
+   # superclass constructor called instead if no __init__ here
+   # def __init__(self, reader) -> None:
+   #    super(MetadataFileCache, self).__init__(reader)
 
 class VariableFileCache(FileCache):
+   ''' File caching class for storing intermediate data, such as 
+   gradient terms that are more expensive to compute, over whole grids with
+   more HDD footprint.
+   '''
    pass
+   # superclass constructor called instead if no __init__ here
+   # def __init__(self, reader) -> None:
+   #    super(MetadataFileCache, self).__init__(reader)
 
 class PicklableFile(object):
    ''' Picklable file pointer object.
