@@ -3,7 +3,6 @@ Magnetosphere regions: How to find
 
 
 
-
 Cusps
 -----
 
@@ -11,9 +10,9 @@ Cusps
 *Properties:*
 
 * plasma density: high density in comparison to solar wind
-    * Ion density :math:`\geq` solar wind ion density [Pitout_et_al_2006_] (Cluster spacecraft data)
+    * Ion density :math:`\geq` solar wind ion density [Pitout_et_al_2006]_ (Cluster spacecraft data)
 * ion energy:
-    * mean ion energy :math:`~2-3 keV` [Pitout_et_al_2006_] /[Stenuit_et_al_2001_]
+    * mean ion energy :math:`~2-3 keV` [Pitout_et_al_2006]_ /[Stenuit_et_al_2001]_
 * energy flux:
     * energy flux
 
@@ -26,19 +25,19 @@ Tail lobes
 ----------
 
 * plasma density: low
-    * below :math:`0.03 cm^{-3}` [Grison_et_al_2025_] (Cluster spacecraft data)
-    * :math:`0.01 cm^{-3}` [Koskinen_Space_Storms_ p.38]
-    * less than :math:`0.1 cm^{-3}` [Wolf_Introduction_to_space_physics_Ch_10_ p.291]
+    * below :math:`0.03 cm^{-3}` [Grison_et_al_2025]_ (Cluster spacecraft data)
+    * :math:`0.01 cm^{-3}` [Koskinen_Space_Storms]_ p.38
+    * less than :math:`0.1 cm^{-3}` [Wolf_Introduction_to_space_physics_Ch_10]_ p.291
 * plasma :math:`\beta`: low
-    * typically around :math:`0.05` [Grison_et_al_2025_] (Cluster spacecraft data)
-    * :math:`3e-3` [Koskinen_Space_Storms_ p.38]
+    * typically around :math:`0.05` [Grison_et_al_2025]_ (Cluster spacecraft data)
+    * :math:`3e-3` [Koskinen_Space_Storms]_ p.38
 * temperature:
-    * ion temperature :math:`300 eV` [Koskinen_Space_Storms_ p.38]
-    * electron temperature :math:`50 eV` [Koskinen_Space_Storms_ p.38]
+    * ion temperature :math:`300 eV` [Koskinen_Space_Storms]_ p.38
+    * electron temperature :math:`50 eV` [Koskinen_Space_Storms]_ p.38
 * magnetic field:
-    * :math:`20 nT` [Koskinen_Space_Storms_ p.38]
-* open magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10_ p.291]
-* strong and stable magnetic field towards the Earth (northern lobe) and away from the Earth (southern lobe) [Coxon_et_al_2016_]
+    * :math:`20 nT` [Koskinen_Space_Storms]_ p.38
+* open magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10]_ p.291
+* strong and stable magnetic field towards the Earth (northern lobe) and away from the Earth (southern lobe) [Coxon_et_al_2016]_
 
 Separated from the plasma sheet by the plasma sheet boundary layer (PSBL)
 
@@ -63,10 +62,10 @@ Low-latitude boundary layer (LLBL)
 Properties:
 
 * density:
-    * ion number densities between those of magnetosphere and magnetosheath [Hudges_Introduction_to_space_physics_Ch_9_ p.267] 
+    * ion number densities between those of magnetosphere and magnetosheath [Hudges_Introduction_to_space_physics_Ch_9]_ p.267
 * temperature
-    * ion temperatures between those of magnetosphere and magnetosheath [Hudges_Introduction_to_space_physics_Ch_9_ p.267] 
-* unknown field line configuration, probably a mix of open and closed field lines [Hudges_Introduction_to_space_physics_Ch_9_ p.262]
+    * ion temperatures between those of magnetosphere and magnetosheath [Hudges_Introduction_to_space_physics_Ch_9]_ p.267
+* unknown field line configuration, probably a mix of open and closed field lines [Hudges_Introduction_to_space_physics_Ch_9]_ p.262
 
 
 
@@ -77,7 +76,7 @@ Includes the plasma mantle on the tail side and the entry layer on the dayside [
 
 Properties:
 
-* open magnetic field lines [Hudges_Introduction_to_space_physics_Ch_9_ p.261]
+* open magnetic field lines [Hudges_Introduction_to_space_physics_Ch_9]_ p.261
 
 
 
@@ -86,20 +85,20 @@ Properties:
 Plasma sheet boundary layer (PSBL)
 ----------------------------------
 
-The plasma sheet boundary layer is a very thin boundary layer separating the tail lobes from the tail plasma sheet [Koskinen_Johdatus_]
+The plasma sheet boundary layer is a very thin boundary layer separating the tail lobes from the tail plasma sheet [Koskinen_Johdatus]_
 
 *Properties:*
 
 * density:
-    * :math:`0.1 cm^{-3}` [Koskinen_Space_Storms_ p.38]
+    * :math:`0.1 cm^{-3}` [Koskinen_Space_Storms]_ p.38
 * temperature:
-    * ion temperature :math:`1000 eV` [Koskinen_Space_Storms_ p.38]
-    * electron temperature :math:`150 eV` [Koskinen_Space_Storms_ p.38]
+    * ion temperature :math:`1000 eV` [Koskinen_Space_Storms]_ p.38
+    * electron temperature :math:`150 eV` [Koskinen_Space_Storms]_ p.38
 * magnetic field:
-    * :math:`20 nT` [Koskinen_Space_Storms_ p.38]
+    * :math:`20 nT` [Koskinen_Space_Storms]_ p.38
 * plasma :math:`\beta` :
-    * :math:`0.1` [Koskinen_Space_Storms_ p.38]
-* probably closed magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10_ p.291]
+    * :math:`0.1` [Koskinen_Space_Storms]_ p.38
+* probably closed magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10]_ p.291
 
 
 
@@ -111,17 +110,18 @@ Central plasma sheet
 *Properties:*
 
 * density:
-    * :math:`0.3 cm^{-3}` [Koskinen_Space_Storms_ p.38]
-    * :math:`0.1-1 cm^{-3}` [Wolf_Introduction_to_space_physics_Ch_10_ p.291]
+    * :math:`0.3 cm^{-3}` [Koskinen_Space_Storms]_ p.38
+    * :math:`0.1-1 cm^{-3}` [Wolf_Introduction_to_space_physics_Ch_10]_ p.291
 * temperature: hot
-    * ion temperature :math:`4200 eV` [Koskinen_Space_Storms_ p.38]
-    * electron temperature :math:`600 eV` [Koskinen_Space_Storms_ p.38]
+    * ion temperature :math:`4200 eV` [Koskinen_Space_Storms]_ p.38
+    * electron temperature :math:`600 eV` [Koskinen_Space_Storms]_ p.38
 * magnetic field:
-    * :math:`10 nT` [Koskinen_Space_Storms_ p.38], [Hudges_Introduction_to_space_physics_Ch_9_]
+    * :math:`10 nT` [Koskinen_Space_Storms]_ p.38, [Hudges_Introduction_to_space_physics_Ch_9]_
 * plasma :math:`\beta`: high
-    * :math:`6` [Koskinen_Space_Storms_ p.38]
-* Mostly closed magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10_]
+    * :math:`6` [Koskinen_Space_Storms]_ p.38
+* Mostly closed magnetic field lines [Wolf_Introduction_to_space_physics_Ch_10]_
 
+Inner plasma sheet: unusually low plasma beta may exist (e.g., cold tenuous plasma near the neutral sheet after long periods of northward IMF) [Boakes_et_al_2014]_, (Cluster spacecraft data)
 
 
 
@@ -138,3 +138,4 @@ References
 .. [Wolf_Introduction_to_space_physics_Ch_10] Wolf, R. A. (1995) Magnetospheric configuration. In Kivelson, M. G., & Russell, C. T. (Eds.), Introduction to space physics (pp.288-329). Cambridge University Press.
 .. [Sckopke_et_al_1981] Sckopke, N., Paschmann, G., Haerendel, G., Sonnerup, B. U. , Bame, S. J., Forbes, T. G., Hones Jr., E. W., and Russell, C. T. (1981). Structure of the low-latitude boundary layer. Journal of Geophysical Research: Space Physics, 86(A4):2099–2110. eprint: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/JA086iA04p02099
 .. [Boakes_et_al_2014] Boakes, P. D., Nakamura, R., Volwerk, M., and Milan, S. E. (2014). ECLAT Cluster Spacecraft Magnetotail Plasma Region Identifications (2001–2009). Dataset Papers in Science, 2014(1):684305. eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1155/2014/684305
+.. [Stenuit_et_al_2001] Stenuit, H., Sauvaud, J.-A., Delcourt, D. C., Mukai, T., Kokubun, S., Fujimoto, M., Buzulukova, N. Y., Kovrazhkin, R. A., Lin, R. P., and Lepping, R. P. (2001). A study of ion injections at the dawn and dusk polar edges of the auroral oval. Journal of Geophysical Research: Space Physics, 106(A12):29619–29631. eprint: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2001JA900060.
