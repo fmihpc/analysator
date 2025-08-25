@@ -27,6 +27,7 @@ dependencies = [
     "packaging",
     "scikit-image",
     "h5py",
+    "tree"
 ]
 [project.optional-dependencies]
 none = [

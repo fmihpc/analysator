@@ -31,8 +31,8 @@ import warnings
 import numbers
 import numpy as np
 from operator import itemgetter
-import h5py
 import re
+import rtree 
 
 class VariableCache:
     ''' Class for handling in-memory variable/reducer caching.
@@ -43,6 +43,13 @@ class VariableCache:
 
     def keys(self):
         return self.__varcache.keys()
+    
+    def __getitem__(self, key):
+       return self.__varcache[key]
+       
+    def __setitem__(self, key, value):
+       self.__varcache[key] = value
+       
 
     def read_variable_from_cache(self, name, cellids, operator):
       ''' Read variable from cache instead of the vlsv file.
@@ -82,6 +89,15 @@ class FileCache:
    def __init__(self, reader) -> None:
       self.__reader = reader
 
+      self.__rtree_index_files = []
+      self.__rtree_index = None
+      self.__rtree_idxfile = os.path.join(self.get_cache_folder(),"rtree.idx")
+      self.__rtree_datfile = os.path.join(self.get_cache_folder(),"rtree.dat")
+      self.__rtree_properties = rtree.index.Property()
+      self.__rtree_properties.dimension = 3
+      self.__rtree_properties.overwrite=True
+
+
    def get_cache_folder(self):
       fn = self.__reader.file_name
 
@@ -113,6 +129,37 @@ class FileCache:
       import shutil
       shutil.rmtree(path)
 
+   def set_cellid_spatial_index(self, force = False):
+      if not os.path.exists(self.get_cache_folder()):
+         os.makedirs(self.get_cache_folder())
+
+      if(force or (not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile))):
+         
+         
+         
+         bboxes = self.__reader.get_mesh_domain_extents("SpatialGrid")
+         bboxes = bboxes.reshape((-1,6), order='C')
+         print(bboxes.shape)
+
+         self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4],properties=rtree_properties, interleaved=False)
+         for rank, bbox in enumerate(bboxes):
+            print(rank, bbox)
+            self.__rtree_index.insert(rank, bbox)
+
+         print("index set")
+      else:
+         print("index exists")
+
+   def get_cellid_spatial_index(self, force = False):
+      if self.__rtree_index == None:
+         if(force or (not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile))):
+            self.set_cellid_spatial_index(force)
+         else:
+            self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4], properties=self.__rtree_properties, interleaved=False)
+
+      return self.__rtree_index
+
+
 class MetadataFileCache(FileCache):
    ''' File caching class for storing "lightweight" metadata.
    '''
@@ -120,6 +167,8 @@ class MetadataFileCache(FileCache):
    # superclass constructor called instead if no __init__ here
    # def __init__(self, reader) -> None:
    #    super(MetadataFileCache, self).__init__(reader)
+
+
 
 class VariableFileCache(FileCache):
    ''' File caching class for storing intermediate data, such as 
