@@ -33,6 +33,7 @@ import numpy as np
 from operator import itemgetter
 import re
 import rtree 
+import time
 
 class VariableCache:
     ''' Class for handling in-memory variable/reducer caching.
@@ -134,21 +135,18 @@ class FileCache:
          os.makedirs(self.get_cache_folder())
 
       if(force or (not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile))):
-         
-         
+         t0 = time.time()
          
          bboxes = self.__reader.get_mesh_domain_extents("SpatialGrid")
          bboxes = bboxes.reshape((-1,6), order='C')
-         print(bboxes.shape)
 
-         self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4],properties=rtree_properties, interleaved=False)
+         self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4],properties=self.__rtree_properties, interleaved=False)
          for rank, bbox in enumerate(bboxes):
-            print(rank, bbox)
             self.__rtree_index.insert(rank, bbox)
 
-         print("index set")
+         logging.info("index set in "+str(time.time()-t0)+" seconds")
       else:
-         print("index exists")
+         pass
 
    def get_cellid_spatial_index(self, force = False):
       if self.__rtree_index == None:
