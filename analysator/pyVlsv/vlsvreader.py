@@ -1447,7 +1447,7 @@ class VlsvReader(object):
 
             if not isinstance(cellids, numbers.Number):
                data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
-               data_out[cellids!=0,:] = data
+               data_out[cellids!=0,...] = data
                data = data_out
             
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
@@ -4220,7 +4220,10 @@ class VlsvReader(object):
             self.__neighbors_cache_loaded = True
 
    def set_cellid_spatial_index(self, force=False):
-      self.__cellid_spatial_index =  self.__metadata_cache.get_cellid_spatial_index(force)
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+
+   def get_cellid_spatial_index(self, force=False):
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
 
    def clear_cache_folder(self):
       path = self.get_cache_folder()
@@ -4231,4 +4234,4 @@ class VlsvReader(object):
       ''' Create cached optimization files for this reader object (e.g. spatial index)
       
       '''
-      self.__metadata_cache.get_cellid_spatial_index(force)
+      self.__metadata_cache.set_cellid_spatial_index(force)

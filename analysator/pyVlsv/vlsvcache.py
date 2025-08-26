@@ -150,8 +150,10 @@ class FileCache:
 
    def get_cellid_spatial_index(self, force = False):
       if self.__rtree_index == None:
-         if(force or (not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile))):
+         if(force):
             self.set_cellid_spatial_index(force)
+         elif not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile):
+            self.__rtree_index = None
          else:
             self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4], properties=self.__rtree_properties, interleaved=False)
 
