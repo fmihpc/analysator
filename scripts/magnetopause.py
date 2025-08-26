@@ -37,7 +37,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     :kword return_surface: True/False, return vtkDataSetSurfaceFilter object
     :kword return_SDF: True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface
     :kword SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
-    :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded (-> concave hull)
+    :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded (won't be a proper surface, SDF won't work)
     :kword beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
     :returns: vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True
     """
@@ -56,11 +56,10 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         dl=5e5
         iters = int(((seeds_x0-xmin)/dl)+100)
         sector_n = 36*4
-        vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=200, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
+        vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=300, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
                                                                                 dl=dl, iterations=iters, end_x=xmin+10*6371000, x_point_n=200, sector_n=sector_n) 
-        # good parameters example: seeds_x0=150e6, dl=5e5, iters = int(((seeds_x0-xmin)/dl)+100), sector_n = 36*3, seeds_n=100, seeds_range=[-5*6371000, 5*6371000], end_x=xmin+10*6371000, x_point_n=200
-        
-        write_vtk_surface_to_file(manual_vtkSurface, "/wrk-vakka/users/jreimi/magnetosphere_classification/FID/FID_magnetopause_SW_manual_t1100.vtp")
+ 
+        write_vtk_surface_to_file(manual_vtkSurface, "/wrk-vakka/users/jreimi/magnetosphere_classification/FID/FID_magnetopause_SWnf_manual_t1100.vtp")
         # make the magnetopause surface from vertice points
         np.random.shuffle(vertices) # helps Delaunay triangulation
         vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, vertices, Delaunay_alpha)
@@ -141,13 +140,12 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         return vtkSurface, None
     elif return_SDF:
         return None, SDF
+    
+    # beta* + B connectivity:
+    #connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0)
+    #betastar_region = regions.treshold_mask(f.read_variable("beta_star"), [0.0, 0.5])
+    #magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
 
-    # write the surface to a file
-    #writer = vtk.vtkXMLPolyDataWriter() 
-    #writer.SetInputConnection(vtkSurface.GetOutputPort())
-    #writer.SetFileName(outfilen)
-    #writer.Write()
-    #return vtkSurface, SDF
 
 
 
@@ -155,15 +153,15 @@ def main():
 
 
     datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.0001100.vlsv"
-    vtpoutfilen = "FID_magnetopause_BS_noalpha_t1100.vtp"
-    vlsvoutfilen =  "FID_magnetopause_BS_noalpha_t1100.vlsv"
+    vtpoutfilen = "FID_magnetopause_BS_t1100.vtp"
+    vlsvoutfilen =  "FID_magnetopause_BS_t1100.vlsv"
 
 
     surface, SDF = magnetopause(datafile,
                                 #method="streamlines",
                                method="beta_star_with_connectivity", 
                                beta_star_range=[0.3, 0.4],
-                               #Delaunay_alpha=2*R_E,
+                               Delaunay_alpha=1*R_E,
                                return_SDF=True,
                                return_surface=True) 
     
