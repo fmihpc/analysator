@@ -24,8 +24,10 @@
 import logging
 import numpy as np
 import cProfile
-import os.path
+import os
 import pickle
+from operator import itemgetter
+import numbers
 
 import analysator as pt
 try:
@@ -627,6 +629,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       self.__cellarrays = []
       self._arrayselection = vtk.vtkDataArraySelection()
       self._arrayselection.AddObserver("ModifiedEvent", createModifiedCallback(self))
+      self.__cellIDtoIdx = {}
 
    def SetFileName(self, filename):
       if filename != self.__FileName:
@@ -635,7 +638,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          if self.__FileName is not None:
             self.__reader = pt.vlsvfile.VlsvReader(self.__FileName)
             fn = os.path.basename(self.__FileName)
-            self.__metafile = os.path.join(os.path.dirname(self.__FileName),"vlsvmeta",fn[:-5]+"_meta")
+            self.__metafile = os.path.join(self.__reader.get_cache_folder(),"vlsvvtkcache.pkl")
 
    def GetFileName(self):
       return self.__FileName
@@ -716,6 +719,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
    def getDescriptor(self, reinit=False):
 
+      if hasattr(self, "__descriptor") and hasattr(self, "__idxToFileIndex"):
+         return self.__descriptor, self.__idxToFileIndex
       try:
          if reinit:
             raise Exception("reinit = True")
@@ -728,13 +733,24 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          print("Re-initializing HTG, no metadata accessible because of ", e)
          self.__descriptor, self.__idxToFileIndex = self.buildDescriptor()
          if not os.path.isdir(os.path.dirname(self.__metafile)):
-            os.mkdir(os.path.dirname(self.__metafile))
+            os.makedirs(os.path.dirname(self.__metafile), exist_ok=True)
          with open(self.__metafile,'wb') as mfile:
             pickle.dump({"descr":self.__descriptor, "idxToFileIndexMap":self.__idxToFileIndex}, mfile)
 
       return self.__descriptor, self.__idxToFileIndex
+   
+   def getCellIDtoIdxMap(self):
+      if len(self.__cellIDtoIdx) == 0:
+         FileIndexToID = {v:k for k,v in self.getDescriptor()[1].items()}
+         for c,fi in self.__reader._VlsvReader__fileindex_for_cellid.items():
+            self.__cellIDtoIdx[c] = FileIndexToID[fi]
+
+      return self.__cellIDtoIdx
 
    def getHTG(self):
+      if self.__htg is not None:
+         return self.__htg
+      
       f = self.__reader
 
       descr, idxToFileIndex = self.getDescriptor()
@@ -838,7 +854,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    '''
    def addArrayFromVlsv(self, varname):
 
-      htg = self.__htg
+      htg = self.getHTG()
       # Do not re-add an already existing array
       if htg.GetCellData().HasArray(varname):
          print("skipped existing array")
@@ -919,9 +935,16 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          
       #    self.__htg.addArrayFromVlsv(name)
 
-
-   def GetDataArraySelection(self):
-      return self._arrayselection
+# TODO
+   # def GetDataArraySelection(self):
+   #    return self._arrayselection
+   
+   # def GetIdx(self, cellid):
+   #    cidToIdx = self.getCellIDtoIdxMap()
+   #    if isinstance(cellid,numbers.Number):
+   #       return cidToIdx[cellid]
+   #    else:
+   #       return itemgetter(*cellid)(cidToIdx)
 
 
 def __main__():
