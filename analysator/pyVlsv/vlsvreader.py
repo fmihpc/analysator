@@ -309,31 +309,6 @@ class VlsvReader(object):
          self.__grid_epsilon = 1e-3*np.array([self.__dx, self.__dy, self.__dz])/2**8 
       return self.__grid_epsilon
 
-   def get_linked_readers_filename(self):
-      '''Need to go to a consolidated metadata handler'''
-      pth, base = os.path.split(self.file_name)
-      
-      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_linked_readers.pkl")
-      return s
-
-   def get_linked_readers(self, reload=False):
-      self.__linked_files = self.get_reader_metadata("linked_reader_files", set())
-      if len(self.__linked_files)==0 or reload:
-         if(os.path.isfile(self.get_linked_readers_filename())):
-            with open(self.get_linked_readers_filename(), 'rb') as f:
-               l = pickle.load(f)
-               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
-               self.__linked_files.update(l)
-               print(l)
-
-      else:
-         self.add_linked_readers()
-
-         self.add_metadata("linked_reader_files",self.__linked_files)
-
-
-
-      return self.__linked_readers
 
    def get_metadata_filename(self):
       pth, base = os.path.split(self.file_name)
@@ -402,6 +377,31 @@ class VlsvReader(object):
       except Exception as e:
          logging.warning("Could not save metadata file, error: "+str(e))
 
+   def get_linked_readers_filename(self):
+      '''Need to go to a consolidated metadata handler'''
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(self.__metadata_cache.get_cache_folder(),base[:-5]+"_linked_readers.txt")
+      return s
+
+   def get_linked_readers(self, reload=False):
+      self.__linked_files = self.get_reader_metadata("linked_reader_files", set())
+      if len(self.__linked_files)==0 or reload:
+         if(os.path.isfile(self.get_linked_readers_filename())):
+            with open(self.get_linked_readers_filename(), 'r') as f:
+               l = f.readlines()
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+               self.__linked_files.update(l)
+               print(l)
+
+      else:
+         self.add_linked_readers()
+
+         self.add_metadata("linked_reader_files",self.__linked_files)
+
+      return self.__linked_readers
+
+
    def add_linked_file(self, fname):
       if os.path.exists(fname):
          self.__linked_files.add(VlsvReader(fname))
@@ -421,15 +421,31 @@ class VlsvReader(object):
       for fname in self.__linked_files:
          self.add_linked_reader(fname)
 
-   def save_linked_readers_file(self):
+   def save_linked_readers_file(self, overwrite = False):
       fn = self.get_linked_readers_filename()
+      if not overwrite: # Load existing linked reader to not overwrite everything
+         self.get_linked_readers()
+
       logging.info("Saving linked readers to "+fn)
       dn = os.path.dirname(fn)
       if not os.path.isdir(dn):
             os.mkdir(dn)
-      with open(fn,'wb') as f:
-         pickle.dump(self.__linked_files, f)
+      with open(fn,'w') as f:
+         lines = []
+         for line in self.__linked_files:
+            lines += (line+os.linesep) # gather from set and insert line swap
+         f.writelines(lines)
 
+   def clear_linked_readers(self):
+      self.__linked_files.clear()
+      self.__linked_readers.clear()
+
+   def clear_linked_readers_file(self):
+      fn = self.get_linked_readers_filename()
+      if os.path.exists(fn):
+         os.remove(fn)
+      else:
+         logging.info("Tried to remove nonexisting linked reader file "+fn)
 
    def __popmesh(self, popname):
       ''' Get the population-specific vspace mesh info object, and initialize it if it does not exist
@@ -2654,6 +2670,7 @@ class VlsvReader(object):
       # If the query bounding box volume is small, we really should use spatial indexing instead of loading the whole
       # domain
       volume_threshold = 0.01
+      rank_ratio_threshold = 1./8.
 
       mins = np.min(coords, axis=0)-self.get_grid_epsilon()
       maxs = np.max(coords, axis=0)+self.get_grid_epsilon()
@@ -2681,22 +2698,25 @@ class VlsvReader(object):
             for rankid in rankids:
                self.get_cellid_locations_rank(rankid)
       else:
-         # print("small boxes")
-         query_windows = np.zeros((coords.shape[0],6))
-         query_windows[:,0::2] = coords - self.get_grid_epsilon()
-         query_windows[:,1::2] = coords + self.get_grid_epsilon()
-         rankids = set()
-         for qw in query_windows:
-            rankids.update(self.__cellid_spatial_index.intersection(qw))
-         rankids = rankids - self.__loaded_fileindex_ranks
-         # print(len(rankids), "ranks to load")
-         if len(rankids) < self.read_parameter("numWritingRanks")/8:
-            # print("few ranks")
-            for rankid in rankids:
-               self.get_cellid_locations_rank(rankid)
-         else: # Fallback: read everything
-            # print("Fallback")
+         if coords.shape[0] > 0.001*self.read_attribute(name="CellID",mesh="SpatialGrid",attribute="arraysize",tag="VARIABLE"):
+            # Guess that there are too many cellids to handle even the intersection search sensibly
             self.__read_fileindex_for_cellid()
+         else:
+            query_windows = np.zeros((coords.shape[0],6))
+            query_windows[:,0::2] = coords - self.get_grid_epsilon()
+            query_windows[:,1::2] = coords + self.get_grid_epsilon()
+            rankids = set()
+            for qw in query_windows: # There is a bulk intersection_v function but it does not work?
+               rankids.update(self.__cellid_spatial_index.intersection(qw))
+            rankids = rankids - self.__loaded_fileindex_ranks
+            # print(len(rankids), "ranks to load")
+            if len(rankids) < self.read_parameter("numWritingRanks")*rank_ratio_threshold:
+               # print("few ranks")
+               for rankid in rankids:
+                  self.get_cellid_locations_rank(rankid)
+            else: # Fallback: read everything
+               # print("Fallback")
+               self.__read_fileindex_for_cellid()
 
 
    def get_cellid(self, coords):
@@ -4176,26 +4196,26 @@ class VlsvReader(object):
       self.load_neighbor_stencils_from_filecache()
       path = self.get_cache_folder()
       os.makedirs(path,exist_ok=True) 
-      cache_file_neighbors = "neighbors_cache.pkl"
-      with open(os.path.join(path,cache_file_neighbors),'wb') as cache:
+      cache_file_neighbors = os.path.join(path, "neighbors_cache.pkl")
+      with open(cache_file_neighbors,'wb') as cache:
             pickle.dump({
-               "cell_neighbours": self._VlsvReader__cell_neighbours,
-               "cell_vertices":self._VlsvReader__cell_vertices,
-               "cell_corner_vertices":self._VlsvReader__cell_corner_vertices}
+               "cell_neighbours": self.__cell_neighbours,
+               "cell_vertices":self.__cell_vertices,
+               "cell_corner_vertices":self.__cell_corner_vertices}
                ,cache)
 
    def load_neighbor_stencils_from_filecache(self):
       if self.__neighbors_cache_available and not self.__neighbors_cache_loaded:
          path = self.get_cache_folder()
-         cache_file_neighbors = "neighbors_cache.pkl"
-         if(os.path.isfile(os.path.join(path,cache_file_neighbors))):
-            with open(os.path.join(path,cache_file_neighbors),'rb') as cache:
+         cache_file_neighbors = os.path.join(path, "neighbors_cache.pkl")
+         if(os.path.isfile(cache_file_neighbors)):
+            with open(cache_file_neighbors,'rb') as cache:
                loaded = pickle.load(cache)
                
-               self._VlsvReader__cell_neighbours.update(loaded["cell_neighbours"])
-               self._VlsvReader__cell_vertices.update(loaded["cell_vertices"])
-               self._VlsvReader__cell_corner_vertices.update(loaded["cell_corner_vertices"])
-               self.__neighbors_cache_len = len(self._VlsvReader__cell_neighbours)
+               self.__cell_neighbours.update(loaded["cell_neighbours"])
+               self.__cell_vertices.update(loaded["cell_vertices"])
+               self.__cell_corner_vertices.update(loaded["cell_corner_vertices"])
+               self.__neighbors_cache_len = len(self.__cell_neighbours)
          else:
             self.__neighbors_cache_loaded = True
 
@@ -4206,3 +4226,9 @@ class VlsvReader(object):
       path = self.get_cache_folder()
       import shutil
       shutil.rmtree(path)
+
+   def cache_optimization_files(self, force=False):
+      ''' Create cached optimization files for this reader object (e.g. spatial index)
+      
+      '''
+      self.__metadata_cache.get_cellid_spatial_index(force)
