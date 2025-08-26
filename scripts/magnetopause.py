@@ -59,7 +59,6 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=300, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
                                                                                 dl=dl, iterations=iters, end_x=xmin+10*6371000, x_point_n=200, sector_n=sector_n) 
  
-        write_vtk_surface_to_file(manual_vtkSurface, "/wrk-vakka/users/jreimi/magnetosphere_classification/FID/FID_magnetopause_SWnf_manual_t1100.vtp")
         # make the magnetopause surface from vertice points
         np.random.shuffle(vertices) # helps Delaunay triangulation
         vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, vertices, Delaunay_alpha)
