@@ -10,6 +10,7 @@
 import analysator as pt
 import numpy as np
 import vtk
+from scripts import magnetopause
 #from .analysator.scripts import shue
 
 
@@ -18,16 +19,18 @@ R_E = 6371000
 ### Signed distance field functions: ###
 
 
-def vtkDelaunay3d_SDF(all_points, coordinates):
-    """Gives a signed distance to a convex hull surface created from given coordinates.
+def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
+    """Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.
+        Note: if using alpha, SDF most likely won't work!
 
         :param all_points: points ([x, y, z] coordinates in m) for which a signed distance to surface will be calculated
         :param coordinates: coordinates (array of [x, y, z]:s in m) that are used to make a surface.
-        :returns: array of signed distances, negative sign: inside the surface, positive sign: outside the surface
+        :kword alpha: alpha to be given to vtkDelaunay3D (e.g. R_E), removes surface edges that have length more than alpha so that the resulting surface is not convex. None -> convex hull
+        :returns: vtkDataSetSurfaceFilter() object, array of signed distances (negative sign: inside the surface, positive sign: outside the surface)
     
     """
 
-    points =vtk.vtkPoints()#.NewInstance()
+    points = vtk.vtkPoints()#.NewInstance()
     for i in range(len(coordinates)):
         points.InsertNextPoint(coordinates[i,0],coordinates[i,1],coordinates[i,2])
         polydata = vtk.vtkPolyData()
@@ -37,6 +40,8 @@ def vtkDelaunay3d_SDF(all_points, coordinates):
     # Delaunay convex hull
     delaunay_3d = vtk.vtkDelaunay3D()
     delaunay_3d.SetInputData(polydata)
+    if alpha is not None:
+        delaunay_3d.SetAlpha(alpha)
     delaunay_3d.Update()
 
 
@@ -49,13 +54,13 @@ def vtkDelaunay3d_SDF(all_points, coordinates):
     implicitPolyDataDistance = vtk.vtkImplicitPolyDataDistance()
     implicitPolyDataDistance.SetInput(surface.GetOutput())
 
-    convexhull_sdf = np.zeros(len(all_points))
+    convexhull_sdf = np.zeros(len(query_points))
 
     # SDFs
-    for i,coord in enumerate(all_points):
+    for i,coord in enumerate(query_points):
         convexhull_sdf[i] = implicitPolyDataDistance.EvaluateFunction(coord)
     
-    return convexhull_sdf
+    return surface, convexhull_sdf
 
 
 
@@ -69,7 +74,7 @@ def treshold_mask(data_array, value):
 	:returns: 0/1 mask in same order as cellids, 1: variable value in array inside treshold values, 0: outside
     """
 
-    if data_array is None or value is None:  # either variable isn't usable or treshold has not been given
+    if (data_array is None) or (value is None) or (np.isnan(data_array[0])):  # either variable isn't usable or treshold has not been given
         return None
 
     mask = np.zeros((len(data_array)))
@@ -222,132 +227,39 @@ def bowshock_SDF(f, variable_dict, query_points, own_condition_dict=None):
 
         bowshock_conditions = {"density": (1.5*upstream_rho, 0.1)}
         bowshock_rho_flags = make_region_flags(variable_dict, bowshock_conditions, flag_type="01")
-        bowshock_rho_SDF = vtkDelaunay3d_SDF(query_points, f.get_cell_coordinates(cellids[bowshock_rho_flags!=0]))
+        __, bowshock_rho_SDF = vtkDelaunay3d_SDF(query_points, f.get_cell_coordinates(cellids[bowshock_rho_flags!=0]))
         return bowshock_rho_SDF
     
     else: # bowshock from user-defined variable and values 
-        bowshock_rho_flags = make_region_flags(variable_dict, own_condition_dict, flag_type="01")
-        bowshock_rho_SDF = vtkDelaunay3d_SDF(query_points, f.get_cell_coordinates(cellids[bowshock_rho_flags!=0]))
-        dict_sdf = vtkDelaunay3d_SDF(query_points, f.get_cell_coordinates(cellids[bowshock_rho_flags!=0]))
+        bowshock_dict_flags = make_region_flags(variable_dict, own_condition_dict, flag_type="01")
+        __, dict_sdf = vtkDelaunay3d_SDF(query_points, f.get_cell_coordinates(cellids[bowshock_dict_flags!=0]))
 
         return dict_sdf
     
 
-def magnetopause_SDF(f, datafile, vtpoutfile, variable_dict, query_points, method="beta_star_with_connectivity", own_variable_dict=None): # TODO: remove vlsvReader AND datafile name need (streamline magnetopause to only use f?)
-    """Finds the magnetopause by making a convex hull of either streamlines, beta*, or user-defined variables, and returns signed distances from surface to query_points.
-        Note: constructing the magnetopause using solar wind streamlines is slow and needs more memory than e.g. the beta*-method
-    
-        :param query_points: xyz-coordinates of all points where the SDF will be calculated ([x1, y1, z1], [x2, y2, z2], ...)
-        :kword method: str, specifies the method used to find magnetopause, options: "beta_star", "streamlines", "shue", "dict". If "dict" is used, own_variable_dict dictionary must be given. If "shue", run needs to be specified (TODO kwarg)
-        :kword own_variable_dict: when using "dict"-method, dictionary with string variable names as keys and treshold pairs as values to pass to treshold_mask()-function
-    """
 
-    if method != "streamlines": cellids =f.read_variable("CellID")
-
-    if method == "streamlines": 
-
-        [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
-        seeds_x0=150e6
-        dl=5e5
-        iters = int(((seeds_x0-xmin)/dl)+100)
-        sector_n = 36*2
-        vertices, vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafile, seeds_n=200, seeds_x0=seeds_x0, seeds_range=[-15*6371000, 15*6371000], 
-                                                                               dl=dl, iterations=iters, end_x=xmin+15*6371000, x_point_n=100, sector_n=sector_n) 
-
-        # make the magnetopause surface from vertice points
-        np.random.shuffle(vertices) # helps Delaunay triangulation
-        Delaunay_SDF = vtkDelaunay3d_SDF(query_points, vertices)
-
-        writer = vtk.vtkXMLPolyDataWriter() 
-        writer.SetInputConnection(vtkSurface.GetOutputPort())
-        writer.SetFileName(vtpoutfile)
-        writer.Write()
-        return Delaunay_SDF
-
-    elif method == "beta_star":
-        # magnetopause from beta_star only
-        condition_dict = {"beta_star": [0.4, 0.5]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
-        mpause_flags = make_region_flags(variable_dict, condition_dict, flag_type="01")
-        contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
-    
-        # make a convex hull surface with vtk's Delaunay
-        magnetopause_sdf = vtkDelaunay3d_SDF(query_points, contour_coords)
-        return magnetopause_sdf
-    
-
-    elif method == "beta_star_with_connectivity":
-        # magnetopause from beta_star, with connectivity if possible
-        try:
-            connectivity_region = treshold_mask(variable_dict["connection"], 0)
-            betastar_region = treshold_mask(variable_dict["beta_star"], [0.6, 0.7])
-            magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
-            contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
-        except:
-            print("using field line connectivity for magnetosphere did not work, using only beta*")
-            condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
-            mpause_flags = make_region_flags(variable_dict, condition_dict, flag_type="01")
-            contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
-        
-        # make a convex hull surface with vtk's Delaunay
-        magnetopause_sdf = vtkDelaunay3d_SDF(query_points, contour_coords)
-        return magnetopause_sdf
-    
-    elif method == "dict":
-        # same method as beta* but from user-defined variables as initial contour
-        flags = make_region_flags(variable_dict, own_variable_dict, flag_type="01")
-        treshold_coords = f.get_cell_coordinates(cellids[flags!=0])
-        dict_sdf = vtkDelaunay3d_SDF(query_points, treshold_coords)
-
-        return dict_sdf
-    
-    elif method == "shue":
-        return 0
-        theta = np.linspace(0, 2*np.pi/3 , 200) # magnetotail length decided here by trial and error: [0, 5*np.pi/6] ~ -350e6 m, [0, 2*np.pi/3] ~ -100e6 m in EGE
-        r, __, __ = shue.f_shue(theta, run='EGI') # EGI~EGE, for runs not in shue.py B_z, n_p, and v_sw need to be specified and run=None
-
-        # 2d one-sided magnetopause
-        xs = r*np.cos(theta)
-        ys = r*np.sin(theta)
-
-        # 3d projection for complete magnetopause
-        psis = np.linspace(0, 2*np.pi, 100)
-        coords = np.zeros((len(theta)*len(psis), 3))
-        i=0
-        for x,y in zip(xs,ys): 
-            for psi in psis:
-                coords[i] = np.array([x, y*np.sin(psi), y*np.cos(psi)])
-                i += 1
-
-        coords = coords*R_E
-
-        # surface and SDF
-        np.random.shuffle(coords) # helps Delaunay triangulation
-        shue_SDF = vtkDelaunay3d_SDF(query_points, coords)
-
-        return shue_SDF
-    
-    else:
-        print("Magnetopause method not recognized. Use one of the options: \"beta_star\", \"beta_star_with_connectivity\", \"streamlines\", \"shue\", \"dict\"")
-
-def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
-                magnetopause_method="beta_star", magnetopause_dict=None):
+def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, magnetopause_kwargs={}):
     
     """Creates a sidecar .vlsv file with flagged cells for regions and boundaries in near-Earth plasma environment. 
         Region flags (start with flag_, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet, PSBL
         Boundary signed distance flags (start with SDF_, flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock
 
-    :param datafile: vlsv file name (and path)
-    :param outdir: sidecar file save directory path
-    :param outfilen: sidecar file name
+        possilbe regions: "all", "boundaries" (magnetopause, bow shock), "large_areas" (boundaries + upstream, magnetosheath, magnetosphere), "magnetosphere", "bowshock",
+            "cusps", "lobes", "central_plasma_sheet", "boundary_layers" (incl. central plasma sheet BL, HLBL, LLBL; note: not reliable/working atm)
+
+        Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually      
+
+    :param datafile: .vlsv bulk file name (and path)
+    :param outfilen: sidecar .vlsv file name (and path)
     :kword ignore_boundaries: True: do not take cells in the inner/outer boundaries of the simulation into account when looking for regions 
-    :kword magnetopause_method: default "beta_star", 
+    :kword magnetopause_method: default "beta_star", other options: "beta_star_with_connectivity", "streamlines", "shue"
     """
 
 
     f = pt.vlsvfile.VlsvReader(file_name=datafile)
     cellids =f.read_variable("CellID")
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
-    all_points = f.get_cell_coordinates(cellids) #centre_points_of_cells(f)
+    all_points = f.get_cell_coordinates(cellids)
     cellIDdict = f.get_cellid_locations()
 
 
@@ -385,17 +297,22 @@ def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
             try: 
                 variables[varname] = f.read_variable(name=filevarname, cellids=-1)
             except:
+                variables[varname] = np.full((len(cellids)), np.nan)
                 errormsg(filevarname)
         else:
             try: 
                 variables[varname] = f.read_variable(name=filevarname[0], cellids=-1, operator=filevarname[1])
             except:
+                variables[varname] = np.full((len(cellids)), np.nan)
                 errormsg(filevarname)
 
-    ## cellid testing
-    #testmesh = np.where(cellids < 10000, 1, 0)
-    #write_flags(writer, testmesh, 'testmesh')
 
+
+    #connectivity_region = treshold_mask(variables["connection"], 0)
+    #betastar_region = treshold_mask(variables["beta_star"], [0.0, 0.5])
+    #magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
+    #write_flags(writer, magnetosphere_proper, 'flag_magnetosphere')
+    #return 0
 
 
     # upstream point
@@ -404,32 +321,36 @@ def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
     upstream_index = cellIDdict[upstream_cellid]
 
     ## MAGNETOPAUSE ##
-    magnetopause = magnetopause_SDF(f, datafile, vtpoufile, variables, all_points, method=magnetopause_method, own_variable_dict=magnetopause_dict)
-    write_flags(writer, magnetopause, 'SDF_magnetopause')
-    write_flags(writer, np.where(np.abs(magnetopause) < 5e6, 1, 0), "flag_magnetopause")
+    if magnetopause_kwargs:
+        __, magnetopause_SDF = magnetopause.magnetopause(datafile, **magnetopause_kwargs)
+    else:
+        __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=None)  # default magnetopause: beta*+ B connectivity convex hull 
+    write_flags(writer, magnetopause_SDF, 'SDF_magnetopause')
+    write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "flag_magnetopause")
 
     # save some magnetopause values for later
-    magnetopause_density = np.mean(variables["density"][np.abs(magnetopause) < 5e6])
+    magnetopause_density = np.mean(variables["density"][np.abs(magnetopause_SDF) < 5e6])
     print(f"{magnetopause_density=}")
-    magnetopause_temperature = np.mean(variables["temperature"][np.abs(magnetopause) < 5e6])
+    magnetopause_temperature = np.mean(variables["temperature"][np.abs(magnetopause_SDF) < 5e6])
     print(f"{magnetopause_temperature=}")
     
     ## MAGNETOSPHERE ##
     # magnetosphere from magentopause SDF
-    magnetosphere = np.where(magnetopause<0, 1, 0)
+    magnetosphere = np.where(magnetopause_SDF<0, 1, 0)
     write_flags(writer, magnetosphere, 'flag_magnetosphere_convex')
 
     # magnetospshere from beta* and field line connectivity if possible # TODO
     try: 
         connectivity_region = treshold_mask(variables["connection"], 0)
-        betastar_region = treshold_mask(variables["beta_star"], [0.01, 0.5])
+        betastar_region = treshold_mask(variables["beta_star"], [0.0, 0.5])
         magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
         write_flags(writer, magnetosphere_proper, 'flag_magnetosphere')
     except:
-        print("Non-convex magnetosphere could not be made")
+        print("Non-Delaunay beta* magnetosphere could not be made")
 
-    ## BOW SHOCK ##
-    # bow shock from rho
+
+    ## BOW SHOCK ## #TODO: similar kwargs system as magnetopause?
+    # bow shock from rho 
     bowshock = bowshock_SDF(f, variables, all_points)
     write_flags(writer, bowshock, 'SDF_bowshock')
     write_flags(writer, np.where(np.abs(bowshock) < 5e6, 1, 0), "flag_bowshock")
@@ -470,73 +391,78 @@ def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
     #print("upstream B:", variables["B_magnitude"][upstream_index])
 
     # cusps
-    try:
-        cusp_conditions = {"density": [variables["density"][upstream_index], None],
-                        #"beta_star": [0.1, None],
-                        "connection": [0.0, 2.5], # either closed, or open-closed/closed-open
-                        "B_magnitude":[2*variables["B_magnitude"][upstream_index], None],
-                        "J_magnitude": [variables["J_magnitude"][upstream_index], None]
-                        }
-    except:
-        cusp_conditions = {"density": [variables["density"][upstream_index], None],
-                        #"beta_star": [0.1, None],
-                        "connection": [0.0, 2.5], # either closed, or open-closed/closed-open
-                        "B_magnitude":[2*variables["B_magnitude"][upstream_index], None]
-                        }
+    cusp_conditions = {"density": [variables["density"][upstream_index], None],
+                    #"beta_star": [0.1, None],
+                    "connection": [0.0, 2.5], # either closed, or open-closed/closed-open
+                    "B_magnitude":[2*variables["B_magnitude"][upstream_index], None],
+                    "J_magnitude": [variables["J_magnitude"][upstream_index], None]
+                    }
 
     cusp_flags = make_region_flags(variables, cusp_conditions, flag_type="fraction", mask=mask_inMagnetosphere)
     write_flags(writer, cusp_flags, 'flag_cusps', mask_inMagnetosphere)
 
-
+ 
     # magnetotail lobes 
-    lobes_conditions = {"beta": [None, 0.1], # Koskinen: 0.003
-                       "connection": [0.5, 2.5],
-                       "density": [None, variables["density"][upstream_index]], # Koskinen: 1e-8
-                        "temperature": [None, 3.5e6], # Koskinen: 3.5e6 K
-                        }
-    lobes_flags = make_region_flags(variables, lobes_conditions, flag_type="fraction", mask=mask_inBowshock)
-    write_flags(writer, lobes_flags, 'flag_lobes', mask_inBowshock)
+    def lobes():
+        lobes_conditions = {"beta": [None, 0.1], # Koskinen: 0.003
+                            "connection": [0.5, 2.5],
+                            "density": [None, variables["density"][upstream_index]], # Koskinen: 1e-8
+                            "temperature": [None, 3.5e6], # Koskinen: 3.5e6 K
+                            }
+        lobes_flags = make_region_flags(variables, lobes_conditions, flag_type="fraction")
+        
 
-    # lobes slightly other way
-    lobe_N_conditions = {"beta": [None, 0.1], 
-                       "connection": [0.5, 2.5],
-                       "B_x":[0, None],
-                       "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
-                       }
-    lobe_N_flags = make_region_flags(variables, lobe_N_conditions, flag_type="fraction", mask=mask_inBowshock)
-    write_flags(writer, lobe_N_flags, 'flag_lobe_N', mask_inBowshock)
+        # lobes slightly other way
+        lobe_N_conditions = {"beta": [None, 0.1], 
+                            "connection": [0.5, 2.5],
+                            "B_x":[0, None],
+                            "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
+                            }
+        lobe_N_flags = make_region_flags(variables, lobe_N_conditions, flag_type="fraction")
+        
 
-    lobe_S_conditions = {"beta": [None, 0.1], 
-                       "connection": [0.5, 2.5],
-                       "B_x":[None, 0],
-                       "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
-                        }
-    lobe_S_flags = make_region_flags(variables, lobe_S_conditions, flag_type="fraction", mask=mask_inBowshock)
-    write_flags(writer, lobe_S_flags, 'flag_lobe_S', mask_inBowshock)
+        lobe_S_conditions = {"beta": [None, 0.1], 
+                            "connection": [0.5, 2.5],
+                            "B_x":[None, 0],
+                            "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
+                            }
+        lobe_S_flags = make_region_flags(variables, lobe_S_conditions, flag_type="fraction")
+        
+
+        return lobes_flags, lobe_N_flags, lobe_S_flags
+
+    if "all" in regions or "lobes" in regions:
+        mask = mask_inBowshock
+        lobes_flags, N_lobe_flags, S_lobe_flags = lobes()
+        write_flags(writer, lobes_flags, 'flag_lobes')
+        write_flags(writer, N_lobe_flags, 'flag_lobe_N')
+        write_flags(writer, S_lobe_flags, 'flag_lobe_S')
+
 
     # lobe density from median densities?
     lobes_mask = np.where((lobes_flags > 0.9), 1, 0).astype(bool)
-    lobes_allcells = mask_inBowshock.astype(float)
-    lobes_allcells[mask_inBowshock] = lobes_mask
-    lobe_density = np.mean(variables["density"][lobes_allcells>0.9])
+    #lobes_allcells = mask_inBowshock.astype(float)
+    #lobes_allcells[mask_inBowshock] = lobes_mask
+    lobe_density = np.mean(variables["density"][lobes_mask])#[lobes_allcells>0.9])
     print(f"{lobe_density=}")
 
     # Central plasma sheet
-    central_plasma_sheet_conditions = {#"density": [None, variables["density"][upstream_index]],
-                                        "density": [None, 1e6], # Wolf intro 
-                                        #"density" : [1e7, None], # Koskinen: 3e-7
-                                        #"density": [lobe_density, None],
-                                       "beta": [1.0, None], # Koskinen: 6
-                                       #"connection": 0, # only closed-closed
-                                       #"temperature": [2*variables["temperature"][upstream_index], None]#,
-                                       "temperature": [2e6, None], #  5e7 from Koskinen
-                                       #"B_magnitude":[10*variables["B_magnitude"][upstream_index], None]
-                                       #"J_magnitude": [2*variables["J_magnitude"][upstream_index], None],
-                                       "J_magnitude": [1e-9, None],
-                                       }
+    def CPS():
+        central_plasma_sheet_conditions = {"density": [None, 1e6], # Wolf intro ?should not be
+                                            #"density" : [1e7, None], # Koskinen: 3e-7
+                                            #"density": [lobe_density, None],
+                                            "beta": [1.0, None], # Koskinen: 6
+                                            #"connection": 0, # only closed-closed
+                                            "temperature": [2e6, None], #  5e7 from Koskinen
+                                            "J_magnitude": [1e-9, None],
+                                             }
+        
+        central_plasma_sheet_flags = make_region_flags(variables, central_plasma_sheet_conditions,flag_type="fraction", mask=mask_inMagnetosphere)
+        return central_plasma_sheet_flags
     
-    central_plasma_sheet_flags = make_region_flags(variables, central_plasma_sheet_conditions,flag_type="fraction", mask=mask_inMagnetosphere)
-    write_flags(writer, central_plasma_sheet_flags, 'flag_central_plasma_sheet', mask_inMagnetosphere)
+    if "all" in regions or "central_plasma_sheet" in regions:
+        CPS_flags = CPS()
+        write_flags(writer, CPS_flags, 'flag_central_plasma_sheet', mask_inMagnetosphere)
 
     
     # Plasma sheet boundary layer (PSBL)
@@ -563,8 +489,6 @@ def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
 
 
 
-
-
     # High-Latitude boundary layer (HLBL)
     HLBL_conditions = { "density": [magnetopause_density, magnetosheath_density],
                         "temperature": [magnetosheath_temperature, magnetopause_temperature],
@@ -580,13 +504,11 @@ def RegionFlags(datafile, outfilen, vtpoufile, ignore_boundaries=True,
 
 def main():
 
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.0001400.vlsv"
-    outfilen = "FHA_regions_t0001400.vlsv"
-    vtp_outfilen = "FHA_regions_t0001400.vtp"
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    outfilen = "EGE_regions_t2000.vlsv"
 
 
-    for infile, outfile, vtp_outfile in zip(datafile, outfilen, vtp_outfilen):
-        RegionFlags(infile, outfile, vtp_outfile, magnetopause_method="streamlines")
+    RegionFlags(datafile, outfilen, regions=["all"], magnetopause_kwargs={"method":"beta_star_with_connectivity", "beta_star_range":[0.3, 0.4]})
 
 
 if __name__ == "__main__":
