@@ -142,6 +142,37 @@ def make_surface(coords):
         next_triangles = [x + slices_in_plane*area_index for x in first_triangles]
         faces.extend(next_triangles)
 
+    #### test area ####
+    # From last triangles remove every other triangle
+    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
+    #removed = 0
+    #for i in range(len(faces)-slices_in_plane*2, len(faces)):
+    #    if i%2!=0:
+    #        faces.pop(i-removed)
+    #        removed += 1
+
+    # From last triangles remove every other triangle
+    # (a single subsolar point -> last triangles are actual triangles instead of rectangles sliced in two)
+    # Also fix the last triangles so that they only point to one subsolar point and have normals towards outside
+    #subsolar_index = int(len(verts)-slices_in_plane)
+
+    #for i,triangle in enumerate(reversed(faces)):
+    #    if i > (slices_in_plane): # faces not in last plane (we're going backwards) 
+    #        break
+
+    #    faces[len(faces)-i-1] = np.clip(triangle, a_min=0, a_max=subsolar_index)
+
+    # this would remove duplicate subsolar points from vertices but makes 2d slicing harder
+    #verts = verts[:int(len(verts)-slices_in_plane+1)]
+
+    # Change every other face triangle (except for last slice triangles) normal direction so that all face the same way (hopefully)
+    #faces = np.array(faces)
+    #for i in range(len(faces)-int(slices_in_plane)):
+    #    if i%2!=0:
+    #        faces[i,1], faces[i,2] =  faces[i,2], faces[i,1]
+
+    ###################
+
     # Change every other face triangle normal direction so that all face the same way
     faces = np.array(faces)
     for i in range(len(faces)):
@@ -236,7 +267,7 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
     return streams
 
 
-def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
+def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
     """Finds the mangetopause location based on streamlines.
 
         :param streams: streamlines (coordinates in m)
@@ -250,7 +281,6 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     """
 
     RE = 6371000
-    ignore = 0
     
     ## if given sector number isn't divisible by 4, make it so because we want to have magnetopause points at exactly y=0 and z=0 for 2d slices of the whole thing
     while sector_n%4 != 0:
@@ -276,7 +306,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     dayside_points = streampoints[streampoints[:,0] > 0]
 
     phi_slices = sector_n
-    theta_slices = 10
+    theta_slices = dayside_x_point_n
     phi_step = 2*np.pi/phi_slices
     theta_step = np.pi/(2*theta_slices) # positive x-axis only
 
@@ -398,7 +428,7 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36):
     return magnetopause
 
 
-def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36):
+def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
     """Finds the magnetopause position by tracing streamlines of the velocity field.
 
         :param vlsvfile: path to .vlsv bulk file to use for VlsvReader
@@ -409,14 +439,15 @@ def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=
         :kword dl: streamline iteration step length in m
         :kword iterations: int, number of iteration steps
         :kword end_x: tail end x-coordinate (how far along the x-axis the magnetopause is calculated)
-        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
-        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
+        :kword x_point_n: integer, how many parts the magnetopause will be divided in between the subsolar point and tail end
+        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane/radial sector
+        :kword ignore: how many inner streamlines will be ignored when calculating the magnetopause
 
         :returns:   vertices, surface where vertices are numpy arrays in shape [[x0,y0,z0], [x1,y1,z1],...] and surface is a vtk vtkDataSetSurfaceFilter object
     """
 
     streams = make_streamlines(vlsvfile, streamline_seeds, seeds_n, seeds_x0, seeds_range, dl, iterations)
-    magnetopause = make_magnetopause(streams, end_x, x_point_n, sector_n)
+    magnetopause = make_magnetopause(streams, end_x, x_point_n, sector_n, ignore)
     vertices, faces = make_surface(magnetopause)
     surface = make_vtk_surface(vertices, faces)
 
