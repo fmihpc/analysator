@@ -93,7 +93,7 @@ def fsGlobalIdToGlobalIndex(globalids, bbox):
 # Read in the global ids and indices for FsGrid cells, returns
 # min and max corners of the fsGrid chunk by rank
 def fsReadGlobalIdsPerRank(reader):
-   numWritingRanks = reader.read_parameter("numWritingRanks")
+   numWritingRanks = reader.get_numWritingRanks("fsgrid")
    rawData = reader.read(tag="MESH", name="fsgrid")
    bbox = reader.read(tag="MESH_BBOX", mesh="fsgrid")
    sizes = reader.read(tag="MESH_DOMAIN_SIZES", mesh="fsgrid")
@@ -1040,14 +1040,29 @@ class VlsvReader(object):
          self.__mesh_domain_sizes[mesh] = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh=mesh)
       return self.__mesh_domain_sizes[mesh]
       
+   def get_numWritingRanks(self, mesh):
+      ''' Get the number of writing ranks. This does not exist for all outputfiles eerywhere.
+      '''
+      ranks = None
+      if "numWritingRanks" in self.__params_cache.keys():
+         return self.__params_cache["numWritingRanks"]
+      else:
+         try: 
+            ranks = self.read_parameter("numWritingRanks")
+         except:
+            ranks = self.read_attribute(mesh=mesh, attribute="arraysize", tag="MESH_DOMAIN_SIZES")
+            self.__params_cache["numWritingRanks"] = ranks
+
+         return ranks
+      
 
    def __read_fileindex_for_cellid_rank(self, rank):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
       """
       # print("filling rank",rank)
 
-      if rank > self.read_parameter("numWritingRanks"):
-         raise ValueError("Tried to read rank "+rank+" out of "+self.read_parameter("numWritingRanks"))
+      if rank > self.get_numWritingRanks("SpatialGrid"):
+         raise ValueError("Tried to read rank "+rank+" out of "+self.get_numWritingRanks("SpatialGrid"))
          
       if not self.__rankwise_fileindex_for_cellid.get(rank,{}) == {}:
          return
@@ -2111,7 +2126,7 @@ class VlsvReader(object):
          # Decomposition is a list (or fail assertions below) - use it instead
          pass
       
-      numWritingRanks = self.read_parameter("numWritingRanks")
+      numWritingRanks = self.get_numWritingRanks("SpatialGrid")
       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
       
@@ -2138,7 +2153,7 @@ class VlsvReader(object):
        rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
 
        # Determine fsgrid domain decomposition
-       numWritingRanks = self.read_parameter("numWritingRanks")
+       numWritingRanks = self.get_numWritingRanks("SpatialGrid")
        if len(rawData.shape) > 1:
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
        else:
@@ -2663,7 +2678,8 @@ class VlsvReader(object):
       if coords.shape[0] == 0:
          return
 
-      if self.__cellid_spatial_index == None:
+      if self.get_cellid_spatial_index() == None:
+         
          self.__read_fileindex_for_cellid()
          return
 
@@ -2710,7 +2726,7 @@ class VlsvReader(object):
                rankids.update(self.__cellid_spatial_index.intersection(qw))
             rankids = rankids - self.__loaded_fileindex_ranks
             # print(len(rankids), "ranks to load")
-            if len(rankids) < self.read_parameter("numWritingRanks")*rank_ratio_threshold:
+            if len(rankids) < self.get_numWritingRanks("SpatialGrid")*rank_ratio_threshold:
                # print("few ranks")
                for rankid in rankids:
                   self.get_cellid_locations_rank(rankid)
@@ -4223,7 +4239,15 @@ class VlsvReader(object):
       self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
 
    def get_cellid_spatial_index(self, force=False):
-      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+      if not force:
+         if self.__cellid_spatial_index is None:   
+            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
+         else:
+            pass
+      else:
+         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+
+      return self.__cellid_spatial_index
 
    def clear_cache_folder(self):
       path = self.get_cache_folder()

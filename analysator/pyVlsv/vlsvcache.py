@@ -134,7 +134,10 @@ class FileCache:
       if not os.path.exists(self.get_cache_folder()):
          os.makedirs(self.get_cache_folder())
 
-      if(force or (not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile))):
+      if force:
+         os.remove(self.__rtree_idxfile)
+         os.remove(self.__rtree_datfile)
+      if(not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile)):
          t0 = time.time()
          
          bboxes = self.__reader.get_mesh_domain_extents("SpatialGrid")
