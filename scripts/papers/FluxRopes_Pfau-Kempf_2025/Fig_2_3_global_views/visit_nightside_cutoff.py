@@ -6,7 +6,7 @@ db = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.000"+str(tindex
 # Define expressions
 DefineScalarExpression('curvature_radius_re', 'curvature_radius / 6371000.0') # noqa
 
-TransformAtts_RE = TransformAttributes()
+TransformAtts_RE = TransformAttributes() # noqa
 TransformAtts_RE.doScale = 1
 TransformAtts_RE.scaleOrigin = (0, 0, 0)
 TransformAtts_RE.scaleX = 1.56961e-07
@@ -21,9 +21,9 @@ for cutoff in [3.0, 5.0, 7.0]:
 
    # Create plots
    # Create plot 1
-   OpenDatabase(db)
-   AddPlot("Contour", "vg_connection", 0, 0)
-   atts = ContourAttributes()
+   OpenDatabase(db) # noqa
+   AddPlot("Contour", "vg_connection", 0, 0) # noqa
+   atts = ContourAttributes() # noqa
    atts.defaultPalette.equalSpacingFlag = 1
    atts.defaultPalette.discreteFlag = 1
    atts.defaultPalette.tagNames = ("Default", "Discrete")
@@ -44,10 +44,10 @@ for cutoff in [3.0, 5.0, 7.0]:
    atts.max = 1
    atts.scaling = atts.Linear  # Linear, Log
    atts.wireframe = 0
-   SetPlotOptions(atts)
+   SetPlotOptions(atts) # noqa
 
-   AddOperator("Transform", 0)
-   SetOperatorOptions(TransformAtts_RE, 1, 0)
+   AddOperator("Transform", 0) # noqa
+   SetOperatorOptions(TransformAtts_RE, 1, 0) # noqa
 
 #   AddOperator("Box", 1)
 #   opatts = BoxAttributes()
@@ -62,9 +62,9 @@ for cutoff in [3.0, 5.0, 7.0]:
 #   SetOperatorOptions(opatts)
 
    # Create plot 4
-   OpenDatabase(dbvtu)
-   AddPlot("Pseudocolor", "curvature_radius_re", 0, 0)
-   atts = PseudocolorAttributes()
+   OpenDatabase(dbvtu) # noqa
+   AddPlot("Pseudocolor", "curvature_radius_re", 0, 0) # noqa
+   atts = PseudocolorAttributes() # noqa
    atts.scaling = atts.Linear  # Linear, Log, Skew
    atts.skewFactor = 1
    atts.limitsMode = atts.OriginalData  # OriginalData, ActualData
@@ -118,15 +118,15 @@ for cutoff in [3.0, 5.0, 7.0]:
    atts.lightingFlag = 1
    atts.wireframeColor = (0, 0, 0, 0)
    atts.pointColor = (0, 0, 0, 0)
-   SetPlotOptions(atts)
+   SetPlotOptions(atts) # noqa
 
-   AddOperator("Transform", 0)
-   SetOperatorOptions(TransformAtts_RE, 1, 0)
+   AddOperator("Transform", 0) # noqa
+   SetOperatorOptions(TransformAtts_RE, 1, 0) # noqa
 
-   DrawPlots()
+   DrawPlots() # noqa
 
-   plotName = GetPlotList().GetPlots(1).plotName
-   legend = GetAnnotationObject(plotName)
+   plotName = GetPlotList().GetPlots(1).plotName # noqa
+   legend = GetAnnotationObject(plotName) # noqa
    # moving the legend
    legend.managePosition = 0
    legend.position = (0.075,0.5)
@@ -155,7 +155,7 @@ for cutoff in [3.0, 5.0, 7.0]:
    legend.suppliedLabels = ()
 
    # Set the view
-   view = View3DAttributes()
+   view = View3DAttributes() # noqa
    view.viewNormal = (0.001, 0, 1)
    view.focus = (0, 0, 0)
    view.viewUp = (0, 1, 0)
@@ -173,10 +173,10 @@ for cutoff in [3.0, 5.0, 7.0]:
    view.axis3DScales = (1, 1, 1)
    view.shear = (0, 0, 1)
    view.windowValid = 1
-   SetView3D(view)
+   SetView3D(view) # noqa
 
    # Set the annotation attributes
-   AnnotationAtts = AnnotationAttributes()
+   AnnotationAtts = AnnotationAttributes() # noqa
    AnnotationAtts.axes3D.visible = 1
    AnnotationAtts.axes3D.autoSetTicks = 0
    AnnotationAtts.axes3D.autoSetScaling = 1
@@ -326,9 +326,9 @@ for cutoff in [3.0, 5.0, 7.0]:
    AnnotationAtts.axesArray.axes.tickMarks.minorSpacing = 0.02
    AnnotationAtts.axesArray.axes.tickMarks.majorSpacing = 0.2
    AnnotationAtts.axesArray.axes.grid = 0
-   SetAnnotationAttributes(AnnotationAtts)
+   SetAnnotationAttributes(AnnotationAtts) # noqa
 
-   SaveWindowatts = SaveWindowAttributes()
+   SaveWindowatts = SaveWindowAttributes() # noqa
    SaveWindowatts.outputToCurrentDirectory = 0
    SaveWindowatts.outputDirectory = filepath
    SaveWindowatts.fileName = filename
@@ -348,12 +348,12 @@ for cutoff in [3.0, 5.0, 7.0]:
    SaveWindowatts.pixelData = 1
    SaveWindowatts.opts.types = ()
    SaveWindowatts.opts.help = ""
-   SetSaveWindowAttributes(SaveWindowatts)
-   SaveWindow()
+   SetSaveWindowAttributes(SaveWindowatts) # noqa
+   SaveWindow() # noqa
    
-   DeleteAllPlots()
-   CloseDatabase(db)
-   CloseDatabase(dbvtu)
+   DeleteAllPlots() # noqa
+   CloseDatabase(db) # noqa
+   CloseDatabase(dbvtu) # noqa
 
 
 exit()
