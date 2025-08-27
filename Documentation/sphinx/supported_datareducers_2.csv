@@ -1,0 +1,76 @@
+v5 datareducer,v4 datareducer,explanation
+pop/vg\_rhom,pop/rhom,mass density
+pop/vg\_rhoq,pop/rhoq,charge density
+pop/vg\_pdyn,pop/pdyn,dynamic pressure
+pop/vg\_pdynx,pop/pdynx,dynamic pressure from only x-directional velocity
+  ,  ,  
+pop/vg\_v\_parallel,pop/vparallel,V parallel to B
+pop/vg\_v\_perpendicular,pop/vperpendicular,V perpendicular to B
+pop/vg\_v\_parallel\_nonthermal,pop/vparallelbackstream,non-thermal V parallel to B
+pop/vg\_v\_perpendicular\_nonthermal,pop/vperpendicularbackstream,non-thermal V perpendicular to B
+pop/vg\_v\_parallel\_thermal,pop/vparallelnonbackstream,thermal V parallel to B
+pop/vg\_v\_perpendicular\_thermal,pop/vperpendicularnonbackstream,thermal V perpendicular to B
+  ,  ,  
+pop/vg\_thermalvelocity,pop/thermalvelocity,estimate of thermal velocity
+pop/vg\_larmor,pop/larmor,estimate of representative Larmor radius
+pop/vg\_firstadiabatic,pop/firstadiabatic,estimate of first adiabatic invariant (old!)
+pop/vg\_gyroperiod,pop/gyroperiod,gyroperiod
+pop/vg\_plasmaperiod,pop/plasmaperiod,plasma period
+pop/vg\_precipitationintegralenergyflux,n/a,Integral energy flux of precipitating particles estimate (several energy channels)
+pop/vg\_precipitationmeanenergy,n/a,Mean energy of channel for precipitating particle fluxes
+  ,  ,  
+pop/vg\_pressure,pop/pressure,pressure
+pop/vg\_ptensor,pop/ptensor,pressure tensor
+pop/vg\_ptensor\_rotated,pop/ptensorrotated,pressure tensor rotated to align with B
+pop/vg\_p\_parallel,pop/pparallel,pressure parallel to B
+pop/vg\_p\_perpendicular,pop/pperpendicular,pressure perpendicular to B
+pop/vg\_p\_anisotropy,pop/pperpoverpar,ratio of perpendicular pressure to parallel pressure
+  ,  ,  
+pop/vg\_p\_nonthermal,pop/pbackstream,pressure due to non-thermal particles
+pop/vg\_ptensor\_nonthermal,pop/ptensorbackstream,pressure tensor due to non-thermal particles
+pop/vg\_ptensor\_rotated\_nonthermal,pop/ptensorrotatedbackstream,pressure tensor due to non-thermal particles rotated to align with B
+pop/vg\_p\_parallel\_nonthermal,pop/pparallelbackstream,pressure component due to non-thermal particles parallel to B
+pop/vg\_p\_perpendicular\_nonthermal,pop/pperpendicularbackstream,pressure component due to non-thermal particles perpendicular to B
+pop/vg\_p\_anisotropy\_nonthermal,pop/pperpoverparbackstream,ratio of perpendicular pressure to parallel pressure for non-thermal particles
+  ,  ,  
+pop/vg\_p\_thermal,pop/pnonbackstream,pressure due to thermal particles
+pop/vg\_ptensor\_thermal,pop/ptensornonbackstream,pressure tensor due to thermal particles
+pop/vg\_ptensor\_rotated\_thermal,pop/ptensorrotatednonbackstream,pressure tensor due to thermal particles rotated to align with B
+pop/vg\_p\_parallel\_thermal,pop/pparallelnonbackstream,pressure component due to thermal particles parallel to B
+pop/vg\_p\_perpendicular\_thermal,pop/pperpendicularnonbackstream,pressure component due to thermal particles perpendicular to B
+pop/vg\_p\_anisotropy\_thermal,pop/pperpoverparnonbackstream,ratio of perpendicular pressure to parallel pressure for thermal particles
+  ,  ,  
+pop/vg\_temperature,pop/temperature,temperature
+pop/vg\_ttensor,pop/ttensor,temperature tensor
+pop/vg\_ttensor\_rotated,pop/ttensorrotated,temperature tensor rotated to align with B
+pop/vg\_t\_parallel,pop/tparallel,temperature parallel to B
+pop/vg\_t\_perpendicular,pop/tperpendicular,temperature perpendicular to B
+  ,  ,  
+pop/vg\_t\_nonthermal,pop/tbackstream,temperature of non-thermal particles
+pop/vg\_ttensor\_nonthermal,pop/ttensorbackstream,temperature tensor of non-thermal particles
+pop/vg\_ttensor\_rotated\_nonthermal,pop/ttensorrotatedbackstream,temperature tensor of non-thermal particles rotated to align with B
+pop/vg\_t\_parallel\_nonthermal,pop/tparallelbackstream,temperature component of non-thermal particles parallel to B
+pop/vg\_t\_perpendicular\_nonthermal,pop/tperpendicularbackstream,temperature component of non-thermal particles perpendicular to B
+pop/vg\_t\_thermal,pop/tnonbackstream,temperature of thermal particles
+  ,  ,  
+pop/vg\_ttensor\_thermal,pop/ttensornonbackstream,temperature tensor of thermal particles
+pop/vg\_ttensor\_rotated\_thermal,pop/ttensorrotatednonbackstream,temperature temperature tensor of thermal particles rotated to align with B
+pop/vg\_t\_parallel\_thermal,pop/tparallelnonbackstream,temperature component of thermal particles parallel to B
+pop/vg\_t\_perpendicular\_thermal,pop/tperpendicularnonbackstream,temperature component of thermal particles perpendicular to B
+  ,  ,  
+pop/vg\_t\_anisotropy,pop/tperpoverpar,ratio of perpendicular temperature to parallel temperature
+pop/vg\_t\_anisotropy\_nonthermal,pop/tperpoverparbackstream,ratio of perpendicular temperature to parallel temperature for non-thermal particles
+pop/vg\_t\_anisotropy\_thermal,pop/tperpoverparnonbackstream,ratio of perpendicular temperature to parallel temperature for thermal particles
+  ,  ,  
+pop/vg\_agyrotropy,pop/agyrotropy,agyrotropy (according to Swisdak 2016)
+pop/vg\_agyrotropy\_nonthermal,pop/agyrotropybackstream,agyrotropy for non-thermal particles
+pop/vg\_agyrotropy\_thermal,pop/agyrotropynonbackstream,agyrotropy for thermal particles
+  ,  ,  
+pop/vg\_beta,pop/beta,plasma beta
+pop/vg\_beta\_parallel,pop/betaparallel,plasma beta component parallel to B
+pop/vg\_beta\_perpendicular,pop/betaperpendicular,plasma beta component perpendicular to B
+pop/vg\_beta\_anisotropy,pop/betaperpoverpar,ratio of perpendicular beta to parallel beta
+pop/vg\_beta\_anisotropy\_nonthermal,pop/betaperpoverparbackstream,ratio of perpendicular beta to parallel beta for non-thermal particles
+pop/vg\_beta\_anisotropy\_thermal,pop/betaperpoverparnonbackstream,ratio of perpendicular beta to parallel beta for thermal particles
+  ,  ,  
+
