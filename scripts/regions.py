@@ -1,23 +1,13 @@
 """Script and functions for creating sidecar files with SDF/region/boundary tags of plasma regions.
 
-    variables used to find regions/boundary regions:
-    rho, temperature, beta, beta_star, 
-
-
-
 """
 
 import analysator as pt
 import numpy as np
 import vtk
 from scripts import magnetopause
-#from .analysator.scripts import shue
-
 
 R_E = 6371000
-
-### Signed distance field functions: ###
-
 
 def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     """Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.
@@ -42,6 +32,10 @@ def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     delaunay_3d.SetInputData(polydata)
     if alpha is not None:
         delaunay_3d.SetAlpha(alpha)
+        delaunay_3d.SetAlphaTets(1)
+        delaunay_3d.SetAlphaLines(0)
+        delaunay_3d.SetAlphaTris(0)
+        delaunay_3d.SetAlphaVerts(0)
     delaunay_3d.Update()
 
 
@@ -71,13 +65,13 @@ def treshold_mask(data_array, value):
 	:param data_array: array to mask, e.g. output of f.read_variable(name="proton/vg_rho", cellids=-1)
 	:param variable: str, variable name
 	:param value: value/values to use for masking; a float or int for exact match, a (value, relative tolerance) tuple, or [min value, max value] list pair where either can be None for less than or eq./more than or eq. value
-	:returns: 0/1 mask in same order as cellids, 1: variable value in array inside treshold values, 0: outside
+	:returns: 0/1 mask in same order as data_array, 1: variable value in array inside treshold values, 0: outside
     """
 
     if (data_array is None) or (value is None) or (np.isnan(data_array[0])):  # either variable isn't usable or treshold has not been given
         return None
 
-    mask = np.zeros((len(data_array)))
+    #mask = np.zeros((len(data_array)))
 	
     if isinstance(value, float) or isinstance(value, int): # single value, exact
         mask = np.where(np.isclose(data_array, value), 1, 0)
@@ -238,22 +232,39 @@ def bowshock_SDF(f, variable_dict, query_points, own_condition_dict=None):
     
 
 
-def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, magnetopause_kwargs={}):
-    
+def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, region_flag_type="01", magnetopause_kwargs={}, region_conditions={}):
     """Creates a sidecar .vlsv file with flagged cells for regions and boundaries in near-Earth plasma environment. 
-        Region flags (start with flag_, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet, PSBL
+        Region flags (start with flag_, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet
         Boundary signed distance flags (start with SDF_, flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock
 
         possilbe regions: "all", "boundaries" (magnetopause, bow shock), "large_areas" (boundaries + upstream, magnetosheath, magnetosphere), "magnetosphere", "bowshock",
-            "cusps", "lobes", "central_plasma_sheet", "boundary_layers" (incl. central plasma sheet BL, HLBL, LLBL; note: not reliable/working atm)
+            "cusps", "lobes", "central_plasma_sheet"
 
-        Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually      
+        Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually
+        Beta* convex hull is most likely the best magnetopause method for regions, for just magnetopause with different options use magnetopause.py
 
-    :param datafile: .vlsv bulk file name (and path)
-    :param outfilen: sidecar .vlsv file name (and path)
-    :kword ignore_boundaries: True: do not take cells in the inner/outer boundaries of the simulation into account when looking for regions 
-    :kword magnetopause_method: default "beta_star", other options: "beta_star_with_connectivity", "streamlines", "shue"
+        :param datafile: .vlsv bulk file name (and path)
+        :param outfilen: sidecar .vlsv file name (and path)
+        :kword ignore_boundaries: True: do not take cells in the inner/outer boundaries of the simulation into account when looking for regions (applicable for cusps and CPS for now)
+        :kword region_flag_type: "01" or "fraction", whether flags are binary (all conditions must be satisfied) or fractions of how many given conditions are met
+        :kword magnetopause_method: default "beta_star", other options: see magnetopause.py, use alpha=None
+        :kword region_conditions: optional dict where keys are str region names and values are condition dictionaries, for setting own conditions for bow shock, cusps, lobes or central plasma sheet
     """
+
+    if "all" in regions:
+        regions.extend(["magnetopause", "bowshock", "upstream", "magnetosheath", "magnetosphere", "cusps", "lobes", "central_plasma_sheet"])
+    else:
+        if "large_areas" in regions:
+            regions.extend(["magnetopause", "bowshock", "upstream", "magnetosheath", "magnetosphere"])
+        if "boundaries" in regions:
+            regions.extend(["magnetopause", "bowshock"])
+        if "cusps" in regions or "central_plasma_sheet" in regions:  # for cusps and central plasma sheet we need the magnetoshpere
+            regions.extend(["magnetosphere"])
+        if "magnetosphere" in regions or "magnetosheath" in regions:
+            regions.extend(["magnetopause"])
+        if "bowshock" in regions or "magnetosheath" in regions or "upstream" in regions:
+            regions.extend(["bowshock"])
+
 
 
     f = pt.vlsvfile.VlsvReader(file_name=datafile)
@@ -262,12 +273,10 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, mag
     all_points = f.get_cell_coordinates(cellids)
     cellIDdict = f.get_cellid_locations()
 
-
-
     ## writer ##
     writer = pt.vlsvfile.VlsvWriter(f, outfilen)
     writer.copy_variables_list(f, ["CellID"])
-    writer.copy_variables(f, varlist=["proton/vg_rho" , "vg_beta_star", "vg_temperature", "vg_b_vol", "vg_J", "vg_beta", "vg_connection", "vg_boundarytype"])
+    #writer.copy_variables(f, varlist=["proton/vg_rho" , "vg_beta_star", "vg_temperature", "vg_b_vol", "vg_J", "vg_beta", "vg_connection", "vg_boundarytype"])
 
 
     # variable data dictionary
@@ -315,157 +324,153 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, mag
     #return 0
 
 
-    # upstream point
+    # upstream point # this could probably be done better than just a random point in sw
     upstream_point = [xmax-10*R_E,0.0,0.0]
     upstream_cellid = f.get_cellid(upstream_point)
     upstream_index = cellIDdict[upstream_cellid]
 
     ## MAGNETOPAUSE ##
-    if magnetopause_kwargs:
-        __, magnetopause_SDF = magnetopause.magnetopause(datafile, **magnetopause_kwargs)
-    else:
-        __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=None)  # default magnetopause: beta*+ B connectivity convex hull 
-    write_flags(writer, magnetopause_SDF, 'SDF_magnetopause')
-    write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "flag_magnetopause")
+    if "magnetopause" in regions:
+        if magnetopause_kwargs:
+            __, magnetopause_SDF = magnetopause.magnetopause(datafile, **magnetopause_kwargs)
+        else:
+            __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=None)  # default magnetopause: beta*+ B connectivity convex hull 
+        write_flags(writer, magnetopause_SDF, 'SDF_magnetopause')
+        write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "flag_magnetopause")
 
-    # save some magnetopause values for later
-    magnetopause_density = np.mean(variables["density"][np.abs(magnetopause_SDF) < 5e6])
-    print(f"{magnetopause_density=}")
-    magnetopause_temperature = np.mean(variables["temperature"][np.abs(magnetopause_SDF) < 5e6])
-    print(f"{magnetopause_temperature=}")
+        # save some magnetopause values for later
+        magnetopause_density = np.mean(variables["density"][np.abs(magnetopause_SDF) < 5e6])
+        print(f"{magnetopause_density=}")
+        magnetopause_temperature = np.mean(variables["temperature"][np.abs(magnetopause_SDF) < 5e6])
+        print(f"{magnetopause_temperature=}")
     
     ## MAGNETOSPHERE ##
     # magnetosphere from magentopause SDF
-    magnetosphere = np.where(magnetopause_SDF<0, 1, 0)
-    write_flags(writer, magnetosphere, 'flag_magnetosphere_convex')
-
-    # magnetospshere from beta* and field line connectivity if possible # TODO
-    try: 
-        connectivity_region = treshold_mask(variables["connection"], 0)
-        betastar_region = treshold_mask(variables["beta_star"], [0.0, 0.5])
-        magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
-        write_flags(writer, magnetosphere_proper, 'flag_magnetosphere')
-    except:
-        print("Non-Delaunay beta* magnetosphere could not be made")
+    if "magnetosphere" in regions:
+        magnetosphere = np.where(magnetopause_SDF<0, 1, 0)
+        write_flags(writer, magnetosphere, 'flag_magnetosphere')
 
 
     ## BOW SHOCK ## #TODO: similar kwargs system as magnetopause?
     # bow shock from rho 
-    bowshock = bowshock_SDF(f, variables, all_points)
-    write_flags(writer, bowshock, 'SDF_bowshock')
-    write_flags(writer, np.where(np.abs(bowshock) < 5e6, 1, 0), "flag_bowshock")
+    if "bowshock" in regions:
+        if "bowshock" in region_conditions:
+            bowshock = bowshock_SDF(f, variables, all_points, own_condition_dict=region_conditions["bowshock"])
+        else:
+            bowshock = bowshock_SDF(f, variables, all_points) # default upstream rho method, might fail with foreshock
+        write_flags(writer, bowshock, 'SDF_bowshock')
+        write_flags(writer, np.where(np.abs(bowshock) < 5e6, 1, 0), "flag_bowshock")
 
-    # magnetosphere+magnetosheath -area
-    inside_bowshock = np.where(bowshock<0, 1, 0)
+        # magnetosphere+magnetosheath -area
+        inside_bowshock = np.where(bowshock<0, 1, 0)
 
     ## MAGNETOSHEATH ##
-    # magnetosheath from bow shock-magnetosphere difference
-    magnetosheath_flags = np.where((inside_bowshock & 1-magnetosphere), 1, 0)
-    write_flags(writer, magnetosheath_flags, 'flag_magnetosheath')
+    if "magnetosheath" in regions:
+        # magnetosheath from bow shock-magnetosphere difference
+        magnetosheath_flags = np.where((inside_bowshock & 1-magnetosphere), 1, 0)
+        write_flags(writer, magnetosheath_flags, 'flag_magnetosheath')
 
-    # save magentosheath density and temperature for further use
-    magnetosheath_density = np.mean(variables["density"][magnetosheath_flags == 1])
-    print(f"{magnetosheath_density=}")
-    magnetosheath_temperature = np.mean(variables["temperature"][magnetosheath_flags == 1])
-    print(f"{magnetosheath_temperature=}")
+        # save magentosheath density and temperature for further use
+        #magnetosheath_density = np.mean(variables["density"][magnetosheath_flags == 1])
+        #print(f"{magnetosheath_density=}")
+        #magnetosheath_temperature = np.mean(variables["temperature"][magnetosheath_flags == 1])
+        #print(f"{magnetosheath_temperature=}")
 
     ## UPSTREAM ##
-    # upstream from !bowshock
-    write_flags(writer, 1-inside_bowshock, 'flag_upstream')
-
-    write_flags(writer, inside_bowshock, 'flag_inside_bowshock')
+    if "upstream" in regions:
+        # upstream from !bowshock
+        write_flags(writer, 1-inside_bowshock, 'flag_upstream')
+        #write_flags(writer, inside_bowshock, 'flag_inside_bowshock')
 
 
 
     ## INNER MAGNETOSPHERE REGIONS ##
 
-    if ignore_boundaries:
-        noBoundaries = np.where(f.read_variable(name=boundaryname, cellids=-1) == 1, 1, 0) # boundarytype 1: not a boundary
-        mask_inBowshock= np.where(((inside_bowshock == 1) & (noBoundaries == 1)), 1, 0).astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere
-        mask_inMagnetosphere = np.where(((magnetosphere == 1) & (noBoundaries == 1)), 1, 0).astype(bool) # 
-
-    else:
-        mask_inBowshock = inside_bowshock.astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere
-        mask_inMagnetosphere = magnetosphere.astype(bool) # 
+    if "magnetosphere" in regions:
+        if ignore_boundaries:
+            noBoundaries = np.where(f.read_variable(name=boundaryname, cellids=-1) == 1, 1, 0) # boundarytype 1: not a boundary
+            #mask_inBowshock= np.where(((inside_bowshock == 1) & (noBoundaries == 1)), 1, 0).astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere
+            mask_inMagnetosphere = np.where(((magnetosphere == 1) & (noBoundaries == 1)), 1, 0).astype(bool) # 
+        else:
+            #mask_inBowshock = inside_bowshock.astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere
+            mask_inMagnetosphere = magnetosphere.astype(bool) # 
 
     #print("upstream B:", variables["B_magnitude"][upstream_index])
 
     # cusps
-    cusp_conditions = {"density": [variables["density"][upstream_index], None],
-                    #"beta_star": [0.1, None],
-                    "connection": [0.0, 2.5], # either closed, or open-closed/closed-open
-                    "B_magnitude":[2*variables["B_magnitude"][upstream_index], None],
-                    "J_magnitude": [variables["J_magnitude"][upstream_index], None]
-                    }
+    if "cusps" in regions:
+        if "cusps" in region_conditions:
+            cusp_conditions = region_conditions["cusps"]
+        else:
+            cusp_conditions = {"density": [variables["density"][upstream_index], None],
+                            #"beta_star": [0.1, None],
+                            "connection": [0.0, 2.5], # either closed, or open-closed/closed-open
+                            "B_magnitude":[2*variables["B_magnitude"][upstream_index], None],
+                            "J_magnitude": [variables["J_magnitude"][upstream_index], None]
+                            }
 
-    cusp_flags = make_region_flags(variables, cusp_conditions, flag_type="fraction", mask=mask_inMagnetosphere)
-    write_flags(writer, cusp_flags, 'flag_cusps', mask_inMagnetosphere)
+        cusp_flags = make_region_flags(variables, cusp_conditions, flag_type=region_flag_type, mask=mask_inMagnetosphere)
+        write_flags(writer, cusp_flags, 'flag_cusps', mask_inMagnetosphere)
 
  
     # magnetotail lobes 
-    def lobes():
-        lobes_conditions = {"beta": [None, 0.1], # Koskinen: 0.003
-                            "connection": [0.5, 2.5],
-                            "density": [None, variables["density"][upstream_index]], # Koskinen: 1e-8
-                            "temperature": [None, 3.5e6], # Koskinen: 3.5e6 K
-                            }
-        lobes_flags = make_region_flags(variables, lobes_conditions, flag_type="fraction")
-        
+    if "lobes" in regions:
+        if "lobes" in region_conditions:
+            lobes_conditions = region_conditions["lobes"]
+        else:
+            lobes_conditions = {"beta": [None, 0.1], # Koskinen: 0.003
+                                "connection": [0.5, 2.5],
+                                "density": [None, variables["density"][upstream_index]], # Koskinen: 1e-8
+                                "temperature": [None, 3.5e6], # Koskinen: 3.5e6 K
+                                }
 
-        # lobes slightly other way
-        lobe_N_conditions = {"beta": [None, 0.1], 
-                            "connection": [0.5, 2.5],
-                            "B_x":[0, None],
-                            "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
-                            }
-        lobe_N_flags = make_region_flags(variables, lobe_N_conditions, flag_type="fraction")
-        
+            # lobes slightly other way
+            lobe_N_conditions = {"beta": [None, 0.1], 
+                                "connection": [0.5, 2.5],
+                                "B_x":[0, None],
+                                "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
+                                }
+            lobe_N_flags = make_region_flags(variables, lobe_N_conditions, flag_type=region_flag_type)
+            
 
-        lobe_S_conditions = {"beta": [None, 0.1], 
-                            "connection": [0.5, 2.5],
-                            "B_x":[None, 0],
-                            "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
-                            }
-        lobe_S_flags = make_region_flags(variables, lobe_S_conditions, flag_type="fraction")
-        
+            lobe_S_conditions = {"beta": [None, 0.1], 
+                                "connection": [0.5, 2.5],
+                                "B_x":[None, 0],
+                                "B_magnitude":[None, 10*variables["B_magnitude"][upstream_index]]
+                                }
+            lobe_S_flags = make_region_flags(variables, lobe_S_conditions, flag_type=region_flag_type)
 
-        return lobes_flags, lobe_N_flags, lobe_S_flags
+            write_flags(writer, lobe_N_flags, 'flag_lobe_N')
+            write_flags(writer, lobe_S_flags, 'flag_lobe_S')
 
-    if "all" in regions or "lobes" in regions:
-        mask = mask_inBowshock
-        lobes_flags, N_lobe_flags, S_lobe_flags = lobes()
+        lobes_flags = make_region_flags(variables, lobes_conditions, flag_type=region_flag_type)
         write_flags(writer, lobes_flags, 'flag_lobes')
-        write_flags(writer, N_lobe_flags, 'flag_lobe_N')
-        write_flags(writer, S_lobe_flags, 'flag_lobe_S')
 
 
-    # lobe density from median densities?
-    lobes_mask = np.where((lobes_flags > 0.9), 1, 0).astype(bool)
-    #lobes_allcells = mask_inBowshock.astype(float)
-    #lobes_allcells[mask_inBowshock] = lobes_mask
-    lobe_density = np.mean(variables["density"][lobes_mask])#[lobes_allcells>0.9])
-    print(f"{lobe_density=}")
+        # lobe density from median densities?
+        #lobes_mask = np.where((lobes_flags > 0.9), 1, 0).astype(bool)
+        #lobe_density = np.mean(variables["density"][lobes_mask])#[lobes_allcells>0.9])
+        #print(f"{lobe_density=}")
 
     # Central plasma sheet
-    def CPS():
-        central_plasma_sheet_conditions = {"density": [None, 1e6], # Wolf intro ?should not be
-                                            #"density" : [1e7, None], # Koskinen: 3e-7
-                                            #"density": [lobe_density, None],
+    if "central_plasma_sheet" in regions:
+        if "central_plasma_sheet" in region_conditions:
+            central_plasma_sheet_conditions = region_conditions["central_plasma_sheet"]
+        else:
+            central_plasma_sheet_conditions = {"density": [None, 1e6], # Wolf intro ?should not be but seems to work
                                             "beta": [1.0, None], # Koskinen: 6
-                                            #"connection": 0, # only closed-closed
                                             "temperature": [2e6, None], #  5e7 from Koskinen
                                             "J_magnitude": [1e-9, None],
                                              }
         
-        central_plasma_sheet_flags = make_region_flags(variables, central_plasma_sheet_conditions,flag_type="fraction", mask=mask_inMagnetosphere)
-        return central_plasma_sheet_flags
-    
-    if "all" in regions or "central_plasma_sheet" in regions:
-        CPS_flags = CPS()
-        write_flags(writer, CPS_flags, 'flag_central_plasma_sheet', mask_inMagnetosphere)
+        central_plasma_sheet_flags = make_region_flags(variables, central_plasma_sheet_conditions,flag_type=region_flag_type, mask=mask_inMagnetosphere)
+        write_flags(writer, central_plasma_sheet_flags, 'flag_central_plasma_sheet', mask_inMagnetosphere)
 
+
+    ## Other boundary layers, PSBL sometimes works
     
     # Plasma sheet boundary layer (PSBL)
+    # if "PSBL" in regions or "all" in regions:
     #PSBL_conditions = {#"density": (1e7, 1.0), # Koskinen: 1e5
     #                    "density": [None, 1e7],
                         #"temperature": [0.5e6, 1e6],#(1e7, 2.0), # from Koskinen
@@ -476,36 +481,23 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, mag
     #                   }
     
 
-    #PSBL_flags = make_region_flags(variables, PSBL_conditions,flag_type="fraction", mask=mask_inMagnetosphere)
-    #write_flags(writer, PSBL_flags, "flag_PSBL", mask_inMagnetosphere)
-
-
-    # Low-Latitude boundary layer (LLBL)
-    #LLBL_conditions = {"density": [magnetopause_density, magnetosheath_density],
-    #                   "temperature": [magnetosheath_temperature, magnetopause_temperature]
-    #                   }
-    #LLBL_flags = make_region_flags(variables, LLBL_conditions,flag_type="fraction", mask=mask_inBowshock)
-    #write_flags(writer, LLBL_flags, "flag_LLBL", mask_inBowshock)
-
-
-
-    # High-Latitude boundary layer (HLBL)
-    HLBL_conditions = { "density": [magnetopause_density, magnetosheath_density],
-                        "temperature": [magnetosheath_temperature, magnetopause_temperature],
-                        "beta": [1.0, None], 
-                        "connection": 0, 
-                        "J_magnitude": [2*variables["J_magnitude"][upstream_index], None],
-                        }
-    
-    HLBL_flags = make_region_flags(variables, HLBL_conditions,flag_type="fraction", mask=mask_inBowshock)
-    write_flags(writer, HLBL_flags, "flag_HLBL", mask_inBowshock)
-
 
 
 def main():
 
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    outfilen = "EGE_regions_t2000.vlsv"
+    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.0001400.vlsv"
+    #outfilen = "FHA_regions_t0001400.vlsv"
+
+    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    #outfilen = "/wrk-vakka/users/jreimi/magnetosphere_classification/Results/EGE_regions_t2000.vlsv"
+
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.0001100.vlsv"
+    outfilen =  "/wrk-vakka/users/jreimi/magnetosphere_classification/FID/FID_magnetopause_BSC_t1100.vlsv"
+
+    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    #outfilen = "EGE_regions_t2000.vlsv"
+
+
 
 
     RegionFlags(datafile, outfilen, regions=["all"], magnetopause_kwargs={"method":"beta_star_with_connectivity", "beta_star_range":[0.3, 0.4]})
