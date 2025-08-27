@@ -989,10 +989,10 @@ def plot_colormap3dslice(filename=None,
     # Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing
     if axes is None: # If axes are provided, leave backend as-is.
         if draw is not None:
-            if str(matplotlib.get_backend()) is not 'TkAgg':
+            if str(matplotlib.get_backend()) != 'TkAgg':
                 plt.switch_backend('TkAgg')
         else:
-            if str(matplotlib.get_backend()) is not 'Agg':
+            if str(matplotlib.get_backend()) != 'Agg':
                 plt.switch_backend('Agg')
 
     # Select image shape to match plotted area
