@@ -1,5 +1,14 @@
 """Script and functions for creating sidecar files with SDF/region/boundary tags of plasma regions.
 
+    Usage example where bow shock conditions are given to replace default conditions:
+
+    .. code-block:: python
+    
+        datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+        outfilen = "EGE_regions_t2000.vlsv"
+        RegionFlags(datafile, outfilen, regions=["all"],
+                    region_conditions = {"bowshock": {"density": [2e6, None]}}
+
 """
 
 import analysator as pt
@@ -481,28 +490,3 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     #                   }
     
 
-
-
-def main():
-
-    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.0001400.vlsv"
-    #outfilen = "FHA_regions_t0001400.vlsv"
-
-    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    #outfilen = "/wrk-vakka/users/jreimi/magnetosphere_classification/Results/EGE_regions_t2000.vlsv"
-
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.0001100.vlsv"
-    outfilen =  "/wrk-vakka/users/jreimi/magnetosphere_classification/FID/FID_magnetopause_BSC_t1100.vlsv"
-
-    #datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    #outfilen = "EGE_regions_t2000.vlsv"
-
-
-
-
-    RegionFlags(datafile, outfilen, regions=["all"], magnetopause_kwargs={"method":"beta_star_with_connectivity", "beta_star_range":[0.3, 0.4]})
-
-
-if __name__ == "__main__":
-
-    main()
