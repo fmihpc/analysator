@@ -84,6 +84,24 @@ tsyganenko
 
 ------------
 
+magnetopause
+------------
+:doc:`magnetopause`
+
+.. automodule:: magnetopause
+    :no-index:
+
+------------
+
+regions
+-------
+:doc:`magnetosphere_regions`
+
+.. automodule:: regions
+    :no-index:
+
+------------
+
 .. toctree::
    :maxdepth: 2
    :caption: Scripts:
@@ -97,4 +115,6 @@ tsyganenko
    obliqueshock_nif
    shue
    tsyganenko
+   magnetopause
+   magnetosphere_regions
 
