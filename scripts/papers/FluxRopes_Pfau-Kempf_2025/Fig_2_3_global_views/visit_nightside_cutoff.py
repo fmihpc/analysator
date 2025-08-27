@@ -4,7 +4,7 @@ filepath = "/wrk-vakka/users/ykempf/FHA_fluxropes/fluxrope_global_views/"
 db = "/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/bulk1.000"+str(tindex)+".vlsv"
 
 # Define expressions
-DefineScalarExpression('curvature_radius_re', 'curvature_radius / 6371000.0') # pylint: disable=all
+DefineScalarExpression('curvature_radius_re', 'curvature_radius / 6371000.0') # noqa
 
 TransformAtts_RE = TransformAttributes()
 TransformAtts_RE.doScale = 1
