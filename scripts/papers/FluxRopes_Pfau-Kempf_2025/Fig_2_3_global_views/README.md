@@ -19,3 +19,5 @@ Figs. 2 and 3 in the paper (and a lot of exploratory work) were done with [VisIt
 
 [[visit_generate.sh]] first runs VisIt twice to generate the raw frames at the three different cutoff values for both the dayside ([[visit_dayside_cutoff.py]]) and nightside ([[visit_nightside_cutoff.py]]) view. Then a lot of magick is used to composite them, overlay the annotations and arrows etc. This requires a working install of VisIt, as installed in the path indicated on Carrington.
 
+Note the not-very-documented trick to fiddle with the legend in a VisIt script.
+
