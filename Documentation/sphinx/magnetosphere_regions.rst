@@ -16,6 +16,17 @@ Plasma properties for estimating bow shock position:
     * :math:`M_{ms} < 1` [Battarbee_et_al_2020]_ (Vlasiator)
 
 
+**In analysator:**
+
+*regions.py* in *scripts* has an option to find the bow shock. Default method uses 1.5*solar wind density as limit.
+Usage example:
+
+.. code-block:: python
+
+    datafile = "vlsvbulkfile.vlsv"
+    outfilen = "bowshock.vlsv"
+    RegionFlags(datafile, outfilen, regions=["bowshock"])
+
 
 Magnetosheath
 -------------
@@ -31,6 +42,17 @@ properties:
     * :math:`15 nT` [Hudges_Introduction_to_space_physics_Ch_9]_
 * plasma :math:`\beta`:
     * 2.5  [Hudges_Introduction_to_space_physics_Ch_9]_
+
+**In analysator:**
+
+*regions.py* in *scripts* has an option to find the magnetosheath using bow shock and magnetopause:
+Usage example:
+
+.. code-block:: python
+
+    datafile = "vlsvbulkfile.vlsv"
+    outfilen = "magnetosheath.vlsv"
+    RegionFlags(datafile, outfilen, regions=["magnetosheath"])
 
 
 Polar cusps
@@ -52,7 +74,7 @@ Polar cusps
 *regions.py* in *scripts* has an option to find cusps using convex hull of the magnetosphere.
 Usage example:
 
-.. code-block:: [python]
+.. code-block:: python
 
     datafile = "vlsvbulkfile.vlsv"
     outfilen = "cusps.vlsv"
@@ -85,7 +107,7 @@ Separated from the plasma sheet by the plasma sheet boundary layer (PSBL)
 *regions.py* in *scripts* has an option to find tail lobes.
 Usage example:
 
-.. code-block:: [python]
+.. code-block:: python
 
     datafile = "vlsvbulkfile.vlsv"
     outfilen = "lobes.vlsv"
@@ -166,10 +188,10 @@ Inner plasma sheet: unusually low plasma beta may exist (e.g., cold tenuous plas
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find tail lobes.
+*regions.py* in *scripts* has an option to find the central plasma sheet.
 Usage example:
 
-.. code-block:: [python]
+.. code-block:: python
 
     datafile = "vlsvbulkfile.vlsv"
     outfilen = "CPS.vlsv"
@@ -191,6 +213,5 @@ References
 .. [Coxon_et_al_2016] Coxon,J.C.,C.M.Jackman, M. P. Freeman, C. Forsyth, and I. J. Rae (2016), Identifying the magnetotail lobes with Cluster magnetometer data, J. Geophys. Res. Space Physics, 121, 1436–1446, doi:10.1002/2015JA022020.
 .. [Hudges_Introduction_to_space_physics_Ch_9] Hudges, W. J. (1995) The magnetopause, magnetotail and magnetic reconnection. In Kivelson, M. G., & Russell, C. T. (Eds.), Introduction to space physics (pp.227-287). Cambridge University Press.
 .. [Wolf_Introduction_to_space_physics_Ch_10] Wolf, R. A. (1995) Magnetospheric configuration. In Kivelson, M. G., & Russell, C. T. (Eds.), Introduction to space physics (pp.288-329). Cambridge University Press.
-.. [Sckopke_et_al_1981] Sckopke, N., Paschmann, G., Haerendel, G., Sonnerup, B. U. , Bame, S. J., Forbes, T. G., Hones Jr., E. W., and Russell, C. T. (1981). Structure of the low-latitude boundary layer. Journal of Geophysical Research: Space Physics, 86(A4):2099–2110. eprint: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/JA086iA04p02099
 .. [Boakes_et_al_2014] Boakes, P. D., Nakamura, R., Volwerk, M., and Milan, S. E. (2014). ECLAT Cluster Spacecraft Magnetotail Plasma Region Identifications (2001–2009). Dataset Papers in Science, 2014(1):684305. eprint: https://onlinelibrary.wiley.com/doi/pdf/10.1155/2014/684305
 .. [Stenuit_et_al_2001] Stenuit, H., Sauvaud, J.-A., Delcourt, D. C., Mukai, T., Kokubun, S., Fujimoto, M., Buzulukova, N. Y., Kovrazhkin, R. A., Lin, R. P., and Lepping, R. P. (2001). A study of ion injections at the dawn and dusk polar edges of the auroral oval. Journal of Geophysical Research: Space Physics, 106(A12):29619–29631. eprint: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2001JA900060.
