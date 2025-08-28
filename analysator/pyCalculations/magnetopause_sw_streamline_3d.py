@@ -222,11 +222,13 @@ def streamline_stopping_condition(vlsvReader, points, value):
    x = points[:, 0]
    y = points[:, 1]
    z = points[:, 2]
-   return (x < xmin)|(x > xmax) | (y < ymin)|(y > ymax) | (z < zmin)|(z > zmax)|(value[:,0] > 0)
+   beta_star = vlsvReader.read_interpolated_variable("vg_beta_star", points)
+   return (x < xmin)|(x > xmax) | (y < ymin)|(y > ymax) | (z < zmin)|(z > zmax)|(value[:,0] > 0)| (beta_star < 0.4)
 
 
 def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000],  dl=2e6, iterations=200):
     """Traces streamlines of velocity field from outside the magnetosphere to magnetotail.
+        Stopping condition for when streamlines turn sunwards or go out of box
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
 
@@ -314,11 +316,16 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
         # Only for x > 0
         r, theta, phi = cartesian_to_spherical(cartesian_coords)
         theta_idx = int(theta/theta_step)
-        phi_idx = int(phi/phi_step)
+        #phi_idx = int(phi/phi_step) # off by half grid cell in relation to x<0 grid
+        if (phi <phi_step*0.5) and (phi > (0-phi_step*0.5)):
+            phi_idx = 0
+        else:
+            phi_idx = round(phi/phi_step)
+
         return [theta_idx, phi_idx, r]
 
     def grid_mid_point(theta_idx, phi_idx):
-        return (theta_idx+0.5)*theta_step, (phi_idx+0.5)*phi_step
+        return (theta_idx+0.5)*theta_step, (phi_idx)*phi_step
     
     # make a dictionary based on spherical areas by theta index and phi index
     sph_points = {}
@@ -430,6 +437,10 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
 
 def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000], dl=2e6, iterations=200, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
     """Finds the magnetopause position by tracing streamlines of the velocity field.
+
+        Note: there may be a slight jump at x=0. This may be due to difference in methods (pointcloud vs. interpolation).
+            If the subsolar point area looks off then more streamlines near the x-axis are needed.
+
 
         :param vlsvfile: path to .vlsv bulk file to use for VlsvReader
         :kword streamline_seeds: optional streamline starting points in numpy array
