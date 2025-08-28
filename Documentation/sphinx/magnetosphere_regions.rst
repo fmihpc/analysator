@@ -18,7 +18,7 @@ Plasma properties for estimating bow shock position:
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find the bow shock. Default method uses 1.5*solar wind density as limit.
+:mod:`regions` has an option to find the bow shock. Default method uses 1.5*solar wind density as limit.
 Usage example:
 
 .. code-block:: python
@@ -45,7 +45,7 @@ properties:
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find the magnetosheath using bow shock and magnetopause:
+:mod:`regions` has an option to find the magnetosheath using bow shock and magnetopause:
 Usage example:
 
 .. code-block:: python
@@ -71,7 +71,7 @@ Polar cusps
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find cusps using convex hull of the magnetosphere.
+:mod:`regions` has an option to find cusps using convex hull of the magnetosphere.
 Usage example:
 
 .. code-block:: python
@@ -104,7 +104,7 @@ Separated from the plasma sheet by the plasma sheet boundary layer (PSBL)
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find tail lobes.
+:mod:`regions` has an option to find tail lobes.
 Usage example:
 
 .. code-block:: python
@@ -134,7 +134,7 @@ Properties:
 High-latitude boundary layer (HLBL)
 -----------------------------------
 
-Includes the plasma mantle on the tail side and the entry layer on the dayside [... cit.]
+Includes the plasma mantle on the tail side and the entry layer on the dayside
 
 Properties:
 
@@ -188,7 +188,7 @@ Inner plasma sheet: unusually low plasma beta may exist (e.g., cold tenuous plas
 
 **In analysator:**
 
-*regions.py* in *scripts* has an option to find the central plasma sheet.
+:mod:`regions` has an option to find the central plasma sheet.
 Usage example:
 
 .. code-block:: python

@@ -20,7 +20,7 @@ Caveats: magnetotail current sheet has beta* :math:`>` 1
 
 **in analysator:**
 
-*magnetopause.py* in *scripts*: see :func:`magnetopause.magnetopause`
+see :func:`magnetopause.magnetopause` "method" keyword options "beta_star", "beta_star_with_connectivity"
 
 datareducer: beta_star, vg_beta_star
 
@@ -49,8 +49,8 @@ Caveats: sometimes some streamlines can curve into the magnetotail or dayside ma
 **In analysator:**
 
 see
-:mod:`calculations.magnetopause_sw_streamline_2d.py`
-:mod:`calculations.magnetopause_sw_streamline_3d.py`
+:func:`calculations.find_magnetopause_sw_streamline_2d`
+:func:`calculations.find_magnetopause_sw_streamline_3d`
 
 Streamlines are traced from outside the bow shock towards Earth. A subsolar point for the magnetopause is chosen to be where streamlines get closest to Earth in x-axis [y/z~0]. 
 
