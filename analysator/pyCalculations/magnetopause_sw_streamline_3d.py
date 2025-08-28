@@ -228,7 +228,7 @@ def streamline_stopping_condition(vlsvReader, points, value):
 
 def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*6371000, seeds_range=[-5*6371000, 5*6371000],  dl=2e6, iterations=200):
     """Traces streamlines of velocity field from outside the magnetosphere to magnetotail.
-        Stopping condition for when streamlines turn sunwards or go out of box
+        Stopping condition for when streamlines turn sunwards, go out of box, or hit beta* below 0.4 region
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
 
