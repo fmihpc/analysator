@@ -4,7 +4,6 @@
 import analysator as pt
 import numpy as np
 import vtk
-import time
 from scripts import shue, regions
 
 
@@ -28,7 +27,7 @@ def write_SDF_to_file(SDF, datafilen, outfilen):
 
       
 
-def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5]): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
+def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5], method_args={}): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
     """Finds the magnetopause using the specified method. Surface is constructed using vtk's Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.
         Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside mangetopause) (=SDF) to all cells
         Note that using alpha for Delaunay might make SDF not so accurate inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5)
@@ -41,6 +40,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     :kword SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
     :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded
     :kword beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
+    :kword method_args: dict of keyword arguments to be passed down to external functions (for streamlines and shue)
     :returns: vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True
     """
 
@@ -51,12 +51,15 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
 
     if method == "streamlines": 
 
-        seeds_x0=150e6
-        dl=5e5
-        iters = int(((seeds_x0-xmin)/dl)+100)
-        sector_n = 36*3
-        vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=300, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
-                                                                                dl=dl, iterations=iters, end_x=xmin+10*6371000, x_point_n=200, sector_n=sector_n) 
+        if "streamline_seeds" in method_args or "seeds_n" in method_args:
+            vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, **method_args)
+        else:
+            seeds_x0=150e6
+            dl=5e5
+            iters = int(((seeds_x0-xmin)/dl)+100)
+            sector_n = 36*3
+            vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=300, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
+                                                                                    dl=dl, iterations=iters, end_x=xmin+10*6371000, x_point_n=200, sector_n=sector_n) 
 
         # make the magnetopause surface from vertice points
         np.random.shuffle(vertices) # helps Delaunay triangulation
@@ -125,7 +128,10 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         # note: might not be correct but should produce something, should recheck the projection coordinates
 
         theta = np.linspace(0, 2*np.pi/3 , 200) # magnetotail length decided here by trial and error: [0, 5*np.pi/6] ~ -350e6 m, [0, 2*np.pi/3] ~ -100e6 m in EGE
-        r, __, __ = shue.f_shue(theta, B_z = -10, n_p = 1, v_sw = 750) # for runs not in shue.py B_z, n_p, and v_sw need to be specified and run=None
+        if "run" in method_args or "B_z" in method_args:
+             r, __, __ = shue.f_shue(theta, **method_args)
+        else:
+            r, __, __ = shue.f_shue(theta, B_z = -10, n_p = 1, v_sw = 750) # for runs not in shue.py B_z, n_p, and v_sw need to be specified and run=None
 
         # 2d one-sided magnetopause
         xs = r*np.cos(theta)
