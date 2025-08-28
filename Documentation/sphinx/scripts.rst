@@ -12,6 +12,15 @@ biot_savart
 
 ------------
 
+cutthrough_timeseries
+---------------------
+:doc:`cutthrough_timeseries`
+
+.. automodule:: cutthrough_timeseries
+    :no-index:
+
+---------------------
+
 gics
 ----
 :doc:`gics`
@@ -98,6 +107,7 @@ regions
    :caption: Scripts:
 
    biot_savart
+   cutthrough_timeseries
    gics
    plot_streamline_magnetopause_2d
    plot_streamline_magnetopause_3d
