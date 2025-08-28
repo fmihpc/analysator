@@ -200,6 +200,10 @@ Usage example:
 
 
 
+.. automodule:: regions
+    :members:
+
+
 ------------
 
 References 
