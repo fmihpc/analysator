@@ -20,7 +20,7 @@ R_E = 6371000
 
 def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     """Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.
-        Note: if using alpha, SDF most likely won't work!
+        Note: if using alpha, SDF might not work, especially if the point cloud used for Delaunay is not complete (missing low b)
 
         :param all_points: points ([x, y, z] coordinates in m) for which a signed distance to surface will be calculated
         :param coordinates: coordinates (array of [x, y, z]:s in m) that are used to make a surface.
@@ -243,8 +243,8 @@ def bowshock_SDF(f, variable_dict, query_points, own_condition_dict=None):
 
 def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, region_flag_type="01", magnetopause_kwargs={}, region_conditions={}):
     """Creates a sidecar .vlsv file with flagged cells for regions and boundaries in near-Earth plasma environment. 
-        Region flags (start with flag_, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet
-        Boundary signed distance flags (start with SDF_, flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock
+        Region flags (named flag_region, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet
+        Boundary signed distance flags (named "SDF_boundary", flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock
 
         possilbe regions: "all", "boundaries" (magnetopause, bow shock), "large_areas" (boundaries + upstream, magnetosheath, magnetosphere), "magnetosphere", "bowshock",
             "cusps", "lobes", "central_plasma_sheet"
