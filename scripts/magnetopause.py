@@ -28,22 +28,22 @@ def write_SDF_to_file(SDF, datafilen, outfilen):
 
       
 
-def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.1, 1.0]): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
+def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5]): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
     """Finds the magnetopause using the specified method. Surface is constructed using vtk's Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.
-    
+        Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside mangetopause) (=SDF) to all cells
+        Note that using alpha for Delaunay might make SDF not so accurate inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5)
+
     :param datafilen: a .vlsv bulk file name (and path)
     :kword method: str, default "beta_star_with_connectivity", other options "beta_star", "streamlines", "shue", "dict"
     :kword own_tresholds: if using method "dict", a dictionary with conditions for the magnetopause/magnetosphere must be given where key is data name in datafile and value is treshold used (see treshold_mask())
     :kword return_surface: True/False, return vtkDataSetSurfaceFilter object
     :kword return_SDF: True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface
     :kword SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
-    :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded (won't be a proper surface, SDF won't work)
+    :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded
     :kword beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
     :returns: vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True
     """
 
-
-    start_t = time.time()
     f = pt.vlsvfile.VlsvReader(file_name=datafilen)
     cellids = f.read_variable("CellID")
     [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
@@ -51,14 +51,13 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
 
     if method == "streamlines": 
 
-        [xmin, ymin, zmin, xmax, ymax, zmax] = f.get_spatial_mesh_extent()
         seeds_x0=150e6
         dl=5e5
         iters = int(((seeds_x0-xmin)/dl)+100)
-        sector_n = 36*4
+        sector_n = 36*3
         vertices, manual_vtkSurface = pt.calculations.find_magnetopause_sw_streamline_3d(datafilen, seeds_n=300, seeds_x0=seeds_x0, seeds_range=[-5*6371000, 5*6371000], 
                                                                                 dl=dl, iterations=iters, end_x=xmin+10*6371000, x_point_n=200, sector_n=sector_n) 
- 
+
         # make the magnetopause surface from vertice points
         np.random.shuffle(vertices) # helps Delaunay triangulation
         vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, vertices, Delaunay_alpha)
@@ -81,6 +80,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
             connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0) # closed-closed magnetic field lines
             magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
             contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
+            np.save("pointcloud.npy", contour_coords)
         except:
             print("using field line connectivity for magnetosphere did not work, using only beta*")
             #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
@@ -89,6 +89,25 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         
         # make a convex hull surface with vtk's Delaunay
         vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, contour_coords, Delaunay_alpha)
+
+    #elif method == "beta_star_with_fieldlines": # either incredibly slow or does not work, don't use without fixing #TODO proprer measure of actual field line backwall point
+    #    # magnetopause from beta_star, with field lines connecting to back wall if possible
+    #    betastar_region = regions.treshold_mask(f.read_variable("vg_beta_star"), beta_star_range)
+    #    try:
+    #        fw_region = regions.treshold_mask(f.read_variable("vg_connection_coordinates_fw")[:,0], [None, xmin+5e7])
+    #        bw_region = regions.treshold_mask(f.read_variable("vg_connection_coordinates_bw")[:,0], [None, xmin+5e7])
+    #        #connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0) # closed-closed magnetic field lines
+    #        magnetosphere_proper =  np.where(((fw_region==1) | (betastar_region==1) | (bw_region==1)), 1, 0)
+    #        contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
+    #    except:
+    #        print("using field lines for magnetosphere did not work, using only beta*")
+    #        #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
+    #        mpause_flags = np.where(betastar_region==1, 1, 0)
+    #        contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
+    #    
+    #    # make a convex hull surface with vtk's Delaunay
+    #    vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, contour_coords, Delaunay_alpha)
+
 
     
     elif method == "dict":
@@ -151,15 +170,17 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
 def main():
 
 
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.0001100.vlsv"
-    vtpoutfilen = "FID_magnetopause_BS_t1100.vtp"
-    vlsvoutfilen =  "FID_magnetopause_BS_t1100.vlsv"
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    vtpoutfilen = "EGE_magnetopause_SWtest_t2000.vtp"
+    vlsvoutfilen = "EGE_magnetopause_SWtest_t2000.vlsv"
+
+
 
 
     surface, SDF = magnetopause(datafile,
-                                #method="streamlines",
-                               method="beta_star_with_connectivity", 
-                               beta_star_range=[0.3, 0.4],
+                               method="streamlines",
+                               #method="beta_star_with_connectivity", 
+                               #beta_star_range=[0.0, 0.4],
                                Delaunay_alpha=1*R_E,
                                return_SDF=True,
                                return_surface=True) 
