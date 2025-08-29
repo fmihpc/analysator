@@ -352,9 +352,9 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
 
         # save some magnetopause values for later
         magnetopause_density = np.mean(variables["density"][np.abs(magnetopause_SDF) < 5e6])
-        print(f"{magnetopause_density=}")
+        #print(f"{magnetopause_density=}")
         magnetopause_temperature = np.mean(variables["temperature"][np.abs(magnetopause_SDF) < 5e6])
-        print(f"{magnetopause_temperature=}")
+        #print(f"{magnetopause_temperature=}")
     
     ## MAGNETOSPHERE ##
     # magnetosphere from magentopause SDF
