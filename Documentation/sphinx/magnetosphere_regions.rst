@@ -109,6 +109,8 @@ Separated from the plasma sheet by the plasma sheet boundary layer (PSBL)
 **In analysator:**
 
 :mod:`regions` has an option to find tail lobes.
+Note that the default parameters to find lobes may include some areas from the dayside.
+
 Usage example:
 
 .. code-block:: python
