@@ -210,3 +210,23 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     #magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
 
 
+def main():
+
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    vtpoutfilen = "EGE_magnetopause_t2000.vtp"
+    vlsvoutfilen = "EGE_magnetopause_t2000.vlsv"
+
+    surface, SDF = magnetopause(datafile,
+                            method="beta_star", 
+                            beta_star_range=[0.9, 1.0],
+                            return_SDF=True,
+                            return_surface=True) 
+
+    write_vtk_surface_to_file(surface, vtpoutfilen)
+    write_SDF_to_file(SDF, datafile, vlsvoutfilen)
+
+
+if __name__ == "__main__":
+
+    main()
+

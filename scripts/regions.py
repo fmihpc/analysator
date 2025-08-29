@@ -357,7 +357,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         #print(f"{magnetopause_temperature=}")
     
     ## MAGNETOSPHERE ##
-    # magnetosphere from magentopause SDF
+    # magnetosphere from magnetopause SDF
     if "magnetosphere" in regions:
         magnetosphere = np.where(magnetopause_SDF<0, 1, 0)
         write_flags(writer, magnetosphere, 'flag_magnetosphere')
@@ -382,7 +382,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         magnetosheath_flags = np.where((inside_bowshock & 1-magnetosphere), 1, 0)
         write_flags(writer, magnetosheath_flags, 'flag_magnetosheath')
 
-        # save magentosheath density and temperature for further use
+        # save magnetosheath density and temperature for further use
         #magnetosheath_density = np.mean(variables["density"][magnetosheath_flags == 1])
         #print(f"{magnetosheath_density=}")
         #magnetosheath_temperature = np.mean(variables["temperature"][magnetosheath_flags == 1])
@@ -492,4 +492,14 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     #                   "J_magnitude": [2*variables["J_magnitude"][upstream_index], None],
     #                   }
     
+def main():
 
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
+    outfilen = "EGE_regions_t2000.vlsv"
+
+    RegionFlags(datafile, outfilen, regions=["all"])
+
+
+if __name__ == "__main__":
+
+    main()
