@@ -72,6 +72,9 @@ Polar cusps
 **In analysator:**
 
 :mod:`regions` has an option to find cusps using convex hull of the magnetosphere.
+Note that the default parameters may catch some dayside cells near the magnetopause and some non-cusp areas inside dayside in addition to cusps.
+Areas near magnetopause can be excluded for example by only including cells where the SDF is less than e.g. -1 Re.
+
 Usage example:
 
 .. code-block:: python
