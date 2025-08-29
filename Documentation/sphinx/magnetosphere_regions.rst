@@ -1,6 +1,7 @@
 Magnetosphere regions and bow shock: How to find
 ================================================
 
+Note: The analysator methods here are prototypes and should be adapted and modified as needed.
 
 Bow shock
 ---------

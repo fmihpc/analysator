@@ -1,6 +1,8 @@
 Magnetopause: how to find
 =========================
 
+Note: The analysator methods here are prototypes and should be adapted and modified as needed.
+
 Magnetopause 
 
 Plasma beta, beta*
@@ -80,7 +82,7 @@ This surface is then made into a vtkPolyData and returned as vtkDataSetSurfaceFi
 Shue et al. (1997)
 ------------------
 
-The Shue et al. (1997) [Shue_et_al_1997]_ mangnetopause model:
+The Shue et al. (1997) [Shue_et_al_1997]_ magnetopause model:
 
 .. math::
 
@@ -119,7 +121,7 @@ see :doc:`../shue`
 Constructs the magnetopause surface with vtk's vtkDelaunay3d triangulation with optional alpha to make the surface non-convex.
 Uses regions.py functions.
 
-Important: SDF of non-convex surface might not always work
+Important: SDF of non-convex surface might not always work as expected inside the magnetosphere if e.g. the lobes are hollow. 
 
 options (magnetopause() method keyword) and some notes: 
 

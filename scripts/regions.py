@@ -250,7 +250,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         Region flags (named flag_region, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet
         Boundary signed distance flags (named "SDF_boundary", flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock
 
-        possilbe regions: "all", "boundaries" (magnetopause, bow shock), "large_areas" (boundaries + upstream, magnetosheath, magnetosphere), "magnetosphere", "bowshock",
+        possible regions: "all", "boundaries" (magnetopause, bow shock), "large_areas" (boundaries + upstream, magnetosheath, magnetosphere), "magnetosphere", "bowshock",
             "cusps", "lobes", "central_plasma_sheet"
 
         Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually

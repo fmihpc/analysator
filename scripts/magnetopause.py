@@ -70,7 +70,7 @@ def write_SDF_to_file(SDF, datafilen, outfilen):
 def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5], method_args={}): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
     """Finds the magnetopause using the specified method. Surface is constructed using vtk's Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.
         Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside magnetopause) (=SDF) to all cells
-        Note that using alpha for Delaunay might make SDF not so accurate inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5)
+        Note that using alpha for Delaunay might make SDF different from expected inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5) or if simulation grid size is larger than alpha
 
     :param datafilen: a .vlsv bulk file name (and path)
     :kword method: str, default "beta_star_with_connectivity", other options "beta_star", "streamlines", "shue", "dict"
