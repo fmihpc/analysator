@@ -4,8 +4,8 @@
 
     .. code-block:: python
     
-        datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-        outfilen = "EGE_regions_t2000.vlsv"
+        datafile = "bulkfile.vlsv"
+        outfilen = "regions.vlsv"
         RegionFlags(datafile, outfilen, regions=["all"],
                     region_conditions = {"bowshock": {"density": [2e6, None]}}
 
@@ -20,7 +20,7 @@ R_E = 6371000
 
 def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     """Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.
-        Note: if using alpha, SDF might not work, especially if the point cloud used for Delaunay is not complete (missing low b)
+        Note: if using alpha, SDF might not work, especially if the point cloud used for Delaunay does not fully cover e.g. lobes
 
         :param all_points: points ([x, y, z] coordinates in m) for which a signed distance to surface will be calculated
         :param coordinates: coordinates (array of [x, y, z]:s in m) that are used to make a surface.
@@ -159,9 +159,12 @@ def make_region_flags(variable_dict, condition_dict, flag_type="01", mask=None):
     """Makes region flags
 
         example:
+        
+        .. code-block:: python
+        
             make_region_flags(variable_dict = {"density": f.read_variable(name="proton/vg_rho", cellids=-1)}, condition_dict = {"density": [None, 1e7]})
 
-            results in flag array in shape of read_variable output where cells where "proton/vg_rho" is less or equal to 1e7 are 1 and others are 0
+        results in flag array in shape of read_variable output where cells where "proton/vg_rho" is less or equal to 1e7 are 1 and others are 0
         
     
         :param variable_dict: dictionary containing names and data arrays of variables, names must match those in condition_dict
