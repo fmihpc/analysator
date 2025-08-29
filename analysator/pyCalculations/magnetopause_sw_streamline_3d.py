@@ -270,7 +270,7 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
 
 
 def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ignore=0):
-    """Finds the mangetopause location based on streamlines.
+    """Finds the magnetopause location based on streamlines.
 
         :param streams: streamlines (coordinates in m)
 

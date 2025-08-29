@@ -116,7 +116,7 @@ see :mod:`shue`
 ------------------
 
 *magnetopause.py* in scripts for 3d runs
-Constructs the magentopause surface with vtk's vtkDelaunay3d triangulation with optional alpha to make the surface non-convex.
+Constructs the magnetopause surface with vtk's vtkDelaunay3d triangulation with optional alpha to make the surface non-convex.
 Uses regions.py functions.
 
 Important: SDF of non-convex surface might not always work

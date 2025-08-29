@@ -9,7 +9,7 @@
         vlsvoutfilen = "magnetopause.vlsv"
 
         SW_args = {"seeds_n":300, "seeds_x0":150e6, "seeds_range":[-5*6371000, 5*6371000], 
-                "dl":5e5, "iterations":500, "end_x":-50*6371000, "x_point_n":100, "sector_n":36*2} 
+                "dl":5e5, "iterations":int(1500), "end_x":-50*6371000, "x_point_n":100, "sector_n":36*2} 
 
         surface, SDF = magnetopause(datafile,
                                 method="streamlines",
@@ -68,7 +68,7 @@ def write_SDF_to_file(SDF, datafilen, outfilen):
 
 def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5], method_args={}): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
     """Finds the magnetopause using the specified method. Surface is constructed using vtk's Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.
-        Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside mangetopause) (=SDF) to all cells
+        Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside magnetopause) (=SDF) to all cells
         Note that using alpha for Delaunay might make SDF not so accurate inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5)
 
     :param datafilen: a .vlsv bulk file name (and path)
