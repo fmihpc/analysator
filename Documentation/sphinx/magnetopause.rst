@@ -56,7 +56,7 @@ Streamlines are traced from outside the bow shock towards Earth. A subsolar poin
 
 From subsolar point towards Earth, space is divided radially by spherical coordiante (theta from x-axis) angles theta and phi, and magnetopause is located by looking at streamline point distances from origo and marked to be at middle of the sector
 
-From the Earth towards negative x the space is divided into yz-planes. 
+From the Earth towards negative x the space is divided into yz-planes and streamlines are interpolated to certain x-points. 
 Each yz-plane is then divided into 2d sectors and magnetopause is marked to be in the middle of the sector with the radius of the n:th closest streamline to the x-axis. 
 
 
@@ -64,7 +64,7 @@ For subsolar point, radial dayside, and -x planes the closest streamline point c
 
 
 2d:
-Note: no radial dayside
+Note: no radial dayside, uses yt-package instead of analysator's fieldtracer
 
 3d:
 After the magnetopause points are chosen, they are made into a surface by setting connnection lines between vertices (magnetopause points) to make surface triangles. 
@@ -103,7 +103,7 @@ The magnetopause radius as a function of angle :math:`\theta` is
 
 **In analysator:** 
 
-see :mod:`shue`
+see :doc:`../shue`
 
 
 .. [Shue_et_al_1997] Shue, J.-H., Chao, J. K., Fu, H. C., Russell, C. T., Song, P., Khurana, K. K., and Singer, H. J. (1997). A new functional form to study the solar wind control of the magnetopause size and shape. Journal of Geophysical Research: Space Physics, 102(A5):9497–9511. eprint: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/97JA00196.
@@ -115,7 +115,7 @@ see :mod:`shue`
 **In analysator:**
 ------------------
 
-*magnetopause.py* in scripts for 3d runs
+:mod:`magnetopause` in scripts for 3d runs
 Constructs the magnetopause surface with vtk's vtkDelaunay3d triangulation with optional alpha to make the surface non-convex.
 Uses regions.py functions.
 
@@ -126,7 +126,9 @@ options (magnetopause() method keyword) and some notes:
 * solar wind flow ("streamlines")
     * uses *magnetopause_sw_streamline_3d.py* from pyCalculations
     * if streamlines make a turn so that the velocity points sunwards (to pos. x), the streamline is ignored from that point onwards
-        * this fixes some issues with funky and inwards-turning streamlines but not all
+    * streamlines that enter an area where beta* is below 0.4 are also stopped
+        * this can affect the far magnetotail as streamlines may turn inwards into lobes at some point and may result in magnetopause not forming 
+            due to not enough streamline points where magnetopause is supposed to be
     * very dependent on how solar wind streamlines behave
     * streamline seeds and other options can greatly affect the resulting magnetopause
 
@@ -134,7 +136,7 @@ options (magnetopause() method keyword) and some notes:
     * beta* treshold might need tweaking as sometimes there are small low beta* areas in the magnetosheath that get taken in distorting the magnetopause shape at nose
     * convex hull (Delaunay_alpha=None) usually makes a nice rough magnetopause but goes over any inward dips (like polar cusps)
     * alpha shape (Delaunay_alpha= e.g. 1*R_E) does a better job at cusps and delicate shapes like vortices but might fail at SDF inside the magnetosphere
-    * Delaynay3d has an easier time if the treshold is something like [0.4, 0.5] and not [0.1, 0.5]
+    * Delaynay3d has an easier time if the treshold is something like [0.4, 0.5] and not [0.0, 0.5], but this can affect the alpha shape if alpha is used
 
 * beta* with magnetic field line connectivity ("beta_star_with_connectivity")
     * includes closed-closed magnetic field line areas if available, otherwise like "beta_star"
