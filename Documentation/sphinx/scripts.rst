@@ -39,15 +39,6 @@ plot_streamline_magnetopause_2d
 
 ------------
 
-plot_streamline_magnetopause_3d
--------------------------------
-:doc:`plot_streamline_magnetopause_3d`
-
-.. automodule:: plot_streamline_magnetopause_3d
-	:no-index:
-
-------------
-
 obliqueshock
 ------------
 :doc:`obliqueshock`
@@ -110,7 +101,6 @@ regions
    cutthrough_timeseries
    gics
    plot_streamline_magnetopause_2d
-   plot_streamline_magnetopause_3d
    obliqueshock
    obliqueshock_nif
    shue
