@@ -15,6 +15,7 @@ import analysator as pt
 import numpy as np
 import vtk
 from scripts import magnetopause
+import logging
 
 R_E = 6371000
 
@@ -95,7 +96,7 @@ def treshold_mask(data_array, value):
             mask = np.where((value[0] <= data_array) & (data_array <= value[1]), 1, 0) # min/max
 
     if np.sum(mask[mask>0]) == 0:
-        print("Treshold mask didn't match any values in array")
+        logging.warning("Treshold mask didn't match any values in array")
         return None
 
     return mask
@@ -151,7 +152,7 @@ def write_flags(writer, flags, flag_name, mask=None):
         #writer.write(flags,flag_name,'VARIABLE','SpatialGrid')
         writer.write_variable_info(pt.calculations.VariableInfo(flags, flag_name, "-", latex="",latexunits=""),"SpatialGrid",1)
 
-    print(flag_name+" written to file")
+    logging.info(flag_name+" written to file")
 
 
 
@@ -183,7 +184,7 @@ def make_region_flags(variable_dict, condition_dict, flag_type="01", mask=None):
                 region = treshold_mask(variable_dict[key], condition_dict[key])
                 if region is not None: variable_flags.append(region)
             except:
-                print(key, "ignored")
+                logging.warning(key, "ignored")
 
     else: # search only masked area
         for key in condition_dict.keys():
@@ -191,7 +192,7 @@ def make_region_flags(variable_dict, condition_dict, flag_type="01", mask=None):
                 region = treshold_mask(variable_dict[key][mask], condition_dict[key])
                 if region is not None: variable_flags.append(region)
             except:
-                print(key, "ignored")
+                logging.warning(key, "ignored")
 
 
     variable_flags = np.array(variable_flags)
@@ -311,7 +312,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         boundaryname = "vg_boundarytype"
 
 
-    def errormsg(varstr): print("{} could not be read, will be ignored".format(varstr))
+    def errormsg(varstr): logging.warning("{} could not be read, will be ignored".format(varstr))
 
     for varname, filevarname in varnames.items():
         if isinstance(filevarname, str): # no operator

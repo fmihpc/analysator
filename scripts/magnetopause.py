@@ -44,6 +44,7 @@ import analysator as pt
 import numpy as np
 import vtk
 from scripts import shue, regions
+import logging
 
 
 R_E = 6371000
@@ -54,14 +55,14 @@ def write_vtk_surface_to_file(vtkSurface, outfilen):
     writer.SetInputConnection(vtkSurface.GetOutputPort())
     writer.SetFileName(outfilen)
     writer.Write()
-    print("wrote ", outfilen)
+    logging.info("wrote ", outfilen)
 
 def write_SDF_to_file(SDF, datafilen, outfilen):
     f = pt.vlsvfile.VlsvReader(file_name=datafilen)
     writer = pt.vlsvfile.VlsvWriter(f, outfilen)
     writer.copy_variables_list(f, ["CellID"])
     writer.write_variable_info(pt.calculations.VariableInfo(SDF, "SDF_magnetopause", "-", latex="",latexunits=""),"SpatialGrid",1)
-    print("wrote ", outfilen)
+    logging.info("wrote ", outfilen)
 
 
       
@@ -124,7 +125,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
             contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
             np.save("pointcloud.npy", contour_coords)
         except:
-            print("using field line connectivity for magnetosphere did not work, using only beta*")
+            logging.warning("using field line connectivity for magnetosphere did not work, using only beta*")
             #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
             mpause_flags = np.where(betastar_region==1, 1, 0)
             contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
@@ -142,7 +143,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     #        magnetosphere_proper =  np.where(((fw_region==1) | (betastar_region==1) | (bw_region==1)), 1, 0)
     #        contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
     #    except:
-    #        print("using field lines for magnetosphere did not work, using only beta*")
+    #        logging.warning("using field lines for magnetosphere did not work, using only beta*")
     #        #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
     #        mpause_flags = np.where(betastar_region==1, 1, 0)
     #        contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
@@ -194,7 +195,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
 
     
     else:
-        print("Magnetopause method not recognized. Use one of the options: \"beta_star\", \"beta_star_with_connectivity\", \"streamlines\", \"shue\", \"dict\"")
+        logging.error("Magnetopause method not recognized. Use one of the options: \"beta_star\", \"beta_star_with_connectivity\", \"streamlines\", \"shue\", \"dict\"")
         exit()
 
     if return_surface and return_SDF:
