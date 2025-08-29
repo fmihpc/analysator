@@ -34,8 +34,7 @@ datareducer: beta_star, vg_beta_star
 Field line connectivity
 -----------------------
 
-
-
+Bulkfiles from newer Vlasiator runs include connection (whether magnetic field lines are closed-closed, closed-open, open/closed or open-open) and coordinates for field line start and end points that can be used in finding the mangetopause location.
 
 
 Solar wind flow
