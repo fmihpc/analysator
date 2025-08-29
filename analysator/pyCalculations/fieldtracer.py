@@ -51,7 +51,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
    ''' Field tracer in a static frame
 
        :param vlsvReader:         An open vlsv file
-       :param x:                  Starting point for the field trace
+       :param x0:                  Starting point for the field trace
        :param max_iterations:     The maximum amount of iteractions before the algorithm stops
        :param dx:                 One iteration step length
        :param direction:          '+' or '-' or '+-' Follow field in the plus direction or minus direction
@@ -60,6 +60,10 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
        :param boundary_inner:     Float, stop propagation if closer to origin than this value [default -1]
        :returns:                  List of coordinates
    '''
+
+   # Check the starting point
+   if (np.shape(x0) != (3,)): 
+      raise ValueError("Starting point should be a single [x,y,z] coordinate in 1-dimensional list or array")
 
    if(bvar != 'B'):
      warnings.warn("User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.")
@@ -117,7 +121,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
       x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
       y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
       z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-      coordinates = np.array([x,y,z])
+      coordinates = [x,y,z]
       # Debug:
       if( len(x) != sizes[0] ):
          logging.info("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
@@ -142,7 +146,7 @@ def static_field_tracer( vlsvReader, x0, max_iterations, dx, direction='+', bvar
       x = np.arange(mins[0], maxs[0], dcell[0]) + 0.5*dcell[0]
       y = np.arange(mins[1], maxs[1], dcell[1]) + 0.5*dcell[1]
       z = np.arange(mins[2], maxs[2], dcell[2]) + 0.5*dcell[2]
-      coordinates = np.array([x,y,z])
+      coordinates = [x,y,z]
       # Debug:
       if( len(x) != sizes[0] ):
          logging.info("SIZE WRONG: " + str(len(x)) + " " + str(sizes[0]))
@@ -290,7 +294,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
 
       points_traced_unique[mask_update,i,:] = next_points[mask_update,:]
       # distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)
-      mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:])] = False
+      mask_update[stop_condition(vlsvReader, points_traced_unique[:,i,:], vlsvReader.read_interpolated_variable(vg,points_traced_unique[:,i,:]))] = False
 
       # points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]
 
@@ -298,7 +302,7 @@ def vg_trace(vlsvReader, vg, seed_coords, max_iterations, dx, multiplier, stop_c
    return points_traced
 
 # Default stop tracing condition for the vg tracing, (No stop until max_iteration)
-def default_stopping_condition(vlsvReader, points):
+def default_stopping_condition(vlsvReader, points, vars):
    [xmin, ymin, zmin, xmax, ymax, zmax] = vlsvReader.get_spatial_mesh_extent()
    x = points[:, 0]
    y = points[:, 1]
@@ -359,6 +363,10 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
    # Standardize input: (N,3) np.array
    if type(seed_coords) != np.ndarray:
       raise TypeError("Please give a numpy array.")
+   
+   # Transform a single (3,) coordinate to (1,3) if needed
+   if np.shape(seed_coords)==(3,):
+      seed_coords = np.array([seed_coords])
 
    # Cache and read variables:
    vg = None
