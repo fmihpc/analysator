@@ -1,4 +1,43 @@
 """Functions for finding the magnetopause from .vlsv data
+
+    Example use with own arguments passed to streamline function:
+    
+    .. code-block:: python
+
+        datafile = "bulkfile.vlsv"
+        vtpoutfilen = "magnetopause.vtp"
+        vlsvoutfilen = "magnetopause.vlsv"
+
+        SW_args = {"seeds_n":300, "seeds_x0":150e6, "seeds_range":[-5*6371000, 5*6371000], 
+                "dl":5e5, "iterations":500, "end_x":-50*6371000, "x_point_n":100, "sector_n":36*2} 
+
+        surface, SDF = magnetopause(datafile,
+                                method="streamlines",
+                                return_SDF=True,
+                                return_surface=True,
+                                method_args=SW_args) 
+
+        write_vtk_surface_to_file(surface, vtpoutfilen)
+        write_SDF_to_file(SDF, datafile, vlsvoutfilen)
+
+        
+    Example use for 0.0-0.4 beta* magnetopause with tetrahedrons with sides longer than 1Re excluded (aplha = 1Re):
+
+    .. code-block:: python
+
+        datafile = "bulkfile.vlsv"
+        vtpoutfilen = "magnetopause.vtp"
+
+        surface, __ = magnetopause(datafile,
+                                method="beta_star_with_connectivity", 
+                                beta_star_range=[0.0, 0.4],
+                                Delaunay_alpha=1*6371000,
+                                return_SDF=False,
+                                return_surface=True) 
+
+        write_vtk_surface_to_file(surface, vtpoutfilen)
+
+
 """
 
 import analysator as pt
@@ -171,29 +210,3 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     #magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
 
 
-
-
-def main():
-
-
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    vtpoutfilen = "EGE_magnetopause_SWtest_t2000.vtp"
-    vlsvoutfilen = "EGE_magnetopause_SWtest_t2000.vlsv"
-
-
-
-
-    surface, SDF = magnetopause(datafile,
-                               method="streamlines",
-                               #method="beta_star_with_connectivity", 
-                               #beta_star_range=[0.0, 0.4],
-                               Delaunay_alpha=1*R_E,
-                               return_SDF=True,
-                               return_surface=True) 
-    
-    write_vtk_surface_to_file(surface, vtpoutfilen)
-    write_SDF_to_file(SDF, datafile, vlsvoutfilen)
-
-if __name__ == "__main__":
-
-    main()
