@@ -189,6 +189,7 @@ Inner plasma sheet: unusually low plasma beta may exist (e.g., cold tenuous plas
 **In analysator:**
 
 :mod:`regions` has an option to find the central plasma sheet.
+Note that the default parameters may catch some dayside cells in addition to plasma sheet.
 Usage example:
 
 .. code-block:: python
