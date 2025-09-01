@@ -4,8 +4,8 @@ The tools in this folder were used to post-process data from the [FHA run](http:
 
 Global evolution of flux transfer events along the magnetopause from the dayside to the far tail
 Yann Pfau-Kempf, Konstantinos Papadakis, Markku Alho, Markus Battarbee, Giulia Cozzani, Lauri Pänkäläinen, Urs Ganse, Fasil Kebede, Jonas Suni, Konstantinos Horaites, Maxime Grandin, and Minna Palmroth
-https://doi.org/10.5194/angeo-2024-26
-Annales Geophysicae, Volume X, Number Y, Pages N to M, 2025
+https://doi.org/10.5194/angeo-43-469-2025
+Annales Geophysicae, Volume 43, Issue 2, Pages 469–488, 2025
 
 ## Global views
 [[Fig_2_3_global_views]] contains the python and job scripts to trace the field lines from the regions where `vg_fluxrope` is above the chosen threshold. The resulting files can then be used in VisIt to plot the global views of Figs. 2 and 3.
