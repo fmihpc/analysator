@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "tree"
 ]
 [project.optional-dependencies]
 none = [
