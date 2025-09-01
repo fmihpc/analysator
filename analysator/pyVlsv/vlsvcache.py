@@ -135,8 +135,10 @@ class FileCache:
          os.makedirs(self.get_cache_folder())
 
       if force:
-         os.remove(self.__rtree_idxfile)
-         os.remove(self.__rtree_datfile)
+         if os.path.exists(self.__rtree_idxfile):
+            os.remove(self.__rtree_idxfile)
+         if os.path.exists(self.__rtree_datfile):
+            os.remove(self.__rtree_datfile)
       if(not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile)):
          t0 = time.time()
          
