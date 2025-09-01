@@ -27,6 +27,7 @@ dependencies = [
     "packaging",
     "scikit-image",
     "yt"
+    "rtree"
 ]
 [project.optional-dependencies]
 none = [

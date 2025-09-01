@@ -29,7 +29,6 @@ import numpy as np
 import os
 import warnings
 from reduction import datareducers,data_operators
-import warnings
 
 class VlsvWriter(object):
    ''' Class for reading VLSV files
@@ -112,17 +111,24 @@ class VlsvWriter(object):
       tags['MESH_OFFSETS'] = ''
       tags['MESH'] = ''
       tags['MESH_DOMAIN_SIZES'] = ''
+      tags['MESH_DOMAIN_EXTENTS'] = ''
       tags['MESH_GHOST_DOMAINS'] = ''
       tags['MESH_GHOST_LOCALIDS'] = ''
       tags['CellID'] = ''
       tags['MESH_BBOX'] = ''
       tags['COORDS'] = ''
 
+      xml_mesh_tags = {}
       # Copy the xml root
       for child in xml_root:
          if child.tag in tags:
             if 'name' in child.attrib: name = child.attrib['name']
             else: name = ''
+            if 'mesh' in child.attrib:
+               mesh = child.attrib['mesh']
+               xml_mesh_tags.setdefault(mesh, []).append(child.tag)
+            else:
+               mesh = None
             if 'mesh' in child.attrib: mesh = child.attrib['mesh']
             else: mesh = ''
             tag = child.tag
@@ -142,6 +148,15 @@ class VlsvWriter(object):
             # Write the data:
 
             self.__write( data=data, name=name, tag=tag, mesh=mesh, extra_attribs=extra_attribs )
+      
+      # Find out and write possibly nonexisting metadata
+      for mesh, tags in xml_mesh_tags.items():
+         if mesh == "SpatialGrid":
+            if "MESH_DOMAIN_EXTENTS" not in tags:
+               extents = vlsvReader.get_mesh_domain_extents(mesh)
+               # print(extents)
+               self.__write( data = extents, name='', tag="MESH_DOMAIN_EXTENTS", mesh=mesh)
+
 
 
    def copy_variables( self, vlsvReader, varlist=None ):
