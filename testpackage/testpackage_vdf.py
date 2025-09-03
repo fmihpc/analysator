@@ -30,7 +30,7 @@ runs.append( { 'name': 'BFD',
                  'filename': None } )
 runs.append( { 'name': 'BCQr',
                  'verifydir': 'testpackage_vdf/BCQr/', 
-                 'fileLocation': '/proj/vlasiato/BCQ/',
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BCQ/restart/',
                  'pops': ['avgs'],
                  'time': 0,
                  'filename': 'restart.0001361.vlsv' } )
@@ -39,7 +39,7 @@ runs.append( { 'name': 'BFDr',
                  'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BFD/restart/',
                  'pops': ['avgs'],
                  'time': 0,
-                 'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv' } )
+                 'filename': 'restart.0001126.vlsv' } )
                      
 regularcalls = [
 # Input and output methods, nooverwrite
