@@ -67,7 +67,7 @@ def write_SDF_to_file(SDF, datafilen, outfilen):
 
       
 
-def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.4, 0.5], method_args={}): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
+def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=None, return_surface=True, return_SDF=True, SDF_points=None, Delaunay_alpha=None, beta_star_range=[0.0, 0.5], method_args={}): # TODO: separate streamline suface and vtkDelaunay3d surface in streamline method
     """Finds the magnetopause using the specified method. Surface is constructed using vtk's Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.
         Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -> inside magnetopause) (=SDF) to all cells
         Note that using alpha for Delaunay might make SDF different from expected inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5) or if simulation grid size is larger than alpha
@@ -119,19 +119,80 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     elif method == "beta_star_with_connectivity":
         # magnetopause from beta_star, with connectivity if possible
         betastar_region = regions.treshold_mask(f.read_variable("vg_beta_star"), beta_star_range)
-        try:
-            connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0) # closed-closed magnetic field lines
-            magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
-            contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
-            np.save("pointcloud.npy", contour_coords)
-        except:
-            logging.warning("using field line connectivity for magnetosphere did not work, using only beta*")
-            #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
-            mpause_flags = np.where(betastar_region==1, 1, 0)
-            contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
+        if True:
+            vtkreader = pt.vlsvfile.VlsvVtkReader()
+            vtkreader.SetFileName(f.file_name)
+            vtkreader.Update()
+            # vars =vtkreader.findVariablesFromVlsv(getReducers=False)
+            # add here more/other datareducer outputs for downstream use if needed
+            vars = ["proton/vg_beta_star", "vg_connection","cellid"] 
+            
+            for var in [v for v in vars if ("vg_" in v.lower()) or (v.lower() == "cellid")]:
+                vtkreader.addArrayFromVlsv(var)
+
+            vtkreader.Modified() 
+            vtkreader.Update()
+            dataport = vtkreader.GetOutputPort()
+
+            dual = vtk.vtkHyperTreeGridToDualGrid()
+            dual.SetInputConnection(dataport)
+            vtkreader.Update()
+            dual.Update()
+
+            data = dual.GetOutputDataObject(0)
+            renamer = vtk.vtkArrayRename()
+            renamer.SetPointArrayName("proton/vg_beta_star", "vg_beta_star")
+            renamer.SetInputData(data)
+            renamer.Update()
+
+            data = renamer.GetOutputDataObject(0)
+            # print(data)
+
+            newarr = vtk.vtkDoubleArray()
+            newarr.SetName("BL")
+            newarr.SetNumberOfComponents(1) # This will be a scalar results
+            newarr.SetNumberOfTuples(data.GetPointData().GetNumberOfTuples()) # Set how many values to allocate
+            data.GetPointData().AddArray(newarr) # add the array to the dataset
+
+
+            # Setting up the actual calulcation
+            calcBL = vtk.vtkArrayCalculator()
+            calcBL.SetInputData(data)   # This data we ingest
+            # We need to specify which arrays we will use to derive the value
+            calcBL.AddScalarArrayName('vg_beta_star') 
+            calcBL.AddScalarArrayName('vg_connection')
+            calcBL.SetReplaceInvalidValues(True)
+            calcBL.SetReplacementValue(np.nan)
+            # The actual function to calculate
+            calcBL.SetFunction("vg_beta_star*min(vg_connection,1)")
+            # Set result array name
+            calcBL.SetResultArrayName("BL")
+            calcBL.Update()
+            data = calcBL.GetOutputDataObject(0)
+
+            threshold0 = vtk.vtkThreshold()
+            threshold0.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, "BL")
+            threshold0.SetInputData(data)
+            threshold0.SetLowerThreshold(beta_star_range[0])
+            threshold0.SetUpperThreshold(beta_star_range[1])
+            threshold0.Update()
+
+            vtkSurface, SDF = regions.vtkSDF(query_points, threshold0.GetOutputDataObject(0))
+
+        else:
+            try:
+                connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0) # closed-closed magnetic field lines
+                magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
+                contour_coords = f.get_cell_coordinates(cellids[magnetosphere_proper==1])
+                np.save("pointcloud.npy", contour_coords)
+            except:
+                logging.warning("using field line connectivity for magnetosphere did not work, using only beta*")
+                #condition_dict = {"beta_star": [0.5, 0.6]} # FIC: [0.4, 0.5]) # EGE: [0.9, 1.0]) # max 0.6 in FHA to not take flyaways from outside magnetopause
+                mpause_flags = np.where(betastar_region==1, 1, 0)
+                contour_coords = f.get_cell_coordinates(cellids[mpause_flags!=0])
         
-        # make a convex hull surface with vtk's Delaunay
-        vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, contour_coords, Delaunay_alpha)
+            # make a convex hull surface with vtk's Delaunay
+            vtkSurface, SDF = regions.vtkDelaunay3d_SDF(query_points, contour_coords, Delaunay_alpha)
 
     #elif method == "beta_star_with_fieldlines": # either incredibly slow or does not work, don't use without fixing #TODO proprer measure of actual field line backwall point
     #    # magnetopause from beta_star, with field lines connecting to back wall if possible

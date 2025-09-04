@@ -67,6 +67,27 @@ def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     return surface, convexhull_sdf
 
 
+def vtkSDF(query_points, dualgrid):
+    ''' Obtain the SDF in relation to a waterproof volumetric grid "dualgrid"
+    '''
+
+    # print(dualgrid)
+    surface = vtk.vtkDataSetSurfaceFilter()
+    surface.SetInputData(dualgrid)
+    surface.Update()
+
+    # print(surface.GetOutput())
+
+
+    implicitPolyDataDistance = vtk.vtkImplicitPolyDataDistance()
+    implicitPolyDataDistance.SetInput(surface.GetOutput())
+    import sys
+    convexhull_sdf = np.zeros(len(query_points))
+    for i,coord in enumerate(query_points):
+        convexhull_sdf[i] = implicitPolyDataDistance.EvaluateFunction(coord)
+        # sys.exit()
+    
+    return surface.GetOutputDataObject(0), convexhull_sdf
 
 
 def treshold_mask(data_array, value):
@@ -347,7 +368,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         if magnetopause_kwargs:
             __, magnetopause_SDF = magnetopause.magnetopause(datafile, **magnetopause_kwargs)
         else:
-            __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=None)  # default magnetopause: beta*+ B connectivity convex hull 
+            __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=2e6, )  # default magnetopause: beta*+ B connectivity convex hull 
         write_flags(writer, magnetopause_SDF, 'SDF_magnetopause')
         write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "flag_magnetopause")
 
@@ -495,10 +516,11 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     
 def main():
 
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    outfilen = "EGE_regions_t2000.vlsv"
+    fileid = 1000
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.{:07d}.vlsv".format(fileid) 
+    outfilen = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/postprocessing/prototyping/FID_mpause_{:07d}.vlsv".format(fileid) 
 
-    RegionFlags(datafile, outfilen, regions=["all"])
+    RegionFlags(datafile, outfilen, regions=["magnetopause"])
 
 
 if __name__ == "__main__":
