@@ -25,6 +25,11 @@
 
 import numpy as np
 import logging
+import analysator as pt
+try:
+   from collections.abc import Iterable
+except ImportError:
+   from collections import Iterable
 
 def cell_time_evolution( vlsvReader_list, variables, cellids, units="" ):
    ''' Returns variable data from a time evolution of some certain cell ids
@@ -194,61 +199,83 @@ def point_time_evolution( vlsvReader_list, variables, coordinates, units="", met
                      parameters +  [variables[(int)(i)%(int)(len(variables))] for i in range(len(data)-len(parameters))], 
                      parameter_units + [units[(int)(i)%(int)(len(units))] for i in range(len(data)-len(parameters))] )
 
-
 class VlsvTInterpolator:
    ''' Class for setting up a time-interpolation wrapper from a list of VLSV files.
+   Requires either files_list or vlsvReaders_list as input.
 
-       :param vlsvReader_list:         List containing VlsvReaders with a file open
-       :type vlsvReader_list:          :class:`vlsvfile.VlsvReader`
-       :param variables:               Name of the variables
-       :param coordinates:             List of coordinates [n,3]
-       :param units:                   List of units for the variables (OPTIONAL)
-       :param method:                  name of interpolation method ['nearest','linear']
+       :param files_list:               List containing paths to VLSV files
+       :type files_list:                :class:`str`
+       :param vlsvReaders_list:         List containing VlsvReaders with a file open
+       :type vlsvReaders_list:          :class:`vlsvfile.VlsvReader`
+
+       :returns:  a callable object that can be used to interpolate values in time and space from the given files.
        :returns: an array containing the data for the time evolution for every coordinate
 
        .. code-block:: python
 
           import analysator as pt;
           # Example of usage:
-          time_data = pt.calculations.point_time_evolution( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")], variables=["rho", "Pressure", "B"], coordinates=[[1e8,0,0],[1.2e8,0,0]], units=["N", "Pascal", "T"] )
+          time_interpolator = pt.calculations.VlsvTInterpolator( vlsvReader_list=[VlsvReader("bulk.000.vlsv"), VlsvReader("bulk.001.vlsv"), VlsvReader("bulk.002.vlsv")])
 
-          # Check output
-          logging.info time_data
 
           # Now plot the results:
-          time = time_data[0]
-          rho = time_data[3]
+          time = time_interpolator.ts
+          rho = [time_interpolator(t, [1e8,0,0], "proton/vg_rho")]
           pt.plot.plot_variables(time, rho)
           pl.show()
 
-          # Do post processing:
-          rho_data = rho.data
-          non_existing_example_function(rho_data)
-
    '''
 
-   def __init__(self, files, var):
-      self.variable = var
+   def __init__(self, files_list=[], vlsvReaders_list=[]):
       self.ts = []
       
-      self.files = files
-      self.readers = []
-      for i,f in enumerate(files):
-         reader = pt.vlsvfile.VlsvReader(f)
-         self.ts.append(reader.read_parameter('time'))
-         # self.readers.append(pt.vlsvfile.VlsvReader(f))
-      self.ts = np.array(self.ts)
-      # self.readers = np.array(self.readers)
-      sorti = np.argsort(self.ts)
-      self.ts = self.ts[sorti]
-      self.files.sort()
-      # self.readers = self.readers[sorti]
-      self.activeReaders = {'low':None, 'hi':None}
-      self.t = np.min(self.ts)
+      self.files = files_list
+      self.readers = vlsvReaders_list
+      if len(self.files) == 0 and len(self.readers) == 0:
+         raise ValueError("Please provide either a list of vlsv files or a list of readers")
+      if len(self.readers) == 0:
+         for i,f in enumerate(self.files):
+            reader = pt.vlsvfile.VlsvReader(f)
+            self.readers.append(reader)
+            self.ts.append(reader.read_parameter('time'))
+      else:
+         self.files = []
+         for i,r in enumerate(self.readers):
+            self.ts.append(r.read_parameter('time'))
+            self.files.append(r.file_name)
 
-   def __call__(self, t, coordinates):
+         # self.readers.append(pt.vlsvfile.VlsvReader(f))
+      sort_bunch = [(t, self.files[i], self.readers[i]) for i,t in enumerate(self.ts)]
+      # self.readers = np.array(self.readers)
+      sort_bunch.sort()
+      self.ts = [b[0] for b in sort_bunch]
+      self.files = [b[1] for b in sort_bunch]
+      self.readers = [b[2] for b in sort_bunch]
+
+      self.activeReaders = {'low':None, 'hi':None}
+
+   def __call__(self, t, coordinates, variable, operator='pass', method="linear", extrapolate=False):
+      ''' Spatiotemporal interpolation. 
+
+       :param t:                 Time-coordinate of query
+       :param coordinates:       List or numpy array of query coordinates, shape of [n,3] or [3]
+       :param variable:          Name of the variable
+       :param operator:          Name of operator (see VlsvReader/datareduction) ['pass']
+       :param method:            Name of interpolation method ['nearest','linear'], only affects spatial interpolation
+       :param extrapolate:       Allow time queries outside of reader range [False]. If enabled, queries beyond range return interpolants from the first/latest reader.
+       
+       '''
       # print("Calling for t ",t)
-      crds = coordinates
+      crds = np.array(coordinates)
+      stack = True
+      if len(np.shape(crds)) == 1:
+         stack = False
+         crds = np.atleast_2d(crds)
+
+
+      if not extrapolate:
+         if t < np.min(self.ts) or t > np.max(self.ts):
+            raise ValueError("Queried time "+str(t)+" is out of bounds for given files ["+str(np.min(self.ts))+", "+str(np.max(self.ts))+"]")
       # crds = np.reshape(coordinates,(len(coordinates)//3,3))
       # print(coordinates)
       rti = np.searchsorted(self.ts, t)
@@ -263,23 +290,35 @@ class VlsvTInterpolator:
          if lower_t == self.activeReaders['low'].read_parameter('time'):
                pass
          else:
-               self.activeReaders['low'] = pt.vlsvfile.VlsvReader(self.files[max(rti-1,0)])
+               self.activeReaders['low'] = self.readers[max(rti-1,0)]
       else:
-         self.activeReaders['low'] = pt.vlsvfile.VlsvReader(self.files[max(rti-1,0)])
+         self.activeReaders['low'] = self.readers[max(rti-1,0)]
 
       if self.activeReaders['hi']:
          if lower_t == self.activeReaders['hi'].read_parameter('time'):
                pass
          else:
-               self.activeReaders['hi'] = pt.vlsvfile.VlsvReader(self.files[min(rti,len(self.ts)-1)])
+               self.activeReaders['hi'] = self.readers[min(rti,len(self.ts)-1)]
       else:
-         self.activeReaders['hi'] = pt.vlsvfile.VlsvReader(self.files[min(rti,len(self.ts)-1)])
+         self.activeReaders['hi'] = self.readers[min(rti,len(self.ts)-1)]
          
-      lower_vals = self.activeReaders['low'].read_interpolated_variable(self.variable, crds)
-      upper_vals = self.activeReaders['hi'].read_interpolated_variable(self.variable, crds)
+      lower_vals = self.activeReaders['low'].read_interpolated_variable(variable, crds, operator=operator, method=method)
+      upper_vals = self.activeReaders['hi'].read_interpolated_variable(variable, crds, operator=operator, method=method)
       vals = (1-alpha)*lower_vals + alpha*upper_vals
 
-      # for i,t in enumerate(self.ts):
-      #     if i < rti-1:
 
-      return vals
+      test_variable = self.activeReaders['low'].read_variable(variable,cellids=[self.activeReaders['low'].get_cellid(crds[0,:])],operator=operator)
+      if isinstance(test_variable,np.ma.core.MaskedConstant):
+         value_length=1
+      elif isinstance(test_variable, Iterable):
+         value_length=len(test_variable)
+      else:
+         value_length=1
+
+      if stack:
+         return vals.squeeze()
+      else:
+         if value_length == 1:
+            return vals.squeeze()[()] # The only special case to return a scalar instead of an array
+         else:
+            return vals.squeeze()
