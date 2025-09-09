@@ -717,6 +717,17 @@ class VlsvReader(object):
       #number of blocks in each cell for which data is stored
       blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop)
 
+      try:
+         cells_with_blocks = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+         blocks_per_cell = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      except Exception as e:
+         try:
+            cells_with_blocks = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS"))
+            blocks_per_cell = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL"))
+         except Exception as e2:
+            logging.error("Could not read CELLSWITHBLOCKS or BLOCKSPERCELL successfully, after first searching for " +pop+"/[CELLSWITHBLOCKS/BLOCKSPERCELL]/SpatialGrid and then without pop; errors raised: \n Firstly"+str(e)+",\n Secondly "+str(e2))
+            raise e2
+
       # Navigate to the correct position:
       from copy import copy
       offset = 0
@@ -737,8 +748,17 @@ class VlsvReader(object):
 
       logging.info("Getting offsets for population " + pop)
 
-      self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
-      self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      try:
+         self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+         self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      except Exception as e:
+         try:
+            self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS"))
+            self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL"))
+         except Exception as e2:
+            logging.error("Could not read CELLSWITHBLOCKS or BLOCKSPERCELL successfully, after first searching for " +pop+"/[CELLSWITHBLOCKS/BLOCKSPERCELL]/SpatialGrid and then without pop; errors raised: \n Firstly"+str(e)+",\n Secondly "+str(e2))
+            raise e2
+
 
       self.__blocks_per_cell_offsets[pop] = np.empty(len(self.__cells_with_blocks[pop]))
       self.__blocks_per_cell_offsets[pop][0] = 0.0
