@@ -1,0 +1,26 @@
+v5 datareducer,v1...4 datareducer,explanation
+(vg\_v),v,velocity
+vg\_vms,vms,magnetosonic speed
+vg\_vs,vs,sound speed
+vg\_va,va,Alfvén speed
+vg\_ma,ma,Alfvén Mach number
+vg\_mms,mms,magnetosonic Mach number
+vg\_di,di,Ion inertial length
+vg\_v\_parallel,vparallel,V parallel to B
+vg\_v\_perpendicular,vperpendicular,V perpendicular to B
+"mpop",vparallelbackstream,non-thermal proton V parallel to B
+"mpop",vperpendicularbackstream,non-thermal proton V perpendicular to B
+"mpop",vparallelnonbackstream,thermal proton V parallel to B
+"mpop",vperpendicularnonbackstream,thermal proton V perpendicular to B
+vg\_e\_parallel,eparallel,E component parallel to B
+vg\_e\_perpendicular,eperpendicular,E component perpendicular to B
+vg\_pdyn,pdyn,dynamic pressure
+vg\_pdynx,pdynx,dynamic pressure from only x-directional velocity
+vg\_poynting,poynting,Poynting vector
+n/a,firstadiabatic,mean first adiabatic invariant
+vg\_egradpe\_parallel,n/a,Electric field electron pressure gradient term parallel to B
+vg\_egradpe\_perpendicular,n/a,Electric field electron pressure gradient term perpendicular to B
+vg\_restart\_v,restart\_v,estimate V from a restart file
+vg\_restart\_rho,restart\_rho,estimate particle number density from a restart file
+vg\_restart\_rhom,restart\_rhom,estimate mass density from a restart file
+vg\_restart\_rhoq,restart\_rhoq,estimate charge density from a restart file

@@ -1,0 +1,19 @@
+V5 Vlasov grid variables,Older Vlasov grid variables
+vg_rhom,Rhom
+vg_rhoq,Rhoq
+vg_v,V
+vg_pressure,Pressure
+,Blocks
+vg_b_vol,B_vol
+vg_b_background_vol,BGB_vol
+vg_b_perturbed_vol,PERB_vol
+,E
+vg_e_vol,E_vol
+vg_e_gradpe,EGRADPE
+vg_f_saved,fSaved
+vg_maxdt_acceleration,max_v_dt
+vg_maxdt_translation,max_r_dt
+vg_rank,MPI_rank
+vg_loadbalance_weight,LB_weight
+vg_boundarytype,Boundary_type
+vg_boundarylayer,Boundary_layer

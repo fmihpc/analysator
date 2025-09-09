@@ -44,7 +44,7 @@ from cutthrough import cut_through, cut_through_step, cut_through_curve, cut_thr
 from fourier import fourier
 from spectra import get_spectrum_energy, get_spectrum_alongaxis_vel
 from variable import VariableInfo
-from timeevolution import cell_time_evolution,point_time_evolution
+from timeevolution import cell_time_evolution,point_time_evolution,VlsvTInterpolator
 from pitchangle import pitch_angles
 #from backstream import extract_velocity_cells_sphere, extract_velocity_cells_non_sphere
 from gyrophaseangle import gyrophase_angles_from_file
