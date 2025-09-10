@@ -36,4 +36,3 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             . CI_env/bin/activate
             python -c 'import analysator as pt'
-    
