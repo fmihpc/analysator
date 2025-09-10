@@ -1,0 +1,854 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysator supported data reducers and vlasiator variables &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="plot" href="../plot/" />
+    <link rel="prev" title="Analysator exercises" href="../analysator_exercises/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysator supported data reducers and vlasiator variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reading-variables-from-vlsv-files">Reading variables from .vlsv files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vlasiator-variable-naming-scheme">Vlasiator variable naming scheme</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multipop-naming-version-4-onwards">Multipop naming (version 4 onwards)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vlasiator-variable-correspondences">Vlasiator variable correspondences</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analysator-datareducers">Analysator datareducers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#list-of-datareducers-for-vlasiator-versions-1-4">List of datareducers for Vlasiator versions 1…4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#list-of-per-population-datareducers-for-vlasiator-versions-4-and-5">List of per-population datareducers for Vlasiator versions 4 and 5.</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Analysator supported data reducers and vlasiator variables</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysator_supported.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analysator-supported-data-reducers-and-vlasiator-variables">
+<h1>Analysator supported data reducers and vlasiator variables<a class="headerlink" href="#analysator-supported-data-reducers-and-vlasiator-variables" title="Link to this heading"></a></h1>
+<p>This documents is intended as a helpful but incomplete reference for vlasiator
+outputs and post-processing data reducers supported by Analysator</p>
+<section id="reading-variables-from-vlsv-files">
+<h2>Reading variables from .vlsv files<a class="headerlink" href="#reading-variables-from-vlsv-files" title="Link to this heading"></a></h2>
+<p>Analysator supports reading multiple different types of variables:</p>
+<ul class="simple">
+<li><p>MPIgrid variables</p></li>
+<li><p>FSgrid variables</p></li>
+<li><p>variables directly available in the data files</p></li>
+<li><p>variables generated via receipes from the data file variables (named, somewhat incorrectly, datareducers)</p></li>
+</ul>
+</section>
+<section id="vlasiator-variable-naming-scheme">
+<h2>Vlasiator variable naming scheme<a class="headerlink" href="#vlasiator-variable-naming-scheme" title="Link to this heading"></a></h2>
+<p>In Vlasiator versions before V5, variables were always saved on the DCCRG/MPI/Vlasov grid,
+and as such, only a single naming scheme was required. With the introduction of Vlasiator V5,
+variables could also be saved on the FSgrid. When the ionosphere grid was be implemented,
+that can also be saved to on its own grid. To differentiate between the different grids, a
+naming scheme was introduced where a prefix defines the grid type:</p>
+<ul class="simple">
+<li><p>No prefix: old pre-V5 data</p></li>
+<li><p>prefix <code class="docutils literal notranslate"><span class="pre">vg_</span></code>: Vlasov/MPI/DCCRG grid</p></li>
+<li><p>prefix <code class="docutils literal notranslate"><span class="pre">fg_</span></code>: fieldsolver/FSgrid</p></li>
+<li><p>prefix <code class="docutils literal notranslate"><span class="pre">ig_</span></code>: ionosphere grid</p></li>
+</ul>
+</section>
+<section id="multipop-naming-version-4-onwards">
+<h2>Multipop naming (version 4 onwards)<a class="headerlink" href="#multipop-naming-version-4-onwards" title="Link to this heading"></a></h2>
+<p>Some variables are directly connected to a given particle species, with the variable name having a
+particle species prefix. For example: <code class="docutils literal notranslate"><span class="pre">proton/rho</span></code> or <code class="docutils literal notranslate"><span class="pre">proton/vg_rho</span></code> for V4 and V5 outputs
+respectively. Note that multipop outputs are always on the Vlasov grid, but still have the <code class="docutils literal notranslate"><span class="pre">vg_</span></code>
+prefix after the particle species name. Some variable such as <code class="docutils literal notranslate"><span class="pre">rho</span></code> and <code class="docutils literal notranslate"><span class="pre">blocks</span></code> which are
+directly connected to particle species are availabe without the population identifier in datafiles
+from version 3 and earlier, assuming the species to be protons.</p>
+</section>
+<section id="vlasiator-variable-correspondences">
+<h2>Vlasiator variable correspondences<a class="headerlink" href="#vlasiator-variable-correspondences" title="Link to this heading"></a></h2>
+<p>The below tables list variable names used in different versions of Vlasiator proper (updated: 3.6.2021).
+A blank entry in a corresponding column indicates this variable is not available.
+Some debugging variables such as field derivatives have been omitted from the table.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">FSgrid to pre-V5</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>FSgrid variables</p></th>
+<th class="head"><p>Corresponding Vlasov grid variable in older versions</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>fg_b</p></td>
+<td><p>B</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_b_background</p></td>
+<td><p>background_B</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_b_perturbed</p></td>
+<td><p>perturbed_B</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_b_vol</p></td>
+<td><p>B_vol</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_e</p></td>
+<td><p>E</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_e_hall_??</p></td>
+<td><p>EXHALL_???_???</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_e_vol</p></td>
+<td><p>E_vol</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_rhom</p></td>
+<td><p>Rhom</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_rhoq</p></td>
+<td><p>Rhoq</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_v</p></td>
+<td><p>V</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_pressure</p></td>
+<td><p>Pressure</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_maxdt_fieldsolver</p></td>
+<td><p>max_fields_dt</p></td>
+</tr>
+<tr class="row-even"><td><p>fg_rank</p></td>
+<td><p>FSgrid_rank</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_amr_level</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>fg_boundarytype</p></td>
+<td><p>FSgrid_boundaryType</p></td>
+</tr>
+<tr class="row-odd"><td><p>fg_boundarylayer</p></td>
+<td><p>Boundary_layerx</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">V5 Vlasov grid to pre-V5</span><a class="headerlink" href="#id2" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>V5 Vlasov grid variables</p></th>
+<th class="head"><p>Older Vlasov grid variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>vg_rhom</p></td>
+<td><p>Rhom</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_rhoq</p></td>
+<td><p>Rhoq</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_v</p></td>
+<td><p>V</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_pressure</p></td>
+<td><p>Pressure</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>Blocks</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_b_vol</p></td>
+<td><p>B_vol</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_b_background_vol</p></td>
+<td><p>BGB_vol</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_b_perturbed_vol</p></td>
+<td><p>PERB_vol</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>E</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_e_vol</p></td>
+<td><p>E_vol</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_e_gradpe</p></td>
+<td><p>EGRADPE</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_f_saved</p></td>
+<td><p>fSaved</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_maxdt_acceleration</p></td>
+<td><p>max_v_dt</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_maxdt_translation</p></td>
+<td><p>max_r_dt</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_rank</p></td>
+<td><p>MPI_rank</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_loadbalance_weight</p></td>
+<td><p>LB_weight</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_boundarytype</p></td>
+<td><p>Boundary_type</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_boundarylayer</p></td>
+<td><p>Boundary_layer</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Multipop correspondence</span><a class="headerlink" href="#id3" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 60.0%" />
+<col style="width: 10.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Per-population variables</p></th>
+<th class="head"><p>Older per-population variables</p></th>
+<th class="head"><p>Older pre-multipop variables</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>populations/vg_rho</p></td>
+<td><p>populations/rho</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_v</p></td>
+<td><p>populations/V</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_rho_thermal</p></td>
+<td><p>populations/RhoNonBackstream</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_rho_nonthermal</p></td>
+<td><p>populations/RhoBackstream</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_v_thermal</p></td>
+<td><p>populations/VNonBackstream</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_v_nonthermal</p></td>
+<td><p>populations/VBackstream</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_effectivesparsitythreshold</p></td>
+<td><p>populations/EffectiveSparsityThreshold</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_rho_loss_adjust</p></td>
+<td><p>populations/rho_loss_adjust</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_energydensity</p></td>
+<td><p>populations/EnergyDensity</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_precipitationdifferentialflux</p></td>
+<td><p>populations/PrecipitationDiffFlux</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_maxdt_acceleration</p></td>
+<td><p>populations/MaxVdt</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_maxdt_translation</p></td>
+<td><p>populations/MaxRdt</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_blocks</p></td>
+<td><p>populations/Blocks</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_acceleration_subcycles</p></td>
+<td><p>populations/acc_subcycles</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_ptensor_diagonal</p></td>
+<td><p>populations/PTensorDiagonal</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_ptensor_offdiagonal</p></td>
+<td><p>populations/PTensorOffDiagonal</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_ptensor_nonthermal_diagonal</p></td>
+<td><p>populations/PTensorBackstreamDiagonal</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_ptensor_nonthermal_offdiagonal</p></td>
+<td><p>populations/PTensorBackstreamOffDiagonal</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>populations/vg_ptensor_thermal_diagonal</p></td>
+<td><p>populations/PTensorNonBackstreamDiagonal</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>populations/vg_ptensor_thermal_offdiagonal</p></td>
+<td><p>populations/PTensorNonBackstreamOffDiagonal</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="analysator-datareducers">
+<h2>Analysator datareducers<a class="headerlink" href="#analysator-datareducers" title="Link to this heading"></a></h2>
+<p>Post-processed derived variables (called somewhat mistakenly datareducers) are available in analysator.
+One limitation is that in current versions of analysator (as of March 2022) all datareducers require
+Vlasov grid variables as they work with CellID lists. Also, datareducers do not support spatial or
+temporal derivatives. However, both use of FSgrid variables and spatial and temporal derivatives in
+plotting routines is possible via expressions and external functions as called by plot_colormap
+and other such plotting routines (see also plot_helpers.py).</p>
+<p>The up-to-date list of datareducers can always be found in pyVlsv/reduction.py</p>
+</section>
+<section id="list-of-datareducers-for-vlasiator-versions-1-4">
+<h2>List of datareducers for Vlasiator versions 1…4<a class="headerlink" href="#list-of-datareducers-for-vlasiator-versions-1-4" title="Link to this heading"></a></h2>
+<p>Note: If several populations exist for a v4 multipop run, temperature reducers are incorrect.
+If the value is available directly instead of as a datareducer, that name is listed instead in
+parathentheses. If it is available through multipop datareducers, it is shown with “mpop”.</p>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Generic datareducers</span><a class="headerlink" href="#id4" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 60.0%" />
+<col style="width: 10.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>v5 datareducer</p></th>
+<th class="head"><p>v1…4 datareducer</p></th>
+<th class="head"><p>explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>(vg_v)</p></td>
+<td><p>v</p></td>
+<td><p>velocity</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_vms</p></td>
+<td><p>vms</p></td>
+<td><p>magnetosonic speed</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_vs</p></td>
+<td><p>vs</p></td>
+<td><p>sound speed</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_va</p></td>
+<td><p>va</p></td>
+<td><p>Alfvén speed</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_ma</p></td>
+<td><p>ma</p></td>
+<td><p>Alfvén Mach number</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_mms</p></td>
+<td><p>mms</p></td>
+<td><p>magnetosonic Mach number</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_di</p></td>
+<td><p>di</p></td>
+<td><p>Ion inertial length</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_v_parallel</p></td>
+<td><p>vparallel</p></td>
+<td><p>V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_v_perpendicular</p></td>
+<td><p>vperpendicular</p></td>
+<td><p>V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>mpop</p></td>
+<td><p>vparallelbackstream</p></td>
+<td><p>non-thermal proton V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>mpop</p></td>
+<td><p>vperpendicularbackstream</p></td>
+<td><p>non-thermal proton V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>mpop</p></td>
+<td><p>vparallelnonbackstream</p></td>
+<td><p>thermal proton V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>mpop</p></td>
+<td><p>vperpendicularnonbackstream</p></td>
+<td><p>thermal proton V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_e_parallel</p></td>
+<td><p>eparallel</p></td>
+<td><p>E component parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_e_perpendicular</p></td>
+<td><p>eperpendicular</p></td>
+<td><p>E component perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_pdyn</p></td>
+<td><p>pdyn</p></td>
+<td><p>dynamic pressure</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_pdynx</p></td>
+<td><p>pdynx</p></td>
+<td><p>dynamic pressure from only x-directional velocity</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_poynting</p></td>
+<td><p>poynting</p></td>
+<td><p>Poynting vector</p></td>
+</tr>
+<tr class="row-even"><td><p>n/a</p></td>
+<td><p>firstadiabatic</p></td>
+<td><p>mean first adiabatic invariant</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_egradpe_parallel</p></td>
+<td><p>n/a</p></td>
+<td><p>Electric field electron pressure gradient term parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_egradpe_perpendicular</p></td>
+<td><p>n/a</p></td>
+<td><p>Electric field electron pressure gradient term perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_restart_v</p></td>
+<td><p>restart_v</p></td>
+<td><p>estimate V from a restart file</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_restart_rho</p></td>
+<td><p>restart_rho</p></td>
+<td><p>estimate particle number density from a restart file</p></td>
+</tr>
+<tr class="row-odd"><td><p>vg_restart_rhom</p></td>
+<td><p>restart_rhom</p></td>
+<td><p>estimate mass density from a restart file</p></td>
+</tr>
+<tr class="row-even"><td><p>vg_restart_rhoq</p></td>
+<td><p>restart_rhoq</p></td>
+<td><p>estimate charge density from a restart file</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="list-of-per-population-datareducers-for-vlasiator-versions-4-and-5">
+<h2>List of per-population datareducers for Vlasiator versions 4 and 5.<a class="headerlink" href="#list-of-per-population-datareducers-for-vlasiator-versions-4-and-5" title="Link to this heading"></a></h2>
+<p>For these multipop datareducers, replace <code class="docutils literal notranslate"><span class="pre">pop</span></code> with required population name. If <code class="docutils literal notranslate"><span class="pre">pop/</span></code> is
+omitted, a sum over per-population values is provided.</p>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Multipop datareduces</span><a class="headerlink" href="#id5" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>v5 datareducer</p></th>
+<th class="head"><p>v4 datareducer</p></th>
+<th class="head"><p>explanation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pop/vg_rhom</p></td>
+<td><p>pop/rhom</p></td>
+<td><p>mass density</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_rhoq</p></td>
+<td><p>pop/rhoq</p></td>
+<td><p>charge density</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_pdyn</p></td>
+<td><p>pop/pdyn</p></td>
+<td><p>dynamic pressure</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_pdynx</p></td>
+<td><p>pop/pdynx</p></td>
+<td><p>dynamic pressure from only x-directional velocity</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_v_parallel</p></td>
+<td><p>pop/vparallel</p></td>
+<td><p>V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_v_perpendicular</p></td>
+<td><p>pop/vperpendicular</p></td>
+<td><p>V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_v_parallel_nonthermal</p></td>
+<td><p>pop/vparallelbackstream</p></td>
+<td><p>non-thermal V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_v_perpendicular_nonthermal</p></td>
+<td><p>pop/vperpendicularbackstream</p></td>
+<td><p>non-thermal V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_v_parallel_thermal</p></td>
+<td><p>pop/vparallelnonbackstream</p></td>
+<td><p>thermal V parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_v_perpendicular_thermal</p></td>
+<td><p>pop/vperpendicularnonbackstream</p></td>
+<td><p>thermal V perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_thermalvelocity</p></td>
+<td><p>pop/thermalvelocity</p></td>
+<td><p>estimate of thermal velocity</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_larmor</p></td>
+<td><p>pop/larmor</p></td>
+<td><p>estimate of representative Larmor radius</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_firstadiabatic</p></td>
+<td><p>pop/firstadiabatic</p></td>
+<td><p>estimate of first adiabatic invariant (old!)</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_gyroperiod</p></td>
+<td><p>pop/gyroperiod</p></td>
+<td><p>gyroperiod</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_plasmaperiod</p></td>
+<td><p>pop/plasmaperiod</p></td>
+<td><p>plasma period</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_precipitationintegralenergyflux</p></td>
+<td><p>n/a</p></td>
+<td><p>Integral energy flux of precipitating particles estimate (several energy channels)</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_precipitationmeanenergy</p></td>
+<td><p>n/a</p></td>
+<td><p>Mean energy of channel for precipitating particle fluxes</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_pressure</p></td>
+<td><p>pop/pressure</p></td>
+<td><p>pressure</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ptensor</p></td>
+<td><p>pop/ptensor</p></td>
+<td><p>pressure tensor</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ptensor_rotated</p></td>
+<td><p>pop/ptensorrotated</p></td>
+<td><p>pressure tensor rotated to align with B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_parallel</p></td>
+<td><p>pop/pparallel</p></td>
+<td><p>pressure parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_p_perpendicular</p></td>
+<td><p>pop/pperpendicular</p></td>
+<td><p>pressure perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_anisotropy</p></td>
+<td><p>pop/pperpoverpar</p></td>
+<td><p>ratio of perpendicular pressure to parallel pressure</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_nonthermal</p></td>
+<td><p>pop/pbackstream</p></td>
+<td><p>pressure due to non-thermal particles</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ptensor_nonthermal</p></td>
+<td><p>pop/ptensorbackstream</p></td>
+<td><p>pressure tensor due to non-thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ptensor_rotated_nonthermal</p></td>
+<td><p>pop/ptensorrotatedbackstream</p></td>
+<td><p>pressure tensor due to non-thermal particles rotated to align with B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_p_parallel_nonthermal</p></td>
+<td><p>pop/pparallelbackstream</p></td>
+<td><p>pressure component due to non-thermal particles parallel to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_perpendicular_nonthermal</p></td>
+<td><p>pop/pperpendicularbackstream</p></td>
+<td><p>pressure component due to non-thermal particles perpendicular to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_p_anisotropy_nonthermal</p></td>
+<td><p>pop/pperpoverparbackstream</p></td>
+<td><p>ratio of perpendicular pressure to parallel pressure for non-thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_p_thermal</p></td>
+<td><p>pop/pnonbackstream</p></td>
+<td><p>pressure due to thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ptensor_thermal</p></td>
+<td><p>pop/ptensornonbackstream</p></td>
+<td><p>pressure tensor due to thermal particles</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ptensor_rotated_thermal</p></td>
+<td><p>pop/ptensorrotatednonbackstream</p></td>
+<td><p>pressure tensor due to thermal particles rotated to align with B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_parallel_thermal</p></td>
+<td><p>pop/pparallelnonbackstream</p></td>
+<td><p>pressure component due to thermal particles parallel to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_p_perpendicular_thermal</p></td>
+<td><p>pop/pperpendicularnonbackstream</p></td>
+<td><p>pressure component due to thermal particles perpendicular to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_p_anisotropy_thermal</p></td>
+<td><p>pop/pperpoverparnonbackstream</p></td>
+<td><p>ratio of perpendicular pressure to parallel pressure for thermal particles</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_temperature</p></td>
+<td><p>pop/temperature</p></td>
+<td><p>temperature</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ttensor</p></td>
+<td><p>pop/ttensor</p></td>
+<td><p>temperature tensor</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ttensor_rotated</p></td>
+<td><p>pop/ttensorrotated</p></td>
+<td><p>temperature tensor rotated to align with B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_t_parallel</p></td>
+<td><p>pop/tparallel</p></td>
+<td><p>temperature parallel to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_perpendicular</p></td>
+<td><p>pop/tperpendicular</p></td>
+<td><p>temperature perpendicular to B</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_nonthermal</p></td>
+<td><p>pop/tbackstream</p></td>
+<td><p>temperature of non-thermal particles</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ttensor_nonthermal</p></td>
+<td><p>pop/ttensorbackstream</p></td>
+<td><p>temperature tensor of non-thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ttensor_rotated_nonthermal</p></td>
+<td><p>pop/ttensorrotatedbackstream</p></td>
+<td><p>temperature tensor of non-thermal particles rotated to align with B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_t_parallel_nonthermal</p></td>
+<td><p>pop/tparallelbackstream</p></td>
+<td><p>temperature component of non-thermal particles parallel to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_perpendicular_nonthermal</p></td>
+<td><p>pop/tperpendicularbackstream</p></td>
+<td><p>temperature component of non-thermal particles perpendicular to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_t_thermal</p></td>
+<td><p>pop/tnonbackstream</p></td>
+<td><p>temperature of thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_ttensor_thermal</p></td>
+<td><p>pop/ttensornonbackstream</p></td>
+<td><p>temperature tensor of thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_ttensor_rotated_thermal</p></td>
+<td><p>pop/ttensorrotatednonbackstream</p></td>
+<td><p>temperature temperature tensor of thermal particles rotated to align with B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_t_parallel_thermal</p></td>
+<td><p>pop/tparallelnonbackstream</p></td>
+<td><p>temperature component of thermal particles parallel to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_perpendicular_thermal</p></td>
+<td><p>pop/tperpendicularnonbackstream</p></td>
+<td><p>temperature component of thermal particles perpendicular to B</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_anisotropy</p></td>
+<td><p>pop/tperpoverpar</p></td>
+<td><p>ratio of perpendicular temperature to parallel temperature</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_t_anisotropy_nonthermal</p></td>
+<td><p>pop/tperpoverparbackstream</p></td>
+<td><p>ratio of perpendicular temperature to parallel temperature for non-thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_t_anisotropy_thermal</p></td>
+<td><p>pop/tperpoverparnonbackstream</p></td>
+<td><p>ratio of perpendicular temperature to parallel temperature for thermal particles</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_agyrotropy</p></td>
+<td><p>pop/agyrotropy</p></td>
+<td><p>agyrotropy (according to Swisdak 2016)</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_agyrotropy_nonthermal</p></td>
+<td><p>pop/agyrotropybackstream</p></td>
+<td><p>agyrotropy for non-thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_agyrotropy_thermal</p></td>
+<td><p>pop/agyrotropynonbackstream</p></td>
+<td><p>agyrotropy for thermal particles</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_beta</p></td>
+<td><p>pop/beta</p></td>
+<td><p>plasma beta</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_beta_parallel</p></td>
+<td><p>pop/betaparallel</p></td>
+<td><p>plasma beta component parallel to B</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_beta_perpendicular</p></td>
+<td><p>pop/betaperpendicular</p></td>
+<td><p>plasma beta component perpendicular to B</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_beta_anisotropy</p></td>
+<td><p>pop/betaperpoverpar</p></td>
+<td><p>ratio of perpendicular beta to parallel beta</p></td>
+</tr>
+<tr class="row-odd"><td><p>pop/vg_beta_anisotropy_nonthermal</p></td>
+<td><p>pop/betaperpoverparbackstream</p></td>
+<td><p>ratio of perpendicular beta to parallel beta for non-thermal particles</p></td>
+</tr>
+<tr class="row-even"><td><p>pop/vg_beta_anisotropy_thermal</p></td>
+<td><p>pop/betaperpoverparnonbackstream</p></td>
+<td><p>ratio of perpendicular beta to parallel beta for thermal particles</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../analysator_exercises/" class="btn btn-neutral float-left" title="Analysator exercises" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../plot/" class="btn btn-neutral float-right" title="plot" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
