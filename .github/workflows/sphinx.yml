@@ -46,6 +46,8 @@ jobs:
       # ^-- This gives info on installing dependencies with pip
       - name: Install dependencies
         run: |
+          uv venv CI_env
+          . CI_env/bin/activate
           uv pip install ../analysator[all]
           uv pip install sphinx numba yt geopack sphinx-rtd-theme
 
@@ -57,6 +59,7 @@ jobs:
           head_ref: ${{github.head_ref}}
           base_ref: ${{github.base_ref}}
         run: |
+          . CI_env/bin/activate
           echo "github.ref: ${ref}"
           echo "github.event_name: ${event_name}"
           echo "github.head_ref: ${head_ref}"
@@ -78,6 +81,7 @@ jobs:
       - name: Build Sphinx docs (dirhtml)
         # SPHINXOPTS used via environment variables
         run: |
+          . CI_env/bin/activate
           cd Documentation/sphinx/
           make dirhtml
           # This fixes broken copy button icons, as explained in
@@ -93,6 +97,7 @@ jobs:
       - name: Generate singlehtml
         if: ${{ env.GENERATE_SINGLEHTML == 'true' }}
         run: |
+          . CI_env/bin/activate
           make singlehtml
           mv _build/singlehtml/ _build/dirhtml/singlehtml/
 
@@ -100,6 +105,7 @@ jobs:
       - name: Generate PDF
         if: ${{ env.GENERATE_PDF == 'true' }}
         run: |
+          . CI_env/bin/activate
           uv pip install https://github.com/rkdarst/sphinx_pyppeteer_builder/archive/refs/heads/main.zip
           make pyppeteer
           mv _build/pyppeteer/*.pdf _build/dirhtml/${PDF_FILENAME}
