@@ -20,7 +20,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            extras: ["none", "vtk", "all", "bvtk"]
+            extras: ["none", "all", "bvtk"]
         steps:
         - uses: actions/checkout@v4
         - name: Install uv
