@@ -72,7 +72,6 @@ jobs:
           git branch -a
           git remote -v
           python -V
-          uv pip list --not-required
           uv pip list
 
 
