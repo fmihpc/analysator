@@ -2491,6 +2491,19 @@ class VlsvReader(object):
       # self.__read_fileindex_for_cellid()
       return self.__variable_cache[(name,operator)]
 
+   def add_cached_variable(self, data, name, operator="pass"):
+      ''' Add a variable to cache, for the whole grid and after applying
+          operator. Works by injecting a (variable,operator) key and the data to cache.
+
+          :param data: data array - make sure it is of the correct shape and size.
+          :param name: Name of the variable (or datareducer)
+          :param operator: Datareduction operator. "pass" does no operation on data.
+
+      '''
+
+      # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
+      self.__variable_cache[(name,operator)] = data
+
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file.
       Arguments:
