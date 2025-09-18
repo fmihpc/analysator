@@ -118,14 +118,19 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
 
     elif method == "beta_star_with_connectivity":
         # magnetopause from beta_star, with connectivity if possible
-        betastar_region = regions.treshold_mask(f.read_variable("vg_beta_star"), beta_star_range)
+        vg_beta_star =f.read_variable("vg_beta_star")
+        vg_conn = f.read_variable("vg_connection")
+        vg_classifier = vg_beta_star*np.min(vg_conn,1) # if closed-closed fieldlines, set var to zero
         if True:
+            
             vtkreader = pt.vlsvfile.VlsvVtkReader()
-            vtkreader.SetFileName(f.file_name)
+            vtkreader.SetReader(f)
+            f.add_cached_variable(vg_classifier, "vg_betastar_classifier")
             vtkreader.Update()
+
             # vars =vtkreader.findVariablesFromVlsv(getReducers=False)
             # add here more/other datareducer outputs for downstream use if needed
-            vars = ["proton/vg_beta_star", "vg_connection","cellid"] 
+            vars = ["vg_betastar_classifier", "cellid"] 
             
             for var in [v for v in vars if ("vg_" in v.lower()) or (v.lower() == "cellid")]:
                 vtkreader.addArrayFromVlsv(var)
@@ -140,38 +145,9 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
             dual.Update()
 
             data = dual.GetOutputDataObject(0)
-            renamer = vtk.vtkArrayRename()
-            renamer.SetPointArrayName("proton/vg_beta_star", "vg_beta_star")
-            renamer.SetInputData(data)
-            renamer.Update()
-
-            data = renamer.GetOutputDataObject(0)
-            # print(data)
-
-            newarr = vtk.vtkDoubleArray()
-            newarr.SetName("BL")
-            newarr.SetNumberOfComponents(1) # This will be a scalar results
-            newarr.SetNumberOfTuples(data.GetPointData().GetNumberOfTuples()) # Set how many values to allocate
-            data.GetPointData().AddArray(newarr) # add the array to the dataset
-
-
-            # Setting up the actual calulcation
-            calcBL = vtk.vtkArrayCalculator()
-            calcBL.SetInputData(data)   # This data we ingest
-            # We need to specify which arrays we will use to derive the value
-            calcBL.AddScalarArrayName('vg_beta_star') 
-            calcBL.AddScalarArrayName('vg_connection')
-            calcBL.SetReplaceInvalidValues(True)
-            calcBL.SetReplacementValue(np.nan)
-            # The actual function to calculate
-            calcBL.SetFunction("vg_beta_star*min(vg_connection,1)")
-            # Set result array name
-            calcBL.SetResultArrayName("BL")
-            calcBL.Update()
-            data = calcBL.GetOutputDataObject(0)
 
             threshold0 = vtk.vtkThreshold()
-            threshold0.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, "BL")
+            threshold0.SetInputArrayToProcess(0,0,0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, "vg_betastar_classifier")
             threshold0.SetInputData(data)
             threshold0.SetLowerThreshold(beta_star_range[0])
             threshold0.SetUpperThreshold(beta_star_range[1])
@@ -180,6 +156,8 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
             vtkSurface, SDF = regions.vtkSDF(query_points, threshold0.GetOutputDataObject(0))
 
         else:
+            betastar_region = regions.treshold_mask(vg_classifier, beta_star_range)
+
             try:
                 connectivity_region = regions.treshold_mask(f.read_variable("vg_connection"), 0) # closed-closed magnetic field lines
                 magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)
