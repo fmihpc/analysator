@@ -1555,7 +1555,7 @@ class VlsvReader(object):
       if name[0:3] == 'fg_':
          return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, method)
 
       # case vg
 
@@ -1716,7 +1716,7 @@ class VlsvReader(object):
       if name[0:3] == 'fg_':
          return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, method)
 
       # Default case: AMR grid
 
@@ -2229,7 +2229,7 @@ class VlsvReader(object):
          n = n/3
       ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
       if(n != ncells):
-         warnings.warn("Weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
+         warnings.warn("Weird fs subarray size " +str(n)+ ' for amrlevel ' +str(self.get_amr_level(cellid))+' expect ' +str(ncells))
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
