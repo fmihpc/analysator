@@ -37,19 +37,19 @@ jobs:
 
       # https://github.com/marketplace/actions/setup-python
       # ^-- This gives info on matrix testing.
-      - name: Install Python
-        uses: actions/setup-python@v3
-        # with:
-        #   python-version: '3.11'
-        #   cache: 'pip'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Setup Python
+        run: uv python install
 
       # https://docs.github.com/en/actions/guides/building-and-testing-python#installing-dependencies
       # ^-- This gives info on installing dependencies with pip
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          python -m pip install sphinx numpy scipy matplotlib scikit-image numba yt geopack sphinx-rtd-theme
+          uv venv CI_env
+          . CI_env/bin/activate
+          uv pip install ../analysator[all]
+          uv pip install sphinx numba yt geopack sphinx-rtd-theme
 
         # Debug
       - name: Debugging information
@@ -59,6 +59,7 @@ jobs:
           head_ref: ${{github.head_ref}}
           base_ref: ${{github.base_ref}}
         run: |
+          . CI_env/bin/activate
           echo "github.ref: ${ref}"
           echo "github.event_name: ${event_name}"
           echo "github.head_ref: ${head_ref}"
@@ -71,8 +72,7 @@ jobs:
           git branch -a
           git remote -v
           python -V
-          pip list --not-required
-          pip list
+          uv pip list
 
 
       # Build
@@ -80,6 +80,7 @@ jobs:
       - name: Build Sphinx docs (dirhtml)
         # SPHINXOPTS used via environment variables
         run: |
+          . CI_env/bin/activate
           cd Documentation/sphinx/
           make dirhtml
           # This fixes broken copy button icons, as explained in
@@ -95,6 +96,7 @@ jobs:
       - name: Generate singlehtml
         if: ${{ env.GENERATE_SINGLEHTML == 'true' }}
         run: |
+          . CI_env/bin/activate
           make singlehtml
           mv _build/singlehtml/ _build/dirhtml/singlehtml/
 
@@ -102,7 +104,8 @@ jobs:
       - name: Generate PDF
         if: ${{ env.GENERATE_PDF == 'true' }}
         run: |
-          pip install https://github.com/rkdarst/sphinx_pyppeteer_builder/archive/refs/heads/main.zip
+          . CI_env/bin/activate
+          uv pip install https://github.com/rkdarst/sphinx_pyppeteer_builder/archive/refs/heads/main.zip
           make pyppeteer
           mv _build/pyppeteer/*.pdf _build/dirhtml/${PDF_FILENAME}
 
