@@ -1800,7 +1800,7 @@ class VlsvReader(object):
        '''
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
-       bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+       bbox = self.get_fsgrid_mesh_size()
        bbox = np.int32(bbox)
 
        # Read the raw array data
@@ -2205,31 +2205,49 @@ class VlsvReader(object):
       covered by the SpatialGrid cellid.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            array=np.expand_dims(array, dim)
       if array.ndim == 4:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
       else:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+      array.squeeze()
+      return ret
 
    def get_bbox_fsgrid_subarray(self, low, up, array):
       '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
-      if array.ndim == 4:
-         return array[lowi[0]:upi[0]+int(1), lowi[1]:upi[1]+int(1), lowi[2]:upi[2]+int(1), :]
-      else:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            array=np.expand_dims(array, dim)
 
+      if array.ndim == 4:
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+      else:
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+
+      array.squeeze()
+      return ret
 
    def downsample_fsgrid_subarray(self, cellid, array):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
       '''
       fsarr = self.get_cell_fsgrid_subarray(cellid, array)
+      
       n = fsarr.size
       if fsarr.ndim == 4:
          n = n/3
       ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
       if(n != ncells):
-         warnings.warn("Weird fs subarray size " +str(n)+ ' for amrlevel ' +str(self.get_amr_level(cellid))+' expect ' +str(ncells))
+         raise ValueError("Weird fs subarray size " +str(n)+ ' for amrlevel ' +str(self.get_amr_level(cellid))+' expect ' +str(ncells))
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
@@ -2273,10 +2291,20 @@ class VlsvReader(object):
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
       value = self.read_variable(var, cellids=[cellid])
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            value=np.expand_dims(value, dim)
+            array=np.expand_dims(array, dim)
+         
       if array.ndim == 4:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
       else:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
+      value.squeeze()
+      array.squeeze()
       return
 
    def read_variable_as_fg(self, var, operator='pass'):
