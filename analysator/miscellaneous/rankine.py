@@ -28,7 +28,7 @@ import sys
 from scipy import optimize
 from ..calculations.cutthrough import cut_through
 from ..calculations.variable import VariableInfo
-from ..plots import plot_variables
+from ..plot import plot_variables
 
 
 
