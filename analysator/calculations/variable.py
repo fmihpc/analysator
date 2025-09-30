@@ -23,7 +23,7 @@
 
 # This file has a class "Variable" that holds all the important data for variables e.g. variable's name, the units and the data on the variable
 import numpy as np
-from plot import cbfmtsci
+from ..plots import cbfmtsci
 from numbers import Number
 import logging
 

@@ -23,7 +23,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from rotation import rotateVectorToVector
+from .rotation import rotateVectorToVector
 import logging
 
 def gyrophase_angles_from_file( vlsvReader, cellid):

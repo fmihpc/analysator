@@ -31,8 +31,8 @@ which is not part of the default Vlasiator outputs and requires extra steps to a
 high precision.
 '''
 
-from null_lines import LMN_null_lines_FOTE
-from reducer import DataReducerVariable
+from ..calculations.null_lines import LMN_null_lines_FOTE
+from .reducer import DataReducerVariable
 import numpy as np
 
 def GGT( variables ):
@@ -455,7 +455,7 @@ def N_flip_distance( variables ):
    return N_zero_intercept
 
 
-from reduction import v5reducers
+from .reduction import v5reducers
 
 v5reducers["vg_gtg"] =                    DataReducerVariable(["vg_jacobian_b"], GTG, "T^2/m^2", 9, latex=r"$\mathcal{G}^\intercal\mathcal{G}$",latexunits=r"$\mathrm{T}^2\,\mathrm{m}^{-2}$")
 v5reducers["vg_ggt"] =                    DataReducerVariable(["vg_jacobian_b"], GGT, "T^2/m^2", 9, latex=r"$\mathcal{G}\mathcal{G}^\intercal$",latexunits=r"$\mathrm{T^2}\,\mathrm{m}^{-2}$")

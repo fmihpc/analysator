@@ -2,15 +2,15 @@
 import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging
+
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 
 # Input current folder's path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # Input folder paths
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "miscellaneous")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCalculations")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyPlots")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVlsv")
+
 if os.getenv('PTMAYAVI2') != None:
    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyMayaVi")
 
@@ -56,12 +56,12 @@ else:
 
 # Import modules
 try:
-   import calculations
+   from . import calculations
 except ImportError as e:
    logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
-   import vlsvfile
+   from . import vlsvfile
 except ImportError as e:
    logging.info("Note: Did not import vlsvfile module: " + str(e))
 
@@ -90,12 +90,12 @@ else:
          logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
-   import plot
+   from . import plots
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 
 try:
-   import miscellaneous
+   from . import miscellaneous
 except ImportError as e:
    logging.info("Note: Did not import miscellaneous: " + str(e))
 

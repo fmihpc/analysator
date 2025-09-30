@@ -1,7 +1,7 @@
 # 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
-# Copyright 2017-2018 University of Helsinki
+# Copyright 2017-2024 University of Helsinki
 # 
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
@@ -21,20 +21,29 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # 
 
-'''This file module includes all the relevant functions/classes from the misc folder
-   Miscellaneous functions include functions which dont fit any other category
+''' The vlsvfile module has all the classes related to reading and writing vlsv files
 
-   # List of functions:
 
    .. code-block:: python
 
+      # Example:
       import analysator as pt
-      pt.miscellaneous.
-      #press tab -> get the functions
+      pt.vlsvfile.
+      #press [tab] -> get the functions
 
 '''
 
-from rankine import oblique_shock, plot_rankine
-from filenames import get_sorted_file_names
-from vtkwriter import write_vtk_file
-import slams
+import logging
+from .vlsvreader import VlsvReader
+from .vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
+from .vlsvwriter import VlsvWriter
+from .vlasiatorreader import VlasiatorReader
+try:
+   from .vlsvvtkinterface import VlsvVtkReader
+except Exception as e:
+   logging.warning("VlsvVtkReader not imported due to "+str(e))
+
+
+from .vlsvparticles import VlsvParticles
+from . import reduction
+from . import reduction_sidecar

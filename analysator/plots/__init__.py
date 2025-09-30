@@ -32,27 +32,27 @@
 
 '''
 
-from plot_variables import plot_variables, plot_multiple_variables
+from .plot_variables import plot_variables, plot_multiple_variables
 
 
 import logging
 import matplotlib.pyplot as plt
 import matplotlib
-import colormaps as cmaps
+from . import colormaps as cmaps
 
-import plot_helpers
-from plot_colormap import plot_colormap
-from plot_vdf import plot_vdf
-from plot_vdfdiff import plot_vdfdiff
-from plot_vdf_profiles import plot_vdf_profiles
-from plot_colormap3dslice import plot_colormap3dslice
-from plot_threeslice import plot_threeslice
-from plot_ionosphere import plot_ionosphere
+from . import plot_helpers
+from .plot_colormap import plot_colormap
+from .plot_vdf import plot_vdf
+from .plot_vdfdiff import plot_vdfdiff
+from .plot_vdf_profiles import plot_vdf_profiles
+from .plot_colormap3dslice import plot_colormap3dslice
+from .plot_threeslice import plot_threeslice
+from .plot_ionosphere import plot_ionosphere
 import platform
 from packaging.version import Version
 
 try:
-    from plot_isosurface import plot_isosurface, plot_neutral_sheet
+    from .plot_isosurface import plot_isosurface, plot_neutral_sheet
     if Version(platform.python_version()) < Version("3.7"):
        raise ImportError("Python>=3.7 required for RBFInterpolator.")
 except:

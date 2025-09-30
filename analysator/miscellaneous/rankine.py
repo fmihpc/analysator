@@ -26,9 +26,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from scipy import optimize
-from cutthrough import cut_through
-from variable import VariableInfo
-from plot import plot_variables
+from ..calculations.cutthrough import cut_through
+from ..calculations.variable import VariableInfo
+from ..plots import plot_variables
 
 
 

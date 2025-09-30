@@ -1,6 +1,6 @@
 #
 # This file is part of Analysator.
-# Copyright 2013-2016 Finnish Meteorological Institute
+# pyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2021 University of Helsinki
 #
 # For details of usage, see the COPYING file and read the "Rules of the Road"

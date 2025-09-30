@@ -36,11 +36,11 @@ from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm,Normalize
 from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import LogLocator,LinearLocator
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+from . import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
-from rotation import rotateVectorToVector,rotateVectorToVector_X
+from ..calculations.rotation import rotateVectorToVector,rotateVectorToVector_X
 
 from packaging.version import Version
 
