@@ -32,6 +32,17 @@
       #press [tab] -> get the functions
 
 '''
+#for usage with "from (package) import *"
+__all__ = ["reducer",
+"reduction",
+"reduction_sidecar",
+"vlasiatorreader",
+"vlsvparticles",
+"vlsvreader",
+"vlsvvariables",
+"vlsvvtkinterface",
+"vlsvwriter"
+]
 
 import logging
 from .vlsvreader import VlsvReader

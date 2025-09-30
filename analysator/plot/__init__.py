@@ -32,6 +32,12 @@
 
 '''
 
+
+#for usage with "from (package) import *"
+__all__ = ['plot_colormap', 'plot_vdf', 'plot_vdfdiff', 'plot_vdf_profiles', 'plot_colormap3dslice',
+           'plot_threeslice', 'plot_ionosphere', 'plot_isosurface', 'plot_neutral_sheet',
+           'plot_variables','colormaps', 'plot_helpers']
+
 from .plot_variables import plot_variables, plot_multiple_variables
 
 

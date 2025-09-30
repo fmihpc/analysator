@@ -35,11 +35,14 @@ pt.calculations.fourier?
 #Press Enter
 
 '''
+#for usage with "from (package) import *"
 __all__=["ids3d","intpol_file","intpol_points","cutthrough","fourier","spectra","variable","timeevolution","pitchangle","gyrophaseangle","themis_observation","cut3d","lineout","fit","fieldtracer","non_maxwellianity","null_lines","interpolator_amr"]
+
+
 # List of functions and classes that should be imported into the interface
 import logging
-#Which import is better?
-from analysator.calculations.intpol_file import vlsv_intpol_file
+
+from .intpol_file import vlsv_intpol_file  
 from .intpol_points import vlsv_intpol_points
 from .cutthrough import cut_through, cut_through_step, cut_through_curve, cut_through_swath
 from .fourier import fourier

@@ -34,6 +34,12 @@
 
 '''
 
+#for usage with "from (package) import *"
+__all__=["filenames",
+"rankine",
+"slams",
+"vtkwriter"]
+
 from .rankine import oblique_shock, plot_rankine
 from .filenames import get_sorted_file_names
 from .vtkwriter import write_vtk_file
