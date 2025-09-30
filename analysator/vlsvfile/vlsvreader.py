@@ -2026,7 +2026,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable`
       '''
-      from variable import VariableInfo
+      from analysator.calculations.variable import VariableInfo
 
       # Force lowercase
       name = name.lower()
