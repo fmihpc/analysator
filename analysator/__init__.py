@@ -90,7 +90,7 @@ else:
          logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
-   from . import plots
+   from . import plot
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 

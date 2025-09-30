@@ -5,7 +5,7 @@ from analysator.calculations import ids3d
 import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
-import plot_colormap3dslice
+from analysator.plot import plot_colormap3dslice
 import yt
 import math
 from mpl_toolkits import mplot3d
