@@ -35,29 +35,30 @@ pt.calculations.fourier?
 #Press Enter
 
 '''
-
+__all__=["ids3d","intpol_file","intpol_points","cutthrough","fourier","spectra","variable","timeevolution","pitchangle","gyrophaseangle","themis_observation","cut3d","lineout","fit","fieldtracer","non_maxwellianity","null_lines","interpolator_amr"]
 # List of functions and classes that should be imported into the interface
 import logging
-from intpol_file import vlsv_intpol_file
-from intpol_points import vlsv_intpol_points
-from cutthrough import cut_through, cut_through_step, cut_through_curve, cut_through_swath
-from fourier import fourier
-from spectra import get_spectrum_energy, get_spectrum_alongaxis_vel
-from variable import VariableInfo
-from timeevolution import cell_time_evolution,point_time_evolution,VlsvTInterpolator
-from pitchangle import pitch_angles
-#from backstream import extract_velocity_cells_sphere, extract_velocity_cells_non_sphere
-from gyrophaseangle import gyrophase_angles_from_file
-from themis_observation import themis_observation_from_file
-from themis_observation import themis_plot_detector
-from themis_observation import themis_plot_phasespace_contour
-from themis_observation import themis_plot_phasespace_helistyle
-#from themis_observation import simulation_to_spacecraft_frame
-from cut3d import cut3d
-from lineout import lineout
-import fit
-from fieldtracer import static_field_tracer, static_field_tracer_3d
-from fieldtracer import dynamic_field_tracer
-from non_maxwellianity import epsilon_M
-from null_lines import LMN_null_lines_FOTE
-from interpolator_amr import AMRInterpolator, supported_amr_interpolators
+#Which import is better?
+from analysator.calculations.intpol_file import vlsv_intpol_file
+from .intpol_points import vlsv_intpol_points
+from .cutthrough import cut_through, cut_through_step, cut_through_curve, cut_through_swath
+from .fourier import fourier
+from .spectra import get_spectrum_energy, get_spectrum_alongaxis_vel
+from .variable import VariableInfo
+from .timeevolution import cell_time_evolution,point_time_evolution,VlsvTInterpolator
+from .pitchangle import pitch_angles
+#from .backstream import extract_velocity_cells_sphere, extract_velocity_cells_non_sphere
+from .gyrophaseangle import gyrophase_angles_from_file
+from .themis_observation import themis_observation_from_file
+from .themis_observation import themis_plot_detector
+from .themis_observation import themis_plot_phasespace_contour
+from .themis_observation import themis_plot_phasespace_helistyle
+#from .themis_observation import simulation_to_spacecraft_frame
+from .cut3d import cut3d
+from .lineout import lineout
+from . import fit
+from .fieldtracer import static_field_tracer, static_field_tracer_3d
+from .fieldtracer import dynamic_field_tracer
+from .non_maxwellianity import epsilon_M
+from .null_lines import LMN_null_lines_FOTE
+from .interpolator_amr import AMRInterpolator, supported_amr_interpolators
