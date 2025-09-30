@@ -1,5 +1,0 @@
-tsyganenko
-----------
-
-.. automodule:: tsyganenko
-	:members:

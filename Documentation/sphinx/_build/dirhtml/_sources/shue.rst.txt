@@ -1,5 +1,0 @@
-shue
-----
-
-.. automodule:: shue
-	:members:
