@@ -1,0 +1,393 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction to Analysator &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Analysator exercises" href="../analysator_exercises/" />
+    <link rel="prev" title="analysator documentation" href="../" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to Analysator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-we-teach-this-lesson">Why we teach this lesson</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#intended-learning-outcomes">Intended learning outcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timing">Timing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-exercises">Preparing exercises</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analysator-on-lumi-with-jupyterhub">Analysator on LUMI with jupyterhub</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analysator-required-packages-on-other-systems">Analysator required packages on other systems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#other-practical-aspects">Other practical aspects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#analysator-function-options">Analysator function options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interactive-help">Interactive help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interactive-plots">Interactive plots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reading-data">Reading data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vlsvreader">VlsvReader</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#listing-available-variables">Listing available variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-in-vlasov-grid-mpigrid-variables">Reading in vlasov grid (MPIgrid) variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-in-vlasov-grid-mpigrid-amr-variables">Reading in vlasov grid (MPIgrid) AMR variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-in-field-solver-grid-fsgrid-variables">Reading in field solver grid (FSgrid) variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-variables-with-metadata">Reading variables with metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reading-spatial-cut-throughs">Reading spatial cut-throughs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-data-with-vlsvwriter">Writing Data with VlsvWriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interesting-questions-you-might-get">Interesting questions you might get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#typical-pitfalls">Typical pitfalls</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Introduction to Analysator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysator.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction-to-analysator">
+<h1>Introduction to Analysator<a class="headerlink" href="#introduction-to-analysator" title="Link to this heading"></a></h1>
+<section id="why-we-teach-this-lesson">
+<h2>Why we teach this lesson<a class="headerlink" href="#why-we-teach-this-lesson" title="Link to this heading"></a></h2>
+<p>Here we introduce the use of Analysator python tools for plotting and accessing .vlsv data.</p>
+<p>The Analysator tool package contains .vlsv file accessing routines, helper routines,
+data post-processing libraries, and a handful of useful plotting scripts. The Analysator
+files and routines are designed to act as a starting point for more involved python post-processing
+of Vlasiator data, not as an end point, and as such, can and should be extended by the end-user.</p>
+</section>
+<section id="intended-learning-outcomes">
+<h2>Intended learning outcomes<a class="headerlink" href="#intended-learning-outcomes" title="Link to this heading"></a></h2>
+<p>You shall learn how to open a .vlsv file in Analysator, how to view file contents, and how to perform
+plotting of Vlasiator spatial data in 2D and 3D. You will practice accessing Vlasov grid, FSgrid, and
+ionospheric grid data. You will learn about some of the most useful Analysator plotting options.</p>
+</section>
+<section id="timing">
+<h2>Timing<a class="headerlink" href="#timing" title="Link to this heading"></a></h2>
+</section>
+<section id="preparing-exercises">
+<h2>Preparing exercises<a class="headerlink" href="#preparing-exercises" title="Link to this heading"></a></h2>
+<p>Clone the Analysator git repository onto the computer where you intend to use it.
+Vlasiator .vlsv output files can be quite large, but at the same time you should have access to a
+graphical interface on the machine.</p>
+<p>For cloning, you can use the SSH or the HTTP method.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span><span class="nv">$HOME</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/fmihpc/analysator.git
+git<span class="w"> </span>clone<span class="w"> </span>git@github.com:fmihpc/analysator.git
+</pre></div>
+</div>
+<p>Next, you should set your <code class="docutils literal notranslate"><span class="pre">PYTHONPATH</span></code> variable to include your Analysator install directory. One way is to add this line to your startup script:
+<code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTHONPATH=$PYTHONPATH:$HOME/analysator</span></code></p>
+</section>
+<section id="analysator-on-lumi-with-jupyterhub">
+<h2>Analysator on LUMI with jupyterhub<a class="headerlink" href="#analysator-on-lumi-with-jupyterhub" title="Link to this heading"></a></h2>
+<p>For this introductory course, we will be using analysator in an interactive manner through the web interface at
+<a class="reference external" href="https://www.lumi.csc.fi">https://www.lumi.csc.fi</a></p>
+<p>Log in and select a Jupyter session (<em>not</em> Jupyter for courses). Verify that you have the correct project selected (<code class="docutils literal notranslate"><span class="pre">project_465000693</span></code>) and the interactive partition. You may want to select more than just 1 CPU in order to have enough memory to open large files. In settings, select “advanced” and type the following into the window “Script to start”:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>module<span class="w"> </span>use<span class="w"> </span>/appl/local/csc/modulefiles/
+module<span class="w"> </span>load<span class="w"> </span>pytorch/2.1
+<span class="nb">export</span><span class="w"> </span><span class="nv">PTNOLATEX</span><span class="o">=</span><span class="m">1</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span><span class="nv">$PYTHONPATH</span>:<span class="nv">$HOME</span>/analysator:
+</pre></div>
+</div>
+<p>N.B. Remember to include the semicolon at the end of the last line! Next, launch the Jupyter session. Once your job has queued and launched, you can launch the Jupyter session and verify operation by importing Analysator. Type the command in the window and execute with shift+Enter.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pytools</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="n">Using</span> <span class="n">LaTeX</span> <span class="n">formatting</span>
+<span class="n">Using</span> <span class="n">backend</span> <span class="n">module</span><span class="p">:</span><span class="o">//</span><span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span>
+<span class="n">Using</span> <span class="n">matplotlib</span> <span class="n">version</span> <span class="mf">3.8.1</span>
+
+<span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+</pre></div>
+</div>
+</section>
+<section id="analysator-required-packages-on-other-systems">
+<h2>Analysator required packages on other systems<a class="headerlink" href="#analysator-required-packages-on-other-systems" title="Link to this heading"></a></h2>
+<p>Analysator should work mostly equally well on both Python 2.7 and Python 3.x. However, versions prior to
+Python 3.8 no longer receive security support and are thus not recommended. Use of iPython, jupyter, or
+a similar interface is recommended for ease of use.</p>
+<p>Analysator only requires a small selection of python libraries, namely matplotlib, scipy&gt;1.7 and numpy. On modern
+systems, these should be pre-installed. Some legacy sections of Analysator also use MayaVi2 but those
+are no longer updated or supported.</p>
+<p>To verify the availability of required libraries, it is suggested to try importing Analysator in python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pytools</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="n">Using</span> <span class="n">LaTeX</span> <span class="n">formatting</span>
+<span class="n">Using</span> <span class="n">backend</span> <span class="n">module</span><span class="p">:</span><span class="o">//</span><span class="n">matplotlib_inline</span><span class="o">.</span><span class="n">backend_inline</span>
+<span class="n">Using</span> <span class="n">matplotlib</span> <span class="n">version</span> <span class="mf">3.8.1</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+</pre></div>
+</div>
+</section>
+<section id="other-practical-aspects">
+<h2>Other practical aspects<a class="headerlink" href="#other-practical-aspects" title="Link to this heading"></a></h2>
+<p>A TeX Live installation (or similar) is recommended for formatting of plotting text. If one is not available
+on the target system, output can be forced to use TeX-like markup supported directly by matplotlib.
+This is achieved by setting the system variable <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PTNOLATEX=1</span></code>. This will negatively impact output
+of e.g. bolded text, but is required on e.g. the LUMI web interface.</p>
+<p>On systems without an x-windowing system such as compute nodes on a cluster (or if using it is
+prohibitively slow due to e.g. network weather), Analysator can be set to ignore X-windowing and
+use a non-interactive frontend by setting the system variable <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PTNONINTERACTIVE=1</span></code>. In this
+case, outputs are generated into .png files and should be transferred to another system for viewing. This is the suggested approach when using a batch job to generate several images/frames in order to e.g. build a movie.</p>
+<p>If necessary, the matplotlib frontend can be declared manually with a system variable,
+for example, <code class="docutils literal notranslate"><span class="pre">`export</span> <span class="pre">PTBACKEND=Qt5Agg`</span></code></p>
+<p>The default directory for image file output for some Analysator plotting tools is <code class="docutils literal notranslate"><span class="pre">$HOME/Plots</span></code>.
+This setting can be altered with the system variable <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PTOUTPUTDIR=/target/directory/</span></code>.</p>
+</section>
+<section id="analysator-function-options">
+<h2>Analysator function options<a class="headerlink" href="#analysator-function-options" title="Link to this heading"></a></h2>
+<p>The formalism of providing Analysator plotting functions with arguments is similar to matlab or IDL, utilizing keywords. Many keywords have a default value of e.g. None, which the code checks against.</p>
+</section>
+<section id="interactive-help">
+<h2>Interactive help<a class="headerlink" href="#interactive-help" title="Link to this heading"></a></h2>
+<p>Most Analysator functions and classes contain up-to-date help, which is accessable in the python interpreter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>pt.plot.plot_colormap?
+</pre></div>
+</div>
+</section>
+<section id="interactive-plots">
+<h2>Interactive plots<a class="headerlink" href="#interactive-plots" title="Link to this heading"></a></h2>
+<p>On some systems you can activate interactive backends in Jupyter notebooks by issuing the command <code class="docutils literal notranslate"><span class="pre">%matplotlib</span> <span class="pre">ipympl</span></code> or <code class="docutils literal notranslate"><span class="pre">%matplotlib</span> <span class="pre">notebook</span></code> before importing pytools. This is not supported on the LUMI web interface.</p>
+</section>
+<section id="reading-data">
+<h2>Reading data<a class="headerlink" href="#reading-data" title="Link to this heading"></a></h2>
+<p>Access to Vlasiator output .vlsv files is handled through the Vlsvreader class. There are a number of
+useful plotting routines which do not require editing the data directly, but for any in-depth scripting,
+direct access routines are likely necessary.</p>
+<section id="vlsvreader">
+<h3>VlsvReader<a class="headerlink" href="#vlsvreader" title="Link to this heading"></a></h3>
+<p>Open a file for access by creating a VlsvReader object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s2">&quot;/path/to/simulation/bulk.0001234.vlsv&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="listing-available-variables">
+<h3>Listing available variables<a class="headerlink" href="#listing-available-variables" title="Link to this heading"></a></h3>
+<p>Within python, you can list available variables as a concise list, or as a list of all available data reducers and operators:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">datareducer</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">operator</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-in-vlasov-grid-mpigrid-variables">
+<h3>Reading in vlasov grid (MPIgrid) variables<a class="headerlink" href="#reading-in-vlasov-grid-mpigrid-variables" title="Link to this heading"></a></h3>
+<p>In older Vlasiator versions (before 5.0, simulation identifier second letter A through F) most
+variables are saved on the MPIgrid and there is no identifying naming convention. Since version
+5.0, with simulation version identifier letters starting from G, vlasov grid variables are
+prepended with <code class="docutils literal notranslate"><span class="pre">vg_</span></code>. Note that for per-population variables, this is placed after the population name.</p>
+<p>Variables are read and returned as numpy arrays. MPIgrid (Vlasov grid) cell scalar variables are returned
+as a simple 1-dimensional array. Vectors, tensors and so on have additional dimensions tacked on. Note that
+the ordering of CellIDs (and thus, the corresponding order of proton number densities and all other MPIgrid
+variables) will vary between files. The list of MPIgrid CellIDs and the corresponding proton number
+densities can be found with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cellids</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;cellid&#39;</span><span class="p">)</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;proton/vg_rho&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In order to use the read data, it needs to be sorted and rearranged to correspond with the
+spatial grid structure. If the grid is 2-D and AMR was not used, this is relatively straightforward.
+Select the coordinate sizes to match the simulation domain.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+<span class="n">rho_shaped</span> <span class="o">=</span> <span class="n">rho</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">ysize</span><span class="p">,</span><span class="n">xsize</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>For vector data, use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bvol</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_b_vol&#39;</span><span class="p">)</span>
+<span class="n">bvol_shaped</span> <span class="o">=</span> <span class="n">bvol</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">ysize</span><span class="p">,</span><span class="n">xsize</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-in-vlasov-grid-mpigrid-amr-variables">
+<h3>Reading in vlasov grid (MPIgrid) AMR variables<a class="headerlink" href="#reading-in-vlasov-grid-mpigrid-amr-variables" title="Link to this heading"></a></h3>
+<p>Since the AMR mesh is not refined in blocks but rather as an octree-mesh, the cells
+from which the refined mesh consists of does not directly translate to a 2D array.
+Re-sampling the input data is a somewhat involved process, and the interested reader can
+peruse the contents of e.g. the <code class="docutils literal notranslate"><span class="pre">pyPlots/plot_colormap3dslice.py</span></code> file for a working example.</p>
+</section>
+<section id="reading-in-field-solver-grid-fsgrid-variables">
+<h3>Reading in field solver grid (FSgrid) variables<a class="headerlink" href="#reading-in-field-solver-grid-fsgrid-variables" title="Link to this heading"></a></h3>
+<p>Since Vlasiator version 5.0, field solver grid (FSgrid) variables can be output and are
+prepended with <code class="docutils literal notranslate"><span class="pre">fg_</span></code>. FSgrid variables are returned as a numpy array, pre-sorted by the
+reading routine, with dimensions matching the spatial dimensions and, if applicable, vector size.
+For example, reading volumetric B-fields might yield an array of shape <code class="docutils literal notranslate"><span class="pre">(1024,</span> <span class="pre">736,</span> <span class="pre">736,</span> <span class="pre">3)</span></code>.
+There is a separate routine for reading FSgrid variables, but the standard <code class="docutils literal notranslate"><span class="pre">read_variable()</span></code>
+routine will redirect to the FSgrid routine if an FSgrid variable is requested.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fg_b</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_fsgrid_variable</span><span class="p">(</span><span class="s1">&#39;fg_b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Please note that FSgrid variables do not support reading via CellID. Transforming CellIDs to coordinates
+and to FSgrid file indices is possible via functions provided by <code class="docutils literal notranslate"><span class="pre">pt.vlsvfile.VlsvReader</span></code> but are outside
+the scope of this introductory tutorial.</p>
+</section>
+<section id="reading-variables-with-metadata">
+<h3>Reading variables with metadata<a class="headerlink" href="#reading-variables-with-metadata" title="Link to this heading"></a></h3>
+<p>Since Vlasiator 5.0, metadata is included for stored variables. The function <code class="docutils literal notranslate"><span class="pre">read_variable_info</span></code> returns
+an object with the following fields: <code class="docutils literal notranslate"><span class="pre">data</span></code> (as per the <code class="docutils literal notranslate"><span class="pre">read_variable</span></code> or <code class="docutils literal notranslate"><span class="pre">read_fsgrid_variable</span></code>
+call), <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">units</span></code>, <code class="docutils literal notranslate"><span class="pre">latex</span></code> (LaTeX-formatted name), <code class="docutils literal notranslate"><span class="pre">latexunits</span></code> (LaTeX-formatted unit)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vg_b_vol_with_info</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable_info</span><span class="p">(</span><span class="s1">&#39;vg_b_vol&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reading-spatial-cut-throughs">
+<h3>Reading spatial cut-throughs<a class="headerlink" href="#reading-spatial-cut-throughs" title="Link to this heading"></a></h3>
+<p>Reading a spatial profile through the simulation can be achieved with the <code class="docutils literal notranslate"><span class="pre">cut_through()</span></code> method.
+This supports only Vlasov grid data, not FSgrid data. AMR support is not yet included. Select the
+starting and final positions and read the line profile with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cut</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">calculations</span><span class="o">.</span><span class="n">cut_through</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">pos1</span><span class="p">,</span><span class="n">pos2</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>here <code class="docutils literal notranslate"><span class="pre">f</span></code> is the .vlsv file used for reading, <code class="docutils literal notranslate"><span class="pre">pos1</span></code> and <code class="docutils literal notranslate"><span class="pre">pos2</span></code> are XYZ coordinates (in metres) and the
+returned structure contains the relevant cellIDs (<code class="docutils literal notranslate"><span class="pre">cut[0]</span></code>) and position along the cut (<code class="docutils literal notranslate"><span class="pre">cut[1]</span></code>, in metres).
+You can read the actual cut data with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">variable</span><span class="o">=</span><span class="n">get_data</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_variablename&quot;</span><span class="p">,</span><span class="n">cut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Plot the data with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">/</span><span class="n">Re</span><span class="p">,</span> <span class="n">variable</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Instead of reading all cells along a cut, there exists an alternative function which proceeds primarily along
+the cut in the dominant cartesian direction and returns one cellID per row/column.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cut</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">calculations</span><span class="o">.</span><span class="n">cut_through_step</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">pos1</span><span class="p">,</span> <span class="n">pos2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="writing-data-with-vlsvwriter">
+<h2>Writing Data with VlsvWriter<a class="headerlink" href="#writing-data-with-vlsvwriter" title="Link to this heading"></a></h2>
+<p>From time to time, one may wish to perform more involved operations on the grid, and re-use them later. <code class="docutils literal notranslate"><span class="pre">VlsvWriter</span></code> can be used to save derived data on SpatialGrid. It operates by copying the grid metadata and data layout from an existing file at initialization, and can thereafter be used to store the results of more involved processing.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+<span class="c1"># Initialize, copy only the SpatialGrid mesh</span>
+<span class="n">writer</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvWriter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">copy_meshes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">])</span>
+<span class="c1"># Copy some list of variables as a baseline. varlist accepts datareducer variables as well.</span>
+<span class="n">writer</span><span class="o">.</span><span class="n">copy_variables</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">varlist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CellID&quot;</span><span class="p">,</span><span class="s2">&quot;proton/vg_rho&quot;</span><span class="p">,</span><span class="s2">&quot;proton/vg_v&quot;</span><span class="p">,</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">,</span><span class="s2">&quot;vg_e_vol&quot;</span><span class="p">,</span><span class="s2">&quot;vg_beta&quot;</span><span class="p">,</span><span class="s2">&quot;vg_beta_star&quot;</span><span class="p">])</span>
+
+<span class="c1"># Do some heavy lifting that you don&#39;t want to repeat each time:</span>
+<span class="n">orthogonality</span> <span class="o">=</span> <span class="n">lengthy_calculation_for_orthogonality</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="c1"># Take care that this variable is compatible with the SpatialGrid variables,</span>
+<span class="c1"># and that is has the same memory layout as CellIDs!</span>
+
+<span class="c1"># Wrap the result with metadata</span>
+<span class="n">varinfo</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">calculations</span><span class="o">.</span><span class="n">VariableInfo</span><span class="p">(</span><span class="n">orthogonality</span><span class="p">,</span>
+                                       <span class="n">name</span><span class="o">=</span><span class="s2">&quot;vg_LMN_orthogonality&quot;</span><span class="p">,</span>
+                                       <span class="n">units</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                                       <span class="n">latex</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$|\hat</span><span class="si">{L}</span><span class="s2">_\mathrm</span><span class="si">{MGA}</span><span class="s2">\times\hat</span><span class="si">{L}</span><span class="s2">_\mathrm</span><span class="si">{MDD}</span><span class="s2">|$&quot;</span><span class="p">,</span><span class="n">latexunits</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+<span class="c1"># Write the result to SpatialGrid with the output_file writer</span>
+<span class="n">writer</span><span class="o">.</span><span class="n">write_variable_info</span><span class="p">(</span><span class="n">varinfo</span><span class="p">,</span> <span class="s1">&#39;SpatialGrid&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,)</span>
+</pre></div>
+</div>
+</section>
+<section id="interesting-questions-you-might-get">
+<h2>Interesting questions you might get<a class="headerlink" href="#interesting-questions-you-might-get" title="Link to this heading"></a></h2>
+<p>Q: Why are the output formats so convoluted?</p>
+<p>A: They are optimized for run-time performance, so that each MPI task can simply pour its data into
+one contiguous region on-disk via MPI writes.</p>
+<p>A2: Evolution over time leads to interesting design choices.</p>
+</section>
+<section id="typical-pitfalls">
+<h2>Typical pitfalls<a class="headerlink" href="#typical-pitfalls" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Read Vlasov grid data and forget the order the cells based on CELLIDS</p></li>
+<li><p>Read FSGrid data and accidentally order that also according to CELLIDS</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../" class="btn btn-neutral float-left" title="analysator documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../analysator_exercises/" class="btn btn-neutral float-right" title="Analysator exercises" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysator exercises &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Analysator supported data reducers and vlasiator variables" href="../analysator_supported/" />
+    <link rel="prev" title="Introduction to Analysator" href="../analysator/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysator exercises</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-we-teach-this-lesson">Why we teach this lesson</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vlsvreader">VlsvReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#listing-available-variables">Listing available variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-2d-5d-simulation-data">Plotting 2D/5D simulation data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#altering-basic-plot-properties">Altering basic plot properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#altering-the-colour-scale">Altering the colour scale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#overlaying-data-on-top-of-the-plot">Overlaying data on top of the plot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fine-tuning-of-plot-properties">Fine-tuning of plot properties</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-3d-6d-simulation-data">Plotting 3D/6D simulation data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-ionospheric-simulation-data">Plotting ionospheric simulation data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-velocity-distribution-functions">Plotting velocity distribution functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-plotting-methods">Advanced plotting methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-methods-axes-post-processing-overlaying">Advanced methods: axes, post-processing, overlaying</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#expression-functions">Expression functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#external-functions">External functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#advanced-methods-2-energy-spectrograms-virtual-spacecraft">Advanced methods 2: energy spectrograms, virtual spacecraft</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#interesting-questions-you-might-get">Interesting questions you might get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#typical-pitfalls">Typical pitfalls</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Analysator exercises</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/analysator_exercises.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="analysator-exercises">
+<h1>Analysator exercises<a class="headerlink" href="#analysator-exercises" title="Link to this heading"></a></h1>
+<section id="why-we-teach-this-lesson">
+<h2>Why we teach this lesson<a class="headerlink" href="#why-we-teach-this-lesson" title="Link to this heading"></a></h2>
+<p>This page has a number of suggested exercises to help the
+participants to learn of some of the possibilities of the Analysator
+visualization toolkit. One should first familiarize oneself with the
+Analysator introduction page and keep those lessons in mind. Remember
+that most plotting routines accept <strong>keywords</strong> with certain pre-determined default values.</p>
+</section>
+<section id="outputs">
+<h2>Outputs<a class="headerlink" href="#outputs" title="Link to this heading"></a></h2>
+<p>Running Analysator within a Jupyter interface will by default show the results on-screen, but will also store the image as a .png file in the default Analysator output directory. You can deactivate .png output by providing a plotting routine with the <code class="docutils literal notranslate"><span class="pre">draw=True</span></code> keyword.</p>
+</section>
+<section id="vlsvreader">
+<h2>VlsvReader<a class="headerlink" href="#vlsvreader" title="Link to this heading"></a></h2>
+<p>It may be helpful to open a file for access by creating a VlsvReader object. Here are three sample files: one from a 5D run, one from a 6D run, and one from a coarse 6D test with an ionospheric inner boundary active.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f2d</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s2">&quot;/scratch/project_465000693/example_data/AGD/bulk.0000904.vlsv&quot;</span><span class="p">)</span>
+<span class="n">f3d</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s2">&quot;/scratch/project_465000693/example_data/EGE/bulk.0001500.vlsv&quot;</span><span class="p">)</span>
+<span class="n">fiono</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s2">&quot;/scratch/project_465000693/example_data/IGtest/bulk.0000229.vlsv&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="listing-available-variables">
+<h2>Listing available variables<a class="headerlink" href="#listing-available-variables" title="Link to this heading"></a></h2>
+<p>Within python, you can list available variables for a given file as a list, or as an extended
+list of all available data reducers and operators. The return value of this function will be grouped as PARAMETERs (one per file), VARIABLEs (one per simulation cell)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+<span class="n">f</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">operator</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">datareducer</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It is important to note that the list of datareducers is <em>not</em> limited to those
+supported by the available data, but rather lists all supported by the plotting library.</p>
+</section>
+<section id="plotting-2d-5d-simulation-data">
+<h2>Plotting 2D/5D simulation data<a class="headerlink" href="#plotting-2d-5d-simulation-data" title="Link to this heading"></a></h2>
+<p>The easiest manner to plot 2D data from a 5D simulation run is to use the pre-existing
+plotting routines. These will sort, scale, and crop the data as requested and provide
+suitable axes and color bars. You can access a given file via several approaches:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/AGD/bulk.0000904.vlsv&quot;</span><span class="p">)</span>
+<span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap</span><span class="p">(</span><span class="n">vlsvobj</span><span class="o">=</span><span class="n">f2d</span><span class="p">)</span>
+<span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap</span><span class="p">(</span><span class="n">filedir</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/AGD/&quot;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">904</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first thing to trial is plotting different variables from the data. First, use <code class="docutils literal notranslate"><span class="pre">f2d.list()</span></code> to review which outputs were active during the simulation. PARAMETERs cannot be plotted as they are singular values, VARIABLEs can. For any given VLSV file you should see at least overall vg-variables and per-population vg-variables (e.g. proton values). Often, you can find also fieldsolver grid fg-variables and, only in ionospheric 6D runs, ionospheric grid ig-variables.</p>
+<section id="altering-basic-plot-properties">
+<h3>Altering basic plot properties<a class="headerlink" href="#altering-basic-plot-properties" title="Link to this heading"></a></h3>
+<p>Selecting a new output variable (replacing the default proton number density) is performed as, for example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap</span><span class="p">(</span><span class="n">vlsvobj</span><span class="o">=</span><span class="n">f2d</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="s1">&#39;vg_blocks&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Select a handful of output variables from <code class="docutils literal notranslate"><span class="pre">f2d.list()</span></code> and try plotting them. Once you’re familiar with how vg-variables work, you can also try proton-specific values and then fg-variables.</p>
+<p>For scalar variables such as number densities, the default setting is to use a logarithmic colour scale. When selecting a vector variable such as <code class="docutils literal notranslate"><span class="pre">proton/vg_v</span></code>, the default option is to reduce the value to the scalar magnitude of the vector. To view a singular component of a vector, you can select the component via the <code class="docutils literal notranslate"><span class="pre">operator</span></code> or <code class="docutils literal notranslate"><span class="pre">op</span></code> keyword:,  <code class="docutils literal notranslate"><span class="pre">op='x'</span></code>, <code class="docutils literal notranslate"><span class="pre">op='y'</span></code>, or  <code class="docutils literal notranslate"><span class="pre">op='z'</span></code>. This will automatically swap the colour scale to be linear, facilitating both positive and negative values. If, on the other hand, you want to plot the magnitude of a component, you can fold the output into an absolute value with the keyword <code class="docutils literal notranslate"><span class="pre">absolute=True</span></code>. As the default color map for a linear plot is a diverging map with white in the centre, it is possible to enforce white mapping to zero by forcing the range to be symmetric with <code class="docutils literal notranslate"><span class="pre">`symmetric=True</span></code>.</p>
+<p>Next, try zooming around. You can adjust the plot domain by cropping it, selecting a plotting box either in metres or in units of Earth radius. You can select the crop box as either <code class="docutils literal notranslate"><span class="pre">boxm=[xmin,xmax,ymin,ymax]</span></code> in metres, or <code class="docutils literal notranslate"><span class="pre">boxre=[xmin,xmax,ymin,ymax]</span></code> in units of Earth radius. The default unit used for plot axes is Earth radii, but you can change them to metres with <code class="docutils literal notranslate"><span class="pre">axisunit=0</span></code>, kilometres with <code class="docutils literal notranslate"><span class="pre">axisunit=3</span></code>, or e.g. megametres with <code class="docutils literal notranslate"><span class="pre">axisunit=6</span></code>.</p>
+</section>
+<section id="altering-the-colour-scale">
+<h3>Altering the colour scale<a class="headerlink" href="#altering-the-colour-scale" title="Link to this heading"></a></h3>
+<p>Plotting is all about pretty pictures, and pretty pictures are all about colormaps. <a class="reference external" href="https://matplotlib.org/stable/users/explain/colors/colormaps.html">https://matplotlib.org/stable/users/explain/colors/colormaps.html</a> contains a list of available matplotlib colormaps, supported by analysator. In addition to the standard colormaps, we have created some extra ones such as <code class="docutils literal notranslate"><span class="pre">hot_desaturated</span></code> and <code class="docutils literal notranslate"><span class="pre">warhol</span></code>. Try plotting some of your variables with various colormaps e.g. with the keywords <code class="docutils literal notranslate"><span class="pre">colormap='viridis'</span></code> or <code class="docutils literal notranslate"><span class="pre">colormap='plasma'</span></code>.</p>
+<p>Next, try plotting a variable which would make sense to plot on a linear scale, such as <code class="docutils literal notranslate"><span class="pre">vg_rank</span></code>. To activate a linear scale, give the keyword <code class="docutils literal notranslate"><span class="pre">lin=True</span></code>. To adjust the number of tick marks on the colourbar axis, you can provide them as e.g. <code class="docutils literal notranslate"><span class="pre">lin=5</span></code>.</p>
+<p>By default, the minimum and maximum values of the colourbar axis are selected from the visible data. If you which to adjust the limits, to over- or undersaturate regions, you can set the minimum and maximum values of the scale with e.g. <code class="docutils literal notranslate"><span class="pre">vmin=1</span></code> and <code class="docutils literal notranslate"><span class="pre">vmax=100</span></code>. Now, as a next exercise, plot a magnetic field variable, such as <code class="docutils literal notranslate"><span class="pre">fg_b</span></code>, and turn off the masking of the inner boundary region with <code class="docutils literal notranslate"><span class="pre">nomask=True</span></code>. You will notice that the centre of the dipole field will dominate the plot. Next, adjust the minimum and maximum values along with the selected colour map to view the regions of interest of your plot. You may note that different regions of the magnetosphere (sheath, tail, foreshock) are best plotted with different colourbar ranges.</p>
+<p>When plotting magnetospheric magnetic field values, you might note that having the field strength in Tesla is not always smart. By providing the keyword <code class="docutils literal notranslate"><span class="pre">vscale=None</span></code>, you allow the routine to auto-scale to a suggested value, e.g. nanotesla. Setting the value manually as <code class="docutils literal notranslate"><span class="pre">vscale=1e9</span></code> provides the same result. Other scaling factors can also be used, and they may or may not offer suitable unit names.</p>
+<p>The tick marks of the colourbar default to using scientific notation, which may be deactivated with the keyword <code class="docutils literal notranslate"><span class="pre">usesci=False</span></code>.</p>
+<p>Should you wish to evaluate a wide range of variability whist still allowing both positive and negative values, Analysator allows the use of the symmetric logarithmic colour scale. Try it by plotting the out-of-plane magnetic field component <code class="docutils literal notranslate"><span class="pre">var=fg_b,</span> <span class="pre">op='z',</span> <span class="pre">symlog=0</span></code> where giving symlog the value of zero allows it to self-determine the extent of the linear range at the centre between two mirrored logarithmic ranges.</p>
+</section>
+<section id="overlaying-data-on-top-of-the-plot">
+<h3>Overlaying data on top of the plot<a class="headerlink" href="#overlaying-data-on-top-of-the-plot" title="Link to this heading"></a></h3>
+<p>In addition to plotting a single value as a colormap, it is possible to overlay other information. A Vlasiator watermark is available by setting the <code class="docutils literal notranslate"><span class="pre">wmark</span></code> (colour) or <code class="docutils literal notranslate"><span class="pre">wmarkb</span></code> (black) keyword, which takes a location string such as <code class="docutils literal notranslate"><span class="pre">&quot;NW&quot;,&quot;NE&quot;,&quot;SW&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;SW&quot;</span></code>. Setting <code class="docutils literal notranslate"><span class="pre">Earth=true</span></code> plots an Earth symbol inside the inner boundary with a realistic radius.</p>
+<p>Setting the keword <code class="docutils literal notranslate"><span class="pre">fsaved=True</span></code> will add contours delienating all spatial cells which contain saved-to-disk velocity distribution functions.</p>
+<p>Vector quantities can be overplotted as streamlines or vector maps. Give some a go!
+.. code-block:: python</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">kword vectors<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)</p>
+</dd>
+<dt class="field-even">kword vectordensity<span class="colon">:</span></dt>
+<dd class="field-even"><p>Aim for how many vectors to show in plot window (default 100)</p>
+</dd>
+<dt class="field-odd">kword vectorcolormap<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Colormap to use for overplotted vectors (default: gray)</p>
+</dd>
+<dt class="field-even">kword vectorsize<span class="colon">:</span></dt>
+<dd class="field-even"><p>Scaling of vector sizes</p>
+</dd>
+<dt class="field-odd">kword streamlines<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set to a vector variable to overplot as streamlines</p>
+</dd>
+<dt class="field-even">kword streamlinedensity<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set streamline density (default 1)</p>
+</dd>
+<dt class="field-odd">kword streamlinecolor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set streamline color (default white)</p>
+</dd>
+<dt class="field-even">kword streamlinethick<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set streamline thickness</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>If a pre-generated fluxfunction file is available (only for 5D simulations), magnetic field lines can be plotted
+with greater accuracy than via streamlines. Flux functions are generated with the fluxfunction tool distributed as part of Vlasiator. A plotting example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap</span><span class="p">(</span><span class="n">filedir</span><span class="o">=</span><span class="s1">&#39;/scratch/project_465000693/example_data/AGD/&#39;</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="s1">&#39;proton/vg_v&#39;</span><span class="p">,</span> <span class="n">boxre</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">],</span> <span class="n">fluxdir</span><span class="o">=</span><span class="s1">&#39;/scratch/project_465000693/example_data/AGD/flux/&#39;</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="mi">904</span><span class="p">,</span><span class="n">lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">vscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">vmin</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">flux_levels</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="fine-tuning-of-plot-properties">
+<h3>Fine-tuning of plot properties<a class="headerlink" href="#fine-tuning-of-plot-properties" title="Link to this heading"></a></h3>
+<p>Several keywords exist for fine-tuning Analysator plot properties. As usual, the description of these can be found by calling the help functionality with <code class="docutils literal notranslate"><span class="pre">pt.plot.plot_colormap?</span></code>. Some examples are provided below</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">kword</span> <span class="n">noborder</span><span class="p">:</span>    <span class="n">Plot</span> <span class="n">figure</span> <span class="n">edge</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">edge</span> <span class="n">without</span> <span class="n">borders</span> <span class="p">(</span><span class="n">default</span> <span class="n">off</span><span class="p">)</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">noxlabels</span><span class="p">:</span>   <span class="n">Suppress</span> <span class="n">x</span><span class="o">-</span><span class="n">axis</span> <span class="n">labels</span> <span class="ow">and</span> <span class="n">title</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">noylabels</span><span class="p">:</span>   <span class="n">Suppress</span> <span class="n">y</span><span class="o">-</span><span class="n">axis</span> <span class="n">labels</span> <span class="ow">and</span> <span class="n">title</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">scale</span><span class="p">:</span>       <span class="n">Scale</span> <span class="n">text</span> <span class="n">size</span> <span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">thick</span><span class="p">:</span>       <span class="n">line</span> <span class="ow">and</span> <span class="n">axis</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">nocb</span><span class="p">:</span>        <span class="n">Set</span> <span class="n">to</span> <span class="n">suppress</span> <span class="n">drawing</span> <span class="n">of</span> <span class="n">colourbar</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">internalcb</span><span class="p">:</span>  <span class="n">Set</span> <span class="n">to</span> <span class="n">draw</span> <span class="n">colorbar</span> <span class="n">inside</span> <span class="n">plot</span> <span class="n">instead</span> <span class="n">of</span> <span class="n">outside</span><span class="o">.</span> <span class="n">If</span> <span class="nb">set</span> <span class="n">to</span> <span class="n">a</span> <span class="n">text</span>
+                    <span class="n">string</span><span class="p">,</span> <span class="n">tries</span> <span class="n">to</span> <span class="n">use</span> <span class="n">that</span> <span class="k">as</span> <span class="n">the</span> <span class="n">location</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span> <span class="s2">&quot;NW&quot;</span><span class="p">,</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span><span class="s2">&quot;SW&quot;</span><span class="p">,</span><span class="s2">&quot;SW&quot;</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">highres</span><span class="p">:</span>     <span class="n">Creates</span> <span class="n">the</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">high</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">scaled</span> <span class="n">up</span> <span class="n">by</span> <span class="n">this</span> <span class="n">value</span> <span class="p">(</span><span class="n">suitable</span> <span class="k">for</span> <span class="nb">print</span><span class="p">)</span><span class="o">.</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">tickinterval</span><span class="p">:</span> <span class="n">Interval</span> <span class="n">at</span> <span class="n">which</span> <span class="n">to</span> <span class="n">have</span> <span class="n">ticks</span> <span class="n">on</span> <span class="n">axes</span> <span class="p">(</span><span class="ow">not</span> <span class="n">colorbar</span><span class="p">)</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">title</span><span class="p">:</span>       <span class="n">string</span> <span class="n">to</span> <span class="n">use</span> <span class="k">as</span> <span class="n">plot</span> <span class="n">title</span> <span class="n">instead</span> <span class="n">of</span> <span class="n">time</span><span class="o">.</span>
+                    <span class="n">Special</span> <span class="n">case</span><span class="p">:</span> <span class="n">Set</span> <span class="n">to</span> <span class="s2">&quot;msec&quot;</span> <span class="n">to</span> <span class="n">plot</span> <span class="n">time</span> <span class="k">with</span> <span class="n">millisecond</span> <span class="n">accuracy</span> <span class="ow">or</span> <span class="s2">&quot;musec&quot;</span>
+                    <span class="k">for</span> <span class="n">microsecond</span> <span class="n">accuracy</span><span class="o">.</span> <span class="s2">&quot;sec&quot;</span> <span class="ow">is</span> <span class="n">integer</span> <span class="n">second</span> <span class="n">accuracy</span><span class="o">.</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">cbtitle</span><span class="p">:</span>     <span class="n">string</span> <span class="n">to</span> <span class="n">use</span> <span class="k">as</span> <span class="n">colorbar</span> <span class="n">title</span> <span class="n">instead</span> <span class="n">of</span> <span class="nb">map</span> <span class="n">name</span>
+<span class="p">:</span><span class="n">kword</span> <span class="n">nooverwrite</span><span class="p">:</span> <span class="n">Set</span> <span class="n">to</span> <span class="n">only</span> <span class="n">perform</span> <span class="n">actions</span> <span class="k">if</span> <span class="n">the</span> <span class="n">target</span> <span class="n">output</span> <span class="n">file</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">yet</span> <span class="n">exist</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="plotting-3d-6d-simulation-data">
+<h2>Plotting 3D/6D simulation data<a class="headerlink" href="#plotting-3d-6d-simulation-data" title="Link to this heading"></a></h2>
+<p>For 3D/6D simulation data, interactive VisIt plotting is often the easiest and most powerful way to go. Analysator still provides several useful tools for plotting 3D data reduced into 3D images. These methods can be expensive, as the AMR MPIgrid data is resampled to the highest resolution. This allows handling of both vg-grid and fg-grid variables. The simplest method is to plot a Cartesian 2D slice out of the 3D domain:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap3dslice</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/EGE/bulk.0001500.vlsv&quot;</span><span class="p">)</span>
+<span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap3dslice</span><span class="p">(</span><span class="n">vlsvobj</span><span class="o">=</span><span class="n">f3d</span><span class="p">)</span>
+<span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_colormap3dslice</span><span class="p">(</span><span class="n">filedir</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/EGE/&quot;</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1500</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For these Cartesian slices, many of the options of regular 2D plots are accepted. In addition, you can select the direction normal to the plot slice with e.g. <code class="docutils literal notranslate"><span class="pre">normal='y'</span></code> (the default) or <code class="docutils literal notranslate"><span class="pre">normal='z'</span></code>. The coordinate along this normal direction used for the slice is set with the keyword <code class="docutils literal notranslate"><span class="pre">cutpoint</span></code> in metres or <code class="docutils literal notranslate"><span class="pre">cutpointre</span></code> in Earth radii.</p>
+<p>Another, much heavier option is the <em>threeslice</em> which intersects three Cartesian planes through the simulation domain and plots them all. Generating one of these images can take several tens of seconds and require significant memory from the Jupyter server.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_threeslice</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/EGE/bulk.0001500.vlsv&quot;</span><span class="p">,</span><span class="n">draw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Another again heavy option is to plot an isosurface of a 3D plot, showing one variable at a surface where another variable is constant. Generating one of these images may also take several tens of seconds and require significant memory from the Jupyter server. A plotting example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_isosurface</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/EGE/bulk.0001500.vlsv&quot;</span><span class="p">,</span><span class="n">surf_var</span><span class="o">=</span><span class="s1">&#39;vg_b_vol&#39;</span><span class="p">,</span><span class="n">surf_op</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">surf_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">color_var</span><span class="o">=</span><span class="s1">&#39;proton/vg_v&#39;</span><span class="p">,</span><span class="n">color_op</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">draw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">usesci</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">boxre</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">],</span><span class="n">angle</span><span class="o">=</span><span class="p">[</span><span class="mi">20</span><span class="p">,</span><span class="mi">210</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>For isosurfaces, cropping the plotting region can help significantly with both image clarity and plot time. The <code class="docutils literal notranslate"><span class="pre">angle</span></code> keyword is used to define both the elevation angle and the azimuthal rotation around the z axis. The surface can be set to be opaque with <code class="docutils literal notranslate"><span class="pre">transparent=False</span></code>.</p>
+</section>
+<section id="plotting-ionospheric-simulation-data">
+<h2>Plotting ionospheric simulation data<a class="headerlink" href="#plotting-ionospheric-simulation-data" title="Link to this heading"></a></h2>
+<p>A separate routine exists for plotting ionospheric values flattened on a polar plot. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_ionosphere</span><span class="p">(</span><span class="n">vlsvobj</span><span class="o">=</span><span class="n">fiono</span><span class="p">,</span> <span class="n">var</span><span class="o">=</span><span class="s1">&#39;ig_fac&#39;</span><span class="p">,</span><span class="n">viewdir</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">symlog</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">draw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="plotting-velocity-distribution-functions">
+<h2>Plotting velocity distribution functions<a class="headerlink" href="#plotting-velocity-distribution-functions" title="Link to this heading"></a></h2>
+<p>For some spatial cells, Vlasiator stores VDFs in addition to reduced data such as moments. These velocity distribution functions can also be evaluated using Analysator. The VDF plotter routine accepts either direct CellID values as a list, or alternatively coordinates in units metres or Earth radii, from which it can search for the closest cell with a stored VDF. An example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">plot_vdf</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s2">&quot;/scratch/project_465000693/example_data/AGD/bulk.0000904.vlsv&quot;</span><span class="p">,</span><span class="n">draw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="n">coordre</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">center</span><span class="o">=</span><span class="s2">&quot;peak&quot;</span><span class="p">,</span><span class="n">bpara1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">slicethick</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Since VDFs are a sparse blob of phase-space, which may or may not intersect the origin, it’s usually a smart move to either plot a projection with <code class="docutils literal notranslate"><span class="pre">slicethick=0</span></code> and/or re-centre the plot on either the bulk velocity of the plasma or the peak position of phase-space density. Various rotations are available, providing directions evaluated from the bulk flow, the magnetic field, etc.</p>
+</section>
+<section id="advanced-plotting-methods">
+<h2>Advanced plotting methods<a class="headerlink" href="#advanced-plotting-methods" title="Link to this heading"></a></h2>
+<section id="advanced-methods-axes-post-processing-overlaying">
+<h3>Advanced methods: axes, post-processing, overlaying<a class="headerlink" href="#advanced-methods-axes-post-processing-overlaying" title="Link to this heading"></a></h3>
+<p>Several advanced methods exist beyond the scope of this tutorial.</p>
+<p>An Analysator plot can be placed inside another image using the <code class="docutils literal notranslate"><span class="pre">axes</span></code> keyword. Examples can be found in <code class="docutils literal notranslate"><span class="pre">examples/gridspec_plot.py</span></code> and <code class="docutils literal notranslate"><span class="pre">examples/multi_panel_plot.py</span></code>.</p>
+<p>Variables read from the vlsv file can be passed to user-provided functions for post-processing. There are two types of functions supported:</p>
+</section>
+</section>
+<section id="expression-functions">
+<h2>Expression functions<a class="headerlink" href="#expression-functions" title="Link to this heading"></a></h2>
+<p>An expression takes arrays of variables, computes a new value from them (a scalar or a vector), and then returns it to the main plotting routine. The colormap variable is replaced with the result of the expression. Examples of more involved expressions can be found in <code class="docutils literal notranslate"><span class="pre">examples/generate_panel.py</span></code>. A long list of simpler expressions can be found in <code class="docutils literal notranslate"><span class="pre">pyPlots/plot_helpers.py</span></code>.</p>
+<p>Expressions can also be instructed to be given several timesteps of data in order to facilitate time derivatives of variables.</p>
+</section>
+<section id="external-functions">
+<h2>External functions<a class="headerlink" href="#external-functions" title="Link to this heading"></a></h2>
+<p>External functions act in many ways like expressions, but they are also given the axes of the plot along with coordinate information. An external function does not replace the main variable of the plotting routine, but can be used to overlay information, variables, or other information on top of the main plot.</p>
+<section id="advanced-methods-2-energy-spectrograms-virtual-spacecraft">
+<h3>Advanced methods 2: energy spectrograms, virtual spacecraft<a class="headerlink" href="#advanced-methods-2-energy-spectrograms-virtual-spacecraft" title="Link to this heading"></a></h3>
+<p>More involved data analysis is also outside the scope of this tutorial, but the interested reader should look at topics within the Analysator wiki.</p>
+<p>Plotting a virtual spacecraft time profile involves deciding on the position for the spacecraft and choosing a time extent for the measurement. There is no quick tool for this, as for each case the required variables are likely different, but a simple example script can be found as <code class="docutils literal notranslate"><span class="pre">examples/plot_VSC.py</span></code></p>
+<p>Plotting time-energy spectrograms is a highly requested feature, and rudimentary scripts do exist within the Analysator repository, e.g. <code class="docutils literal notranslate"><span class="pre">scripts/plot_time_energy_spectrogram.py</span></code>. Future updates will most likely add a full-fledged plotting routine to the toolkit.</p>
+</section>
+</section>
+<section id="interesting-questions-you-might-get">
+<h2>Interesting questions you might get<a class="headerlink" href="#interesting-questions-you-might-get" title="Link to this heading"></a></h2>
+<p>Q: How can I plot XXX or YYY?</p>
+<p>A: look through the examples and the post-processing scripts in <code class="docutils literal notranslate"><span class="pre">pyPlots/plot_helpers.py</span></code>. If you are not successful, you can look through those for insipration, code it yourself, and make a pull request!</p>
+<p>A2: You can of course always ask the developers directly - perhaps the functionality exists in a non-released feature branch.</p>
+<p>Q: Why does my plotting routine crash?</p>
+<p>A: Analysator has formed organically over many years, with new tools and features coming in along with new data types. Sometimes mistakes slip through. Also, it’s worth checking if you can find more up-to-date versions of scipy, matplotlib, or numpy - that may help.</p>
+</section>
+<section id="typical-pitfalls">
+<h2>Typical pitfalls<a class="headerlink" href="#typical-pitfalls" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Forgetting to pull the latest version of Analysator</p></li>
+<li><p>Directly editing the plotting scripts instead of using external or expression functionality, leading to conflicts when Analysator master gets updated</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../analysator/" class="btn btn-neutral float-left" title="Introduction to Analysator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../analysator_supported/" class="btn btn-neutral float-right" title="Analysator supported data reducers and vlasiator variables" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
