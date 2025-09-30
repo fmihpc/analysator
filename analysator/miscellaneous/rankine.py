@@ -203,7 +203,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
          rho_rankine.append(rankine_conditions[5])
 
    # Plot the variables:
-   from plot import plot_multiple_variables
+   from analysator.plot import plot_multiple_variables
    variables = []
    #VariableInfo(self, data_array, name="", units="")
    variables.append( VariableInfo(rho_data, "rho", "m^-3" ) )

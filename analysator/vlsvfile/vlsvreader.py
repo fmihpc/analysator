@@ -2581,7 +2581,7 @@ class VlsvReader(object):
       :returns: duals (numpy array of N 3-tuples), ksis (numpy array of interpolation weights (N, 8))
       '''
 
-      from calculations.interpolator_amr import find_ksi
+      from analysator.calculations.interpolator_amr import find_ksi
 
       # start the search from the vertices 
       if cellids is None:

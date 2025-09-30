@@ -145,7 +145,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
          fig.add_subplot(length_of_list,1,i+1)
 
    axes = fig.get_axes()
-   from variable import get_data, get_name, get_units
+   from analysator.calculations.variable import get_data, get_name, get_units
    for i in range(length_of_list):
       
       x = variables_x_list[i]
