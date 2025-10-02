@@ -958,6 +958,8 @@ def Pressure_dilatation(variables, reader):
 
    div_v =  dvx + dvy + dvz
 
+   print(p)
+
    return -p*div_v
 
 def PiD(variables, reader):
@@ -989,7 +991,7 @@ def PiD(variables, reader):
 
       pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)  # Traceless pressure tensor
 
-      div_v = np.einsum('...ii', v_jacobian)    # Velociry divergence
+      div_v = np.einsum('...ii', v_jacobian)    # Velocity divergence
 
       d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   # D tensor
 
@@ -1059,9 +1061,9 @@ def Pressure_strain(variables, reader):
       kdelta = np.diag(np.ones(3))
       pi = ptensor - p*kdelta
       div_v = np.trace(v_jacobian)
-      d = 0.5*(v_jacobian + v_jacobian.T)
+      d = 0.5*(v_jacobian + v_jacobian.T)- 1/3 * div_v*kdelta
 
-      return -np.einsum('ij,ij', pi, d) -1/3*p*div_v
+      return -np.einsum('ij,ij', pi, d) - p*div_v
 
 
 
