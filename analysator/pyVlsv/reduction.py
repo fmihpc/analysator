@@ -936,6 +936,137 @@ def ig_inplanecurrent( variables, reader ):
    ig_b_hat = -normal * np.repeat(np.sign(ig_r[:,2]), 3).reshape(normal.shape)  # TODO: check precision of this z-coordinat test near the equator
    return ig_sigmap * E - ig_sigmah * np.cross(E, ig_b_hat)
 
+
+def Pressure_dilatation(variables, reader):
+   ''' Calculate the (proton) pressure dilatation interaction term p*div(V)
+   '''
+      
+   coord = variables[0]
+   p = variables[1]
+   dx = np.min(variables[2])/2  # Half of the smallest cell size for linear derivative estimation
+
+   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]), operator='x')    # Directional derivatives
+   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]),  operator='x')
+   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]), operator='y')
+   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]),  operator='y')
+   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]), operator='z')
+   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]),  operator='z')
+
+   dvx = (vx2 - vx1) / (2*dx)
+   dvy = (vy2 - vy1) / (2*dx)
+   dvz = (vz2 - vz1) / (2*dx)
+
+   div_v =  dvx + dvy + dvz
+
+   return -p*div_v
+
+def PiD(variables, reader):
+   ''' Calculate the (proton) Pi-D interaction term
+   '''
+
+   coord = variables[0]
+   ptensor = variables[1]
+   dx = np.min(variables[2])/2
+
+   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]))   # Directional derivatives
+   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]))
+   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]))
+   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]))
+   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]))
+   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]))
+
+   if np.shape(ptensor)!=(3,3):  # If evaluated for many cells
+
+
+      dxv = (vx2 - vx1) / (2*dx)
+      dyv = (vy2 - vy1) / (2*dx)
+      dzv = (vz2 - vz1) / (2*dx)
+
+      v_jacobian =  np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
+
+      kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))  # Identity tensors in the shape of ptensor
+      p = 1/3*np.einsum('...ii', ptensor)   # Scalar pressure
+
+      pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)  # Traceless pressure tensor
+
+      div_v = np.einsum('...ii', v_jacobian)    # Velociry divergence
+
+      d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   # D tensor
+
+      return -np.einsum('...ij,...ij', pi, d)
+   
+   else: # The same but for a singular cell
+
+      dxx, dxy, dxz = (vx2 - vx1) / (2*dx)
+      dyx, dyy, dyz = (vy2 - vy1) / (2*dx)
+      dzx, dzy, dzz = (vz2 - vz1) / (2*dx)
+
+      v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
+
+      p = 1/3*np.trace(ptensor)
+      kdelta = np.diag(np.ones(3))
+      pi = ptensor - p*kdelta
+      div_v = np.trace(v_jacobian)
+      d = 0.5*(v_jacobian + v_jacobian.T) - 1/3 * div_v*kdelta
+
+      return -np.einsum('ij,ij', pi, d)
+   
+def Pressure_strain(variables, reader):
+   ''' Calculate the (proton) pressure strain interaction -(P dot nabla) dot bulk velocity, a sum of the pdil and PiD interactions. A separate datareducer to avoid redundant Jacobian estimations.
+   '''
+
+   coord = variables[0]
+   ptensor = variables[1]
+   dx = np.min(variables[2])/2
+
+
+   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]))
+   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]))
+   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]))
+   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]))
+   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]))
+   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]))
+
+   if np.shape(ptensor)!=(3,3):
+
+
+      dxv = (vx2 - vx1) / (2*dx)
+      dyv = (vy2 - vy1) / (2*dx)
+      dzv = (vz2 - vz1) / (2*dx)
+
+      v_jacobian =  np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
+
+      kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))
+      p = 1/3*np.einsum('...ii', ptensor)
+
+      pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)
+
+      div_v = np.einsum('...ii', v_jacobian)
+
+      d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   
+
+      return -np.einsum('...ij,...ij', pi, d) -1/3*np.einsum('...ii', ptensor)*np.einsum('...ii', v_jacobian)
+   
+   else:
+
+      dxx, dxy, dxz = (vx2 - vx1) / (2*dx)
+      dyx, dyy, dyz = (vy2 - vy1) / (2*dx)
+      dzx, dzy, dzz = (vz2 - vz1) / (2*dx)
+
+      v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
+
+      p = 1/3*np.trace(ptensor)
+      kdelta = np.diag(np.ones(3))
+      pi = ptensor - p*kdelta
+      div_v = np.trace(v_jacobian)
+      d = 0.5*(v_jacobian + v_jacobian.T)
+
+      return -np.einsum('ij,ij', pi, d) -1/3*p*div_v
+
+
+
+
+
 #list of operators. The user can apply these to any variable,
 #including more general datareducers. Can only be used to reduce one
 #variable at a time
@@ -1313,6 +1444,10 @@ v5reducers["vg_derivatives/vg_dperbxvoldz"] = DataReducerVariable(["vg_dperbxvol
 v5reducers["vg_derivatives/vg_dperbyvoldz"] = DataReducerVariable(["vg_dperbyvoldz"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{y,vol,vg,per} (\Delta Z)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 v5reducers["vg_derivatives/vg_dperbzvoldz"] = DataReducerVariable(["vg_dperbzvoldz"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{z,vol,vg,per} (\Delta Z)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 
+v5reducers["vg_p_dilatation"] =    DataReducerVariable(["vg_coordinates", "vg_pressure", "vg_dx"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
+v5reducers["vg_pid"] =             DataReducerVariable(["vg_coordinates", "vg_ptensor", "vg_dx"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
+v5reducers["vg_p_strain"] =        DataReducerVariable(["vg_coordinates", "vg_ptensor", "vg_dx"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
+
 #multipopv5reducers
 multipopv5reducers = {}
 multipopv5reducers["pop/vg_rhom"] =                   DataReducerVariable(["pop/vg_rho"], rhom, "kg/m3", 1, latex=r"$\rho_{m,\mathrm{REPLACEPOP}}$",latexunits=r"$\mathrm{kg}\,\mathrm{m}^{-3}$")
@@ -1397,6 +1532,8 @@ multipopv5reducers["pop/vg_beta_star"] =               DataReducerVariable(["pop
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
+# multipopv5reducers["pop/vg_pressure_dilatation"] =    DataReducerVariable(["CellID", "pop/vg_pressure", "vg_dx"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
+# multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["CellID", "pop/vg_ptensor", "vg_dx"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
 
 # The dictionary with deprecated data reducers
 deprecated_datareducers = {}
