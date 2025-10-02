@@ -957,9 +957,7 @@ def Pressure_dilatation(variables, reader):
    dvz = (vz2 - vz1) / (2*dx)
 
    div_v =  dvx + dvy + dvz
-
-   print(p)
-
+   
    return -p*div_v
 
 def PiD(variables, reader):
