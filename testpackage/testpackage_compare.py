@@ -7,7 +7,6 @@ from argparse import ArgumentParser
 
 def compare_images(a,b):
     cmd = f'magick compare -metric RMSE {a} {b} NULL:'
-    print(cmd.split(" "))
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     out,err = proc.communicate()
 
@@ -79,7 +78,6 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
     #Feed the different files to compare_images
     for file in different_files:
-        print(file,file.replace(a,b))
         if(not compare_images(file,file.replace(a,b))):
             filename = file.split("/")[-1].rstrip(".png") #is it always png?
             cmd = f"compare -metric RMSE {file} {file.replace(a,b)} {output_folder}/difference_output_{filename}.png"
