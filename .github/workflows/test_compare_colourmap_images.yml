@@ -34,5 +34,7 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
+            module purge 
+            module load ImageMagick/7.1.1-10-gompi-2023a
             . CI_env/bin/activate
             ../analysator/testpackage/run_compare.sh
