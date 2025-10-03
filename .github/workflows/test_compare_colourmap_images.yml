@@ -31,12 +31,21 @@ jobs:
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
+        - name: Produce plots
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            
+            module purge 
+            export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
+            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
+            . CI_env/bin/activate
+
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ../analysator/testpackage/run_testpackage_colormap.sh
+            cat testpackage_colormap_run.txt
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
-            echo $TMPDIR
-            echo $PWD
-            module purge 
-            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
+
+
             . CI_env/bin/activate
             ../analysator/testpackage/run_compare.sh
