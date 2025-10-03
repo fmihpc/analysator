@@ -17,6 +17,7 @@ jobs:
   turso_system:
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
+        timeout-minutes: 30
         strategy:
           fail-fast: false
           matrix:
@@ -41,6 +42,7 @@ jobs:
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             module list
             . CI_env/bin/activate
+            pip list
 
             sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ../analysator/testpackage/run_testpackage_colormap_workflow.sh
             cat testpackage_colormap_run.txt
