@@ -14,7 +14,7 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 hostname
 source CI_env/bin/activate
-mkdir $PWD/produced_plots
+mkdir -p $PWD/produced_plots
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
