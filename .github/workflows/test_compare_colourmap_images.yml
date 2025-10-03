@@ -40,7 +40,7 @@ jobs:
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
 
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ../analysator/testpackage/run_testpackage_colormap.sh
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ../analysator/testpackage/run_testpackage_colormap_workflow.sh
             cat testpackage_colormap_run.txt
         - name: Comparing plotted data
           run: |
