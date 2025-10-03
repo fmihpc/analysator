@@ -42,7 +42,7 @@ args= parser.parse_args()
 a,b,output_folder = args.folder_a,args.folder_b,args.output_folder
 
 #Create output folder if it doesn't exist
-if not os.path.exists(output_folder):
+if not os.path.exists(output_folder) and output_folder!='NULL:':
     proc = subprocess.Popen(f'mkdir {output_folder}'.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = proc.communicate()
 
@@ -78,6 +78,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
     #Feed the different files to compare_images
     for file in different_files:
+        print(file)
         if(not compare_images(file,file.replace(a,b))):
             filename = file.split("/")[-1].rstrip(".png")
             cmd = f"compare -metric RMSE {file} {file.replace(a,b)} {output_folder}/difference_output_{filename}.png"
