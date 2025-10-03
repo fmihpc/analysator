@@ -5,9 +5,9 @@ name: Turso compare colourmap images
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master, dev, image_compare]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ master, dev, image_compare]
   schedule:
     - cron: '0 8 * * MON'
   workflow_dispatch:
