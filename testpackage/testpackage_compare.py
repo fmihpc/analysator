@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 
 def compare_images(a,b):
-    cmd = f'compare -metric RMSE {a} {b} NULL:'
+    cmd = f'magick compare -metric RMSE {a} {b} NULL:'
     print(cmd.split(" "))
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     out,err = proc.communicate()
