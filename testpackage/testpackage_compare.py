@@ -107,3 +107,4 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
 compare_images_in_folders(a,b,output_folder)
+
