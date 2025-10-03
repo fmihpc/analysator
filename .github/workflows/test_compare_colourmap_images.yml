@@ -35,6 +35,6 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge 
-            module load ImageMagick/7.1.1-10-gompi-2023a
+            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
             ../analysator/testpackage/run_compare.sh
