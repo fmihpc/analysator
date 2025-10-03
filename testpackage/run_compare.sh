@@ -9,9 +9,6 @@ folder_2="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpacka
 output=$((python3 ../analysator/testpackage/testpackage_compare.py ${folder_1} ${folder_2}) 2>&1)
 
 
-#Make it so stderr is also captured
-
-
 if [[ $output == "" ]]; then
     echo "No differences found"
     exit 0

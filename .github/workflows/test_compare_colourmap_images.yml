@@ -34,6 +34,8 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
+            echo $TMPDIR
+            echo $PWD
             module purge 
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
