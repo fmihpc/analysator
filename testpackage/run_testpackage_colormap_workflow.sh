@@ -12,7 +12,7 @@
 jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
-echo $PWD
+#echo $PWD
 
 hostname
 
