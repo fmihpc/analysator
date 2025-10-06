@@ -52,7 +52,7 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
-
+            module load Python/3.10.4-GCCcore-11.3.0
 
             . CI_env/bin/activate
             ../analysator/testpackage/run_compare.sh
