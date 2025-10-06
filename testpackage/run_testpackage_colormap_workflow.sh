@@ -15,7 +15,8 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 echo $PWD
 
 hostname
-#source CI_env/bin/activate
+source CI_env/bin/activate
+echo $PYTHONPATH
 mkdir -p $PWD/produced_plots
 
 export PTNONINTERACTIVE=1
