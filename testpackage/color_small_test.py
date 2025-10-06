@@ -3,7 +3,7 @@ import sys, os
 import numpy as np
 import traceback
 
-datalocation = "/wrk/group/spacephysics/vlasator"
+datalocation = "/wrk/group/spacephysics/vlasiator"
 runs = []
 runs.append( { 'name': 'ABC',
                  'verifydir': 'testpackage_colormap/ABC/', 

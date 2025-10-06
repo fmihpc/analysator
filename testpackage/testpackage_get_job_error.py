@@ -17,5 +17,6 @@ file= args.log_file
 with open(file,'r') as f:
     lines = f.readlines()
     for line in lines:
-        if line.split(" ")[0]=="EXIT_CODE_FROM_JOB":
+        error_code = line.split(" ")
+        if error_code[0]=="EXIT_CODE_FROM_JOB" and error_code[1].rstrip("\n")!="0":
             raise SystemExit(int(line.split(" ")[1].rstrip("\n")))
