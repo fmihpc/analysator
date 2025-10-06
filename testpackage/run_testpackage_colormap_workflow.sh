@@ -29,7 +29,7 @@ mkdir -p $PWD/produced_plots
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
 
-echo $?
+
 python ./testpackage/color_small_test.py $jobcount $index
-echo $?
+echo "EXIT_CODE_FROM_JOB {$?}"
 #echo Job $SLURM_ARRAY_TASK_ID complete.
