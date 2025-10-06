@@ -3,7 +3,7 @@
 #SBATCH -J analysator_testpackage
 #SBATCH -p short
 #SBATCH -n 1
-#SBATCH --array=1-2
+#SBATCH --array=1-4
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 
@@ -33,6 +33,6 @@ export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
 
 
-python ./testpackage/color_small_test.py $jobcount $index
+python ./testpackage/testpackage_colormap.py $jobcount $index
 echo "EXIT_CODE_FROM_JOB $?"
 #echo Job $SLURM_ARRAY_TASK_ID complete.
