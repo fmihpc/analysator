@@ -20,3 +20,5 @@ with open(file,'r') as f:
         error_code = line.split(" ")
         if error_code[0]=="EXIT_CODE_FROM_JOB" and error_code[1].rstrip("\n")!="0":
             raise SystemExit(int(line.split(" ")[1].rstrip("\n")))
+
+

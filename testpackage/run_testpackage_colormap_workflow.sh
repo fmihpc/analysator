@@ -12,7 +12,6 @@
 jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
-#echo $PWD
 
 hostname
 
@@ -22,7 +21,11 @@ export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x
 module load Python/3.10.4-GCCcore-11.3.0
 module load ImageMagick/7.1.0-37-GCCcore-11.3.0
 
+
+
 source CI_env/bin/activate
+
+module list
 
 mkdir -p $PWD/produced_plots
 
