@@ -3,7 +3,7 @@
 #SBATCH -J analysator_testpackage
 #SBATCH -p short
 #SBATCH -n 1
-#SBATCH --array=1
+#SBATCH --array=1-2
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 
