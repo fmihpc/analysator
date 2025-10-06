@@ -23,12 +23,13 @@ module load Python/3.10.4-GCCcore-11.3.0
 module load ImageMagick/7.1.0-37-GCCcore-11.3.0
 
 source CI_env/bin/activate
-uv pip list
 
 mkdir -p $PWD/produced_plots
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
 
+echo $?
 python ./testpackage/color_small_test.py $jobcount $index
-echo Job $SLURM_ARRAY_TASK_ID complete.
+echo $?
+#echo Job $SLURM_ARRAY_TASK_ID complete.
