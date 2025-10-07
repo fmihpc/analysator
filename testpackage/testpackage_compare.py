@@ -6,15 +6,19 @@ from argparse import ArgumentParser
 
 
 
-def compare_images(a,b):
-    cmd = f'magick compare -metric RMSE {a} {b} NULL:'
+def compare_images(a,b,output_file="NULL:"):
+
+    cmd = f"magick compare -metric RMSE {a} {b} {output_file}"
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+
     out,err = proc.communicate()
 
-    #If errors, raise an exception
-    if err:
-        err = str(err,'utf-8')
-        raise RuntimeError(err)
+    exitcode=proc.returncode
+    print(exitcode)
+    #If errors, raise an exception (This has to be odne like this as compare sends output to stderr)
+    if exitcode!=0 and exitcode != 1:
+        out = str(out,'utf-8')
+        raise RuntimeError(out)
 
     out = str(out,'utf-8') 
     out=out.strip('\n')
@@ -60,7 +64,6 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     cmd = f'diff -r {a} {b}'
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = proc.communicate()
-    unique=False
     different=False
     #If errors, raise an exception
     if err:
@@ -85,25 +88,15 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     for file in different_files:
         if(not compare_images(file,file.replace(a,b))):
             different=True
-            filename = file.split("/")[-1].rstrip(".png") #is it always png?
-            cmd = f"compare -metric RMSE {file} {file.replace(a,b)} {output_folder}/difference_output_{filename}.png"
 
-            if output_folder=='NULL:':
-                cmd = cmd.replace(f"{output_folder}/difference_output_{filename}.png","NULL:")
+            if output_folder!= "NULL:":
+                filename = file.split("/")[-1].rstrip(".png") #is it always png?
+                output_folder=output_folder+f"/difference_output_{filename}.png"
 
-            proc = subprocess.run(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            compare_images(file,file.replace(a,b),output_folder)
+
             print("Images differ:",file,file.replace(a,b))
 
-            # The error handling doesnt work, the compare sends the result to stderr also, so that's just great
-            '''
-            out,err = proc.stdout,proc.stderr
-            print(out,err)
-
-            #If errors, raise an exception
-            if err:
-                err = str(err,'utf-8')
-                raise RuntimeError(err)
-            '''
 
 
     #Print unique files
@@ -113,7 +106,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     if len(unique_files)!=0:
         print("::warning title=Unique file(s)::Found new file(s) produced by the code")
     if different:
-        sys.exit(1)
+        raise SystemError("Images Differ")
 
 
 compare_images_in_folders(a,b,output_folder)
