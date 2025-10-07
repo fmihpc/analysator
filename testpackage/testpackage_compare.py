@@ -28,6 +28,8 @@ def compare_images(a,b):
 
 #output_folder = "/home/siclasse/analysator/different_output/"
 
+#!!!!!outputs unique files only from folder "b"
+
 
 #Parse arguments
 parser = ArgumentParser(prog="Image compare"
@@ -73,7 +75,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
         line=line.split(" ")
         if line[0]=="Binary" and line[1]=="files":
             different_files.append(line[2])
-        elif line[0]=="Only":
+        elif line[0]=="Only" and line[2].rstrip(":")==b:
             unique_files.append(line[2].rstrip(":")+line[3])
 
     #Feed the different files to compare_images
