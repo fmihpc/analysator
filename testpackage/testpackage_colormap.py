@@ -179,27 +179,23 @@ def expr_cav_cust(pass_maps, requestvariables=False):
     empty = np.zeros(np.array(thisrho.shape))+0.0
     half = empty + 0.5
     one = empty + 1.0
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
-    caviton = np.add(empty, one,out=out_array_temp, where=(rhoratio<rhoratioreq))
+    
+    caviton=np.zeros(empty.shape,dtype='float64')
+    np.add(empty, one,out=caviton, where=(rhoratio<rhoratioreq))
     print("sum of cavitons rho ",caviton.sum())
-
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
-    caviton = np.add(caviton, one,out=out_array_temp, where=(Bmagratio<bmagratioreq))
-    print("sum of cavitons Bmag ",caviton.sum())
-
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
-    shfa = np.add(caviton, one,out=out_array_temp, where=(thisbeta>betashfareq))
+    cavitonbmag=np.zeros(empty.shape,dtype='float64')
+    np.add(caviton, one, out=cavitonbmag,where=(Bmagratio<bmagratioreq))
+    print("sum of cavitons Bmag ",cavitonbmag.sum())
+    shfa=np.zeros(empty.shape,dtype='float64')
+    np.add(cavitonbmag, one,out=shfa, where=(thisbeta>betashfareq))
     print("sum of SHFA ",shfa.sum())
 
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
-    combo = np.add(empty, half,out=out_array_temp, where=(caviton>1.5))
+    combo=np.zeros(empty.shape,dtype='float64')
+    np.add(empty, half,out=combo,where=(cavitonbmag>1.5))
     print("sum of combo ",combo.sum())
-
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
-    combo2 = np.add(empty, half,out=out_array_temp, where=(shfa>2.5))
+    combo2=np.zeros(empty.shape,dtype='float64')
+    combo2 = np.add(empty, half,out=combo2, where=(shfa>2.5))
     print("sum of combo2 ",combo2.sum())
-
-    out_array_temp=np.zeros(empty.shape,dtype='float64')
     combo3 = combo+combo2
     print("sum of combo3 ",combo3.sum())
 
