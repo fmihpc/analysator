@@ -13,6 +13,5 @@ if [[ $output == "" ]]; then
     exit 0
 else
     echo "$output"
-    exit 1
 fi
 

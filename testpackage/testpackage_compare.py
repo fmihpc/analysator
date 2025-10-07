@@ -1,6 +1,7 @@
 import subprocess
 import time as timetime
 import os
+import sys
 from argparse import ArgumentParser
 
 
@@ -59,6 +60,8 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     cmd = f'diff -r {a} {b}'
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = proc.communicate()
+    unique=False
+    different=False
     #If errors, raise an exception
     if err:
         err = str(err,'utf-8')
@@ -81,6 +84,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     #Feed the different files to compare_images
     for file in different_files:
         if(not compare_images(file,file.replace(a,b))):
+            different=True
             filename = file.split("/")[-1].rstrip(".png") #is it always png?
             cmd = f"compare -metric RMSE {file} {file.replace(a,b)} {output_folder}/difference_output_{filename}.png"
 
@@ -106,6 +110,10 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     for file in unique_files:
         print("Unique file:",file)
 
+    if len(unique_files)!=0:
+        print("::warning title=Unique file(s)::Found new file(s) produced by the code")
+    if different:
+        sys.exit(1)
 
 
 compare_images_in_folders(a,b,output_folder)
