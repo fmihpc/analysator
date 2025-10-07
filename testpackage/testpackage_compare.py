@@ -14,7 +14,7 @@ def compare_images(a,b,output_file="NULL:"):
     out,err = proc.communicate()
 
     exitcode=proc.returncode
-    print(exitcode)
+
     #If errors, raise an exception (This has to be odne like this as compare sends output to stderr)
     if exitcode!=0 and exitcode != 1:
         out = str(out,'utf-8')
