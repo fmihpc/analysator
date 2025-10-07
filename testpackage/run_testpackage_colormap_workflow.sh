@@ -33,6 +33,7 @@ export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
 
 
-python ./testpackage/testpackage_colormap.py $jobcount $index
+#python ./testpackage/testpackage_colormap.py $jobcount $index
+python ./testpackage/color_small_test.py
 echo "EXIT_CODE_FROM_JOB $?"
 #echo Job $SLURM_ARRAY_TASK_ID complete.
