@@ -86,15 +86,12 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
     #Feed the different files to compare_images
     for file in different_files:
-        if(not compare_images(file,file.replace(a,b))):
+        if output_folder!= "NULL:":
+            filename = file.split("/")[-1].rstrip(".png") #is it always png?
+            output_folder=output_folder+f"/difference_output_{filename}.png"
+
+        if(not compare_images(file,file.replace(a,b),output_folder)):
             different=True
-
-            if output_folder!= "NULL:":
-                filename = file.split("/")[-1].rstrip(".png") #is it always png?
-                output_folder=output_folder+f"/difference_output_{filename}.png"
-
-            compare_images(file,file.replace(a,b),output_folder)
-
             print("Images differ:",file,file.replace(a,b))
 
 
