@@ -68,7 +68,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
-             axes=None, cbaxes=None,
+             axes=None, cbaxes=None,cb_horizontal=False,
              contours=None
              ):
 
@@ -154,6 +154,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -966,7 +967,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax,orientation="horizontal" if cb_horizontal else "vertical")
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
