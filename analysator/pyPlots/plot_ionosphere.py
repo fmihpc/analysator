@@ -239,13 +239,13 @@ def plot_ionosphere(filename=None,
             pass
 
     if axes is None and not os.access(outputdir, os.W_OK):
-        raise SystemError(("No write access for directory "+outputdir+"! Exiting."))
+        raise PermissionError(("No write access for directory "+outputdir+"! Exiting."))
         
 
     # Check if target file already exists and overwriting is disabled
     if axes is None and (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            raise SystemError(("Found existing file "+outputfile+". Skipping."))
+            logging.info(("Found existing file "+outputfile+". Skipping."))
         else:
             logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
@@ -628,7 +628,7 @@ def plot_ionosphere(filename=None,
         except Exception as e:
             print("Encountered the following exception from Matplotlib while trying to save a figure:")
             print(e)
-            raise RuntimeError("Error attempting to save figure: " + str(sys.exc_info())+"\n\n There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!")
+            raise IOError("Error attempting to save figure: " + str(sys.exc_info())+"\n\n There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!")
         logging.info(outputfile+"\n")
         plt.close()
     elif draw is not None and axes is None:
