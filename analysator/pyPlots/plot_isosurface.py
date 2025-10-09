@@ -145,8 +145,8 @@ def plot_isosurface(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         f=pt.vlsvfile.VlsvReader(filename)
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("Error, needs a .vlsv file name, python object, or directory and step")
+
                 
     # Scientific notation for colorbar ticks?
     if usesci==None:
@@ -260,8 +260,7 @@ def plot_isosurface(filename=None,
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
-            return -1
+            raise TypeError("Found 2D DCCRG mesh without FSgrid data. Exiting.")
 
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
@@ -276,8 +275,8 @@ def plot_isosurface(filename=None,
 
 
     if (xsize==1) or (ysize==1) or (zsize==1):
-        logging.info("Error: isosurface plotting requires 3D spatial domain!")
-        return
+        raise TypeError(" isosurface plotting requires 3D spatial domain!")
+
 
     simext=[xmin,xmax,ymin,ymax,zmin,zmax]
     sizes=[xsize,ysize,zsize]
@@ -346,8 +345,8 @@ def plot_isosurface(filename=None,
 
     # Verify data shape
     if np.ndim(surf_datamap)==0:
-        logging.info("Error, read only single surface variable value from vlsv file! surf_datamap.shape being " + str(surf_datamap.shape))
-        return -1
+        raise TypeError(" read only single surface variable value from vlsv file! surf_datamap.shape being " + str(surf_datamap.shape))
+
     
 
     #Define the box limits
@@ -368,8 +367,7 @@ def plot_isosurface(filename=None,
     elif np.ndim(surf_datamap)==3:
         surf_data_in_box = ids3d.idmesh3d2(ids, surf_datamap, reflevel, xsize, ysize, zsize, (surf_datamap.shape[1],surf_datamap.shape[2]))
     else:
-        logging.info("Dimension error in constructing 2D AMR slice!")
-        return -1
+        raise ValueError("Dimension error in constructing 2D AMR slice!")
 
     # Remove empty rows, columns and tubes
     empty_0 = np.where(~np.all(surf_data_in_box==0, axis=0))
@@ -412,8 +410,8 @@ def plot_isosurface(filename=None,
 
         counter+=1
         if counter > 50:    # Failsafe
-            logging.info("Error with boundaries! Exiting.")
-            return -1
+            raise RuntimeError("Error with boundaries! Exiting.")
+
         
         if np.all(zero_counts==0):
             break 
@@ -518,8 +516,7 @@ def plot_isosurface(filename=None,
 
         # If both values are zero, we have an empty array
         if vmaxuse==vminuse==0:
-            logging.info("Error, requested array is zero everywhere. Exiting.")
-            return 0            
+            raise ValueError("Error, requested array is zero everywhere. Exiting.")
 
         # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
         # e.g. to plot transverse field components. Always done for symlog.
@@ -774,10 +771,10 @@ def plot_isosurface(filename=None,
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        logging.info("Error:" + str(sys.exc_info()))
-                        logging.info("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
-                        logging.info("Usually removing the title should work, but this time even that failed.")                        
-                        savechange = -1
+                        raise IOError("Error:" + str(sys.exc_info()) +'\n' 
+                                     "Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.\n \
+                                    Usually removing the title should work, but this time even that failed.")                        
+
         if savechange>0:
             logging.info("Due to rendering error, replaced image title with "+plot_title)
         if savechange>=0:
@@ -1008,8 +1005,8 @@ def plot_neutral_sheet(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("Error, needs a .vlsv file name, python object, or directory and step")
+
     
     if operator is None:
         if op is not None:
@@ -1134,8 +1131,7 @@ def plot_neutral_sheet(filename=None,
                 pass
 
         if not os.access(outputdir, os.W_OK):
-            logging.info(("No write access for directory "+outputdir+"! Exiting."))
-            return
+            raise PermissionError("No write access for directory "+outputdir+"! Exiting.")
 
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
@@ -1250,8 +1246,9 @@ def plot_neutral_sheet(filename=None,
     elif f.check_variable("rho"): #old non-AMR data, can still be 3D
         rhomap = f.read_variable("rho")
     else:
-        logging.info("error!")
-        quit
+        raise ValueError("vlsv data did not contain one of the following variables:\n" \
+        "moments,proton/vg_rho,vg_rhom,rho")
+
               
     rhomap = rhomap[indexids] # sort
     rhomap = rhomap[indexlist] # find required cells
@@ -1331,8 +1328,8 @@ def plot_neutral_sheet(filename=None,
 
         # Verify data shape
         if np.ndim(datamap)==0:
-            logging.info("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
-            return -1
+            raise ValueError("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
+
         elif np.ndim(datamap)==3: # Vector variable
             datamap = np.linalg.norm(datamap, axis=-1)
         
@@ -1398,10 +1395,9 @@ def plot_neutral_sheet(filename=None,
                     pass_map = np.dstack(tuple(temporary_pass_map))
 
                 elif np.ndim(pass_map)==3:  # tensor variable
-                    logging.info("Tensor support has not been implemented yet! Aborting")
-                    return -1
+                    raise NotImplementedError("Tensor support has not been implemented yet! Aborting")
                 else:
-                    logging.info("Error in reshaping pass_maps!")
+                    raise RuntimeError("Error in reshaping pass_maps!")
 
 
                 pass_maps[mapval] = pass_map # add to the dictionary
@@ -1417,16 +1413,16 @@ def plot_neutral_sheet(filename=None,
                 if filename: # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
-                    logging.info("Error, cannot determine current step for time extent extraction!")
-                    return
+                    raise RuntimeError("Error, cannot determine current step for time extent extraction!")
+
             # define relative time step selection
             if np.ndim(pass_times)==0:
                 dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
             elif np.ndim(pass_times)==1 and len(pass_times)==2:
                 dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
-            else:
-                logging.info("Invalid value given to pass_times")
-                return
+            else:                
+                raise ValueError("Invalid value given to pass_times")
+
             # Loop over requested times
             for ds in dsteps:
                 if diff:
@@ -1473,10 +1469,9 @@ def plot_neutral_sheet(filename=None,
                         pass_map = np.dstack(tuple(temporary_pass_map))
 
                     elif np.ndim(pass_map)==3:  # tensor variable
-                        logging.info("Tensor support has not been implemented yet! Aborting")
-                        return -1
+                        raise NotImplementedError("Tensor support has not been implemented yet! Aborting")
                     else:
-                        logging.info("Error in reshaping pass_maps!")
+                        raise RuntimeError("Error in reshaping pass_maps!")
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # colorbar title for diffs:
@@ -1510,31 +1505,30 @@ def plot_neutral_sheet(filename=None,
             if operator=='z': 
                 operator = '2'
             if not operator.isdigit():
-                logging.info("Error parsing operator for custom expression!")
-                return
+                raise SyntaxError("Error parsing operator for custom expression!")
+
             elif np.ndim(datamap)==3:
                 datamap = datamap[:,:,int(operator)]
         
     # Now, if map is a vector or tensor, reduce it down
     if np.ndim(datamap)==3: # vector
         if datamap.shape[2]!=3:
-            logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
-            return -1
+            raise TypeError("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
+
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap)==4: # tensor
         if datamap.shape[2]!=3 or datamap.shape[3]!=3:
             # This may also catch 3D simulation fsgrid variables
-            logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
-            return -1
+            raise TypeError("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
+
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
     if np.ndim(datamap)>=5: # Too many dimensions
-        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
-        return -1
+        raise TypeError("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
     if np.ndim(datamap)!=2: # Too many dimensions
-        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
-        return -1
+        raise TypeError("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
+
 
     # Scale final generated datamap if requested
     datamap = datamap * vscale
@@ -1578,8 +1572,8 @@ def plot_neutral_sheet(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logging.info("Error, requested array is zero everywhere. Exiting.")
-        return 0
+        raise ValueError("Error, requested array is zero everywhere. Exiting.")
+
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -1998,8 +1992,8 @@ def plot_neutral_sheet(filename=None,
     if not draw and not axes:
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            logging.info("Error with attempting to save figure.")
+        except Exception as e:
+            raise e
         logging.info(outputfile+"\n")
     elif not axes:
         # Draw on-screen
@@ -2045,8 +2039,8 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
     # Verify data shape
     if np.ndim(sheet_datamap)==0:
-        logging.info("Error, read only single Bx value from vlsv file! sheet_datamap.shape being "+ str(sheet_datamap.shape))
-        return -1
+        raise ValueError("Error, read only single Bx value from vlsv file! sheet_datamap.shape being "+ str(sheet_datamap.shape))
+
     
 
     #Define the box limits
@@ -2063,8 +2057,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
     if np.ndim(sheet_datamap)==1:
         sheet_data_in_box = ids3d.idmesh3d2(ids, sheet_datamap, reflevel, xsize, ysize, zsize,  None)
     else:
-        logging.info("Dimension error in constructing sheet!")
-        return -1
+        raise TypeError("Dimension error in constructing sheet!")
 
     # Remove empty rows, columns and tubes
     empty_0 = np.where(~np.all(sheet_data_in_box==0, axis=0))
@@ -2107,8 +2100,8 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
         counter+=1
         if counter > 50:    # Failsafe
-            logging.info("Error reading sheet variable vg_b_vol! Exiting.")
-            return -1
+            raise IOError("Error reading sheet variable vg_b_vol! Exiting.")
+
         
         if np.all(zero_counts==0):
             break 
