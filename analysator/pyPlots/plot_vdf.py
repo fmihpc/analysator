@@ -659,8 +659,8 @@ def plot_vdf(filename=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+savefigdir+"! Exiting.")
-            return
+            raise PermissionError("No write access for directory "+savefigdir+"! Exiting.")
+
 
 
 
@@ -780,7 +780,7 @@ def plot_vdf(filename=None,
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
-                raise TypeError(" cellid "+str(cellid)+" does not contain a VDF!")
+                raise ValueError(" cellid "+str(cellid)+" does not contain a VDF!")
 
 
     if draw is not None or axes is not None:
@@ -1365,8 +1365,8 @@ def plot_vdf(filename=None,
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
-            except:
-                raise SystemError("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            except Exception as e:
+                raise IOError("Error with attempting to save figure due to matplotlib LaTeX integration:"+str(e))
             logging.info(savefigname+"\n")
             plt.close()
         elif axes is None:
