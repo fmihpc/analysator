@@ -537,10 +537,8 @@ class VlsvReader(object):
             elif datatype == "uint" and element_size == 8:
                data_block_ids = np.fromfile(fptr, dtype = np.uint64, count = vector_size*num_of_blocks)
             else:
-               logging.info("Error! Bad block id data!")
-               logging.info("Data type: " + datatype + ", element size: " + str(element_size))
-               return
-
+               raise ValueError("Error! Bad block id data!\n " \
+                        "Data type: " + datatype + ", element size: " + str(element_size))
             data_block_ids = np.reshape(data_block_ids, (len(data_block_ids),) )
 
       fptr.close()
@@ -1262,7 +1260,7 @@ class VlsvReader(object):
             operator="absolute"
 
          if reducer.useVspace:
-            logging.info("Error: useVspace flag is not implemented for multipop datareducers!") 
+            raise NotImplementedError("Error: useVspace flag is not implemented for multipop datareducers!") 
             return
 
          # sum over populations
@@ -1349,7 +1347,7 @@ class VlsvReader(object):
          return unit, unitLaTeX, variableLaTeX, unitConversion
             
       if name!="":
-         logging.info("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
+         raise IOError("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       fptr.close()
       return -1
          
@@ -2429,8 +2427,8 @@ class VlsvReader(object):
       N_in = coords_in.shape[0]; N_w_vdf = len(cid_w_vdf)
 
       if N_w_vdf==0:
-         logging.info("Error: No velocity distributions found!")
-         sys.exit()
+         raise ValueError("Error: No velocity distributions found!")
+
 
       # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells, 
       output = self.get_cellid(coords_in)
@@ -3536,8 +3534,7 @@ class VlsvReader(object):
          domainsizes = self.read(tag="MESH_DOMAIN_SIZES", mesh="ionosphere")
          return [domainsizes[0], domainsizes[2]]
       except:
-         logging.info("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
-         return [0,0]
+         raise IOError("Error: Failed to read ionosphere mesh size. Are you reading from a file without ionosphere?")
 
    def get_ionosphere_node_coords(self):
       ''' Read ionosphere node coordinates (in cartesian GSM coordinate system).
@@ -3548,8 +3545,8 @@ class VlsvReader(object):
          coords = np.array(self.read(tag="MESH_NODE_CRDS", mesh="ionosphere")).reshape([-1,3])
          return coords
       except:
-         logging.info("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
-         return []
+         raise IOError("Error: Failed to read ionosphere mesh coordinates. Are you reading from a file without ionosphere?")
+
 
    def get_ionosphere_latlon_coords(self):
       ''' Read ionosphere node coordinates (in magnetic longitude / latitude)
@@ -3577,8 +3574,8 @@ class VlsvReader(object):
          # - Corner index 3
          return meshdata[:,2:5]
       except:
-         logging.info("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
-         return []
+         raise IOError("Error: Failed to read ionosphere mesh elements. Are you reading from a file without ionosphere?")
+
 
    def get_ionosphere_mesh_area(self):
       ''' Read areas of ionosphere elements (triangular mesh)
