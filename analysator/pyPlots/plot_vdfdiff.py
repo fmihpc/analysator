@@ -188,12 +188,12 @@ def plot_vdfdiff(filename1=None, filename2=None,
     if filename1 is not None:
         vlsvReader1=pt.vlsvfile.VlsvReader(filename1)
     else:
-        logging.info("Error, needs a .vlsv file name")
+        raise IOError("Error, needs a .vlsv file name")
         return
     if filename2 is not None:
         vlsvReader2=pt.vlsvfile.VlsvReader(filename2)
     else:
-        logging.info("Error, needs a .vlsv file name")
+        raise IOError("Error, needs a .vlsv file name")
         return
 
     if colormap is None:
@@ -290,8 +290,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pass
 
         if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+savefigdir+"! Exiting.")
-            return
+            raise PermissionError("No write access for directory "+savefigdir+"! Exiting.")
 
 
 
@@ -357,9 +356,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 plt.switch_backend(pt.backend_noninteractive)
 
     if (cellids is None and coordinates is None and coordre is None):
-        logging.info("Error: must provide either cell id's or coordinates")
-        return -1
-
+        raise ValueError("Error: must provide either cell id's or coordinates")
+ 
     if coordre is not None:
         # Transform to metres
         coordinates = (Re*np.asarray(coordre)).tolist()
@@ -415,11 +413,11 @@ def plot_vdfdiff(filename1=None, filename2=None,
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader1, cellid):
-                logging.info("Error, cellid "+str(cellid)+" in input file 1 does not contain a VDF!")
-                return
+                raise IOError("Error, cellid "+str(cellid)+" in input file 1 does not contain a VDF!")
+
             if not verifyCellWithVspace(vlsvReader2, cellid):
-                logging.info("Error, cellid "+str(cellid)+" in input file 2 does not contain a VDF!")
-                return
+                raise IOError("Error, cellid "+str(cellid)+" in input file 2 does not contain a VDF!")
+
 
 
     if draw is not None or axes is not None:
@@ -468,8 +466,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             Vbulk = vlsvReader1.read_variable('V',cellid)
             Vbulk2 = vlsvReader2.read_variable('V',cellid2)
         if Vbulk is None:
-            logging.info("Error in finding plasma bulk velocity!")
-            sys.exit()
+            raise ValueError("Error in finding plasma bulk velocity!")
 
         # If necessary, find magnetic field
         if bvector is not None or bpara is not None or bperp is not None or bpara1 is not None:
@@ -497,7 +494,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
                     PERBB = vlsvReader1.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    logging.info("Error finding B vector direction!")
+                    raise RuntimeError("Error finding B vector direction!")
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -545,17 +542,17 @@ def plot_vdfdiff(filename1=None, filename2=None,
                 pltxstr=r"$v_1$ "+velUnitStr
                 pltystr=r"$v_2$ "+velUnitStr
             else:
-                logging.info("Error parsing slice normal vector!")
-                sys.exit()
+                raise RuntimeError("Error parsing slice normal vector!")
+
             if normalx is not None:
                 if len(normalx)==3:
                     normvectX=normalx
                     if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
-                        logging.info("Error, normalx dot normal is not zero!")
-                        sys.exit()
+                        raise ValueError("Error, normalx dot normal is not zero!")
+
                 else:
-                    logging.info("Error parsing slice normalx vector!")
-                    sys.exit()
+                    raise ValueError("Error parsing slice normalx vector!")
+
         elif xy is not None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
@@ -583,7 +580,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
             # Ensure bulkV has some value
             if np.linalg.norm(Vbulk) < 1e-10:
                 Vbulk = [-1,0,0]
-                logging.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
+                logging.warning(" read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
@@ -1027,8 +1024,8 @@ def plot_vdfdiff(filename1=None, filename2=None,
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
-            except:
-                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            except Exception as e:
+                raise IOError("Error with attempting to save figure due to matplotlib LaTeX integration:"+str(e))
             logging.info(savefigname+"\n")
         elif axes is None:
             # Draw on-screen
