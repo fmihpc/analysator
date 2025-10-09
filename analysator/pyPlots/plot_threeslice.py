@@ -465,11 +465,11 @@ def axes3d(fig, reflevel, cutpoint, boxcoords, axisunit, axisunituse, tickinterv
         limits = np.array([getattr(ax, 'get_{}lim'.format(axis))() for axis in 'xyz'])
         ax.set_box_aspect(np.ptp(limits, axis = 1))
     except:
-        logging.info("WARNING: ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
+        logging.warning("ax.set_box_aspect() failed (not supported by this version of matplotlib?).")
         try:
             ax.auto_scale_xyz([boxcoords[0],boxcoords[1]],[boxcoords[2],boxcoords[3]],[boxcoords[4],boxcoords[5]])
         except:
-            logging.info("WARNING: ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
+            logging.warning("ax.auto_scale_xyz() failed (not supported by this version of matplotlib?).")
 
     # Draw ticks
     if not fixedticks: # Ticks are relative to the triple point
@@ -717,9 +717,7 @@ def plot_threeslice(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
-
+        raise TypeError("needs a .vlsv file name, python object, or dictionary and step")
     if operator is None:
         if op is not None:
             operator=op
@@ -831,8 +829,7 @@ def plot_threeslice(filename=None,
             pass
 
     if not os.access(outputdir, os.W_OK):
-        logging.info(("No write access for directory "+outputdir+"! Exiting."))
-        return
+        raise SystemError(("No write access for directory "+outputdir+"! Exiting."))
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite and os.path.exists(outputfile)):            
@@ -890,8 +887,8 @@ def plot_threeslice(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logging.info("FSgrid and vlasov grid disagreement!")
-        return -1
+        raise ValueError("FSgrid and vlasov grid disagreement!")
+
 
     # Simulation domain outer boundaries
     simext=[xmin,xmax,ymin,ymax,zmin,zmax]
@@ -937,8 +934,7 @@ def plot_threeslice(filename=None,
         logging.info("Note: adjusting box extents to include cut point (z)")
 
     if len(slices)==0:
-        logging.info("Error: no active slices at cutpoint within box domain")
-        return -1
+        raise ValueError("no active slices at cutpoint within box domain")
 
     # Also, if necessary, adjust box coordinates to extend a bit beyond the cutpoint.
     # This is preferable to moving the cutpoint, and required by the quadrant-drawing method.
@@ -1057,8 +1053,7 @@ def plot_threeslice(filename=None,
 
         # Verify data shape
         if np.ndim(datamap)==0:
-            logging.info("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
-            return -1
+            raise ValueError( "read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
 
         if var.startswith('fg_'):
             # fsgrid reader returns array in correct shape but needs to be sliced and transposed
@@ -1075,7 +1070,7 @@ def plot_threeslice(filename=None,
                 datamap_y = datamap[:,fgslice_y,:,:,:]
                 datamap_z = datamap[:,:,fgslice_z,:,:]
             else:
-                logging.info("Error in reshaping fsgrid datamap!") 
+                raise RuntimeError("could not reshape fsgrid datamap!")
             datamap_x = np.squeeze(datamap_x)
             datamap_x = np.swapaxes(datamap_x, 0,1)
             datamap_y = np.squeeze(datamap_y)
@@ -1103,33 +1098,30 @@ def plot_threeslice(filename=None,
                 if 'y' in slices: datamap_y = ids3d.idmesh3d(idlist_y, datamap_y, reflevel, xsize, ysize, zsize, 1, (datamap.shape[1],datamap.shape[2]))
                 if 'z' in slices: datamap_z = ids3d.idmesh3d(idlist_z, datamap_z, reflevel, xsize, ysize, zsize, 2, (datamap.shape[1],datamap.shape[2]))
             else:
-                logging.info("Dimension error in constructing 2D AMR slice!")
-                return -1
+                raise ValueError("Dimension error in constructing 2D AMR slice!")
 
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__ + operatorstr
-        logging.info('WARNING: Expressions have not been implemented yet')
+        logging.warning('Expressions have not been implemented yet')
 
     # Now, if map is a vector or tensor, reduce it down
     if 'x' in slices:
         if np.ndim(datamap_x)==3: # vector
             if datamap_x.shape[2]!=3:
-                logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap_x.shape))
-                return -1
+                raise ValueError(" expected array of 3-element vectors, found array of shape " + str(datamap_x.shape))
             datamap_x = np.linalg.norm(datamap_x, axis=-1)
         if np.ndim(datamap_x)==4: # tensor
             if datamap_x.shape[2]!=3 or datamap_x.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap_x.shape))
-                return -1
+                raise ValueError(" expected array of 3x3 tensors, found array of shape " + str(datamap_x.shape))
             datamap_x = datamap_x[:,:,0,0]+datamap_x[:,:,1,1]+datamap_x[:,:,2,2]
         if np.ndim(datamap_x)>=5: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
-            return -1
+            raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
+
         if np.ndim(datamap_x)!=2: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
-            return -1
+            raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
+
 
         # Scale final generated datamap if requested
         datamap_x = datamap_x * vscale
@@ -1253,7 +1245,7 @@ def plot_threeslice(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)

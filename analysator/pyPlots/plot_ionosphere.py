@@ -124,8 +124,7 @@ def plot_ionosphere(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("needs a .vlsv file name, python object, or directory and step")
 
     if operator is None:
         if op is not None:
@@ -240,14 +239,13 @@ def plot_ionosphere(filename=None,
             pass
 
     if axes is None and not os.access(outputdir, os.W_OK):
-        logging.info(("No write access for directory "+outputdir+"! Exiting."))
-        return
+        raise SystemError(("No write access for directory "+outputdir+"! Exiting."))
+        
 
     # Check if target file already exists and overwriting is disabled
     if axes is None and (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            logging.info(("Found existing file "+outputfile+". Skipping."))
-            return
+            raise SystemError(("Found existing file "+outputfile+". Skipping."))
         else:
             logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
@@ -289,8 +287,8 @@ def plot_ionosphere(filename=None,
     vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
     values = datamap_info.data*vscale
     if np.ndim(values) == 0:
-        logging.info("Error, reading variable '" + str(var) + "' from vlsv file! values.shape being" + str(values.shape))
-        return -1
+        raise ValueError("reading variable '" + str(var) + "' from vlsv file! values.shape being" + str(values.shape))
+
 
     # Add unit to colorbar title
     if datamap_unit_latex:
@@ -340,9 +338,8 @@ def plot_ionosphere(filename=None,
         lin=True
 
     # If both values are zero, we have an empty array
-    if vmaxuse==vminuse==0:
-        logging.info("Error, requested array is zero everywhere. Exiting.")
-        return 0
+    if vmaxuse==vminuse==0:        
+        raise ValueError("requested array is zero everywhere. Exiting.")
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -376,7 +373,7 @@ def plot_ionosphere(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
