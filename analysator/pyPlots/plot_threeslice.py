@@ -829,7 +829,7 @@ def plot_threeslice(filename=None,
             pass
 
     if not os.access(outputdir, os.W_OK):
-        raise SystemError(("No write access for directory "+outputdir+"! Exiting."))
+        raise PermissionError("No write access for directory "+outputdir+"! Exiting.")
 
     # Check if target file already exists and overwriting is disabled
     if (nooverwrite and os.path.exists(outputfile)):            
@@ -1109,18 +1109,18 @@ def plot_threeslice(filename=None,
     if 'x' in slices:
         if np.ndim(datamap_x)==3: # vector
             if datamap_x.shape[2]!=3:
-                raise ValueError(" expected array of 3-element vectors, found array of shape " + str(datamap_x.shape))
+                raise TypeError(" expected array of 3-element vectors, found array of shape " + str(datamap_x.shape))
             datamap_x = np.linalg.norm(datamap_x, axis=-1)
         if np.ndim(datamap_x)==4: # tensor
             if datamap_x.shape[2]!=3 or datamap_x.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                raise ValueError(" expected array of 3x3 tensors, found array of shape " + str(datamap_x.shape))
+                raise TypeError(" expected array of 3x3 tensors, found array of shape " + str(datamap_x.shape))
             datamap_x = datamap_x[:,:,0,0]+datamap_x[:,:,1,1]+datamap_x[:,:,2,2]
         if np.ndim(datamap_x)>=5: # Too many dimensions
-            raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
+            raise TypeError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
 
         if np.ndim(datamap_x)!=2: # Too many dimensions
-            raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
+            raise TypeError(" too many dimensions in datamap, found array of shape " + str(datamap_x.shape))
 
 
         # Scale final generated datamap if requested
@@ -1131,21 +1131,21 @@ def plot_threeslice(filename=None,
     if 'y' in slices:
         if np.ndim(datamap_y)==3: # vector
             if datamap_y.shape[2]!=3:
-                logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap_y.shape))
-                return -1
+                raise TypeError("expected array of 3-element vectors, found array of shape " + str(datamap_y.shape))
+
             datamap_y = np.linalg.norm(datamap_y, axis=-1)
         if np.ndim(datamap_y)==4: # tensor
             if datamap_y.shape[2]!=3 or datamap_y.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap_y.shape))
-                return -1
+                raise TypeError("expected array of 3x3 tensors, found array of shape " + str(datamap_y.shape))
+
             datamap_y = datamap_y[:,:,0,0]+datamap_y[:,:,1,1]+datamap_y[:,:,2,2]
         if np.ndim(datamap_y)>=5: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_y.shape))
-            return -1
+            raise TypeError("too many dimensions in datamap, found array of shape " + str(datamap_y.shape))
+
         if np.ndim(datamap_y)!=2: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_y.shape))
-            return -1
+            raise TypeError("too many dimensions in datamap, found array of shape " + str(datamap_y.shape))
+
 
         # Scale final generated datamap if requested
         datamap_y = datamap_y * vscale
@@ -1155,21 +1155,18 @@ def plot_threeslice(filename=None,
     if 'z' in slices:
         if np.ndim(datamap_z)==3: # vector
             if datamap_z.shape[2]!=3:
-                logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap_z.shape))
-                return -1
+                raise TypeError(" expected array of 3-element vectors, found array of shape " + str(datamap_z.shape))
             datamap_z = np.linalg.norm(datamap_z, axis=-1)
         if np.ndim(datamap_z)==4: # tensor
             if datamap_z.shape[2]!=3 or datamap_z.shape[3]!=3:
                 # This may also catch 3D simulation fsgrid variables
-                logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap_z.shape))
-                return -1
+                raise TypeError("expected array of 3x3 tensors, found array of shape " + str(datamap_z.shape))
             datamap_z = datamap_z[:,:,0,0]+datamap_z[:,:,1,1]+datamap_z[:,:,2,2]
         if np.ndim(datamap_z)>=5: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_z.shape))
-            return -1
+            raise TypeError(" too many dimensions in datamap, found array of shape " + str(datamap_z.shape))
         if np.ndim(datamap_z)!=2: # Too many dimensions
-            logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap_z.shape))
-            return -1
+            raise TypeError(" too many dimensions in datamap, found array of shape " + str(datamap_z.shape))
+
 
         # Scale final generated datamap if requested
         datamap_z = datamap_z * vscale
@@ -1207,8 +1204,7 @@ def plot_threeslice(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logging.info("Error, requested array is zero everywhere. Exiting.")
-        return 0
+        raise ValueError("Error, requested array is zero everywhere. Exiting.")
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -1738,9 +1734,9 @@ def plot_threeslice(filename=None,
         logging.info('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            logging.info("Error with attempting to save figure.")
-            logging.info('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
+        except Exception as e:
+            raise e
+        logging.info('...Done! Time since start = {:.2f} s'.format(time.time()-t0))
         plt.close()
     else:
         # Draw on-screen
