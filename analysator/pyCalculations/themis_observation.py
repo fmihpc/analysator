@@ -157,9 +157,9 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     grid_x = -grid_r * np.sin(grid_theta)  # turn radial grid points into (x, y)
     grid_y = -grid_r * np.cos(grid_theta)  # (the - comes from detector-look-direction vs particle-movement-direction)
 
-    hires_x = np.linspace(-2200,2200,256);
-    hires_y = np.linspace(-2200,2200,256);
-    xi,yi = np.meshgrid(hires_x,hires_y);
+    hires_x = np.linspace(-2200,2200,256)
+    hires_y = np.linspace(-2200,2200,256)
+    xi,yi = np.meshgrid(hires_x,hires_y)
     vi = griddata( (grid_x.flatten(),grid_y.flatten()), values.flatten(), (xi,yi))
 
     if smooth:
@@ -200,9 +200,9 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     grid_x = -grid_r * np.sin(grid_theta)  # turn radial grid points into (x, y)
     grid_y = -grid_r * np.cos(grid_theta)
 
-    hires_x = np.linspace(-2200,2200,256);
-    hires_y = np.linspace(-2200,2200,256);
-    xi,yi = np.meshgrid(hires_x,hires_y);
+    hires_x = np.linspace(-2200,2200,256)
+    hires_y = np.linspace(-2200,2200,256)
+    xi,yi = np.meshgrid(hires_x,hires_y)
     vi = griddata( (grid_x.flatten(),grid_y.flatten()), values.flatten(), (xi,yi), method='linear')
 
     if smooth:
