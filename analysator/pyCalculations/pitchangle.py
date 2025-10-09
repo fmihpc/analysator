@@ -231,7 +231,7 @@ def pitch_angles( vlsvReader,
          except:
             pass
       if not os.access(outputdir, os.W_OK):
-         raise IOError("No write access for directory "+outputdir+"! Exiting.")
+         raise PermissionError("No write access for directory "+outputdir+"! Exiting.")
 
 
       outfilewrite=open(outputfile,'w')
