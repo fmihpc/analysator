@@ -376,9 +376,8 @@ def plot_colormap(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-             logging.info("attempted to perform diff with one of the following active:")
-             logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
-             return -1
+             raise RuntimeError("attempted to perform diff with one of the following active:\n " \
+                            "expression or external or pass_vars or pass_times or pass_full. ")
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
