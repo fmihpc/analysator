@@ -31,7 +31,7 @@ def plot_ionosphere(filename=None,
                   usesci=True, log=None,
                   lin=None, symlog=None, nocb=False, internalcb=False,
                   minlatitude=60,
-                  cbtitle=None, title=None, cbaxes=None,
+                  cbtitle=None, title=None, cbaxes=None,cb_horizontal=False,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None,
@@ -84,6 +84,7 @@ def plot_ionosphere(filename=None,
                         variables.
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
@@ -390,7 +391,7 @@ def plot_ionosphere(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -518,10 +519,10 @@ def plot_ionosphere(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
             #cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 

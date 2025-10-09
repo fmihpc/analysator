@@ -816,7 +816,7 @@ def plot_neutral_sheet(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
-                  axes=None, cbaxes=None,
+                  axes=None, cbaxes=None,cb_horizontal=False,
                   useimshow=False, imshowinterp='none', folding_alpha=0.2, z_extent=[-5,5], sheetlayer='above'
                   ):
     
@@ -940,6 +940,7 @@ def plot_neutral_sheet(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
         :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
         :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
         :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
@@ -1627,7 +1628,7 @@ def plot_neutral_sheet(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
@@ -1835,10 +1836,10 @@ def plot_neutral_sheet(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
         # Ensure minor tick marks are off
