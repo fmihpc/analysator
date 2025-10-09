@@ -486,9 +486,7 @@ def J( variables ):
    else:
       return J[0,:]
 
-
-   logging.info("Error in J")
-   return -1
+   raise RuntimeError("Failed to extract current from Jacobian")
 
 def TensorFromScalars(variables):
    '''Construct a 9-element vector ("tensor") from nine scalar fields.
@@ -577,8 +575,8 @@ def Temperature( variables ):
       elif np.ndim(Pressure)==3:
          return np.ma.divide(Pressure, divisor[:,np.newaxis,np.newaxis])
    # Should not reach here...
-   logging.info("Error finding dimensions in calculating temperature!")
-   return -1
+   raise RuntimeError("Error finding dimensions in calculating temperature!")
+
 
 
 def gyrotropy(variables):
