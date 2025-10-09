@@ -47,8 +47,7 @@ def inplane(inputarray):
     elif PLANE=='YZ':
         inputarray[:,:,0] = np.zeros(inputarray[:,:,0].shape)
     else:
-        logging.info("Error defining plane!")
-        return -1
+        raise RuntimeError("defining plane failed! Check input")
     return inputarray
 
 def inplanevec(inputarray):
@@ -60,8 +59,7 @@ def inplanevec(inputarray):
     elif PLANE=='YZ':
         return inputarray[:,:,1:3]
     else:
-        logging.info("Error defining plane!")
-        return -1
+        raise RuntimeError("defining plane failed! Check input")
 
 def numjacobian(inputarray):
     # Assumes input array is of format [nx,ny,3]
@@ -80,8 +78,8 @@ def numjacobian(inputarray):
         jac[:,:,1,1], jac[:,:,1,2] = np.gradient(inputarray[:,:,1], CELLSIZE)
         jac[:,:,2,1], jac[:,:,2,2] = np.gradient(inputarray[:,:,2], CELLSIZE)
     else:
-        logging.info("Error defining plane!")
-        return -1
+        raise RuntimeError("defining plane failed! Check input")
+
     # Output array is of format [nx,ny,3,3]
     #  :,:,component, derivativedirection
     # so dAx/dx = :,:,0,0
@@ -112,8 +110,8 @@ def numgradscalar(inputarray):
     elif PLANE=='YZ':
         grad[:,:,1],grad[:,:,2] = np.gradient(inputarray, CELLSIZE)
     else:
-        logging.info("Error defining plane!")
-        return -1
+        raise RuntimeError("defining plane failed! Check input")
+
     # Output array is of format [nx,ny,3]
     return grad
 
@@ -279,8 +277,7 @@ def numcurllimited(inputarray):
         jac[:, :, 1, 1], jac[:, :, 1, 2] = limitedgradient(inputarray[:, :, 1], CELLSIZE)
         jac[:, :, 2, 1], jac[:, :, 2, 2] = limitedgradient(inputarray[:, :, 2], CELLSIZE)
     else:
-        logging.info("Error defining plane!")
-        return -1
+        raise RuntimeError("defining plane failed! Check input")
     # Output array is of format [nx,ny,3,3]
     #  :,:,component, derivativedirection
     # so dAx/dx = :,:,0,0
@@ -299,8 +296,8 @@ def numvecdotdelvec(inputarray1, inputarray2):
     # (V1 dot Del)V2
     # Assumesinput arrays are of format [nx,ny,3]
     if inputarray1.shape!=inputarray2.shape:
-        logging.info("Error: Input array shapes don't match!",inputarray1.shape,inputarray2.shape)
-        return -1
+        raise TypeError("EInput array shapes don't match!",inputarray1.shape,inputarray2.shape)
+
     result = np.zeros(inputarray1.shape)
     jac = numjacobian(inputarray2)
     result[:,:,0] = (inputarray1[:,:,0]*jac[:,:,0,0] +
@@ -507,8 +504,8 @@ def expr_Diff(pass_maps, requestvariables=False):
     map0=pass_maps[0][var]
     map1=pass_maps[1][var]
     if (map0.shape != map1.shape):
-        logging.info("Error with diff: incompatible map shapes! " + str(map0.shape) + " vs " + str(map1.shape))
-        sys.exit(-1)
+        raise TypeError("Error with diff: incompatible map shapes! " + str(map0.shape) + " vs " + str(map1.shape))
+
     if (map0.dtype in ['uint8','uint16','uint32','uint64']):
         logging.info("Diff: Converting from unsigned to signed integers")
         map0 = map0.astype('int64')
