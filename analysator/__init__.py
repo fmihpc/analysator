@@ -2,6 +2,13 @@
 import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging
+import importlib.util
+
+
+backend_noninteractive=""
+backend_interactive=""
+
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 
 # Input current folder's path
@@ -23,8 +30,22 @@ os.environ['MPLCONFIGDIR']=mpldir
 # Check if user is on taito.csc.fi without loading the mayavi2 module
 import numpy as np
 logging.getLogger('matplotlib').setLevel(os.environ.get('ANALYSATOR_MPL_LOG_LEVEL', 'WARNING').upper())
-import matplotlib
+#import matplotlib
 
+def lazyimport(module_name):
+   try:
+      return sys.modules[module_name]
+   except KeyError:
+      spec = importlib.util.find_spec(module_name)
+      loader = importlib.util.LazyLoader(spec.loader)
+      spec.loader = loader
+      module = importlib.util.module_from_spec(spec)
+      sys.modules[module_name]= module
+      loader.exec_module(module)
+      return module
+
+
+'''
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
    logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
    logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
@@ -53,22 +74,23 @@ elif not os.getenv('PTBACKEND'):
 else:
    backend_interactive = os.getenv('PTBACKEND')
    backend_noninteractive = os.getenv('PTBACKEND')
-
+'''
 # Import modules
 try:
-   import calculations
+   calculations=lazyimport("calculations")
 except ImportError as e:
    logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
-   import vlsvfile
+   vlsvfile=lazyimport("vlsvfile")
 except ImportError as e:
    logging.info("Note: Did not import vlsvfile module: " + str(e))
 
 import os
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-if os.getenv('PTNONINTERACTIVE') != None:
+if os.getenv('PTNONINTERACTIVE') == None: #was ineq
+   '''
    # Non-interactive plotting mode
    try:
       plt.switch_backend(backend_noninteractive)
@@ -83,6 +105,7 @@ else:
       logging.info("Note: Unable to switch to "+backend_interactive+" backend")
 
    #Only attempt loading MayaVi2 if requested
+   '''
    if os.getenv('PTMAYAVI2') != None:
       try:
          import grid
@@ -90,16 +113,16 @@ else:
          logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
-   import plot
+   #import plot
+   plot=lazyimport("plot")
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 
 try:
-   import miscellaneous
+   #import miscellaneous
+   miscellaneous=lazyimport("miscellaneous")
 except ImportError as e:
    logging.info("Note: Did not import miscellaneous: " + str(e))
-
-
 
 # from analysator.pytools import *
 # import warnings
