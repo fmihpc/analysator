@@ -73,11 +73,10 @@ class VariableInfo:
              E.g. if the data is an array of 3d vectors, get_variable(0) would return the variable with data[:,0] as the data
       '''
       if len(self.data) <= 0:
-         logging.info("BAD DATA LENGTH")
-         return []
+         raise ValueError("bad data length")
       if len(np.atleast_1d(self.data[0])) <= index:
-         logging.info("BAD INDEX, THE INDEX IS LARGER THAN VECTOR SIZE!")
-         return []
+         raise IndexError("bad index, the index is larger than vector size!")
+
       return VariableInfo( self.data[:,index], self.name, self.units, self.latex, self.latexunits )
 
 
