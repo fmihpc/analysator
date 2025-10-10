@@ -157,8 +157,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
             setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
             logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
-            logging.info("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
-            logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
+            logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.\n Using a default value of 1.e-16. Override with setThreshold=value.")
             setThreshold = 1.e-16
     ii_f = np.where(f >= setThreshold)
     logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
