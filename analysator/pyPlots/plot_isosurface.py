@@ -2038,7 +2038,7 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
 
     # Verify data shape
     if np.ndim(sheet_datamap)==0:
-        raise ValueError("Error, read only single Bx value from vlsv file! sheet_datamap.shape being "+ str(sheet_datamap.shape))
+        raise TypeError("Error, read only single Bx value from vlsv file! sheet_datamap.shape being "+ str(sheet_datamap.shape))
 
     
 
