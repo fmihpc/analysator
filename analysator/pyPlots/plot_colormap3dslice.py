@@ -360,9 +360,8 @@ def plot_colormap3dslice(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-            logging.info("attempted to perform diff with one of the following active:")
-            logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
-            return -1
+            raise RuntimeError("attempted to perform diff with one of the following active:\n expression or external or pass_vars or pass_times or pass_full. Exiting.")
+
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
@@ -449,8 +448,8 @@ def plot_colormap3dslice(filename=None,
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
-            return -1
+            raise ValueError("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+
 
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
@@ -468,8 +467,7 @@ def plot_colormap3dslice(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logging.info("FSgrid and vlasov grid disagreement!")
-        return -1
+        raise ValueError("FSgrid and vlasov grid disagreement!")
     
     if cutpointre is not None:
         cutpoint = cutpointre * Re
