@@ -842,8 +842,8 @@ def expr_Slippage(pass_maps, requestvariables=False):
         return ['E','B','V']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_Slippage expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_Slippage expected a single timestep, but got multiple. Exiting.")
+
 
     expr_Slippage.__name__ = r"Slippage $[v_\mathrm{A}]$"
 
@@ -862,8 +862,8 @@ def expr_EcrossB(pass_maps, requestvariables=False):
         return ['E','B']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_EcrossB expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_EcrossB expected a single timestep, but got multiple. Exiting.")
+
 
     E = pass_maps['E']
     B = pass_maps['B']
@@ -884,8 +884,8 @@ def expr_betatron(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        logging.info("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expr_betatron expected a list of timesteps to average from, but got a single timestep. Exiting.")
+
 
     # Multiple time steps were found. This should be 3, for a time derivative.
     dsteps = [x['dstep'] for x in pass_maps]
@@ -974,8 +974,7 @@ def expr_diamagnetic(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        logging.info("expr_diamagnetic expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expr_diamagnetic expected a list of timesteps to average from, but got a single timestep. Exiting.")
 
     # Multiple time steps were found. This should be 3, for a time derivative.
     dsteps = [x['dstep'] for x in pass_maps]
@@ -1027,8 +1026,7 @@ def expr_jc(pass_maps, requestvariables=False):
         return ['B','PParallel']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_jc expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_jc expected a single timestep, but got multiple. Exiting.")
 
     Pparallel = pass_maps['PParallel'].T #Pressure (scalar)
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
@@ -1045,8 +1043,8 @@ def expr_jg(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_jg expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_jg expected a single timestep, but got multiple. Exiting.")
+
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
@@ -1063,8 +1061,8 @@ def expr_jgyr(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_jgyr expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_jgyr expected a single timestep, but got multiple. Exiting.")
+
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
     gradPperp = numgradscalar(Pperp)
@@ -1093,8 +1091,8 @@ def expr_jring(pass_maps, requestvariables=False):
         return ['B','PParallel','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_jring expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_jring expected a single timestep, but got multiple. Exiting.")
+
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
     Ppara = pass_maps['PParallel'].T #Pressure (scalar)
@@ -1125,9 +1123,7 @@ def expr_jp(pass_maps, requestvariables=False):
     # This custom expression returns a proxy for betatron acceleration
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        logging.info("expr_jp expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
-
+        raise TypeError("expr_jp expected a list of timesteps to average from, but got a single timestep. Exiting.")
     # Multiple time steps were found. This should be 3, for a time derivative.
     dsteps = [x['dstep'] for x in pass_maps]
     curri = dsteps.index(0)
@@ -1153,8 +1149,8 @@ def expr_jm(pass_maps, requestvariables=False):
         return ['B','PPerpendicular']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_jm expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_jm expected a single timestep, but got multiple. Exiting.")
+
 
     Pperp = pass_maps['PPerpendicular'].T #Pressure (scalar)
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
@@ -1172,8 +1168,7 @@ def expr_ja(pass_maps, requestvariables=False):
         return ['B','PTensorRotated']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_ja expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_ja expected a single timestep, but got multiple. Exiting.")
 
     Ptensor = np.transpose(pass_maps['PTensorRotated'], (1,0,2,3))
     Bmap = TransposeVectorArray(pass_maps['B']) # Magnetic field
@@ -1199,8 +1194,7 @@ def expr_dLstardt(pass_maps, requestvariables=False):
 
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        logging.info("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expr_dLstardt expected a list of timesteps to average from, but got a single timestep. Exiting.")
 
     # Multiple time steps were found. This should be 3, for a time derivative.
     dsteps = [x['dstep'] for x in pass_maps]
@@ -1291,8 +1285,7 @@ def expr_electronflow(pass_maps, requestvariables=False):
         return ['vg_b_vol','electron/vg_v','electron/vg_rho','proton/vg_v','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronflow expected a single timestep, but got multiple. Exiting.")
 
     unitcharge = 1.602177e-19
     mu0 = 1.25663706144e-6
@@ -1326,8 +1319,7 @@ def expr_electronflowerr(pass_maps, requestvariables=False):
         return ['vg_b_vol','electron/vg_v','electron/vg_rho','proton/vg_v','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronflow expected a single timestep, but got multiple. Exiting.")
 
     unitcharge = 1.602177e-19
     mu0 = 1.25663706144e-6
@@ -1415,8 +1407,8 @@ def expr_numberdensitycheck(pass_maps, requestvariables=False):
         return ['electron/vg_rho','proton/vg_rho']
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronflow expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronflow expected a single timestep, but got multiple. Exiting.")
+
 
     return pass_maps['electron/vg_rho']-pass_maps['proton/vg_rho']
 
@@ -1426,8 +1418,8 @@ def expr_electronpressure_isothermal(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronpressure_isothermal expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronpressure_isothermal expected a single timestep, but got multiple. Exiting.")
+
 
     #rho_e = pass_maps['electron/rho'].T
     rho_p = np.ma.masked_less_equal(pass_maps['rho'].T,0) # assumes equal number density for e,p
@@ -1465,8 +1457,8 @@ def expr_electronpressure_polytropic(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronpressure_polytropic expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronpressure_polytropic expected a single timestep, but got multiple. Exiting.")
+
 
     #index (5/3 is adiabatic), 1 is isothermal
     index=5./3.
@@ -1513,8 +1505,7 @@ def expr_electronpressure_ratio(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
     egradpe = np.ma.masked_less_equal(np.linalg.norm(egradpe,axis=-1),0)
@@ -1530,8 +1521,8 @@ def expr_electronpressure_ratioHall(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
     egradpe = np.ma.masked_less_equal(np.linalg.norm(egradpe,axis=-1),0)
@@ -1553,8 +1544,8 @@ def expr_electronpressure_check(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expr_electronpressure_ratio expected a single timestep, but got multiple. Exiting.")
+
 
     egradpe = expr_electronpressure_isothermal(pass_maps)
     egradpe2 = expr_electronpressure_polytropic(pass_maps)
@@ -1572,8 +1563,8 @@ def expr_fgvgbvol(pass_maps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(pass_maps) is list:
-        logging.info("expression expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("expression expected a single timestep, but got multiple. Exiting.")
+
 
     fg = np.ma.masked_invalid(pass_maps['fg_b_vol'])
     # use boundarytype to mask which cells participate in aggregation
