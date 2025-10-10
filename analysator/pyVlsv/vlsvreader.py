@@ -1977,14 +1977,14 @@ class VlsvReader(object):
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
          if not cellids == -1:
-            logging.info("Warning, CellID requests not supported for FSgrid variables! Aborting.")
+            logging.warning( "CellID requests not supported for FSgrid variables! Aborting.")
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
 
       #if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
       if name.lower()[0:3]=="ig_":
          if not cellids == -1:
-            logging.info("Warning, CellID requests not supported for ionosphere variables! Aborting.")
+            logging.warning("CellID requests not supported for ionosphere variables! Aborting.")
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
       
