@@ -1156,8 +1156,8 @@ def plot_colormap(filename=None,
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
             if cb_horizontal:
-                cax = divider.append_axes("bottom", size="4%", pad=0.55)     
-                ax1.xaxis.set_label_coords(0.5,-0.2)
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
                 horalign="center"
             else:
                 cax = divider.append_axes("right", size="5%", pad=0.05)           
