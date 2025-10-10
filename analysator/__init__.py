@@ -26,9 +26,9 @@ logging.getLogger('matplotlib').setLevel(os.environ.get('ANALYSATOR_MPL_LOG_LEVE
 import matplotlib
 
 if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
-   logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
-   logging.info('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
+   logging.warning('Warning, according to loaded numpy and matplotlib versions, user appears to be\n \
+                     either using csc.taito.fi without loading the mayavi2 module, or by invoking\n \
+                     the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
 # Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
 # for changing fonts, bold math symbols etc, but may cause trouble on some systems.
