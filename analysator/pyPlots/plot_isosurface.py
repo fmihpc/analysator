@@ -550,7 +550,7 @@ def plot_isosurface(filename=None,
             if symlog is not None:
                 if Version(matplotlib.__version__) < Version("3.2.0"):
                     norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                    logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                    logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                     #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
                 else:
                     norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -1099,9 +1099,8 @@ def plot_neutral_sheet(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-            logging.info("attempted to perform diff with one of the following active:")
-            logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
-            return -1
+            raise RuntimeError("attempted to perform diff with one of the following active:\n expression or external or pass_vars or pass_times or pass_full. Exiting.")
+
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
@@ -1169,8 +1168,8 @@ def plot_neutral_sheet(filename=None,
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
-            return -1
+            raise TypeError("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+
 
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
@@ -1188,8 +1187,8 @@ def plot_neutral_sheet(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logging.info("FSgrid and vlasov grid disagreement!")
-        return -1
+        raise ValueError("FSgrid and vlasov grid disagreement!")
+
     
     # Plotting grid in the XY plane
     axislabels = ['X','Y']
@@ -1607,7 +1606,7 @@ def plot_neutral_sheet(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -2029,8 +2028,8 @@ def sheet_coordinate_finder(f, boxcoords, axisunit, cellids, reflevel, indexids,
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
-            return -1
+            raise TypeError("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+
 
     # Read Bx data
     sheet_datamap_info = f.read_variable_info("vg_b_vol", operator='x')
