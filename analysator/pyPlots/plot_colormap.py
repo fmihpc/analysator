@@ -261,7 +261,7 @@ def plot_colormap(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        raise ValueError("Error, needs a .vlsv file name, python object, or directory and step")
+        raise TypeError("Error, needs a .vlsv file name, python object, or directory and step")
 
     # Flux function files
     if fluxdir:

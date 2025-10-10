@@ -188,13 +188,12 @@ def plot_vdfdiff(filename1=None, filename2=None,
     if filename1 is not None:
         vlsvReader1=pt.vlsvfile.VlsvReader(filename1)
     else:
-        raise IOError("Error, needs a .vlsv file name")
-        return
+        raise TypeError("Error, needs a .vlsv file name")
+
     if filename2 is not None:
         vlsvReader2=pt.vlsvfile.VlsvReader(filename2)
     else:
-        raise IOError("Error, needs a .vlsv file name")
-        return
+        raise TypeError("Error, needs a .vlsv file name")
 
     if colormap is None:
         colormap="seismic"
