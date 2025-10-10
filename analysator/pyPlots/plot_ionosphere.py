@@ -246,6 +246,7 @@ def plot_ionosphere(filename=None,
     if axes is None and (nooverwrite and os.path.exists(outputfile)):            
         if os.stat(outputfile).st_size > 0: # Also check that file is not empty
             logging.info(("Found existing file "+outputfile+". Skipping."))
+            return
         else:
             logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
