@@ -1155,9 +1155,14 @@ def plot_colormap(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
-
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55)     
+                ax1.xaxis.set_label_coords(0.5,-0.2)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)           
+                horalign="left"
+            cbdir="right"
         # Set flag which affects colorbar decimal precision
         if lin is None:
             pt.plot.cb_linear = False
@@ -1177,9 +1182,13 @@ def plot_colormap(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
-            cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
-            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+            if cb_horizontal:
+                cb.ax.tick_params(labelsize=fontsize3*0.5,width=thick,length=3*thick,which="both",labelrotation=30)
+                cb.set_label(cb_title_use,fontsize=fontsize3,fontweight='bold')
+            else:
+                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+                cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+                cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
             cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
@@ -1189,6 +1198,7 @@ def plot_colormap(filename=None,
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        # Might need additions for horizontal cb?
         if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
             (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero

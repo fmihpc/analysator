@@ -1284,9 +1284,16 @@ def plot_vdf(filename=None,
             elif internalcb is None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
-                cax = divider.append_axes("right", size="5%", pad=0.05)
+
+                if cb_horizontal:
+                    cax = divider.append_axes("bottom", size="4%", pad=0.6)     
+                    ax1.xaxis.set_label_coords(0.5,-0.18)
+                    horalign="center"
+                else:
+                    cax = divider.append_axes("right", size="5%", pad=0.05)           
+                    horalign="left"
                 cbdir="right"
-                horalign="left"
+
             else:
                 # Colorbar within plot area
                 cbloc=1
@@ -1317,13 +1324,19 @@ def plot_vdf(filename=None,
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
-                cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+
+                if cb_horizontal:
+                    cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,labelrotation=30)
+                    cb.set_label(cb_title_use,fontsize=fontsize3,fontweight='bold')
+                else:
+                    cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+                    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
                 cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
-            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
-
+            if not cb_horizontal:
+                cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+    
 
 
         if noxlabels is not None:
