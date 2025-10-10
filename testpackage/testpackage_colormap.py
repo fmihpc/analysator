@@ -135,8 +135,8 @@ def expr_cav_cust(pass_maps, requestvariables=False):
     # format of the incoming data.
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_cav_cust expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expr_cav_cust expected a list of timesteps to average from, but got a single timestep. Exiting.")
+
 
     # Multiple time steps were found
     ntimes = len(pass_maps)
@@ -215,8 +215,8 @@ def timesmooth(pass_maps):
 
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("timesmooth expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("timesmooth expected a list of timesteps to average from, but got a single timestep. Exiting.")
+
     ntimes = len(pass_maps)
     print("this many time steps ",ntimes)
     # Select first valid variable
