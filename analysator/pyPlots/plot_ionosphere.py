@@ -418,6 +418,7 @@ def plot_ionosphere(filename=None,
     else:
         axes.set_xticklabels([])
         axes.set_yticklabels([])
+        axes.axis('off')
         ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
@@ -508,7 +509,7 @@ def plot_ionosphere(filename=None,
                 cax = fig.add_axes([0.8,0.1,0.03,0.6])
                 #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
             else:
-                cax = axes.inset_axes([0.8,0.1,0.03,0.6])
+                cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
 
         # Set flag which affects colorbar decimal precision
