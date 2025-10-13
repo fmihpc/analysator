@@ -462,7 +462,7 @@ def plot_ionosphere(filename=None,
     gridlatitudes = np.arange(0., 90.-minlatitude,10.)
     ax_polar.set_rmax(90.-minlatitude);
     ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=225)
-    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
+    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","6h","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
     ax_polar.set_theta_zero_location('S', offset=0)
     ax_polar.tick_params(labelsize=fontsize2, pad=0.1)
 
