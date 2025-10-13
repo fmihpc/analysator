@@ -568,6 +568,8 @@ def plot_vdf(filename=None,
     if colormap is None:
         colormap="hot_desaturated"
 
+    cmapuse=pt.plot.get_cmap(colormap)
+
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
     fontsize3=scale_cb*scale # Colour bar ticks
