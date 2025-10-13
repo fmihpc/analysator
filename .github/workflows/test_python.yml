@@ -96,7 +96,6 @@ jobs:
         python -m pip install --editable ../analysator[${{ matrix.extras }}]
     - name: Trial imports
       run:  
-            . CI_env/bin/activate
             python -c 'import analysator as pt'
             python -c 'import analysator as pt;pt.plot.__dict__'
             python -c 'import analysator as pt;pt.calculations.__dict__'
