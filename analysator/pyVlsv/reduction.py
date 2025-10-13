@@ -1015,24 +1015,48 @@ def Pressure_strain(variables, reader):
    ''' Calculate the (proton) pressure strain interaction -(P dot nabla) dot bulk velocity, a sum of the pdil and PiD interactions. A separate datareducer to avoid redundant Jacobian estimations.
    '''
 
-   coord = variables[0]
-   ptensor = variables[1]
-   dx = np.min(variables[2])/2
+   stack = True
+   if variables[0].ndim == 1:
+      coord = np.atleast_2d(variables[0][np.newaxis,:])
+      ptensor = variables[1][np.newaxis,:,:]
+      dx = variables[2][np.newaxis,:]
+      stack = False
+   else:
+      coord = variables[0]
+      ptensor = variables[1]
+      dx = variables[2]
 
+   
+   h = 2.0
+   dx = dx/h
 
-   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]))
-   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]))
-   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]))
-   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]))
-   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]))
-   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]))
+   mesh_size = reader.get_fsgrid_mesh_size()
+
+   if mesh_size[0] > 1:
+      vx1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+      vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+   else:    
+      vx1 = np.zeros_like(coord)
+      vx2 = np.zeros_like(coord)
+   if mesh_size[1] > 1:
+      vy1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+      vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+   else:
+      vy1 = np.zeros_like(coord)
+      vy2 = np.zeros_like(coord)
+   if mesh_size[2] > 1:   
+      vz1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+      vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+   else:
+      vz1 = np.zeros_like(coord)
+      vz2 = np.zeros_like(coord)
 
    if np.shape(ptensor)!=(3,3):
 
 
-      dxv = (vx2 - vx1) / (2*dx)
-      dyv = (vy2 - vy1) / (2*dx)
-      dzv = (vz2 - vz1) / (2*dx)
+      dxv = (vx2 - vx1) / (2*dx[:,0][:,np.newaxis])
+      dyv = (vy2 - vy1) / (2*dx[:,1][:,np.newaxis])
+      dzv = (vz2 - vz1) / (2*dx[:,2][:,np.newaxis])
 
       v_jacobian =  np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
 
@@ -1045,23 +1069,29 @@ def Pressure_strain(variables, reader):
 
       d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   
 
-      return -np.einsum('...ij,...ij', pi, d) -1/3*np.einsum('...ii', ptensor)*np.einsum('...ii', v_jacobian)
-   
+      strain = -np.einsum('...ij,...ij', pi, d) -1/3*np.einsum('...ii', ptensor)*np.einsum('...ii', v_jacobian)
+      if stack:
+         return strain
+      else:
+         return strain[0,...]
+
    else:
+      raise ValueError("Stacking of parameters failed")
 
-      dxx, dxy, dxz = (vx2 - vx1) / (2*dx)
-      dyx, dyy, dyz = (vy2 - vy1) / (2*dx)
-      dzx, dzy, dzz = (vz2 - vz1) / (2*dx)
+      # single-element einsums left for example
+      # dxx, dxy, dxz = (vx2 - vx1) / (2*dx[0])
+      # dyx, dyy, dyz = (vy2 - vy1) / (2*dx[1])
+      # dzx, dzy, dzz = (vz2 - vz1) / (2*dx[2])
 
-      v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
+      # v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
 
-      p = 1/3*np.trace(ptensor)
-      kdelta = np.diag(np.ones(3))
-      pi = ptensor - p*kdelta
-      div_v = np.trace(v_jacobian)
-      d = 0.5*(v_jacobian + v_jacobian.T)- 1/3 * div_v*kdelta
+      # p = 1/3*np.trace(ptensor)
+      # kdelta = np.diag(np.ones(3))
+      # pi = ptensor - p*kdelta
+      # div_v = np.trace(v_jacobian)
+      # d = 0.5*(v_jacobian + v_jacobian.T)- 1/3 * div_v*kdelta
 
-      return -np.einsum('ij,ij', pi, d) - p*div_v
+      # return -np.einsum('ij,ij', pi, d) - p*div_v
 
 
 
