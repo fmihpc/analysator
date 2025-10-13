@@ -35,7 +35,7 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.patches import Circle, Wedge
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+from . import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from packaging.version import Version
