@@ -410,7 +410,7 @@ def plot_ionosphere(filename=None,
 
     if axes is None:
         fig = plt.figure(figsize=figsize,dpi=150)
-        ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_cartesian = fig.add_axes([0,0,0.8,0.8], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
         #ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
@@ -505,9 +505,10 @@ def plot_ionosphere(filename=None,
         else:
             # Split existing axes to make room for colorbar
             if axes is None:
-                cax = fig.add_axes([0.9,0.2,0.03,0.6])
+                cax = fig.add_axes([0.8,0.1,0.03,0.6])
+                #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
             else:
-                cax = axes.inset_axes([0.9,0.2,0.03,0.6])
+                cax = axes.inset_axes([0.8,0.1,0.03,0.6])
             cbdir="right"; horalign="left"
 
         # Set flag which affects colorbar decimal precision
