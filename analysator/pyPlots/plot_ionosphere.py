@@ -417,9 +417,10 @@ def plot_ionosphere(filename=None,
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
     else:
+        axes.axis('off')
         axes.set_xticklabels([])
         axes.set_yticklabels([])
-        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center left')
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center' if cb_horizontal else 'center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
@@ -487,7 +488,8 @@ def plot_ionosphere(filename=None,
         if cbaxes: 
             # Colorbar axes are provided
             cax = cbaxes
-            cbdir="right"; horalign="left"
+            cbdir="right"
+            horalign="center" if cb_horizontal else "left"
         elif internalcb:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
