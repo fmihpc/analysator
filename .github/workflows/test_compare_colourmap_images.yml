@@ -12,6 +12,10 @@ on:
     - cron: '0 8 * * MON'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
 
   turso_system:
@@ -20,7 +24,7 @@ jobs:
         timeout-minutes: 45
         strategy:
           fail-fast: false
-          max-parallel: 1
+          max-parallel: 2
           matrix:
             extras: ["all"]
         steps:
