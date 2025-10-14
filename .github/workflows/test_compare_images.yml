@@ -77,4 +77,8 @@ jobs:
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
             ../analysator/testpackage/run_compare.sh testpackage_vdf
-
+        - name: scancel dangling job upon cancellation
+          if: cancelled()
+          run: |
+            scancel ${{ steps.run.outputs.SLURM_JOB_ID }}
+  
