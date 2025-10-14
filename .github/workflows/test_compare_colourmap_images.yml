@@ -5,9 +5,10 @@ name: Turso compare colourmap images
 
 on:
   push:
-    branches: [ master, dev, image_compare]
+    branches: [ master, dev ]
   pull_request:
-    branches: [ master, dev, image_compare]
+    branches: [ master, dev,image_compare ]
+    types: [opened, reopened,converted_to_draft]
   schedule:
     - cron: '0 8 * * MON'
   workflow_dispatch:
@@ -20,7 +21,7 @@ jobs:
         timeout-minutes: 45
         strategy:
           fail-fast: false
-          max-parallel: 1
+          max-parallel: 2
           matrix:
             extras: ["all"]
         steps:
