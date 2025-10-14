@@ -40,7 +40,7 @@ jobs:
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
-        - name: Produce plots
+        - name: Produce colormap plots
           run: |
             export TMPDIR=$RUNNER_TEMP
       
@@ -57,4 +57,24 @@ jobs:
             module load Python/3.10.4-GCCcore-11.3.0
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
-            ../analysator/testpackage/run_compare.sh
+            ../analysator/testpackage/run_compare.sh testpackage_colormap
+
+        - name: Produce vdf plots
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+      
+
+            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh
+            cat testpackage_vdf_run.txt
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            python ./testpackage/testpackage_get_job_error.py testpackage_vdf_run.txt
+            
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
+            . CI_env/bin/activate
+            ../analysator/testpackage/run_compare.sh testpackage_vdf
+

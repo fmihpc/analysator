@@ -27,13 +27,13 @@ source CI_env/bin/activate
 
 module list
 
-mkdir -p $PWD/produced_plots/testpackage_colormap
+mkdir -p $PWD/produced_plots/testpackage_vdf
 
 export PTNONINTERACTIVE=1
-export PTOUTPUTDIR=$PWD/produced_plots/testpackage_colormap/
+export PTOUTPUTDIR=$PWD/produced_plots/testpackage_vdf/
 
 
-python ./testpackage/testpackage_colormap.py $jobcount $index
+python ./testpackage/testpackage_vdf.py $jobcount $index
 #python ./testpackage/color_small_test.py $jobcount $index
 echo "EXIT_CODE_FROM_JOB $?"
 #echo Job $SLURM_ARRAY_TASK_ID complete.
