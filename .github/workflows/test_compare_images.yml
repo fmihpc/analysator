@@ -46,7 +46,8 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
       
 
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh | grep -Po '\d+$' > temp_file.txt
+            export SLURM_JOB_ID=$(cat temp_file.txt)
             cat testpackage_colormap_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
@@ -81,5 +82,5 @@ jobs:
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
-            scancel ${{ steps.run.outputs.SLURM_JOB_ID }}
+            scancel $SLURM_JOB_ID
   
