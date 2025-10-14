@@ -521,8 +521,9 @@ def plot_vdf(filename=None,
     :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
     :kword scale_label: Big label text additional scale factor (default=12.0)
     :kword thick:       line and axis thickness, default=1.0
-    :kword fixfigsize   Used for fixing the size of the output image for testpackage or for comparing images with ImageMagick compare.
+    :kword fixfigsize:  Used for fixing the size of the output image for testpackage or for comparing images with ImageMagick compare.
                         This should not be used with noborder, as it may undo it.
+
     :returns:           Outputs an image to a file or to the screen.
 
     .. code-block:: python
