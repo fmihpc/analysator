@@ -523,7 +523,6 @@ def plot_vdf(filename=None,
     :kword thick:       line and axis thickness, default=1.0
     :kword fixfigsize   Used for fixing the size of the output image for testpackage or for comparing images with ImageMagick compare.
                         This should not be used with noborder, as it may undo it.
-
     :returns:           Outputs an image to a file or to the screen.
 
     .. code-block:: python
