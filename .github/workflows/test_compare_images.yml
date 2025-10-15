@@ -48,7 +48,6 @@ jobs:
 
             sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh | grep -Po '\d+$' > temp_file.txt
             echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
-            echo "Submitted job ${{ steps.run_color.SLURM_JOB_ID }}"
             cat testpackage_colormap_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
@@ -70,7 +69,6 @@ jobs:
 
             sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh | grep -Po '\d+$' > temp_file.txt
             echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
-            echo "Submitted job ${{ steps.run_vdf.SLURM_JOB_ID }}"
             cat testpackage_vdf_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
