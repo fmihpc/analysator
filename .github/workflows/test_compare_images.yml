@@ -33,8 +33,7 @@ jobs:
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
           run: |
-            scancel 276963042
-            scancel 276963035
+
             
             
             export TMPDIR=$RUNNER_TEMP
