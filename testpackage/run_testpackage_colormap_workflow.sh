@@ -22,7 +22,7 @@ module load Python/3.10.4-GCCcore-11.3.0
 module load ImageMagick/7.1.0-37-GCCcore-11.3.0
 
 
-echo "SLURM_JOB_ID=$SLURM_JOB_ID" >> $GITHUB_OUTPUT
+echo "SLURM_JOB_ID1=$SLURM_JOB_ID" >> $GITHUB_OUTPUT
 
 source CI_env/bin/activate
 
