@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  SLURM_JOB_ID_COLORMAP:
+  SLURM_JOB_ID_VDF:
 
 jobs:
 
@@ -42,13 +45,14 @@ jobs:
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Produce colormap plots
+          id: run_color
           run: |
             export TMPDIR=$RUNNER_TEMP
       
 
             sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh | grep -Po '\d+$' > temp_file.txt
-            export SLURM_JOB_ID_COLORMAP=$(cat temp_file.txt)
-            echo "Submitted job $SLURM_JOB_ID_COLORMAP"
+            echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
+            echo "Submitted job ${{ steps.run_color.SLURM_JOB_ID }}"
             cat testpackage_colormap_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
@@ -63,13 +67,14 @@ jobs:
             ../analysator/testpackage/run_compare.sh testpackage_colormap
 
         - name: Produce vdf plots
+          id: run_vdf
           run: |
             export TMPDIR=$RUNNER_TEMP
       
 
             sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh | grep -Po '\d+$' > temp_file.txt
-            export SLURM_JOB_ID_VDF=$(cat temp_file.txt)
-            echo "Submitted job $SLURM_JOB_ID_VDF"
+            echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
+            echo "Submitted job ${{ steps.run_vdf.SLURM_JOB_ID }}"
             cat testpackage_vdf_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
@@ -86,12 +91,12 @@ jobs:
           if: cancelled()
           run: |
             #check if variables are set and try to scancel
-            echo $SLURM_JOB_ID_COLORMAP
-            echo $SLURM_JOB_ID_VDF
-            if [[ -v SLURM_JOB_ID_VDF ]]; then 
-              scancel $SLURM_JOB_ID_VDF
+
+            if [[ -v {{ steps.run_color.SLURM_JOB_ID }} ]]; then 
+              scancel ${{ steps.run_color.SLURM_JOB_ID }}
+
             fi
-            if [[ -v SLURM_JOB_ID_COLORMAP ]]; then 
-              scancel $SLURM_JOB_ID_COLORMAP
+            if [[ -v {{ steps.run_vdf.SLURM_JOB_ID }} ]]; then 
+              scancel ${{ steps.run_vdf.SLURM_JOB_ID }}
             fi
   
