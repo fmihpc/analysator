@@ -33,7 +33,7 @@ jobs:
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
           run: |
-          
+
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
@@ -85,8 +85,8 @@ jobs:
           run: |
             #check if variables are set and try to scancel
 
-            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
+            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID1 }}
 
-            scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID }}
+            scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID2 }}
 
   
