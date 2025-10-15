@@ -34,7 +34,8 @@ jobs:
         - name: Install dependencies
           run: |
 
-            
+            scancel 276963046
+            scancel 276963051
             
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
@@ -87,8 +88,8 @@ jobs:
           run: |
             #check if variables are set and try to scancel
 
-            scancel ${{ steps.run_color.SLURM_JOB_ID }}
+            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
 
-            scancel ${{ steps.run_vdf.SLURM_JOB_ID }}
+            scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID }}
 
   
