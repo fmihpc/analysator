@@ -1182,13 +1182,9 @@ def plot_colormap(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            if cb_horizontal:
-                cb.ax.tick_params(labelsize=fontsize3*0.5,width=thick,length=3*thick,which="both",labelrotation=30)
-                cb.set_label(cb_title_use,fontsize=fontsize3,fontweight='bold')
-            else:
-                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
-                cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
-                cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
+            cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
             cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
