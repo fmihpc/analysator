@@ -508,7 +508,11 @@ def plot_ionosphere(filename=None,
         else:
             # Split existing axes to make room for colorbar
             if axes is None:
-                cax = fig.add_axes([0.9,0.2,0.03,0.6])
+                if cb_horizontal:
+                    cax = fig.add_axes([0.1,-0.1,0.6,0.03])
+                else:
+                    cax = fig.add_axes([0.9,0.2,0.03,0.6])
+ 
             else:
                 cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
@@ -529,7 +533,7 @@ def plot_ionosphere(filename=None,
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
