@@ -33,9 +33,9 @@ jobs:
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
           run: |
-            scancel 276963031
-            scancel 276963014
-            scancel 276963009
+            scancel 276963042
+            scancel 276963035
+            
             
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
@@ -50,8 +50,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
       
 
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh | grep -Po '\d+$' > temp_file.txt
-            echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh 
             cat testpackage_colormap_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
@@ -71,8 +70,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
       
 
-            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh | grep -Po '\d+$' > temp_file.txt
-            echo "SLURM_JOB_ID=$(cat temp_file.txt)" >> $GITHUB_OUTPUT
+            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh 
             cat testpackage_vdf_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
