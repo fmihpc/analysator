@@ -745,7 +745,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
         norm = Normalize(vmin=fminuse,vmax=fmaxuse)
 
-        ticks = LinearLocator()
+        ticks = LinearLocator(numticks=7 if cb_horizontal else None)
 
         if box is not None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]
