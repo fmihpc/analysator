@@ -88,11 +88,8 @@ jobs:
           run: |
             #check if variables are set and try to scancel
 
-            if [[ -v {{ steps.run_color.SLURM_JOB_ID }} ]]; then 
-              scancel ${{ steps.run_color.SLURM_JOB_ID }}
+            scancel ${{ steps.run_color.SLURM_JOB_ID }}
 
-            fi
-            if [[ -v {{ steps.run_vdf.SLURM_JOB_ID }} ]]; then 
-              scancel ${{ steps.run_vdf.SLURM_JOB_ID }}
-            fi
+            scancel ${{ steps.run_vdf.SLURM_JOB_ID }}
+
   
