@@ -84,12 +84,8 @@ jobs:
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
-            #check if variables are set and try to scancel
-            if [[  -v ${{ steps.run_color.outputs.SLURM_JOB_ID1 }} ]]; then 
-              scancel ${{ steps.run_color.outputs.SLURM_JOB_ID1 }}
-            fi
-            if [[  -v ${{ steps.run_vdf.outputs.SLURM_JOB_ID2 }} ]]; then 
-              scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID2 }}
-            fi
+            #check if variables are set and try to scancel/need to add IF here somehow.....
+            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID1 }}
+            scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID2 }}
             
   
