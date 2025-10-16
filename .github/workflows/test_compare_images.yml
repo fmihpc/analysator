@@ -47,7 +47,8 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
       
 
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh 
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh
+            
             echo ${{ steps.run_color.outputs.SLURM_JOB_ID1 }}
             cat testpackage_colormap_run.txt
             module purge
