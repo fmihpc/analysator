@@ -33,8 +33,6 @@ jobs:
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
           run: |
-            scancel 276963064
-            scancel 276963055
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
