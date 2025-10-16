@@ -321,6 +321,10 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1,highres=True)",
 
+#Horizontal colorbar
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',highres=True,cb_horizontal=True)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cb_horizontal=True)",
+
 # Variables, operators, colormaps, usesci, lin, vscale
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', colormap='nipy_spectral')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', colormap='nipy_spectral', vscale=1e9)",
