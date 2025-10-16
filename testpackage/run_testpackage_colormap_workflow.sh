@@ -21,8 +21,7 @@ export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x
 module load Python/3.10.4-GCCcore-11.3.0
 module load ImageMagick/7.1.0-37-GCCcore-11.3.0
 
-echo "SLURM_JOB_ID1=$SLURM_ARRAY_JOB_ID"
-echo "SLURM_JOB_ID1=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
+echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
 
 source CI_env/bin/activate
 

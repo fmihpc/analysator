@@ -86,7 +86,6 @@ jobs:
           if: cancelled()
           run: |
             #check if variables are set and try to scancel/need to add IF here somehow.....
-            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID1 }}
-            scancel ${{ steps.run_vdf.outputs.SLURM_JOB_ID2 }}
+            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
             
   
