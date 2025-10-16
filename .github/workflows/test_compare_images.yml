@@ -21,7 +21,7 @@ jobs:
 
   turso_system:
         if: github.repository_owner == 'fmihpc'
-        runs-on: turso-carrington
+        runs-on: turso-carrington-lasse
         timeout-minutes: 45
         strategy:
           fail-fast: false
