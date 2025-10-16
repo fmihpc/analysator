@@ -984,16 +984,16 @@ def plot_vdfdiff(filename1=None, filename2=None,
                     #cax.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.1f'))
 
                     cb.ax.tick_params(labelsize=fontsize3,labelrotation=30)
-                    cb.set_label(cb_title_use,fontsize=fontsize3,fontweight='bold')
-                    
+                    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+
                 else:
                     cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
                     cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
                 cb.ax.tick_params(labelsize=fontsize)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
-            if not cb_horizontal:
-                cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
+
+            cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
 
 
