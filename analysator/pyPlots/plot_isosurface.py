@@ -1821,8 +1821,15 @@ def plot_neutral_sheet(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                horalign="left"
+            cbdir="right"
+
 
         # Colourbar title
         if len(cb_title_use)!=0:
@@ -1847,7 +1854,7 @@ def plot_neutral_sheet(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
