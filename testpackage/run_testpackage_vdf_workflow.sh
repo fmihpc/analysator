@@ -27,7 +27,7 @@ echo "SLURM_JOB_ID=$SLURM_JOB_ID" >> $GITHUB_OUTPUT
 source CI_env/bin/activate
 
 module list
-
+ 
 mkdir -p $PWD/produced_plots/
 
 export PTNONINTERACTIVE=1
