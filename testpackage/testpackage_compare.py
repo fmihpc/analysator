@@ -74,6 +74,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
     different_files=[]
     unique_files=[]
+    missing_files=[]
     out=out.splitlines()
 
     #Parse the output of diff
@@ -81,8 +82,12 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
         line=line.split(" ")
         if line[0]=="Binary" and line[1]=="files":
             different_files.append(line[2])
-        elif line[0]=="Only" and line[2].rstrip(":")==b:
-            unique_files.append(line[2].rstrip(":")+line[3])
+        elif line[0]=="Only":
+            if line[2].rstrip(":")==b:
+                unique_files.append(line[2].rstrip(":")+line[3])
+            else:
+                missing_files.append(line[2].rstrip(":")+line[3])
+
 
     #Feed the different files to compare_images
     for file in different_files:
@@ -102,6 +107,9 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
     if len(unique_files)!=0:
         print("::warning title=Unique file(s)::Found new file(s) produced by the code!")
+    if len(missing_files)!=0:
+        print("::warning title=Missing file(s)::Found file(s) **not** produced by the code!")
+
     if different:
         print(f"::error title=Plot(s) differ::Produced plots not in agreement with the verfication set {a}")
         raise SystemError("Images Differ")
