@@ -27,10 +27,10 @@ source CI_env/bin/activate
 
 module list
 
-mkdir -p $PWD/produced_plots/testpackage_colormap
+mkdir -p $PWD/produced_plots/
 
 export PTNONINTERACTIVE=1
-export PTOUTPUTDIR=$PWD/produced_plots/testpackage_colormap/
+export PTOUTPUTDIR=$PWD/produced_plots/
 
 
 python ./testpackage/testpackage_colormap.py $jobcount $index
