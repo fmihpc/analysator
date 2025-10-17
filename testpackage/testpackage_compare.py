@@ -101,9 +101,12 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
 
-    #Print unique files
+    #Print unique and missing files
     for file in unique_files:
         print("Unique file:",file)
+    for file in missing_files:
+        print("Missing file:",file)
+
 
     if len(unique_files)!=0:
         print("::warning title=Unique file(s)::Found new file(s) produced by the code!")
