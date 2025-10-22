@@ -217,7 +217,7 @@ for j in range(start,end):
     time = runs[runid]['time']
     filename = runs[runid]['filename']
 
-    outputLocation=os.path.expandvars('$HOME/Plots/'+verifydir)
+    outputLocation=pt.plot.defaultoutputdir+verifydir
     
     # Source data files
     bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
