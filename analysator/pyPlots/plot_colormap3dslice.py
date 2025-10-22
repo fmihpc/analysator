@@ -1225,23 +1225,8 @@ def plot_colormap3dslice(filename=None,
             if XYmask.any():
                 fSmap = np.ma.array(fSmap, mask=XYmask)
 
-            v = np.diff(fSmap > 0.1, axis=1)
-            h = np.diff(fSmap > 0.1, axis=0)
 
-            # From https://stackoverflow.com/questions/63458863/way-to-contour-outer-edge-of-selected-grid-region-in-python
-            # Check that at least one spot exceeds threshold or the below will crash.
-            if np.max(fSmap) > 0.1:
-                x=np.array(XmeshPass[0])
-                y=np.array([li[0] for li in YmeshPass])
-
-                l = np.argwhere(v.T)
-                vlines = np.array(list(zip(np.stack((x[l[:, 0] + 1], y[l[:, 1]])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                l = np.argwhere(h.T)
-                hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                lines = np.vstack((vlines, hlines))
-                ax1.add_collection(LineCollection(lines, lw=fsavedlinewidth, colors=fScolour, linestyle=fsavedlinestyle))
+            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,fSmap,threshold=0.1,linewidth=fsavedlinewidth,linestyle=fsavedlinestyle,colors=fScolour)
 
     # add fluxrope contour
     if fluxrope > 0:
@@ -1258,24 +1243,9 @@ def plot_colormap3dslice(filename=None,
 
                 # vg_fluxrope goes to the max defined at runtime, set the values above our cutoff to zero for clean results.
                 fRmap = np.where(fRmap > fluxrope, np.zeros_like(fRmap), fRmap)
-
-            v = np.diff(fRmap > 0.1, axis=1)
-            h = np.diff(fRmap > 0.1, axis=0)
-
-            # From https://stackoverflow.com/questions/63458863/way-to-contour-outer-edge-of-selected-grid-region-in-python
-            # Check that at least one spot exceeds threshold or the below will crash.
-            if np.max(fRmap) > 0.1:
-                x=np.array(XmeshPass[0])
-                y=np.array([li[0] for li in YmeshPass])
-
-                l = np.argwhere(v.T)
-                vlines = np.array(list(zip(np.stack((x[l[:, 0] + 1], y[l[:, 1]])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                l = np.argwhere(h.T)
-                hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                lines = np.vstack((vlines, hlines))
-                ax1.add_collection(LineCollection(lines, lw=fluxropelinewidth, colors=fluxropecolour, linestyle=fluxropelinestyle))
+        
+        
+            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,fRmap,threshold=0.1,linewidth=fluxropelinewidth,linestyle=fluxropelinestyle,colors=fluxropecolour)
 
     # add AMR contours
     if amr is not None:
