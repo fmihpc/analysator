@@ -21,8 +21,7 @@ author = 'Sameli'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'matplotlib.sphinxext.roles'
+    'sphinx.ext.autodoc'
     ]
 
 templates_path = ['_templates']
