@@ -211,8 +211,8 @@ def textbfstring(string):
     # LaTex output off
     return string
 
-#Draws sharp contour lines along cell edges (xmeshpass,ymeshpass)
-def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5,linestyle='solid',colors='black'):
+#Draws sharp contour lines along cell edges (xmeshpass,ymeshpass), for some dpi+linewidth combinations antialiasing True causes issues
+def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5,linestyle='solid',colors='black',antialiased=False):
     x=np.array(XmeshPass[0])
     y=np.array([li[0] for li in YmeshPass])
 
@@ -231,7 +231,7 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
                                     np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
         lines = np.vstack((vlines, hlines))
 
-        ax.add_collection(LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2))
+        ax.add_collection(LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
 
     
     return 0
