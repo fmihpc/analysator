@@ -1280,24 +1280,8 @@ def plot_colormap3dslice(filename=None,
             AMRmap = np.ma.array(AMRmap, mask=XYmask)
 
         for i,val in enumerate(amr):
-            v = np.diff(AMRmap > val-0.1, axis=1)
-            h = np.diff(AMRmap > val-0.1, axis=0)
-
-            # From https://stackoverflow.com/questions/63458863/way-to-contour-outer-edge-of-selected-grid-region-in-python
-            # Check that at least one spot exceeds threshold or the below will crash.
-            if np.max(AMRmap) > val-0.1:
-                x=np.array(XmeshPass[0])
-                y=np.array([li[0] for li in YmeshPass])
-
-                l = np.argwhere(v.T)
-                vlines = np.array(list(zip(np.stack((x[l[:, 0] + 1], y[l[:, 1]])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                l = np.argwhere(h.T)
-                hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
-                                           np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
-                lines = np.vstack((vlines, hlines))
-                ax1.add_collection(LineCollection(lines, lw=amrlinewidths[i], colors=amrcolours[i], linestyle=amrlinestyles[i]))
-
+            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthstuple[i], colors=amrcolourstuple[i], linestyle=amrlinestylestuple[i])
+          
 
     if Earth:
         Earth = Circle((0, 0), 1.0, color='k')
