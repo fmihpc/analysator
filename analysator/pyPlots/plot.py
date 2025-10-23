@@ -38,7 +38,7 @@ from plot_variables import plot_variables, plot_multiple_variables
 import logging
 import matplotlib.pyplot as plt
 import matplotlib
-from matplotlib.collections import LineCollection
+#from matplotlib.collections import LineCollection
 import colormaps as cmaps
 
 import plot_helpers
@@ -231,7 +231,7 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
                                     np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
         lines = np.vstack((vlines, hlines))
 
-        ax.add_collection(LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
+        ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
 
     
     return 0
