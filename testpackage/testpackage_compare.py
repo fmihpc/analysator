@@ -6,34 +6,6 @@ from argparse import ArgumentParser
 
 
 
-def compare_images(a,b,output_file="NULL:"):
-
-    cmd = f"magick compare -metric RMSE {a} {b} {output_file}"
-    proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-
-    out,err = proc.communicate()
-
-    exitcode=proc.returncode
-
-    #If errors, raise an exception (This has to be odne like this as compare sends output to stderr)
-    if exitcode!=0 and exitcode != 1:
-        out = str(out,'utf-8')
-        raise RuntimeError(out)
-
-    out = str(out,'utf-8') 
-    out=out.strip('\n')
-    out = out.split(" ")
-
-    #Returns true if images' RMSE = 0, i.e are identical
-    if out[0]=='0':
-        return True
-
-    return False
-
-
-#output_folder = "/home/siclasse/analysator/different_output/"
-
-#!!!!!outputs unique files only from folder "b"
 
 
 #Parse arguments
@@ -58,6 +30,30 @@ if not os.path.exists(output_folder) and output_folder!='NULL:':
         err = str(err,'utf-8')
         raise RuntimeError(err)
 
+
+def compare_images(a,b,output_file="NULL:"):
+
+    cmd = f"magick compare -metric RMSE {a} {b} {output_file}"
+    proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+
+    out,err = proc.communicate()
+
+    exitcode=proc.returncode
+
+    #If errors, raise an exception (This has to be odne like this as compare sends output to stderr)
+    if exitcode!=0 and exitcode != 1:
+        out = str(out,'utf-8')
+        raise RuntimeError(out)
+
+    out = str(out,'utf-8') 
+    out=out.strip('\n')
+    out = out.split(" ")
+
+    #Returns true if images' RMSE = 0, i.e are identical
+    if out[0]=='0':
+        return True
+
+    return False
 
 
 def compare_images_in_folders(a,b,output_folder='NULL:'):
@@ -84,9 +80,9 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
             different_files.append(line[2])
         elif line[0]=="Only":
             if line[2].rstrip(":")==b:
-                unique_files.append(line[2].rstrip(":")+line[3])
+                unique_files.append(line[2].rstrip(":")+'/'+line[3])
             else:
-                missing_files.append(line[2].rstrip(":")+line[3])
+                missing_files.append(line[2].rstrip(":")+'/'+line[3])
 
 
     #Feed the different files to compare_images
