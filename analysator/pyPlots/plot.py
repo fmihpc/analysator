@@ -38,7 +38,6 @@ from plot_variables import plot_variables, plot_multiple_variables
 import logging
 import matplotlib.pyplot as plt
 import matplotlib
-#from matplotlib.collections import LineCollection
 import colormaps as cmaps
 
 import plot_helpers
