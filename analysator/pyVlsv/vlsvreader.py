@@ -2121,8 +2121,9 @@ class VlsvReader(object):
       
       def wrap(*args, **kwargs):
          stack = True
-         if not hasattr(cellid,"__len__"):
-            cellid = np.atleast_1d(cellid)
+         #Figure out a way to pass multiple args etc,
+         if not hasattr(args[1],"__len__"):
+            args = (args[0],np.atleast_1d(args[1]))
             stack = False
          
          variable = func(*args, **kwargs)
@@ -2153,7 +2154,7 @@ class VlsvReader(object):
          if(iters > self.get_max_refinement_level()+1):
             logging.info("Can't have that large refinements. Something broke.")
             break
-
+      return AMR_count-1
 
 
    def get_cell_dx(self, cellid):
