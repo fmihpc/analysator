@@ -1251,22 +1251,22 @@ def plot_colormap3dslice(filename=None,
     if amr is not None:
         if np.isscalar(amr):
             amr = [amr]
-        amrcolourstuple = []
-        amrlinewidthstuple = []
-        amrlinestylestuple = []
+        amrcolourslist = []
+        amrlinewidthslist = []
+        amrlinestyleslist = []
         for i in range(len(amr)):
             if type(amrcolours) is str:
-                amrcolourstuple.append(amrcolours)
+                amrcolourslist.append(amrcolours)
             else:
-                amrcolourstuple.append(amrcolours[i])
+                amrcolourslist.append(amrcolours[i])
             if np.isscalar(amrlinewidths):
-                amrlinewidthstuple.append(amrlinewidths)
+                amrlinewidthslist.append(amrlinewidths)
             else:
-                amrlinewidthstuple.append(amrlinewidths[i])
+                amrlinewidthslist.append(amrlinewidths[i])
             if type(amrlinestyles) is str:
-                amrlinestylestuple.append(amrlinestyles)
+                amrlinestyleslist.append(amrlinestyles)
             else:
-                amrlinestylestuple.append(amrlinestyles[i])
+                amrlinestyleslist.append(amrlinestyles[i])
 
 
         AMRmap = f.read_variable("vg_reflevel")
@@ -1280,7 +1280,7 @@ def plot_colormap3dslice(filename=None,
             AMRmap = np.ma.array(AMRmap, mask=XYmask)
 
         for i,val in enumerate(amr):
-            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthstuple[i], colors=amrcolourstuple[i], linestyle=amrlinestylestuple[i])
+            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
           
 
     if Earth:
