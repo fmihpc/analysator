@@ -2117,17 +2117,30 @@ class VlsvReader(object):
          self.__max_spatial_amr_level = AMR_count - 1
       return self.__max_spatial_amr_level
 
+   def wrap_array(func):
+      
+      def wrap(*args, **kwargs):
+         stack = True
+         if not hasattr(cellid,"__len__"):
+            cellid = np.atleast_1d(cellid)
+            stack = False
+         
+         variable = func(*args, **kwargs)
+
+         if stack:
+            return variable
+         else:
+            return variable[0]
+
+      return wrap
+   
+   @wrap_array
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid
       
       :param cellid:        The cell's cellid
       :returns:             The cell's refinement level in the AMR
       '''
-      stack = True
-      if not hasattr(cellid,"__len__"):
-         cellid = np.atleast_1d(cellid)
-         stack = False
-
       AMR_count = np.zeros(np.array(cellid).shape, dtype=np.int64)
       cellids = cellid.astype(np.int64)
       iters = 0
@@ -2141,10 +2154,7 @@ class VlsvReader(object):
             logging.info("Can't have that large refinements. Something broke.")
             break
 
-      if stack:
-         return AMR_count - 1 
-      else:
-         return (AMR_count - 1)[0]
+
 
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
