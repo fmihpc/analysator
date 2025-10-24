@@ -2117,13 +2117,23 @@ class VlsvReader(object):
          self.__max_spatial_amr_level = AMR_count - 1
       return self.__max_spatial_amr_level
 
+
    def wrap_array(func):
-      
+      '''Wrapper for consolidaring inputs as arrays.
+          Note that when using this for a function, second variable should be used
+         otherwise wrapper wont work as intended.
+
+         Putting @wrap_array before a function will use this automatically
+         
+         When making a function that uses this, remember to return whatever variable it calculates
+         
+
+      '''
       def wrap(*args, **kwargs):
          stack = True
          #Figure out a way to pass multiple args etc,
          if not hasattr(args[1],"__len__"):
-            args = (args[0],np.atleast_1d(args[1]))
+            args = (args[0],np.atleast_1d(args[1]),*args[2:])
             stack = False
          
          variable = func(*args, **kwargs)
@@ -2156,19 +2166,13 @@ class VlsvReader(object):
             break
       return AMR_count-1
 
-
+   @wrap_array
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
       
       :param cellid:        The cell's cellid
       :returns:             The cell's size [dx, dy, dz]
       '''
-
-      stack = True
-      if not hasattr(cellid,"__len__"):
-         cellid = np.atleast_1d(cellid)
-         stack = False
-
       cellid = np.array(cellid, dtype=np.int64)
 
       dxs = np.array([[self.__dx,self.__dy,self.__dz]])
@@ -2180,11 +2184,7 @@ class VlsvReader(object):
       amrs[amrs < 0] = 0
 
       ret = dxs/2**amrs
-
-      if stack:
-         return ret
-      else:
-         return ret[0]
+      return ret
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
