@@ -2131,11 +2131,13 @@ class VlsvReader(object):
       '''
       def wrap(*args, **kwargs):
          stack = True
-         #Figure out a way to pass multiple args etc,
+         #Figure out a way to pass multiple args etc,    
          if not hasattr(args[1],"__len__"):
             args = (args[0],np.atleast_1d(args[1]),*args[2:])
             stack = False
-         
+         else:
+            args = (args[0],np.array(args[1]),*args[2:])     
+
          variable = func(*args, **kwargs)
 
          if stack:
@@ -2871,7 +2873,7 @@ class VlsvReader(object):
          self.build_dual_from_vertices(list(vertices))
 
 
-
+   @wrap_array
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
@@ -2883,10 +2885,6 @@ class VlsvReader(object):
       .. note:: The cell ids go from 1 .. max not from 0
       '''
 
-      stack = True
-      if not hasattr(cellids,"__len__"):
-         cellids = np.atleast_1d(cellids)
-         stack = False
 
       # Get cell lengths:
       xcells = np.zeros((self.get_max_refinement_level()+1), dtype=np.int64)
@@ -2906,12 +2904,11 @@ class VlsvReader(object):
                                (self.__zmax - self.__zmin)/(zcells[reflevels])]).T
       mins = np.array([self.__xmin,self.__ymin,self.__zmin])
       cellcoordinates = mins + (cellindices + 0.5)*cell_lengths
-      # Return the coordinates:
-      if stack:
-         return np.array(cellcoordinates)
-      else:
-         return np.array(cellcoordinates)[0,:]
 
+      # Return the coordinates:
+      return cellcoordinates
+
+   @wrap_array
    def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
 
@@ -2923,12 +2920,6 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-
-      stack = True
-      if not hasattr(cellids,"__len__"):
-         cellids = np.atleast_1d(cellids)
-         stack = False
-
       if reflevels is None:
          reflevels = self.get_amr_level(cellids)
       else:
@@ -2950,11 +2941,7 @@ class VlsvReader(object):
       cellindices[mask,1] = ((cellids[mask])//(np.power(2,reflevels[mask])*self.__xcells))%(np.power(2,reflevels[mask])*self.__ycells)
       cellindices[mask,2] = (cellids[mask])//(np.power(4,reflevels[mask])*self.__xcells*self.__ycells)
 
-      # Return the indices:
-      if stack:
-         return np.array(cellindices)
-      else:
-         return np.array(cellindices)[0]
+      return cellindices
 
    def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
