@@ -3,7 +3,7 @@
 #SBATCH -J analysator_testpackage
 #SBATCH -p short
 #SBATCH -n 1
-#SBATCH --array=0-20
+#SBATCH --array=0-10
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 
@@ -11,7 +11,7 @@ jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 ))
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 hostname
-source /wrk-vakka/group/spacephysics/proj/analysator_testpackage/pyvenv.sh
+source /wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage/pyvenv.sh
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$1
