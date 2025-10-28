@@ -2959,7 +2959,8 @@ class VlsvReader(object):
 
       return cellindices
 
-   #@wrap_array(dimensions=[1,2])
+   #@wrap_array(dimensions=[1,2]) 
+   #This function needs some modifications to accommodate the wrapping function
    def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
 
