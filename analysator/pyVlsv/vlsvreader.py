@@ -2118,36 +2118,52 @@ class VlsvReader(object):
       return self.__max_spatial_amr_level
 
 
-   def wrap_array(func):
+   def wrap_array(dimensions):
       '''Wrapper for consolidaring inputs as arrays.
-          Note that when using this for a function, second variable should be used
+         Note that when using this for a function, second variable should be used
          otherwise wrapper wont work as intended.
 
-         Putting @wrap_array before a function will use this automatically
+         Putting @wrap_array(dimension) before a function will use this automatically
          
+         dimensions, must be int or list which is in same order as the arguments, 0 in the list will skip an arg
+         dimension can be maximum of 3.
+
          When making a function that uses this, remember to return whatever variable it calculates
-         
-
       '''
-      def wrap(*args, **kwargs):
-         stack = True
-         #Figure out a way to pass multiple args etc,    
-         if not hasattr(args[1],"__len__"):
-            args = (args[0],np.atleast_1d(args[1]),*args[2:])
-            stack = False
-         else:
-            args = (args[0],np.array(args[1]),*args[2:])     
+      #Check if integer
+      if type(dimensions)==type(1):
+         dimensions=[dimensions]
 
-         variable = func(*args, **kwargs)
+      
+      def wrap_array_inner(func):
+         def wrap(*args, **kwargs):
+            stack = True
+            for i,d in enumerate(dimensions):
+               #Offset since self is always first argument
+               i=i+1
+               if not hasattr(args[i],"__len__"):
+                  arg=np.array(args[i])
+                  #Make sure that the scalar argument is turned into np.array of dimension d
+                  for _ in range(d):
+                     arg=arg[np.newaxis]
 
-         if stack:
-            return variable
-         else:
-            return variable[0]
+                  args = (*args[0:i],arg,*args[i+1:])
+                  stack = False
+               else:
+                  if d!=0:
+                     args = (*args[0:i],np.array(args[i]),*args[i+1:])     
 
-      return wrap
-   
-   @wrap_array
+            variable = func(*args, **kwargs)
+
+            if stack:
+               return variable
+            else:
+               return variable[0]
+
+         return wrap
+      return wrap_array_inner
+
+   @wrap_array(dimensions=1)
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid
       
@@ -2168,7 +2184,7 @@ class VlsvReader(object):
             break
       return AMR_count-1
 
-   @wrap_array
+   @wrap_array(dimensions=1)
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
       
@@ -2873,7 +2889,7 @@ class VlsvReader(object):
          self.build_dual_from_vertices(list(vertices))
 
 
-   @wrap_array
+   @wrap_array(dimensions=1)
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
@@ -2908,7 +2924,7 @@ class VlsvReader(object):
       # Return the coordinates:
       return cellcoordinates
 
-   @wrap_array
+   @wrap_array(dimensions=1)
    def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
 
@@ -2943,6 +2959,7 @@ class VlsvReader(object):
 
       return cellindices
 
+   #@wrap_array(dimensions=[1,2])
    def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
 
