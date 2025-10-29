@@ -2118,7 +2118,7 @@ class VlsvReader(object):
       return self.__max_spatial_amr_level
 
 
-   def wrap_array(dimensions):
+   def wrap_array(dimensions,squeeze=True):
       '''Wrapper for consolidaring inputs as arrays.
          Note that when using this for a function, second variable should be used
          otherwise wrapper wont work as intended.
@@ -2131,6 +2131,7 @@ class VlsvReader(object):
          When making a function that uses this, remember to return whatever variable it calculates
       '''
       #Check if integer
+
       if type(dimensions)==type(1):
          dimensions=[dimensions]
 
@@ -2159,7 +2160,7 @@ class VlsvReader(object):
             if stack:
                return variable
             else:
-               return np.squeeze(variable)
+               return np.squeeze(variable) if squeeze else variable
 
          return wrap
       return wrap_array_inner
