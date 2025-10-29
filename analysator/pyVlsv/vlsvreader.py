@@ -2159,7 +2159,7 @@ class VlsvReader(object):
             if stack:
                return variable
             else:
-               return np.squeeze(variable[0])
+               return np.squeeze(variable)
 
          return wrap
       return wrap_array_inner
