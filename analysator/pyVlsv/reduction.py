@@ -937,162 +937,142 @@ def ig_inplanecurrent( variables, reader ):
    return ig_sigmap * E - ig_sigmah * np.cross(E, ig_b_hat)
 
 
-def Pressure_dilatation(variables, reader):
-   ''' Calculate the (proton) pressure dilatation interaction term p*div(V)
+def Pressure_dilatation(variables):
+   ''' Calculate the (proton) pressure dilatation interaction term -p*div(V)
+       See e.g. Yang+2017: https://doi.org/10.1103/PhysRevE.95.061201
    '''
-      
-   coord = variables[0]
-   p = variables[1]
-   dx = np.min(variables[2])/2  # Half of the smallest cell size for linear derivative estimation
+   stack = True
+   if variables[0].ndim == 0:
+      p = variables[0][np.newaxis]
+      stack = False
 
-   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]), operator='x')    # Directional derivatives
-   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]),  operator='x')
-   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]), operator='y')
-   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]),  operator='y')
-   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]), operator='z')
-   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]),  operator='z')
+   else:    
+      p = variables[0]
+   v_jacobian = variables[1]
 
-   dvx = (vx2 - vx1) / (2*dx)
-   dvy = (vy2 - vy1) / (2*dx)
-   dvz = (vz2 - vz1) / (2*dx)
-
-   div_v =  dvx + dvy + dvz
+   div_v =  np.einsum('...ii', v_jacobian)
    
-   return -p*div_v
+   dilatation = -p*div_v
 
-def PiD(variables, reader):
+   if stack:
+      return dilatation
+   else:
+      return dilatation[0,...]
+
+def PiD(variables):
    ''' Calculate the (proton) Pi-D interaction term
-   '''
-
-   coord = variables[0]
-   ptensor = variables[1]
-   dx = np.min(variables[2])/2
-
-   vx1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([-dx,0,0]))   # Directional derivatives
-   vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([dx,0,0]))
-   vy1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,-dx,0]))
-   vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,dx,0]))
-   vz1 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,-dx]))
-   vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([0,0,dx]))
-
-   if np.shape(ptensor)!=(3,3):  # If evaluated for many cells
-
-
-      dxv = (vx2 - vx1) / (2*dx)
-      dyv = (vy2 - vy1) / (2*dx)
-      dzv = (vz2 - vz1) / (2*dx)
-
-      v_jacobian =  np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
-
-      kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))  # Identity tensors in the shape of ptensor
-      p = 1/3*np.einsum('...ii', ptensor)   # Scalar pressure
-
-      pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)  # Traceless pressure tensor
-
-      div_v = np.einsum('...ii', v_jacobian)    # Velocity divergence
-
-      d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   # D tensor
-
-      return -np.einsum('...ij,...ij', pi, d)
-   
-   else: # The same but for a singular cell
-
-      dxx, dxy, dxz = (vx2 - vx1) / (2*dx)
-      dyx, dyy, dyz = (vy2 - vy1) / (2*dx)
-      dzx, dzy, dzz = (vz2 - vz1) / (2*dx)
-
-      v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
-
-      p = 1/3*np.trace(ptensor)
-      kdelta = np.diag(np.ones(3))
-      pi = ptensor - p*kdelta
-      div_v = np.trace(v_jacobian)
-      d = 0.5*(v_jacobian + v_jacobian.T) - 1/3 * div_v*kdelta
-
-      return -np.einsum('ij,ij', pi, d)
-   
-def Pressure_strain(variables, reader):
-   ''' Calculate the (proton) pressure strain interaction -(P dot nabla) dot bulk velocity, a sum of the pdil and PiD interactions. A separate datareducer to avoid redundant Jacobian estimations.
+       See e.g. Yang+2017: https://doi.org/10.1103/PhysRevE.95.061201
    '''
 
    stack = True
-   if variables[0].ndim == 1:
-      coord = np.atleast_2d(variables[0][np.newaxis,:])
-      ptensor = variables[1][np.newaxis,:,:]
-      dx = variables[2][np.newaxis,:]
+   if variables[0].ndim == 2:
+      ptensor = variables[0][np.newaxis,:,:]
       stack = False
    else:
-      coord = variables[0]
-      ptensor = variables[1]
-      dx = variables[2]
+      ptensor = variables[0]
+
+   v_jacobian = variables[1]
+
+
+   kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))  # Identity tensors in the shape of ptensor
+   p = 1/3*np.einsum('...ii', ptensor)   # Scalar pressure
+
+   pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)  # Traceless pressure tensor
+
+   div_v = np.einsum('...ii', v_jacobian)    # Velocity divergence
+
+   d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   # D tensor
+   pi_d = -np.einsum('...ij,...ij', pi, d)
+
+   if stack:
+      return pi_d
+   else:
+      return pi_d[0,...]
+
+ 
+   
+def Pressure_strain(variables):
+   ''' Calculate the (proton) pressure strain interaction -(P dot nabla) dot bulk velocity, a sum of the pdil and PiD interactions. A separate datareducer to avoid redundant Jacobian estimations.
+       See e.g. Yang+2017: https://doi.org/10.1103/PhysRevE.95.061201
+   '''
+
+   stack = True
+   if variables[0].ndim == 2:
+      ptensor = variables[0][np.newaxis,:,:]
+      stack = False
+   else:
+      ptensor = variables[0]
+
+   v_jacobian = variables[1]
+   
+
+   kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))
+   p = 1/3*np.einsum('...ii', ptensor)
+
+   pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)
+
+   div_v = np.einsum('...ii', v_jacobian)
+
+   d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   
+
+   strain = -np.einsum('...ij,...ij', pi, d) -1/3*np.einsum('...ii', ptensor)*np.einsum('...ii', v_jacobian)
+
+   if stack:
+      return strain
+   else:
+      return strain[0,...]
 
    
-   h = 2.0
-   dx = dx/h
 
+
+
+def v_jacobian(variables, reader):
+   ''' Slow reducer for the (proton) velocity Jacobian, also the transpose of the gradient of V.
+   '''
+
+   if variables[0].ndim == 1:
+      coord = np.atleast_2d(variables[0][np.newaxis,:])
+      dx = variables[1][np.newaxis,:]
+
+   else:
+      coord = variables[0]
+      dx = variables[1]
+
+   h = 2.1
+   dx = dx/h
    mesh_size = reader.get_fsgrid_mesh_size()
 
    if mesh_size[0] > 1:
       vx1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
       vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+
    else:    
       vx1 = np.zeros_like(coord)
       vx2 = np.zeros_like(coord)
+
    if mesh_size[1] > 1:
       vy1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
       vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+
    else:
       vy1 = np.zeros_like(coord)
       vy2 = np.zeros_like(coord)
+
    if mesh_size[2] > 1:   
       vz1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
       vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+
    else:
       vz1 = np.zeros_like(coord)
       vz2 = np.zeros_like(coord)
+   
 
-   if np.shape(ptensor)!=(3,3):
+   dxv = (vx2 - vx1) / (2*dx)
+   dyv = (vy2 - vy1) / (2*dx)
+   dzv = (vz2 - vz1) / (2*dx)
 
-
-      dxv = (vx2 - vx1) / (2*dx[:,0][:,np.newaxis])
-      dyv = (vy2 - vy1) / (2*dx[:,1][:,np.newaxis])
-      dzv = (vz2 - vz1) / (2*dx[:,2][:,np.newaxis])
-
-      v_jacobian =  np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
-
-      kdelta = np.einsum('i,jk',np.ones(len(ptensor)),np.eye(3))
-      p = 1/3*np.einsum('...ii', ptensor)
-
-      pi = ptensor - np.einsum('i..., i...->i...', p, kdelta)
-
-      div_v = np.einsum('...ii', v_jacobian)
-
-      d = 0.5*(v_jacobian+np.einsum('...ji', v_jacobian)) - 1/3 * np.einsum('i..., i...->i...', div_v, kdelta)   
-
-      strain = -np.einsum('...ij,...ij', pi, d) -1/3*np.einsum('...ii', ptensor)*np.einsum('...ii', v_jacobian)
-      if stack:
-         return strain
-      else:
-         return strain[0,...]
-
-   else:
-      raise ValueError("Stacking of parameters failed")
-
-      # single-element einsums left for example
-      # dxx, dxy, dxz = (vx2 - vx1) / (2*dx[0])
-      # dyx, dyy, dyz = (vy2 - vy1) / (2*dx[1])
-      # dzx, dzy, dzz = (vz2 - vz1) / (2*dx[2])
-
-      # v_jacobian =  np.array([[dxx,dyx,dzx],[dxy, dyy, dzy],[dxz,dyz,dzz]])
-
-      # p = 1/3*np.trace(ptensor)
-      # kdelta = np.diag(np.ones(3))
-      # pi = ptensor - p*kdelta
-      # div_v = np.trace(v_jacobian)
-      # d = 0.5*(v_jacobian + v_jacobian.T)- 1/3 * div_v*kdelta
-
-      # return -np.einsum('ij,ij', pi, d) - p*div_v
-
+   return np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
+   
 
 
 
@@ -1452,6 +1432,7 @@ v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_derivatives/v
 v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_derivatives/vg_dperbxvoldx","vg_derivatives/vg_dperbxvoldy","vg_derivatives/vg_dperbxvoldz","vg_derivatives/vg_dperbyvoldx","vg_derivatives/vg_dperbyvoldy","vg_derivatives/vg_dperbyvoldz","vg_derivatives/vg_dperbzvoldx","vg_derivatives/vg_dperbzvoldy","vg_derivatives/vg_dperbzvoldz"],
                                                                TensorFromScalars, "T/m", 9, latex=r"$\nabla\vec{B}_\mathrm{vol,vg,per}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 3, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
+v5reducers["vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian, "1/s", 3, latex=r"$J_\vec{V}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
 
 # Not the most elegant alias setup - could refine to fetch upstream metadata
 v5reducers["vg_derivatives/vg_dbxvoldx"] = DataReducerVariable(["vg_dbxvoldx"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{x,vol,vg} (\Delta X)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
@@ -1473,10 +1454,6 @@ v5reducers["vg_derivatives/vg_dperbzvoldy"] = DataReducerVariable(["vg_dperbzvol
 v5reducers["vg_derivatives/vg_dperbxvoldz"] = DataReducerVariable(["vg_dperbxvoldz"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{x,vol,vg,per} (\Delta Z)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 v5reducers["vg_derivatives/vg_dperbyvoldz"] = DataReducerVariable(["vg_dperbyvoldz"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{y,vol,vg,per} (\Delta Z)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 v5reducers["vg_derivatives/vg_dperbzvoldz"] = DataReducerVariable(["vg_dperbzvoldz"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{z,vol,vg,per} (\Delta Z)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
-
-v5reducers["vg_p_dilatation"] =    DataReducerVariable(["vg_coordinates", "vg_pressure", "vg_dx"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
-v5reducers["vg_pid"] =             DataReducerVariable(["vg_coordinates", "vg_ptensor", "vg_dx"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
-v5reducers["vg_p_strain"] =        DataReducerVariable(["vg_coordinates", "vg_ptensor", "vg_dx"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
 
 #multipopv5reducers
 multipopv5reducers = {}
@@ -1562,8 +1539,9 @@ multipopv5reducers["pop/vg_beta_star"] =               DataReducerVariable(["pop
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
-# multipopv5reducers["pop/vg_pressure_dilatation"] =    DataReducerVariable(["CellID", "pop/vg_pressure", "vg_dx"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
-# multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["CellID", "pop/vg_ptensor", "vg_dx"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{W/m}^3 $", useReader=True)
+multipopv5reducers["pop/vg_p_dilatation"] =           DataReducerVariable(["pop/vg_pressure", "vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["pop/vg_ptensor", "vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_p_strain"] =               DataReducerVariable(["pop/vg_ptensor", "vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{Wm}^{-3} $")
 
 # The dictionary with deprecated data reducers
 deprecated_datareducers = {}
