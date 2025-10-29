@@ -1498,7 +1498,7 @@ class VlsvReader(object):
       raise NotImplementedError('Interpolation of ionosphere variables has not yet been implemented; exiting.')
 
    # These are the 8 cells that span the upper corner vertex on a regular grid
-   def get_vg_regular_interp_neighbors(self, cellids):
+   def get_vg_regular_interp_neighbors(self, cellids, periodic = [True, True, True]):
 
       
       len_cellids = np.atleast_1d(cellids).shape[0]
@@ -1521,7 +1521,7 @@ class VlsvReader(object):
 
          cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids[~in_cache]), 8, axis=1).T,n_not_in_cache*8)
          offsets = np.tile(offsets, (n_not_in_cache, 1))
-         cellid_neighbors_new = self.get_cell_neighbor(cellids_rep, offsets, [True,True,True], prune_uniques=False)
+         cellid_neighbors_new = self.get_cell_neighbor(cellids_rep, offsets, periodic, prune_uniques=False)
          cellid_neighbors_new = cellid_neighbors_new.reshape((-1,8))
          self.__regular_neighbor_cache.update( {c:cellid_neighbors_new[i,:] for i,c in enumerate(cellids[~in_cache])})
          cellid_neighbors[~in_cache,:] = cellid_neighbors_new
@@ -1605,7 +1605,7 @@ class VlsvReader(object):
       ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
 
       cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
-      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0])
+      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0], periodic)
       cellid_neighbors = cellid_neighbors.reshape((-1))
    
 
