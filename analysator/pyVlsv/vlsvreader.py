@@ -2119,16 +2119,15 @@ class VlsvReader(object):
 
 
    def wrap_array(dimensions,squeeze=True):
-      '''Wrapper for consolidaring inputs as arrays.
-         Note that when using this for a function, second variable should be used
-         otherwise wrapper wont work as intended.
-
-         Putting @wrap_array(dimension) before a function will use this automatically
+      '''Wrapper for consolidating inputs as numpy arrays.
          
-         dimensions, must be int or list which is in same order as the arguments, 0 in the list will skip an arg
-         dimension can be maximum of 3.
-
+         Putting @wrap_array(dimension) before a function will use this automatically.
+         
          When making a function that uses this, remember to return whatever variable it calculates
+
+
+         :param dimensions:   int or list of int in same order as the arguments, 0 in the list will skip an argument, self is automatically skipped.
+         :param squeeze:      Whether to squeeze the output if input dimension mismatched, default True
       '''
       #Check if integer
 
