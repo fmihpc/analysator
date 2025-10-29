@@ -2139,26 +2139,27 @@ class VlsvReader(object):
          def wrap(*args, **kwargs):
             stack = True
             for i,d in enumerate(dimensions):
-               #Offset since self is always first argument
+               #Offset since self is always the first argument
                i=i+1
-               if not hasattr(args[i],"__len__"):
+               if d!=0:
                   arg=np.array(args[i])
-                  #Make sure that the scalar argument is turned into np.array of dimension d
-                  for _ in range(d):
-                     arg=arg[np.newaxis]
+                  if arg.ndim!=d:
+                     #Make sure that the scalar argument is turned into np.array of dimension d
+                     while arg.ndim<d:
+                        arg=arg[np.newaxis]
+                     #Make sure to return scalar if value was given as scalar
+                     stack = False
 
-                  args = (*args[0:i],arg,*args[i+1:])
-                  stack = False
-               else:
-                  if d!=0:
-                     args = (*args[0:i],np.array(args[i]),*args[i+1:])     
+                  #Update args
+                  args = (*args[0:i],arg,*args[i+1:])     
 
+            #Call the function
             variable = func(*args, **kwargs)
 
             if stack:
                return variable
             else:
-               return variable[0]
+               return np.squeeze(variable[0])
 
          return wrap
       return wrap_array_inner
@@ -2959,8 +2960,8 @@ class VlsvReader(object):
 
       return cellindices
 
-   #@wrap_array(dimensions=[1,2]) 
-   #This function needs some modifications to accommodate the wrapping function
+
+   @wrap_array(dimensions=[1,2]) 
    def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
 
@@ -2972,12 +2973,8 @@ class VlsvReader(object):
       .. note:: Returns 0 if the offset is out of bounds!
 
       '''
-      stack = True
-      if not hasattr(cellidss,"__len__"):
-         cellidss = np.atleast_1d(cellidss)
-         offsetss = np.atleast_2d(offsetss)
-         stack = False
-
+  
+      
       if prune_uniques:
          fullargs = np.array(np.hstack((cellidss[:,np.newaxis],offsetss)))
          uniqueargs, inverse_indices = np.unique(fullargs,axis=0, return_inverse=True)
@@ -2987,7 +2984,6 @@ class VlsvReader(object):
          cellids = cellidss
          offsets = offsetss
          inverse_indices = np.indices((len(cellids),))
-
 
       reflevel = self.get_amr_level(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
@@ -3024,10 +3020,7 @@ class VlsvReader(object):
       #    warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
-      if stack:
-         return np.array(cellid_neighbors[inverse_indices])
-      else:
-         return np.array(cellid_neighbors)[0]
+      return cellid_neighbors[inverse_indices]
 
    def get_WID(self):
       # default WID=4
