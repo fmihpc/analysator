@@ -1,9 +1,7 @@
 import subprocess
 import os
 
-
-
-def system_call(cmd):
+def system_call(cmd,wait=False):
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 
     out,err = proc.communicate()
@@ -14,6 +12,8 @@ def system_call(cmd):
         raise RuntimeError(err)
 
     out = str(out,'utf-8').rstrip('\n')
+    if wait:
+        proc.wait()
     return out
 
 #output_dir named after the latest commit hash
