@@ -79,7 +79,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
         if line[0]=="Binary" and line[1]=="files":
             different_files.append(line[2])
         elif line[0]=="Only":
-            if line[2].rstrip(":")==b:
+            if b in line[2]:
                 unique_files.append(line[2].rstrip(":")+'/'+line[3])
             else:
                 missing_files.append(line[2].rstrip(":")+'/'+line[3])
