@@ -12,7 +12,8 @@ def system_call(cmd,live_output=False):
             for line in proc.stdout:
                 print(str(line,'utf-8').rstrip('\n')) #Note that for example pip's progress bar is not displayed
 
-    out,err = proc.communicate()
+        out,err = proc.communicate()
+    
 
     #If errors, raise an exception
     if proc.returncode!=0:
@@ -20,9 +21,6 @@ def system_call(cmd,live_output=False):
         raise RuntimeError(err)
 
     out = str(out,'utf-8').rstrip('\n')
-
-    
-
     return out
 
 def create_venv(path,install_analysator=True,editable=False):
@@ -57,8 +55,7 @@ if __name__ == "__main__":
         print('venv_testpackage found, not creating virtual environment')
 
 
-
-
+    
     #Create a virtual environment for CI in wrk-vakka
     if create_venv_CI:
         print('Creating virtual environment for CI')
@@ -73,6 +70,15 @@ if __name__ == "__main__":
             user_input=input('::warning not in master branch, are you sure you want to continue? y/n\n')
             if user_input.capitalize() != 'Y':
                 quit()
+        else:
+            #Is local master up to date with remote?
+            git_diff=system_call('git diff --numstat origin/master...')
+            if git_diff!='':
+                print('::warning Local master branch not up to date with remote, are you sure you want to continue? y/n\n')
+                user_input=input()
+                if user_input.capitalize() != 'Y':
+                    quit()
+            
 
         path=f"{ci_path}/venv_testpackage-{gmtime_now}-{git_branch}"
 
