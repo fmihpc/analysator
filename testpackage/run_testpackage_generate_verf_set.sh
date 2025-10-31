@@ -1,7 +1,6 @@
 #!/bin/bash -l
 #SBATCH -t 00:60:00
 #SBATCH -J analysator_testpackage
-#SBATCH -o output-%j-generate_verf_set.out
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=0-10
