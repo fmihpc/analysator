@@ -11,7 +11,7 @@ jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 ))
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 hostname
-source /wrk-vakka/group/spacephysics/proj/analysator_testpackage/pyvenv.sh
+source pyvenv.sh
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/
