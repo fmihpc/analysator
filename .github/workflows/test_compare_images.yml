@@ -1,0 +1,89 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Turso compare colourmap images
+
+on:
+  push:
+    branches: [ master, dev, image_compare]
+  pull_request:
+    branches: [ master, dev, image_compare]
+  schedule:
+    - cron: '0 8 * * MON'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+jobs:
+
+  turso_system:
+        if: github.repository_owner == 'fmihpc'
+        runs-on: carrington
+        timeout-minutes: 60
+        strategy:
+          fail-fast: false
+          max-parallel: 2
+          matrix:
+            extras: ["all"]
+        steps:
+        - uses: actions/checkout@v4
+        - name: Install uv
+          uses: astral-sh/setup-uv@v6
+        - name: Install dependencies
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            export UV_LINK_MODE=copy
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            uv venv CI_env
+            . CI_env/bin/activate
+            uv pip install --editable ../analysator[${{ matrix.extras }}]
+        - name: Produce colormap plots
+          id: run_color
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+      
+
+            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh
+            
+            cat testpackage_colormap_run.txt
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            python ./testpackage/testpackage_get_job_error.py testpackage_colormap_run.txt
+            
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
+            . CI_env/bin/activate
+            ./testpackage/run_compare.sh testpackage_colormap
+
+        - name: Produce vdf plots
+          id: run_vdf
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+      
+
+            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh 
+            cat testpackage_vdf_run.txt
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            python ./testpackage/testpackage_get_job_error.py testpackage_vdf_run.txt
+            
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
+            . CI_env/bin/activate
+            ./testpackage/run_compare.sh testpackage_vdf
+        - name: scancel dangling job upon cancellation
+          if: cancelled()
+          run: |
+            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
+            
+  
