@@ -40,50 +40,97 @@ def create_venv(path,install_analysator=True,editable=False):
     print(f'Virtual environment created at {path}')
     return None
 
-if __name__ == "__main__":
-    
-    create_venv_CI = False          #Create a virtual environment for CI in wrk-vakka
-    create_venv_local = True        #Create a virtual environment in the current folder (should be in testpackage folder)
+def gitcheck():
 
+    git_branch = system_call('git rev-parse --abbrev-ref HEAD')
+
+
+    #Are we on master branch?
+    if git_branch not in ('master','main') :
+        user_input=input('::warning not in master branch, are you sure you want to continue? y/n\n')
+        if user_input.capitalize() != 'Y':
+            quit()
+    else:
+        #Is local master up to date with remote?
+        git_diff=system_call('git diff --numstat origin/master...')
+        if git_diff!='':
+            print(git_diff)
+            print('::warning Local master branch not up to date with remote, are you sure you want to continue? y/n\n')
+            user_input=input()
+            if user_input.capitalize() != 'Y':
+                quit()
+    return None
+
+
+'''
+def create_ci_venv():
+    print('Creating virtual environment for CI')
+    import time
+    gmtime_now=time.strftime("%c",time.gmtime()).replace(" ","_").replace(":","-")
+
+    gitcheck()
 
     ci_path="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage"
 
-    if not 'venv_testpackage' in os.listdir('.') and create_venv_local:
+    path=f"{ci_path}/venv_testpackage-{gmtime_now}-{git_branch}"
+
+    create_venv(path,install_analysator=True,editable=False) #Editable should be false (default) for CI!
+
+    #Make group writable
+    print(system_call(f'chmod -R g+w {path}'))
+
+    return path
+'''
+
+
+def create_venv_script(path,venv_path):
+    if path[-1]!="/":
+        path=path+"/"
+
+    if not os.path.isdir(path):
+        raise FileNotFoundError(f"{path} does not exist.")
+    
+    if os.path.isfile(path+"pyvenv.sh"):
+        #If file exists, check for source line and add one if not present
+        source_line=False
+        with open(path+"pyvenv.sh","a+") as f:
+            f.seek(0)
+            for line in f:
+                if "source" in line[:6]:
+                    source_line=True
+                    print("Warning: source line already in pyvenv.sh, make sure it is correct for CI! Run regardless? y/n")
+                    user_input=input()
+                    if user_input.capitalize() != 'Y':
+                        quit()
+                    break
+            if not source_line:
+                f.write(f"source {path}/bin/activate\n")
+            f.close()
+    else:
+        #Create the file with the source line
+        with open(path+"pyvenv.sh","w") as f:
+            f.write("module purge\n")
+            if 'TURSO' in os.uname().nodename.upper():
+                f.write("export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH\n")
+            f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
+            f.write("module list\n")
+            f.write(f"source {path}/bin/activate\n")
+            f.close()
+    
+
+if __name__ == "__main__":
+    
+    create_venv_local = True        #Create a virtual environment in the current folder (should be in testpackage folder)
+
+
+    venv_name= 'venv_testpackage'
+
+    if not venv_name in os.listdir('.') and create_venv_local:
         print('venv_testpackage not found, creating virtual environment')
-        create_venv('venv_testpackage',editable=True)
+        create_venv(venv_name,editable=True)
+        create_venv_script('./',f'./{venv_name}')
     else:
         print('venv_testpackage found, not creating virtual environment')
 
 
     
-    #Create a virtual environment for CI in wrk-vakka
-    if create_venv_CI:
-        print('Creating virtual environment for CI')
-        import time
-        gmtime_now=time.strftime("%c",time.gmtime()).replace(" ","_").replace(":","-")
-
-        git_branch = system_call('git rev-parse --abbrev-ref HEAD')
-
-
-        #Are we on master branch?
-        if git_branch not in ('master','main') :
-            user_input=input('::warning not in master branch, are you sure you want to continue? y/n\n')
-            if user_input.capitalize() != 'Y':
-                quit()
-        else:
-            #Is local master up to date with remote?
-            git_diff=system_call('git diff --numstat origin/master...')
-            if git_diff!='':
-                print(git_diff)
-                print('::warning Local master branch not up to date with remote, are you sure you want to continue? y/n\n')
-                user_input=input()
-                if user_input.capitalize() != 'Y':
-                    quit()
-            
-
-        path=f"{ci_path}/venv_testpackage-{gmtime_now}-{git_branch}"
-
-        create_venv(path,install_analysator=True,editable=False) #Editable should be false (default) for CI!
-
-        #Make group writable
-        print(system_call(f'chmod -R g+w {path}'))
