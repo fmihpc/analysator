@@ -74,6 +74,7 @@ if __name__ == "__main__":
             #Is local master up to date with remote?
             git_diff=system_call('git diff --numstat origin/master...')
             if git_diff!='':
+                print(git_diff)
                 print('::warning Local master branch not up to date with remote, are you sure you want to continue? y/n\n')
                 user_input=input()
                 if user_input.capitalize() != 'Y':
