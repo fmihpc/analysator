@@ -105,9 +105,11 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
     if len(unique_files)!=0:
-        print("::warning title=Unique file(s)::Found new file(s) produced by the code!")
+        raise SystemError("Found new file(s) produced by the code!")
+
     if len(missing_files)!=0:
-        print("::warning title=Missing file(s)::Found file(s) **not** produced by the code!")
+        raise SystemError("Found file(s) **not** produced by the code!")
+
 
     if different:
         print(f"::error title=Plot(s) differ::Produced plots not in agreement with the verfication set {a}")
