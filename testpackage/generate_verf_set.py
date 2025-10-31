@@ -1,20 +1,7 @@
-import subprocess
+
 import os
+from create_env import system_call
 
-def system_call(cmd,wait=False):
-    proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-
-    out,err = proc.communicate()
-
-    #If errors, raise an exception
-    if err:
-        err = str(err,'utf-8')
-        raise RuntimeError(err)
-
-    out = str(out,'utf-8').rstrip('\n')
-    if wait:
-        proc.wait()
-    return out
 
 #output_dir named after the latest commit hash
 output_dir="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage/verification_sets/"+system_call("git rev-parse HEAD")
