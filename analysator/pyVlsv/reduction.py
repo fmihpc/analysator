@@ -1043,24 +1043,24 @@ def v_jacobian(variables, reader):
    mesh_size = reader.get_fsgrid_mesh_size()
 
    if mesh_size[0] > 1:
-      vx1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
-      vx2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+      vx1 = reader.read_interpolated_variable("vg_v", coord-np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+      vx2 = reader.read_interpolated_variable("vg_v", coord+np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
 
    else:    
       vx1 = np.zeros_like(coord)
       vx2 = np.zeros_like(coord)
 
    if mesh_size[1] > 1:
-      vy1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
-      vy2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+      vy1 = reader.read_interpolated_variable("vg_v", coord-np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+      vy2 = reader.read_interpolated_variable("vg_v", coord+np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
 
    else:
       vy1 = np.zeros_like(coord)
       vy2 = np.zeros_like(coord)
 
    if mesh_size[2] > 1:   
-      vz1 = reader.read_interpolated_variable("proton/vg_v", coord-np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
-      vz2 = reader.read_interpolated_variable("proton/vg_v", coord+np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+      vz1 = reader.read_interpolated_variable("vg_v", coord-np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+      vz2 = reader.read_interpolated_variable("vg_v", coord+np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
 
    else:
       vz1 = np.zeros_like(coord)
@@ -1074,6 +1074,52 @@ def v_jacobian(variables, reader):
    return np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
    
 
+def v_jacobian_pop(variables, reader):
+   ''' Slow reducer for the (proton) velocity Jacobian, also the transpose of the gradient of V.
+   '''
+
+   if variables[0].ndim == 1:
+      coord = np.atleast_2d(variables[0][np.newaxis,:])
+      dx = variables[1][np.newaxis,:]
+
+   else:
+      coord = variables[0]
+      dx = variables[1]
+
+   h = 2.1
+   dx = dx/h
+   mesh_size = reader.get_fsgrid_mesh_size()
+
+   if mesh_size[0] > 1:
+      vx1 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord-np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+      vx2 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord+np.array([[1.0,0.0,0.0]])*dx[:,0][:,np.newaxis])
+
+   else:    
+      vx1 = np.zeros_like(coord)
+      vx2 = np.zeros_like(coord)
+
+   if mesh_size[1] > 1:
+      vy1 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord-np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+      vy2 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord+np.array([[0.0,1.0,0.0]])*dx[...,1][:,np.newaxis])
+
+   else:
+      vy1 = np.zeros_like(coord)
+      vy2 = np.zeros_like(coord)
+
+   if mesh_size[2] > 1:   
+      vz1 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord-np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+      vz2 = reader.read_interpolated_variable(vlsvvariables.activepopulation+"/vg_v", coord+np.array([[0.0,0.0,1.0]])*dx[...,2][:,np.newaxis])
+
+   else:
+      vz1 = np.zeros_like(coord)
+      vz2 = np.zeros_like(coord)
+   
+
+   dxv = (vx2 - vx1) / (2*dx)
+   dyv = (vy2 - vy1) / (2*dx)
+   dzv = (vz2 - vz1) / (2*dx)
+
+   return np.transpose(np.stack((dxv, dyv, dzv), axis=1), axes=(0,2,1))
 
 
 
@@ -1432,7 +1478,11 @@ v5reducers["vg_jacobian_b"] =             DataReducerVariable(["vg_derivatives/v
 v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_derivatives/vg_dperbxvoldx","vg_derivatives/vg_dperbxvoldy","vg_derivatives/vg_dperbxvoldz","vg_derivatives/vg_dperbyvoldx","vg_derivatives/vg_dperbyvoldy","vg_derivatives/vg_dperbyvoldz","vg_derivatives/vg_dperbzvoldx","vg_derivatives/vg_dperbzvoldy","vg_derivatives/vg_dperbzvoldz"],
                                                                TensorFromScalars, "T/m", 9, latex=r"$\nabla\vec{B}_\mathrm{vol,vg,per}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 3, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
-v5reducers["vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian, "1/s", 3, latex=r"$J_\vec{V}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
+v5reducers["vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian, "1/s", 3, latex=r"$\nabla\vec{V}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
+v5reducers["vg_p_dilatation"] =           DataReducerVariable(["vg_pressure", "vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{Wm}^{-3} $")
+v5reducers["vg_pid"] =                    DataReducerVariable(["vg_ptensor",  "vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D})", latexunits=r"$\mathrm{Wm}^{-3} $")
+v5reducers["vg_p_strain"] =               DataReducerVariable(["vg_ptensor",  "vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{Wm}^{-3} $")
+
 
 # Not the most elegant alias setup - could refine to fetch upstream metadata
 v5reducers["vg_derivatives/vg_dbxvoldx"] = DataReducerVariable(["vg_dbxvoldx"], Alias, "T/m", 1, latex=r"$\Delta B_\mathrm{x,vol,vg} (\Delta X)^{-1}$",latexunits=r"$\mathrm{T}\,\mathrm{m}^{-1}$")
@@ -1539,9 +1589,10 @@ multipopv5reducers["pop/vg_beta_star"] =               DataReducerVariable(["pop
 
 multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/vg_ptensor", "vg_b_vol"], rMirror, "", 1, latex=r"$R_\mathrm{m,REPLACEPOP}$")
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
-multipopv5reducers["pop/vg_p_dilatation"] =           DataReducerVariable(["pop/vg_pressure", "vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{Wm}^{-3} $")
-multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["pop/vg_ptensor", "vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D}", latexunits=r"$\mathrm{Wm}^{-3} $")
-multipopv5reducers["pop/vg_p_strain"] =               DataReducerVariable(["pop/vg_ptensor", "vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian_pop, "1/s", 3, latex=r"$\nabla\vec{V}_\mathrm{REPLACEPOP}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
+multipopv5reducers["pop/vg_p_dilatation"] =           DataReducerVariable(["pop/vg_pressure", "pop/vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta_\mathrm{REPLACEPOP}$", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D})_\mathrm{REPLACEPOP}", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_p_strain"] =               DataReducerVariable(["pop/vg_ptensor", "pop/vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P_\mathrm{REPLACEPOP}\cdot \nabla)\cdot u_\mathrm{REPLACEPOP}$", latexunits=r"$\mathrm{Wm}^{-3} $")
 
 # The dictionary with deprecated data reducers
 deprecated_datareducers = {}
