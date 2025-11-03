@@ -256,4 +256,5 @@ def output_path(draw,axes,outputfile,output_default,outputdir,nooverwrite):
                 logging.warning("Found existing file "+outputfile_out+" of size zero. Re-rendering.")
 
         return outputfile_out
-        
+
+
