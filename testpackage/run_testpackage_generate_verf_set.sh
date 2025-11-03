@@ -21,3 +21,4 @@ python testpackage_colormap.py $jobcount $index
 python testpackage_vdf.py $jobcount $index
 
 echo Job $SLURM_ARRAY_TASK_ID complete.
+echo "EXIT_CODE_FROM_JOB $?"
