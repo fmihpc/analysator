@@ -44,6 +44,7 @@ from rotation import rotateVectorToVector,rotateVectorToVector_X
 
 from packaging.version import Version
 
+
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
@@ -1325,17 +1326,19 @@ def plot_vdf(filename=None,
         if draw is None and axes is None:
             if outputfile is None:
                 outputfile=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-        from plot import output_path
-        outputfile=output_path(draw,axes,outputfile,outputdir,nooverwrite)
+                savefigname=pt.plot.output_path(draw,axes,outputfile,outputdir,nooverwrite)
+                outputfile=None
+            else:
+                savefigname=pt.plot.output_path(draw,axes,outputfile,outputdir,nooverwrite)
 
         # Save output or draw on-screen
         if draw is None and axes is None:
             try:
-                plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
             except:
                 logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            logging.info(outputfile+"\n")
+            logging.info(savefigname+"\n")
             plt.close()
         elif axes is None:
             # Draw on-screen
