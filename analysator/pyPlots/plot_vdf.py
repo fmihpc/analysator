@@ -1324,11 +1324,11 @@ def plot_vdf(filename=None,
             newax.axis('off')
 
 
-        outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-        savefigname=pt.plot.output_path(draw,axes,outputfile,outputfile_default,outputdir,nooverwrite)
 
         # Save output or draw on-screen
         if draw is None and axes is None:
+            outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+            savefigname=pt.plot.output_path(draw,axes,outputfile,outputfile_default,outputdir,nooverwrite)
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
