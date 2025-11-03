@@ -209,3 +209,42 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
+
+def output_path(draw,axes,outputfile,outputdir,nooverwrite):
+
+        if not draw and not axes:
+
+            if not outputdir: # default initial path
+                outputfile=os.path.join(defaultoutputdir,outputfile)
+            else: 
+                outputfile = os.path.join(outputdir,outputfile)
+
+
+        if (outputdir == '' or outputdir is None):
+            outputdir = './'
+
+        # Re-check to find actual target sub-directory
+        outputprefixind = outputfile.rfind('/')
+        if outputprefixind >= 0:            
+            outputdir = outputfile[:outputprefixind+1]
+
+        # Ensure output directory exists
+        if not os.path.exists(outputdir):
+            try:
+                os.makedirs(outputdir)
+            except:
+                pass
+
+        if not os.access(outputdir, os.W_OK):
+            logging.info("No write access for directory "+outputdir+"! Exiting.")
+            return
+
+        # Check if target file already exists and overwriting is disabled
+        if (nooverwrite and os.path.exists(outputfile)):            
+            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+                logging.warning("Found existing file "+outputfile+". Skipping.")
+                return
+            else:
+                logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
+
+        return outputfile

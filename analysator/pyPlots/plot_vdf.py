@@ -628,39 +628,6 @@ def plot_vdf(filename=None,
         if slicethick==0:
             projstr="_proj"
 
-        # Verify directory
-        if outputfile is None:
-            if outputdir is None: # default initial path
-                savefigdir=pt.plot.defaultoutputdir
-            else:
-                savefigdir=outputdir
-            # Sub-directories can still be defined in the "run" variable
-            savefigname = savefigdir+run
-        else:
-            if outputdir is not None:
-                savefigname = outputdir+outputfile
-            else:
-                savefigname = outputfile
-
-        # Re-check to find actual target sub-directory
-        savefigprefixind = savefigname.rfind('/')
-        if savefigprefixind >= 0:
-            savefigdir = savefigname[:savefigprefixind+1]
-            savefigprefix = savefigname[savefigprefixind+1:]
-        else:
-            savefigdir = "./"
-            savefigprefix = savefigname
-
-        # Ensure output directory exists
-        if not os.path.exists(savefigdir):
-            try:
-                os.makedirs(savefigdir)
-            except:
-                pass
-
-        if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+savefigdir+"! Exiting.")
-            return
 
 
 
@@ -972,18 +939,6 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
 
 
-        if draw is None and axes is None:
-            if outputfile is None:
-                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-            else:
-                savefigname=outputfile
-            # Check if target file already exists and overwriting is disabled
-            if (nooverwrite is not None and os.path.exists(savefigname)):
-                if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    logging.info("Found existing file "+savefigname+". Skipping.")
-                    return
-                else:
-                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -1367,14 +1322,20 @@ def plot_vdf(filename=None,
             newax.imshow(wm)
             newax.axis('off')
 
+        if draw is None and axes is None:
+            if outputfile is None:
+                outputfile=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+        from plot import output_path
+        outputfile=output_path(draw,axes,outputfile,outputdir,nooverwrite)
+
         # Save output or draw on-screen
         if draw is None and axes is None:
             try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
             except:
                 logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            logging.info(savefigname+"\n")
+            logging.info(outputfile+"\n")
             plt.close()
         elif axes is None:
             # Draw on-screen
