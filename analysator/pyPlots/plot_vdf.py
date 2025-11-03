@@ -1323,13 +1323,9 @@ def plot_vdf(filename=None,
             newax.imshow(wm)
             newax.axis('off')
 
-        if draw is None and axes is None:
-            if outputfile is None:
-                outputfile=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-                savefigname=pt.plot.output_path(draw,axes,outputfile,outputdir,nooverwrite)
-                outputfile=None
-            else:
-                savefigname=pt.plot.output_path(draw,axes,outputfile,outputdir,nooverwrite)
+
+        outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+        savefigname=pt.plot.output_path(draw,axes,outputfile,outputfile_default,outputdir,nooverwrite)
 
         # Save output or draw on-screen
         if draw is None and axes is None:
