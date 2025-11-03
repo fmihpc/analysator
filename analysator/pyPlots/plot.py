@@ -214,27 +214,27 @@ def output_path(draw,axes,outputfile,output_default,outputdir,nooverwrite):
 
         outputfile_out=outputfile
 
-        if not draw and not axes:
-            if not outputfile_out:
-                outputfile_out=output_default
-                if not output_default:
-                    outputfile_out="plot.png"
 
-            if not outputdir: # default initial path
-                outputfile_out=os.path.join(defaultoutputdir,outputfile_out)
-            else: 
-                outputfile_out = os.path.join(outputdir,outputfile_out)
-
-
-
-
-        if (outputdir == '' or outputdir is None):
-            outputdir = './'
-
-        # Re-check to find actual target sub-directory
         outputprefixind = outputfile_out.rfind('/')
         if outputprefixind >= 0:            
-            outputdir = outputfile_out[:outputprefixind+1]
+            outputdir = outputfile[:outputprefixind+1]
+            outputfile_out = outputfile[outputprefixind+1:]
+
+
+
+        if not outputfile_out:
+            if not output_default:
+                outputfile_out="plot.png"
+            outputfile_out=output_default
+        
+        if not outputdir: # default initial path
+            outputfile_out=os.path.join(defaultoutputdir,outputfile_out)
+            outputdir=defaultoutputdir
+        else: 
+            outputfile_out = os.path.join(outputdir,outputfile_out)
+
+
+
 
         # Ensure output directory exists
         if not os.path.exists(outputdir):
