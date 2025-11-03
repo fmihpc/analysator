@@ -209,6 +209,9 @@ def plot_isosurface(filename=None,
             surf_opstr='_'+surf_op
 
     # Output file name
+    if not surf_var:
+        raise ValueError("surf_var must be provided for isosurface plotting.")
+
     surf_varstr=surf_var.replace("/","_")
     if color_var!=None:
         color_varstr=color_var.replace("/","_")
