@@ -214,42 +214,6 @@ def plot_ionosphere(filename=None,
         var='ig_fac'
     varstr=var.replace("/","_")
 
-    if not outputfile: # Generate filename
-        if not outputdir: # default initial path
-            outputdir=pt.plot.defaultoutputdir
-        # Sub-directories can still be defined in the "run" variable
-        if viewdir > 0:
-            outputpole = "_north"
-        else:
-            outputpole = "_south"
-        outputfile = outputdir+run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
-    else: 
-        if outputdir:
-            outputfile = outputdir+outputfile
-
-    # Re-check to find actual target sub-directory
-    outputprefixind = outputfile.rfind('/')
-    if outputprefixind >= 0:            
-        outputdir = outputfile[:outputprefixind+1]
-
-    # Ensure output directory exists
-    if axes is None and not os.path.exists(outputdir):
-        try:
-            os.makedirs(outputdir)
-        except:
-            pass
-
-    if axes is None and not os.access(outputdir, os.W_OK):
-        logging.info(("No write access for directory "+outputdir+"! Exiting."))
-        return
-
-    # Check if target file already exists and overwriting is disabled
-    if axes is None and (nooverwrite and os.path.exists(outputfile)):            
-        if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            logging.info(("Found existing file "+outputfile+". Skipping."))
-            return
-        else:
-            logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure 
     if axes is None and str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -626,6 +590,15 @@ def plot_ionosphere(filename=None,
 
     # Save output or draw on-screen
     if not draw and axes is None:
+
+        if viewdir > 0:
+            outputpole = "_north"
+        else:
+            outputpole = "_south"
+        outputfile_default = run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
+
+        savefigname=pt.plot.output_path(draw,axes,outputfile,outputfile_default,outputdir,nooverwrite)
+
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except Exception as e:
