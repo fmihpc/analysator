@@ -47,7 +47,7 @@ import re
 def plot_isosurface(filename=None,
                     vlsvobj=None,
                     filedir=None, step=None,
-                    outputdir=None, nooverwrite=None,
+                    outputdir=None,outputfile=None, nooverwrite=None,
                     #
                     surf_var=None, surf_op=None, surf_level=None,
                     color_var=None, color_op=None,
@@ -75,6 +75,7 @@ def plot_isosurface(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
+    :kword outputfile:  Full path to output file, will make directory if it does not exist. Overrides outputdir.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
     :kword surf_var:    Variable to read for defining surface
@@ -125,15 +126,6 @@ def plot_isosurface(filename=None,
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
-    outputprefix = ''
-    if outputdir==None:
-        outputdir=pt.plot.defaultoutputdir
-    outputprefixind = outputdir.rfind('/')
-    if outputprefixind >= 0:
-        outputprefix = outputdir[outputprefixind+1:]
-        outputdir = outputdir[:outputprefixind+1]
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
 
     # Input file or object
     if filename!=None:
@@ -222,18 +214,8 @@ def plot_isosurface(filename=None,
         color_varstr=color_var.replace("/","_")
     else:
         color_varstr="solid"
-    savefigname = outputdir+outputprefix+run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
 
-    # Check if target file already exists and overwriting is disabled
-    if (nooverwrite!=None and os.path.exists(savefigname)):
-        # Also check that file is not empty
-        if os.stat(savefigname).st_size > 0:
-            return
-        else:
-            logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
-
-
-    Re = 6.371e+6 # Earth radius in m
+    Re = 6.371e+6 # Earth radius in moutputpref
     # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     xsize = int(xsize)
@@ -750,10 +732,12 @@ def plot_isosurface(filename=None,
 
 
     # Save output or draw on-screen
-    if draw==None:
+    if not draw:
         # Note: generated title can cause strange PNG header problems
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
+        output_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, output_default=output_default,nooverwrite=nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
