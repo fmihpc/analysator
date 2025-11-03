@@ -1305,7 +1305,10 @@ class VlsvReader(object):
             else:
                tvar = i.split('/',1)[1]
                tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
-         return data_operators[operator](reducer.operation( tmp_vars ))
+         if reducer.useReader:
+            return data_operators[operator](reducer.operation( tmp_vars, self))
+         else:
+            return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
          raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
