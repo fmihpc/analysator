@@ -213,7 +213,12 @@ def textbfstring(string):
 def output_path(draw,axes,outputfile,output_default,outputdir,nooverwrite):
 
         outputfile_out=outputfile
-
+        
+        if not outputfile_out:
+                    if not output_default:
+                        outputfile_out="plot.png"
+                    outputfile_out=output_default
+                
 
         outputprefixind = outputfile_out.rfind('/')
         if outputprefixind >= 0:            
@@ -222,10 +227,6 @@ def output_path(draw,axes,outputfile,output_default,outputdir,nooverwrite):
 
 
 
-        if not outputfile_out:
-            if not output_default:
-                outputfile_out="plot.png"
-            outputfile_out=output_default
         
         if not outputdir: # default initial path
             outputfile_out=os.path.join(defaultoutputdir,outputfile_out)
