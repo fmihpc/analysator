@@ -210,7 +210,7 @@ def textbfstring(string):
     # LaTex output off
     return string
 
-def output_path(draw,axes,outputfile,output_default,outputdir,nooverwrite):
+def output_path(outputfile,output_default,outputdir,nooverwrite):
 
         outputfile_out=outputfile
         

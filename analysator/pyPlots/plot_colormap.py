@@ -1295,7 +1295,7 @@ def plot_colormap(filename=None,
     # Save output or draw on-screen
     if not draw and not axes:
         output_default=run+"_map_"+varstr+operatorfilestr+stepstr+".png"
-        savefigname=pt.plot.output_path(draw,axes,outputfile, output_default,outputdir,nooverwrite)
+        savefigname=pt.plot.output_path(outputfile, output_default,outputdir,nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
