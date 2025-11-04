@@ -1276,7 +1276,8 @@ def plot_colormap3dslice(filename=None,
                                            np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
                 lines = np.vstack((vlines, hlines))
                 ax1.add_collection(LineCollection(lines, lw=fluxropelinewidth, colors=fluxropecolour, linestyle=fluxropelinestyle))
-
+        else:
+            raise ValueError('parameter "fluxrope" passed to plot_colormap3dslice but no vg_fluxrope variable found in data')
     # add AMR contours
     if amr is not None:
         if np.isscalar(amr):
