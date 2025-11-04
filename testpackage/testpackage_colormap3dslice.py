@@ -3,7 +3,7 @@ import sys, os
 import numpy as np
 import traceback
 
-datalocation = "/wrk/group/spacephysics/vlasiator"
+datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 runs.append( { 'name': 'FHA',
                  'verifydir': 'testpackage_colormap3dslice/FHA/', 
@@ -280,6 +280,54 @@ v5regularcalls = [
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=400)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=20, boxre=[-10,10,5,50])",
 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='x',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='y',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='z',vectordensity=200)", 
+
+
+#bunch of reducers
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_nonthermal',lin=1)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_thermal',lin=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel', op='magnitude',lin=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular',lin=1)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel_nonthermal', op='magnitude',lin=1)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular_nonthermal',lin=1)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel_thermal', op='magnitude',lin=1)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_perpendicular_thermal',lin=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pressure')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_thermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_parallel_thermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_perpendicular_thermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_p_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pdyn',lin=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pdynx',lin=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_temperature')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular_nonthermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_thermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_parallel_thermal')",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_perpendicular_thermal')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_t_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy_nonthermal', vmin=0.1, vmax=10)",
+#"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_anisotropy_thermal', vmin=0.1, vmax=10)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_parallel')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 
 #colorbar
 #not yet in in master see PR #359
@@ -292,6 +340,14 @@ v5regularcalls = [
 "pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
 ]
+'''
+v5regularcalls=["pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol', vectorcolormap='viridis')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='x',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='y',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='z',vectordensity=200)"
+]
+'''
 v5nonrestartcalls = []
 
 v5multipopcalls = []
@@ -461,7 +517,7 @@ for j in range(start,end):
     call = call.replace('REPLACETIME',"'"+str(time)+"'")
 
     # Many different plots
-    print(j, runid, jrun, call)
+    print(j, runid, jrun, call,fileLocation+bulkname)
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     try:
         exec(call)
