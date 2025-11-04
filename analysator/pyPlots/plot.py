@@ -211,30 +211,24 @@ def textbfstring(string):
     return string
 
 def output_path(outputfile,output_default,outputdir,nooverwrite):
-
-        outputfile_out=outputfile
         
-        if not outputfile_out:
-                    if not output_default:
-                        outputfile_out="plot.png"
-                    outputfile_out=output_default
-                
-
-        outputprefixind = outputfile_out.rfind('/')
+        if not outputfile:
+            if not output_default:
+                outputfile="plot.png"
+            outputfile=output_default
+        
+        # Check if outputfile contains path information
+        outputprefixind = outputfile.rfind('/')
         if outputprefixind >= 0:            
             outputdir = outputfile[:outputprefixind+1]
-            outputfile_out = outputfile[outputprefixind+1:]
+            outputfile = outputfile[outputprefixind+1:]
 
 
-
-        
         if not outputdir: # default initial path
-            outputfile_out=os.path.join(defaultoutputdir,outputfile_out)
+            outputfile=os.path.join(defaultoutputdir,outputfile)
             outputdir=defaultoutputdir
         else: 
-            outputfile_out = os.path.join(outputdir,outputfile_out)
-
-
+            outputfile = os.path.join(outputdir,outputfile)
 
 
         # Ensure output directory exists
@@ -249,13 +243,13 @@ def output_path(outputfile,output_default,outputdir,nooverwrite):
             return
 
         # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile_out)):            
-            if os.stat(outputfile_out).st_size > 0: # Also check that file is not empty
-                logging.warning("Found existing file "+outputfile_out+". Skipping.")
+        if (nooverwrite and os.path.exists(outputfile)):            
+            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+                logging.warning("Found existing file "+outputfile+". Skipping.")
                 return
             else:
-                logging.warning("Found existing file "+outputfile_out+" of size zero. Re-rendering.")
+                logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
 
-        return outputfile_out
+        return outputfile
 
 
