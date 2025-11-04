@@ -267,16 +267,21 @@ v5regularcalls = [
 
 
 # Streamlines, vectors
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol')",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol', vectorcolormap='viridis')",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=400)",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,normal='x',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,normal='y',vectordensity=200)", 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,normal='z',vectordensity=200)", 
+
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectordensity=400, boxre=[-10,10,5,50],vectorsize=1.5)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectordensity=20, boxre=[-10,10,5,50],vectorsize=0.5)",
 
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol', vectorcolormap='viridis')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=400)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectordensity=20, boxre=[-10,10,5,50])",
 
-#coloarbar
+
+#colorbar
 #not yet in in master see PR #359
 #"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
 
@@ -287,7 +292,6 @@ v5regularcalls = [
 "pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
 ]
-
 v5nonrestartcalls = []
 
 v5multipopcalls = []
