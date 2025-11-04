@@ -210,12 +210,12 @@ def textbfstring(string):
     # LaTex output off
     return string
 
-def output_path(outputfile,output_default,outputdir,nooverwrite):
+def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         
         if not outputfile:
-            if not output_default:
+            if not outputfile_default:
                 outputfile="plot.png"
-            outputfile=output_default
+            outputfile=outputfile_default
         
         # Check if outputfile contains path information
         outputprefixind = outputfile.rfind('/')

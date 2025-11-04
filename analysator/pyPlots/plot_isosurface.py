@@ -739,8 +739,8 @@ def plot_isosurface(filename=None,
         # Note: generated title can cause strange PNG header problems
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
-        output_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
-        savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, output_default=output_default,nooverwrite=nooverwrite)
+        outputfile_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, outputfile_default=outputfile_default,nooverwrite=nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
@@ -1949,8 +1949,8 @@ def plot_neutral_sheet(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
-        output_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
-        savefigname=pt.plot.output_path(outputfile,output_default,outputdir,nooverwrite)
+        outputfile_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:

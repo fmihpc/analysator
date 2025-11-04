@@ -1619,8 +1619,8 @@ def plot_colormap3dslice(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
-        output_default=run+slicestr+"_map_"+varstr+operatorfilestr+stepstr+".png"
-        savefigname=pt.plot.output_path(outputfile,output_default,outputdir,nooverwrite)
+        outputfile_default=run+slicestr+"_map_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
