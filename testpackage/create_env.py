@@ -2,7 +2,8 @@ import os
 import venv
 import subprocess
 from sys import version_info as python_version_info
-
+from sys import version as python_version
+import argparse
 
 
 
@@ -35,13 +36,15 @@ def create_venv(path,install_analysator=True,editable=False):
 
     virt_env.create_configuration(context)
     virt_env.setup_scripts(context)
+    virt_env.post_setup(context)
     if install_analysator:
-        system_call(f'{path}/bin/pip install {'--editable' if editable else ''} ../',live_output=True)
+        editable='--editable' if editable else None
+        system_call(f'{path}/bin/pip install {editable} ../',live_output=True)
     print(f'Virtual environment created at {path}')
     return None
 
 
-def create_venv_script(path,venv_name):
+def create_venv_script(path,venv_path):
     if path[-1]!="/":
         path=path+"/"
 
@@ -56,7 +59,7 @@ def create_venv_script(path,venv_name):
                 if "source" in line[:6]:
                     raise SystemError("source line already in pyvenv.sh!")
 
-            f.write(f"source {path+venv_name}/bin/activate\n")
+            f.write(f"source {venv_path}/bin/activate\n")
             f.close()
     else:
         #Create the file with the source line
@@ -64,23 +67,37 @@ def create_venv_script(path,venv_name):
             f.write("module purge\n")
             if 'TURSO' in os.uname().nodename.upper():
                 f.write("export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH\n")
+
+            #Get used python version and gcc version
+            #note that this may break if the version string format changes
+            #this is required so that the python module is loaded, otherwise python cannot be called outside the directory the venv is in
+            version_info = python_version.split(" ")
+            used_python_version = version_info[0]
+            used_gcc_version = version_info[-1].strip("[]")
+            f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
+        
             f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
             f.write("module list\n")
-            f.write(f"source {path+venv_name}/bin/activate\n")
+            f.write(f"source {venv_path}/bin/activate\n")
             f.close()
     
 
 if __name__ == "__main__":
-    
+    #Will install python venv with same version as the python this script was called with 
+
     create_venv_local = True        #Create a virtual environment in the current folder (should be in testpackage folder)
 
-
+    parser=argparse.ArgumentParser(description='Create virtual environment for testpackage.')
+    parser.add_argument('--no-analysator',action='store_true',help='Do not install analysator.',default=False)
+    parser.add_argument('--editable','-e',action='store_true',help='Install analysator as editable',default=False)
+    args=parser.parse_args()
+    
     venv_name= 'venv_testpackage'
-
+    venv_path = os.path.abspath('./'+venv_name)
     if not venv_name in os.listdir('.') and create_venv_local:
         print('venv_testpackage not found, creating virtual environment')
-        create_venv(venv_name,editable=True)
-        create_venv_script('./',venv_name)
+        create_venv(venv_path,editable=args.editable,install_analysator=not args.no_analysator)
+        create_venv_script('./',venv_path)
     else:
         print('venv_testpackage found, not creating virtual environment')
 
