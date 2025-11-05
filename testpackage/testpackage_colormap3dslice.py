@@ -286,7 +286,7 @@ v5regularcalls = [
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_b_vol',vectorsize=1,normal='z',vectordensity=200)", 
 
 
-#bunch of reducers
+#bunch of reducers, none of the thermals worked?
 #"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_nonthermal',lin=1)",
 #"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_thermal',lin=1)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel', op='magnitude',lin=1)",
