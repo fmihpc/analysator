@@ -31,7 +31,7 @@ def plot_ionosphere(filename=None,
                   usesci=True, log=None,
                   lin=None, symlog=None, nocb=False, internalcb=False,
                   minlatitude=60,
-                  cbtitle=None, title=None, cbaxes=None,
+                  cbtitle=None, title=None, cbaxes=None,cb_horizontal=False,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None,
@@ -84,6 +84,7 @@ def plot_ionosphere(filename=None,
                         variables.
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
@@ -390,7 +391,7 @@ def plot_ionosphere(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -416,10 +417,10 @@ def plot_ionosphere(filename=None,
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
     else:
+        axes.axis('off')
         axes.set_xticklabels([])
         axes.set_yticklabels([])
-        axes.axis('off')
-        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center left')
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center' if cb_horizontal else 'center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
@@ -487,7 +488,8 @@ def plot_ionosphere(filename=None,
         if cbaxes: 
             # Colorbar axes are provided
             cax = cbaxes
-            cbdir="right"; horalign="left"
+            cbdir="right"
+            horalign="center" if cb_horizontal else "left"
         elif internalcb:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
@@ -506,8 +508,11 @@ def plot_ionosphere(filename=None,
         else:
             # Split existing axes to make room for colorbar
             if axes is None:
-                cax = fig.add_axes([0.8,0.1,0.03,0.6])
-                #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
+                if cb_horizontal:
+                    cax = fig.add_axes([0.1,-0.1,0.6,0.03])
+                else:
+                    cax = fig.add_axes([0.8,0.1,0.03,0.6])
+                    #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
             else:
                 cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
@@ -520,15 +525,15 @@ def plot_ionosphere(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
             #cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
