@@ -16,6 +16,7 @@ runs.append( { 'name': 'FHA',
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
+                 'skipped_vars':{'plot_ionosphere':'vg_'},
                  'filename': None, #restart file
                  'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
@@ -31,6 +32,7 @@ runs.append( { 'name': 'BCQ',
                 'funcs': ['plot_colormap','plot_vdf'],
                 'manualcall':False,
                 'time': 1600,
+                'skipped_vars':None,
                 'filename': None,
                 'vlasiator5':False,
                 'nosubpops':False,
@@ -311,7 +313,7 @@ v5nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['vg_va'], vmin=1, vmax=20,lin=1,usesci=0)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)", #why error with plot3d? keyeerror vg_va
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_rho'], boxre=[0,30,-15,15])",
@@ -472,7 +474,7 @@ manualcalls=[
 # v5nonrestartcalls = []
 # v5multipopcalls = []
 
-def call_replace(call,func):
+def call_replace(call,func,skipped_vars):
     call=call.replace('REPLACEFUNC',func)
 
     #Get the arguments of the call
@@ -484,7 +486,9 @@ def call_replace(call,func):
     args_out=[]
     for arg in args:
         if arg:
-            if arg.split("=")[0] in function_pars:
+            if skipped_vars and func in skipped_vars.keys() and skipped_vars[func] in arg.split("=")[1]:
+                continue
+            elif arg.split("=")[0] in function_pars:
                 args_out.append(arg)
             else:
                 logging.warning(f"Argument {arg} removed from call {call}")
@@ -500,6 +504,7 @@ calls = []
 callrunids = []
 callrunindex = []
 funcids=[]
+offset=0
 for i,run in enumerate(runs):
     # bulk and restart files
     vlasiator5 = run['vlasiator5']
@@ -509,10 +514,13 @@ for i,run in enumerate(runs):
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
     functions = run['funcs']
+    skipped_vars=run['skipped_vars']
+
 
     callindex = 0
     if run['manualcall']:
         for call in manualcalls:
+            funcids.append(-1)
             callrunids.append(i)
             calls.append(call)
             callrunindex.append(callindex)
@@ -522,7 +530,7 @@ for i,run in enumerate(runs):
         calls_in=v5restartcalls if vlasiator5 else regularcalls
         for call in calls_in:
             funcids.append(j)
-            call=call_replace(call,func)
+            call=call_replace(call,func,skipped_vars)
             if func == "plot_vdf" and ('cellids' not in call and 'coordinates' not in call and 'coordsre' not in call):
                 continue
             if not filename is None: 
@@ -530,10 +538,12 @@ for i,run in enumerate(runs):
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
                 else:
                     call = call.replace("var='V'","var='restart_V'")
-            callrunids.append(i)
-            calls.append(call)
-            callrunindex.append(callindex)
-            callindex += 1
+
+            if call not in calls:
+                callrunids.append(i)
+                calls.append(call)
+                callrunindex.append(callindex)
+                callindex += 1
 
         # non-restart files
         if filename is None:
@@ -541,7 +551,7 @@ for i,run in enumerate(runs):
             calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
             for call in calls_in:
                 funcids.append(j)
-                call=call_replace(call,func)
+                call=call_replace(call,func,skipped_vars)
                 # Skip flux function calls if no flux files
                 if "flux" in call and fluxLocation is None:
                     continue
@@ -553,19 +563,19 @@ for i,run in enumerate(runs):
                     continue
                 elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                     continue
-
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-            
+                if call not in calls:
+                    callrunids.append(i)
+                    calls.append(call)
+                    callrunindex.append(callindex)
+                    callindex += 1
+                
             #multipop calls
             calls_in=v5multipopcalls if vlasiator5 else multipopcalls
             for pop in run['pops']:
                 if pop != 'avgs':
                     for call in calls_in:
                         funcids.append(j)
-                        call=call_replace(call,func)
+                        call=call_replace(call,func,skipped_vars)
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:
                             continue
@@ -578,10 +588,11 @@ for i,run in enumerate(runs):
                         elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                             continue
                         mpcall = call.replace('REPLACEPOP',pop)
-                        callrunids.append(i)
-                        calls.append(mpcall)
-                        callrunindex.append(callindex)
-                        callindex += 1
+                        if call not in calls:
+                            callrunids.append(i)
+                            calls.append(call)
+                            callrunindex.append(callindex)
+                            callindex += 1
             
 
 nteststot = len(callrunids)
@@ -609,11 +620,13 @@ for j in range(start,end):
     runid = callrunids[j]
     call = calls[j]
 
-    funcid=funcids[j]
+    funcid=funcids[jrun] #offset due to manualcalls
     
     runname = runs[runid]['name']
+    
     func = runs[runid]['funcs'][funcid]
     verifydir = func+runs[runid]['verifydir']
+
     fileLocation = runs[runid]['fileLocation']
     fluxLocation = runs[runid]['fluxLocation']
     pops = runs[runid]['pops']
@@ -629,7 +642,7 @@ for j in range(start,end):
 
     verifydir=os.path.join("testpackage_run",verifydir)
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
-    
+
     if func == "plot_ionosphere" and "var='vg_" in call:
         print(f"skipped call {j}")
         continue
@@ -674,3 +687,7 @@ for j in range(start,end):
         
         traceback.print_exc()
         print("END TRACE for call",j,"\n----------------------------")
+
+#add way to specify which function to test 
+#add a way to add expections to variables etc easily.
+#currenlty does multiple calls
