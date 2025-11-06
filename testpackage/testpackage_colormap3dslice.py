@@ -198,8 +198,8 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
-regularcalls = []
-regularcalls=[]
+
+restartcalls=[]
 
 nonrestartcalls = []
 
@@ -273,8 +273,24 @@ v5nonrestartcalls = [
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='x', colormap='PuOr')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='y', colormap='PuOr',symlog=0, usesci=0)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='z', colormap='PuOr',symlog=0, usesci=0)",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_pressure')",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rho')",
+
+# Zoom and units
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
+
+# Externals and expressions
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['vg_va'], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
+"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_rho'], boxre=[0,30,-15,15])",
+"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_beta'])",
+
 
 # Everything at once
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
@@ -318,6 +334,7 @@ v5nonrestartcalls = [
 
 # More data reducers
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rho')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_nonthermal',lin=1)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_thermal',lin=1)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v_parallel', op='magnitude',lin=1)",
@@ -368,6 +385,8 @@ v5nonrestartcalls = [
 #Does not work currently, fix for the AMR contour is in PR #364
 #"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, amr=0.1,amrlinestyles='dashed',amrcolours='red',amrlinewidths=1"),
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved='red')",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=1)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=0.5)",
 "pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
 ]
@@ -424,6 +443,7 @@ v5multipopcalls= [
 # v5multipopcalls = []
 
 # Construct test list
+#construct calls
 calls = []
 callrunids = []
 callrunindex = []
@@ -435,90 +455,64 @@ for i,run in enumerate(runs):
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
-
     callindex = 0
-    if vlasiator5:
-        for call in v5restartcalls:
-            if not filename is None: 
+
+    calls_in=v5restartcalls if vlasiator5 else restartcalls
+    for call in calls_in:
+        if not filename is None: 
+            if vlasiator5:
+                call = call.replace("var='vg_v'","var='vg_restart_v'")
+            else:
                 call = call.replace("var='V'","var='restart_V'")
+        callrunids.append(i)
+        calls.append(call)
+        callrunindex.append(callindex)
+        callindex += 1
+
+    # non-restart files
+    if filename is None:
+        #non restart calls
+        calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
+        for call in calls_in:
+            # Skip flux function calls if no flux files
+            if "flux" in call and fluxLocation is None:
+                continue
+            # skip time integration if only one file available
+            if "pass_times" in call and singletime:
+                continue
+            # thermal / non-thermal subpopulations
+            if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
+                continue
+            elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
+                continue
+
             callrunids.append(i)
             calls.append(call)
             callrunindex.append(callindex)
             callindex += 1
-    else:
-        for call in regularcalls:
-            if not filename is None: 
-                call = call.replace("var='V'","var='restart_V'")
-            callrunids.append(i)
-            calls.append(call)                
-            callrunindex.append(callindex)
-            callindex += 1
-    # non-restart files
-    if filename is None:
-        if vlasiator5:
-            for call in v5nonrestartcalls:
-                # Skip flux function calls if no flux files
-                if "flux" in call and fluxLocation is None:
-                    continue
-                # skip time integration if only one file available
-                if "pass_times" in call and singletime:
-                    continue
-                # thermal / non-thermal subpopulations
-                if (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                    continue
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-            for pop in run['pops']:
-                if pop != 'avgs':
-                    for call in v5multipopcalls:
-                        # Skip flux function calls if no flux files
-                        if "flux" in call and fluxLocation is None:
-                            continue
-                        # skip time integration if only one file available
-                        if "pass_times" in call and singletime:
-                            continue
-                        # thermal / non-thermal subpopulations
-                        if (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                            continue
-                        mpcall = call.replace('REPLACEPOP',pop)
-                        callrunids.append(i)
-                        calls.append(mpcall)
-                        callrunindex.append(callindex)
-                        callindex += 1
-        else:
-            for call in nonrestartcalls:
-                # Skip flux function calls if no flux files
-                if "flux" in call and fluxLocation is None:
-                    continue
-                # skip time integration if only one file available
-                if "pass_times" in call and singletime:
-                    continue
-                # thermal / non-thermal subpopulations
-                if (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                    continue
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-            for pop in run['pops']:
-                if pop != 'avgs':
-                    for call in multipopcalls:
-                        # Skip flux function calls if no flux files
-                        if "flux" in call and fluxLocation is None:
-                            continue
-                        # skip time integration if only one file available
-                        if "pass_times" in call and singletime:
-                            continue
-                        # thermal / non-thermal subpopulations
-                        if (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                            continue
-                        mpcall = call.replace('REPLACEPOP',pop)
-                        callrunids.append(i)
-                        calls.append(mpcall)
-                        callrunindex.append(callindex)
-                        callindex += 1
+        
+        #multipop calls
+        calls_in=v5multipopcalls if vlasiator5 else multipopcalls
+        for pop in run['pops']:
+            if pop != 'avgs':
+                for call in calls_in:
+                    # Skip flux function calls if no flux files
+                    if "flux" in call and fluxLocation is None:
+                        continue
+                    # skip time integration if only one file available
+                    if "pass_times" in call and singletime:
+                        continue
+                    # thermal / non-thermal subpopulations
+                    if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
+                        continue
+                    elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
+                        continue
+                    mpcall = call.replace('REPLACEPOP',pop)
+                    callrunids.append(i)
+                    calls.append(mpcall)
+                    callrunindex.append(callindex)
+                    callindex += 1
+        
 
 nteststot = len(callrunids)
 
