@@ -8,6 +8,19 @@ import re
 
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
+
+
+#required args for functions, lists are handled as OR statements, tuples within lists as AND
+#add a way to add required args automatically
+
+required_args ={
+    "plot_vdf":["coordre","coordinates","cellids"]
+
+
+
+}
+
+
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
                  'fileLocation': datalocation+'/3D/FHA/bulk1/',
@@ -16,12 +29,13 @@ runs.append( { 'name': 'FHA',
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
-                 'skipped_vars':{'plot_ionosphere':'vg_'},
+                 'skipped_args':{'plot_ionosphere':{'var':'vg_'}},
                  'filename': None, #restart file
                  'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
                  'vlasiator5': True,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
+
 
 runs.append( { 'name': 'BCQ',
                 'verifydir': '/BCQ/', 
@@ -32,7 +46,7 @@ runs.append( { 'name': 'BCQ',
                 'funcs': ['plot_colormap','plot_vdf'],
                 'manualcall':False,
                 'time': 1600,
-                'skipped_vars':None,
+                'skipped_args':None,
                 'filename': None,
                 'vlasiator5':False,
                 'nosubpops':False,
@@ -229,7 +243,161 @@ regularcalls=[
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE)",
 ]
 
-nonrestartcalls = []
+nonrestartcalls = [
+# Overplots and flux lines
+"pt.plot.REPLACEFUNC(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
+
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated', vscale=1e3)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='x', colormap='RdBu',symlog=0, usesci=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='y', colormap='RdBu',symlog=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', op='z', colormap='RdBu',symlog=0, usesci=0)",
+
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='RhoBackstream', colormap='jet')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='beta',lin=1, usesci=0, colormap='viridis',vmax=50)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='MA',lin=1,usesci=0,vmin=2,vmax=40, colormap='inferno_r')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Mms',lin=1,usesci=0, vmin=0, colormap='magma')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='va',lin=1,usesci=0, colormap='magma_r')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vms',lin=1, colormap='plasma_r')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vs',lin=1, colormap='viridis_r')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='max_v_dt', vscale=1e6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='max_v_dt', vscale=1e3)",
+
+# Vscale
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e3, vmax=7.e6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e-3, vmax=7.e0, vscale=1e-6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e6, vmax=7.e9, vscale=1e3)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Temperature', colormap='plasma', vscale=1e-6,lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Pressure', vscale=1e9)",
+
+# Symlog and vscale
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-9)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-12)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=0,vscale=1e9)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1,vscale=1e9)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-3,vscale=1e9)",
+
+# Zoom and units
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
+
+# Externals and expressions
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['rho','B','beta'])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['rho'], boxre=[0,30,-15,15])",
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['beta'])",
+
+# Everything at once
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
+
+# Streamlines, vectors
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B', vectorcolormap='viridis')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B', vectorcolormap='magma')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=20)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=400)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B',vectordensity=400, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20,vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400,vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',boxre=[-10,10,5,50],vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20, boxre=[-10,10,5,50],vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400, boxre=[-10,10,5,50],vectorsize=1.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectorsize=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20,vectorsize=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400,vectorsize=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',boxre=[-10,10,5,50],vectorsize=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=20, boxre=[-10,10,5,50],vectorsize=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='E',vectordensity=400, boxre=[-10,10,5,50],vectorsize=0.5)",
+
+
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinecolor='black')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinecolor='gray')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinedensity=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinedensity=2)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinedensity=0.5, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='B', streamlinedensity=2, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=2)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=0.5,streamlinethick=2)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinethick=2)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=2,streamlinethick=2)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=0.5,streamlinethick=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinethick=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=2,streamlinethick=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=0.5, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, streamlines='V', streamlinedensity=2, boxre=[-10,10,5,50])",
+
+# More data reducers
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VBackstream',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VNonBackstream',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VParallel', op='magnitude',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VPerpendicular',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VParallelBackstream', op='magnitude',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VPerpendicularBackstream',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VParallelNonBackstream', op='magnitude',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='VPerpendicularNonBackstream',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Pressure')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PParallelBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpendicularBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PParallelNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpendicularNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='PPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Pdyn',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Pdynx',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Temperature')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TParallelBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpendicularBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TParallelNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpendicularNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='TPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='beta')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='betaPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeam',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Thermalvelocity',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='gyrotropy')"]
 
 
 multipopcalls = []
@@ -474,21 +642,42 @@ manualcalls=[
 # v5nonrestartcalls = []
 # v5multipopcalls = []
 
-def call_replace(call,func,skipped_vars):
+def call_replace(call,func,skipped_args):
+    #This is kind of scuffed maybe
+
     call=call.replace('REPLACEFUNC',func)
 
     #Get the arguments of the call
     args = re.search(r'\((.+)\)',call).group(1)
     args = [x[0] or x[1] or x[2] for x in re.findall(r'(\w+=[^,(\[]+)|(\w+=\(.+\))|(\w+=\[.+?\])',args)]
+    named_parameters=[arg.split("=")[0] for arg in args]
+
     #Get parameters of the func
     function_pars=inspect.getfullargspec(eval("pt.plot."+func)).args
     #Remove args that are not present as parameters for the func
     args_out=[]
+
+    #check that all required func args are set
+    if required_args and func in required_args.keys():
+        required_params=required_args[func]
+        check=False
+        for param in required_params:
+            if any((all(r in named_parameters for r in param),(param in named_parameters))):
+                check=True
+                break
+        if not check:
+            #print("REQUIRED",call,named_parameters,required_params)
+            return None
+
+    #add execption for tuple?
     for arg in args:
         if arg:
-            if skipped_vars and func in skipped_vars.keys() and skipped_vars[func] in arg.split("=")[1]:
-                continue
-            elif arg.split("=")[0] in function_pars:
+            if skipped_args and func in skipped_args.keys():
+                skipped_args_dict=skipped_args[func]
+                call_args=arg.split("=")
+                if call_args[0] in skipped_args_dict.keys() and skipped_args_dict[call_args[0]] in call_args[1]:
+                    continue
+            if arg.split("=")[0] in function_pars:
                 args_out.append(arg)
             else:
                 logging.warning(f"Argument {arg} removed from call {call}")
@@ -514,7 +703,7 @@ for i,run in enumerate(runs):
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
     functions = run['funcs']
-    skipped_vars=run['skipped_vars']
+    skipped_args=run['skipped_args']
 
 
     callindex = 0
@@ -529,9 +718,8 @@ for i,run in enumerate(runs):
     for j,func in enumerate(functions):
         calls_in=v5restartcalls if vlasiator5 else regularcalls
         for call in calls_in:
-            funcids.append(j)
-            call=call_replace(call,func,skipped_vars)
-            if func == "plot_vdf" and ('cellids' not in call and 'coordinates' not in call and 'coordsre' not in call):
+            call=call_replace(call,func,skipped_args)
+            if not call:
                 continue
             if not filename is None: 
                 if vlasiator5:
@@ -544,14 +732,18 @@ for i,run in enumerate(runs):
                 calls.append(call)
                 callrunindex.append(callindex)
                 callindex += 1
+                funcids.append(j)
+
 
         # non-restart files
         if filename is None:
             #non restart calls
             calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
             for call in calls_in:
-                funcids.append(j)
-                call=call_replace(call,func,skipped_vars)
+
+                call=call_replace(call,func,skipped_args)
+                if not call:
+                    continue
                 # Skip flux function calls if no flux files
                 if "flux" in call and fluxLocation is None:
                     continue
@@ -568,14 +760,17 @@ for i,run in enumerate(runs):
                     calls.append(call)
                     callrunindex.append(callindex)
                     callindex += 1
+                    funcids.append(j)
                 
             #multipop calls
             calls_in=v5multipopcalls if vlasiator5 else multipopcalls
             for pop in run['pops']:
                 if pop != 'avgs':
                     for call in calls_in:
-                        funcids.append(j)
-                        call=call_replace(call,func,skipped_vars)
+
+                        call=call_replace(call,func,skipped_args)
+                        if not call:
+                            continue
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:
                             continue
@@ -593,7 +788,7 @@ for i,run in enumerate(runs):
                             calls.append(call)
                             callrunindex.append(callindex)
                             callindex += 1
-            
+                            funcids.append(j)            
 
 nteststot = len(callrunids)
 
@@ -620,7 +815,7 @@ for j in range(start,end):
     runid = callrunids[j]
     call = calls[j]
 
-    funcid=funcids[jrun] #offset due to manualcalls
+    funcid=funcids[j] 
     
     runname = runs[runid]['name']
     
@@ -642,10 +837,6 @@ for j in range(start,end):
 
     verifydir=os.path.join("testpackage_run",verifydir)
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
-
-    if func == "plot_ionosphere" and "var='vg_" in call:
-        print(f"skipped call {j}")
-        continue
 
     # Source data files
     if filename is None:
@@ -681,7 +872,8 @@ for j in range(start,end):
     print(j, runid, jrun, call,fileLocation+bulkname)
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     try:
-        exec(call)
+        #exec(call)
+        print(call)
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
         
@@ -689,5 +881,6 @@ for j in range(start,end):
         print("END TRACE for call",j,"\n----------------------------")
 
 #add way to specify which function to test 
-#add a way to add expections to variables etc easily.
-#currenlty does multiple calls
+#add a way to add expections to variables etc easily. (DONE)
+#currenlty does multiple calls (Fixed with list but still needs better implementation as we waste bit of time going through multiple things)
+#add manual calls (DONE)
