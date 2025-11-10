@@ -235,11 +235,31 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
+'''
+
+    DISCLAIMER
+
+    Add to the end of the list always so the output file names remain the same
+
+
+
+'''
+
+
+
 regularcalls=[
 ]
 
 #This can be v4 or v5, these both get added into nonrestartcalls and v5nonrestartcalls, here for cleanliness sake
 agnostic_call = [
+
+
+# Input and output methods, nooverwrite
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
+"pt.plot.REPLACEFUNC(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 
 # cellids, coordinates
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACECELLID)",
@@ -248,13 +268,6 @@ agnostic_call = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACEMULTIPLECELLID)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACEMULTIPLECOORDINATES)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE)",
-
-# Input and output methods, nooverwrite
-"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
-"pt.plot.REPLACEFUNC(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 
 
 
@@ -399,6 +412,14 @@ agnostic_call = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=1)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=0.5)",
 ]
+
+
+#This is here so the agnostic calls are first and the order doesnt change if you add something to nonrestartcalls
+nonrestartcalls=[]
+v5nonrestartcalls=[]
+nonrestartcalls.extend(agnostic_call)
+v5nonrestartcalls.extend(agnostic_call)
+
 
 nonrestartcalls = [
 
@@ -785,8 +806,6 @@ callrunids = []
 callrunindex = []
 funcids=[]
 offset=0
-nonrestartcalls.extend(agnostic_call)
-v5nonrestartcalls.extend(agnostic_call)
 
 for i,run in enumerate(runs):
     # bulk and restart files
