@@ -15,6 +15,7 @@ runs = []
 
 #list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
 
+#maybe add overide to this in runs append
 required_args ={
     "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
     "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
@@ -22,7 +23,6 @@ required_args ={
 
 }
 
-#'plot_isosurface':{'var':''}
 
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
@@ -32,7 +32,7 @@ runs.append( { 'name': 'FHA',
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
-                 'skipped_args':{'plot_ionosphere':{'var':'vg_'}},
+                 'skipped_args':{'plot_ionosphere':{'var':'vg_'}}, #Uses 'in' operator for the values of the inner dict, so skipping arg completely can be done with {'var':''}
                  'filename': None, #restart file
                  'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
@@ -776,7 +776,7 @@ def call_replace(call,func,skipped_args):
                     for param in default_params:
                         if param not in named_parameters:
                             args_out.append(param)
-                        #print("ADDED",param,call)
+  #                      print("ADDED",param,call)
                 else:
                     #print("NOT ADDED",call)
                     return None
@@ -798,7 +798,7 @@ def call_replace(call,func,skipped_args):
     if not args_out:
         return None
     call=call[:call.rfind("(")+1]+",".join(args_out)+")"
-
+#    print("BEFORE",call)
     return call
 
 
