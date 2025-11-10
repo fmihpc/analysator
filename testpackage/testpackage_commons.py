@@ -236,16 +236,74 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
 regularcalls=[
-    # cellids, coordinates
+]
+
+#This can be v4 or v5, these both get added into nonrestartcalls and v5nonrestartcalls, here for cleanliness sake
+agnostic_call = [
+
+# cellids, coordinates
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACECELLID)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACECOORDINATES)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACEMULTIPLECELLID)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACEMULTIPLECOORDINATES)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE)",
-]
 
-nonrestartcalls = [
+# Input and output methods, nooverwrite
+"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
+"pt.plot.REPLACEFUNC(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
+
+
+
+# Thickness, scale
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=True)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0, highres=True)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0, highres=True)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=3)",
+
+# Tick interval
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=0.5,axisunit=6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=1,axisunit=6)",
+
+# msec musec titles
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='msec')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='musec')",
+
+# Watermarks
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmarkb=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NE')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NW')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
+
+
+
+
+# title, axes, noborders
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1,noborder=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noborder=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noxlabels=1,noborder=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,nocb=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1,highres=True)",
+
+
+
 # Overplots and flux lines
 "pt.plot.REPLACEFUNC(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
@@ -253,6 +311,96 @@ nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxfile=fluxLocation+fluxname, boxre=[-10,10,5,50])",
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, step=REPLACETIME, fluxthick=0.5, fluxlines=10)",
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, fluxdir=fluxLocation, fluxthick=5, fluxlines=2)",
+
+# Vscale
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e3, vmax=7.e6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e-3, vmax=7.e0, vscale=1e-6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e6, vmax=7.e9, vscale=1e3)",
+
+
+# Zoom and units
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
+
+
+# slicethick (Mostly for vdf,vdf_prof,vdfdiff)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=0, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=2, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=4, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=1e3, coordre=REPLACECOORDRE)",
+# cellsize (same)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=0.5, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=2, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=4, coordre=REPLACECOORDRE)",
+# fmin, fmax, setThreshold (same)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmin=1.e-14, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmax=1.e-12, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmin=1.e-14,fmax=1.e-12, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=1.e-20, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=1.e-15, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=0, coordre=REPLACECOORDRE)",
+# Biglabels(vdf,vdfdiff)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='A', coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='B', biglabloc=0, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='C', biglabloc=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='D', biglabloc=2, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='E', biglabloc=3, coordre=REPLACECOORDRE)",
+# cbulk, center, bvector(same)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, cbulk=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, center=[-7e5,0,0], coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, center=[2e5,2e5,2e5], coordre=REPLACECOORDRE)",
+
+# wflux(same)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wflux=1, coordre=REPLACECOORDRE)",
+# directions(about same)
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xy=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xy=1,coordswap=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[0,0,5], coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xz=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xz=1,coordswap=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[0,1,0], coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, yz=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, yz=1,coordswap=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[-1,0,0], coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bpara=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bpara=1,coordswap=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1,coordswap=1, coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[1,1,1], coordre=REPLACECOORDRE)",
+
+
+
+# colormaps 
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='nipy_spectral')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='jet')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='hot_desaturated')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='hot_desaturated_r')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='viridis')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='plasma')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='magma')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='warhol')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='bwr')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='PuOr')",
+
+#colorbar
+#not yet in in master see PR #359
+#"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
+
+#AMR, fsaved
+#Does not work currently, fix for the AMR contour is in PR #364
+#"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, amr=0.1,amrlinestyles='dashed',amrcolours='red',amrlinewidths=1"),
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved='red')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=0.5)",
+]
+
+nonrestartcalls = [
 
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='E', colormap='hot_desaturated', vscale=1e3)",
@@ -270,10 +418,6 @@ nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='max_v_dt', vscale=1e6)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='max_v_dt', vscale=1e3)",
 
-# Vscale
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e3, vmax=7.e6)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e-3, vmax=7.e0, vscale=1e-6)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vmin=7.e6, vmax=7.e9, vscale=1e3)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Temperature', colormap='plasma', vscale=1e-6,lin=1)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Pressure', vscale=1e9)",
 
@@ -284,13 +428,6 @@ nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=0,vscale=1e9)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1,vscale=1e9)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-3,vscale=1e9)",
-
-# Zoom and units
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
 
 # Externals and expressions
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['rho','B','beta'])",
@@ -414,58 +551,6 @@ v5restartcalls = [
 
 
 v5nonrestartcalls = [
-
-
-# Input and output methods, nooverwrite
-"pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
-
-# Thickness, scale
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=0.5)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=True)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, scale=2.0, highres=True)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, thick=2.0, highres=True)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, highres=3)",
-
-# Tick interval
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=10)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=0.5,axisunit=6)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, tickinterval=1,axisunit=6)",
-
-# msec musec titles
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='msec')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='musec')",
-
-# Watermarks
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmarkb=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NE')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='NW')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SE')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wmark='SW')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, Earth=True)",
-
-
-
-
-# title, axes, noborders
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1,noborder=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noborder=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noylabels=1,noxlabels=1,noborder=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,nocb=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',noylabels=1,noxlabels=1,noborder=1,internalcb=1,highres=True)",
-
 # Variables, operators, colormaps, usesci, lin, vscale
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', colormap='nipy_spectral')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_b_vol', colormap='nipy_spectral', vscale=1e9)",
@@ -476,70 +561,6 @@ v5nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='x', colormap='PuOr')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='y', colormap='PuOr',symlog=0, usesci=0)",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='z', colormap='PuOr',symlog=0, usesci=0)",
-
-# Zoom and units
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50])",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=3)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxre=[-10,10,5,50],axisunit=6)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6])",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, boxm=[-10e6,50e6,-5e6,15e6],axisunit=0)",
-
-
-
-# slicethick (Mostly for vdf,vdf_prof,vdfdiff)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=0, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=2, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=4, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, slicethick=1e3, coordre=REPLACECOORDRE)",
-# cellsize (same)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=0.5, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=2, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cellsize=4, coordre=REPLACECOORDRE)",
-# fmin, fmax, setThreshold (same)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmin=1.e-14, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmax=1.e-12, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fmin=1.e-14,fmax=1.e-12, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=1.e-20, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=1.e-15, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, setThreshold=0, coordre=REPLACECOORDRE)",
-# Biglabels(vdf,vdfdiff)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='A', coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='B', biglabloc=0, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='C', biglabloc=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='D', biglabloc=2, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, biglabel='E', biglabloc=3, coordre=REPLACECOORDRE)",
-# cbulk, center, bvector(same)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, cbulk=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, center=[-7e5,0,0], coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, center=[2e5,2e5,2e5], coordre=REPLACECOORDRE)",
-
-# wflux(same)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, wflux=1, coordre=REPLACECOORDRE)",
-# directions(about same)
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xy=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xy=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[0,0,5], coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xz=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, xz=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[0,1,0], coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, yz=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, yz=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[-1,0,0], coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bpara=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bpara=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[1,1,1], coordre=REPLACECOORDRE)",
-
-
-# colormaps 
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='nipy_spectral')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='jet')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='hot_desaturated')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='hot_desaturated_r')",
 
 
 # Externals and expressions
@@ -638,16 +659,6 @@ v5nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 
-#colorbar
-#not yet in in master see PR #359
-#"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
-
-#AMR, fsaved
-#Does not work currently, fix for the AMR contour is in PR #364
-#"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, amr=0.1,amrlinestyles='dashed',amrcolours='red',amrlinewidths=1"),
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved='red')",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=1)",
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=0.5)",
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
 ]
@@ -774,6 +785,9 @@ callrunids = []
 callrunindex = []
 funcids=[]
 offset=0
+nonrestartcalls.extend(agnostic_call)
+v5nonrestartcalls.extend(agnostic_call)
+
 for i,run in enumerate(runs):
     # bulk and restart files
     vlasiator5 = run['vlasiator5']
@@ -965,4 +979,4 @@ for j in range(start,end):
 #currenlty does multiple calls (Fixed with list but still needs better implementation as we waste bit of time going through multiple things)
 #add manual calls (DONE)
 #why spend time going through all calls on all threads?
-#v5 vdf??
+#v5 vdf?? (post 2019 are v5)
