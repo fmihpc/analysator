@@ -13,21 +13,22 @@ runs = []
 #required args for functions, lists are handled as OR statements, tuples within lists as AND
 #add a way to add required args automatically
 
-#tuple, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
+#list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
 
 required_args ={
-    "plot_vdf":(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])
-
-
+    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
+    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
+    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"])]
 
 }
 
+#'plot_isosurface':{'var':''}
 
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
                  'fileLocation': datalocation+'/3D/FHA/bulk1/',
                  'fluxLocation': None,
-                 'funcs': ['plot_colormap3dslice','plot_ionosphere'],
+                 'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
@@ -45,7 +46,7 @@ runs.append( { 'name': 'BCQ',
                 'fluxLocation': None,
                 'singletime': False,
                 'pops': ['avgs'],
-                'funcs': ['plot_colormap','plot_vdf'],
+                'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                 'manualcall':False,
                 'time': 1600,
                 'skipped_args':None,
@@ -759,24 +760,26 @@ def call_replace(call,func,skipped_args):
     args_out=[]
     #check that all required func args are set
     if required_args and func in required_args.keys():
-        required_params=required_args[func][0]
-        default_params=required_args[func][1]
-        check=False
-        for param in required_params:
-            if any((all(r in named_parameters for r in param),(param in named_parameters))):
-                check=True
-                break
-        if not check:
-            #print("REQUIRED",call,named_parameters,required_params)
+        for required_tuple in required_args[func]:
+            required_params=required_tuple[0]
+            default_params=required_tuple[1]
+            check=False
+            for param in required_params:
+                if any((all(r in named_parameters for r in param),(param in named_parameters))):
+                    check=True
+                    break
+            if not check:
+                #print("REQUIRED",call,named_parameters,required_params)
 
-            #Add parameters if there are default_params
-            if default_params:
-                for param in default_params:
-                    args_out.append(param)
-                    #print("ADDED",param,call)
-            else:
-                #print("NOT ADDED",call)
-                return None
+                #Add parameters if there are default_params
+                if default_params:
+                    for param in default_params:
+                        if param not in named_parameters:
+                            args_out.append(param)
+                        #print("ADDED",param,call)
+                else:
+                    #print("NOT ADDED",call)
+                    return None
 
 
     #add execption for tuple?
