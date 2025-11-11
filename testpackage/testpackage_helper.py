@@ -17,4 +17,3 @@ def system_call(cmd,live_output=False):
     out = str(out,'utf-8').rstrip('\n')
     return out
 
-    
