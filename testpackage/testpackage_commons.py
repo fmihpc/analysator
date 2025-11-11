@@ -46,7 +46,9 @@ runs.append( { 'name': 'FHA',
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
-                 'skipped_args':{'plot_ionosphere':{'var':'vg_'}}, #Uses 'in' operator for the values of the inner dict, so skipping arg completely can be done with {'var':''}
+
+                  #Uses 'in' operator for the values of the inner dict, so skipping arg completely can be done with {'var':''}
+                 'skipped_args':{'plot_ionosphere':{'var':'vg_'},'plot_colormap3dslice':{'expression':['expr_cav_cust','exprMA_cust']}},
                  'filename': None, #restart file
                  'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
@@ -70,6 +72,10 @@ runs.append( { 'name': 'BCQ',
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                   } )
                      
+
+
+
+
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
     if vlasiator5 is True:
@@ -802,12 +808,15 @@ def call_replace(call,func,skipped_args):
             if skipped_args and func in skipped_args.keys():
                 skipped_args_dict=skipped_args[func]
                 call_args=arg.split("=")
-                if call_args[0] in skipped_args_dict.keys() and skipped_args_dict[call_args[0]] in call_args[1]:
-                    continue
+                if call_args[0] in skipped_args_dict.keys():
+                    if type(skipped_args_dict[call_args[0]])==str and skipped_args_dict[call_args[0]] in call_args[1]:
+                        continue
+                    elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):
+                        continue
             if arg.split("=")[0] in function_pars:
                 args_out.append(arg)
-            else:
-                logging.warning(f"Argument {arg} removed from call {call}")
+            #else:
+            #    logging.warning(f"Argument {arg} removed from call {call}")
     
     if not args_out:
         return None
