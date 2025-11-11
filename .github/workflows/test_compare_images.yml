@@ -41,18 +41,19 @@ jobs:
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
-        - name: Produce colormap plots
-          id: run_color
+        - name: Produce plots
+          id: run_cl
           run: |
             export TMPDIR=$RUNNER_TEMP
-      
+            export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
+            echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
 
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh
-            
-            cat testpackage_colormap_run.txt
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh $DIFFRESULT
+
+            cat testpackage_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
-            python ./testpackage/testpackage_get_job_error.py testpackage_colormap_run.txt
+            python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
             
         - name: Comparing plotted data
           run: |
@@ -60,30 +61,11 @@ jobs:
             module load Python/3.10.4-GCCcore-11.3.0
             module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
-            ./testpackage/run_compare.sh testpackage_colormap
+            ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
 
-        - name: Produce vdf plots
-          id: run_vdf
-          run: |
-            export TMPDIR=$RUNNER_TEMP
-      
-
-            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh 
-            cat testpackage_vdf_run.txt
-            module purge
-            module load Python/3.10.4-GCCcore-11.3.0
-            python ./testpackage/testpackage_get_job_error.py testpackage_vdf_run.txt
-            
-        - name: Comparing plotted data
-          run: |
-            export TMPDIR=$RUNNER_TEMP
-            module load Python/3.10.4-GCCcore-11.3.0
-            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
-            . CI_env/bin/activate
-            ./testpackage/run_compare.sh testpackage_vdf
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
-            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
+            scancel ${{ steps.run_cl.outputs.SLURM_JOB_ID }}
             
   
