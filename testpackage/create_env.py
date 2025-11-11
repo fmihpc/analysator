@@ -1,28 +1,13 @@
 import os
 import venv
-import subprocess
+
+from testpackage_helper import system_call
+import logging
 from sys import version_info as python_version_info
 from sys import version as python_version
 import argparse
 
 
-
-def system_call(cmd,live_output=False):
-    with subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE) as proc:
-        if live_output:
-            for line in proc.stdout:
-                print(str(line,'utf-8').rstrip('\n')) #Note that for example pip's progress bar is not displayed
-
-        out,err = proc.communicate()
-    
-
-    #If errors, raise an exception
-    if proc.returncode!=0:
-        err = str(err,'utf-8')
-        raise RuntimeError(err)
-
-    out = str(out,'utf-8').rstrip('\n')
-    return out
 
 def create_venv(path,install_analysator=True,editable=False):
     virt_env= venv.EnvBuilder(with_pip=True,upgrade_deps=True)
@@ -31,8 +16,12 @@ def create_venv(path,install_analysator=True,editable=False):
     virt_env.setup_python(context)
 
     #Does not work in python versions <3.13
-    if python_version_info.major>=3 and python_version_info.minor>=13:
-        virt_env.create_git_ignore_file(context)
+    #if python_version_info.major>=3 and python_version_info.minor>=13:
+    #    virt_env.create_git_ignore_file(context)
+    try:
+        system_call(f"touch {os.path.join(path,'.gitignore')}")
+    except Exception as e:
+        logging.info(f"unable to create .gitignore file: {e}")
 
     virt_env.create_configuration(context)
     virt_env.setup_scripts(context)
@@ -74,9 +63,12 @@ def create_venv_script(path,venv_path):
             version_info = python_version.split(" ")
             used_python_version = version_info[0]
             used_gcc_version = version_info[-1].strip("[]")
-            f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
-        
-            f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
+            if 'HILE' in os.uname().nodename.upper(): #bit scuffed but a quick fix
+                f.write(f"module load cray-python/{used_python_version}\n")
+            else:
+                f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
+                f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
+
             f.write("module list\n")
             f.write(f"source {venv_path}/bin/activate\n")
             f.close()
