@@ -9,6 +9,7 @@ fi
 
 check=true
 
+#Note that this is skipped if on arguments are passed
 for i in $@
 do
     check=false
