@@ -5,6 +5,18 @@ import traceback
 import inspect
 import logging
 import re
+import argparse
+
+argp=argparse.ArgumentParser(
+    prog='Analysator Testpackage',
+    description='Outputs test plots'
+)
+argp.add_argument("jobcount",type=int)
+argp.add_argument("jobindex",type=int)
+
+argp.add_argument('funcs',type=str,help="function/list of functions to test, if none give does all.",nargs='*')
+cmd_args=argp.parse_args()
+funcs_to_use=cmd_args.funcs
 
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
@@ -818,7 +830,14 @@ for i,run in enumerate(runs):
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
-    functions = run['funcs']
+
+    if not funcs_to_use:
+        functions = run['funcs']
+    else:
+        functions = list(set(run['funcs']) & set(funcs_to_use))
+        if not functions:
+            continue
+
     skipped_args=run['skipped_args']
 
 
@@ -909,8 +928,9 @@ for i,run in enumerate(runs):
 nteststot = len(callrunids)
 
 # How many jobs? 
-jobcount=int(sys.argv[1])
-jobcurr=int(sys.argv[2])
+jobcount=cmd_args.jobcount
+jobcurr=cmd_args.jobindex
+
 increment = int(nteststot/jobcount)
 remainder = nteststot - jobcount * increment
 start=jobcurr * increment
@@ -1002,3 +1022,4 @@ for j in range(start,end):
 #add manual calls (DONE)
 #why spend time going through all calls on all threads?
 #v5 vdf?? (post 2019 are v5)
+
