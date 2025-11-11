@@ -34,7 +34,7 @@ export PTOUTPUTDIR=$PWD/produced_plots/
 
 
 
-python ./testpackage/testpackage_colormap.py $jobcount $index $1
+python ./testpackage/testpackage_commons.py $jobcount $index $@
 #python ./testpackage/color_small_test.py $jobcount $index
 echo "EXIT_CODE_FROM_JOB $?"
 #echo Job $SLURM_ARRAY_TASK_ID complete.

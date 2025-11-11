@@ -17,6 +17,8 @@ argp.add_argument("jobindex",type=int)
 argp.add_argument('funcs',type=str,help="function/list of functions to test, if none give does all.",nargs='*')
 cmd_args=argp.parse_args()
 funcs_to_use=cmd_args.funcs
+if "pass" in funcs_to_use:
+    quit()
 
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []

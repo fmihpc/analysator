@@ -2,6 +2,10 @@
 
 verf_loc="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage/verification_sets"
 
+#if pass we do not check for anything
+if echo $@ | grep -q -P "\spass$|\spass\s"; then
+   exit 0
+fi
 
 for i in $@
 do

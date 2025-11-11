@@ -49,4 +49,4 @@ for diff_line in git_diff:
 if output:
     print(" ".join(output))
 else:
-    print("None")
+    print("pass")
