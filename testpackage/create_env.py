@@ -2,7 +2,7 @@ import os
 import venv
 
 from testpackage_helper import system_call
-import logging
+
 from sys import version_info as python_version_info
 from sys import version as python_version
 import argparse
