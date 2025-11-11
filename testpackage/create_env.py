@@ -14,6 +14,11 @@ def create_venv(path,install_analysator=True,editable=False):
     context=virt_env.ensure_directories(path)
     virt_env.create(path)
     virt_env.setup_python(context)
+
+    #Does not work in python versions <3.13
+    if python_version_info.major>=3 and python_version_info.minor>=13:
+        virt_env.create_git_ignore_file(context)
+  
     virt_env.create_configuration(context)
     virt_env.setup_scripts(context)
     virt_env.post_setup(context)
