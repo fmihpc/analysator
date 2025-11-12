@@ -567,10 +567,8 @@ def plot_vdf(filename=None,
 
     if colormap is None:
         colormap="hot_desaturated"
-    if Version(matplotlib.__version__) < Version("3.5.0"):
-        cmapuse=matplotlib.cm.get_cmap(name=colormap)
-    else:
-        cmapuse=matplotlib.colormaps.get_cmap(colormap)
+
+    cmapuse=pt.plot.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title

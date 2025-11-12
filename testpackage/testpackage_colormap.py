@@ -789,7 +789,7 @@ v5multipopcalls = [
 # v5nonrestartcalls = []
 # v5multipopcalls = []
 
-# Construct test list
+#construct calls
 calls = []
 callrunids = []
 callrunindex = []
@@ -801,93 +801,66 @@ for i,run in enumerate(runs):
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
-
     callindex = 0
-    if vlasiator5:
-        for call in v5regularcalls:
-            if not filename is None: 
+
+    calls_in=v5regularcalls if vlasiator5 else regularcalls
+    for call in calls_in:
+        if not filename is None: 
+            if vlasiator5:
+                call = call.replace("var='vg_v'","var='vg_restart_v'")
+            else:
                 call = call.replace("var='V'","var='restart_V'")
+        callrunids.append(i)
+        calls.append(call)
+        callrunindex.append(callindex)
+        callindex += 1
+
+    # non-restart files
+    if filename is None:
+        #non restart calls
+        calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
+        for call in calls_in:
+            # Skip flux function calls if no flux files
+            if "flux" in call and fluxLocation is None:
+                continue
+            # skip time integration if only one file available
+            if "pass_times" in call and singletime:
+                continue
+            # thermal / non-thermal subpopulations
+            if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
+                continue
+            elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
+                continue
+
             callrunids.append(i)
             calls.append(call)
             callrunindex.append(callindex)
             callindex += 1
-    else:
-        for call in regularcalls:
-            if not filename is None: 
-                call = call.replace("var='V'","var='restart_V'")
-            callrunids.append(i)
-            calls.append(call)                
-            callrunindex.append(callindex)
-            callindex += 1
-    # non-restart files
-    if filename is None:
-        if vlasiator5:
-            for call in v5nonrestartcalls:
-                # Skip flux function calls if no flux files
-                if "flux" in call and fluxLocation is None:
-                    continue
-                # skip time integration if only one file available
-                if "pass_times" in call and singletime:
-                    continue
-                # thermal / non-thermal subpopulations
-                if (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                    continue
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-            for pop in run['pops']:
-                if pop != 'avgs':
-                    for call in v5multipopcalls:
-                        # Skip flux function calls if no flux files
-                        if "flux" in call and fluxLocation is None:
-                            continue
-                        # skip time integration if only one file available
-                        if "pass_times" in call and singletime:
-                            continue
-                        # thermal / non-thermal subpopulations
-                        if (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                            continue
-                        mpcall = call.replace('REPLACEPOP',pop)
-                        callrunids.append(i)
-                        calls.append(mpcall)
-                        callrunindex.append(callindex)
-                        callindex += 1
-        else:
-            for call in nonrestartcalls:
-                # Skip flux function calls if no flux files
-                if "flux" in call and fluxLocation is None:
-                    continue
-                # skip time integration if only one file available
-                if "pass_times" in call and singletime:
-                    continue
-                # thermal / non-thermal subpopulations
-                if (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                    continue
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-            for pop in run['pops']:
-                if pop != 'avgs':
-                    for call in multipopcalls:
-                        # Skip flux function calls if no flux files
-                        if "flux" in call and fluxLocation is None:
-                            continue
-                        # skip time integration if only one file available
-                        if "pass_times" in call and singletime:
-                            continue
-                        # thermal / non-thermal subpopulations
-                        if (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                            continue
-                        mpcall = call.replace('REPLACEPOP',pop)
-                        callrunids.append(i)
-                        calls.append(mpcall)
-                        callrunindex.append(callindex)
-                        callindex += 1
+        
+        #multipop calls
+        calls_in=v5multipopcalls if vlasiator5 else multipopcalls
+        for pop in run['pops']:
+            if pop != 'avgs':
+                for call in calls_in:
+                    # Skip flux function calls if no flux files
+                    if "flux" in call and fluxLocation is None:
+                        continue
+                    # skip time integration if only one file available
+                    if "pass_times" in call and singletime:
+                        continue
+                    # thermal / non-thermal subpopulations
+                    if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
+                        continue
+                    elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
+                        continue
+                    mpcall = call.replace('REPLACEPOP',pop)
+                    callrunids.append(i)
+                    calls.append(mpcall)
+                    callrunindex.append(callindex)
+                    callindex += 1
+        
 
 nteststot = len(callrunids)
-
 
 
 # How many jobs? 
