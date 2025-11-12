@@ -84,6 +84,7 @@ runs.append( { 'name': 'BCQr',
                 'fluxLocation': None,
                  'singletime': True, # neighboring bulk files not available
                  'time': 0,
+                 'skipped_args':None,
                  'manualcall':False,
                  'vlasiator5': False,
                  'nosubpops': False, # thermal / non-thermal
@@ -314,6 +315,7 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
 
 
 restartcalls=[
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='hot_desaturated')",
 ]
 
 #This can be v4 or v5, these both get added into nonrestartcalls and v5nonrestartcalls, here for cleanliness sake
