@@ -314,9 +314,6 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
 
 
 
-restartcalls=[
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='hot_desaturated')",
-]
 
 #This can be v4 or v5, these both get added into nonrestartcalls and v5nonrestartcalls, here for cleanliness sake
 agnostic_call = [
@@ -485,9 +482,23 @@ agnostic_call = [
 #This is here so the agnostic calls are first and the order doesnt change if you add something to nonrestartcalls
 nonrestartcalls=[]
 v5nonrestartcalls=[]
+restartcalls=[]
+v5restartcalls=[]
 nonrestartcalls.extend(agnostic_call)
 v5nonrestartcalls.extend(agnostic_call)
+restartcalls.extend(agnostic_call)
+v5restartcalls.extend(agnostic_call)
 
+v5restartcalls = [
+
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v')"
+
+] 
+
+restartcalls=[
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V')"
+
+]
 
 nonrestartcalls = [
 
@@ -629,11 +640,6 @@ nonrestartcalls = [
 
 
 
-v5restartcalls = [
-
-"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v')"
-
-] 
 
 
 
@@ -949,23 +955,24 @@ for i,run in enumerate(runs):
             callindex += 1
 
     for j,func in enumerate(functions):
-        calls_in=v5restartcalls if vlasiator5 else restartcalls
-        for call in calls_in:
-            call=call_replace(call,func,skipped_args)
-            if not call:
-                continue
-            if not filename is None: 
-                if vlasiator5:
-                    call = call.replace("var='vg_v'","var='vg_restart_v'")
-                else:
-                    call = call.replace("var='V'","var='restart_V'")
+        if filename is not None:
+            calls_in=v5restartcalls if vlasiator5 else restartcalls
+            for call in calls_in:
+                call=call_replace(call,func,skipped_args)
+                if not call:
+                    continue
+                if not filename is None: 
+                    if vlasiator5:
+                        call = call.replace("var='vg_v'","var='vg_restart_v'")
+                    else:
+                        call = call.replace("var='V'","var='restart_V'")
 
-            if call not in calls:
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-                funcids.append(j)
+                if call not in calls:
+                    callrunids.append(i)
+                    calls.append(call)
+                    callrunindex.append(callindex)
+                    callindex += 1
+                    funcids.append(j)
 
 
         # non-restart files
