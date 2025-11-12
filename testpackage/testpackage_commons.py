@@ -76,7 +76,20 @@ runs.append( { 'name': 'BCQ',
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                   } )
 '''                     
-
+runs.append( { 'name': 'BCQr',
+                 'verifydir': '/BCQr/', 
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BCQ/restart/',
+                 'pops': ['avgs'],
+                'fluxLocation': None,
+                 'singletime': True, # neighboring bulk files not available
+                 'time': 0,
+                 'manualcall':False,
+                 'vlasiator5': False,
+                 'nosubpops': False, # thermal / non-thermal
+                 'filename': 'restart.0001361.vlsv',
+                'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
+'''
 runs.append( { 'name': 'BGA',
                  'verifydir': '/BGA/', 
                  'fileLocation': datalocation+'/2D/BGA/zero_ehall_layers_23/',
@@ -107,7 +120,7 @@ runs.append( { 'name': 'BFD',
                  'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-
+'''
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
     if vlasiator5 is True:
