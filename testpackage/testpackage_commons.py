@@ -7,6 +7,8 @@ import logging
 import re
 import argparse
 
+#add manualcals filtering or something since rightnow it tries to do it for 3D data? does it work?
+
 argp=argparse.ArgumentParser(
     prog='Analysator Testpackage',
     description='Outputs test plots'
@@ -37,7 +39,7 @@ required_args ={
 
 }
 
-
+'''
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
                  'fileLocation': datalocation+'/3D/FHA/bulk1/',
@@ -48,7 +50,9 @@ runs.append( { 'name': 'FHA',
                  'singletime': False,
 
                   #Uses 'in' operator for the values of the inner dict, so skipping arg completely can be done with {'var':''}
-                 'skipped_args':{'plot_ionosphere':{'var':'vg_'},'plot_colormap3dslice':{'expression':['expr_cav_cust','exprMA_cust']}},
+                 'skipped_args':{'plot_ionosphere':{'var':'vg_'},
+                                'plot_colormap3dslice':{'expression':['expr_cav_cust','exprMA_cust']}
+                                },
                  'filename': None, #restart file
                  'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
@@ -71,10 +75,38 @@ runs.append( { 'name': 'BCQ',
                 'nosubpops':False,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                   } )
+'''                     
+
+runs.append( { 'name': 'BGA',
+                 'verifydir': '/BGA/', 
+                 'fileLocation': datalocation+'/2D/BGA/zero_ehall_layers_23/',
+                 'fluxLocation': None,
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'pops': ['proton'],
+                 'skipped_args':{'plot_vdf':{'normal':''}},
+                 'time': 380,
+                 'manualcall':False,
+                 'singletime': True, # neighboring bulk files not available
+                 'filename': None,
+                 'vlasiator5': True,
+                 'nosubpops': True, # thermal / non-thermal
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
                      
-
-
-
+runs.append( { 'name': 'BFD',
+                 'verifydir': '/BFD/', 
+                 'fileLocation': datalocation+'/2D/BFD/bulk/',
+                 'fluxLocation': datalocation+'/2D/BFD/fluxfunction/',
+                 'fluxprefix': 'bulk.',
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'skipped_args':{'plot_vdf':{'normal':''}},
+                 'pops': ['proton','helium'],
+                 'time': 2000,
+                 'singletime': False,
+                 'filename': None,
+                  'manualcall':False,
+                 'nosubpops': False, # backstreaming / non-backstreaming
+                 'vlasiator5': False,
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
@@ -268,7 +300,7 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
 
 
 
-regularcalls=[
+restartcalls=[
 ]
 
 #This can be v4 or v5, these both get added into nonrestartcalls and v5nonrestartcalls, here for cleanliness sake
@@ -581,7 +613,6 @@ nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='gyrotropy')"]
 
 
-multipopcalls = ["pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, pop='REPLACEPOP', coordre=REPLACECOORDRE)"]
 
 v5restartcalls = [
 
@@ -700,10 +731,10 @@ v5nonrestartcalls = [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_parallel')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
-
 "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
 ]
+
 
 v5multipopcalls= [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_v_parallel', op='magnitude',lin=1)",
@@ -746,10 +777,51 @@ v5multipopcalls= [
 "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_gyrotropy')"
 ]
 
+
+multipopcalls = [
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, pop='REPLACEPOP', coordre=REPLACECOORDRE)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/VParallel', op='magnitude',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/VPerpendicular',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Pressure')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PParallelBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpendicularBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PParallelNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpendicularNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/PPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Pdyn',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Pdynx',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Temperature')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TParallelBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpendicularBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TParallelNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpendicularNonBackstream')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/TPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpOverPar', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpOverParBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpOverParNonBackstream', vmin=0.1, vmax=10)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/beta')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaParallel')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/betaPerpendicular')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Thermalvelocity',lin=1)",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')",
+"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/gyrotropy')"]
+
 manualcalls=[
     "pt.plot.colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_gyrotropy')",
-
-#plot_vdf manual calls
+    #plot_vdf manual calls
     "pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, bvector=1, coordre=REPLACECOORDRE)"
 
 ]
@@ -928,7 +1000,7 @@ for i,run in enumerate(runs):
                             continue
                         elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                             continue
-                        mpcall = call.replace('REPLACEPOP',pop)
+                        call = call.replace('REPLACEPOP',pop)
                         if call not in calls:
                             callrunids.append(i)
                             calls.append(call)
