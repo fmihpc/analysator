@@ -163,7 +163,6 @@ def get_test_variable_length(test_variable):
       value_length=1
       value_shape=(1,)
    value_ndims = len(value_shape)
-   print(value_length, value_shape, value_ndims)
    return value_length, value_shape, value_ndims
 
 class VlsvReader(object):
@@ -1653,12 +1652,11 @@ class VlsvReader(object):
 
       ngbrvalues = ngbrvalues[unique_cell_indices,...]
       newax = (1,2, *[3+i for i,l in enumerate(value_shape)])
-      print(scaled_coordinates, newax, (np.expand_dims(scaled_coordinates[:,0],axis=newax)).shape, ngbrvalues[:,0,:,:,...].shape)
-      c2ds = (ngbrvalues[:,0,:,:,...]* (1 - np.expand_dims(scaled_coordinates[:,0],axis=newax)) +  ngbrvalues[:,1,:,:,...]*np.expand_dims(scaled_coordinates[:,0],axis=newax))#[:,0,...]
+      c2ds = (ngbrvalues[:,0,:,:,...]* (1 - np.expand_dims(scaled_coordinates[:,0],axis=newax)) +  ngbrvalues[:,1,:,:,...]*np.expand_dims(scaled_coordinates[:,0],axis=newax))
       newax = (1, *[2+i for i,l in enumerate(value_shape)])
-      c1ds = (c2ds[:,0,:,...]*(1 - np.expand_dims(scaled_coordinates[:,1],axis=newax)) + c2ds[:,1,:,...] * np.expand_dims(scaled_coordinates[:,1],axis=newax))#[:,0,...]
+      c1ds = (c2ds[:,0,:,...]*(1 - np.expand_dims(scaled_coordinates[:,1],axis=newax)) + c2ds[:,1,:,...] * np.expand_dims(scaled_coordinates[:,1],axis=newax))
       newax = tuple(1+i for i,l in enumerate(value_shape))
-      final_values = (c1ds[:,0,...] * (1 - np.expand_dims(scaled_coordinates[:,2],axis=newax)) + c1ds[:,1,...] * np.expand_dims(scaled_coordinates[:,2],axis=newax))#[:,0,...]
+      final_values = (c1ds[:,0,...] * (1 - np.expand_dims(scaled_coordinates[:,2],axis=newax)) + c1ds[:,1,...] * np.expand_dims(scaled_coordinates[:,2],axis=newax))
 
       if np.any(cellid_neighbors==0):
          warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
