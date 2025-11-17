@@ -2140,13 +2140,11 @@ class VlsvReader(object):
             for i,d in enumerate(dimensions):
                #Offset since self is always the first argument
                i=i+1
-               d_add=0
                if d!=0:
                   arg=np.array(args[i])
                   if arg.ndim!=d:
                      #Make sure that the scalar argument is turned into np.array of dimension d
                      while arg.ndim<d:
-                        d_add+=1
                         arg=arg[np.newaxis]
                      #Make sure to return scalar if value was given as scalar
                      stack = False
