@@ -2118,7 +2118,7 @@ class VlsvReader(object):
       return self.__max_spatial_amr_level
 
 
-   def wrap_array(dimensions,squeeze=True):
+   def wrap_array(dimensions):
       '''Wrapper for consolidating inputs as numpy arrays.
          
          Putting @wrap_array(dimension) before a function will use this automatically.
@@ -2141,11 +2141,13 @@ class VlsvReader(object):
             for i,d in enumerate(dimensions):
                #Offset since self is always the first argument
                i=i+1
+               d_add=0
                if d!=0:
                   arg=np.array(args[i])
                   if arg.ndim!=d:
                      #Make sure that the scalar argument is turned into np.array of dimension d
                      while arg.ndim<d:
+                        d_add+=1
                         arg=arg[np.newaxis]
                      #Make sure to return scalar if value was given as scalar
                      stack = False
@@ -2159,8 +2161,9 @@ class VlsvReader(object):
             if stack:
                return variable
             else:
-               return np.squeeze(variable) if squeeze else variable
-
+               for i in range(d_add):
+                  variable=variable[0,...]
+               return variable
          return wrap
       return wrap_array_inner
 
