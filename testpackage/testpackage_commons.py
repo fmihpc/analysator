@@ -36,7 +36,7 @@ runs = []
 #filedir issues test with the one below and see if fixed, alos other errors
 
 required_args ={
-    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
+    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
     "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
     "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
     
@@ -869,7 +869,6 @@ def call_replace(call,func,skipped_args):
     args = re.search(r'\((.+)\)',call).group(1)
     args = [x[0] or x[1] or x[2] for x in re.findall(r'(\w+=[^,(\[]+)|(\w+=\(.+\))|(\w+=\[.+?\])',args)]
     named_parameters=[arg.split("=")[0] for arg in args]
-
     #Get parameters of the func
     function_pars=inspect.getfullargspec(eval("pt.plot."+func)).args
     #Remove args that are not present as parameters for the func
@@ -916,6 +915,9 @@ def call_replace(call,func,skipped_args):
     
     if not args_out:
         return None
+    if func=="plot_vdf":
+        print(args_out)
+    args_out=filter(None,args_out)
     call=call[:call.rfind("(")+1]+",".join(args_out)+")"
 #    print("BEFORE",call)
     return call
@@ -1118,6 +1120,7 @@ for j in range(start,end):
     try:
         exec(call)
         #print(call)
+        #quit()
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
         
