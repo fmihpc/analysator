@@ -1379,11 +1379,14 @@ class VlsvReader(object):
    def get_test_variable_length(test_variable):
       if isinstance(test_variable,np.ma.core.MaskedConstant):
          value_length=1
+         value_shape=(1)
       elif isinstance(test_variable, (list, tuple, np.ndarray)):
          value_length=np.size(test_variable)
+         value_shape=np.shape(test_variable)
       else:
          value_length=1
-      return value_length
+         value_shape=(1)
+      return value_length, value_shape
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
@@ -1580,7 +1583,7 @@ class VlsvReader(object):
 
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      value_length=get_test_variable_length(test_variable)
+      value_length, value_shape=get_test_variable_length(test_variable)
 
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
@@ -1608,7 +1611,7 @@ class VlsvReader(object):
       lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic, prune_uniques=True)
 
       lower_cell_ids_unique, unique_cell_indices = np.unique(lower_cell_ids, return_inverse=True)
-      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
+      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,*value_shape),np.nan)
 
       cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
       cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0], periodic)
@@ -1638,7 +1641,7 @@ class VlsvReader(object):
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
          # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
       # ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
-      ngbrvalues = np.reshape(ngbrvalues, (len(lower_cell_ids_unique),2,2,2,value_length))
+      ngbrvalues = np.reshape(ngbrvalues, (len(lower_cell_ids_unique),2,2,2,*value_shape))
 
       ngbrvalues = ngbrvalues[unique_cell_indices,...]
       
@@ -1653,7 +1656,7 @@ class VlsvReader(object):
       refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(-1,8))
       if np.any(np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)):
          irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)[unique_cell_indices]
-         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method.lower()),(-1,value_length))
+         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method.lower()),(-1,*value_shape))
          # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
 
       if stack:
@@ -1738,7 +1741,7 @@ class VlsvReader(object):
       if method == "nearest":
          # Check one value for the length
          test_variable = self.read_variable(name,cellids=[1],operator=operator)
-         value_length = get_test_variable_length(test_variable)
+         value_length, value_shape = get_test_variable_length(test_variable)
 
          final_values = self.read_variable(name, cellids=cellids, operator=operator)
          if stack:
