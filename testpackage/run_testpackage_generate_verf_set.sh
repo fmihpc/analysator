@@ -17,11 +17,9 @@ source CI_env/bin/activate
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$1
 
-python ./testpackage/testpackage_colormap.py $jobcount $index
-echo "EXIT_CODE_FROM_JOB $?"
-
-python ./testpackage/testpackage_vdf.py $jobcount $index
+python ./testpackage/testpackage_commons.py $jobcount $index
 
 echo "EXIT_CODE_FROM_JOB $?"
+
 echo Job $SLURM_ARRAY_TASK_ID complete.
 

@@ -1,100 +1,9 @@
-import analysator as pt
-import sys, os
-import numpy as np
-import traceback
 
-datalocation = "/wrk/group/spacephysics/vlasiator"
-runs = []
-runs.append( { 'name': 'ABC',
-                 'verifydir': 'testpackage_colormap/ABC/', 
-                 'fileLocation': datalocation+'/2D/ABC/bulk/',
-                 'fluxLocation': datalocation+'/2D/ABC/flux/',
-                 'pops': ['avgs'],
-                 'time': 1000,
-                 'singletime': False,
-                 'filename': None,
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
-runs.append( { 'name': 'BCQ',
-                 'verifydir': 'testpackage_colormap/BCQ/', 
-                 'fileLocation': datalocation+'/2D/BCQ/bulk/',
-                 'fluxLocation': None, #datalocation+'/2D/BCQ/flux/', # missing on Vorna
-                 'pops': ['avgs'],
-                 'time': 2000,
-                 'singletime': False,
-                 'filename': None,
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-runs.append( { 'name': 'BFD',
-                 'verifydir': 'testpackage_colormap/BFD/', 
-                 'fileLocation': datalocation+'/2D/BFD/bulk/',
-                 'fluxLocation': datalocation+'/2D/BFD/fluxfunction/',
-                 'fluxprefix': 'bulk.',
-                 'pops': ['proton','helium'],
-                 'time': 2000,
-                 'singletime': False,
-                 'filename': None,
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-# runs.append( { 'name': 'BCQr',
-#                  'verifydir': 'testpackage_colormap/BCQr/', 
-#                  'fileLocation': datalocation+'/2D/BCQ/',
-#                  'fluxLocation': None,
-#                  'pops': ['avgs'],
-#                  'time': 0,
-#                  'singletime': False,
-#                  'filename': 'restart.0001361.vlsv',
-#                  'nosubpops': False, # backstreaming / non-backstreaming
-#                  'vlasiator5': False,
-#                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-# runs.append( { 'name': 'AFC',
-#                  'verifydir': 'testpackage_colormap/AFC/', 
-#                  'fileLocation': datalocation+'/2D/AFC/production_halfres/',
-#                  'fluxLocation': datalocation+'/2D/AFC/production_halfres/flux/',
-#                  'pops': ['proton'],
-#                  'time': 1000,
-#                  'singletime': False,
-#                  'filename': None,
-#                  'nosubpops': False, # backstreaming / non-backstreaming
-#                  'vlasiator5': False,
-#                  'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
-# runs.append( { 'name': 'AFCr',
-#                  'verifydir': 'testpackage_colormap/AFCr/', 
-#                  'fileLocation': datalocation+'/2D/AFC/production_halfres/',
-#                  'fluxLocation': None,
-#                  'pops': ['proton'],
-#                  'time': 0,
-#                  'singletime': False,
-#                  'filename': 'restart.0000592.2019-04-19_07-58-12.vlsv',
-#                  'nosubpops': False, # backstreaming / non-backstreaming
-#                  'vlasiator5': False,
-#                  'cavitonparams': [24.0e6,9.6e6,11.27e-9,10] } )
-# runs.append( { 'name': 'BFDr',
-#                  'verifydir': 'testpackage_colormap/BFDr/', 
-#                  'fileLocation': datalocation+'/2D/BFD/restart/',
-#                  'fluxLocation': None,
-#                  'pops': ['avgs'],
-#                  'time': 0,
-#                  'singletime': False,
-#                  'filename': 'restart.0001126.2018-06-03_21-34-16.vlsv',
-#                  'nosubpops': False, # backstreaming / non-backstreaming
-#                  'vlasiator5': False,
-#                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-runs.append( { 'name': 'BGA',
-                 'verifydir': 'testpackage_colormap/BGA/', 
-                 'fileLocation': datalocation+'/2D/BGA/zero_ehall_layers_23/',
-                 'fluxLocation': None,
-                 'pops': ['proton'],
-                 'time': 380,
-                 'singletime': True, # neighboring bulk files not available
-                 'filename': None,
-                 'vlasiator5': True,
-                 'nosubpops': True, # thermal / non-thermal
-                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-                     
+import numpy as np
+vlasiator5=None
+
+
+
 # Custom expression function                                                               
 def exprMA_cust(exprmaps, requestvariables=False):
     if vlasiator5 is True:
@@ -275,8 +184,16 @@ def extcontour(ax, XmeshXY,YmeshXY, extmaps, requestvariables=False):
     contour_cavitons = ax.contour(XmeshXY,YmeshXY,cavitons.filled(),[0.5], linewidths=1.5, colors=color_cavitons)
     contour_SHFAs = ax.contour(XmeshXY,YmeshXY,SHFAs.filled(),[0.5], linewidths=1.5, colors=color_SHFAs)
 
-regularcalls = [
-# Input and output methods, nooverwrite
+restartcalls = [
+
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1, vscale=1e-3)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='x', colormap='PuOr')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='y', colormap='PuOr',symlog=0, usesci=0)",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)"]
+
+nonrestartcalls = [
+    # Input and output methods, nooverwrite
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
@@ -330,9 +247,7 @@ regularcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', colormap='warhol',lin=1, vscale=1e-3)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='x', colormap='PuOr')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='y', colormap='PuOr',symlog=0, usesci=0)",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)"]
-
-nonrestartcalls = [
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='V', op='z', colormap='PuOr',symlog=0, usesci=0)",
 # Overplots and flux lines
 "pt.plot.plot_colormap(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved=1)",
@@ -529,7 +444,7 @@ multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/Blocks')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/gyrotropy')"]
 
-v5regularcalls = [
+v5restartcalls = [
 # Input and output methods, nooverwrite
 "pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
@@ -779,151 +694,3 @@ v5multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_thermalvelocity',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_blocks')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_gyrotropy')"]
-
-# For handier debugging, uncomment these to overwrite call lists and include only relevant calls
-# regularcalls = []
-# nonrestartcalls = ["pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)","pt.plot.plot_colormap(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-# ]
-# multipopcalls = []
-# v5regularcalls = []
-# v5nonrestartcalls = []
-# v5multipopcalls = []
-
-#construct calls
-calls = []
-callrunids = []
-callrunindex = []
-for i,run in enumerate(runs):
-    # bulk and restart files
-    vlasiator5 = run['vlasiator5']
-    filename = run['filename']
-    fileLocation = run['fileLocation']
-    singletime = run['singletime']
-    nosubpops = run['nosubpops']
-    fluxLocation = run['fluxLocation']
-    callindex = 0
-
-    calls_in=v5regularcalls if vlasiator5 else regularcalls
-    for call in calls_in:
-        if not filename is None: 
-            if vlasiator5:
-                call = call.replace("var='vg_v'","var='vg_restart_v'")
-            else:
-                call = call.replace("var='V'","var='restart_V'")
-        callrunids.append(i)
-        calls.append(call)
-        callrunindex.append(callindex)
-        callindex += 1
-
-    # non-restart files
-    if filename is None:
-        #non restart calls
-        calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
-        for call in calls_in:
-            # Skip flux function calls if no flux files
-            if "flux" in call and fluxLocation is None:
-                continue
-            # skip time integration if only one file available
-            if "pass_times" in call and singletime:
-                continue
-            # thermal / non-thermal subpopulations
-            if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                continue
-            elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                continue
-
-            callrunids.append(i)
-            calls.append(call)
-            callrunindex.append(callindex)
-            callindex += 1
-        
-        #multipop calls
-        calls_in=v5multipopcalls if vlasiator5 else multipopcalls
-        for pop in run['pops']:
-            if pop != 'avgs':
-                for call in calls_in:
-                    # Skip flux function calls if no flux files
-                    if "flux" in call and fluxLocation is None:
-                        continue
-                    # skip time integration if only one file available
-                    if "pass_times" in call and singletime:
-                        continue
-                    # thermal / non-thermal subpopulations
-                    if vlasiator5 and (("_thermal" in call) or ("_nonthermal" in call)) and nosubpops:
-                        continue
-                    elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
-                        continue
-                    mpcall = call.replace('REPLACEPOP',pop)
-                    callrunids.append(i)
-                    calls.append(mpcall)
-                    callrunindex.append(callindex)
-                    callindex += 1
-        
-
-nteststot = len(callrunids)
-
-
-# How many jobs? 
-jobcount=int(sys.argv[1])
-jobcurr=int(sys.argv[2])
-increment = int(nteststot/jobcount)
-remainder = nteststot - jobcount * increment
-start=jobcurr * increment
-end=start + increment
-# Remainder frames are divvied out evenly among tasks
-if jobcurr < remainder:
-    start = start + jobcurr
-    end = end + jobcurr + 1
-else:
-    start = start + remainder
-    end = end + remainder
-
-
-# Perform call
-for j in range(start,end):
-    # Calculate which run
-    jrun = callrunindex[j]
-    runid = callrunids[j]
-    call = calls[j]
-
-    runname = runs[runid]['name']
-    verifydir = runs[runid]['verifydir']
-    fileLocation = runs[runid]['fileLocation']
-    fluxLocation = runs[runid]['fluxLocation']
-    pops = runs[runid]['pops']
-    time = runs[runid]['time']
-    filename = runs[runid]['filename']
-    vlasiator5 = runs[runid]['vlasiator5']
-    singletime = runs[runid]['singletime']
-
-    level_bow_shock = runs[runid]['cavitonparams'][0]
-    level_n_caviton = runs[runid]['cavitonparams'][1]
-    level_B_caviton = runs[runid]['cavitonparams'][2]
-    level_beta_SHFA = runs[runid]['cavitonparams'][3]
-
-    outputLocation=pt.plot.defaultoutputdir+verifydir
-    
-    # Source data files
-    if filename is None:
-        bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
-    else:
-        bulkname = filename
-    if 'fluxprefix' in runs[runid]:
-        fluxname = runs[runid]['fluxprefix']+str(time).rjust(7,'0')+".bin"
-    else:
-        fluxname = "flux."+str(time).rjust(7,'0')+".bin"
-           
-    call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
-    call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
-    call = call.replace('REPLACETIME',"'"+str(time)+"'")
-
-    # Many different plots
-    print(j, runid, jrun, call)
-    f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
-    try:
-        exec(call)
-    except Exception as e:
-        print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
-        
-        traceback.print_exc()
-        print("END TRACE for call",j,"\n----------------------------")
