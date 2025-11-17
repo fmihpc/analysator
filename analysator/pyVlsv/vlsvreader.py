@@ -1375,7 +1375,15 @@ class VlsvReader(object):
          logging.info("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       fptr.close()
       return -1
-         
+   
+   def get_test_variable_length(test_variable):
+   if isinstance(test_variable,np.ma.core.MaskedConstant):
+      value_length=1
+   elif isinstance(test_variable, (list, tuple, np.ndarray)):
+      value_length=np.size(test_variable)
+   else:
+      value_length=1
+   return value_length
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
@@ -1572,12 +1580,7 @@ class VlsvReader(object):
 
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      if isinstance(test_variable,np.ma.core.MaskedConstant):
-         value_length=1
-      elif isinstance(test_variable, Iterable):
-         value_length=len(test_variable)
-      else:
-         value_length=1
+      value_length=get_test_variable_length(test_variable)
 
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
@@ -1735,12 +1738,8 @@ class VlsvReader(object):
       if method == "nearest":
          # Check one value for the length
          test_variable = self.read_variable(name,cellids=[1],operator=operator)
-         if isinstance(test_variable,np.ma.core.MaskedConstant):
-            value_length=1
-         elif isinstance(test_variable, Iterable):
-            value_length=len(test_variable)
-         else:
-            value_length=1
+         value_length = get_test_variable_length(test_variable)
+
          final_values = self.read_variable(name, cellids=cellids, operator=operator)
          if stack:
             return final_values.squeeze()
