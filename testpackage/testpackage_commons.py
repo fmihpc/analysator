@@ -32,11 +32,14 @@ runs = []
 #list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
 
 #maybe add overide to this in runs append
-required_args ={
-    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
-    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"])],
-    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"])]
 
+#filedir issues test with the one below and see if fixed, alos other errors
+
+required_args ={
+    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
+    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
+    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
+    
 }
 
 '''
