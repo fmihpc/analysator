@@ -165,6 +165,9 @@ for i,run in enumerate(runs):
             except:
                 exec(f'{call_list}=[]')
 
+        if vlasiator5:
+            exec(f'testpackage_{func}.vlasiator5=True')
+
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             for call in calls_in:
