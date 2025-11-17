@@ -149,6 +149,21 @@ def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
                            refined_ids_start[i,2]:refined_ids_end[i,2]] = i
    return arr
 
+def get_test_variable_length(test_variable):
+   ''' Check the size and dimensions of a test variable.
+   Returns number of elements and shape of an np.ndarray, 
+   '''
+   if isinstance(test_variable,np.ma.core.MaskedConstant):
+      value_length=1
+      value_shape=(1)
+   elif isinstance(test_variable, (list, tuple, np.ndarray)):
+      value_length=np.size(test_variable)
+      value_shape=np.shape(test_variable)
+   else:
+      value_length=1
+      value_shape=(1)
+   return value_length, value_shape
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -1376,17 +1391,7 @@ class VlsvReader(object):
       fptr.close()
       return -1
    
-   def get_test_variable_length(test_variable):
-      if isinstance(test_variable,np.ma.core.MaskedConstant):
-         value_length=1
-         value_shape=(1)
-      elif isinstance(test_variable, (list, tuple, np.ndarray)):
-         value_length=np.size(test_variable)
-         value_shape=np.shape(test_variable)
-      else:
-         value_length=1
-         value_shape=(1)
-      return value_length, value_shape
+
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
@@ -1583,7 +1588,7 @@ class VlsvReader(object):
 
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      value_length, value_shape=get_test_variable_length(test_variable)
+      value_length, value_shape = get_test_variable_length(test_variable)
 
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
