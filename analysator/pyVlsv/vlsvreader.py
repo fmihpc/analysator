@@ -1377,13 +1377,13 @@ class VlsvReader(object):
       return -1
    
    def get_test_variable_length(test_variable):
-   if isinstance(test_variable,np.ma.core.MaskedConstant):
-      value_length=1
-   elif isinstance(test_variable, (list, tuple, np.ndarray)):
-      value_length=np.size(test_variable)
-   else:
-      value_length=1
-   return value_length
+      if isinstance(test_variable,np.ma.core.MaskedConstant):
+         value_length=1
+      elif isinstance(test_variable, (list, tuple, np.ndarray)):
+         value_length=np.size(test_variable)
+      else:
+         value_length=1
+      return value_length
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
