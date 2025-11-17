@@ -50,13 +50,12 @@ runs.append( { 'name': 'BCQ',
                 'singletime': False,
                 'pops': ['avgs'],
                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
-                'manualcall':False,
-                'time': 1600,
+                'time': 2000,
                 'skipped_args':None,
                 'filename': None,
                 'vlasiator5':False,
                 'nosubpops':False,
-                'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
+                'cavitonparams': [2.0e6,0.8e6,4.e-9,10] 
                   } )
 
 
@@ -192,8 +191,13 @@ for i,run in enumerate(runs):
                 # Skip flux function calls if no flux files
                 if "flux" in call and fluxLocation is None:
                     continue
+
+                #change the extrnal and expression calls to correct format
                 if f"expression=testpackage_{func}" not in call and "expression=" in call:
                     call=call.replace("expression=",f"expression=testpackage_{func}.")
+                if f"external=testpackage_{func}" not in call and "external=" in call:
+                    call=call.replace("external=",f"external=testpackage_{func}.")
+
                 # skip time integration if only one file available
                 if "pass_times" in call and singletime:
                     continue
@@ -277,11 +281,13 @@ for j in range(start,end):
     filename = runs[runid]['filename']
     vlasiator5 = runs[runid]['vlasiator5']
     singletime = runs[runid]['singletime']
-
-    level_bow_shock = runs[runid]['cavitonparams'][0]
-    level_n_caviton = runs[runid]['cavitonparams'][1]
-    level_B_caviton = runs[runid]['cavitonparams'][2]
-    level_beta_SHFA = runs[runid]['cavitonparams'][3]
+    
+    #set custom expression variables for plot_colormap
+    testpackage_plot_colormap.level_bow_shock = runs[runid]['cavitonparams'][0]
+    testpackage_plot_colormap.level_n_caviton = runs[runid]['cavitonparams'][1]
+    testpackage_plot_colormap.level_B_caviton = runs[runid]['cavitonparams'][2]
+    testpackage_plot_colormap.level_beta_SHFA = runs[runid]['cavitonparams'][3]
+    
 
 #    verifydir=os.path.join(verifydir)
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
@@ -321,7 +327,7 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     try:
         exec(call)
-        verifydir#print(call)
+        #print(call)
         #quit()
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
