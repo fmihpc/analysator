@@ -1480,7 +1480,7 @@ v5reducers["vg_jacobian_bper"] =          DataReducerVariable(["vg_derivatives/v
 v5reducers["vg_j"] =                     DataReducerVariable(["vg_jacobian_bper"], J, "A/m^2", 3, latex=r"$\vec{J}$",latexunits=r"$\mathrm{A}\,\mathrm{m}^{-2}$")
 v5reducers["vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian, "1/s", 3, latex=r"$\nabla\vec{V}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
 v5reducers["vg_p_dilatation"] =           DataReducerVariable(["vg_pressure", "vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta$", latexunits=r"$\mathrm{Wm}^{-3} $")
-v5reducers["vg_pid"] =                    DataReducerVariable(["vg_ptensor",  "vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D})", latexunits=r"$\mathrm{Wm}^{-3} $")
+v5reducers["vg_pid"] =                    DataReducerVariable(["vg_ptensor",  "vg_jacobian_v"], PiD, "W/m3", 1, latex=r"$\Pi : D$", latexunits=r"$\mathrm{Wm}^{-3} $")
 v5reducers["vg_p_strain"] =               DataReducerVariable(["vg_ptensor",  "vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P\cdot \nabla)\cdot u$", latexunits=r"$\mathrm{Wm}^{-3} $")
 
 
@@ -1591,7 +1591,7 @@ multipopv5reducers["pop/vg_rmirror"] =                DataReducerVariable(["pop/
 multipopv5reducers["pop/vg_dng"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_p_parallel", "pop/vg_p_perpendicular", "vg_b_vol"], Dng, "", 1, latex=r"$\mathrm{Dng}_\mathrm{REPLACEPOP}$")
 multipopv5reducers["pop/vg_jacobian_v"] =             DataReducerVariable(["vg_coordinates", "vg_dx"], v_jacobian_pop, "1/s", 3, latex=r"$\nabla\vec{V}_\mathrm{REPLACEPOP}$",latexunits=r"$\mathrm{s}^{-1}$", useReader=True)
 multipopv5reducers["pop/vg_p_dilatation"] =           DataReducerVariable(["pop/vg_pressure", "pop/vg_jacobian_v"], Pressure_dilatation, "W/m3", 1, latex=r"$p\theta_\mathrm{REPLACEPOP}$", latexunits=r"$\mathrm{Wm}^{-3} $")
-multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_jacobian_v"], PiD, "W/m3", 1, latex=r"\mathrm{Pi-D})_\mathrm{REPLACEPOP}", latexunits=r"$\mathrm{Wm}^{-3} $")
+multipopv5reducers["pop/vg_pid"] =                    DataReducerVariable(["pop/vg_ptensor", "pop/vg_jacobian_v"], PiD, "W/m3", 1, latex=r"$-\Pi_\mathrm{REPLACEPOP} : D_\mathrm{REPLACEPOP}$", latexunits=r"$\mathrm{Wm}^{-3} $")
 multipopv5reducers["pop/vg_p_strain"] =               DataReducerVariable(["pop/vg_ptensor", "pop/vg_jacobian_v"], Pressure_strain, "W/m3", 1, latex=r"$-(P_\mathrm{REPLACEPOP}\cdot \nabla)\cdot u_\mathrm{REPLACEPOP}$", latexunits=r"$\mathrm{Wm}^{-3} $")
 
 # The dictionary with deprecated data reducers
