@@ -268,10 +268,11 @@ def textbfstring(string):
 def get_scaled_units(variable_info,vscale=None, env='EarthSpace', manualDict=None):
     ''' Return scaling metadata
 
+        :param variable_info: VariableInfo object used for getting the units
         :param env:          A string to choose the scaling dictionary [default: EarthSpace]
         :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
         :param vscale:       float, factor to scale the variable with
-        :param variable_info: VariableInfo object used for getting the units
+        
         :returns: (norming factor, scaledUnits, scaledLatexUnits)
 
     '''
@@ -395,10 +396,11 @@ def get_scaled_var(variable_info,vscale=None, data=None, env='EarthSpace', manua
     ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
         default dictionaries.
 
+        :param variable_info: VariableInfo object used for getting the units
         :param data:         in case you wish to provide new data array (why, though?)
         :param env:          A string to choose the scaling dictionary [default: EarthSpace]
         :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
-        :param variable_info: VariableInfo object used for getting the units
+
         :returns: variable_info, with scaled units with pre-formatted units included in the varinfo.
 
 
