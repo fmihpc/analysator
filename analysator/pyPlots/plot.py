@@ -265,7 +265,7 @@ def textbfstring(string):
     # LaTex output off
     return string
 
-def get_scaled_units(vscale=None, env='EarthSpace', manualDict=None,variable_info=None):
+def get_scaled_units(variable_info,vscale=None, env='EarthSpace', manualDict=None):
     ''' Return scaling metadata
 
         :param env:          A string to choose the scaling dictionary [default: EarthSpace]
@@ -391,7 +391,7 @@ def get_scaled_units(vscale=None, env='EarthSpace', manualDict=None,variable_inf
 
 # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
 # necessary, for default/other environments.
-def get_scaled_var(vscale=None, data=None, env='EarthSpace', manualDict=None,variable_info=None):
+def get_scaled_var(variable_info,vscale=None, data=None, env='EarthSpace', manualDict=None):
     ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
         default dictionaries.
 
