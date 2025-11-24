@@ -19,7 +19,7 @@ import argparse
 # v5nonrestartcalls = []
 # v5multipopcalls = []
 required_args=False
-def call_replace(call,func,skipped_args):
+def call_replace(call,func,skipped_args,required_args=required_args):
     #This is kind of scuffed maybe
 
     call=call.replace('REPLACEFUNC',func)
@@ -33,16 +33,19 @@ def call_replace(call,func,skipped_args):
     #Remove args that are not present as parameters for the func
     args_out=[]
     #check that all required func args are set
+
     if required_args and func in required_args.keys():
         for required_tuple in required_args[func]:
             required_params=required_tuple[0]
             default_params=required_tuple[1]
+
             check=False
             for param in required_params:
                 if any((all(r in named_parameters for r in param),(param in named_parameters))):
                     check=True
                     break
             if not check:
+
                 #print("REQUIRED",call,named_parameters,required_params)
 
                 #Add parameters if there are default_params

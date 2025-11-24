@@ -140,7 +140,7 @@ runs.append( { 'name': 'BFDr',
                  'singletime': True, # neighboring bulk files not available
                  'time': 1126,
                 'manualcall':False,
-                'skipped_args':{'plot_vdf':{'normal':'','step':'','filedir':''}},
+                'skipped_args':{'plot_vdf':{'normal':'','step':''}},
                 'nosubpops': False, # thermal / non-thermal
                 'vlasiator5': False,
                  'filename': 'restart.0001126.vlsv',
@@ -159,6 +159,13 @@ runs.append( { 'name': 'BFDr',
 # v5nonrestartcalls = []
 # v5multipopcalls = []
 
+
+required_args ={
+    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
+    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
+    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
+    
+}
 
 
 calls = []
@@ -214,7 +221,9 @@ for i,run in enumerate(runs):
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             for call in calls_in:
                 if skipped_args:
-                    call=call_replace(call,func,skipped_args)
+                    call=call_replace(call,func,skipped_args,required_args)
+                    if call is None:
+                        continue
                 if vlasiator5:
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
                 else:
