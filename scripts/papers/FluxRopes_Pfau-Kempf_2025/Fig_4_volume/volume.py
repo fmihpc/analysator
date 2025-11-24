@@ -13,7 +13,7 @@ import numpy as np
 #import scipy
 import sys
 import pytools as pt
-from variable import get_data, get_name, get_units
+from analysator.calculations.variable import get_data, get_name, get_units
 
 #plt.xkcd(scale=1.5, length=100, randomness=3)
 
