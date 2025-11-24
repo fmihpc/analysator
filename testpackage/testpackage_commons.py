@@ -6,8 +6,8 @@ import inspect
 import logging
 import re
 import argparse
+from testpackage_template_maker import call_replace
 
-#add manualcals filtering or something since rightnow it tries to do it for 3D data? does it work?
 
 argp=argparse.ArgumentParser(
     prog='Analysator Testpackage',
@@ -25,8 +25,35 @@ if "pass" in funcs_to_use:
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 
-
-
+'''
+runs.append( { 'name': 'ABC',
+                 'verifydir': '/ABC/', 
+                 'fileLocation': datalocation+'/2D/ABC/bulk/',
+                 'fluxLocation': datalocation+'/2D/ABC/flux/',
+                 'skipped_args':None,
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'pops': ['avgs'],
+                 'time': 1000,
+                 'singletime': False,
+                 'filename': None,
+                 'nosubpops': False, # backstreaming / non-backstreaming
+                 'vlasiator5': False,
+                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
+'''
+runs.append( { 'name': 'BED', 
+                 'verifydir': '/BED/', 
+                'fluxLocation': None,
+                 'fileLocation': datalocation+'/2D/BED/bulk/',
+                 'pops': ['avgs'],
+                 'time': 2000,
+                 'singletime':True,
+                'nosubpops': False, # backstreaming / non-backstreaming
+                 'vlasiator5': False,
+                 'skipped_args':None,
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'filename': None ,
+                'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
+                })
 '''
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
@@ -41,7 +68,6 @@ runs.append( { 'name': 'FHA',
                  'nosubpops': True, # backstreaming / non-backstreaming
                  'vlasiator5': True,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
-'''
 
 runs.append( { 'name': 'BCQ',
                 'verifydir': '/BCQ/', 
@@ -59,11 +85,10 @@ runs.append( { 'name': 'BCQ',
                   } )
 
 
-'''    
 runs.append( { 'name': 'BCQr',
                  'verifydir': '/BCQr/', 
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
-                 'fileLocation': '/wrk-vakka/group/spacephysics/vlasiator/2D/BCQ/restart/',
+                 'fileLocation': datalocation+'/2D/BCQ/restart/',
                  'pops': ['avgs'],
                 'fluxLocation': None,
                  'singletime': True, # neighboring bulk files not available
@@ -74,9 +99,7 @@ runs.append( { 'name': 'BCQr',
                  'nosubpops': False, # thermal / non-thermal
                  'filename': 'restart.0001361.vlsv',
                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-'''    
-                
-'''
+
 runs.append( { 'name': 'BGA',
                  'verifydir': '/BGA/', 
                  'fileLocation': datalocation+'/2D/BGA/zero_ehall_layers_23/',
@@ -108,6 +131,22 @@ runs.append( { 'name': 'BFD',
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 '''
+runs.append( { 'name': 'BFDr',
+                 'verifydir': '/BFDr/', 
+                'funcs': ['plot_colormap','plot_vdf'],
+                 'fileLocation': datalocation+'/2D/BFD/restart/',
+                 'pops': ['avgs'],
+                'fluxLocation': None,
+                 'singletime': True, # neighboring bulk files not available
+                 'time': 1126,
+                'manualcall':False,
+                'skipped_args':{'plot_vdf':{'normal':'','step':'','filedir':''}},
+                'nosubpops': False, # thermal / non-thermal
+                'vlasiator5': False,
+                 'filename': 'restart.0001126.vlsv',
+                'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
+
+
 
 #keys: v5bulk,v5restart,bulk,restart,v5multipop,multipop
 
@@ -139,6 +178,7 @@ for i,run in enumerate(runs):
 
     if not funcs_to_use:
         functions = run['funcs']
+
     else:
         functions = list(set(run['funcs']) & set(funcs_to_use))
         if not functions:
@@ -164,17 +204,21 @@ for i,run in enumerate(runs):
             except:
                 exec(f'{call_list}=[]')
 
+        skipped_args=run['skipped_args']
+
+
         if vlasiator5:
             exec(f'testpackage_{func}.vlasiator5=True')
 
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             for call in calls_in:
-                if not filename is None: 
-                    if vlasiator5:
-                        call = call.replace("var='vg_v'","var='vg_restart_v'")
-                    else:
-                        call = call.replace("var='V'","var='restart_V'")
+                if skipped_args:
+                    call=call_replace(call,func,skipped_args)
+                if vlasiator5:
+                    call = call.replace("var='vg_v'","var='vg_restart_v'")
+                else:
+                    call = call.replace("var='V'","var='restart_V'")
                 callrunids.append(i)
                 calls.append(call)
                 callrunindex.append(callindex)
@@ -217,9 +261,6 @@ for i,run in enumerate(runs):
             for pop in run['pops']:
                 if pop != 'avgs':
                     for call in calls_in:
-                        call=call_replace(call,func,skipped_args)
-                        if not call:
-                            continue
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:
                             continue
