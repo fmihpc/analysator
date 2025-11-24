@@ -265,19 +265,20 @@ def textbfstring(string):
     # LaTex output off
     return string
 
-def get_scaled_units( vscale=None, env='EarthSpace', manualDict=None,variable_info=None):
+def get_scaled_units(vscale=None, env='EarthSpace', manualDict=None,variable_info=None):
     ''' Return scaling metadata
 
         :param env:          A string to choose the scaling dictionary [default: EarthSpace]
         :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
         :param vscale:       float, factor to scale the variable with
+        :param variable_info: VariableInfo object used for getting the units
         :returns: (norming factor, scaledUnits, scaledLatexUnits)
 
     '''
 
     #
     if env=='EarthSpace':
-        scaleDict = {
+        variable_info.scaleDict = {
                 's'      : {'defaultScale':1,
                             1e6: {'scaledUnits':'us', 'scaledLatexUnit':r'$\mu\mathrm{s}$'},
                             1e3: {'scaledUnits':'ms', 'scaledLatexUnit':r'$\mathrm{ms}$'}
@@ -339,86 +340,81 @@ def get_scaled_units( vscale=None, env='EarthSpace', manualDict=None,variable_in
         }
 
     else:
-        scaleDict = {}
+        variable_info.scaleDict = {}
     if manualDict is not None:
-        scaleDict.update(manualDict)
+        variable_info.scaleDict.update(manualDict)
     unitScale = 1.0
-    if variable_info:
-        scaledUnits = variable_info.units
-        scaledLatexUnits = variable_info.latexunits
-        units=variable_info.units
-        latexunits=variable_info.latexunits
-    else:
-        scaledUnits=''
-        scaledLatexUnits = ''
-        units=''
-        latexunits=''
+    scaledUnits = variable_info.units
+    scaledLatexUnits = variable_info.latexunits
 
-    if units != '':
+    if variable_info.units != '':
         dictKey = variable_info.units
         try:
-            udict =scaleDict[dictKey]
+            udict = variable_info.scaleDict[dictKey]
         except:
             if vscale is None:
-                return 1.0, units, latexunits
+                return 1.0, variable_info.units, variable_info.latexunits
             else:
-                return vscale, units, latexunits
+                return vscale, variable_info.units, variable_info.latexunits
         if vscale is None:
             try:
                 unitScale = udict['defaultScale']
             except:
-                return 1.0, units, latexunits
+                return 1.0, variable_info.units, variable_info.latexunits
         elif np.isclose(vscale, 1.0):
-            return 1.0, units, latexunits
+            return 1.0, variable_info.units, variable_info.latexunits
         else:
             unitScale = vscale
 
         if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
             #
-            return vscale, units+" x{vscale:e}".format(vscale=vscale), latexunits+r"{\times}"+cbfmtsci(vscale,None)
+            return vscale, variable_info.units+" x{vscale:e}".format(vscale=vscale), variable_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)
         try:
-            #above guarantees the list comprehension does not give an empty list
+        #above guarantees the list comprehension does not give an empty list
             unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
             scaledUnits = udict[unitScale]['scaledUnits']
         except KeyError:
-        # logging.info('Missing scaledUnits in specialist dict for' + units + ' for unitScale='+str(unitScale))
-          return 1.0, units, latexunits
+            # logging.info('Missing scaledUnits in specialist dict for' + variable_info.units + ' for unitScale='+str(unitScale))
+            return 1.0, variable_info.units, variable_info.latexunits
         try:
             scaledLatexUnits = udict[unitScale]['scaledLatexUnit']
         except:
-        # logging.info('Missing scaledLatexUnits in specialist dict for ' + units+ ' for unitScale='+str(unitScale))
-            return 1.0, units, latexunits
+            # logging.info('Missing scaledLatexUnits in specialist dict for ' + variable_info.units+ ' for unitScale='+str(unitScale))
+            return 1.0, variable_info.units, variable_info.latexunits
     else:
         if vscale is None or np.isclose(vscale, 1.0):
-            return 1.0, units, latexunits
+            return 1.0, variable_info.units, variable_info.latexunits
         else:
-            return vscale, units+"x{vscale:e}".format(vscale=vscale), latexunits+r"{\times}"+cbfmtsci(vscale,None)
+            return vscale, variable_info.units+"x{vscale:e}".format(vscale=vscale), variable_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)
 
     return unitScale, scaledUnits, scaledLatexUnits
 
 # A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
 # necessary, for default/other environments.
-def get_scaled_var(self, vscale=None, data=None, env='EarthSpace', manualDict=None,variable_info=None):
+def get_scaled_var(vscale=None, data=None, env='EarthSpace', manualDict=None,variable_info=None):
     ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
         default dictionaries.
 
         :param data:         in case you wish to provide new data array (why, though?)
         :param env:          A string to choose the scaling dictionary [default: EarthSpace]
         :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
-        :returns: self, with scaled units with pre-formatted units included in the varinfo.
+        :param variable_info: VariableInfo object used for getting the units
+        :returns: variable_info, with scaled units with pre-formatted units included in the varinfo.
 
 
     '''
 
-    if variable_info is not None:
-        data=variable_info.data
-    
-    unitScale, scaledUnits, scaledLatexUnits = get_scaled_units(vscale=vscale, env=env, manualDict=manualDict)
-    if unitScale == 1: # no change, optimize out the calculation
-        return self
+    if data is None:
+        data = variable_info.data
+    else:
+        variable_info.data = data
 
-    data = data*unitScale
-    units = scaledUnits
-    latexunits = scaledLatexUnits
-    return self
+    unitScale, scaledUnits, scaledLatexUnits = get_scaled_units(vscale=vscale, env=env, manualDict=manualDict,variable_info=variable_info)
+    if unitScale == 1: # no change, optimize out the calculation
+        return variable_info
+
+    variable_info.data = data*unitScale
+    variable_info.units = scaledUnits
+    variable_info.latexunits = scaledLatexUnits
+    return variable_info
 
