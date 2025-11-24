@@ -2,6 +2,11 @@
 import socket, re, os, tempfile, atexit, shutil, sys
 import warnings
 import logging
+import importlib.util
+
+#Initialize backend variables, pt.plot will assign these when imported
+backend_noninteractive=""
+backend_interactive=""
 
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
@@ -23,66 +28,39 @@ os.environ['MPLCONFIGDIR']=mpldir
 # Check if user is on taito.csc.fi without loading the mayavi2 module
 import numpy as np
 logging.getLogger('matplotlib').setLevel(os.environ.get('ANALYSATOR_MPL_LOG_LEVEL', 'WARNING').upper())
-import matplotlib
 
-if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
-   logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
-   logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
-   logging.info('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
 
-# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
-# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
-if not os.getenv('PTNOLATEX'):
-   matplotlib.rc('text', usetex=True)
-   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-   # matplotlib.rcParams['mathtext.fontset'] = 'stix'
-   # matplotlib.rcParams['font.family'] = 'STIXGeneral'
-   # Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.
-   matplotlib.rcParams['font.family'] = 'serif'
-   logging.info("Using LaTeX formatting")
-   # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
+def lazyimport(module_name):
+   try:
+      return sys.modules[module_name]
+   except KeyError:
+      spec = importlib.util.find_spec(module_name)
+      loader = importlib.util.LazyLoader(spec.loader)
+      spec.loader = loader
+      module = importlib.util.module_from_spec(spec)
+      sys.modules[module_name]= module
+      loader.exec_module(module)
+      return module
 
-# Set backends
-if matplotlib.get_backend()[:9] == 'module://':
-   logging.info("Using backend "+matplotlib.get_backend())
-   backend_interactive = matplotlib.get_backend()
-   backend_noninteractive = matplotlib.get_backend()
-elif not os.getenv('PTBACKEND'):
-   backend_interactive = 'TkAgg'
-   backend_noninteractive = 'Agg'
-else:
-   backend_interactive = os.getenv('PTBACKEND')
-   backend_noninteractive = os.getenv('PTBACKEND')
+
 
 # Import modules
 try:
-   from . import calculations
+   calculations=lazyimport("calculations")
 except ImportError as e:
    logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
-   from . import vlsvfile
+   vlsvfile=lazyimport("vlsvfile")
 except ImportError as e:
    logging.info("Note: Did not import vlsvfile module: " + str(e))
 
 import os
-import matplotlib.pyplot as plt
 
-if os.getenv('PTNONINTERACTIVE') != None:
-   # Non-interactive plotting mode
-   try:
-      plt.switch_backend(backend_noninteractive)
-   except:
-      logging.info("Note: Unable to switch to "+backend_noninteractive+" backend")
-else:
-   # Interactive plotting mode
-   plt.ion()
-   try:
-      plt.switch_backend(backend_interactive)
-   except:
-      logging.info("Note: Unable to switch to "+backend_interactive+" backend")
+if os.getenv('PTNONINTERACTIVE') == None: #was ineq
 
    #Only attempt loading MayaVi2 if requested
+
    if os.getenv('PTMAYAVI2') != None:
       try:
          import grid
@@ -90,16 +68,16 @@ else:
          logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
-   from . import plot
+   #import plot
+   plot=lazyimport("plot")
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 
 try:
-   from . import miscellaneous
+   #import miscellaneous
+   miscellaneous=lazyimport("miscellaneous")
 except ImportError as e:
    logging.info("Note: Did not import miscellaneous: " + str(e))
-
-
 
 # from analysator.pytools import *
 # import warnings
