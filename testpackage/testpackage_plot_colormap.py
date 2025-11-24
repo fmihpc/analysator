@@ -1,7 +1,5 @@
 
 import numpy as np
-vlasiator5=None
-
 
 
 # Custom expression function                                                               

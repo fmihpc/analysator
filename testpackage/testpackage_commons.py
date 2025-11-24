@@ -25,21 +25,21 @@ if "pass" in funcs_to_use:
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 
-'''
+
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
                  'fluxLocation': datalocation+'/2D/ABC/flux/',
-                 'skipped_args':None,
+                'skipped_args':{'plot_vdf':{'normal':'','step':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                  'pops': ['avgs'],
-                 'time': 1000,
+                 'time': 100,
                  'singletime': False,
                  'filename': None,
                  'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
-'''
+
 runs.append( { 'name': 'BED', 
                  'verifydir': '/BED/', 
                 'fluxLocation': None,
@@ -54,7 +54,7 @@ runs.append( { 'name': 'BED',
                  'filename': None ,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                 })
-'''
+
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
                  'fileLocation': datalocation+'/3D/FHA/bulk1/',
@@ -62,6 +62,7 @@ runs.append( { 'name': 'FHA',
                  'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
+                'skipped_args':None,
                  'singletime': False,
                  'filename': None, #restart file
                  'manualcall':False,
@@ -92,8 +93,8 @@ runs.append( { 'name': 'BCQr',
                  'pops': ['avgs'],
                 'fluxLocation': None,
                  'singletime': True, # neighboring bulk files not available
-                 'time': 0,
-                 'skipped_args':None,
+                 'time': 1361,
+                'skipped_args':{'plot_vdf':{'normal':'','step':''}},
                  'manualcall':False,
                  'vlasiator5': False,
                  'nosubpops': False, # thermal / non-thermal
@@ -130,7 +131,8 @@ runs.append( { 'name': 'BFD',
                  'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
-'''
+
+
 runs.append( { 'name': 'BFDr',
                  'verifydir': '/BFDr/', 
                 'funcs': ['plot_colormap','plot_vdf'],
@@ -147,7 +149,6 @@ runs.append( { 'name': 'BFDr',
                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 
-
 #keys: v5bulk,v5restart,bulk,restart,v5multipop,multipop
 
 # For handier debugging, uncomment these to overwrite call lists and include only relevant calls
@@ -161,7 +162,7 @@ runs.append( { 'name': 'BFDr',
 
 
 required_args ={
-    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
+    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
     "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
     "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
     
@@ -182,6 +183,7 @@ for i,run in enumerate(runs):
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
+
 
     if not funcs_to_use:
         functions = run['funcs']
@@ -220,19 +222,18 @@ for i,run in enumerate(runs):
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             for call in calls_in:
-                if skipped_args:
-                    call=call_replace(call,func,skipped_args,required_args)
-                    if call is None:
-                        continue
                 if vlasiator5:
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
                 else:
                     call = call.replace("var='V'","var='restart_V'")
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-                funcids.append(j)
+                if skipped_args:
+                    call=call_replace(call,func,skipped_args,required_args)
+                if call is not None:
+                    callrunids.append(i)
+                    calls.append(call)
+                    callrunindex.append(callindex)
+                    callindex += 1
+                    funcids.append(j)
 
 
         # non-restart files
@@ -291,6 +292,7 @@ for i,run in enumerate(runs):
 
 
 
+
 nteststot = len(callrunids)
 
 # How many jobs? 
@@ -321,7 +323,17 @@ for j in range(start,end):
     
     runname = runs[runid]['name']
     
-    func = runs[runid]['funcs'][funcid]
+    #func = runs[runid]['funcs'][funcid]
+
+    if not funcs_to_use:
+        func = runs[runid]['funcs'][funcid]
+
+    else:
+        func = list(set(runs[runid]['funcs']) & set(funcs_to_use))[funcid]
+        print(func,runs[runid]['funcs'],funcs_to_use,runs[runid]['verifydir'])
+        if not func:
+            continue
+
     verifydir = func+runs[runid]['verifydir']
 
     fileLocation = runs[runid]['fileLocation']
@@ -333,10 +345,11 @@ for j in range(start,end):
     singletime = runs[runid]['singletime']
     
     #set custom expression variables for plot_colormap
-    testpackage_plot_colormap.level_bow_shock = runs[runid]['cavitonparams'][0]
-    testpackage_plot_colormap.level_n_caviton = runs[runid]['cavitonparams'][1]
-    testpackage_plot_colormap.level_B_caviton = runs[runid]['cavitonparams'][2]
-    testpackage_plot_colormap.level_beta_SHFA = runs[runid]['cavitonparams'][3]
+    if 'plot_colormap' == func:
+        testpackage_plot_colormap.level_bow_shock = runs[runid]['cavitonparams'][0]
+        testpackage_plot_colormap.level_n_caviton = runs[runid]['cavitonparams'][1]
+        testpackage_plot_colormap.level_B_caviton = runs[runid]['cavitonparams'][2]
+        testpackage_plot_colormap.level_beta_SHFA = runs[runid]['cavitonparams'][3]
     
 
 #    verifydir=os.path.join(verifydir)
@@ -356,7 +369,8 @@ for j in range(start,end):
         fluxname = "flux."+str(time).rjust(7,'0')+".bin"
 
 
-    if run=="ABC":
+    if runs[runid]['name']=="ABC" and func=='plot_vdf':
+        fileLocation=fileLocation.replace('bulk','distributions')
         bulkname = "distributions."+str(time).rjust(7,'0')+".vlsv"
 
            
