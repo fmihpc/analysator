@@ -50,7 +50,7 @@ runs.append( { 'name': 'BED',
                 'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'skipped_args':None,
-                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'funcs': ['plot_vdf','plot_vdf_profiles'],
                  'filename': None ,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                 })
@@ -88,7 +88,7 @@ runs.append( { 'name': 'BCQ',
 
 runs.append( { 'name': 'BCQr',
                  'verifydir': '/BCQr/', 
-                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'funcs': ['plot_vdf','plot_vdf_profiles'],
                  'fileLocation': datalocation+'/2D/BCQ/restart/',
                  'pops': ['avgs'],
                 'fluxLocation': None,
@@ -135,7 +135,7 @@ runs.append( { 'name': 'BFD',
 
 runs.append( { 'name': 'BFDr',
                  'verifydir': '/BFDr/', 
-                'funcs': ['plot_colormap','plot_vdf'],
+                'funcs': ['plot_vdf'],
                  'fileLocation': datalocation+'/2D/BFD/restart/',
                  'pops': ['avgs'],
                 'fluxLocation': None,
