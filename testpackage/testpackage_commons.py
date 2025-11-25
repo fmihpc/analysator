@@ -33,7 +33,7 @@ runs.append( { 'name': 'ABC',
                 'skipped_args':{'plot_vdf':{'step':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                  'pops': ['avgs'],
-                 'time': 1000, #gets the plot_vdf distirbution file wrong, need to rethink this for vdf
+                 'time': 1000,
                  'singletime': False,
                  'filename': None,
                  'nosubpops': False, # backstreaming / non-backstreaming
@@ -374,7 +374,7 @@ for j in range(start,end):
 
     if runs[runid]['name']=="ABC" and func=='plot_vdf':
         fileLocation=fileLocation.replace('bulk','distributions')
-        bulkname = "distributions."+str(time).rjust(7,'0')+".vlsv"
+        bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" #annoyance since timestep 1000 does not seem to exist we are going with 100 then
 
            
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
