@@ -33,7 +33,7 @@ runs.append( { 'name': 'ABC',
                 'skipped_args':{'plot_vdf':{'step':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                  'pops': ['avgs'],
-                 'time': 100,
+                 'time': 1000, #gets the plot_vdf distirbution file wrong, need to rethink this for vdf
                  'singletime': False,
                  'filename': None,
                  'nosubpops': False, # backstreaming / non-backstreaming
@@ -216,8 +216,7 @@ for i,run in enumerate(runs):
         skipped_args=run['skipped_args']
 
 
-        if vlasiator5:
-            exec(f'testpackage_{func}.vlasiator5=True')
+
 
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
@@ -351,6 +350,10 @@ for j in range(start,end):
         testpackage_plot_colormap.level_B_caviton = runs[runid]['cavitonparams'][2]
         testpackage_plot_colormap.level_beta_SHFA = runs[runid]['cavitonparams'][3]
     
+    if vlasiator5:
+        exec(f'testpackage_{func}.vlasiator5=True')
+    else:
+        exec(f'testpackage_{func}.vlasiator5=False')
 
 #    verifydir=os.path.join(verifydir)
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
