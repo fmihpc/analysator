@@ -25,6 +25,9 @@ if "pass" in funcs_to_use:
 datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 
+#Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
+legacy_mode=True
+
 
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
@@ -85,7 +88,6 @@ runs.append( { 'name': 'BCQ',
                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] 
                   } )
 
-
 runs.append( { 'name': 'BCQr',
                  'verifydir': '/BCQr/', 
                  'funcs': ['plot_vdf','plot_vdf_profiles'],
@@ -116,21 +118,6 @@ runs.append( { 'name': 'BGA',
                  'nosubpops': True, # thermal / non-thermal
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
                      
-runs.append( { 'name': 'BFD',
-                 'verifydir': '/BFD/', 
-                 'fileLocation': datalocation+'/2D/BFD/bulk/',
-                 'fluxLocation': datalocation+'/2D/BFD/fluxfunction/',
-                 'fluxprefix': 'bulk.',
-                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
-                 'skipped_args':None,
-                 'pops': ['proton','helium'],
-                 'time': 2000,
-                 'singletime': False,
-                 'filename': None,
-                  'manualcall':False,
-                 'nosubpops': False, # backstreaming / non-backstreaming
-                 'vlasiator5': False,
-                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 
 runs.append( { 'name': 'BFDr',
@@ -148,6 +135,21 @@ runs.append( { 'name': 'BFDr',
                  'filename': 'restart.0001126.vlsv',
                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
+runs.append( { 'name': 'BFD',
+                 'verifydir': '/BFD/', 
+                 'fileLocation': datalocation+'/2D/BFD/bulk/',
+                 'fluxLocation': datalocation+'/2D/BFD/fluxfunction/',
+                 'fluxprefix': 'bulk.',
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                 'skipped_args':None,
+                 'pops': ['proton','helium'],
+                 'time': 2000,
+                 'singletime': False,
+                 'filename': None,
+                  'manualcall':False,
+                 'nosubpops': False, # backstreaming / non-backstreaming
+                 'vlasiator5': False,
+                 'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 #keys: v5bulk,v5restart,bulk,restart,v5multipop,multipop
 
@@ -173,7 +175,6 @@ calls = []
 callrunids = []
 callrunindex = []
 funcids=[]
-offset=0
 
 for i,run in enumerate(runs):
     # bulk and restart files
@@ -184,21 +185,19 @@ for i,run in enumerate(runs):
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
 
-
+    
     if not funcs_to_use:
         functions = run['funcs']
 
     else:
-        functions = list(set(run['funcs']) & set(funcs_to_use))
+        functions = sorted(list(set(run['funcs']) & set(funcs_to_use)))
         if not functions:
             continue
 
 
-    callindex = 0
-
-
     for j,func in enumerate(functions):
-
+        callindex = 0
+        
         #try to import the list of calls corresponding to the function to be tested. Skip if not found
         try:
             exec(f'import testpackage_{func}')
@@ -216,8 +215,6 @@ for i,run in enumerate(runs):
         skipped_args=run['skipped_args']
 
 
-
-
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             for call in calls_in:
@@ -225,7 +222,7 @@ for i,run in enumerate(runs):
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
                 else:
                     call = call.replace("var='V'","var='restart_V'")
-                if skipped_args:
+                if skipped_args and not legacy_mode:
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None:
                     callrunids.append(i)
@@ -242,7 +239,7 @@ for i,run in enumerate(runs):
             for call in calls_in:
 
                 # Skip flux function calls if no flux files
-                if "flux" in call and fluxLocation is None:
+                if ("fluxdir" in call or "fluxfile" in call) and fluxLocation is None:
                     continue
 
                 #change the extrnal and expression calls to correct format
@@ -259,11 +256,16 @@ for i,run in enumerate(runs):
                     continue
                 elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                     continue
-                callrunids.append(i)
-                calls.append(call)
-                callrunindex.append(callindex)
-                callindex += 1
-                funcids.append(j)
+                if skipped_args and not legacy_mode:
+                    call=call_replace(call,func,skipped_args,required_args)
+                if call is not None:
+                    callrunids.append(i)
+                    calls.append(call)
+                    callrunindex.append(callindex)
+                    callindex += 1
+                    funcids.append(j)
+
+
                 
             #multipop calls
             calls_in=v5multipopcalls if vlasiator5 else multipopcalls
@@ -282,13 +284,14 @@ for i,run in enumerate(runs):
                         elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                             continue
                         call = call.replace('REPLACEPOP',pop)
-
-                        callrunids.append(i)
-                        calls.append(call)
-                        callrunindex.append(callindex)
-                        callindex += 1
-                        funcids.append(j)            
-
+                        if skipped_args and not legacy_mode:
+                            call=call_replace(call,func,skipped_args,required_args)
+                        if call is not None:
+                            callrunids.append(i)
+                            calls.append(call)
+                            callrunindex.append(callindex)
+                            callindex += 1
+                            funcids.append(j)
 
 
 
@@ -316,20 +319,18 @@ for j in range(start,end):
     # Calculate which run
     jrun = callrunindex[j]
     runid = callrunids[j]
+    runname = runs[runid]['name']
+
     call = calls[j]
 
     funcid=funcids[j] 
     
-    runname = runs[runid]['name']
-    
-    #func = runs[runid]['funcs'][funcid]
 
     if not funcs_to_use:
         func = runs[runid]['funcs'][funcid]
 
-    else:
-        func = list(set(runs[runid]['funcs']) & set(funcs_to_use))[funcid]
-        print(func,runs[runid]['funcs'],funcs_to_use,runs[runid]['verifydir'])
+    else:        
+        func = sorted(list(set(runs[runid]['funcs']) & set(funcs_to_use)))[funcid]
         if not func:
             continue
 
@@ -355,8 +356,23 @@ for j in range(start,end):
     else:
         exec(f'testpackage_{func}.vlasiator5=False')
 
-#    verifydir=os.path.join(verifydir)
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
+
+
+    #Annoyances due to previous testpackages having different times used for plot_vdf and plot_colormap
+    if legacy_mode:
+        if func=='plot_vdf':
+            if runs[runid]['name']=='ABC':
+                time=100
+            elif runs[runid]['name']=="BCQ":
+                time=1600
+            elif runs[runid]['name']=="BFD":
+                time=1000
+            elif runs[runid]['name']=="BFDr":
+                time=0
+            if not filename is None and "step=" in call:
+                continue
+
 
     # Source data files
     if filename is None:
@@ -371,12 +387,13 @@ for j in range(start,end):
     else:
         fluxname = "flux."+str(time).rjust(7,'0')+".bin"
 
-
     if runs[runid]['name']=="ABC" and func=='plot_vdf':
         fileLocation=fileLocation.replace('bulk','distributions')
-        bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" #annoyance since timestep 1000 does not seem to exist we are going with 100 then
+        bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" 
+        if "step=" in call and legacy_mode:
+            continue    
 
-           
+
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
     call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
     call = call.replace('REPLACETIME',"'"+str(time)+"'")
@@ -394,18 +411,10 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     try:
         exec(call)
-        #print(call)
-        #quit()
+
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
         
         traceback.print_exc()
         print("END TRACE for call",j,"\n----------------------------")
-
-#add way to specify which function to test 
-#add a way to add expections to variables etc easily. (DONE)
-#currenlty does multiple calls (Fixed with list but still needs better implementation as we waste bit of time going through multiple things)
-#add manual calls (DONE)
-#why spend time going through all calls on all threads?
-#v5 vdf?? (post 2019 are v5)
 
