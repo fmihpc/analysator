@@ -26,14 +26,14 @@ datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 
 #Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
-legacy_mode=True
+legacy_mode=False
 
 
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
                  'fluxLocation': datalocation+'/2D/ABC/flux/',
-                'skipped_args':{'plot_vdf':{'step':''}},
+                'skipped_args':{'plot_vdf':{'step':''},'plot_vdf_profiles':{'bpara':'','bperp':'','step':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                  'pops': ['avgs'],
                  'time': 1000,
@@ -52,7 +52,7 @@ runs.append( { 'name': 'BED',
                  'singletime':True,
                 'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
-                 'skipped_args':None,
+                 'skipped_args':{'plot_vdf_profiles':{'bpara':'','bperp':'','step':''}},
                  'funcs': ['plot_vdf','plot_vdf_profiles'],
                  'filename': None ,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
@@ -81,7 +81,7 @@ runs.append( { 'name': 'BCQ',
                 'pops': ['avgs'],
                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
                 'time': 2000,
-                 'skipped_args':None,
+                 'skipped_args':{'plot_vdf_profiles':{'bpara':'','bperp':'','step':''}},
                 'filename': None,
                 'vlasiator5':False,
                 'nosubpops':False,
@@ -165,8 +165,8 @@ runs.append( { 'name': 'BFD',
 
 required_args ={
     "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
-    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
+    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
+    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step"),'vlsvobj','filename'],None)]
     
 }
 
@@ -387,9 +387,10 @@ for j in range(start,end):
     else:
         fluxname = "flux."+str(time).rjust(7,'0')+".bin"
 
-    if runs[runid]['name']=="ABC" and func=='plot_vdf':
+    if runs[runid]['name']=="ABC" and 'plot_vdf' in func:
         fileLocation=fileLocation.replace('bulk','distributions')
         bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" 
+        time=100
         if "step=" in call and legacy_mode:
             continue    
 
@@ -413,7 +414,7 @@ for j in range(start,end):
         exec(call)
 
     except Exception as e:
-        print("----------------------------\nFAILURE DURING CALL ",j," \n```\n"+call+"```\n", repr(e))
+        print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
         
         traceback.print_exc()
         print("END TRACE for call",j,"\n----------------------------")
