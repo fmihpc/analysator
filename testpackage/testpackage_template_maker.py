@@ -41,9 +41,10 @@ def call_replace(call,func,skipped_args,required_args=required_args):
 
             check=False
             for param in required_params:
-                if any((all(r in named_parameters for r in param),(param in named_parameters))) and not any(r in skipped_args[func].keys() for r in param):
-                    check=True
-                    break
+                if any((all(r in named_parameters for r in param),(param in named_parameters))):
+                    if not func in skipped_args or not any(r in skipped_args[func].keys() for r in param):
+                        check=True
+                        break
             if not check:
 
                 #print("REQUIRED",call,named_parameters,required_params)
