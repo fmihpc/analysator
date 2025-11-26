@@ -134,7 +134,7 @@ nonrestartcalls = [
 # cellids, coordinates
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACECELLID)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACECOORDINATES)",
-"pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
+"pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",#Duplicate call
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, cellids=REPLACEMULTIPLECELLID)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACEMULTIPLECOORDINATES)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE)",
