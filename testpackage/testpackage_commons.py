@@ -28,7 +28,6 @@ runs = []
 #Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
 legacy_mode=False
 
-
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
@@ -57,6 +56,21 @@ runs.append( { 'name': 'BED',
                  'filename': None ,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                 })
+
+runs.append( { 'name': 'FID',
+                 'verifydir': '/FID/', 
+                 'fileLocation': datalocation+'/3D/FID/bulk1/',
+                 'fluxLocation': None,
+                 'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
+                 'pops': ['avgs'],
+                 'time': 1000,
+                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]}}, #ig_zz and ig_pp is also skipped on purpose
+                 'singletime': False,
+                 'filename': None, #restart file
+                 'manualcall':False,
+                 'nosubpops': True, # backstreaming / non-backstreaming
+                 'vlasiator5': True,
+                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
 
 runs.append( { 'name': 'FHA',
                  'verifydir': '/FHA/', 
@@ -185,7 +199,9 @@ for i,run in enumerate(runs):
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
 
-    
+#    if run['name']!='FID':
+#        continue
+
     if not funcs_to_use:
         functions = run['funcs']
 
@@ -244,9 +260,9 @@ for i,run in enumerate(runs):
 
                 #change the extrnal and expression calls to correct format
                 if f"expression=testpackage_{func}" not in call and "expression=" in call:
-                    call=call.replace("expression=",f"expression=testpackage_{func}.")
+                    call=call.replace("expression=",f"expression=testpackage_{func}.cexp.")
                 if f"external=testpackage_{func}" not in call and "external=" in call:
-                    call=call.replace("external=",f"external=testpackage_{func}.")
+                    call=call.replace("external=",f"external=testpackage_{func}.cexp.")
 
                 # skip time integration if only one file available
                 if "pass_times" in call and singletime:
@@ -345,17 +361,19 @@ for j in range(start,end):
     singletime = runs[runid]['singletime']
     
     #set custom expression variables for plot_colormap
-    if 'plot_colormap' == func:
-        testpackage_plot_colormap.level_bow_shock = runs[runid]['cavitonparams'][0]
-        testpackage_plot_colormap.level_n_caviton = runs[runid]['cavitonparams'][1]
-        testpackage_plot_colormap.level_B_caviton = runs[runid]['cavitonparams'][2]
-        testpackage_plot_colormap.level_beta_SHFA = runs[runid]['cavitonparams'][3]
+    if 'plot_colormap' in func:
+        exec(f"testpackage_{func}.cexp.level_bow_shock = runs[runid]['cavitonparams'][0]")
+        exec(f"testpackage_{func}.cexp.level_n_caviton = runs[runid]['cavitonparams'][1]")
+        exec(f"testpackage_{func}.cexp.level_B_caviton = runs[runid]['cavitonparams'][2]")
+        exec(f"testpackage_{func}.cexp.level_beta_SHFA = runs[runid]['cavitonparams'][3]")
     
+    #Custom expression vlasiator5 toggle
     if vlasiator5:
-        exec(f'testpackage_{func}.vlasiator5=True')
+        exec(f'testpackage_{func}.cexp.vlasiator5=True')
     else:
-        exec(f'testpackage_{func}.vlasiator5=False')
+        exec(f'testpackage_{func}.cexp.vlasiator5=False')
 
+    
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
 
 

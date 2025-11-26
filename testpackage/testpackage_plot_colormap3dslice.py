@@ -1,3 +1,8 @@
+
+import testpackage_custom_expr as cexp
+
+
+
 nonrestartcalls=["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png',nooverwrite=1)",
@@ -239,7 +244,7 @@ v5nonrestartcalls=["pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACE
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='vg_v',op='z',colormap='PuOr',symlog=0,usesci=0)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,external=extcontour,pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,expression=exprMA_cust,pass_vars=['vg_va'],vmin=1,vmax=20,lin=1,usesci=0)",
-"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,expression=expr_cav_cust,pass_times=3,pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
+#"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,expression=expr_cav_cust,pass_times=3,pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
 "pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,expression=timesmooth,pass_times=[7,0],pass_vars=['vg_rho'],boxre=[0,30,-15,15])",
 "pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,expression=timesmooth,pass_times=[7,0],pass_vars=['vg_beta'])",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,vectors='vg_v',vectorsize=1,vectordensity=200)",
