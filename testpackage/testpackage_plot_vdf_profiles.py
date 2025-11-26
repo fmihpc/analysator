@@ -65,9 +65,11 @@ multipopcalls=["pt.plot.plot_vdf_profiles(vlsvobj=f,run=verifydir+REPLACEINDEX,p
 
 v5restartcalls=[]
 
-v5nonrestartcalls=["pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal='x')",
-"pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal='y')",
-"pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal='z')"]
+v5nonrestartcalls=["pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal=[1,0,0])",
+"pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal=[0,1,0])",
+"pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX,normal=[0,0,1])"]
+
+v5nonrestartcalls.extend(nonrestartcalls)
 
 v5multipopcalls=[]
 
