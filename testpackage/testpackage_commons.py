@@ -367,11 +367,11 @@ for j in range(start,end):
         exec(f"testpackage_{func}.cexp.level_B_caviton = runs[runid]['cavitonparams'][2]")
         exec(f"testpackage_{func}.cexp.level_beta_SHFA = runs[runid]['cavitonparams'][3]")
     
-    #Custom expression vlasiator5 toggle
-    if vlasiator5:
-        exec(f'testpackage_{func}.cexp.vlasiator5=True')
-    else:
-        exec(f'testpackage_{func}.cexp.vlasiator5=False')
+        #Custom expression vlasiator5 toggle
+        if vlasiator5:
+            exec(f'testpackage_{func}.cexp.vlasiator5=True')
+        else:
+            exec(f'testpackage_{func}.cexp.vlasiator5=False')
 
     
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
