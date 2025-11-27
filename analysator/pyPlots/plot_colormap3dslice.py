@@ -1244,9 +1244,10 @@ def plot_colormap3dslice(filename=None,
                 # vg_fluxrope goes to the max defined at runtime, set the values above our cutoff to zero for clean results.
                 fRmap = np.where(fRmap > fluxrope, np.zeros_like(fRmap), fRmap)
         
-        
             pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,fRmap,threshold=0.1,linewidth=fluxropelinewidth,linestyle=fluxropelinestyle,colors=fluxropecolour)
-
+        
+        else:
+            logging.warning(f'Parameter "fluxrope" passed to plot_colormap3dslice but no vg_fluxrope variable found in data {f.file_name}')
     # add AMR contours
     if amr is not None:
         if np.isscalar(amr):
