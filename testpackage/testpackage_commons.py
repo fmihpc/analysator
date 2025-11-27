@@ -8,7 +8,19 @@ import re
 import argparse
 from testpackage_template_maker import call_replace
 
+def source_file_name(filename,fileLocation,time):
+    if filename is None:
+        if '2D' not in fileLocation:
+            bulkname = "bulk1."+str(time).rjust(7,'0')+".vlsv"
 
+        else:
+            bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
+    else:
+        bulkname=filename
+    return bulkname
+
+
+    
 argp=argparse.ArgumentParser(
     prog='Analysator Testpackage',
     description='Outputs test plots'
@@ -32,8 +44,9 @@ runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
                  'fluxLocation': datalocation+'/2D/ABC/flux/',
-                'skipped_args':{'plot_vdf':{'step':''},'plot_vdf_profiles':{'bpara':'','bperp':'','step':''}},
-                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                'skipped_args':{'plot_vdf':{'step':''},'plot_vdf_profiles':{'bpara':'','bperp':'','step':''},
+                                'plot_vdfdiff':{'filedir':'','bpara':'','bperp':''}},
+                 'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles','plot_vdfdiff'],
                  'pops': ['avgs'],
                  'time': 1000,
                  'singletime': False,
@@ -93,7 +106,7 @@ runs.append( { 'name': 'BCQ',
                 'fluxLocation': None,
                 'singletime': False,
                 'pops': ['avgs'],
-                'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles'],
+                'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles','plot_vdfdiff'],
                 'time': 2000,
                  'skipped_args':{'plot_vdf_profiles':{'bpara':'','bperp':'','step':''}},
                 'filename': None,
@@ -165,25 +178,14 @@ runs.append( { 'name': 'BFD',
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
-#keys: v5bulk,v5restart,bulk,restart,v5multipop,multipop
-
-# For handier debugging, uncomment these to overwrite call lists and include only relevant calls
-# restartcalls = []
-# nonrestartcalls = ["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)","pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-# ]
-# multipopcalls = []
-# v5restartcalls = []
-# v5nonrestartcalls = []
-# v5multipopcalls = []
-
-
+#First arg in tuple is the one that needs to be there, second etc can be there without the first
 required_args ={
     "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
     "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
+    "plot_vdfdiff":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
     "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step"),'vlsvobj','filename'],None)]
     
 }
-
 
 calls = []
 callrunids = []
@@ -330,7 +332,8 @@ else:
     end = end + remainder
 
 
-# Perform call
+
+# Perform calls
 for j in range(start,end):
     # Calculate which run
     jrun = callrunindex[j]
@@ -393,13 +396,8 @@ for j in range(start,end):
 
 
     # Source data files
-    if filename is None:
-        if '2D' not in fileLocation:
-            bulkname = "bulk1."+str(time).rjust(7,'0')+".vlsv"
-        else:
-            bulkname = "bulk."+str(time).rjust(7,'0')+".vlsv"
-    else:
-        bulkname = filename
+    bulkname = source_file_name(filename,fileLocation,time)
+
     if 'fluxprefix' in runs[runid]:
         fluxname = runs[runid]['fluxprefix']+str(time).rjust(7,'0')+".bin"
     else:
@@ -412,6 +410,13 @@ for j in range(start,end):
         if "step=" in call and legacy_mode:
             continue    
 
+    if func == 'plot_vdfdiff':
+        time_offset=10
+        bulkname_vdfdiff = source_file_name(filename,fileLocation,time-time_offset)
+        call = call.replace('REPLACETIME2',"'"+str(time-time_offset)+"'")
+        bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
+        g = pt.vlsvfile.VlsvReader(fileLocation+bulkname_vdfdiff)
+    
 
     call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
     call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
@@ -428,6 +433,7 @@ for j in range(start,end):
     # Many different plots
     print(j, runid, jrun, call,fileLocation+bulkname)
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
+
     try:
         exec(call)
 
