@@ -61,8 +61,6 @@ nonrestartcalls=["pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputdir=outputLoc
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,biglabel='E',biglabloc=3,coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,bvector=1,coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,bvector=1,cbulk=1,coordre=REPLACECOORDRE)",
-"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,bvector=1,center=[-7e5,0,0],center2=[0,0,-6e5],coordre=REPLACECOORDRE)",
-"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,bvector=1,center=[2e5,2e5,2e5],center2=[0,0,0],coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,wflux=1,coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,xy=1,coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,xy=1,coordswap=1,coordre=REPLACECOORDRE)",

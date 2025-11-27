@@ -414,7 +414,8 @@ for j in range(start,end):
         time_offset=10
         bulkname_vdfdiff = source_file_name(filename,fileLocation,time-time_offset)
         call = call.replace('REPLACETIME2',"'"+str(time-time_offset)+"'")
-        bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
+        if runs[runid]['name']=="ABC":
+            bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
         g = pt.vlsvfile.VlsvReader(fileLocation+bulkname_vdfdiff)
     
 
