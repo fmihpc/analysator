@@ -14,8 +14,8 @@ nonrestartcalls=["pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputdir=outputLoc
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,thick=2.0,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,scale=0.5,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,scale=2.,coordre=REPLACEMULTIPLECOORDRE)",
-"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=10,coordre=REPLACEMULTIPLECOORDRE)",
-"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=1,coordre=REPLACEMULTIPLECOORDRE)",
+"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=10,axisunit=5,coordre=REPLACEMULTIPLECOORDRE)", #tickinterval calls without axisunit takes far too long
+"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=1,axisunit=5,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=0.5,axisunit=6,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,tickinterval=1,axisunit=6,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,title='msec',coordre=REPLACEMULTIPLECOORDRE)",
