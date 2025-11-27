@@ -18,6 +18,7 @@ import argparse
 # v5restartcalls = []
 # v5nonrestartcalls = []
 # v5multipopcalls = []
+
 required_args=False
 def call_replace(call,func,skipped_args,required_args=required_args):
     #This is kind of scuffed maybe
@@ -32,8 +33,8 @@ def call_replace(call,func,skipped_args,required_args=required_args):
     function_pars=inspect.getfullargspec(eval("pt.plot."+func)).args
     #Remove args that are not present as parameters for the func
     args_out=[]
-    #check that all required func args are set
 
+    #check that all required func args are set
     if required_args and func in required_args.keys():
         for required_tuple in required_args[func]:
             required_params=required_tuple[0]
@@ -41,26 +42,23 @@ def call_replace(call,func,skipped_args,required_args=required_args):
 
             check=False
             for param in required_params:
-                if any((all(r in named_parameters for r in param),(param in named_parameters))):
-                    if not func in skipped_args or not any(r in skipped_args[func].keys() for r in param):
+                if type(param)==tuple and param[0] not in named_parameters:
+                    check=True
+                elif any((all(r in named_parameters for r in param),(param in named_parameters))):
+                    if not skipped_args or func not in skipped_args or not any(r in skipped_args[func].keys() for r in param):
                         check=True
                         break
             if not check:
-
-                #print("REQUIRED",call,named_parameters,required_params)
-
                 #Add parameters if there are default_params
                 if default_params:
                     for param in default_params:
                         if param not in named_parameters:
                             args_out.append(param)
-  #                      print("ADDED",param,call)
                 else:
-                    #print("NOT ADDED",call)
                     return None
 
 
-    #add execption for tuple?
+    #skip args if there are skipped args and append if called arg in function_pars
     for arg in args:
         if arg:
             if skipped_args and func in skipped_args.keys():
@@ -69,7 +67,7 @@ def call_replace(call,func,skipped_args,required_args=required_args):
                 if call_args[0] in skipped_args_dict.keys():
                     if type(skipped_args_dict[call_args[0]])==str and skipped_args_dict[call_args[0]] in call_args[1]:
                         continue
-                    elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):
+                    elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}
                         continue
             if arg.split("=")[0] in function_pars:
                 args_out.append(arg)
@@ -78,11 +76,9 @@ def call_replace(call,func,skipped_args,required_args=required_args):
     
     if not args_out:
         return None
-#    if func=="plot_vdf":
-#        print(args_out)
     args_out=filter(None,args_out)
     call=call[:call.rfind("(")+1]+",".join(args_out)+")"
-#    print("BEFORE",call)
+
     return call
 
 
