@@ -131,7 +131,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
     logging.info("Found "+str(len(V))+" v-space cells")
 
     # center on highest f-value
-    if center == "peak":
+    if type(center)==str and center == "peak":
         peakindex = np.argmax(f)
         Vpeak = V[peakindex,:]
         V = V - Vpeak
