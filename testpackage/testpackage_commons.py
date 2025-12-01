@@ -218,9 +218,9 @@ for i,run in enumerate(runs):
         
         #try to import the list of calls corresponding to the function to be tested. Skip if not found
         try:
-            exec(f'import testpackage_{func}')
+            exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
         except:
-            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the same folder")
+            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder")
 
 
         #Get the list of calls from the imported file, set list to empty list if list not foud in the file
