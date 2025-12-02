@@ -59,7 +59,7 @@ def plot_colormap3dslice(filename=None,
                   tickinterval=0, # Fairly certain this is a valid null value
                   noborder=False, noxlabels=False, noylabels=False,
                   vmin=None, vmax=None, lin=None,
-                  external=None, expression=None,
+                  external=None, expression=None, limitedsize=False,
                   diff=None,
                   vscale=1.0,
                   absolute=False,
@@ -154,6 +154,8 @@ def plot_colormap3dslice(filename=None,
         for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
         on, see the plot_helpers.py file.
 
+        :kword limitedsize: Calculates the requested variable for only the plotted region. Slower for regular variables,
+                            faster for computationally heavy variables.
         :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                             or from tesla to nanotesla. Guesses correct units for colourbar for some known
                             variables. Set to None to seek for a default scaling.
@@ -586,7 +588,11 @@ def plot_colormap3dslice(filename=None,
         # Read data from file
         if operator is None:
             operator="pass"
-        datamap_info = f.read_variable_info(var, operator=operator)
+
+        if not limitedsize:
+            datamap_info = f.read_variable_info(var, operator=operator)
+        else:
+            datamap_info = f.read_variable_info("CellID")
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
@@ -645,6 +651,20 @@ def plot_colormap3dslice(filename=None,
             else:
                 logging.info("Dimension error in constructing 2D AMR slice!")
                 return -1
+            
+        if limitedsize:
+            ids_list = datamap.flatten()
+            datamap_info = f.read_variable_info(var, operator=operator, cellids=ids_list)
+
+            cb_title_use = datamap_info.latex
+            # Check if vscale results in standard unit
+            vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+
+            # Add unit to colorbar title
+            if datamap_unit_latex:
+                cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
+
+            datamap = np.reshape(datamap_info.data, np.shape(datamap))
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__ + operatorstr
