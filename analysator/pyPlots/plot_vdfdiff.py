@@ -68,7 +68,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
-             axes=None, cbaxes=None,
+             axes=None, cbaxes=None,cb_horizontal=False,
              contours=None
              ):
 
@@ -155,6 +155,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
 
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
@@ -758,7 +759,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
         norm = Normalize(vmin=fminuse,vmax=fmaxuse)
 
-        ticks = LinearLocator()
+        ticks = LinearLocator(numticks=7 if cb_horizontal else None)
 
         if box is not None:  # extents of plotted velocity grid as [x0,y0,x1,y1]
             xvalsrange=[box[0],box[1]]
@@ -951,9 +952,14 @@ def plot_vdfdiff(filename1=None, filename2=None,
             elif internalcb is None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
-                cax = divider.append_axes("right", size="5%", pad=0.05)
+                if cb_horizontal:
+                    cax = divider.append_axes("bottom", size="4%", pad=0.65)
+                    #ax1.xaxis.set_label_coords(0.5,-0.2)
+                    horalign="center"
+                else:
+                    cax = divider.append_axes("right", size="5%", pad=0.05)
+                    horalign="left"
                 cbdir="right"
-                horalign="left"
             else:
                 # Colorbar within plot area
                 cbloc=1
@@ -980,15 +986,27 @@ def plot_vdfdiff(filename1=None, filename2=None,
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
+            
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax,orientation="horizontal" if cb_horizontal else "vertical")
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
-                cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+                if cb_horizontal:
+
+                    cax.xaxis.offsetText.set_verticalalignment("bottom")
+                    cax.xaxis.offsetText.set_fontsize(fontsize3) #I hate matplotlib
+                    #cax.xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%.1f'))
+
+                    cb.ax.tick_params(labelsize=fontsize3,labelrotation=30)
+                    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
+
+                else:
+                    cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+                    cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
                 cb.ax.tick_params(labelsize=fontsize)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
 
 
