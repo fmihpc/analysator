@@ -46,7 +46,7 @@ from plot_vdf import verifyCellWithVspace, doHistogram, resampleReducer, vSpaceR
 
 def plot_vdfdiff(filename1=None, filename2=None,
              vlsvobj1=None, vlsvobj2=None,
-             filedir=None, step=None,
+             filedir=None, step=None,step_diff=None,
              cellids=None, cellids2=None,
              pop="proton",
              coordinates=None, coordre=None,
@@ -80,6 +80,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
     :kword vlsvobj2:    Optionally provide a python vlsvfile object instead
     :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
     :kword step:        output step index, used for constructing output (and possibly input) filename
+    :kword step_diff:   the second step index to use for a file in case filedir is used
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
@@ -187,11 +188,22 @@ def plot_vdfdiff(filename1=None, filename2=None,
     # Input file or object
     if filename1 is not None:
         vlsvReader1=pt.vlsvfile.VlsvReader(filename1)
+    elif vlsvobj1 is not None:
+        vlsvReader1=vlsvobj1
+    elif ((filedir is not None) and (step is not None)):
+        filename = glob.glob(filedir+'bulk*'+str(step).rjust(7,'0')+'.vlsv')[0]
+        vlsvReader1=pt.vlsvfile.VlsvReader(filename)
     else:
         logging.info("Error, needs a .vlsv file name")
         return
+
     if filename2 is not None:
         vlsvReader2=pt.vlsvfile.VlsvReader(filename2)
+    elif vlsvobj2 is not None:
+        vlsvReader2=vlsvobj2
+    elif ((filedir is not None) and (step_diff is not None)):
+        filename = glob.glob(filedir+'bulk*'+str(step_diff).rjust(7,'0')+'.vlsv')[0]
+        vlsvReader2=pt.vlsvfile.VlsvReader(filename)
     else:
         logging.info("Error, needs a .vlsv file name")
         return
@@ -237,7 +249,9 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
     if draw is None and axes is None:
         # step, used for file name
-        if step is not None:
+        if step is not None and step_diff is not None:
+            stepstr = '_'+str(step).rjust(7,'0')+'_'+str(step_diff).rjust(7,'0')
+        elif step is not None:
             stepstr = '_'+str(step).rjust(7,'0')
         else:
             if timeval != None:
