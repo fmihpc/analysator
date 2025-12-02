@@ -56,6 +56,27 @@ def compare_images(a,b,output_file="NULL:"):
     return False
 
 
+
+#could be used to replace compare_images with a cv2 based implementation
+def compare_images_cv2(a,b):
+    import cv2
+    im1=cv2.imread(a).astype(np.float16)
+    im2=cv2.imread(b).astype(np.float16)
+    #originally uint8 so we might underflow with the substraction if not casted as float, 16 should be good enough
+    if im1.shape != im2.shape:
+        '''
+        something should be added to handle this better, have a threshold in general or something.
+        the substraction yields an error, so one could pad it with 
+        smaller_image=np.pad(smaller_image,(0,larger_image.shape[0]-smaller_image.shape[0]),(0,larger_image.shape[1]-smaller_image.shape[1]),(0,0))
+        '''
+        return False
+    diff = np.sqrt(np.mean((im1-im2)**2))
+    if diff !=0:
+        return False
+    return True
+
+
+
 def compare_images_in_folders(a,b,output_folder='NULL:'):
     cmd = f'diff -r {a} {b}'
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
