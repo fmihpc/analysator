@@ -61,10 +61,15 @@ def call_replace(call,func,skipped_args,required_args=required_args):
     #skip args if there are skipped args and append if called arg in function_pars
     for arg in args:
         if arg:
-            if skipped_args and func in skipped_args.keys():
-                skipped_args_dict=skipped_args[func]
+            if skipped_args:
+                if func in skipped_args.keys():
+                    skipped_args_dict=skipped_args[func]
+                elif 'ALL' in skipped_args.keys():
+                    skipped_args_dict=skipped_args['ALL']
+                else:
+                    skipped_args_dict=False
                 call_args=arg.split("=")
-                if call_args[0] in skipped_args_dict.keys():
+                if skipped_args_dict and call_args[0] in skipped_args_dict.keys():
                     if type(skipped_args_dict[call_args[0]])==str and skipped_args_dict[call_args[0]] in call_args[1]:
                         continue
                     elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}

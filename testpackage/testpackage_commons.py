@@ -77,7 +77,7 @@ runs.append( { 'name': 'FID',
                  'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
-                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]}}, #ig_zz and ig_pp is also skipped on purpose
+                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
                  'singletime': False,
                  'filename': None, #restart file
                  'manualcall':False,
@@ -436,7 +436,8 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
 
     try:
-        exec(call)
+        #exec(call)
+        print(call)
 
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
