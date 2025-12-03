@@ -436,8 +436,7 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
 
     try:
-        #exec(call)
-        print(call)
+        exec(call)
 
     except Exception as e:
         print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
