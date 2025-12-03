@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -t 00:30:00
 #SBATCH -J analysator_testpackage
-#SBATCH -p short
+#SBATCH -M carrington
 #SBATCH -n 1
 #SBATCH --array=1-4
 #SBATCH --no-requeue
