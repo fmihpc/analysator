@@ -5,8 +5,6 @@ name: Turso compare colourmap images
 
 on:
   push:
-    branches: [image_compare]
-  pull_request:
     branches: [ master, dev, image_compare]
   schedule:
     - cron: '0 8 * * MON'
@@ -31,7 +29,6 @@ jobs:
         steps:
         - uses: actions/checkout@v4
           with:
-            fetch-depth: 0
         - name: Install uv
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
@@ -50,10 +47,7 @@ jobs:
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
 
-            export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
-            echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
-
-            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh $DIFFRESULT
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh
 
             cat testpackage_run.txt
             . CI_env/bin/activate
