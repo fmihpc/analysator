@@ -704,8 +704,6 @@ def plot_threeslice(filename=None,
         symlog = 0
     if (filedir == ''):
         filedir = './'
-    if (outputdir == ''):
-        outputdir = './'
 
     # Input file or object
     if filename!=None:
@@ -808,38 +806,6 @@ def plot_threeslice(filename=None,
                 var = 'vg_restart_rhom'
         varstr=var.replace("/","_")
 
-    if not outputfile: # Generate filename
-        if not outputdir: # default initial path
-            outputdir=pt.plot.defaultoutputdir
-        # Sub-directories can still be defined in the "run" variable
-        outputfile = outputdir+run+"_threeSlice_"+varstr+operatorfilestr+stepstr+".png"
-    else: 
-        if outputdir:
-            outputfile = outputdir+outputfile
-
-    # Re-check to find actual target sub-directory
-    outputprefixind = outputfile.rfind('/')
-    if outputprefixind >= 0:            
-        outputdir = outputfile[:outputprefixind+1]
-
-    # Ensure output directory exists
-    if not os.path.exists(outputdir):
-        try:
-            os.makedirs(outputdir)
-        except:
-            pass
-
-    if not os.access(outputdir, os.W_OK):
-        logging.info(("No write access for directory "+outputdir+"! Exiting."))
-        return
-
-    # Check if target file already exists and overwriting is disabled
-    if (nooverwrite and os.path.exists(outputfile)):            
-        if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            logging.info(("Found existing file "+outputfile+". Skipping."))
-            return
-        else:
-            logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure ('draw' and 'axes' keywords not implemented yet)
     if str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -1742,9 +1708,11 @@ def plot_threeslice(filename=None,
 
     # Save output or draw on-screen
     if not draw:
-        logging.info('Saving the figure as {}, Time since start = {:.2f} s'.format(outputfile,time.time()-t0))
+        outputfile_default=run+"_threeSlice_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
+        logging.info('Saving the figure as {}, Time since start = {:.2f} s'.format(savefigname,time.time()-t0))
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             logging.info("Error with attempting to save figure.")
             logging.info('...Done! Time since start = {:.2f} s'.format(time.time()-t0))

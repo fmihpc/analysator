@@ -48,7 +48,7 @@ import re
 def plot_isosurface(filename=None,
                     vlsvobj=None,
                     filedir=None, step=None,
-                    outputdir=None, nooverwrite=None,
+                    outputdir=None,outputfile=None, nooverwrite=None,
                     #
                     surf_var=None, surf_op=None, surf_level=None,
                     color_var=None, color_op=None,
@@ -76,6 +76,7 @@ def plot_isosurface(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
+    :kword outputfile:  Full path to output file, will make directory if it does not exist. Overrides outputdir.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
     :kword surf_var:    Variable to read for defining surface
@@ -126,15 +127,6 @@ def plot_isosurface(filename=None,
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
-    outputprefix = ''
-    if outputdir==None:
-        outputdir=pt.plot.defaultoutputdir
-    outputprefixind = outputdir.rfind('/')
-    if outputprefixind >= 0:
-        outputprefix = outputdir[outputprefixind+1:]
-        outputdir = outputdir[:outputprefixind+1]
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
 
     # Input file or object
     if filename!=None:
@@ -218,23 +210,16 @@ def plot_isosurface(filename=None,
             surf_opstr='_'+surf_op
 
     # Output file name
+    if not surf_var:
+        raise ValueError("surf_var must be provided for isosurface plotting.")
+
     surf_varstr=surf_var.replace("/","_")
     if color_var!=None:
         color_varstr=color_var.replace("/","_")
     else:
         color_varstr="solid"
-    savefigname = outputdir+outputprefix+run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
 
-    # Check if target file already exists and overwriting is disabled
-    if (nooverwrite!=None and os.path.exists(savefigname)):
-        # Also check that file is not empty
-        if os.stat(savefigname).st_size > 0:
-            return
-        else:
-            logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
-
-
-    Re = 6.371e+6 # Earth radius in m
+    Re = 6.371e+6 # Earth radius in moutputpref
     # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     xsize = int(xsize)
@@ -751,10 +736,12 @@ def plot_isosurface(filename=None,
 
 
     # Save output or draw on-screen
-    if draw==None:
+    if not draw:
         # Note: generated title can cause strange PNG header problems
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
+        outputfile_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, outputfile_default=outputfile_default,nooverwrite=nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
@@ -997,8 +984,7 @@ def plot_neutral_sheet(filename=None,
         symlog = 0
     if (filedir == ''):
         filedir = './'
-    if (outputdir == ''):
-        outputdir = './'
+
 
     # Input file or object
     if filename:
@@ -1113,39 +1099,6 @@ def plot_neutral_sheet(filename=None,
         pass_times=[1,0]
 
         # File output checks
-    if not draw and not axes:
-        if not outputfile: # Generate filename
-            if not outputdir: # default initial path
-                outputdir=pt.plot.defaultoutputdir
-            # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
-        else: 
-            if outputdir:
-                outputfile = outputdir+outputfile
-
-        # Re-check to find actual target sub-directory
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-
-        # Ensure output directory exists
-        if not os.path.exists(outputdir):
-            try:
-                os.makedirs(outputdir)
-            except:
-                pass
-
-        if not os.access(outputdir, os.W_OK):
-            logging.info(("No write access for directory "+outputdir+"! Exiting."))
-            return
-
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile)):            
-            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.info(("Found existing file "+outputfile+". Skipping."))
-                return
-            else:
-                logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -2005,11 +1958,13 @@ def plot_neutral_sheet(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
+        outputfile_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             logging.info("Error with attempting to save figure.")
-        logging.info(outputfile+"\n")
+        logging.info(savefigname+"\n")
     elif not axes:
         # Draw on-screen
         plt.draw()
