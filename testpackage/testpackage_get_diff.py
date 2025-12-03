@@ -22,13 +22,14 @@ file_checks = {
 "colormaps.py":None,
 "calculations":None,
 "vlsv":None,
-"testpackage_commons.py":None,
+"testpackage_":None,
 "MayaVi":None,
-"compare_images.yml":None
+"compare_images.yml":None,
+"miscellaneous":None,
 }
 
 #Override if there are many changes as run all tests
-if len(git_diff)>30:
+if len(git_diff)>10:
     quit()
 
 output=[]
