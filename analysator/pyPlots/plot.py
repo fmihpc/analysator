@@ -34,6 +34,7 @@
 
 from plot_variables import plot_variables, plot_multiple_variables
 
+import analysator as pt
 
 import logging
 import matplotlib.pyplot as plt
@@ -50,6 +51,7 @@ from plot_threeslice import plot_threeslice
 from plot_ionosphere import plot_ionosphere
 import platform
 from packaging.version import Version
+from numbers import Number
 
 try:
     from plot_isosurface import plot_isosurface, plot_neutral_sheet
@@ -93,6 +95,59 @@ else:
 decimalprecision_ax = 0
 decimalprecision_cblin = 0
 cb_linear = False
+
+
+if matplotlib.__version__=="0.99.1.1" and np.__version__=="1.4.1":
+   logging.info('Warning, according to loaded numpy and matplotlib versions, user appears to be')
+   logging.info('either using csc.taito.fi without loading the mayavi2 module, or by invoking')
+   logging.info('the system python interpeter by calling "./scriptname.py" instead of "python ./scriptname.py"')
+
+# Run TeX typesetting through the full TeX engine instead of python's own mathtext. Allows
+# for changing fonts, bold math symbols etc, but may cause trouble on some systems.
+if not os.getenv('PTNOLATEX'):
+   matplotlib.rc('text', usetex=True)
+   matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
+   # matplotlib.rcParams['mathtext.fontset'] = 'stix'
+   # matplotlib.rcParams['font.family'] = 'STIXGeneral'
+   # Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.
+   matplotlib.rcParams['font.family'] = 'serif'
+   logging.info("Using LaTeX formatting")
+   # matplotlib.rcParams['text.dvipnghack'] = 'True' # This hack might fix it on some systems
+
+# Set backends
+if matplotlib.get_backend()[:9] == 'module://':
+   logging.info("Using backend "+matplotlib.get_backend())
+   backend_interactive = matplotlib.get_backend()
+   backend_noninteractive = matplotlib.get_backend()
+elif not os.getenv('PTBACKEND'):
+   backend_interactive = 'TkAgg'
+   backend_noninteractive = 'Agg'
+else:
+   backend_interactive = os.getenv('PTBACKEND')
+   backend_noninteractive = os.getenv('PTBACKEND')
+
+
+
+
+
+
+if os.getenv('PTNONINTERACTIVE') != None:
+   # Non-interactive plotting mode
+   try:
+      plt.switch_backend(backend_noninteractive)
+   except:
+      logging.info("Note: Unable to switch to "+backend_noninteractive+" backend")
+else:
+   # Interactive plotting mode
+   plt.ion()
+   try:
+      plt.switch_backend(backend_interactive)
+   except:
+      logging.info("Note: Unable to switch to "+backend_interactive+" backend")
+
+pt.backend_interactive=backend_interactive
+pt.backend_noninteractive=backend_noninteractive
+
 
 # Output matplotlib version
 logging.info("Using matplotlib version "+matplotlib.__version__)
@@ -252,4 +307,158 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
 
         return outputfile
 
+def get_scaled_units(variable_info,vscale=None, env='EarthSpace', manualDict=None):
+    ''' Return scaling metadata
+
+        :param variable_info: VariableInfo object used for getting the units
+        :param env:          A string to choose the scaling dictionary [default: EarthSpace]
+        :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
+        :param vscale:       float, factor to scale the variable with
+        
+        :returns: (norming factor, scaledUnits, scaledLatexUnits)
+
+    '''
+
+    #
+    if env=='EarthSpace':
+        variable_info.scaleDict = {
+                's'      : {'defaultScale':1,
+                            1e6: {'scaledUnits':'us', 'scaledLatexUnit':r'$\mu\mathrm{s}$'},
+                            1e3: {'scaledUnits':'ms', 'scaledLatexUnit':r'$\mathrm{ms}$'}
+                        },
+                'T'      : {'defaultScale':1e9,
+                            1e9: {'scaledUnits':'nT', 'scaledLatexUnit':r'$\mathrm{nT}$'}
+                        },
+                'K'      : {'defaultScale':1e-6,
+                            1e-6:{'scaledUnits':'MK', 'scaledLatexUnit':r'$\mathrm{MK}$'}
+                        },
+                'Pa'     : {'defaultScale':1e9,
+                            1e9:{'scaledUnits':'nPa', 'scaledLatexUnit':r'$\mathrm{nPa}$'}
+                        },
+                '1/m'  :   {'defaultScale':1e3,
+                            1e3:{'scaledUnits':'1/km', 'scaledLatexUnit':r'$\mathrm{km}^{-1}$'}
+                        },
+                '1/m^3'  : {'defaultScale':1e-6,
+                            1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
+                        },
+                '1/m3'   : {'defaultScale':1e-6,
+                            1e-6:{'scaledUnits':'1/cm^3', 'scaledLatexUnit':r'$\mathrm{cm}^{-3}$'}
+                        },
+                'm/s'    : {'defaultScale':1e-3,
+                            1e-3:{'scaledUnits':'km/s', 'scaledLatexUnit':r'$\mathrm{km}\,\mathrm{s}^{-1}$'}
+                        },
+                'V/m'    : {'defaultScale':1e3,
+                            1e3:{'scaledUnits':'mV/m', 'scaledLatexUnit':r'$\mathrm{mV}\,\mathrm{m}^{-1}$'}
+                        },
+                'eV/cm3' : {'defaultScale':1e-3,
+                            1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
+                        },
+                'eV/cm^3': {'defaultScale':1e-3,
+                            1e-3:{'scaledUnits':'keV/cm^3', 'scaledLatexUnit':r'$\mathrm{keV}\,\mathrm{cm}^{-3}$'}
+                        },
+                'T/m': {'defaultScale':1e-12,
+                            1e-9:{'scaledUnits':'nT/m', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{m}^{-1}$'},
+                            1e-12:{'scaledUnits':'nT/km', 'scaledLatexUnit':r'$\mathrm{nT}\,\mathrm{km}^{-1}$'}
+                        },
+                'kg/m3'  : {'defaultScale':5.97863741e26,
+                            5.97863741e26:{'scaledUnits':'amu/m^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{m}^{-3}$'},
+                            5.97863741e20:{'scaledUnits':'amu/cm^3', 'scaledLatexUnit':r'$\mathrm{amu}\,\mathrm{cm}^{-3}$'}
+                        },
+                'A/m^2' :   {'defaultScale':1,
+                            1e-3:{'scaledUnits':'mA/m^2', 'scaledLatexUnit':r'$\mathrm{mA}\,\mathrm{m}^{-2}$'}
+                        },
+                'W/m^2' :   {'defaultScale':1,
+                            1e-3:{'scaledUnits':'mW/m^2', 'scaledLatexUnit':r'$\mathrm{mW}\,\mathrm{m}^{-2}$'}
+                        },
+                'm^2' :   {'defaultScale':1,
+                            1e-4:{'scaledUnits':'km^2', 'scaledLatexUnit':r'$\mathrm{km}^{2}$'}
+                        },
+                'V' :   {'defaultScale':1,
+                            1e-3:{'scaledUnits':'mV', 'scaledLatexUnit':r'$\mathrm{mV}$'}
+                        },
+                'Degrees' :   {'defaultScale':1,
+                        },
+                'mho' :   {'defaultScale':1,
+                        },
+        }
+
+    else:
+        variable_info.scaleDict = {}
+    if manualDict is not None:
+        variable_info.scaleDict.update(manualDict)
+    unitScale = 1.0
+    scaledUnits = variable_info.units
+    scaledLatexUnits = variable_info.latexunits
+
+    if variable_info.units != '':
+        dictKey = variable_info.units
+        try:
+            udict = variable_info.scaleDict[dictKey]
+        except:
+            if vscale is None:
+                return 1.0, variable_info.units, variable_info.latexunits
+            else:
+                return vscale, variable_info.units, variable_info.latexunits
+        if vscale is None:
+            try:
+                unitScale = udict['defaultScale']
+            except:
+                return 1.0, variable_info.units, variable_info.latexunits
+        elif np.isclose(vscale, 1.0):
+            return 1.0, variable_info.units, variable_info.latexunits
+        else:
+            unitScale = vscale
+
+        if not any([np.isclose(unitScale, tryScale) for tryScale in udict.keys() if isinstance(tryScale, Number)]):
+            #
+            return vscale, variable_info.units+" x{vscale:e}".format(vscale=vscale), variable_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)
+        try:
+        #above guarantees the list comprehension does not give an empty list
+            unitScale = [scale for scale in udict.keys() if isinstance(scale, Number) and np.isclose(scale,unitScale)][0]
+            scaledUnits = udict[unitScale]['scaledUnits']
+        except KeyError:
+            # logging.info('Missing scaledUnits in specialist dict for' + variable_info.units + ' for unitScale='+str(unitScale))
+            return 1.0, variable_info.units, variable_info.latexunits
+        try:
+            scaledLatexUnits = udict[unitScale]['scaledLatexUnit']
+        except:
+            # logging.info('Missing scaledLatexUnits in specialist dict for ' + variable_info.units+ ' for unitScale='+str(unitScale))
+            return 1.0, variable_info.units, variable_info.latexunits
+    else:
+        if vscale is None or np.isclose(vscale, 1.0):
+            return 1.0, variable_info.units, variable_info.latexunits
+        else:
+            return vscale, variable_info.units+"x{vscale:e}".format(vscale=vscale), variable_info.latexunits+r"{\times}"+cbfmtsci(vscale,None)
+
+    return unitScale, scaledUnits, scaledLatexUnits
+
+# A utility to get variableinfo with corresponding units for simple plotting. Add "canonical" scalings as
+# necessary, for default/other environments.
+def get_scaled_var(variable_info,vscale=None, data=None, env='EarthSpace', manualDict=None):
+    ''' Automatically scales the variableinfo data and adjusts the units correspondingly with the
+        default dictionaries.
+
+        :param variable_info: VariableInfo object used for getting the units
+        :param data:         in case you wish to provide new data array (why, though?)
+        :param env:          A string to choose the scaling dictionary [default: EarthSpace]
+        :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary
+
+        :returns: variable_info, with scaled units with pre-formatted units included in the varinfo.
+
+
+    '''
+
+    if data is None:
+        data = variable_info.data
+    else:
+        variable_info.data = data
+
+    unitScale, scaledUnits, scaledLatexUnits = get_scaled_units(vscale=vscale, env=env, manualDict=manualDict,variable_info=variable_info)
+    if unitScale == 1: # no change, optimize out the calculation
+        return variable_info
+
+    variable_info.data = data*unitScale
+    variable_info.units = scaledUnits
+    variable_info.latexunits = scaledLatexUnits
+    return variable_info
 
