@@ -60,7 +60,7 @@ def plot_colormap3dslice(filename=None,
                   tickinterval=0, # Fairly certain this is a valid null value
                   noborder=False, noxlabels=False, noylabels=False,
                   vmin=None, vmax=None, lin=None,
-                  external=None, expression=None,
+                  external=None, expression=None, limitedsize=False,
                   diff=None,
                   vscale=1.0,
                   absolute=False,
@@ -74,7 +74,7 @@ def plot_colormap3dslice(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
-                  axes=None, cbaxes=None,
+                  axes=None, cbaxes=None,cb_horizontal=False,
                   normal='y', cutpoint=0., cutpointre=None, flipxaxis=False,
                   useimshow=False, imshowinterp='none',
                   ):
@@ -155,6 +155,8 @@ def plot_colormap3dslice(filename=None,
         for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
         on, see the plot_helpers.py file.
 
+        :kword limitedsize: Calculates the requested variable for only the plotted region. Slower for regular variables,
+                            faster for computationally heavy variables.
         :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                             or from tesla to nanotesla. Guesses correct units for colourbar for some known
                             variables. Set to None to seek for a default scaling.
@@ -212,6 +214,7 @@ def plot_colormap3dslice(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
         :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector along x,y, or z)
         :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
         :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
@@ -587,11 +590,15 @@ def plot_colormap3dslice(filename=None,
         # Read data from file
         if operator is None:
             operator="pass"
-        datamap_info = f.read_variable_info(var, operator=operator)
+
+        if not limitedsize:
+            datamap_info = f.read_variable_info(var, operator=operator)
+        else:
+            datamap_info = f.read_variable_info("CellID")
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
 
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -646,6 +653,20 @@ def plot_colormap3dslice(filename=None,
             else:
                 logging.info("Dimension error in constructing 2D AMR slice!")
                 return -1
+            
+        if limitedsize:
+            ids_list = datamap.flatten()
+            datamap_info = f.read_variable_info(var, operator=operator, cellids=ids_list)
+
+            cb_title_use = datamap_info.latex
+            # Check if vscale results in standard unit
+            vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+
+            # Add unit to colorbar title
+            if datamap_unit_latex:
+                cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
+
+            datamap = np.reshape(datamap_info.data, np.shape(datamap))
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = expression.__name__ + operatorstr
@@ -1108,7 +1129,7 @@ def plot_colormap3dslice(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
@@ -1476,8 +1497,14 @@ def plot_colormap3dslice(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                oralign="left"
+            cbdir="right"
 
         # Colourbar title
         if len(cb_title_use)!=0:
@@ -1491,10 +1518,10 @@ def plot_colormap3dslice(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
         # Ensure minor tick marks are off
@@ -1502,7 +1529,8 @@ def plot_colormap3dslice(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
