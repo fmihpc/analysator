@@ -29,7 +29,7 @@ file_checks = {
 }
 
 #Override if there are many changes as run all tests
-if len(git_diff)>10:
+if len(git_diff)>6:
     quit()
 
 output=[]
