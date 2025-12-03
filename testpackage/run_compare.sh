@@ -15,7 +15,7 @@ do
     check=false
     echo "Comparing for $i"
     #gets latest verfication set (based on modification date -> grep directories only -> take firstline -> get last word)
-    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/testpackage_run/$i/" 
+    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/$i/" 
     folder_2="${PWD}/produced_plots/$i/"
     python3 ../analysator/testpackage/testpackage_compare.py ${folder_1} ${folder_2} && echo "No differences found in produced images"
 done
@@ -23,7 +23,7 @@ done
 if $check;
 then
     echo "Comparing all"
-    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/testpackage_run/" 
+    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/" 
     folder_2="${PWD}/produced_plots/"
     python3 ../analysator/testpackage/testpackage_compare.py ${folder_1} ${folder_2} && echo "No differences found in produced images"
 fi
