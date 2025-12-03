@@ -265,6 +265,48 @@ def textbfstring(string):
     # LaTex output off
     return string
 
+def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
+        
+        if not outputfile:
+            if not outputfile_default:
+                outputfile="plot.png"
+            outputfile=outputfile_default
+        
+        # Check if outputfile contains path information
+        outputprefixind = outputfile.rfind('/')
+        if outputprefixind >= 0:            
+            outputdir = outputfile[:outputprefixind+1]
+            outputfile = outputfile[outputprefixind+1:]
+
+
+        if not outputdir: # default initial path
+            outputfile=os.path.join(defaultoutputdir,outputfile)
+            outputdir=defaultoutputdir
+        else: 
+            outputfile = os.path.join(outputdir,outputfile)
+
+
+        # Ensure output directory exists
+        if not os.path.exists(outputdir):
+            try:
+                os.makedirs(outputdir)
+            except:
+                pass
+
+        if not os.access(outputdir, os.W_OK):
+            logging.info("No write access for directory "+outputdir+"! Exiting.")
+            return
+
+        # Check if target file already exists and overwriting is disabled
+        if (nooverwrite and os.path.exists(outputfile)):            
+            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
+                logging.warning("Found existing file "+outputfile+". Skipping.")
+                return
+            else:
+                logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
+
+        return outputfile
+
 def get_scaled_units(variable_info,vscale=None, env='EarthSpace', manualDict=None):
     ''' Return scaling metadata
 

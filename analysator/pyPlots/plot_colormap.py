@@ -249,8 +249,7 @@ def plot_colormap(filename=None,
         filedir = './'
     if (fluxdir == ''):
         fluxdir = './'
-    if (outputdir == ''):
-        outputdir = './'
+
 
     # Input file or object
     if filename:
@@ -385,41 +384,6 @@ def plot_colormap(filename=None,
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
         pass_times=[1,0]
-
-    # File output checks
-    if not draw and not axes:
-        if not outputfile: # Generate filename
-            if not outputdir: # default initial path
-                outputdir=pt.plot.defaultoutputdir
-            # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
-        else: 
-            if outputdir:
-                outputfile = outputdir+outputfile
-
-        # Re-check to find actual target sub-directory
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-
-        # Ensure output directory exists
-        if not os.path.exists(outputdir):
-            try:
-                os.makedirs(outputdir)
-            except:
-                pass
-
-        if not os.access(outputdir, os.W_OK):
-            logging.info("No write access for directory "+outputdir+"! Exiting.")
-            return
-
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile)):            
-            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.info("Found existing file "+outputfile+". Skipping.")
-                return
-            else:
-                logging.info("Found existing file "+outputfile+" of size zero. Re-rendering.")
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -1337,11 +1301,13 @@ def plot_colormap(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
+        outputfile_default=run+"_map_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile, outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             logging.info("Error with attempting to save figure.")
-        logging.info(outputfile+"\n")
+        logging.info(savefigname+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen

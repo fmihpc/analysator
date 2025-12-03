@@ -404,41 +404,6 @@ def plot_vdf_profiles(filename=None,
                     if filename[0:16]=="/proj/vlasov/2D/":
                         run = filename[16:19]
         
-        # Verify directory
-        if outputfile==None:
-            if outputdir==None: # default initial path
-                savefigdir=pt.plot.defaultoutputdir
-            else:
-                savefigdir=outputdir
-            # Sub-directories can still be defined in the "run" variable
-            savefigname = savefigdir+run
-        else: 
-            if outputdir!=None:
-                savefigname = outputdir+outputfile
-            else:
-                savefigname = outputfile
-            
-        # Re-check to find actual target sub-directory
-        savefigprefixind = savefigname.rfind('/')
-        if savefigprefixind >= 0:
-            savefigdir = savefigname[:savefigprefixind+1]
-            savefigprefix = savefigname[savefigprefixind+1:]
-        else:
-            savefigdir = "./"
-            savefigprefix = savefigname
-
-        # Ensure output directory exists
-        if not os.path.exists(savefigdir):
-            try:
-                os.makedirs(savefigdir)
-            except:
-                pass
-
-        if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+savefigdir+"! Exiting.")
-            return
-
-
 
     # If population isn't defined i.e. defaults to protons, check if 
     # instead should use old version "avgs"
@@ -722,18 +687,6 @@ def plot_vdf_profiles(filename=None,
                 pltystr=r"$v_{B \times (B \times V)}$"
                 pltzstr=r"$v_{B \times V}$"
 
-        if draw==None and axes==None:
-            if outputfile==None:
-                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
-            else:
-                savefigname=outputfile
-            # Check if target file already exists and overwriting is disabled
-            if (nooverwrite!=None and os.path.exists(savefigname)):            
-                if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    logging.info("Found existing file "+savefigname+". Skipping.")
-                    return
-                else:
-                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -926,6 +879,9 @@ def plot_vdf_profiles(filename=None,
 
         # Save output or draw on-screen
         if draw==None and axes==None:
+
+            outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
+            savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except:
