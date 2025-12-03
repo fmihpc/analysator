@@ -53,6 +53,7 @@ jobs:
             cat testpackage_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
+            . CI_env/bin/activate
             python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
             
         - name: Comparing plotted data
