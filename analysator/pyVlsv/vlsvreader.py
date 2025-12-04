@@ -2515,7 +2515,7 @@ class VlsvReader(object):
       except MemoryError:
       '''
       # Loop approach:
-      logging.info('Not enough memory to broadcast arrays! Using a loop instead...')
+      # logging.info('Not enough memory to broadcast arrays! Using a loop instead...')
       ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
       for ind in ind_emptycell:
          this_coord = coords_in[ind, :]
@@ -3034,6 +3034,25 @@ class VlsvReader(object):
          widval = self.read_parameter("velocity_block_width")
       return widval
 
+   def get_velocity_cell_indices(self, vcellcoord, pop="proton"):
+      ''' Returns velocity cell indices for a dense array format
+      NB: This view does not consider blocks at all.
+
+      :param vcellcoord:   Coordinates of the velocity cell(s)
+      :param pop:          Population ["proton"]
+      '''
+      # WID=self.get_WID()
+      # WID2=WID*WID
+      # WID3=WID2*WID
+      popmesh = self.__popmesh(pop)
+
+      vmin = np.array([popmesh.__vxmin, popmesh.__vymin, popmesh.__vzmin])
+      # print(vmin)
+      dv = np.array([popmesh.__dvx, popmesh.__dvy, popmesh.__dvz])
+      # print(dv)
+      cell_index = np.floor((vcellcoord - vmin) / dv).astype(np.int64)
+      return cell_index
+
    def get_velocity_cell_ids(self, vcellcoord, pop="proton"):
       ''' Returns velocity cell ids of given coordinate
 
@@ -3329,11 +3348,52 @@ class VlsvReader(object):
 
       return self.read(name=name, tag="PARAMETER")
 
+   def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True):
+      '''
+      Read the velocity space of a given cell and return a dense VDF as a numpy array (along with datacube edges)
+      
+      :param cellid:       Cell ID of the cell whose velocity distribution the function will read
+      :kword pop:          Population to read ["proton"]
+      :kword regularize:   replace negative values (fringing effects) with zeros [True]
+
+      :returns: dense_array [np.ndarray], edges
+      '''
+
+      velocity_cell_map = self.read_velocity_cells(cellid, pop)
+      maps = list(zip(*velocity_cell_map.items()))
+      velocity_cell_ids = np.array(maps[0],dtype=np.int64)
+      velocity_cell_values = np.array(maps[1], dtype=np.float32)
+      velocity_cell_coordinates = self.get_velocity_cell_coordinates(velocity_cell_ids, pop)
+      velocity_cell_indices = self.get_velocity_cell_indices(velocity_cell_coordinates, pop)
+
+      popmesh = self.__popmesh(pop)
+      vmin = np.array([popmesh.__vxmin, popmesh.__vymin, popmesh.__vzmin])
+      vmax = np.array([popmesh.__vxmax, popmesh.__vymax, popmesh.__vzmax])
+
+      
+      lowcorner_indices = np.min(velocity_cell_indices, axis = 0)
+      highcorner_indices = np.max(velocity_cell_indices, axis = 0)
+      dv = self.get_velocity_mesh_dv(pop)
+
+      lowcorner_coords = vmin + dv*lowcorner_indices
+      highcorner_coords = vmin + dv*(highcorner_indices+1)
+
+      shape = highcorner_indices+1 - lowcorner_indices
+
+      da, edges=np.histogramdd(velocity_cell_coordinates, shape, list(zip(lowcorner_coords,highcorner_coords)),weights=velocity_cell_values)
+
+      # 
+      if regularize:
+         da[da<0] = 0
+
+      return da, edges
+
 
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
       
       :param cellid: Cell ID of the cell whose velocity cells the function will read
+      :kword pop:    Population to read ["proton"]
       :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
 
       #Example:
