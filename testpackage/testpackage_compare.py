@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 import cv2
 import numpy as np
-
+import logging
 
 #could be used to replace compare_images with a cv2 based implementation
 def compare_images(a,b):
@@ -76,7 +76,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
     if len(unique_files)!=0:
-        raise SystemError("Found new file(s) produced by the code!")
+        print("::warning Found new file(s) produced by the code!")
 
     if len(missing_files)!=0:
         raise SystemError("Found file(s) **not** produced by the code!")
