@@ -4,6 +4,7 @@ import os
 import sys
 from argparse import ArgumentParser
 import cv2
+import numpy as np
 
 
 #could be used to replace compare_images with a cv2 based implementation
