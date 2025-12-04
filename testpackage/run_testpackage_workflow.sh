@@ -6,7 +6,7 @@
 #SBATCH -n 1
 #SBATCH --array=1-4
 #SBATCH --no-requeue
-#SBATCH --mem-per-cpu=16000
+#SBATCH --mem-per-cpu=32000
 
 
 #THIS SHOULD ONLY BE USED FOR GITHUB WORKFLOW TESTS
