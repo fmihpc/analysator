@@ -1467,7 +1467,7 @@ def plot_colormap3dslice(filename=None,
                 horalign="center"
             else:
                 cax = divider.append_axes("right", size="5%", pad=0.05)
-                oralign="left"
+                horalign="left"
             cbdir="right"
 
         # Colourbar title
