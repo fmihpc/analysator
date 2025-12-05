@@ -270,14 +270,15 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         if not outputfile:
             if not outputfile_default:
                 outputfile="plot.png"
-            outputfile=outputfile_default
-        
-        # Check if outputfile contains path information
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-            outputfile = outputfile[outputprefixind+1:]
 
+        
+            # Check if outputfile contains path information
+            outputprefixind = outputfile.rfind('/')
+            if outputprefixind >= 0:            
+                outputdir = outputfile[:outputprefixind+1]
+                outputfile = outputfile[outputprefixind+1:]
+
+        outputfile=outputfile_default
 
         if not outputdir: # default initial path
             outputfile=os.path.join(defaultoutputdir,outputfile)
