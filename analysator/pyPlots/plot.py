@@ -266,17 +266,24 @@ def textbfstring(string):
     return string
 
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
-        
+        check=False
+        if not outputdir:
+            check=True
         if not outputfile:
             if not outputfile_default:
                 outputfile="plot.png"
+            # Check if outputfile contains path information
             outputfile=outputfile_default
-        
-        # Check if outputfile contains path information
+
         outputprefixind = outputfile.rfind('/')
         if outputprefixind >= 0:            
             outputdir = outputfile[:outputprefixind+1]
             outputfile = outputfile[outputprefixind+1:]
+        #os.path.join refuses to work properly if it starts with /
+        outputprefixind = outputdir.find('/')
+        if outputprefixind == 0:            
+            outputdir = outputdir[1:]
+
 
 
         if not outputdir: # default initial path
@@ -285,14 +292,17 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         else: 
             outputfile = os.path.join(outputdir,outputfile)
 
+        if check:
+            outputdir=os.path.join(defaultoutputdir,outputdir)
+
 
         # Ensure output directory exists
+        logging.warning(outputdir+" ofile  "+outputfile+" default "+defaultoutputdir)
         if not os.path.exists(outputdir):
             try:
                 os.makedirs(outputdir)
             except:
-                pass
-
+                raise IOError("Could not create output directory "+outputdir+"! Exiting.")
         if not os.access(outputdir, os.W_OK):
             logging.info("No write access for directory "+outputdir+"! Exiting.")
             return
