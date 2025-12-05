@@ -31,7 +31,7 @@ def plot_ionosphere(filename=None,
                   usesci=True, log=None,
                   lin=None, symlog=None, nocb=False, internalcb=False,
                   minlatitude=60,
-                  cbtitle=None, title=None, cbaxes=None,
+                  cbtitle=None, title=None, cbaxes=None,cb_horizontal=False,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None,
@@ -84,6 +84,7 @@ def plot_ionosphere(filename=None,
                         variables.
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
     :kword thick:       line and axis thickness, default=1.0
     :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
@@ -214,42 +215,6 @@ def plot_ionosphere(filename=None,
         var='ig_fac'
     varstr=var.replace("/","_")
 
-    if not outputfile: # Generate filename
-        if not outputdir: # default initial path
-            outputdir=pt.plot.defaultoutputdir
-        # Sub-directories can still be defined in the "run" variable
-        if viewdir > 0:
-            outputpole = "_north"
-        else:
-            outputpole = "_south"
-        outputfile = outputdir+run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
-    else: 
-        if outputdir:
-            outputfile = outputdir+outputfile
-
-    # Re-check to find actual target sub-directory
-    outputprefixind = outputfile.rfind('/')
-    if outputprefixind >= 0:            
-        outputdir = outputfile[:outputprefixind+1]
-
-    # Ensure output directory exists
-    if axes is None and not os.path.exists(outputdir):
-        try:
-            os.makedirs(outputdir)
-        except:
-            pass
-
-    if axes is None and not os.access(outputdir, os.W_OK):
-        logging.info(("No write access for directory "+outputdir+"! Exiting."))
-        return
-
-    # Check if target file already exists and overwriting is disabled
-    if axes is None and (nooverwrite and os.path.exists(outputfile)):            
-        if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            logging.info(("Found existing file "+outputfile+". Skipping."))
-            return
-        else:
-            logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure 
     if axes is None and str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -286,7 +251,7 @@ def plot_ionosphere(filename=None,
     datamap_info.latexunits = re.sub("\\\\mho","\\\\Omega^{-1}", datamap_info.latexunits)
     cb_title_use = datamap_info.latex
     # Check if vscale results in standard unit
-    vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+    vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
     values = datamap_info.data*vscale
     if np.ndim(values) == 0:
         logging.info("Error, reading variable '" + str(var) + "' from vlsv file! values.shape being" + str(values.shape))
@@ -390,7 +355,7 @@ def plot_ionosphere(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -410,15 +375,16 @@ def plot_ionosphere(filename=None,
 
     if axes is None:
         fig = plt.figure(figsize=figsize,dpi=150)
-        ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_cartesian = fig.add_axes([0,0,0.8,0.8], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
         #ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
     else:
+        axes.axis('off')
         axes.set_xticklabels([])
         axes.set_yticklabels([])
-        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center left')
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center' if cb_horizontal else 'center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
@@ -462,7 +428,7 @@ def plot_ionosphere(filename=None,
     gridlatitudes = np.arange(0., 90.-minlatitude,10.)
     ax_polar.set_rmax(90.-minlatitude);
     ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=225)
-    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
+    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","6h","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
     ax_polar.set_theta_zero_location('S', offset=0)
     ax_polar.tick_params(labelsize=fontsize2, pad=0.1)
 
@@ -486,7 +452,8 @@ def plot_ionosphere(filename=None,
         if cbaxes: 
             # Colorbar axes are provided
             cax = cbaxes
-            cbdir="right"; horalign="left"
+            cbdir="right"
+            horalign="center" if cb_horizontal else "left"
         elif internalcb:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
@@ -505,7 +472,11 @@ def plot_ionosphere(filename=None,
         else:
             # Split existing axes to make room for colorbar
             if axes is None:
-                cax = fig.add_axes([0.9,0.2,0.03,0.6])
+                if cb_horizontal:
+                    cax = fig.add_axes([0.1,-0.1,0.6,0.03])
+                else:
+                    cax = fig.add_axes([0.8,0.1,0.03,0.6])
+                    #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
             else:
                 cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
@@ -518,15 +489,15 @@ def plot_ionosphere(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
             #cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
@@ -626,13 +597,21 @@ def plot_ionosphere(filename=None,
 
     # Save output or draw on-screen
     if not draw and axes is None:
+
+        if viewdir > 0:
+            outputpole = "_north"
+        else:
+            outputpole = "_south"
+        outputfile_default = run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
+
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except Exception as e:
             print("Encountered the following exception from Matplotlib while trying to save a figure:")
             print(e)
             raise RuntimeError("Error attempting to save figure: " + str(sys.exc_info())+"\n\n There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!")
-        logging.info(outputfile+"\n")
+        logging.info(savefigname+"\n")
         plt.close()
     elif draw is not None and axes is None:
         # Draw on-screen
