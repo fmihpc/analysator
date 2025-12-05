@@ -25,7 +25,7 @@ import numpy as np
 import analysator as pt
 import matplotlib.pyplot as plt
 import matplotlib
-from rotation import rotateVectorToVector
+from .rotation import rotateVectorToVector
 from scipy.interpolate import griddata
 from scipy.signal import sepfir2d
 from packaging.version import Version
