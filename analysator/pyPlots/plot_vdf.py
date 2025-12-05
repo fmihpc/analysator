@@ -1336,12 +1336,13 @@ def plot_vdf(filename=None,
         if draw is None and axes is None:
             outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
             savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-            try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                plt.close()
-            except:
-                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
-            logging.info(savefigname+"\n")
+            if savefigname:
+                try:
+                    plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+                    plt.close()
+                except:
+                    logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+                logging.info(savefigname+"\n")
             plt.close()
         elif axes is None:
             # Draw on-screen
