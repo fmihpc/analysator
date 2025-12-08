@@ -3,7 +3,7 @@ v5restartcalls=[]
 
 v5nonrestartcalls=[
 #outputs, nooverwrite
-"pt.plot.plot_ionosphere(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.plot_ionosphere(filename=fileLocation+bulkname, outputdir=outputLocation,run=REPLACEINDEX)",
 "pt.plot.plot_ionosphere(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_ionosphere(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
 "pt.plot.plot_ionosphere(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",

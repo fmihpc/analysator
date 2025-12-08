@@ -1,4 +1,4 @@
-nonrestartcalls=["pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,filename=fileLocation+bulkname,outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+nonrestartcalls=["pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,filename=fileLocation+bulkname,outputdir=outputLocation , run=REPLACEINDEX)",
 "pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png',nooverwrite=1)",
 "pt.plot.plot_vdf_profiles(coordre=REPLACECOORDRE,vlsvobj=f,outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png',nooverwrite=1)",
