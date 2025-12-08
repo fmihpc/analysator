@@ -741,35 +741,38 @@ def plot_isosurface(filename=None,
         # title string. This try-catch attempts to simplify the time string until output succedes.
         outputfile_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
         savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, outputfile_default=outputfile_default,nooverwrite=nooverwrite)
-        if savefigname:
+        if not savefigname:
+            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
+            plt.close()
+            return
+        try:
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            savechange=0
+        except:
+            savechange=1
+            plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
+            ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                savechange=0
             except:
-                savechange=1
-                plot_title = "t="+'{:4.1f}'.format(timeval)+' s '
+                plot_title = "t="+str(int(timeval))+' s   '
                 ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                 try:
                     plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 except:
-                    plot_title = "t="+str(int(timeval))+' s   '
+                    plot_title = ""
                     ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
                     try:
                         plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                     except:
-                        plot_title = ""
-                        ax1.set_title(plot_title,fontsize=fontsize2,fontweight='bold')                
-                        try:
-                            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-                        except:
-                            logging.info("Error:" + str(sys.exc_info()))
-                            logging.info("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
-                            logging.info("Usually removing the title should work, but this time even that failed.")                        
-                            savechange = -1
-            if savechange>0:
-                logging.info("Due to rendering error, replaced image title with "+plot_title)
-            if savechange>=0:
-                logging.info(savefigname+"\n")
+                        logging.info("Error:" + str(sys.exc_info()))
+                        logging.info("Error with attempting to save figure, sometimes due to matplotlib LaTeX integration.")
+                        logging.info("Usually removing the title should work, but this time even that failed.")                        
+                        savechange = -1
+        if savechange>0:
+            logging.info("Due to rendering error, replaced image title with "+plot_title)
+        if savechange>=0:
+            logging.info(savefigname+"\n")
     else:
         plt.draw()
         plt.show()
@@ -1960,13 +1963,16 @@ def plot_neutral_sheet(filename=None,
     if not draw and not axes:
         outputfile_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-        if savefigname:
-            try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-            except:
-                logging.info("Error with attempting to save figure.")
-            logging.info(savefigname+"\n")
-        plt.close()
+        if not savefigname:
+            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
+            plt.close()
+            return
+        try:
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        except:
+            logging.info("Error with attempting to save figure.")
+        logging.info(savefigname+"\n")
+    plt.close()
     elif not axes:
         # Draw on-screen
         plt.draw()

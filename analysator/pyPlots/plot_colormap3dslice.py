@@ -1650,12 +1650,15 @@ def plot_colormap3dslice(filename=None,
     if not draw and not axes:
         outputfile_default=run+slicestr+"_map_"+varstr+operatorfilestr+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-        if savefigname:
-            try:
-                plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-            except:
-                logging.info("Error with attempting to save figure.")
-            logging.info(savefigname+"\n")
+        if not savefigname:
+            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
+            plt.close()
+            return
+        try:
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        except:
+            logging.info("Error with attempting to save figure.")
+        logging.info(savefigname+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen

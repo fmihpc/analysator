@@ -297,20 +297,22 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
 
 
         # Ensure output directory exists
-        logging.warning(outputdir+" ofile  "+outputfile+" default "+defaultoutputdir)
+
         if not os.path.exists(outputdir):
             try:
                 os.makedirs(outputdir)
+            except FileExistsError: 
+                #Parallel jobs might try to create dir simultaneously.
+                pass
             except:
-                raise IOError("Could not create output directory "+outputdir+"! Exiting.")
+                raise IOError("Could not create output directory "+outputdir+" Exiting.")
         if not os.access(outputdir, os.W_OK):
-            logging.info("No write access for directory "+outputdir+"! Exiting.")
-            return
+            raise IOError("No write access for directory "+outputdir+" Exiting.")
 
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.warning("Found existing file "+outputfile+". Skipping.")
+                logging.warning("Found existing file "+outputfile+" Skipping.")
                 return
             else:
                 logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
