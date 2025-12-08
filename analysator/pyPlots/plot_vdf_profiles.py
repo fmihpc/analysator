@@ -879,6 +879,7 @@ def plot_vdf_profiles(filename=None,
 
             outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
             savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
+
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             except Exception as e:

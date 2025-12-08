@@ -602,7 +602,6 @@ def plot_ionosphere(filename=None,
             outputpole = "_south"
         outputfile_default = run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except Exception as e:

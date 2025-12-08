@@ -1959,6 +1959,7 @@ def plot_neutral_sheet(filename=None,
             logging.info("Error with attempting to save figure "+savefigname)
             raise e
         logging.info(savefigname+"\n")
+        plt.close()
     elif not axes:
         # Draw on-screen
         plt.draw()

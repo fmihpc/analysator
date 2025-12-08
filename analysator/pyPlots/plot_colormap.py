@@ -1300,10 +1300,11 @@ def plot_colormap(filename=None,
         outputfile_default=run+"_map_"+varstr+operatorfilestr+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile, outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except Exception as e:
             logging.warning("Error with attempting to save figure: "+str(e))
-        logging.info(outputfile+"\n")
+            raise e
+        logging.info(savefigname+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen
