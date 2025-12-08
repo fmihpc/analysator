@@ -185,7 +185,7 @@ if __name__ == '__main__':
                 for j in range(3): # vector components
                     arr[i, j, :] = np.interp(time, time[ind], interp_arr[i, j, :], left=None, right=None, period=None)
         except:
-            logging.info("error with interpolation. zeroing out array...")
+            logging.warning("An error with interpolation. zeroing out array...")
     
     ig_B_arr =  ig_B_ionosphere_arr + ig_B_inner_arr + ig_B_outer_arr
     
