@@ -57,7 +57,6 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
-            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
             sbatch -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
             cat testpackage_compare.txt
