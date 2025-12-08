@@ -1,4 +1,4 @@
-nonrestartcalls=["pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',filename=fileLocation+bulkname,outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+nonrestartcalls=["pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',filename=fileLocation+bulkname,outputdir=outputLocation , run=REPLACEINDEX)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,nooverwrite=1)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',filedir=fileLocation,step=REPLACETIME,run=verifydir+REPLACEINDEX)",

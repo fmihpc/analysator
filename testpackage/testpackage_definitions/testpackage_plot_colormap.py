@@ -10,7 +10,7 @@ restartcalls = [
 
 nonrestartcalls = [
     # Input and output methods, nooverwrite
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation,run=REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png', nooverwrite=1)",
@@ -269,7 +269,7 @@ v5restartcalls = [
 
 v5nonrestartcalls = [
 # Input and output methods, nooverwrite
-"pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+"pt.plot.plot_colormap(filename=fileLocation+bulkname, outputdir=outputLocation,run=REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap(vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1)",

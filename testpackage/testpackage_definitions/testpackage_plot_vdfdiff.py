@@ -1,4 +1,4 @@
-nonrestartcalls=["pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputdir=outputLocation+'/'+REPLACEINDEX+'_',coordre=REPLACEMULTIPLECOORDRE)",
+nonrestartcalls=["pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputdir=outputLocation , run=REPLACEINDEX,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png',nooverwrite=1,coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png',nooverwrite=1,coordre=REPLACEMULTIPLECOORDRE)",

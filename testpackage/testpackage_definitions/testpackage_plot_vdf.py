@@ -1,7 +1,7 @@
                  
 restartcalls = [
 # Input and output methods, nooverwrite
-"pt.plot.plot_vdf(figsize=[5,4],filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_', coordre=REPLACECOORDRE)",
+"pt.plot.plot_vdf(figsize=[5,4],filename=fileLocation+bulkname, outputdir=outputLocation , run=REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1, coordre=REPLACECOORDRE)",
@@ -125,7 +125,7 @@ restartcalls = [
 ]
 nonrestartcalls = [
 # Input and output methods, nooverwrite
-"pt.plot.plot_vdf(figsize=[5,4],filename=fileLocation+bulkname, outputdir=outputLocation+'/'+REPLACEINDEX+'_', coordre=REPLACECOORDRE)",
+"pt.plot.plot_vdf(figsize=[5,4],filename=fileLocation+bulkname, outputdir=outputLocation , run=REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],filedir=fileLocation, step=REPLACETIME, run=verifydir+REPLACEINDEX, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png', nooverwrite=1, coordre=REPLACECOORDRE)",

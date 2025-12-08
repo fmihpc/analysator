@@ -3,7 +3,7 @@ import testpackage_custom_expr as cexp
 
 
 
-nonrestartcalls=["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,outputdir=outputLocation+'/'+REPLACEINDEX+'_')",
+nonrestartcalls=["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, outputdir=outputLocation,run=REPLACEINDEX)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,outputfile=outputLocation+REPLACEINDEX+'_outputfiletest.png',nooverwrite=1)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,outputfile=outputLocation+REPLACEPREVINDEX+'_outputfiletest.png',nooverwrite=1)",

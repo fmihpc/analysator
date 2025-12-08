@@ -57,6 +57,9 @@ regularcalls = [
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordinates=REPLACEMULTIPLECOORDINATES)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE)",
 
+# Colorbar
+"pt.plot.plot_vdf(vlsvobj=f, run=verifydir+REPLACEINDEX, coordre=REPLACEMULTIPLECOORDRE,cb_horizontal=True)",
+
 
 # Thickness, scale
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, thick=0.5, coordre=REPLACECOORDRE)",
