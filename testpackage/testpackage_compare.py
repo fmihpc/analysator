@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 import cv2
 import numpy as np
 import logging
+import os.path
 
 #could be used to replace compare_images with a cv2 based implementation
 def compare_images(a,b):
@@ -27,7 +28,17 @@ def compare_images(a,b):
 
 
 
-def compare_images_in_folders(a,b,output_folder='NULL:'):
+def compare_images_in_folders(a,b,jobcount,jobcurr):
+
+
+    #folders=get_directories(a,depth=2)
+    #folders2=get_directories(b,depth=2)
+    
+#    if len(folders)!=len(folders2):
+#        raise SystemError("Folders do not have the same structure!")
+
+    #do the comparisons
+    
     cmd = f'diff -r {a} {b}'
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = proc.communicate()
@@ -56,12 +67,23 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
                 missing_files.append(line[2].rstrip(":")+'/'+line[3])
 
 
-    #Feed the different files to compare_images
-    for file in different_files:
-        #if output_folder!= "NULL:":
-        #    filename = file.split("/")[-1].rstrip(".png") #is it always png?
-        #    output_folder=output_folder+f"/difference_output_{filename}.png"
+    nteststot = len(different_files)
+    increment = int(nteststot/jobcount)
+    remainder = nteststot - jobcount * increment
+    start=jobcurr * increment
+    end=start + increment
+    # Remainder frames are divvied out evenly among tasks
+    if jobcurr < remainder:
+        start = start + jobcurr
+        end = end + jobcurr + 1
+    else:
+        start = start + remainder
+        end = end + remainder
 
+
+
+    #Feed the different files to compare_images
+    for file in different_files[start:end]:
         if(not compare_images(file,file.replace(a,b))):
             different=True
             print("Images differ:",file,file.replace(a,b))
@@ -76,7 +98,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
     if len(unique_files)!=0:
-        print("::warning Found new file(s) produced by the code!")
+        print("::warning::Found new file(s) produced by the code!")
 
     if len(missing_files)!=0:
         raise SystemError("Found file(s) **not** produced by the code!")
@@ -85,6 +107,37 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
     if different:
         print(f"::error title=Plot(s) differ::Produced plots not in agreement with the verfication set {a}")
         raise SystemError("Images Differ")
+
+
+#only prints what is at the target depth (might be clunky as i was tired when writing it)
+def get_directories(directory,depth):
+    out_dirs=[]
+    dirs=[]
+    if depth==0:
+        return [directory]
+    for i in range(depth):
+
+        if i==0:
+            directory= [directory]
+            subdirs_current_depth=os.listdir(directory[0])
+            for subdir in subdirs_current_depth:
+                dirs.append(os.path.join(directory[0],subdir))
+            directory=dirs
+        else:
+            directory=[]
+
+            for dircs in dirs:
+                subdirs_current_depth=os.listdir(dircs)
+                for subdir in subdirs_current_depth:
+                    directory.append(os.path.join(dircs,subdir))
+            length_current_depth=len(directory)
+            dirs=directory
+   
+        if i==depth-1:
+            out_dirs=directory
+
+    return out_dirs
+
 
 if __name__=='__main__':
 
@@ -95,19 +148,15 @@ if __name__=='__main__':
 
     parser.add_argument("folder_a",help="First folder/image to compare")
     parser.add_argument("folder_b",help="Second folder/image to compare")
-    parser.add_argument("output_folder",help="Output folder for different images, if not specified, no output is saved",default="NULL:",nargs='?')
-
+   
+    parser.add_argument("jobcount",help="Number of parallel jobs to use",default=1,nargs='?',type=int)
+    parser.add_argument("jobindex",help="Index of the job to run",default=0,nargs='?',type=int)
+    
+   
     args= parser.parse_args()
-    a,b,output_folder = args.folder_a,args.folder_b,args.output_folder
+    a,b = args.folder_a,args.folder_b
 
-    #Create output folder if it doesn't exist
-    if not os.path.exists(output_folder) and output_folder!='NULL:':
-        proc = subprocess.Popen(f'mkdir {output_folder}'.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out,err = proc.communicate()
+    jobcount=args.jobcount
+    jobindex=args.jobindex
 
-        #If errors, raise an exception
-        if err:
-            err = str(err,'utf-8')
-            raise RuntimeError(err)
-
-    compare_images_in_folders(a,b,output_folder)
+    compare_images_in_folders(a,b,jobcount,jobindex)
