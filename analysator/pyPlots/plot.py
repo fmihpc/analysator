@@ -264,40 +264,38 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
-
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         check=False
-        if not outputdir:
-            check=True
         if not outputfile:
             if not outputfile_default:
                 outputfile="plot.png"
-            # Check if outputfile contains path information
-            outputfile=outputfile_default
 
+            outputfile=outputfile_default
+            if not outputdir:
+                # Check later if outputfile contains path information and combine with defaultoutputdir
+                check=True
+
+        # Separate possible path information from outputfile
         outputprefixind = outputfile.rfind('/')
         if outputprefixind >= 0:            
             outputdir = outputfile[:outputprefixind+1]
             outputfile = outputfile[outputprefixind+1:]
-        #os.path.join refuses to work properly if it starts with /
-        outputprefixind = outputdir.find('/')
-        if outputprefixind == 0:            
-            outputdir = outputdir[1:]
-
-
 
         if not outputdir: # default initial path
-            outputfile=os.path.join(defaultoutputdir,outputfile)
             outputdir=defaultoutputdir
-        else: 
+
+    
+        if check:
+            #remove leading '/' on outputdir as this would cause issues with os.path.join
+            outputprefixind = outputdir.find('/')
+            if outputprefixind == 0:            
+                outputdir = outputdir[1:]
+            outputdir= os.path.join(defaultoutputdir,outputdir)
+            outputfile=os.path.join(outputdir,outputfile)
+        else:
             outputfile = os.path.join(outputdir,outputfile)
 
-        if check:
-            outputdir=os.path.join(defaultoutputdir,outputdir)
-
-
         # Ensure output directory exists
-
         if not os.path.exists(outputdir):
             try:
                 os.makedirs(outputdir)
