@@ -68,8 +68,8 @@ def jetcontours(ax, XmeshXY,YmeshXY, pass_maps):
     # format of the incoming data.
     if type(pass_maps[0]) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        logging.info("expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expected a list of timesteps to average from, but got a single timestep. Exiting.")
+
 
     # Multiple time steps were found
     ntimes = len(pass_maps)

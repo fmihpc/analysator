@@ -283,8 +283,8 @@ def plot_colormap3dslice(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError(" needs a .vlsv file name, python object, or directory and step")
+
     
     if operator is None:
         if op is not None:
@@ -380,9 +380,8 @@ def plot_colormap3dslice(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-            logging.info("attempted to perform diff with one of the following active:")
-            logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
-            return -1
+            raise RuntimeError("attempted to perform diff with one of the following active:\n expression or external or pass_vars or pass_times or pass_full. Exiting.")
+
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
@@ -394,8 +393,8 @@ def plot_colormap3dslice(filename=None,
     slicestr='_slice'
     if not isinstance(normal, str):
         if len(normal)!=3:
-            logging.info("Error in interpreting normal " + str(normal))
-            exit
+            raise TypeError("Error in interpreting normal " + str(normal))
+
     else:
         if normal[0]=='x':
             normal = [1,0,0]
@@ -436,8 +435,8 @@ def plot_colormap3dslice(filename=None,
             cellsizefg = cellsize
             pt.plot.plot_helpers.CELLSIZE = cellsize
         else:
-            logging.info("Found 2D DCCRG mesh without FSgrid data. Exiting.")
-            return -1
+            raise ValueError("Found 2D DCCRG mesh without FSgrid data. Exiting.")
+
 
     # sort the cellid and the datamap list
     indexids = cellids.argsort()
@@ -455,8 +454,7 @@ def plot_colormap3dslice(filename=None,
         (ymin!=yminfg) or (ymax!=ymaxfg) or
         (zmin!=zminfg) or (zmax!=zmaxfg) or
         (xsize*(2**reflevel) !=xsizefg) or (ysize*(2**reflevel) !=ysizefg) or (zsize*(2**reflevel) !=zsizefg)):
-        logging.info("FSgrid and vlasov grid disagreement!")
-        return -1
+        raise ValueError("FSgrid and vlasov grid disagreement!")
     
     if cutpointre is not None:
         cutpoint = cutpointre * Re
@@ -572,8 +570,8 @@ def plot_colormap3dslice(filename=None,
 
         # Verify data shape
         if np.ndim(datamap)==0:
-            logging.info("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
-            return -1
+            raise TypeError("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
+
 
         if var.startswith('fg_'):
             # fsgrid reader returns array in correct shape but needs to be sliced and transposed
@@ -599,7 +597,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2]>=0:
                     datamap = datamap[:,:,fgslice[2],:,:]
             else:
-                logging.info("Error in reshaping fsgrid datamap!") 
+                raise RuntimeError("Error in reshaping fsgrid datamap!") 
             datamap = np.squeeze(datamap)
             datamap = np.swapaxes(datamap, 0,1)
 
@@ -740,7 +738,7 @@ def plot_colormap3dslice(filename=None,
                             elif fgslice[2]>=0:
                                 pass_map = pass_map[:,:,fgslice[2],:,:]
                         else:
-                            logging.info("Error in reshaping fsgrid pass_map!") 
+                            raise RuntimeError("Error in reshaping fsgrid pass_map!") 
                         pass_map = np.squeeze(pass_map)
                         pass_map = np.swapaxes(pass_map, 0,1)
                 else:
@@ -755,7 +753,7 @@ def plot_colormap3dslice(filename=None,
                         elif np.ndim(pass_map)==3:  # tensor variable
                             pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
-                            logging.info("Error in reshaping pass_maps!")
+                            raise RuntimeError("Error in reshaping pass_maps!")
                         pass_map = ids3d.idmesh3d2(cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                     else:
                         pass_map = pass_map[indexlist] # find required cells
@@ -766,7 +764,7 @@ def plot_colormap3dslice(filename=None,
                         elif np.ndim(pass_map)==3:  # tensor variable
                             pass_shape = (pass_map.shape[1], pass_map.shape[2])
                         else:
-                            logging.info("Error in reshaping pass_maps!")
+                            raise RuntimeError("Error in reshaping pass_maps!")
                         pass_map = ids3d.idmesh3d(idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
                         
                 # At this point, the map has been ordered into a 2D or 3D image
@@ -793,8 +791,8 @@ def plot_colormap3dslice(filename=None,
                 if filename: # parse from filename
                     currstep = int(filename[-12:-5])
                 else:
-                    logging.info("Error, cannot determine current step for time extent extraction!")
-                    return
+                    raise RuntimeError(" cannot determine current step for time extent extraction!")
+
             # define relative time step selection
             if np.ndim(pass_times)==0:
                 dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
@@ -861,8 +859,8 @@ def plot_colormap3dslice(filename=None,
                                     pass_map = pass_map[:,fgslice[1],:,:,:]
                                 elif fgslice[2]>=0:
                                     pass_map = pass_map[:,:,fgslice[2],:,:]
-                            else:
-                                logging.info("Error in reshaping fsgrid pass_map!") 
+                            else:   
+                                raise RuntimeError("Error in reshaping pass_maps!")
                             pass_map = np.squeeze(pass_map)
                             pass_map = np.swapaxes(pass_map, 0,1)
                     else:
@@ -877,7 +875,7 @@ def plot_colormap3dslice(filename=None,
                             elif np.ndim(pass_map)==3:  # tensor variable
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
-                                logging.info("Error in reshaping pass_maps!")
+                                raise RuntimeError("Error in reshaping pass_maps!")
                             pass_map = ids3d.idmesh3d2(step_cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
                         else:
                             pass_map = pass_map[step_indexlist] # find required cells
@@ -888,7 +886,7 @@ def plot_colormap3dslice(filename=None,
                             elif np.ndim(pass_map)==3:  # tensor variable
                                 pass_shape = (pass_map.shape[1], pass_map.shape[2])
                             else:
-                                logging.info("Error in reshaping pass_maps!")
+                                raise RuntimeError("Error in reshaping pass_maps!")
                             pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
@@ -945,7 +943,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2]>=0:
                     datamap = datamap[:,:,fgslice[2],:,:]
             else:
-                logging.info("Error in reshaping fsgrid datamap!") 
+                raise RuntimeError("Error in reshaping pass_maps!")
             datamap = np.squeeze(datamap)
             datamap = np.swapaxes(datamap, 0,1)
 
@@ -969,31 +967,27 @@ def plot_colormap3dslice(filename=None,
             if operator=='z': 
                 operator = '2'
             if not operator.isdigit():
-                logging.info("Error parsing operator for custom expression!")
-                return
+                raise SyntaxError("failed parsing operator for custom expression!")
+
             elif np.ndim(datamap)==3:
                 datamap = datamap[:,:,int(operator)]
         
     # Now, if map is a vector or tensor, reduce it down
     if np.ndim(datamap)==3: # vector
         if datamap.shape[2]!=3:
-            logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
-            return -1
+            raise ValueError(" expected array of 3-element vectors, found array of shape " + str(datamap.shape))
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap)==4: # tensor
         if datamap.shape[2]!=3 or datamap.shape[3]!=3:
             # This may also catch 3D simulation fsgrid variables
-            logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
-            return -1
+            raise ValueError("expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
     if np.ndim(datamap)>=5: # Too many dimensions
-        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
-        return -1
+        raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap.shape))
     if np.ndim(datamap)!=2: # Too many dimensions
-        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
-        return -1
+        raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap.shape))
         
     # Scale final generated datamap if requested
     datamap = datamap * vscale
@@ -1044,8 +1038,7 @@ def plot_colormap3dslice(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logging.info("Error, requested array is zero everywhere. Exiting.")
-        return 0
+        raise ValueError("requested array is zero everywhere. Exiting.")
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -1079,7 +1072,7 @@ def plot_colormap3dslice(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.2.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -1335,7 +1328,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2]>=0:
                     vectmap = vectmap[:,:,fgslice[2],:]
             else:
-                logging.info("Error in reshaping fsgrid vectmap!") 
+                raise RuntimeError("Error in reshaping fsgrid vectmap!") 
             vectmap = np.squeeze(vectmap)
             vectmap = np.swapaxes(vectmap, 0,1)
         else:
@@ -1402,7 +1395,7 @@ def plot_colormap3dslice(filename=None,
                 elif fgslice[2]>=0:
                     slinemap = slinemap[:,:,fgslice[2],:]
             else:
-                logging.info("Error in reshaping fsgrid slinemap!") 
+                raise RuntimeError("Error in reshaping fsgrid slinemap!") 
             slinemap = np.squeeze(slinemap)
             slinemap = np.swapaxes(slinemap, 0,1)
         else:
@@ -1652,8 +1645,9 @@ def plot_colormap3dslice(filename=None,
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            logging.info("Error with attempting to save figure.")
+        except Exception as e:
+            logging.info("Error with attempting to save figure "+savefigname)
+            raise e
         logging.info(savefigname+"\n")
         plt.close()
     elif not axes:

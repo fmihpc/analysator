@@ -212,7 +212,6 @@ def cut_through_step( vlsvReader, point1, point2 ):
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
-      # logging.info("ERROR, POINT1 IN CUT-THROUGH OUT OF BOUNDS!")
       raise ValueError("point1 in cut_through_step out of bounds!")
    if vlsvReader.get_cellid(point2) == 0:
       raise ValueError("point2 in cut_through_step out of bounds!")
