@@ -92,7 +92,7 @@ runs.append( { 'name': 'FHA',
                  'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface','plot_vdf','plot_vdfdiff','plot_vdf_profiles'],
                  'pops': ['avgs'],
                  'time': 1000,
-                'skipped_args':None,
+                'skipped_args':{'ALL':{'expression':''}},
                  'singletime': False,
                  'filename': None, #restart file
                  'manualcall':False,
@@ -242,7 +242,7 @@ for i,run in enumerate(runs):
                     call = call.replace("var='V'","var='restart_V'")
                 if skipped_args and not legacy_mode:
                     call=call_replace(call,func,skipped_args,required_args)
-                if call is not None:
+                if call is not None: 
                     callrunids.append(i)
                     calls.append(call)
                     callrunindex.append(callindex)
