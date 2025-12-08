@@ -312,8 +312,7 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.warning("Found existing file "+outputfile+" Skipping.")
-                return
+                raise IOError("Found existing file "+outputfile+" and nooverwrite=True.")
             else:
                 logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
 

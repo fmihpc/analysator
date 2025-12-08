@@ -1711,10 +1711,7 @@ def plot_threeslice(filename=None,
     if not draw:
         outputfile_default=run+"_threeSlice_"+varstr+operatorfilestr+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-        if not savefigname:
-            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
-            plt.close()
-            return
+
         logging.info('Saving the figure as {}, Time since start = {:.2f} s'.format(savefigname,time.time()-t0))
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)

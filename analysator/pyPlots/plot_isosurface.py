@@ -741,10 +741,6 @@ def plot_isosurface(filename=None,
         # title string. This try-catch attempts to simplify the time string until output succedes.
         outputfile_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
         savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, outputfile_default=outputfile_default,nooverwrite=nooverwrite)
-        if not savefigname:
-            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
-            plt.close()
-            return
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
@@ -1963,10 +1959,6 @@ def plot_neutral_sheet(filename=None,
     if not draw and not axes:
         outputfile_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
         savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
-        if not savefigname:
-            logging.info(f"File {savefigname} exists and nooverwrite=True, not saving figure.\n")
-            plt.close()
-            return
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
