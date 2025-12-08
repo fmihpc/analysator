@@ -70,7 +70,7 @@ def plot_colormap(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
-                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none', flipxaxis=False,
+                  axes=None, cbaxes=None,cb_horizontal=False, useimshow=False, imshowinterp='none', flipxaxis=False,
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -196,6 +196,7 @@ def plot_colormap(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
         :kword useimshow:   Use imshow for raster background instead (default: False)
         :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
         :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
@@ -248,8 +249,7 @@ def plot_colormap(filename=None,
         filedir = './'
     if (fluxdir == ''):
         fluxdir = './'
-    if (outputdir == ''):
-        outputdir = './'
+
 
     # Input file or object
     if filename:
@@ -384,41 +384,6 @@ def plot_colormap(filename=None,
         varstr="DIFF_"+var.replace("/","_")
         pass_times=[1,0]
 
-    # File output checks
-    if not draw and not axes:
-        if not outputfile: # Generate filename
-            if not outputdir: # default initial path
-                outputdir=pt.plot.defaultoutputdir
-            # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
-        else: 
-            if outputdir:
-                outputfile = outputdir+outputfile
-
-        # Re-check to find actual target sub-directory
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-
-        # Ensure output directory exists
-        if not os.path.exists(outputdir):
-            try:
-                os.makedirs(outputdir)
-            except:
-                pass
-
-        if not os.access(outputdir, os.W_OK):
-            raise PermissionError("No write access for directory "+outputdir+"! Exiting.")
-
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile)):            
-            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.info("Found existing file "+outputfile+". Skipping.")
-                return
-            else:
-                logging.info("Found existing file "+outputfile+" of size zero. Re-rendering.")
-
-
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
@@ -485,7 +450,7 @@ def plot_colormap(filename=None,
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
         
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -863,7 +828,7 @@ def plot_colormap(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -1151,9 +1116,14 @@ def plot_colormap(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
-
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)           
+                horalign="left"
+            cbdir="right"
         # Set flag which affects colorbar decimal precision
         if lin is None:
             pt.plot.cb_linear = False
@@ -1162,10 +1132,10 @@ def plot_colormap(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
         # Ensure minor tick marks are off
@@ -1173,7 +1143,7 @@ def plot_colormap(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
@@ -1185,6 +1155,7 @@ def plot_colormap(filename=None,
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        # Might need additions for horizontal cb?
         if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
             (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
@@ -1327,6 +1298,8 @@ def plot_colormap(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
+        outputfile_default=run+"_map_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile, outputfile_default,outputdir,nooverwrite)
         try:
             plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except Exception as e:

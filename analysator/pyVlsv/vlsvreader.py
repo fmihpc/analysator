@@ -149,6 +149,22 @@ def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
                            refined_ids_start[i,2]:refined_ids_end[i,2]] = i
    return arr
 
+def get_test_variable_length(test_variable):
+   ''' Check the size and dimensions of a test variable.
+   Returns number of elements and shape of an np.ndarray, 
+   '''
+   if isinstance(test_variable,np.ma.core.MaskedConstant):
+      value_length=1
+      value_shape=(1,)
+   elif isinstance(test_variable, (list, tuple, np.ndarray)):
+      value_length=np.size(test_variable)
+      value_shape=np.shape(test_variable)
+   else:
+      value_length=1
+      value_shape=(1,)
+   value_ndims = len(value_shape)
+   return value_length, value_shape, value_ndims
+
 class VlsvReader(object):
    ''' Class for reading VLSV files
    ''' 
@@ -567,6 +583,17 @@ class VlsvReader(object):
       #number of blocks in each cell for which data is stored
       blocks_per_cell = self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop)
 
+      try:
+         cells_with_blocks = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+         blocks_per_cell = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      except Exception as e:
+         try:
+            cells_with_blocks = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS"))
+            blocks_per_cell = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL"))
+         except Exception as e2:
+            logging.error("Could not read CELLSWITHBLOCKS or BLOCKSPERCELL successfully, after first searching for " +pop+"/[CELLSWITHBLOCKS/BLOCKSPERCELL]/SpatialGrid and then without pop; errors raised: \n Firstly"+str(e)+",\n Secondly "+str(e2))
+            raise e2
+
       # Navigate to the correct position:
       from copy import copy
       offset = 0
@@ -587,8 +614,17 @@ class VlsvReader(object):
 
       logging.info("Getting offsets for population " + pop)
 
-      self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
-      self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      try:
+         self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop))
+         self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL", name=pop))
+      except Exception as e:
+         try:
+            self.__cells_with_blocks[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS"))
+            self.__blocks_per_cell[pop] = np.atleast_1d(self.read(mesh="SpatialGrid",tag="BLOCKSPERCELL"))
+         except Exception as e2:
+            logging.error("Could not read CELLSWITHBLOCKS or BLOCKSPERCELL successfully, after first searching for " +pop+"/[CELLSWITHBLOCKS/BLOCKSPERCELL]/SpatialGrid and then without pop; errors raised: \n Firstly"+str(e)+",\n Secondly "+str(e2))
+            raise e2
+
 
       self.__blocks_per_cell_offsets[pop] = np.empty(len(self.__cells_with_blocks[pop]))
       self.__blocks_per_cell_offsets[pop][0] = 0.0
@@ -1285,7 +1321,10 @@ class VlsvReader(object):
             else:
                tvar = i.split('/',1)[1]
                tmp_vars.append( self.read( popname+'/'+tvar, tag, mesh, "pass", cellids ) )
-         return data_operators[operator](reducer.operation( tmp_vars ))
+         if reducer.useReader:
+            return data_operators[operator](reducer.operation( tmp_vars, self))
+         else:
+            return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
          raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
@@ -1352,7 +1391,8 @@ class VlsvReader(object):
          logging.info("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       fptr.close()
       return -1
-         
+   
+
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
       ''' Read a linearly interpolated FSgrid variable value from the open vlsv file. Feel free to vectorize!
@@ -1478,7 +1518,7 @@ class VlsvReader(object):
       raise NotImplementedError('Interpolation of ionosphere variables has not yet been implemented; exiting.')
 
    # These are the 8 cells that span the upper corner vertex on a regular grid
-   def get_vg_regular_interp_neighbors(self, cellids):
+   def get_vg_regular_interp_neighbors(self, cellids, periodic = [True, True, True]):
 
       
       len_cellids = np.atleast_1d(cellids).shape[0]
@@ -1501,7 +1541,7 @@ class VlsvReader(object):
 
          cellids_rep = np.reshape(np.repeat(np.atleast_2d(cellids[~in_cache]), 8, axis=1).T,n_not_in_cache*8)
          offsets = np.tile(offsets, (n_not_in_cache, 1))
-         cellid_neighbors_new = self.get_cell_neighbor(cellids_rep, offsets, [True,True,True], prune_uniques=False)
+         cellid_neighbors_new = self.get_cell_neighbor(cellids_rep, offsets, periodic, prune_uniques=False)
          cellid_neighbors_new = cellid_neighbors_new.reshape((-1,8))
          self.__regular_neighbor_cache.update( {c:cellid_neighbors_new[i,:] for i,c in enumerate(cellids[~in_cache])})
          cellid_neighbors[~in_cache,:] = cellid_neighbors_new
@@ -1535,7 +1575,7 @@ class VlsvReader(object):
       if name[0:3] == 'fg_':
          return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, method)
 
       # case vg
 
@@ -1549,12 +1589,7 @@ class VlsvReader(object):
 
       # Check one value for the length
       test_variable = self.read_variable(name,cellids=[1],operator=operator)
-      if isinstance(test_variable,np.ma.core.MaskedConstant):
-         value_length=1
-      elif isinstance(test_variable, Iterable):
-         value_length=len(test_variable)
-      else:
-         value_length=1
+      value_length, value_shape, value_ndims = get_test_variable_length(test_variable)
 
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
@@ -1582,10 +1617,10 @@ class VlsvReader(object):
       lower_cell_ids = self.get_cell_neighbor(closest_cell_ids, offsets, periodic, prune_uniques=True)
 
       lower_cell_ids_unique, unique_cell_indices = np.unique(lower_cell_ids, return_inverse=True)
-      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,value_length),np.nan)
+      ngbrvalues=np.full((len(lower_cell_ids_unique)*2*2*2,*value_shape),np.nan)
 
       cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
-      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0])
+      cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0], periodic)
       cellid_neighbors = cellid_neighbors.reshape((-1))
    
 
@@ -1612,13 +1647,16 @@ class VlsvReader(object):
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
          # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
       # ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
-      ngbrvalues = np.reshape(ngbrvalues, (len(lower_cell_ids_unique),2,2,2,value_length))
+      nvals = len(lower_cell_ids_unique)
+      ngbrvalues = np.reshape(ngbrvalues, (nvals,2,2,2,*value_shape))
 
       ngbrvalues = ngbrvalues[unique_cell_indices,...]
-      
-      c2ds=ngbrvalues[:,0,:,:,:]* (1- scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]) +  ngbrvalues[:,1,:,:,:]*scaled_coordinates[:,0][:,np.newaxis,np.newaxis,np.newaxis]
-      c1ds = c2ds[:,0,:,:]*(1 - scaled_coordinates[:,1][:,np.newaxis,np.newaxis]) + c2ds[:,1,:,:] * scaled_coordinates[:,1][:,np.newaxis,np.newaxis]
-      final_values=c1ds[:,0,:] * (1 - scaled_coordinates[:,2][:,np.newaxis]) + c1ds[:,1,:] * scaled_coordinates[:,2][:,np.newaxis]
+      newax = (1,2, *[3+i for i,l in enumerate(value_shape)])
+      c2ds = (ngbrvalues[:,0,:,:,...]* (1 - np.expand_dims(scaled_coordinates[:,0],axis=newax)) +  ngbrvalues[:,1,:,:,...]*np.expand_dims(scaled_coordinates[:,0],axis=newax))
+      newax = (1, *[2+i for i,l in enumerate(value_shape)])
+      c1ds = (c2ds[:,0,:,...]*(1 - np.expand_dims(scaled_coordinates[:,1],axis=newax)) + c2ds[:,1,:,...] * np.expand_dims(scaled_coordinates[:,1],axis=newax))
+      newax = tuple(1+i for i,l in enumerate(value_shape))
+      final_values = (c1ds[:,0,...] * (1 - np.expand_dims(scaled_coordinates[:,2],axis=newax)) + c1ds[:,1,...] * np.expand_dims(scaled_coordinates[:,2],axis=newax))
 
       if np.any(cellid_neighbors==0):
          warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
@@ -1627,7 +1665,7 @@ class VlsvReader(object):
       refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(-1,8))
       if np.any(np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)):
          irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)[unique_cell_indices]
-         final_values[irregs,:] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method.lower()),(-1,value_length))
+         final_values[irregs,...] = np.reshape(self.read_interpolated_variable_irregular(name, coordinates[irregs], operator, method=method.lower()),(-1,*value_shape))
          # warnings.warn("Interpolation across refinement levels. Results are now better, but some discontinuitues might appear. If that bothers, try the read_interpolated_variable_irregular variant directly.",UserWarning)
 
       if stack:
@@ -1696,7 +1734,7 @@ class VlsvReader(object):
       if name[0:3] == 'fg_':
          return self.read_interpolated_fsgrid_variable(name, coords, operator, periodic, method)
       if name[0:3] == 'ig_':
-         return self.read_interpolated_ionosphere_variable(name, coords, operator, periodic, method)
+         return self.read_interpolated_ionosphere_variable(name, coords, operator, method)
 
       # Default case: AMR grid
 
@@ -1712,12 +1750,8 @@ class VlsvReader(object):
       if method == "nearest":
          # Check one value for the length
          test_variable = self.read_variable(name,cellids=[1],operator=operator)
-         if isinstance(test_variable,np.ma.core.MaskedConstant):
-            value_length=1
-         elif isinstance(test_variable, Iterable):
-            value_length=len(test_variable)
-         else:
-            value_length=1
+         value_length, value_shape = get_test_variable_length(test_variable)
+
          final_values = self.read_variable(name, cellids=cellids, operator=operator)
          if stack:
             return final_values.squeeze()
@@ -1780,7 +1814,7 @@ class VlsvReader(object):
        '''
 
        # Get fsgrid domain size (this can differ from vlasov grid size if refined)
-       bbox = self.read(tag="MESH_BBOX", mesh="fsgrid")
+       bbox = self.get_fsgrid_mesh_size()
        bbox = np.int32(bbox)
 
        # Read the raw array data
@@ -2185,31 +2219,49 @@ class VlsvReader(object):
       covered by the SpatialGrid cellid.
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            array=np.expand_dims(array, dim)
       if array.ndim == 4:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
       else:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+      array.squeeze()
+      return ret
 
    def get_bbox_fsgrid_subarray(self, low, up, array):
       '''Returns a subarray of the fsgrid array, corresponding to the (low, up) bounding box.
       '''
       lowi, upi = self.get_bbox_fsgrid_slicemap(low,up)
-      if array.ndim == 4:
-         return array[lowi[0]:upi[0]+int(1), lowi[1]:upi[1]+int(1), lowi[2]:upi[2]+int(1), :]
-      else:
-         return array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            array=np.expand_dims(array, dim)
 
+      if array.ndim == 4:
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1, :]
+      else:
+         ret = array[lowi[0]:upi[0]+1, lowi[1]:upi[1]+1, lowi[2]:upi[2]+1]
+
+      array.squeeze()
+      return ret
 
    def downsample_fsgrid_subarray(self, cellid, array):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
       '''
       fsarr = self.get_cell_fsgrid_subarray(cellid, array)
+      
       n = fsarr.size
       if fsarr.ndim == 4:
          n = n/3
       ncells = 8**(self.get_max_refinement_level()-self.get_amr_level(cellid))
       if(n != ncells):
-         warnings.warn("Weird fs subarray size", n, 'for amrlevel', self.get_amr_level(cellid), 'expect', ncells)
+         raise ValueError("Weird fs subarray size " +str(n)+ ' for amrlevel ' +str(self.get_amr_level(cellid))+' expect ' +str(ncells))
       return np.mean(fsarr,axis=(0,1,2))
 
    def fsgrid_array_to_vg(self, array):
@@ -2253,10 +2305,20 @@ class VlsvReader(object):
       '''
       lowi, upi = self.get_cell_fsgrid_slicemap(cellid)
       value = self.read_variable(var, cellids=[cellid])
+      fssize=list(self.get_fsgrid_mesh_size())
+      if 1 in fssize:
+         #expand to have a singleton dimension for a reduced dim - lets slicing happen with ease
+         singletons = [i for i, sz in enumerate(fssize) if sz == 1]
+         for dim in singletons:
+            value=np.expand_dims(value, dim)
+            array=np.expand_dims(array, dim)
+         
       if array.ndim == 4:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
       else:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1] = value
+      value.squeeze()
+      array.squeeze()
       return
 
    def read_variable_as_fg(self, var, operator='pass'):
@@ -2453,7 +2515,7 @@ class VlsvReader(object):
       except MemoryError:
       '''
       # Loop approach:
-      logging.info('Not enough memory to broadcast arrays! Using a loop instead...')
+      # logging.info('Not enough memory to broadcast arrays! Using a loop instead...')
       ind_emptycell = np.arange(len(flag_empty_in))[flag_empty_in]
       for ind in ind_emptycell:
          this_coord = coords_in[ind, :]
@@ -2972,6 +3034,25 @@ class VlsvReader(object):
          widval = self.read_parameter("velocity_block_width")
       return widval
 
+   def get_velocity_cell_indices(self, vcellcoord, pop="proton"):
+      ''' Returns velocity cell indices for a dense array format
+      NB: This view does not consider blocks at all.
+
+      :param vcellcoord:   Coordinates of the velocity cell(s)
+      :param pop:          Population ["proton"]
+      '''
+      # WID=self.get_WID()
+      # WID2=WID*WID
+      # WID3=WID2*WID
+      popmesh = self.__popmesh(pop)
+
+      vmin = np.array([popmesh.__vxmin, popmesh.__vymin, popmesh.__vzmin])
+      # print(vmin)
+      dv = np.array([popmesh.__dvx, popmesh.__dvy, popmesh.__dvz])
+      # print(dv)
+      cell_index = np.floor((vcellcoord - vmin) / dv).astype(np.int64)
+      return cell_index
+
    def get_velocity_cell_ids(self, vcellcoord, pop="proton"):
       ''' Returns velocity cell ids of given coordinate
 
@@ -3267,11 +3348,52 @@ class VlsvReader(object):
 
       return self.read(name=name, tag="PARAMETER")
 
+   def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True):
+      '''
+      Read the velocity space of a given cell and return a dense VDF as a numpy array (along with datacube edges)
+      
+      :param cellid:       Cell ID of the cell whose velocity distribution the function will read
+      :kword pop:          Population to read ["proton"]
+      :kword regularize:   replace negative values (fringing effects) with zeros [True]
+
+      :returns: dense_array [np.ndarray], edges
+      '''
+
+      velocity_cell_map = self.read_velocity_cells(cellid, pop)
+      maps = list(zip(*velocity_cell_map.items()))
+      velocity_cell_ids = np.array(maps[0],dtype=np.int64)
+      velocity_cell_values = np.array(maps[1], dtype=np.float32)
+      velocity_cell_coordinates = self.get_velocity_cell_coordinates(velocity_cell_ids, pop)
+      velocity_cell_indices = self.get_velocity_cell_indices(velocity_cell_coordinates, pop)
+
+      popmesh = self.__popmesh(pop)
+      vmin = np.array([popmesh.__vxmin, popmesh.__vymin, popmesh.__vzmin])
+      vmax = np.array([popmesh.__vxmax, popmesh.__vymax, popmesh.__vzmax])
+
+      
+      lowcorner_indices = np.min(velocity_cell_indices, axis = 0)
+      highcorner_indices = np.max(velocity_cell_indices, axis = 0)
+      dv = self.get_velocity_mesh_dv(pop)
+
+      lowcorner_coords = vmin + dv*lowcorner_indices
+      highcorner_coords = vmin + dv*(highcorner_indices+1)
+
+      shape = highcorner_indices+1 - lowcorner_indices
+
+      da, edges=np.histogramdd(velocity_cell_coordinates, shape, list(zip(lowcorner_coords,highcorner_coords)),weights=velocity_cell_values)
+
+      # 
+      if regularize:
+         da[da<0] = 0
+
+      return da, edges
+
 
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
       
       :param cellid: Cell ID of the cell whose velocity cells the function will read
+      :kword pop:    Population to read ["proton"]
       :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
 
       #Example:

@@ -44,6 +44,7 @@ from rotation import rotateVectorToVector,rotateVectorToVector_X
 
 from packaging.version import Version
 
+
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
 logspaceResample = False
@@ -426,7 +427,7 @@ def plot_vdf(filename=None,
              noborder=None, scale=1.0, scale_text=8.0, scale_title=10.0,scale_cb=5.0,scale_label=12.0,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
-             axes=None, cbaxes=None,
+             axes=None, cbaxes=None, cb_horizontal=False,
              contours=None
              ):
 
@@ -511,7 +512,7 @@ def plot_vdf(filename=None,
 
     :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-
+    :kword cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
     :kword noborder:    Plot figure edge-to-edge without borders (default off)
     :kword noxlabels:   Suppress x-axis labels and title
     :kword noylabels:   Suppress y-axis labels and title
@@ -567,10 +568,8 @@ def plot_vdf(filename=None,
 
     if colormap is None:
         colormap="hot_desaturated"
-    if Version(matplotlib.__version__) < Version("3.5.0"):
-        cmapuse=matplotlib.cm.get_cmap(name=colormap)
-    else:
-        cmapuse=matplotlib.colormaps.get_cmap(colormap)
+
+    cmapuse=pt.plot.get_cmap(colormap)
 
     fontsize=scale_text*scale # Most text
     fontsize2=scale_title*scale # Time title
@@ -630,39 +629,6 @@ def plot_vdf(filename=None,
         if slicethick==0:
             projstr="_proj"
 
-        # Verify directory
-        if outputfile is None:
-            if outputdir is None: # default initial path
-                savefigdir=pt.plot.defaultoutputdir
-            else:
-                savefigdir=outputdir
-            # Sub-directories can still be defined in the "run" variable
-            savefigname = savefigdir+run
-        else:
-            if outputdir is not None:
-                savefigname = outputdir+outputfile
-            else:
-                savefigname = outputfile
-
-        # Re-check to find actual target sub-directory
-        savefigprefixind = savefigname.rfind('/')
-        if savefigprefixind >= 0:
-            savefigdir = savefigname[:savefigprefixind+1]
-            savefigprefix = savefigname[savefigprefixind+1:]
-        else:
-            savefigdir = "./"
-            savefigprefix = savefigname
-
-        # Ensure output directory exists
-        if not os.path.exists(savefigdir):
-            try:
-                os.makedirs(savefigdir)
-            except:
-                pass
-
-        if not os.access(savefigdir, os.W_OK):
-            logging.info("No write access for directory "+savefigdir+"! Exiting.")
-            return
 
 
 
@@ -672,14 +638,12 @@ def plot_vdf(filename=None,
        if not vlsvReader.check_population(pop):
            if vlsvReader.check_population("avgs"):
                pop="avgs"
-               #logging.info("Auto-switched to population avgs")
+               logging.info("Auto-switched to population 'avgs' for an old-style Vlasiator output")
            else:
-               logging.info("Unable to detect population "+pop+" in .vlsv file!")
-               sys.exit()
+               raise ValueError("Unable to detect population "+pop+" in .vlsv file!")
     else:
         if not vlsvReader.check_population(pop):
-            logging.info("Unable to detect population "+pop+" in .vlsv file!")
-            sys.exit()
+            raise ValueError("Unable to detect population "+pop+" in .vlsv file!")
 
     #read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = vlsvReader.get_spatial_mesh_size()
@@ -809,43 +773,44 @@ def plot_vdf(filename=None,
 
         # Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string
         Vbulk=None
-        warn_bulk_centering = False
-        if vlsvReader.check_variable('moments'):
-            # This should be a restart file
-            Vbulk = vlsvReader.read_variable('restart_V',cellid)
-        elif vlsvReader.check_variable('V'):
-            # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
-            Vbulk = vlsvReader.read_variable('V',cellid)
-        elif vlsvReader.check_variable('vg_v'):
-            # regular bulk file, v5 analysator supports pre- and post-multipop files with "vg_v"
-            Vbulk = vlsvReader.read_variable('vg_v',cellid)
-        elif vlsvReader.check_variable(pop+'/vg_v'):
-            # multipop v5 bulk file
-            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
-            warn_bulk_centering = True
-        elif vlsvReader.check_variable(pop+'/V'):
-            # multipop bulk file
-            Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
-            warn_bulk_centering = True
-        elif vlsvReader.check_variable(pop+'/vg_v'):
-            # multipop V5 bulk file
-            Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
-            warn_bulk_centering = True
-        else:
-            # fallback: get bulkV from the VDF itself
-            velcells = vlsvReader.read_velocity_cells(cellid, pop=pop)
-            velcellslist = list(zip(*velcells.items()))
-            f = np.asarray(velcellslist[1])
-            V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
-            Vbulk = np.average(V, axis=0, weights=f)
-            warn_bulk_centering = True
+        if (bpara is not None) or (bpara1 is not None) or (bperp is not None) or (cbulk is not None and type(cbulk) is str) or (str(center)=='bulk'):
+            warn_bulk_centering = False
+            if vlsvReader.check_variable('moments'):
+                # This should be a restart file
+                Vbulk = vlsvReader.read_variable('restart_V',cellid)
+            elif vlsvReader.check_variable('V'):
+                # regular bulk file, currently analysator supports pre- and post-multipop files with "V"
+                Vbulk = vlsvReader.read_variable('V',cellid)
+            elif vlsvReader.check_variable('vg_v'):
+                # regular bulk file, v5 analysator supports pre- and post-multipop files with "vg_v"
+                Vbulk = vlsvReader.read_variable('vg_v',cellid)
+            elif vlsvReader.check_variable('Rho') and vlsvReader.check_variable('RhoV'):
+                # Old file, e.g. ABC run with only flux and density
+                Vbulk = vlsvReader.read_variable('RhoV',cellid)/vlsvReader.read_variable('Rho',cellid)
+            elif vlsvReader.check_variable(pop+'/vg_v'):
+                # multipop v5 bulk file
+                Vbulk = vlsvReader.read_variable(pop+'/vg_v',cellid)
+                warn_bulk_centering = True
+            elif vlsvReader.check_variable(pop+'/V'):
+                # multipop bulk file
+                Vbulk = vlsvReader.read_variable(pop+'/V',cellid)
+                warn_bulk_centering = True
+            else:
+                # fallback: get bulkV from the VDF itself
+                velcells = vlsvReader.read_velocity_cells(cellid, pop=pop)
+                velcellslist = list(zip(*velcells.items()))
+                f = np.asarray(velcellslist[1])
+                V = vlsvReader.get_velocity_cell_coordinates(velcellslist[0], pop=pop)
+                Vbulk = np.average(V, axis=0, weights=f)
+                warn_bulk_centering = True
+                print(Vbulk)
 
-        if(warn_bulk_centering):
-           logging.warning("Bulk V centering based on population bulkV, not total plasma center-of-mass bulkV")
+            if(warn_bulk_centering):
+                logging.warning("Bulk V centering based on population bulkV, not total plasma center-of-mass bulkV")
 
-        if Vbulk is None:
-            logging.info("Error in finding plasma bulk velocity!")
-            sys.exit()
+            if Vbulk is None:
+                logging.error("Error in finding plasma bulk velocity! It is required for cbulk and rotations along B. Quick fix is to given manual `center` parameter for plasma bulk velocity.")
+                sys.exit()
 
         # If necessary, find magnetic field
         if bvector is not None or bpara is not None or bperp is not None or bpara1 is not None:
@@ -946,7 +911,7 @@ def plot_vdf(filename=None,
             normvect = Bvect
 
             # Ensure bulkV has some value
-            if np.linalg.norm(Vbulk) < 1e-10:
+            if Vbulk is None or np.linalg.norm(Vbulk) < 1e-10:
                 Vbulk = [-1,0,0]
                 logging.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
@@ -975,18 +940,6 @@ def plot_vdf(filename=None,
                 pltystr=r"$v_{B \times (B \times V)}$ "+velUnitStr
 
 
-        if draw is None and axes is None:
-            if outputfile is None:
-                savefigname=savefigdir+savefigprefix+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
-            else:
-                savefigname=outputfile
-            # Check if target file already exists and overwriting is disabled
-            if (nooverwrite is not None and os.path.exists(savefigname)):
-                if os.stat(savefigname).st_size > 0: # Also check that file is not empty
-                    logging.info("Found existing file "+savefigname+". Skipping.")
-                    return
-                else:
-                    logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
 
         # Extend velocity space and each cell to account for slice directions oblique to axes
         normvect = np.array(normvect)
@@ -1090,7 +1043,7 @@ def plot_vdf(filename=None,
         logging.info("Active f range is "+str(fminuse)+" to "+str(fmaxuse))
         norm = LogNorm(vmin=fminuse,vmax=fmaxuse)
 
-        ticks = LogLocator(base=10,subs=list(range(0,10)))#,
+        ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(0,10)))#,
                            #numticks=max(2,np.rint(np.log10(fmaxuse/fminuse))) ) # where to show labels
                                                                                 # tries to force at least 2 labels
 
@@ -1285,9 +1238,16 @@ def plot_vdf(filename=None,
             elif internalcb is None:
                 # Witchcraft used to place colourbar
                 divider = make_axes_locatable(ax1)
-                cax = divider.append_axes("right", size="5%", pad=0.05)
+
+                if cb_horizontal:
+                    cax = divider.append_axes("bottom", size="4%", pad=0.55)     
+                    ax1.xaxis.set_label_coords(0.5,-0.2)
+                    horalign="center"
+                else:
+                    cax = divider.append_axes("right", size="5%", pad=0.05)           
+                    horalign="left"
                 cbdir="right"
-                horalign="left"
+
             else:
                 # Colorbar within plot area
                 cbloc=1
@@ -1314,17 +1274,17 @@ def plot_vdf(filename=None,
             cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
 
             # First draw colorbar
-            cb = plt.colorbar(fig1,ticks=ticks,cax=cax)
+            cb = plt.colorbar(fig1,ticks=ticks,cax=cax,orientation="horizontal" if cb_horizontal else "vertical")
             cb.outline.set_linewidth(thick)
             cb.ax.yaxis.set_ticks_position(cbdir)
             if cbaxes is None:
-                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+                cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             else:
                 cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
                 cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
-
+    
 
 
         if noxlabels is not None:
@@ -1370,8 +1330,12 @@ def plot_vdf(filename=None,
             newax.imshow(wm)
             newax.axis('off')
 
+
+
         # Save output or draw on-screen
         if draw is None and axes is None:
+            outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
+            savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()

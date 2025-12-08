@@ -47,7 +47,7 @@ import re
 def plot_isosurface(filename=None,
                     vlsvobj=None,
                     filedir=None, step=None,
-                    outputdir=None, nooverwrite=None,
+                    outputdir=None,outputfile=None, nooverwrite=None,
                     #
                     surf_var=None, surf_op=None, surf_level=None,
                     color_var=None, color_op=None,
@@ -75,6 +75,7 @@ def plot_isosurface(filename=None,
     :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
+    :kword outputfile:  Full path to output file, will make directory if it does not exist. Overrides outputdir.
     :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
     :kword surf_var:    Variable to read for defining surface
@@ -125,15 +126,6 @@ def plot_isosurface(filename=None,
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     # watermarkimage=os.path.expandvars('$HOME/appl_taito/analysator/pyPlot/logo_color.png')
 
-    outputprefix = ''
-    if outputdir==None:
-        outputdir=pt.plot.defaultoutputdir
-    outputprefixind = outputdir.rfind('/')
-    if outputprefixind >= 0:
-        outputprefix = outputdir[outputprefixind+1:]
-        outputdir = outputdir[:outputprefixind+1]
-    if not os.path.exists(outputdir):
-        os.makedirs(outputdir)
 
     # Input file or object
     if filename!=None:
@@ -217,23 +209,16 @@ def plot_isosurface(filename=None,
             surf_opstr='_'+surf_op
 
     # Output file name
+    if not surf_var:
+        raise ValueError("surf_var must be provided for isosurface plotting.")
+
     surf_varstr=surf_var.replace("/","_")
     if color_var!=None:
         color_varstr=color_var.replace("/","_")
     else:
         color_varstr="solid"
-    savefigname = outputdir+outputprefix+run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
 
-    # Check if target file already exists and overwriting is disabled
-    if (nooverwrite!=None and os.path.exists(savefigname)):
-        # Also check that file is not empty
-        if os.stat(savefigname).st_size > 0:
-            return
-        else:
-            logging.info("Found existing file "+savefigname+" of size zero. Re-rendering.")
-
-
-    Re = 6.371e+6 # Earth radius in m
+    Re = 6.371e+6 # Earth radius in moutputpref
     # read in mesh size and cells in ordinary space
     [xsize, ysize, zsize] = f.get_spatial_mesh_size()
     xsize = int(xsize)
@@ -324,7 +309,7 @@ def plot_isosurface(filename=None,
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
 
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -750,10 +735,12 @@ def plot_isosurface(filename=None,
 
 
     # Save output or draw on-screen
-    if draw==None:
+    if not draw:
         # Note: generated title can cause strange PNG header problems
         # in rare cases. This problem is under investigation, but is related to the exact generated
         # title string. This try-catch attempts to simplify the time string until output succedes.
+        outputfile_default=run+"_isosurface_"+surf_varstr+surf_opstr+"-"+color_varstr+color_opstr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputdir=outputdir, outputfile=outputfile, outputfile_default=outputfile_default,nooverwrite=nooverwrite)
         try:
             plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
             savechange=0
@@ -816,7 +803,7 @@ def plot_neutral_sheet(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0,
-                  axes=None, cbaxes=None,
+                  axes=None, cbaxes=None,cb_horizontal=False,
                   useimshow=False, imshowinterp='none', folding_alpha=0.2, z_extent=[-5,5], sheetlayer='above'
                   ):
     
@@ -940,6 +927,7 @@ def plot_neutral_sheet(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
         :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
         :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
         :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
@@ -995,8 +983,7 @@ def plot_neutral_sheet(filename=None,
         symlog = 0
     if (filedir == ''):
         filedir = './'
-    if (outputdir == ''):
-        outputdir = './'
+
 
     # Input file or object
     if filename:
@@ -1111,39 +1098,6 @@ def plot_neutral_sheet(filename=None,
         pass_times=[1,0]
 
         # File output checks
-    if not draw and not axes:
-        if not outputfile: # Generate filename
-            if not outputdir: # default initial path
-                outputdir=pt.plot.defaultoutputdir
-            # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
-        else: 
-            if outputdir:
-                outputfile = outputdir+outputfile
-
-        # Re-check to find actual target sub-directory
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-
-        # Ensure output directory exists
-        if not os.path.exists(outputdir):
-            try:
-                os.makedirs(outputdir)
-            except:
-                pass
-
-        if not os.access(outputdir, os.W_OK):
-            logging.info(("No write access for directory "+outputdir+"! Exiting."))
-            return
-
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile)):            
-            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.info(("Found existing file "+outputfile+". Skipping."))
-                return
-            else:
-                logging.info(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
 
     Re = 6.371e+6 # Earth radius in m
@@ -1321,7 +1275,7 @@ def plot_neutral_sheet(filename=None,
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
 
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -1627,7 +1581,7 @@ def plot_neutral_sheet(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
@@ -1820,8 +1774,15 @@ def plot_neutral_sheet(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)
+                horalign="left"
+            cbdir="right"
+
 
         # Colourbar title
         if len(cb_title_use)!=0:
@@ -1835,10 +1796,10 @@ def plot_neutral_sheet(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
         # Ensure minor tick marks are off
@@ -1846,7 +1807,7 @@ def plot_neutral_sheet(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
@@ -1996,11 +1957,13 @@ def plot_neutral_sheet(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
+        outputfile_default=run+"_sheet_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
         except:
             logging.info("Error with attempting to save figure.")
-        logging.info(outputfile+"\n")
+        logging.info(savefigname+"\n")
     elif not axes:
         # Draw on-screen
         plt.draw()

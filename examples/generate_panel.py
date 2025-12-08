@@ -115,19 +115,26 @@ def expr_cav_cust(pass_maps, requestvariables=False):
     empty = np.zeros(np.array(thisrho.shape))
     half = empty + 0.5
     one = empty + 1.0
-    caviton = np.add(empty, one, where=(rhoratio<0.8))
-    caviton = np.add(caviton, one, where=(Bmagratio<0.8))
-    shfa = np.add(caviton, one, where=(thisbeta>10))
-
-    combo = np.add(empty, half, where=(caviton>1.5))
-    combo2 = np.add(empty, half, where=(shfa>2.5))
+ 
+    caviton=np.zeros(empty.shape,dtype='float64')
+    np.add(empty, one,out=caviton, where=(rhoratio<0.8))
+    cavitonbmag=np.zeros(empty.shape,dtype='float64')
+    np.add(caviton, one, out=cavitonbmag,where=(Bmagratio<0.8))
+    shfa=np.zeros(empty.shape,dtype='float64')
+    np.add(cavitonbmag, one,out=shfa, where=(thisbeta>10))
+    
+    combo=np.zeros(empty.shape,dtype='float64')
+    np.add(empty, half,out=combo,where=(cavitonbmag>1.5))
+    combo2=np.zeros(empty.shape,dtype='float64')
+    combo2 = np.add(empty, half,out=combo2, where=(shfa>2.5))
     combo3 = combo+combo2
-
+    
     # Mask out anything that is inside the bow shock
     bowshock = 2.e6
     combo3 = np.ma.masked_where(thisrho>bowshock, combo3)
 
     return combo3
+
 
 
 
