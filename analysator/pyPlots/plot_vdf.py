@@ -802,8 +802,8 @@ def plot_vdf(filename=None,
             if(warn_bulk_centering):
                 logging.warning("Bulk V centering based on population bulkV, not total plasma center-of-mass bulkV")
 
-        if Vbulk is None:
-            raise LookupError("couldn't find plasma bulk velocity Vbulk. It is required for cbulk and rotations along B. Quick fix is to given manual `center` parameter for plasma bulk velocity.")
+            if Vbulk is None:
+                raise LookupError("couldn't find plasma bulk velocity Vbulk. It is required for cbulk and rotations along B. Quick fix is to given manual `center` parameter for plasma bulk velocity.")
 
         # If necessary, find magnetic field
         if bvector is not None or bpara is not None or bperp is not None or bpara1 is not None:
