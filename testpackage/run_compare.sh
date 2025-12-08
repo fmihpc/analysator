@@ -13,6 +13,10 @@
 jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
+source CI_env/bin/activate
+module purge
+module load libglvnd/1.7.0-GCCcore-13.3.0
+module list
 
 verf_loc="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage/verification_sets"
 
