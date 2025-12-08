@@ -38,7 +38,6 @@ datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 runs = []
 
 #Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
-legacy_mode=False
 
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
@@ -240,7 +239,7 @@ for i,run in enumerate(runs):
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
                 else:
                     call = call.replace("var='V'","var='restart_V'")
-                if skipped_args and not legacy_mode:
+                if skipped_args:
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None:
                     callrunids.append(i)
@@ -274,7 +273,7 @@ for i,run in enumerate(runs):
                     continue
                 elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                     continue
-                if skipped_args and not legacy_mode:
+                if skipped_args:
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None:
                     callrunids.append(i)
@@ -302,7 +301,7 @@ for i,run in enumerate(runs):
                         elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                             continue
                         call = call.replace('REPLACEPOP',pop)
-                        if skipped_args and not legacy_mode:
+                        if skipped_args:
                             call=call_replace(call,func,skipped_args,required_args)
                         if call is not None:
                             callrunids.append(i)
@@ -380,21 +379,6 @@ for j in range(start,end):
     outputLocation=os.path.join(pt.plot.defaultoutputdir,verifydir)
 
 
-    #Annoyances due to previous testpackages having different times used for plot_vdf and plot_colormap
-    if legacy_mode:
-        if func=='plot_vdf':
-            if runs[runid]['name']=='ABC':
-                time=100
-            elif runs[runid]['name']=="BCQ":
-                time=1600
-            elif runs[runid]['name']=="BFD":
-                time=1000
-            elif runs[runid]['name']=="BFDr":
-                time=0
-            if not filename is None and "step=" in call:
-                continue
-
-
     # Source data files
     bulkname = source_file_name(filename,fileLocation,time)
 
@@ -407,8 +391,6 @@ for j in range(start,end):
         fileLocation=fileLocation.replace('bulk','distributions')
         bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" 
         time=100
-        if "step=" in call and legacy_mode:
-            continue    
 
     if func == 'plot_vdfdiff':
         time_offset=10
