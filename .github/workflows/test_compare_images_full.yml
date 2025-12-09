@@ -28,7 +28,6 @@ jobs:
             extras: ["all"]
         steps:
         - uses: actions/checkout@v4
-          with:
         - name: Install uv
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
@@ -58,7 +57,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
-            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
             cat testpackage_compare.txt
             python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
         - name: scancel dangling job upon cancellation
