@@ -427,7 +427,8 @@ for j in range(start,end):
         print("END TRACE for call",j,"\n----------------------------")
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
-        print("EXIT_CODE_FROM_JOB 1") 
+        if not "nooverwrite" in call:  
+            print("EXIT_CODE_FROM_JOB 1") 
         
 
 
