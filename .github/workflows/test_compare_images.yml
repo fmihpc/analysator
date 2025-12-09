@@ -64,7 +64,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
-            sbatch -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
             cat testpackage_compare.txt
         - name: scancel dangling job upon cancellation
           if: cancelled()
