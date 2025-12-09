@@ -15,6 +15,7 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 
 module purge
+module load Python/3.10.4-GCCcore-11.3.0
 source CI_env/bin/activate
 module load libglvnd/1.7.0-GCCcore-13.3.0
 module list
