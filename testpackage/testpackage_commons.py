@@ -425,4 +425,9 @@ for j in range(start,end):
         
         traceback.print_exc()
         print("END TRACE for call",j,"\n----------------------------")
+        #This is here so get_job_error can get the error from the call.
+        # note that we could also raise the error but then execution of subsequent calls would stop
+        print("EXIT_CODE_FROM_JOB 1") 
+        
+
 

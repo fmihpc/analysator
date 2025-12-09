@@ -60,7 +60,7 @@ jobs:
             . CI_env/bin/activate
             sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
             cat testpackage_compare.txt
-
+            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
