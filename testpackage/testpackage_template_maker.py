@@ -51,6 +51,8 @@ def call_replace(call,func,skipped_args,required_args=required_args):
             if not check:
                 #Add parameters if there are default_params
                 if default_params:
+                    if type(default_params)==str:
+                        default_params=[default_params]
                     for param in default_params:
                         if param not in named_parameters:
                             args_out.append(param)
@@ -335,19 +337,18 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=0,vscale=1e9)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1,vscale=1e9)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-3,vscale=1e9)",
-
+    
+    '''
     # Externals and expressions
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['rho','B','beta'])",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20,lin=1,usesci=0)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['rho'], boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['beta'])",
+
 
     # Everything at once
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
+    '''
 
     # Streamlines, vectors
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B')",
@@ -463,7 +464,7 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='y', colormap='PuOr',symlog=0, usesci=0)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='z', colormap='PuOr',symlog=0, usesci=0)",
 
-
+    '''
     # Externals and expressions
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
@@ -477,7 +478,8 @@ if __name__=='__main__':
 
     # Everything at once
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
-
+    '''
+    
     # Streamlines, vectors
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,vectordensity=200)", 
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,normal='x',vectordensity=200)", 
