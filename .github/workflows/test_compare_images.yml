@@ -30,6 +30,7 @@ jobs:
             extras: ["all"]
         steps:
         - uses: actions/checkout@v4
+          timeout-minutes: 5
           with:
             fetch-depth: 0
         - name: Install uv
