@@ -34,7 +34,8 @@ funcs_to_use=cmd_args.funcs
 if "pass" in funcs_to_use:
     quit()
 
-datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
+#datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
+datalocation = "/wrk-kappa/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
 runs = []
 
 #Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
