@@ -1,10 +1,18 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: generate_reference_data
+name: Turso compare all images
 
 on:
+  push:
+    branches: [ master, dev, image_compare]
+  schedule:
+    - cron: '0 8 * * MON'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 
 jobs:
@@ -12,7 +20,7 @@ jobs:
   turso_system:
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
-        timeout-minutes: 60
+        timeout-minutes: 120
         strategy:
           fail-fast: false
           max-parallel: 2
@@ -35,17 +43,29 @@ jobs:
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Produce plots
+          id: run_cl
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
+
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh
+
+            cat testpackage_run.txt
             . CI_env/bin/activate
+            python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
             
-            DATAPATH="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets/$(git rev-parse HEAD)"
-            mkdir $DATAPATH
-            sbatch -W -o testpackage_gen_verf.txt --job-name gen_verf_plots ./testpackage/run_testpackage_generate_verf_set.sh $DATAPATH
-          
-
-            cat testpackage_gen_verf.txt
-
-            python ./testpackage/testpackage_get_job_error.py testpackage_gen_verf.txt
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            . CI_env/bin/activate
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
+            cat testpackage_compare.txt
+            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
+        - name: scancel dangling job upon cancellation
+          if: cancelled()
+          run: |
+            scancel ${{ steps.run_cl.outputs.SLURM_JOB_ID }}
+            
+  
