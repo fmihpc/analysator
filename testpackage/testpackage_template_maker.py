@@ -7,18 +7,6 @@ import logging
 import re
 import argparse
 
-#add manualcals filtering or something since rightnow it tries to do it for 3D data? does it work?
-
-
-# For handier debugging, uncomment these to overwrite call lists and include only relevant calls
-# restartcalls = []
-# nonrestartcalls = ["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)","pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-# ]
-# multipopcalls = []
-# v5restartcalls = []
-# v5nonrestartcalls = []
-# v5multipopcalls = []
-
 required_args=False
 def call_replace(call,func,skipped_args,required_args=required_args):
     #This is kind of scuffed maybe
@@ -107,13 +95,7 @@ if __name__=='__main__':
 
 
     #required args for functions, lists are handled as OR statements, tuples within lists as AND
-    #add a way to add required args automatically
-
     #list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
-
-    #maybe add overide to this in runs append
-
-    #filedir issues test with the one below and see if fixed, alos other errors
 
     required_args ={
         "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
