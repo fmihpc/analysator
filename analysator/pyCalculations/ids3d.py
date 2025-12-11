@@ -92,8 +92,8 @@ def idmesh3d(idlist, data, reflevel, xsize, ysize, zsize, xyz, datadimension):
   elif np.ndim(datadimension) == 1:
     dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
-    logging.info("Error finding data dimension in idmesh3d")
-    return -1
+    raise TypeError("Error finding data dimension in idmesh3d")
+
 
   ######################
   # create the plot grid
@@ -172,9 +172,8 @@ def idmesh3d2(idlist, data, reflevel, xsize, ysize, zsize, datadimension):
   elif np.ndim(datadimension) == 1:
     dpoints = np.zeros(np.append(dims, (datadimension[0], datadimension[1])).astype(int))
   else:
-    logging.info("Error finding data dimension in idmesh3d")
-    return -1
-
+    raise TypeError("Error finding data dimension in idmesh3d")
+ 
   ######################
   # create the plot grid
   cells = int(xsize*ysize*zsize)

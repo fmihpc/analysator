@@ -279,7 +279,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             logging.info("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
-            logging.info("error in shape of center vector! give in form (vx,vy,vz).")
+            raise TypeError("shape of center vector invalid! give it in form (vx,vy,vz).")
 
     if setThreshold is None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
@@ -294,7 +294,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
             logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
-            logging.info("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+            logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
             logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
             setThreshold = 1.e-16
     ii_f = np.where(f >= setThreshold)
@@ -385,19 +385,18 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, VXBins, VYBins, pop="pro
             testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
             testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
             if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
-                  logging.info("Error in rotation: NXrot not a unit vector")
+                  raise ValueError("NXrot not a unit vector")
             if abs(NXrot[2]) > 1.e-3:
-                  logging.info("Error in rotation: NXrot not in x-y-plane")
+                  raise ValueError("NXrot not in x-y-plane")
             for count,testvect in enumerate(testrot2):
                   if abs(1.0-np.linalg.norm(testvect))>1.e-3:
-                     logging.info("Error in rotation: testvector "+ str((count,testvect)) + " not a unit vector")
+                     raise ValueError("rotation: testvector "+ str((count,testvect)) + " not a unit vector")
                   if abs(1.0-np.amax(testvect))>1.e-3:
-                     logging.info("Error in rotation: testvector " + str((count,testvect)) + " largest component is not unity")
+                     raise ValueError("rotation: testvector " + str((count,testvect)) + " largest component is not unity")
          else:
             return resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slicetype, slicethick, reducer=reducer, wflux=wflux)
     else:
-        logging.info("Error finding rotation of v-space!")
-        return (False,0,0,0)
+        raise LookupError("couldn't find rotation of v-space")
 
     # create 2-dimensional histogram of velocity components perpendicular to slice-normal vector
     (binsXY,edgesX,edgesY) = doHistogram(f,VX,VY,Voutofslice,VXBins,VYBins, slicethick, reducer=reducer, wflux=wflux, initial_dV=inputcellsize)
@@ -563,8 +562,7 @@ def plot_vdf(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("needs a .vlsv file name, python object, or directory and step")
 
     if colormap is None:
         colormap="hot_desaturated"
@@ -695,8 +693,8 @@ def plot_vdf(filename=None,
                 plt.switch_backend(pt.backend_noninteractive)
 
     if (cellids is None and coordinates is None and coordre is None):
-        logging.info("Error: must provide either cell id's or coordinates")
-        return -1
+        raise TypeError("must provide either cell id's or coordinates")
+
 
     if coordre is not None:
         # Transform to metres
@@ -716,8 +714,7 @@ def plot_vdf(filename=None,
             #logging.info('Number of points: ' + str(xReq.shape[0]))
             pass
         else:
-            logging.info('ERROR: bad coordinate variables given')
-            sys.exit()
+            raise ValueError('Bad coordinate variables given')
         cidsTemp = []
         for ii in range(xReq.shape[0]):
             cidRequest = (np.int64)(vlsvReader.get_cellid(np.array([xReq[ii],yReq[ii],zReq[ii]])))
@@ -725,11 +722,9 @@ def plot_vdf(filename=None,
             if cidRequest > 0:
                 cidNearestVspace = vlsvReader.get_cellid_with_vdf(np.array([xReq[ii],yReq[ii],zReq[ii]]), pop=pop)   # deprecated getNearestCellWithVspace(). needs testing
             else:
-                logging.info('ERROR: cell not found')
-                sys.exit()
+                raise LookupError("cell not found")
             if (cidNearestVspace <= 0):
-                logging.info('ERROR: cell with vspace not found')
-                sys.exit()
+                raise LookupError('cell with vspace not found')
             xCid,yCid,zCid = vlsvReader.get_cell_coordinates(cidRequest)
             xVCid,yVCid,zVCid = vlsvReader.get_cell_coordinates(cidNearestVspace)
             logging.info('Point: ' + str(ii+1) + '/' + str(xReq.shape[0]))
@@ -751,8 +746,7 @@ def plot_vdf(filename=None,
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
-                logging.info("Error, cellid "+str(cellid)+" does not contain a VDF!")
-                return
+                raise ValueError(" cellid "+str(cellid)+" does not contain a VDF!")
 
 
     if draw is not None or axes is not None:
@@ -809,8 +803,7 @@ def plot_vdf(filename=None,
                 logging.warning("Bulk V centering based on population bulkV, not total plasma center-of-mass bulkV")
 
             if Vbulk is None:
-                logging.error("Error in finding plasma bulk velocity! It is required for cbulk and rotations along B. Quick fix is to given manual `center` parameter for plasma bulk velocity.")
-                sys.exit()
+                raise LookupError("couldn't find plasma bulk velocity Vbulk. It is required for cbulk and rotations along B. Quick fix is to given manual `center` parameter for plasma bulk velocity.")
 
         # If necessary, find magnetic field
         if bvector is not None or bpara is not None or bperp is not None or bpara1 is not None:
@@ -836,7 +829,8 @@ def plot_vdf(filename=None,
                     PERBB = vlsvReader.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    logging.info("Error finding B vector direction!")
+                    raise LookupError("could not find B vector direction")
+
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -879,17 +873,15 @@ def plot_vdf(filename=None,
                 pltxstr=r"$v_1$ "+velUnitStr
                 pltystr=r"$v_2$ "+velUnitStr
             else:
-                logging.info("Error parsing slice normal vector!")
-                sys.exit()
+                raise TypeError("could not parse slice normal vector")
             if normalx is not None:
                 if len(normalx)==3:
                     normvectX=normalx
                     if not np.isclose((np.array(normvect)*np.array(normvectX)).sum(), 0.0):
-                        logging.info("Error, normalx dot normal is not zero!")
-                        sys.exit()
+                        raise ValueError("normalx dot normal is not zero!")
                 else:
-                    logging.info("Error parsing slice normalx vector!")
-                    sys.exit()
+                    raise TypeError("could not parse slice normalx vector!")
+
         elif xy is not None:
             slicetype="xy"
             pltxstr=r"$v_x$ "+velUnitStr
@@ -913,7 +905,7 @@ def plot_vdf(filename=None,
             # Ensure bulkV has some value
             if Vbulk is None or np.linalg.norm(Vbulk) < 1e-10:
                 Vbulk = [-1,0,0]
-                logging.info("Warning, read zero bulk velocity from file. Using VX=-1 for rotation.")
+                logging.warning("read zero bulk velocity from file. Using VX=-1 for rotation.")
             # Calculates BcrossV
             BcrossV = np.cross(Bvect,Vbulk)
             normvectX = BcrossV
@@ -1005,8 +997,8 @@ def plot_vdf(filename=None,
 
         # Check that data is ok and not empty
         if checkOk == False:
-            logging.info('ERROR: error from velocity space reducer. No velocity cells?')
-            continue
+            raise ValueError("error from velocity space reducer. No velocity cells?")
+            #Is error appropriate here?
 
         # Perform swap of coordinate axes, if requested
         if coordswap is not None:
@@ -1336,11 +1328,12 @@ def plot_vdf(filename=None,
         if draw is None and axes is None:
             outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+projstr+".png"
             savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
+
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
                 plt.close()
-            except:
-                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            except Exception as e:
+                raise IOError("Error with attempting to save figure due to matplotlib LaTeX integration:"+str(e))
             logging.info(savefigname+"\n")
             plt.close()
         elif axes is None:
