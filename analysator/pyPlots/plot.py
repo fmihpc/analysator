@@ -283,7 +283,7 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
 
         if not outputdir: # default initial path
             outputdir=defaultoutputdir
-
+            check=False
     
         if check:
             #remove leading '/' on outputdir as this would cause issues with os.path.join
