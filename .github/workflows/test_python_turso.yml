@@ -27,6 +27,9 @@ jobs:
           uses: astral-sh/setup-uv@v6
         - name: Install dependencies
           run: |
+            export UV_CACHE_DIR=../.cache/uv
+            export HTTP_PROXY=
+            export HTTPS_PROXY=
             export TMPDIR=$RUNNER_TEMP
             uv venv CI_env
             . CI_env/bin/activate
@@ -34,6 +37,7 @@ jobs:
         - name: Trial imports
           run: |
             export TMPDIR=$RUNNER_TEMP
+            export UV_CACHE_DIR=../.cache
             . CI_env/bin/activate
             python -c 'import analysator as pt'
             python -c 'import analysator as pt;pt.plot.__dict__'
