@@ -89,17 +89,18 @@ def compare_images_in_folders(a,b,jobcount,jobcurr):
 
 
     #Print unique and missing files
-    for file in unique_files:
-        print("Unique file:",file)
-    for file in missing_files:
-        print("Missing file:",file)
+    if jobcurr==0:
+        for file in unique_files:
+            print("Unique file:",file)
+        for file in missing_files:
+            print("Missing file:",file)
 
 
-    if len(unique_files)!=0:
-        print("::warning::Found new file(s) produced by the code!")
+        if len(unique_files)!=0:
+            print("::warning::Found new file(s) produced by the code!")
 
-    if len(missing_files)!=0:
-        raise SystemError("Found file(s) **not** produced by the code!")
+        if len(missing_files)!=0:
+            raise SystemError("Found file(s) **not** produced by the code!")
 
 
     if different:
