@@ -47,6 +47,5 @@ jobs:
           
 
             cat testpackage_gen_verf.txt
-            module purge
-            module load Python/3.10.4-GCCcore-11.3.0
+
             python ./testpackage/testpackage_get_job_error.py testpackage_gen_verf.txt
