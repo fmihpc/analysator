@@ -4,10 +4,6 @@
 name: Turso compare selectively images
 
 on:
-  push:
-    branches: [image_compare]
-  pull_request:
-    branches: [ master, dev, image_compare]
   workflow_dispatch:
 
 concurrency:
