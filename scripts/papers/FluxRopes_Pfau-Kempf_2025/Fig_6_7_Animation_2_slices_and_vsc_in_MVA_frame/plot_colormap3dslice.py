@@ -72,6 +72,7 @@ def plot_colormap3dslice(filename=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white', streamlinethick=1.0, streamlinearrowsize=3,
                   axes=None, cbaxes=None,
+                  cb_horizontal=False,
                   normal='y', cutpoint=0., cutpointre=None,
                   useimshow=False, imshowinterp='none',
                   circle=0,circlex=0,circley=0
@@ -209,6 +210,7 @@ def plot_colormap3dslice(filename=None,
                         Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                         proportions may change if the box and axes size are not designed to match by the user
     :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kword cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
     :kword normal:      Direction of the normal of the 2D cut through ('x', 'y', or 'z' or a vector)
     :kword cutpoint:    Coordinate (in normal direction) through which the cut must pass [m]
     :kword cutpointre:  Coordinate (in normal direction) through which the cut must pass [rE]
@@ -586,7 +588,7 @@ def plot_colormap3dslice(filename=None,
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
 
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -1101,7 +1103,7 @@ def plot_colormap3dslice(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=range(10)) # where to show labels
+            ticks = LogLocator(base=10,subs= (1.0, ) if cb_horizontal else range(10)) # where to show labels
     else:
         # Linear
         levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
@@ -1487,10 +1489,10 @@ def plot_colormap3dslice(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False, orientation='horizontal' if cb_horizontal else 'vertical')
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False, orientation='horizontal' if cb_horizontal else 'vertical')
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 

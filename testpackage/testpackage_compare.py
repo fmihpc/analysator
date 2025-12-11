@@ -3,60 +3,40 @@ import time as timetime
 import os
 import sys
 from argparse import ArgumentParser
+import cv2
+import numpy as np
+import logging
+import os.path
 
+#could be used to replace compare_images with a cv2 based implementation
 
+def compare_images(a,b):
 
+    im1=cv2.imread(a)
+    im2=cv2.imread(b)
+    return im1.shape == im2.shape and not(np.bitwise_xor(im1,im2).any())
+    
+    
+    #below can be used to get the RMSE, which is about 2-3x as slow the images must be read astype(np.float16) first for accurate RMSE 
+    '''
+    #originally uint8 so we might underflow with the substraction if not casted as float, float16 should be good enough
+    if im1.shape != im2.shape:
 
+        #something should be added to handle this better, have a threshold in general or something.
+        #the substraction yields an error, so one could pad it with 
+        #smaller_image=np.pad(smaller_image,(0,larger_image.shape[0]-smaller_image.shape[0]),(0,larger_image.shape[1]-smaller_image.shape[1]),(0,0))
+ 
+        return False
+    diff = np.sqrt(np.mean((im1-im2)**2))
+    if diff !=0:
+        return False
+    return True
+    '''
 
-#Parse arguments
-parser = ArgumentParser(prog="Image compare"
-                        ,description="Compares images in two folders/images, and outputs the different ones to a specified output folder. Note that folders must have the same structure and filenames, otherwise these files are treated as unique."
-                        )
+def compare_images_in_folders(a,b,jobcount,jobcurr):
 
-parser.add_argument("folder_a",help="First folder/image to compare")
-parser.add_argument("folder_b",help="Second folder/image to compare")
-parser.add_argument("output_folder",help="Output folder for different images, if not specified, no output is saved",default="NULL:",nargs='?')
-
-args= parser.parse_args()
-a,b,output_folder = args.folder_a,args.folder_b,args.output_folder
-
-#Create output folder if it doesn't exist
-if not os.path.exists(output_folder) and output_folder!='NULL:':
-    proc = subprocess.Popen(f'mkdir {output_folder}'.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = proc.communicate()
-
-    #If errors, raise an exception
-    if err:
-        err = str(err,'utf-8')
-        raise RuntimeError(err)
-
-
-def compare_images(a,b,output_file="NULL:"):
-
-    cmd = f"magick compare -metric RMSE {a} {b} {output_file}"
-    proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-
-    out,err = proc.communicate()
-
-    exitcode=proc.returncode
-
-    #If errors, raise an exception (This has to be odne like this as compare sends output to stderr)
-    if exitcode!=0 and exitcode != 1:
-        out = str(out,'utf-8')
-        raise RuntimeError(out)
-
-    out = str(out,'utf-8') 
-    out=out.strip('\n')
-    out = out.split(" ")
-
-    #Returns true if images' RMSE = 0, i.e are identical
-    if out[0]=='0':
-        return True
-
-    return False
-
-
-def compare_images_in_folders(a,b,output_folder='NULL:'):
+    #do the comparisons
+    
     cmd = f'diff -r {a} {b}'
     proc = subprocess.Popen(cmd.split(" "),stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = proc.communicate()
@@ -85,13 +65,24 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
                 missing_files.append(line[2].rstrip(":")+'/'+line[3])
 
 
-    #Feed the different files to compare_images
-    for file in different_files:
-        if output_folder!= "NULL:":
-            filename = file.split("/")[-1].rstrip(".png") #is it always png?
-            output_folder=output_folder+f"/difference_output_{filename}.png"
+    nteststot = len(different_files)
+    increment = int(nteststot/jobcount)
+    remainder = nteststot - jobcount * increment
+    start=jobcurr * increment
+    end=start + increment
+    # Remainder frames are divvied out evenly among tasks
+    if jobcurr < remainder:
+        start = start + jobcurr
+        end = end + jobcurr + 1
+    else:
+        start = start + remainder
+        end = end + remainder
 
-        if(not compare_images(file,file.replace(a,b),output_folder)):
+
+
+    #Feed the different files to compare_images
+    for file in different_files[start:end]:
+        if(not compare_images(file,file.replace(a,b))):
             different=True
             print("Images differ:",file,file.replace(a,b))
 
@@ -105,7 +96,7 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
 
 
     if len(unique_files)!=0:
-        raise SystemError("Found new file(s) produced by the code!")
+        print("::warning::Found new file(s) produced by the code!")
 
     if len(missing_files)!=0:
         raise SystemError("Found file(s) **not** produced by the code!")
@@ -116,4 +107,26 @@ def compare_images_in_folders(a,b,output_folder='NULL:'):
         raise SystemError("Images Differ")
 
 
-compare_images_in_folders(a,b,output_folder)
+
+if __name__=='__main__':
+
+    #Parse arguments
+    parser = ArgumentParser(prog="Image compare"
+                            ,description="Compares images in two folders/images, and outputs the different ones to a specified output folder. Note that folders must have the same structure and filenames, otherwise these files are treated as unique."
+                            )
+
+    parser.add_argument("folder_a",help="First folder/image to compare")
+    parser.add_argument("folder_b",help="Second folder/image to compare")
+   
+    parser.add_argument("jobcount",help="Number of parallel jobs to use",default=1,nargs='?',type=int)
+    parser.add_argument("jobindex",help="Index of the job to run",default=0,nargs='?',type=int)
+    
+   
+    args= parser.parse_args()
+    a,b = args.folder_a,args.folder_b
+
+    jobcount=args.jobcount
+    jobindex=args.jobindex
+
+    compare_images_in_folders(a,b,jobcount,jobindex)
+    

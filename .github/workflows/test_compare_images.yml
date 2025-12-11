@@ -5,7 +5,7 @@ name: Turso compare colourmap images
 
 on:
   push:
-    branches: [ master, dev, image_compare]
+    branches: [image_compare]
   pull_request:
     branches: [ master, dev, image_compare]
   schedule:
@@ -22,7 +22,7 @@ jobs:
   turso_system:
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
-        timeout-minutes: 60
+        timeout-minutes: 120
         strategy:
           fail-fast: false
           max-parallel: 2
@@ -30,9 +30,14 @@ jobs:
             extras: ["all"]
         steps:
         - uses: actions/checkout@v4
+          timeout-minutes: 5
+          with:
+            fetch-depth: 0
         - name: Install uv
           uses: astral-sh/setup-uv@v6
+          timeout-minutes: 5
         - name: Install dependencies
+          timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
@@ -41,49 +46,33 @@ jobs:
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
-        - name: Produce colormap plots
-          id: run_color
+        - name: Produce plots
+          id: run_cl
           run: |
             export TMPDIR=$RUNNER_TEMP
-      
-
-            sbatch -W -o testpackage_colormap_run.txt --job-name gen_plots ./testpackage/run_testpackage_colormap_workflow.sh
-            
-            cat testpackage_colormap_run.txt
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
-            python ./testpackage/testpackage_get_job_error.py testpackage_colormap_run.txt
+
+            export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
+            echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
+            echo "$DIFFRESULT"
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh $DIFFRESULT
+
+            cat testpackage_run.txt
+            . CI_env/bin/activate
+            python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
             
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
-            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
             . CI_env/bin/activate
-            ./testpackage/run_compare.sh testpackage_colormap
-
-        - name: Produce vdf plots
-          id: run_vdf
-          run: |
-            export TMPDIR=$RUNNER_TEMP
-      
-
-            sbatch -W -o testpackage_vdf_run.txt --job-name gen_plots ./testpackage/run_testpackage_vdf_workflow.sh 
-            cat testpackage_vdf_run.txt
-            module purge
-            module load Python/3.10.4-GCCcore-11.3.0
-            python ./testpackage/testpackage_get_job_error.py testpackage_vdf_run.txt
-            
-        - name: Comparing plotted data
-          run: |
-            export TMPDIR=$RUNNER_TEMP
-            module load Python/3.10.4-GCCcore-11.3.0
-            module load ImageMagick/7.1.0-37-GCCcore-11.3.0
-            . CI_env/bin/activate
-            ./testpackage/run_compare.sh testpackage_vdf
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
+            cat testpackage_compare.txt
+            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
-            scancel ${{ steps.run_color.outputs.SLURM_JOB_ID }}
+            scancel ${{ steps.run_cl.outputs.SLURM_JOB_ID }}
             
   
