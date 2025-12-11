@@ -45,8 +45,8 @@ def set_yticks( figure, yticks ):
    from math import ceil
    new_figure = figure
    if yticks <= 1:
-      logging.info("BAD YTICKS SET AT SET_YTICKS!")
-      return []
+      raise ValueError("BAD YTICKS SET AT SET_YTICKS!")
+
    # Get sub axes
    axes = new_figure.get_axes()
    # Iterate thorugh sub axes
@@ -79,8 +79,7 @@ def plot_variables( x, y, figure=[] ):
          new_x.append(x)
          return plot_multiple_variables( new_x, y, figure, clean_xticks=True )
       else:
-         logging.info("ERROR; BAD X AND Y DIMENSIONS " + str(x_dim) + " " + str(y_dim))
-         return []
+         raise ValueError("BAD X AND Y DIMENSIONS " + str(x_dim) + " " + str(y_dim))
    else:
       if x_dim == 0 and y_dim == 0:
          return plot_multiple_variables( [x], [y], figure )
@@ -126,11 +125,9 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
             variables_x_list = [variables_x_list]
 
    if len(variables_x_list) != len(variables_y_list):
-      logging.info("BAD VARIABLE LENGTH: " + str(len(variables_x_list)) + " " + str(len(variables_y_list)))
-      return []
+      raise ValueError("BAD VARIABLE LENGTH: " + str(len(variables_x_list)) + " " + str(len(variables_y_list)))
    if len(variables_y_list) > 18:
-      logging.info("TOO MANY VARIABLES: " + str(len(variables_y_list)))
-      return []
+      raise ValueError("TOO MANY VARIABLES: " + str(len(variables_y_list)))
       
    length_of_list = len(variables_x_list)
 

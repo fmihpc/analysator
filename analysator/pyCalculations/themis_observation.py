@@ -22,6 +22,7 @@
 # 
 
 import numpy as np
+import analysator as pt
 import matplotlib.pyplot as plt
 import matplotlib
 from rotation import rotateVectorToVector
@@ -157,9 +158,9 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     grid_x = -grid_r * np.sin(grid_theta)  # turn radial grid points into (x, y)
     grid_y = -grid_r * np.cos(grid_theta)  # (the - comes from detector-look-direction vs particle-movement-direction)
 
-    hires_x = np.linspace(-2200,2200,256);
-    hires_y = np.linspace(-2200,2200,256);
-    xi,yi = np.meshgrid(hires_x,hires_y);
+    hires_x = np.linspace(-2200,2200,256)
+    hires_y = np.linspace(-2200,2200,256)
+    xi,yi = np.meshgrid(hires_x,hires_y)
     vi = griddata( (grid_x.flatten(),grid_y.flatten()), values.flatten(), (xi,yi))
 
     if smooth:
@@ -200,9 +201,9 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     grid_x = -grid_r * np.sin(grid_theta)  # turn radial grid points into (x, y)
     grid_y = -grid_r * np.cos(grid_theta)
 
-    hires_x = np.linspace(-2200,2200,256);
-    hires_y = np.linspace(-2200,2200,256);
-    xi,yi = np.meshgrid(hires_x,hires_y);
+    hires_x = np.linspace(-2200,2200,256)
+    hires_y = np.linspace(-2200,2200,256)
+    xi,yi = np.meshgrid(hires_x,hires_y)
     vi = griddata( (grid_x.flatten(),grid_y.flatten()), values.flatten(), (xi,yi), method='linear')
 
     if smooth:
@@ -215,10 +216,7 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.set_title("Phasespace at cell " + str(cellID))
     ax.set_xlabel(xlabel+" (km/s)")
     ax.set_ylabel(ylabel+" (km/s)")
-    if Version(matplotlib.__version__) <= Version("3.6"):
-        cmapuse=matplotlib.cm.get_cmap(name="Blues")
-    else:
-        cmapuse=matplotlib.colormaps.get_cmap("Blues")
+    cmapuse=pt.plot.get_cmap("Blues")
 
     cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse, shading='flat')
     cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse)

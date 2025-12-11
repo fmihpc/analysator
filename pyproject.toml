@@ -35,6 +35,7 @@ vtk = [
 ]
 all = [
     "analysator[vtk]",
+    "opencv-python"
 ]
 bvtk = [
     "vtk==9.2.6",
