@@ -76,7 +76,6 @@ def create_venv_script(path,venv_path):
             used_gcc_version = version_info[-1].strip("[]")
             f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
         
-            f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
             f.write("module list\n")
             f.write(f"source {venv_path}/bin/activate\n")
             f.close()
