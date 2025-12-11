@@ -24,7 +24,7 @@ def create_venv(path,install_analysator=True,editable=False):
     virt_env.post_setup(context)
     if install_analysator:
         editable='--editable' if editable else None
-        system_call(f'{path}/bin/pip install {editable} ../[all]',live_output=True)
+        system_call(f'{path}/bin/pip install {editable} ../',live_output=True)
     print(f'Virtual environment created at {path}')
     return None
 
@@ -63,7 +63,6 @@ def create_venv_script(path,venv_path):
                 f.write(f"module load cray-python/{used_python_version}\n")
             else:
                 f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
-                f.write("module load ImageMagick/7.1.0-37-GCCcore-11.3.0\n")
 
             f.write("module list\n")
             f.write(f"source {venv_path}/bin/activate\n")
@@ -77,7 +76,7 @@ if __name__ == "__main__":
 
     parser=argparse.ArgumentParser(description='Create virtual environment for testpackage.')
     parser.add_argument('--no-analysator',action='store_true',help='Do not install analysator.',default=False)
-    parser.add_argument('--editable','-e',action='store_true',help='Install analysator as editable',default=True)
+    parser.add_argument('--editable','-e',action='store_true',help='Install analysator as editable',default=False)
     args=parser.parse_args()
     
     venv_name= 'venv_testpackage'
