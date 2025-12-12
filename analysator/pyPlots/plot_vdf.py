@@ -69,7 +69,7 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
         fw = f # use particle phase-space density as weighting in the histogram
 
     # Select cells which are within slice area
-    if vthick!=plot_vdf:
+    if vthick!=0:
         indexes = [(abs(Voutofslice) <= 0.5*vthick) &
                    (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
