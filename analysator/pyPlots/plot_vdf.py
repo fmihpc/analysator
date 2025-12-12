@@ -1104,7 +1104,7 @@ def plot_vdf(filename=None,
 
         # Grid
         #plt.grid(color='grey',linestyle='-')
-        #plt.minorticks_on()for i in {0..9}; do echo $i; find . -name "000$i*.png" -exec sh -c "identify {} | grep -Po '(\d+x\d+)\s' " \; ; done
+        #plt.minorticks_on()
         ax1.grid(color='grey',linestyle='-',lw=thick)
         ax1.tick_params(axis='x',which='minor')
         ax1.tick_params(axis='y',which='minor')
@@ -1182,10 +1182,8 @@ def plot_vdf(filename=None,
             elif biglabloc==3:
                 BLcoords=[0.02,0.02]
                 BLha = "left"
-                BLva = "bottom"
-                
+                BLva = "bottom" 
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
-
 
 
         if bvector is not None and bpara is None and bperp is None and bpara1 is None:
