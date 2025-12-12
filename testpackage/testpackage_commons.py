@@ -192,6 +192,14 @@ callrunids = []
 callrunindex = []
 funcids=[]
 
+#here so lint doesnt complain
+restartcalls=None
+nonrestartcalls=None
+multipopcalls=None
+v5restartcalls=None
+v5nonrestartcalls=None
+v5multipopcalls=None
+
 for i,run in enumerate(runs):
     # bulk and restart files
     vlasiator5 = run['vlasiator5']
