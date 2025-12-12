@@ -1301,6 +1301,7 @@ def plot_vdf(filename=None,
             savefig_pad=0.05 # The default is 0.1
             bbox_inches=None
         elif figsize is not None:
+            savefig_pad=0.05
             bbox_inches=None
         else:
             plt.tight_layout(pad=0.01)
