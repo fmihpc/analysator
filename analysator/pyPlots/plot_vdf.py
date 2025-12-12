@@ -69,7 +69,7 @@ def doHistogram(f,VX,VY,Voutofslice,vxBinEdges,vyBinEdges,vthick,reducer="integr
         fw = f # use particle phase-space density as weighting in the histogram
 
     # Select cells which are within slice area
-    if vthick!=0:
+    if vthick!=plot_vdf:
         indexes = [(abs(Voutofslice) <= 0.5*vthick) &
                    (VX > min(vxBinEdges)) & (VX < max(vxBinEdges)) &
                    (VY > min(vyBinEdges)) & (VY < max(vyBinEdges)) ]
@@ -1086,19 +1086,14 @@ def plot_vdf(filename=None,
 
         if axes is None:
             if figsize is not None:
-                #Matplotlib jank, it noborder changed the imagesize even though you'd think insetting would work
-                #it did fix the size if inset was something weird like [0.5,0.5,0.5,0.5] *shrug*
 
                 if noborder: 
                     logging.warning("noborder and figsize enabled, this may undo effects of figsize")
                 fig = plt.figure(figsize=figsize,dpi=300)
-                axm=plt.gca()
-                axm.axis('off')
-                ax1 = axm.inset_axes([0.05,0.05,0.9,0.9]) 
             else:
                 # Create 300 dpi image of suitable size
                 fig = plt.figure(figsize=[4.0,3.15*ratio] ,dpi=300)
-                ax1 = plt.gca() # get current axes
+            ax1 = plt.gca() # get current axes
 
         else:
             ax1=axes
@@ -1109,7 +1104,7 @@ def plot_vdf(filename=None,
 
         # Grid
         #plt.grid(color='grey',linestyle='-')
-        #plt.minorticks_on()
+        #plt.minorticks_on()for i in {0..9}; do echo $i; find . -name "000$i*.png" -exec sh -c "identify {} | grep -Po '(\d+x\d+)\s' " \; ; done
         ax1.grid(color='grey',linestyle='-',lw=thick)
         ax1.tick_params(axis='x',which='minor')
         ax1.tick_params(axis='y',which='minor')
@@ -1188,8 +1183,9 @@ def plot_vdf(filename=None,
                 BLcoords=[0.02,0.02]
                 BLha = "left"
                 BLva = "bottom"
-
+                
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
+
 
 
         if bvector is not None and bpara is None and bperp is None and bpara1 is None:
@@ -1305,6 +1301,8 @@ def plot_vdf(filename=None,
         elif noborder is None:
             plt.tight_layout()
             savefig_pad=0.05 # The default is 0.1
+            bbox_inches=None
+        elif figsize is not None:
             bbox_inches=None
         else:
             plt.tight_layout(pad=0.01)
