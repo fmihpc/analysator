@@ -440,14 +440,14 @@ for j in range(start,end):
         exec(call)
 
     except Exception as e:
-        print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
-        
-        traceback.print_exc()
-        print("END TRACE for call",j,"\n----------------------------")
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
-        if "nooverwrite" not in call:  
+        if "nooverwrite" not in call: 
             print("EXIT_CODE_FROM_JOB 1") 
         
+        print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
+
+        traceback.print_exc()
+        print("END TRACE for call",j,"\n----------------------------")
 
 
