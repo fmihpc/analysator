@@ -1,7 +1,7 @@
 #from testpackage_helper import system_call
 from create_env import system_call
 
-git_diff=system_call('git diff --name-only origin/master...').split('\n')
+git_diff=system_call('git diff --name-only origin/image_compare...').split('\n')
 
 #Dictionary that tells which testpackage runs to run (values) if changes were made to these files (keys).
 #Checking uses 'in' operation, case insensitive

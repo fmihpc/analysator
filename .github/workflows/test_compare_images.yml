@@ -1,15 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Turso compare colourmap images
+name: Turso compare selectively images
 
 on:
   push:
     branches: [image_compare]
   pull_request:
     branches: [ master, dev, image_compare]
-  schedule:
-    - cron: '0 8 * * MON'
   workflow_dispatch:
 
 concurrency:
@@ -37,7 +35,7 @@ jobs:
           uses: astral-sh/setup-uv@v6
           timeout-minutes: 5
         - name: Install dependencies
-          timeout-minutes: 5
+          timeout-minutes: 60
           run: |
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy

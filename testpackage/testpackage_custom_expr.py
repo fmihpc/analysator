@@ -1,5 +1,11 @@
 import numpy as np
 
+vlasiator5=None
+level_bow_shock = None
+level_n_caviton = None
+level_B_caviton = None
+level_beta_SHFA = None
+
 
 
 # Custom expression function                                                               
