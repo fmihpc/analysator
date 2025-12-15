@@ -1,4 +1,4 @@
-import testpackage_custom_expr as cexp
+import testpackage_custom_expr as cexp #importing this, even unused, is required for usage in testpackage_commons.py
 
 restartcalls = [
 
