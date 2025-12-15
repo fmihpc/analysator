@@ -223,15 +223,16 @@ for i,run in enumerate(runs):
         #try to import the list of calls corresponding to the function to be tested. Skip if not found
         try:
             exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
-        except Exception:
-            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder")
+        except Exception as e:
+            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder! \n Error message:"+str(e))
 
 
         #Get the list of calls from the imported file, set list to empty list if list not foud in the file
         for call_list in ["restartcalls","nonrestartcalls","multipopcalls","v5restartcalls","v5nonrestartcalls","v5multipopcalls"]:
             try:
                 exec(f'{call_list}=testpackage_{func}.{call_list}')
-            except Exception:
+            except Exception as e:
+                print(f"::warning::Error trying to get call list:\n {str(e)}")
                 exec(f'{call_list}=[]')
 
         skipped_args=run['skipped_args']
