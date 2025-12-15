@@ -244,8 +244,7 @@ for i,run in enumerate(runs):
         for call_list in ["restartcalls","nonrestartcalls","multipopcalls","v5restartcalls","v5nonrestartcalls","v5multipopcalls"]:
             try:
                 exec(f'{call_list}=testpackage_{func}.{call_list}')
-            except Exception as e:
-                print(f"::warning::Error trying to get call list:\n {str(e)}")
+            except Exception:
                 exec(f'{call_list}=[]')
 
         skipped_args=run['skipped_args']
