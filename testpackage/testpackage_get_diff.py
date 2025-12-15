@@ -1,6 +1,6 @@
 #from testpackage_helper import system_call
 from create_env import system_call
-
+import logging
 git_diff=system_call('git diff --name-only origin/image_compare...').split('\n')
 
 #Dictionary that tells which testpackage runs to run (values) if changes were made to these files (keys).
@@ -37,6 +37,8 @@ output=[]
 for diff_line in git_diff:
     for key,val in file_checks.items():
         if key.lower() in diff_line.lower():
+            if key.lower() == 'testpackage_':
+                logging.warning('::warning::Something in testpackage has changed, make sure the test is still comparable with current verification_set!')
             if not val:
                 #run all tests
                 quit()
