@@ -25,7 +25,7 @@ import logging
 import analysator as pt
 import numpy as np
 import sys
-from rotation import rotateTensorToVector
+from ..calculations.rotation import rotateTensorToVector
 import warnings
 
 PLANE = 'XY'

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import analysator as pt
-from variable import get_data, get_name, get_units
+from analysator.calculations.variable import get_data, get_name, get_units
 
 # initialize lists for gathering values
 profiles_B = []
