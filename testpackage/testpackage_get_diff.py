@@ -30,7 +30,7 @@ file_checks = {
 }
 #Override if there are many changes as run all tests
 logger = logging.getLogger(__name__)
-logging.basicConfig(filename="diff_log.txt",level=logging.INFO)
+logging.basicConfig(format='%(message)s',filename="diff_log.txt",level=logging.INFO)
 run_all=False
 testpackage_check=True
 if len(git_diff)>6:
