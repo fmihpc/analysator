@@ -40,7 +40,8 @@ runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
                  'fluxLocation': datalocation+'/2D/ABC/flux/',
-                'skipped_args':{'plot_vdf':{'step':''},'plot_vdf_profiles':{'bpara':'','bperp':'','step':''},
+                'skipped_args':{'plot_vdf':{'step':''},
+                                'plot_vdf_profiles':{'bpara':'','bperp':'','step':''},
                                 'plot_vdfdiff':{'filedir':'','bpara':'','bperp':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles','plot_vdfdiff'],
                  'pops': ['avgs'],
@@ -73,7 +74,8 @@ runs.append( { 'name': 'FID',
                  'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
-                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
+                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},
+                                'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
                  'singletime': False,
                  'filename': None, #restart file
                  'manualcall':False,
@@ -175,12 +177,23 @@ runs.append( { 'name': 'BFD',
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 #First arg in tuple is the one that needs to be there, second etc can be there without the first
-required_args ={
-    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_vdfdiff":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step"),'vlsvobj','filename'],None)]
-    
+required_args = {
+    "plot_vdf": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_vdf_profiles": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_vdfdiff": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_isosurface": [
+        ([("surf_step", "surf_var")], ["surf_step=10", "surf_var='vg_rho'"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
 }
 
 calls = []
@@ -433,7 +446,7 @@ for j in range(start,end):
         print("END TRACE for call",j,"\n----------------------------")
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
-        if not "nooverwrite" in call:  
+        if "nooverwrite" not in call:  
             print("EXIT_CODE_FROM_JOB 1") 
         
 
