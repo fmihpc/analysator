@@ -270,44 +270,53 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
-
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
-        
+        check=False
         if not outputfile:
             if not outputfile_default:
                 outputfile="plot.png"
+
             outputfile=outputfile_default
-        
-        # Check if outputfile contains path information
+            if not outputdir:
+                # Check later if outputfile contains path information and combine with defaultoutputdir
+                check=True
+
+        # Separate possible path information from outputfile
         outputprefixind = outputfile.rfind('/')
         if outputprefixind >= 0:            
             outputdir = outputfile[:outputprefixind+1]
             outputfile = outputfile[outputprefixind+1:]
 
-
         if not outputdir: # default initial path
-            outputfile=os.path.join(defaultoutputdir,outputfile)
             outputdir=defaultoutputdir
-        else: 
+            check=False
+    
+        if check:
+            #remove leading '/' on outputdir as this would cause issues with os.path.join
+            outputprefixind = outputdir.find('/')
+            if outputprefixind == 0:            
+                outputdir = outputdir[1:]
+            outputdir= os.path.join(defaultoutputdir,outputdir)
+            outputfile=os.path.join(outputdir,outputfile)
+        else:
             outputfile = os.path.join(outputdir,outputfile)
-
 
         # Ensure output directory exists
         if not os.path.exists(outputdir):
             try:
                 os.makedirs(outputdir)
-            except:
+            except FileExistsError: 
+                #Parallel jobs might try to create dir simultaneously.
                 pass
-
+            except:
+                raise IOError("Could not create output directory "+outputdir+" Exiting.")
         if not os.access(outputdir, os.W_OK):
-            logging.info("No write access for directory "+outputdir+"! Exiting.")
-            return
+            raise IOError("No write access for directory "+outputdir+" Exiting.")
 
         # Check if target file already exists and overwriting is disabled
         if (nooverwrite and os.path.exists(outputfile)):            
             if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.warning("Found existing file "+outputfile+". Skipping.")
-                return
+                raise IOError("Found existing file "+outputfile+" and nooverwrite=True.")
             else:
                 logging.warning("Found existing file "+outputfile+" of size zero. Re-rendering.")
 

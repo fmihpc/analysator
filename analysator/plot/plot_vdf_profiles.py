@@ -142,7 +142,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
             logging.info("Transforming to frame travelling at speed "+str(center))
             V = V - center
         else:
-            logging.info("Error in shape of center vector! Give in form (vx,vy,vz).")
+            raise TypeError("Error in shape of center vector! Give in form (vx,vy,vz).")
 
     if setThreshold==None:
         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
@@ -157,8 +157,7 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
             setThreshold = vlsvReader.read_variable(pop+"/vg_effectivesparsitythreshold",cid)
             logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
         else:
-            logging.info("Warning! Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
-            logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
+            logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.\n Using a default value of 1.e-16. Override with setThreshold=value.")
             setThreshold = 1.e-16
     ii_f = np.where(f >= setThreshold)
     logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
@@ -225,18 +224,18 @@ def vSpaceReducer(vlsvReader, cid, slicetype, normvect, pop="proton",
         testrot = rotateVectorToVector(testvectors,N) # transforms testvectors to frame where z is aligned with N=B
         testrot2 = rotateVectorToVector_X(testrot,NXrot) # transforms testrot to frame where x is aligned with NXrot (hence preserves z)
         if abs(1.0-np.linalg.norm(NXrot))>1.e-3:
-            logging.info("Error in rotation: NXrot not a unit vector")
+            raise ValueError("Error in rotation: NXrot not a unit vector")
         if abs(NXrot[2]) > 1.e-3:
-            logging.info("Error in rotation: NXrot not in x-y-plane")
+            raise ValueError("Error in rotation: NXrot not in x-y-plane")
         for count,testvect in enumerate(testrot2):
             if abs(1.0-np.linalg.norm(testvect))>1.e-3:
-                logging.info("Error in rotation: testvector " + str((count,testvect)) + " not a unit vector")
+                raise ValueError("Error in rotation: testvector " + str((count,testvect)) + " not a unit vector")
             if abs(1.0-np.amax(testvect))>1.e-3:
-                logging.info("Error in rotation: testvector " + str((count,testvect)) + " largest component is not unity")
+                raise ValueError("Error in rotation: testvector " + str((count,testvect)) + " largest component is not unity")
 
     else:
-        logging.info("Error finding rotation of v-space!")
-        return (False,0,0,0)
+        raise LookupError("Error finding rotation of v-space!")
+
 
     # create three 1-dimensional profiles across VDF
     (bins1,bins2,bins3,axis1,axis2,axis3) = doProfiles(f,VX,VY,Voutofslice,slicethick)
@@ -360,8 +359,7 @@ def plot_vdf_profiles(filename=None,
         #filename = filedir+'bulk.'+str(step).rjust(7,'0')+'.vlsv'
         vlsvReader=pt.vlsvfile.VlsvReader(filename)
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("needs a .vlsv file name, python object, or directory and step")
 
     scale=1
     fontsize=8*scale # Most text
@@ -461,8 +459,8 @@ def plot_vdf_profiles(filename=None,
                 plt.switch_backend(pt.backend_noninteractive)  
 
     if (cellids==None and coordinates==None and coordre==None):
-        logging.info("Error: must provide either cell id's or coordinates")
-        return -1
+        raise TypeError(" must provide either cell id's or coordinates")
+
 
     if coordre!=None:
         # Transform to metres
@@ -517,9 +515,8 @@ def plot_vdf_profiles(filename=None,
         # User-provided cellids
         for cellid in cellids:
             if not verifyCellWithVspace(vlsvReader, cellid):
-                logging.info("Error, cellid "+str(cellid)+" does not contain a VDF!")
-                return
-
+                raise ValueError("Error, cellid "+str(cellid)+" does not contain a VDF!")
+                
 
     if draw!=None or axes!=None:
         # Program was requested to draw to screen or existing axes instead of saving to a file. 
@@ -586,7 +583,7 @@ def plot_vdf_profiles(filename=None,
                     PERBB = vlsvReader.read_variable("perturbed_B", cellidlist)
                     Braw = BGB+PERBB
                 else:
-                    logging.info("Error finding B vector direction!")
+                    raise RuntimeError("Error finding B vector direction!")
                 # Non-reconstruction version, using just cell-face-values
                 # Bvect = Braw[0]
                 # Now average in each face direction (not proper reconstruction)
@@ -633,8 +630,8 @@ def plot_vdf_profiles(filename=None,
                 pltystr=r"$v_2$"
                 pltzstr=r"$v_3$"
             else:
-                logging.info("Error parsing slice normal vector!")
-                sys.exit()
+                raise RuntimeError("Error parsing slice normal vector!")
+
         elif xy!=None:
             slicetype="xy"
             pltxstr=r"$v_x$"
@@ -882,10 +879,11 @@ def plot_vdf_profiles(filename=None,
 
             outputfile_default=run+"_vdf_"+pop+"_cellid_"+str(cellid)+stepstr+"_"+slicetype+".png"
             savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
+
             try:
                 plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-            except:
-                logging.info("Error with attempting to save figure due to matplotlib LaTeX integration.")
+            except Exception as e:
+                raise IOError("Error with attempting to save figure due to matplotlib LaTeX integration:" + str(e))
             logging.info(savefigname+"\n")
             plt.close()
         elif axes==None:

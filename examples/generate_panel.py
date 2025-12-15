@@ -47,8 +47,8 @@ def exprMA_cust(exprmaps, requestvariables=False):
 
     # Verify that time averaging wasn't used
     if type(exprmaps) is list:
-        print("exprMA_cust expected a single timestep, but got multiple. Exiting.")
-        quit()
+        raise TypeError("exprMA_cust expected a single timestep, but got multiple. Exiting.")
+
 
     custombulkspeed=1500000. # m/s
     va = exprmaps['va'][:,:]
@@ -75,8 +75,8 @@ def expr_cav_cust(pass_maps, requestvariables=False):
     # format of the incoming data.
     if type(pass_maps) is not list:
         # Not a list of time steps, calculating this value does not make sense.
-        print("expr_cav_cust expected a list of timesteps to average from, but got a single timestep. Exiting.")
-        quit()
+        raise TypeError("expr_cav_cust expected a list of timesteps to average from, but got a single timestep. Exiting.")
+
 
     # Multiple time steps were found
     ntimes = len(pass_maps)
