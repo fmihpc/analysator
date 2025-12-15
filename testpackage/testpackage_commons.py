@@ -1,10 +1,6 @@
 import analysator as pt
-import sys, os
-import numpy as np
+import os
 import traceback
-import inspect
-import logging
-import re
 import argparse
 from testpackage_template_maker import call_replace
 
@@ -227,7 +223,7 @@ for i,run in enumerate(runs):
         #try to import the list of calls corresponding to the function to be tested. Skip if not found
         try:
             exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
-        except:
+        except Exception:
             raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder")
 
 
@@ -235,7 +231,7 @@ for i,run in enumerate(runs):
         for call_list in ["restartcalls","nonrestartcalls","multipopcalls","v5restartcalls","v5nonrestartcalls","v5multipopcalls"]:
             try:
                 exec(f'{call_list}=testpackage_{func}.{call_list}')
-            except:
+            except Exception:
                 exec(f'{call_list}=[]')
 
         skipped_args=run['skipped_args']
