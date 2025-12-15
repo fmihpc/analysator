@@ -93,7 +93,7 @@ if __name__ == "__main__":
     
     venv_name= 'venv_testpackage'
     venv_path = os.path.abspath('./'+venv_name)
-    if not venv_name in os.listdir('.') and create_venv_local:
+    if venv_name not in os.listdir('.') and create_venv_local:
         print('venv_testpackage not found, creating virtual environment')
         create_venv(venv_path,editable=args.editable,install_analysator=not args.no_analysator)
         create_venv_script('./',venv_path)

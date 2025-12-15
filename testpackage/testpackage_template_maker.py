@@ -1,9 +1,5 @@
-import analysator as pt
-import sys, os
-import numpy as np
-import traceback
+import analysator as pt #this import is used, see the function_pars
 import inspect
-import logging
 import re
 import argparse
 
@@ -30,7 +26,7 @@ def call_replace(call,func,skipped_args,required_args=required_args):
 
             check=False
             for param in required_params:
-                if type(param)==tuple and param[0] not in named_parameters:
+                if type(param) is tuple and param[0] not in named_parameters:
                     check=True
                 elif any((all(r in named_parameters for r in param),(param in named_parameters))):
                     if not skipped_args or func not in skipped_args or not any(r in skipped_args[func].keys() for r in param):
@@ -39,7 +35,7 @@ def call_replace(call,func,skipped_args,required_args=required_args):
             if not check:
                 #Add parameters if there are default_params
                 if default_params:
-                    if type(default_params)==str:
+                    if type(default_params) is str:
                         default_params=[default_params]
                     for param in default_params:
                         if param not in named_parameters:
@@ -60,9 +56,9 @@ def call_replace(call,func,skipped_args,required_args=required_args):
                     skipped_args_dict=False
                 call_args=arg.split("=")
                 if skipped_args_dict and call_args[0] in skipped_args_dict.keys():
-                    if type(skipped_args_dict[call_args[0]])==str and skipped_args_dict[call_args[0]] in call_args[1]:
+                    if type(skipped_args_dict[call_args[0]]) is str and skipped_args_dict[call_args[0]] in call_args[1]:
                         continue
-                    elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}
+                    elif type(skipped_args_dict[call_args[0]]) is list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}
                         continue
             if arg.split("=")[0] in function_pars:
                 args_out.append(arg)

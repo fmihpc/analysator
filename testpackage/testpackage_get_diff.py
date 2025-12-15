@@ -40,7 +40,7 @@ for diff_line in git_diff:
             if not val:
                 #run all tests
                 quit()
-            elif type(val)==list: 
+            elif type(val) is list: 
                 output.extend(val)
             else:
                 output.append(val)
