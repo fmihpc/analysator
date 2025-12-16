@@ -539,7 +539,7 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_parallel')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
+    # "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
     ])
 
