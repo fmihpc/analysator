@@ -13,6 +13,7 @@
 jobcount=$(( $SLURM_ARRAY_TASK_MAX - $SLURM_ARRAY_TASK_MIN + 1 )) 
 index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
+hostname
 
 module purge
 module load Python/3.10.4-GCCcore-11.3.0
