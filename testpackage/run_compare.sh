@@ -31,7 +31,7 @@ fi
 check=true
 verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
 if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
-  echo ".lockfile found in $verf_loc/$verfset, not comparing"
+  echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
   exit(1)
 fi
 echo "Comparing against $verfset"
