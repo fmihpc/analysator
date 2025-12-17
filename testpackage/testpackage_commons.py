@@ -179,6 +179,7 @@ required_args = {
     "plot_vdf": [
         (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
         ([("filedir", "step"), "vlsvobj", "filename"], None),
+        (["figsize"],["figsize=[5,3]"])
     ],
     "plot_vdf_profiles": [
         (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
