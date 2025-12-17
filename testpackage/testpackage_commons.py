@@ -76,7 +76,6 @@ runs.append( { 'name': 'FID',
                                 'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
                  'singletime': False,
                  'filename': None, #restart file
-                 'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
                  'vlasiator5': True,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
@@ -91,7 +90,6 @@ runs.append( { 'name': 'FHA',
                 'skipped_args':{'ALL':{'expression':''}},
                  'singletime': False,
                  'filename': None, #restart file
-                 'manualcall':False,
                  'nosubpops': True, # backstreaming / non-backstreaming
                  'vlasiator5': True,
                  'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
@@ -120,7 +118,6 @@ runs.append( { 'name': 'BCQr',
                  'singletime': True, # neighboring bulk files not available
                  'time': 1361,
                 'skipped_args':{'plot_vdf':{'step':''}},
-                 'manualcall':False,
                  'vlasiator5': False,
                  'nosubpops': False, # thermal / non-thermal
                  'filename': 'restart.0001361.vlsv',
@@ -134,7 +131,6 @@ runs.append( { 'name': 'BGA',
                  'pops': ['proton'],
                  'skipped_args':None,
                  'time': 380,
-                 'manualcall':False,
                  'singletime': True, # neighboring bulk files not available
                  'filename': None,
                  'vlasiator5': True,
@@ -151,7 +147,6 @@ runs.append( { 'name': 'BFDr',
                 'fluxLocation': None,
                  'singletime': True, # neighboring bulk files not available
                  'time': 1126,
-                'manualcall':False,
                 'skipped_args':{'plot_vdf':{'step':''}},
                 'nosubpops': False, # thermal / non-thermal
                 'vlasiator5': False,
@@ -169,7 +164,6 @@ runs.append( { 'name': 'BFD',
                  'time': 2000,
                  'singletime': False,
                  'filename': None,
-                  'manualcall':False,
                  'nosubpops': False, # backstreaming / non-backstreaming
                  'vlasiator5': False,
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
