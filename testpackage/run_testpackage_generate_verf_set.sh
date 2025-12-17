@@ -4,6 +4,7 @@
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=0-10
+#SBATCH --constraint="carrington|ukko"
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 
@@ -13,6 +14,7 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 hostname
 
 source CI_env/bin/activate
+export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 
 export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$1

@@ -24,7 +24,7 @@ module list
 verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
 
 #if pass we do not check for anything
-if echo $@ | grep -q -P "\spass$|\spass\s"; then
+if echo $@ | grep -q -P "\spass$|\spass\s|pass"; then
    exit 0
 fi
 

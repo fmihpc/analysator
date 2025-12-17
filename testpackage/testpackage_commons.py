@@ -1,10 +1,6 @@
 import analysator as pt
-import sys, os
-import numpy as np
+import os
 import traceback
-import inspect
-import logging
-import re
 import argparse
 from testpackage_template_maker import call_replace
 
@@ -44,7 +40,8 @@ runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
                  'fileLocation': datalocation+'/2D/ABC/bulk/',
                  'fluxLocation': datalocation+'/2D/ABC/flux/',
-                'skipped_args':{'plot_vdf':{'step':''},'plot_vdf_profiles':{'bpara':'','bperp':'','step':''},
+                'skipped_args':{'plot_vdf':{'step':''},
+                                'plot_vdf_profiles':{'bpara':'','bperp':'','step':''},
                                 'plot_vdfdiff':{'filedir':'','bpara':'','bperp':''}},
                  'funcs': ['plot_colormap','plot_vdf','plot_vdf_profiles','plot_vdfdiff'],
                  'pops': ['avgs'],
@@ -77,7 +74,8 @@ runs.append( { 'name': 'FID',
                  'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
-                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
+                'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},
+                                'ALL':{'expression':''}}, #ig_zz and ig_pp is also skipped on purpose
                  'singletime': False,
                  'filename': None, #restart file
                  'manualcall':False,
@@ -179,12 +177,23 @@ runs.append( { 'name': 'BFD',
                  'cavitonparams': [2.0e6,0.8e6,4.e-9,10] } )
 
 #First arg in tuple is the one that needs to be there, second etc can be there without the first
-required_args ={
-    "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_vdfdiff":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step"),'vlsvobj','filename'],None)],
-    "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step"),'vlsvobj','filename'],None)]
-    
+required_args = {
+    "plot_vdf": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_vdf_profiles": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_vdfdiff": [
+        (["coordre", "coordinates", "cellids"], ["coordre=REPLACECOORDRE"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
+    "plot_isosurface": [
+        ([("surf_step", "surf_var")], ["surf_step=10", "surf_var='vg_rho'"]),
+        ([("filedir", "step"), "vlsvobj", "filename"], None),
+    ],
 }
 
 calls = []
@@ -227,15 +236,15 @@ for i,run in enumerate(runs):
         #try to import the list of calls corresponding to the function to be tested. Skip if not found
         try:
             exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
-        except:
-            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder")
+        except Exception as e:
+            raise IOError(f"testpackage_{func} could not be imported, check that the file exists and is in the correct folder! \n Error message:"+str(e))
 
 
         #Get the list of calls from the imported file, set list to empty list if list not foud in the file
         for call_list in ["restartcalls","nonrestartcalls","multipopcalls","v5restartcalls","v5nonrestartcalls","v5multipopcalls"]:
             try:
                 exec(f'{call_list}=testpackage_{func}.{call_list}')
-            except:
+            except Exception:
                 exec(f'{call_list}=[]')
 
         skipped_args=run['skipped_args']
@@ -430,14 +439,14 @@ for j in range(start,end):
         exec(call)
 
     except Exception as e:
-        print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
-        
-        traceback.print_exc()
-        print("END TRACE for call",j,"\n----------------------------")
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
-        if not "nooverwrite" in call:  
+        if "nooverwrite" not in call: 
             print("EXIT_CODE_FROM_JOB 1") 
         
+        print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
+
+        traceback.print_exc()
+        print("END TRACE for call",j,"\n----------------------------")
 
 

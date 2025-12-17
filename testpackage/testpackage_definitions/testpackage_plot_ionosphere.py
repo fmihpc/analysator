@@ -47,8 +47,8 @@ v5nonrestartcalls=[
 "pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX, title='title_test')",
 
 #vmin,vmax,Symmetric
-"pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX, symmetric=True,vmin=2,vmax=40)",
-"pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX,vmin=2,vmax=40)",
+"pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX, symmetric=True,vmin=0,vmax=1)",
+"pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX,vmin=0,vmax=0.5)",
 "pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX,vmin=0)",
 "pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX,vscale=1e9)",
 #operators
