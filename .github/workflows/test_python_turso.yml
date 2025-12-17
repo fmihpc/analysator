@@ -16,7 +16,8 @@ jobs:
 
   turso_system:
         env:
-          UV_CACHE_DIR: /wrk-kappa/group/spacephysics/analysator/CI/.cache/uv
+          UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+          # UV_CACHE_DIR: /wrk-kappa/group/spacephysics/analysator/CI/.cache/uv
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
         strategy:
@@ -31,9 +32,9 @@ jobs:
           uses: actions/cache@v4
           with:
             path: /wrk-kappa/group/spacephysics/analysator/CI/.cache/uv
-            key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+            key: uv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
             restore-keys: |
-              uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+              uv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
               uv-${{ runner.os }}
             
         - name: Install dependencies
