@@ -33,7 +33,7 @@ file_checks = {
 }
 #Override if there are many changes as run all tests
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(message)s',filename="diff_log.txt",level=logging.INFO)
+logging.basicConfig(format='%(message)s',filename="diff_log.txt",filemode="w",level=logging.INFO)
 run_all=False
 testpackage_check=True
 if len(git_diff)>6:
@@ -46,7 +46,7 @@ for diff_line in git_diff:
         if key.lower() in diff_line.lower():
             if 'testpackage_' in key.lower() and testpackage_check:
                 testpackage_check=False
-                logging.warning(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!::')
+                logging.warning(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!')
             if not val:
                 run_all=True
             elif type(val) is list: 
