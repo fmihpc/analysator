@@ -1,7 +1,8 @@
 #from testpackage_helper import system_call
 from create_env import system_call
-
-git_diff=system_call('git diff --name-only origin/image_compare...').split('\n')
+import logging
+branch='image_compare'
+git_diff=system_call(f'git diff --name-only origin/{branch}...').split('\n')
 
 #Dictionary that tells which testpackage runs to run (values) if changes were made to these files (keys).
 #Checking uses 'in' operation, case insensitive
@@ -27,26 +28,36 @@ file_checks = {
 "compare_images.yml":None,
 "miscellaneous":None,
 }
-
 #Override if there are many changes as run all tests
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(message)s',filename="diff_log.txt",level=logging.INFO)
+run_all=False
+testpackage_check=True
 if len(git_diff)>6:
-    quit()
+    logging.info(f"Multiple ({len(git_diff)}) changes, will run all tests")
+    run_all=True
 
 output=[]
-
 for diff_line in git_diff:
     for key,val in file_checks.items():
         if key.lower() in diff_line.lower():
+            if 'testpackage_' in key.lower() and testpackage_check:
+                testpackage_check=False
+                logging.warning(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!::')
             if not val:
-                #run all tests
-                quit()
+                run_all=True
             elif type(val) is list: 
                 output.extend(val)
             else:
                 output.append(val)
 
 
-if output:
+
+if run_all:
+    quit()
+elif output:
     print(" ".join(output))
 else:
     print("pass")
+
+
