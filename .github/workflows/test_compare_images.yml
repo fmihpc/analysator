@@ -1,6 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
+# This workflow will install Python dependencies and analysator, run the analysator testpackage based on git diff and compare the images 
 name: Turso compare selectively images
 
 on:
@@ -53,7 +51,7 @@ jobs:
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
-              echo ".lockfile found in $verf_loc/$verfset, not running test"
+              echo -e ".lockfile found in $verf_loc/$verfset, not running test, as the verification set generation is likely still ongoing\n Check ongoing actions and/or re-run verification set generation."
               exit 1
             fi
             export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
