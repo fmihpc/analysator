@@ -2,10 +2,8 @@
 name: Turso compare selectively images
 
 on:
-  push:
-    branches: [image_compare]
   pull_request:
-    branches: [ master, dev, image_compare]
+    branches: [ master, dev]
   workflow_dispatch:
 
 concurrency:
@@ -33,7 +31,7 @@ jobs:
           uses: astral-sh/setup-uv@v6
           timeout-minutes: 5
         - name: Install dependencies
-          timeout-minutes: 60
+          timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
