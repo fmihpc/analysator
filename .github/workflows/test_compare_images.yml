@@ -54,7 +54,7 @@ jobs:
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
               echo ".lockfile found in $verf_loc/$verfset, not running test"
-              exit(1)
+              exit 1
             fi
             export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
             echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
