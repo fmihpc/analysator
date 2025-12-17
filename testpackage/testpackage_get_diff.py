@@ -1,5 +1,4 @@
-#from testpackage_helper import system_call
-from create_env import system_call
+from testpackage_helpers import system_call
 import logging
 branch='image_compare'
 git_diff=system_call(f'git diff --name-only origin/{branch}...').split('\n')

@@ -2,7 +2,7 @@ import analysator as pt
 import os
 import traceback
 import argparse
-from testpackage_template_maker import call_replace
+from testpackage_helpers import call_replace
 
 def source_file_name(filename,fileLocation,time):
     if filename is None:
