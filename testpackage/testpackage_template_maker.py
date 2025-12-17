@@ -1,23 +1,7 @@
-import analysator as pt
-import sys, os
-import numpy as np
-import traceback
+import analysator as pt #this import is used, see the function_pars
 import inspect
-import logging
 import re
 import argparse
-
-#add manualcals filtering or something since rightnow it tries to do it for 3D data? does it work?
-
-
-# For handier debugging, uncomment these to overwrite call lists and include only relevant calls
-# restartcalls = []
-# nonrestartcalls = ["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['rho','B','beta'],lin=1,colormap='bwr',usesci=0)","pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-# ]
-# multipopcalls = []
-# v5restartcalls = []
-# v5nonrestartcalls = []
-# v5multipopcalls = []
 
 required_args=False
 def call_replace(call,func,skipped_args,required_args=required_args):
@@ -42,7 +26,7 @@ def call_replace(call,func,skipped_args,required_args=required_args):
 
             check=False
             for param in required_params:
-                if type(param)==tuple and param[0] not in named_parameters:
+                if type(param) is tuple and param[0] not in named_parameters:
                     check=True
                 elif any((all(r in named_parameters for r in param),(param in named_parameters))):
                     if not skipped_args or func not in skipped_args or not any(r in skipped_args[func].keys() for r in param):
@@ -51,7 +35,7 @@ def call_replace(call,func,skipped_args,required_args=required_args):
             if not check:
                 #Add parameters if there are default_params
                 if default_params:
-                    if type(default_params)==str:
+                    if type(default_params) is str:
                         default_params=[default_params]
                     for param in default_params:
                         if param not in named_parameters:
@@ -72,9 +56,9 @@ def call_replace(call,func,skipped_args,required_args=required_args):
                     skipped_args_dict=False
                 call_args=arg.split("=")
                 if skipped_args_dict and call_args[0] in skipped_args_dict.keys():
-                    if type(skipped_args_dict[call_args[0]])==str and skipped_args_dict[call_args[0]] in call_args[1]:
+                    if type(skipped_args_dict[call_args[0]]) is str and skipped_args_dict[call_args[0]] in call_args[1]:
                         continue
-                    elif type(skipped_args_dict[call_args[0]])==list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}
+                    elif type(skipped_args_dict[call_args[0]]) is list and any(arg_skip in call_args[1] for arg_skip in skipped_args_dict[call_args[0]]):  #list of args in dict value means OR  ex. {'var':["vg_rho","vg_phi"]}
                         continue
             if arg.split("=")[0] in function_pars:
                 args_out.append(arg)
@@ -107,13 +91,7 @@ if __name__=='__main__':
 
 
     #required args for functions, lists are handled as OR statements, tuples within lists as AND
-    #add a way to add required args automatically
-
     #list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
-
-    #maybe add overide to this in runs append
-
-    #filedir issues test with the one below and see if fixed, alos other errors
 
     required_args ={
         "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
@@ -561,7 +539,7 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_parallel')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta_perpendicular')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
+    # "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[14,0],pass_vars=['vg_rho'])"
 
     ])
 

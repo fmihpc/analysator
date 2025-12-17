@@ -1,12 +1,7 @@
 import subprocess
-import time as timetime
-import os
-import sys
 from argparse import ArgumentParser
 import cv2
 import numpy as np
-import logging
-import os.path
 
 #could be used to replace compare_images with a cv2 based implementation
 
