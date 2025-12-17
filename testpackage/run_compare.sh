@@ -29,14 +29,19 @@ if echo $@ | grep -q -P "\spass$|\spass\s|pass"; then
 fi
 
 check=true
-
+verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
+if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
+  echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
+  exit 1
+fi
+echo "Comparing against $verfset"
 #Note that this is skipped if no arguments are passed
 for i in $@
 do
     check=false
     echo "Comparing for $i"
     #gets latest verfication set (based on modification date -> grep directories only -> take firstline -> get last word)
-    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/$i/" 
+    folder_1="$verf_loc/$verfset/$i/" 
     folder_2="${PWD}/produced_plots/$i/"
     python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
     echo "EXIT_CODE_FROM_JOB $?"
@@ -45,7 +50,7 @@ done
 if $check;
 then
     echo "Comparing all"
-    folder_1="$verf_loc/$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')/" 
+    folder_1="$verf_loc/$verfset/" 
     folder_2="${PWD}/produced_plots/"
     python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
     echo "EXIT_CODE_FROM_JOB $?"
