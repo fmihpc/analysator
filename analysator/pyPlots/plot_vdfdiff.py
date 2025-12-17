@@ -201,7 +201,7 @@ def plot_vdfdiff(filename1=None, filename2=None,
         vlsvReader2=pt.vlsvfile.VlsvReader(filename2)
     elif vlsvobj2 is not None:
         vlsvReader2=vlsvobj2
-    elif ((filedir is not None) and (step is not None)):
+    elif ((filedir is not None) and (step_diff is not None)):
         filename = glob.glob(filedir+'bulk*'+str(step_diff).rjust(7,'0')+'.vlsv')[0]
         vlsvReader2=pt.vlsvfile.VlsvReader(filename)
     else:
