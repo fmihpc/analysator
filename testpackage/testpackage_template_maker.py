@@ -92,9 +92,9 @@ if __name__=='__main__':
 
     #required args for functions, lists are handled as OR statements, tuples within lists as AND
     #list of tuples, first element is the list of required arguments and second is the defaults if argument is not found, leaving it as None skips defaults
-
+    #tuples inside inner list [(arg1,arg2,..),..] means that for arg1 to be present arg2 has to be present
     required_args ={
-        "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None])],
+        "plot_vdf":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[None]),("figsize","figsize=[5,4]")],
         "plot_vdf_profiles":[(["coordre","coordinates","cellids"],["coordre=REPLACECOORDRE"]),([("filedir","step")],[""])],
         "plot_isosurface":[([("surf_step","surf_var")],["surf_step=10","surf_var='vg_rho'"]),([("filedir","step")],[""])]
         
@@ -155,7 +155,7 @@ if __name__=='__main__':
 
 
     # title, axes, noborders
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\mathcal{Color}$')",
+    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title=r'$\\mathcal{Title}$ and so forth $\odot$', cbtitle=r'$\\mathcal{Color}$')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noborder=1)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, title='',cbtitle='',noxlabels=1)",
@@ -253,13 +253,9 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='bwr')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, colormap='PuOr')",
 
-    #colorbar
-    #not yet in in master see PR #359
-    #"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
+    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
 
-    #AMR, fsaved
-    #Does not work currently, fix for the AMR contour is in PR #364
-    #"pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, amr=0.1,amrlinestyles='dashed',amrcolours='red',amrlinewidths=1"),
+    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, amr=0.1,amrlinestyles='dashed',amrcolours='red',amrlinewidths=1)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fsaved='red')",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=1)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, fluxrope=0.5)",
@@ -316,17 +312,7 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1,vscale=1e9)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='B', op='y', colormap='bwr',symlog=1e-3,vscale=1e9)",
     
-    '''
-    # Externals and expressions
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['rho','B','beta'])",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['va'], vmin=1, vmax=20,lin=1,usesci=0)",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)",
 
-
-    # Everything at once
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
-    '''
 
     # Streamlines, vectors
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='B')",
@@ -442,21 +428,6 @@ if __name__=='__main__':
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='y', colormap='PuOr',symlog=0, usesci=0)",
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_v', op='z', colormap='PuOr',symlog=0, usesci=0)",
 
-    '''
-    # Externals and expressions
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, pass_vars=['vg_rho','vg_b_vol','vg_beta'])",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, pass_vars=['vg_va'], vmin=1, vmax=20,lin=1,usesci=0)",
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, expression=exprMA_cust, boxre=[0,30,-15,15], vmin=1, vmax=20,lin=1,usesci=0)", #why error with plot3d? keyeerror vg_va
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3, pass_vars=['vg_rho','vg_b_vol','vg_beta'],lin=1,colormap='bwr',usesci=0)",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=expr_cav_cust, pass_times=3,lin=1,colormap='bwr',usesci=0, boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_rho'], boxre=[0,30,-15,15])",
-    "pt.plot.REPLACEFUNC(filename=fileLocation+bulkname, run=verifydir+REPLACEINDEX, expression=timesmooth, pass_times=[7,0], pass_vars=['vg_beta'])",
-
-
-    # Everything at once
-    "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, external=extcontour, boxre=[0,30,-15,15], expression=exprMA_cust, vmin=1, vmax=20,lin=1,usesci=0, fsaved=1, fluxfile=fluxLocation+fluxname)",
-    '''
     
     # Streamlines, vectors
     "pt.plot.REPLACEFUNC(vlsvobj=f, run=verifydir+REPLACEINDEX, vectors='vg_v',vectorsize=1,vectordensity=200)", 
@@ -652,7 +623,7 @@ if __name__=='__main__':
                 restart_replace=True
 
             for call in calls_in:
-                call=call_replace(call,func,skipped_args)
+                call=call_replace(call,func,skipped_args,required_args)
                 if not call:
                     continue
 
@@ -666,7 +637,6 @@ if __name__=='__main__':
                     temp_list.append(call)
 
             calls_in[:]=temp_list
-
 
 
         with open(f"testpackage_{func}.py","w") as f:
