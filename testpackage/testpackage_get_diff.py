@@ -1,6 +1,10 @@
 from testpackage_helpers import system_call
 import logging
-branch='image_compare'
+import sys
+branch=sys.argv[1]
+if branch not in ["master","dev"]:
+    raise SystemError("Pull request target not master or dev, this file should not even be running! Something is likely wrong with the github workflow.")
+
 git_diff=system_call(f'git diff --name-only origin/{branch}...').split('\n')
 
 #Dictionary that tells which testpackage runs to run (values) if changes were made to these files (keys).
