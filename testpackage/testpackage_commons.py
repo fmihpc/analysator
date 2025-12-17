@@ -30,11 +30,9 @@ funcs_to_use=cmd_args.funcs
 if "pass" in funcs_to_use:
     quit()
 
-#datalocation = "/wrk-vakka/group/spacephysics/vlasiator"
 datalocation = "/wrk-kappa/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
 runs = []
 
-#Change this to make it produce same plots as testpackage_vdf and testpackage_colormap used to do
 
 runs.append( { 'name': 'ABC',
                  'verifydir': '/ABC/', 
@@ -209,17 +207,14 @@ v5restartcalls=None
 v5nonrestartcalls=None
 v5multipopcalls=None
 
+#Prepare the call list
 for i,run in enumerate(runs):
-    # bulk and restart files
     vlasiator5 = run['vlasiator5']
     filename = run['filename']
     fileLocation = run['fileLocation']
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
-
-#    if run['name']!='FID':
-#        continue
 
     if not funcs_to_use:
         functions = run['funcs']
@@ -233,7 +228,7 @@ for i,run in enumerate(runs):
     for j,func in enumerate(functions):
         callindex = 0
         
-        #try to import the list of calls corresponding to the function to be tested. Skip if not found
+        #try to import the list of calls corresponding to the function to be tested.
         try:
             exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
         except Exception as e:
@@ -410,6 +405,7 @@ for j in range(start,end):
         bulkname = "distributions."+str(100).rjust(7,'0')+".vlsv" 
         time=100
 
+    #Special case for plot_vdfdiff, we need another .vlsv file for it
     if func == 'plot_vdfdiff':
         time_offset=10
         bulkname_vdfdiff = source_file_name(filename,fileLocation,time-time_offset)
