@@ -42,10 +42,11 @@ jobs:
             . CI_env/bin/activate
             
             DATAPATH="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets/$(git rev-parse HEAD)"
+            touch $DATAPATH/.lockfile
             mkdir $DATAPATH
             sbatch -W -o testpackage_gen_verf.txt --job-name gen_verf_plots ./testpackage/run_testpackage_generate_verf_set.sh $DATAPATH
 
             cat testpackage_gen_verf.txt
 
             python ./testpackage/testpackage_get_job_error.py testpackage_gen_verf.txt
-
+            rm $DATAPATH/.lockfile
