@@ -52,7 +52,7 @@ jobs:
               echo -e ".lockfile found in $verf_loc/$verfset, not running test, as the verification set generation is likely still ongoing\n Check ongoing actions and/or re-run verification set generation."
               exit 1
             fi
-            export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py)
+            export DIFFRESULT=$(python ./testpackage/testpackage_get_diff.py ${{ github.base_ref }})
             if [[ -f diff_log.txt ]]; then
               cat diff_log.txt
             done
