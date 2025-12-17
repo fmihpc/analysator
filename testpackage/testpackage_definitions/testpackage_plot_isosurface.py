@@ -65,7 +65,9 @@ nonrestartcalls=["pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',filenam
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,boxre=[0,30,-15,15])",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,lin=1)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,vmin=0.1,vmax=10)",
-"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,lin=1,vmin=0.5,vmax=1.5,usesci=0)"]
+"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,lin=1,vmin=0.5,vmax=1.5,usesci=0)",
+"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horziontal=True)"
+                 ]
 
 restartcalls=[]
 
@@ -76,7 +78,9 @@ v5restartcalls=[]
 v5nonrestartcalls=["pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,colormap='nipy_spectral',vscale=1e9)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,colormap='warhol',lin=1)",
 "pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,colormap='warhol',lin=1,vscale=1e-3)",
-"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,colormap='PuOr',symlog=0,usesci=0)"]
+"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f,run=verifydir+REPLACEINDEX,colormap='PuOr',symlog=0,usesci=0)",
+"pt.plot.plot_isosurface(surf_step=10,surf_var='vg_rho',vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horziontal=True)"
+]
 
 v5multipopcalls=[]
 

@@ -78,6 +78,7 @@ v5nonrestartcalls=[
 "pt.plot.plot_ionosphere(vlsvobj=f,run=verifydir+REPLACEINDEX,var='ig_pp')",
 "pt.plot.plot_ionosphere(vlsvobj=f,run=verifydir+REPLACEINDEX,var='ig_z')",
 "pt.plot.plot_ionosphere(vlsvobj=f,run=verifydir+REPLACEINDEX,var='ig_zz')",
+"pt.plot.plot_ionosphere(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horziontal=True)"
 
 ]
 

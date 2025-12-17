@@ -90,7 +90,9 @@ nonrestartcalls=["pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,outputdir=outputLoc
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,colormap='inferno_r',coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,colormap='magma_r',coordre=REPLACEMULTIPLECOORDRE)",
 "pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,colormap='plasma_r',coordre=REPLACEMULTIPLECOORDRE)",
-"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,colormap='viridis_r',coordre=REPLACEMULTIPLECOORDRE)"]
+"pt.plot.plot_vdfdiff(vlsvobj1=f,vlsvobj2=g,run=verifydir+REPLACEINDEX,colormap='viridis_r',coordre=REPLACEMULTIPLECOORDRE)",
+"pt.plot.plot_vdfdiff(vlsvobj=f, vlsvobj2=g,run=verifydir+REPLACEINDEX, cb_horizontal=True,coordre=REPLACEMULTIPLECOORDRE)",
+                 ]
 
 restartcalls=[]
 

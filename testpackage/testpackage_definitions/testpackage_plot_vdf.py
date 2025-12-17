@@ -245,7 +245,8 @@ nonrestartcalls = [
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, bpara=1,coordswap=1, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1, coordre=REPLACECOORDRE)",
 "pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, bperp=1,coordswap=1, coordre=REPLACECOORDRE)",
-"pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[1,1,1],normalx=[1,-1,0],coordre=REPLACECOORDRE)"
+"pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, normal=[1,1,1],normalx=[1,-1,0],coordre=REPLACECOORDRE)",
+"pt.plot.plot_vdf(figsize=[5,4],vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True,coordre=REPLACECOORDRE)",
 ]
 
 multipopcalls = [

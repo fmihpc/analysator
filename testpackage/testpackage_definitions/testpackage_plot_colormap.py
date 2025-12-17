@@ -217,7 +217,9 @@ nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vBeamRatio')",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Thermalvelocity',lin=1)",
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='Blocks')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='gyrotropy')"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='gyrotropy')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horziontal=True)"
+]
 
 
 multipopcalls = [
@@ -475,7 +477,9 @@ v5nonrestartcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 # "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vBeam',lin=1)",
 # "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_vBeamRatio')",
-"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_gyrotropy')"]
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_gyrotropy')",
+"pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horziontal=True)"
+]
 
 v5multipopcalls = [
 "pt.plot.plot_colormap(vlsvobj=f, run=verifydir+REPLACEINDEX, var='REPLACEPOP/vg_v_parallel', op='magnitude',lin=1)",
