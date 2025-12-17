@@ -1,5 +1,4 @@
 from testpackage_helpers import system_call
-import logging
 import sys
 branch=sys.argv[1]
 if branch not in ["master","dev"]:
@@ -31,13 +30,13 @@ file_checks = {
 "compare_images.yml":None,
 "miscellaneous":None,
 }
+
+f=open("diff_log.txt","w")
 #Override if there are many changes as run all tests
-logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(message)s',filename="diff_log.txt",filemode="w",level=logging.INFO)
 run_all=False
 testpackage_check=True
 if len(git_diff)>6:
-    logging.info(f"Multiple ({len(git_diff)}) changes, will run all tests")
+    f.write(f"Multiple ({len(git_diff)}) changes, will run all tests\n")
     run_all=True
 
 output=[]
@@ -46,7 +45,7 @@ for diff_line in git_diff:
         if key.lower() in diff_line.lower():
             if 'testpackage_' in key.lower() and testpackage_check:
                 testpackage_check=False
-                logging.warning(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!')
+                f.write(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!\n')
             if not val:
                 run_all=True
             elif type(val) is list: 
@@ -54,7 +53,7 @@ for diff_line in git_diff:
             else:
                 output.append(val)
 
-
+f.close()
 
 if run_all:
     quit()
