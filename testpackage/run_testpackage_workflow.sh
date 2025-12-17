@@ -20,7 +20,6 @@ hostname
 module purge            
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 module load Python/3.10.4-GCCcore-11.3.0
-#module load ImageMagick/7.1.0-37-GCCcore-11.3.0
 
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
 
@@ -36,6 +35,4 @@ export PTOUTPUTDIR=$PWD/produced_plots/
 
 
 python ./testpackage/testpackage_commons.py $jobcount $index $@
-#python ./testpackage/color_small_test.py $jobcount $index
 echo "EXIT_CODE_FROM_JOB $?"
-#echo Job $SLURM_ARRAY_TASK_ID complete.
