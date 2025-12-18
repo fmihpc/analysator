@@ -28,6 +28,7 @@ argp.add_argument('funcs',type=str,help="function/list of functions to test, if 
 cmd_args=argp.parse_args()
 funcs_to_use=cmd_args.funcs
 if "pass" in funcs_to_use:
+    print("No significant changes made, the testpackage will not be run!")
     quit()
 
 datalocation = "/wrk-kappa/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
@@ -210,7 +211,6 @@ for i,run in enumerate(runs):
     singletime = run['singletime']
     nosubpops = run['nosubpops']
     fluxLocation = run['fluxLocation']
-
     if not funcs_to_use:
         functions = run['funcs']
 
@@ -221,6 +221,7 @@ for i,run in enumerate(runs):
 
 
     for j,func in enumerate(functions):
+        #If one wants to test new calls to be added to the testpackage, they could be added in here after the testpackage_definitions/ lists have been parsed
         callindex = 0
         
         #try to import the list of calls corresponding to the function to be tested.

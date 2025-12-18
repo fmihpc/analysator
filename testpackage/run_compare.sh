@@ -21,7 +21,6 @@ source CI_env/bin/activate
 module load libglvnd/1.7.0-GCCcore-13.3.0
 module list
 
-#verf_loc="/wrk-vakka/turso/group/spacephysics/CI_analysator/analysator_testpackage/verification_sets"
 verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
 
 #if pass we do not check for anything
@@ -30,7 +29,10 @@ if echo $@ | grep -q -P "\spass$|\spass\s|pass"; then
 fi
 
 check=true
+
+#gets latest verfication set (based on modification date -> grep directories only -> take firstline -> get last word)
 verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
+
 if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
   echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
   exit 1
@@ -41,7 +43,6 @@ for i in $@
 do
     check=false
     echo "Comparing for $i"
-    #gets latest verfication set (based on modification date -> grep directories only -> take firstline -> get last word)
     folder_1="$verf_loc/$verfset/$i/" 
     folder_2="${PWD}/produced_plots/$i/"
     python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
