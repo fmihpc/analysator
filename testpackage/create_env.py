@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     create_venv_local = True        #Create a virtual environment in the current folder (should be in testpackage folder)
 
-    parser=argparse.ArgumentParser(description='Create virtual environment for testpackage.')
+    parser=argparse.ArgumentParser(description='Create python virtual environment for testpackage, will also create batch script that can be sourced.')
     parser.add_argument('--no-analysator',action='store_true',help='Do not install analysator.',default=False)
     parser.add_argument('--editable','-e',action='store_true',help='Install analysator as editable',default=True)
     args=parser.parse_args()

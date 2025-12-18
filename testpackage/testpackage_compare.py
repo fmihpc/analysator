@@ -3,28 +3,13 @@ from argparse import ArgumentParser
 import cv2
 import numpy as np
 
-#could be used to replace compare_images with a cv2 based implementation
 
 def compare_images(a,b):
 
     im1=cv2.imread(a)
     im2=cv2.imread(b)
     return im1.shape == im2.shape and not(np.bitwise_xor(im1,im2).any())
-    
-    
-    #below can be used to get the RMSE, which is about 2-3x as slow the images must be read astype(np.float16) first for accurate RMSE 
-    # #originally uint8 so we might underflow with the substraction if not casted as float, float16 should be good enough
-    # if im1.shape != im2.shape:
-    #
-    #     #something should be added to handle this better, have a threshold in general or something.
-    #     #the substraction yields an error, so one could pad it with 
-    #     #smaller_image=np.pad(smaller_image,(0,larger_image.shape[0]-smaller_image.shape[0]),(0,larger_image.shape[1]-smaller_image.shape[1]),(0,0))
-    #
-    #     return False
-    # diff = np.sqrt(np.mean((im1-im2)**2))
-    # if diff !=0:
-    #     return False
-    # return True
+
 
 def compare_images_in_folders(a,b,jobcount,jobcurr):
 

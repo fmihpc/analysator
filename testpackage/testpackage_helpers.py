@@ -35,11 +35,12 @@ def call_replace(call,func,skipped_args,required_args):
     args_out=[]
 
     #check that all required func args are set
+    #see example for required_funcs in testpackage_template_maker.py or testpackage_commons.py
     if required_args and func in required_args.keys():
         for required_tuple in required_args[func]:
             required_params=required_tuple[0]
             default_params=required_tuple[1]
-
+            
             check=False
             for param in required_params:
                 if type(param) is tuple and param[0] not in named_parameters:
