@@ -436,7 +436,7 @@ for j in range(start,end):
         if "nooverwrite" not in call: 
             print("EXIT_CODE_FROM_JOB 1") 
         
-            print("----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
+            print("::error::----------------------------\nFAILURE DURING CALL ",j, runname," \n```\n"+call+"```\n", repr(e))
 
             traceback.print_exc()
             print("END TRACE for call",j,"\n----------------------------")
