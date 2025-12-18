@@ -58,7 +58,7 @@ def create_venv_script(path,venv_path):
             
             #If module system is used, on HILE use cray-python!
             if 'HILE' in os.uname().nodename.upper():
-                f.write("module load cray-python")
+                f.write("module load cray-python\n")
             else:
                 f.write(f"module load Python/{used_python_version}-GCCcore-{used_gcc_version}\n")
             f.write("module list\n")
