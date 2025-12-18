@@ -1,4 +1,3 @@
-import analysator as pt #this import is used, see the function_pars
 import argparse
 from testpackage_helpers import call_replace
 

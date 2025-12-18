@@ -1,5 +1,4 @@
 import subprocess
-import analysator as pt #this import is used, see the function_pars
 import inspect
 import re
 
@@ -23,6 +22,7 @@ def system_call(cmd,live_output=False):
 def call_replace(call,func,skipped_args,required_args):
     #This is kind of scuffed maybe
 
+    import analysator as pt #this import is used, see the function_pars
     call=call.replace('REPLACEFUNC',func)
 
     #Get the arguments of the call
