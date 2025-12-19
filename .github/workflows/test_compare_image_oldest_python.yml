@@ -35,12 +35,14 @@ jobs:
             do
               echo "Trying to find module for Python/$PYTHON"
               VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
-              MINOR=$(( $MINOR + 1 ))
-              PYTHON=$MAJOR.$MINOR
-              N=$(( N + 1))
-              if (( N> 20 )); then
-                echo "::error:: Could not find a python version to use."
-                exit 1
+              if [[ ! $VERSIONS_MATCH ]]; then          
+                MINOR=$(( $MINOR + 1 ))
+                PYTHON=$MAJOR.$MINOR
+                N=$(( N + 1))
+                if (( N> 20 )); then
+                  echo "::error:: Could not find a python version to use."
+                  exit 1
+                fi
               fi
             done
             echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
