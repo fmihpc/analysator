@@ -21,7 +21,7 @@ module purge
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
-
+module load Python/3.10.4-GCCcore-11.3.0
 source CI_env/bin/activate
 
 module list
