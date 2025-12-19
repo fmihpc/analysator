@@ -420,20 +420,21 @@ for j in range(start,end):
             bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
         g = pt.vlsvfile.VlsvReader(fileLocation+bulkname_vdfdiff)
 
+    print(f"LIST_INDEX {list_index}")
     if list_index[0] == 0:
-        callist_name = "_restartcall"
+        callList_name = "_restartcall"
     elif list_index[0] == 1:
-        calllist_name = "_nonrestartcall"
+        callList_name = "_nonrestartcall"
     elif list_index[0] == 2:
-        calllist_name = "_multipopcall"
+        callList_name = "_multipopcall"
     else:
         raise ValueError(
             "Something went wrong with indexing, should be 0,1 or 2, but the value of list_index[0] was "
             + list_index[0]
         )
 
-    call = call.replace('REPLACEPREVINDEX',"'"+str(list_index-1).rjust(4,'0')+calllist_name+"'")
-    call = call.replace('REPLACEINDEX',"'"+str(list_index[1]).rjust(4,'0')+calllist_name+"'")
+    call = call.replace('REPLACEPREVINDEX',"'"+str(list_index[1]-1).rjust(4,'0')+callList_name+"'")
+    call = call.replace('REPLACEINDEX',"'"+str(list_index[1]).rjust(4,'0')+callList_name+"'")
     call = call.replace('REPLACETIME',"'"+str(time)+"'")
 
     call = call.replace('REPLACECELLID','1')
@@ -449,8 +450,8 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
 
     try:
-        exec(call)
-
+        #exec(call)
+        print(call)
     except Exception as e:
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
