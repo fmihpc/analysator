@@ -26,7 +26,24 @@ jobs:
         - name: Get oldest allowed python version from pyproject.toml
           id: pyversion
           run: |
-            echo "PYTHON=$(cat pyproject | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')" >> $GITHUB_OUTPUT
+            PYTHON=$(cat pyproject | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')
+            MAJOR=$(echo $PYTHON | grep -Po '^\d+')
+            MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
+            AVAILABLE_VERSIONS=$(module spider Python)
+            N=0
+            while [[ ! $VERSIONS_MATCH ]]
+            do
+              echo "Trying to find module for Python/$PYTHON"
+              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
+              MINOR=$(( $MINOR + 1 ))
+              PYTHON=$MAJOR.$MINOR
+              N=$(( N + 1))
+              if (( N> 20 )); then
+                echo "::error:: Could not find a python version to use."
+                exit 1
+              fi
+            done
+            echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
             module load Python/$PYTHON
         - name: Install dependencies
           timeout-minutes: 5
