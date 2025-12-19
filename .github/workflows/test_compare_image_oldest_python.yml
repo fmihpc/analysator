@@ -54,6 +54,7 @@ jobs:
             export UV_LINK_MODE=copy
             module purge
             module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module list
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
