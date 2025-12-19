@@ -420,7 +420,6 @@ for j in range(start,end):
             bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
         g = pt.vlsvfile.VlsvReader(fileLocation+bulkname_vdfdiff)
 
-    print(f"LIST_INDEX {list_index}")
     if list_index[0] == 0:
         callList_name = "_restartcall"
     elif list_index[0] == 1:
@@ -450,8 +449,7 @@ for j in range(start,end):
     f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
 
     try:
-        #exec(call)
-        print(call)
+        exec(call)
     except Exception as e:
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
