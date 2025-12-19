@@ -31,6 +31,7 @@ jobs:
             MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
             AVAILABLE_VERSIONS=$(module spider Python)
             N=0
+            PYTHON="3.7"
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
