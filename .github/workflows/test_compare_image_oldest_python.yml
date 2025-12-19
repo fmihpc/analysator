@@ -27,6 +27,7 @@ jobs:
           id: pyversion
           run: |
             PYTHON=$(cat pyproject.toml | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')
+            PYTHON="3.7"
             MAJOR=$(echo $PYTHON | grep -Po '^\d+')
             MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
             AVAILABLE_VERSIONS=$(module spider Python)
@@ -34,10 +35,10 @@ jobs:
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
-              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-GCC' | grep -Po 'Python'/$PYTHON)
+              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
               if [[ ! $VERSIONS_MATCH ]]; then          
                 MINOR=$(( $MINOR + 1 ))
-                PYTHON="$MAJOR.$MINOR"
+                PYTHON=$MAJOR.$MINOR
                 N=$(( N + 1))
                 if (( N> 20 )); then
                   echo "::error:: Could not find a python version to use."
