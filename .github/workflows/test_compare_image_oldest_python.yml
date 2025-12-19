@@ -27,11 +27,11 @@ jobs:
           id: pyversion
           run: |
             PYTHON=$(cat pyproject.toml | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')
+            PYTHON="3.7"
             MAJOR=$(echo $PYTHON | grep -Po '^\d+')
             MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
             AVAILABLE_VERSIONS=$(module spider Python)
             N=0
-            PYTHON="3.7"
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
