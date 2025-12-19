@@ -20,7 +20,7 @@ def create_venv(path,install_analysator=True,editable=False):
     virt_env.post_setup(context)
     if install_analysator:
         editable='--editable' if editable else None
-        system_call(f'{path}/bin/pip install {editable} ../[all]',live_output=True)
+        system_call(f'{path}/bin/pip install {editable} ../[testpackage]',live_output=True)
     print(f'Virtual environment created at {path}')
     return None
 
