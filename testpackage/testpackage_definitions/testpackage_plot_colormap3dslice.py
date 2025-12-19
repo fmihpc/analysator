@@ -189,8 +189,9 @@ nonrestartcalls=["pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname, o
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='Thermalvelocity',lin=1)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='Blocks')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='gyrotropy')",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)"
- ]
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='gyrotropy',limitedsize=True)"
+]
 
 restartcalls=["pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='restart_V')"]
 
@@ -326,7 +327,8 @@ v5nonrestartcalls=["pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACE
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='vg_beta_perpendicular')",
 "pt.plot.plot_colormap3dslice(vlsvobj=f,run=verifydir+REPLACEINDEX,var='vg_rmirror',lin=1,vmin=0.5,vmax=1.5,usesci=0)",
 "pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX,amr=0.1,amrlinestyles=['dashed'],amrcolours=['red'],amrlinewidths=[1])",
-"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)"
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, cb_horizontal=True)",
+"pt.plot.plot_colormap3dslice(vlsvobj=f, run=verifydir+REPLACEINDEX, var='vg_beta',limitedsize=True)"
 #"pt.plot.plot_colormap3dslice(filename=fileLocation+bulkname,run=verifydir+REPLACEINDEX,expression=timesmooth,pass_times=[14,0],pass_vars=['vg_rho'])"]
                    ]
 
