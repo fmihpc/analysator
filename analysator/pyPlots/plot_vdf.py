@@ -427,7 +427,7 @@ def plot_vdf(filename=None,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
              axes=None, cbaxes=None, cb_horizontal=False,
-             contours=None
+             contours=None,figsize=None
              ):
 
     ''' Plots a coloured 2D plot of a VDF (a slice of given thickness or fully projected) with axes and a colour bar.
@@ -521,7 +521,7 @@ def plot_vdf(filename=None,
     :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
     :kword scale_label: Big label text additional scale factor (default=12.0)
     :kword thick:       line and axis thickness, default=1.0
-
+    :kword figsize:     Set figure size, default=None which will use [4.0,3.15*ratio]
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -1080,15 +1080,21 @@ def plot_vdf(filename=None,
         # Define figure size
         ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])
         # default for square figure is figsize=[4.0,3.15]
-        figsize = [4.0,3.15*ratio]
 
         # Plot the slice
         [XmeshXY,YmeshXY] = np.meshgrid(edgesX/velUnit,edgesY/velUnit) # Generates the mesh to map the data to
 
         if axes is None:
-            # Create 300 dpi image of suitable size
-            fig = plt.figure(figsize=figsize,dpi=300)
+            if figsize is not None:
+
+                if noborder: 
+                    logging.warning("noborder and figsize enabled, this may undo effects of figsize")
+                fig = plt.figure(figsize=figsize,dpi=300)
+            else:
+                # Create 300 dpi image of suitable size
+                fig = plt.figure(figsize=[4.0,3.15*ratio] ,dpi=300)
             ax1 = plt.gca() # get current axes
+
         else:
             ax1=axes
         fig1 = ax1.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
@@ -1176,8 +1182,7 @@ def plot_vdf(filename=None,
             elif biglabloc==3:
                 BLcoords=[0.02,0.02]
                 BLha = "left"
-                BLva = "bottom"
-
+                BLva = "bottom" 
             plt.text(BLcoords[0],BLcoords[1],biglabel, fontsize=fontsize4,weight='black', transform=ax1.transAxes, ha=BLha, va=BLva,color='k',bbox=dict(facecolor='white', alpha=0.5, edgecolor=None))
 
 
@@ -1294,6 +1299,9 @@ def plot_vdf(filename=None,
         elif noborder is None:
             plt.tight_layout()
             savefig_pad=0.05 # The default is 0.1
+            bbox_inches=None
+        elif figsize is not None:
+            savefig_pad=0.05
             bbox_inches=None
         else:
             plt.tight_layout(pad=0.01)
