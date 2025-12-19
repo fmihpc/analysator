@@ -51,7 +51,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
@@ -60,7 +60,7 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
@@ -76,7 +76,7 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
             . CI_env/bin/activate
             sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
             cat testpackage_compare.txt
