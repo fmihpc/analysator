@@ -26,8 +26,9 @@ jobs:
         - name: Get oldest allowed python version from pyproject.toml
           id: pyversion
           run: |
+            module purge
             PYTHON=$(cat pyproject.toml | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')
-            PYTHON="3.7"
+            #PYTHON="3.7"
             MAJOR=$(echo $PYTHON | grep -Po '^\d+')
             MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
             AVAILABLE_VERSIONS=$(module spider Python)
@@ -48,6 +49,7 @@ jobs:
             done
             echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
             module load Python/$PYTHON
+            module list Python
         - name: Install dependencies
           timeout-minutes: 5
           run: |
