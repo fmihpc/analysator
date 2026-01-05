@@ -194,7 +194,7 @@ calls = []
 callrunids = []
 callrunindex = []
 funcids=[]
-
+list_inidices=[] #list of tuples, first value is 0,1,2 corresponding whether restart/non/multipotcall (used for indexing files)
 #here so lint doesnt complain
 restartcalls=None
 nonrestartcalls=None
@@ -243,6 +243,7 @@ for i,run in enumerate(runs):
 
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
+            list_index=0
             for call in calls_in:
                 if vlasiator5:
                     call = call.replace("var='vg_v'","var='vg_restart_v'")
@@ -255,6 +256,8 @@ for i,run in enumerate(runs):
                     calls.append(call)
                     callrunindex.append(callindex)
                     callindex += 1
+                    list_inidices.append((0,list_index))
+                    list_index+=1
                     funcids.append(j)
 
 
@@ -262,6 +265,7 @@ for i,run in enumerate(runs):
         if filename is None:
             #non restart calls
             calls_in=v5nonrestartcalls if vlasiator5 else nonrestartcalls
+            list_index=0
             for call in calls_in:
 
                 # Skip flux function calls if no flux files
@@ -285,6 +289,8 @@ for i,run in enumerate(runs):
                 if skipped_args:
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None:
+                    list_inidices.append((1,list_index))
+                    list_index+=1
                     callrunids.append(i)
                     calls.append(call)
                     callrunindex.append(callindex)
@@ -297,6 +303,7 @@ for i,run in enumerate(runs):
             calls_in=v5multipopcalls if vlasiator5 else multipopcalls
             for pop in run['pops']:
                 if pop != 'avgs':
+                    list_index=0
                     for call in calls_in:
                         # Skip flux function calls if no flux files
                         if "flux" in call and fluxLocation is None:
@@ -313,6 +320,8 @@ for i,run in enumerate(runs):
                         if skipped_args:
                             call=call_replace(call,func,skipped_args,required_args)
                         if call is not None:
+                            list_inidices.append((2,list_index))
+                            list_index+=1
                             callrunids.append(i)
                             calls.append(call)
                             callrunindex.append(callindex)
@@ -347,9 +356,10 @@ for j in range(start,end):
     jrun = callrunindex[j]
     runid = callrunids[j]
     runname = runs[runid]['name']
-
+    
     call = calls[j]
-
+    
+    list_index=list_inidices[j]
     funcid=funcids[j] 
     
 
@@ -409,10 +419,21 @@ for j in range(start,end):
         if runs[runid]['name']=="ABC":
             bulkname_vdfdiff=bulkname_vdfdiff.replace('bulk','distributions')
         g = pt.vlsvfile.VlsvReader(fileLocation+bulkname_vdfdiff)
-    
 
-    call = call.replace('REPLACEPREVINDEX',"'"+str(jrun-1).rjust(4,'0')+"'")
-    call = call.replace('REPLACEINDEX',"'"+str(jrun).rjust(4,'0')+"'")
+    if list_index[0] == 0:
+        callList_name = "_restartcall"
+    elif list_index[0] == 1:
+        callList_name = "_nonrestartcall"
+    elif list_index[0] == 2:
+        callList_name = "_multipopcall"
+    else:
+        raise ValueError(
+            "Something went wrong with indexing, should be 0,1 or 2, but the value of list_index[0] was "
+            + list_index[0]
+        )
+
+    call = call.replace('REPLACEPREVINDEX',"'"+str(list_index[1]-1).rjust(4,'0')+callList_name+"'")
+    call = call.replace('REPLACEINDEX',"'"+str(list_index[1]).rjust(4,'0')+callList_name+"'")
     call = call.replace('REPLACETIME',"'"+str(time)+"'")
 
     call = call.replace('REPLACECELLID','1')
@@ -429,7 +450,6 @@ for j in range(start,end):
 
     try:
         exec(call)
-
     except Exception as e:
         #This is here so get_job_error can get the error from the call.
         # note that we could also raise the error but then execution of subsequent calls would stop
