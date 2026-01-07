@@ -26,15 +26,38 @@ jobs:
         - name: Get oldest allowed python version from pyproject.toml
           id: pyversion
           run: |
-            echo "PYTHON=$(cat pyproject | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')" >> $GITHUB_OUTPUT
+            module purge
+            PYTHON=$(cat pyproject.toml | grep -Po '^requires-python\W*=\W*".+\K\d.+\d')
+            #PYTHON="3.7"
+            MAJOR=$(echo $PYTHON | grep -Po '^\d+')
+            MINOR=$(echo $PYTHON | grep -Po '\.\K\d+([\.]|$)')
+            AVAILABLE_VERSIONS=$(module spider Python)
+            N=0
+            while [[ ! $VERSIONS_MATCH ]]
+            do
+              echo "Trying to find module for Python/$PYTHON"
+              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
+              if [[ ! $VERSIONS_MATCH ]]; then          
+                MINOR=$(( $MINOR + 1 ))
+                PYTHON=$MAJOR.$MINOR
+                N=$(( N + 1))
+                if (( N> 20 )); then
+                  echo "::error:: Could not find a python version to use."
+                  exit 1
+                fi
+              fi
+            done
+            echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
             module load Python/$PYTHON
+            module list Python
         - name: Install dependencies
           timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module list
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
@@ -43,7 +66,7 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
@@ -59,7 +82,7 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
-            module load Python/{{ steps.pyversion.outputs.PYTHON }}
+            module load Python/${{ steps.pyversion.outputs.PYTHON }}
             . CI_env/bin/activate
             sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
             cat testpackage_compare.txt
