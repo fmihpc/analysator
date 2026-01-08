@@ -41,7 +41,7 @@ echo "Comparing against $verfset"
 
 #Do verf_set compare 
 if [ $@ == 'verf_set' ]; then
-  verfset2=$(ls -lht | grep ^d | sed -n 2p | grep -Po '\w+$')
+  verfset2=$(ls -lht $verf_loc | grep ^d | sed -n 2p | grep -Po '\w+$')
   echo "Comparing two latest verification sets"
   folder_1="$verf_loc/$verfset/" 
   folder_2="$verf_loc/$verfset2/"
