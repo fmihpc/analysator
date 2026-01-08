@@ -53,7 +53,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
-            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh 
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh verf_set 
             cat testpackage_compare.txt
             python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
      

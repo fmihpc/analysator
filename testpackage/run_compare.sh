@@ -28,7 +28,7 @@ if echo $@ | grep -q -P "\spass$|\spass\s|pass"; then
    exit 0
 fi
 
-check=true
+check=false
 
 #gets latest verfication set (based on modification date -> grep directories only -> take firstline -> get last word)
 verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
@@ -38,22 +38,38 @@ if [[ -f $verf_loc/$verfset/.lockfile ]]; then
   exit 1
 fi
 echo "Comparing against $verfset"
-#Note that this is skipped if no arguments are passed
-for i in $@
-do
-    check=false
-    echo "Comparing for $i"
-    folder_1="$verf_loc/$verfset/$i/" 
-    folder_2="${PWD}/produced_plots/$i/"
-    python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
-    echo "EXIT_CODE_FROM_JOB $?"
-done
+
+#Do verf_set compare 
+if [ $@ == 'verf_set' ]; then
+  verfset2=$(ls -lht | grep ^d | sed -n 2p | grep -Po '\w+$')
+  echo "Comparing two latest verification sets"
+  folder_1="$verf_loc/$verfset/" 
+  folder_2="$verf_loc/$verfset2/"
+  python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
+  echo "EXIT_CODE_FROM_JOB $?"
+  exit 0
+#Do selective compare if other arguments
+elif [ $@ ]; then
+  check=true
+fi
+
+
 
 if $check;
 then
-    echo "Comparing all"
-    folder_1="$verf_loc/$verfset/" 
-    folder_2="${PWD}/produced_plots/"
-    python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
-    echo "EXIT_CODE_FROM_JOB $?"
+  for i in $@
+  do
+      echo "Comparing for $i"
+      folder_1="$verf_loc/$verfset/$i/" 
+      folder_2="${PWD}/produced_plots/$i/"
+      python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
+      echo "EXIT_CODE_FROM_JOB $?"
+  done
+  exit 0
+else
+  echo "Comparing all"
+  folder_1="$verf_loc/$verfset/" 
+  folder_2="${PWD}/produced_plots/"
+  python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
+  echo "EXIT_CODE_FROM_JOB $?"
 fi
