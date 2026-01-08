@@ -48,3 +48,12 @@ jobs:
 
             python ./testpackage/testpackage_get_job_error.py testpackage_gen_verf.txt
             rm $DATAPATH/.lockfile
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            . CI_env/bin/activate
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh 
+            cat testpackage_compare.txt
+            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
+     
