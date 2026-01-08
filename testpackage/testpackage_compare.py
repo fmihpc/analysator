@@ -68,7 +68,6 @@ def compare_images_in_folders(a,b,jobcount,jobcurr,error_mode):
         except Exception as e:
             raise SystemError(f"Error calling compare_images({file},{file.replace(a,b)}):"+str(e))
 
-
     #Print unique and missing files
     if jobcurr==0:
         for file in unique_files:
@@ -106,13 +105,13 @@ if __name__=='__main__':
    
     parser.add_argument("jobcount",help="Number of parallel jobs to use",default=1,nargs='?',type=int)
     parser.add_argument("jobindex",help="Index of the job to run",default=0,nargs='?',type=int)
-    parser.add_argument("error_mode",help="handle differing files as errors.",default=True,nargs='?',type=bool) 
+    parser.add_argument("errormode",help="handle differing files as errors.",default=1,nargs='?',type=int) 
    
     args= parser.parse_args()
     a,b = args.folder_a,args.folder_b
-    error_mode=args.error_mode
+    error_mode=args.errormode
     jobcount=args.jobcount
     jobindex=args.jobindex
-
+    error_mode=bool(error_mode)
     compare_images_in_folders(a,b,jobcount,jobindex,error_mode)
     

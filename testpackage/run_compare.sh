@@ -44,7 +44,7 @@ if [ $@ == 'verf_set' ]; then
   echo "Comparing two latest verification sets $verfset and $verfset2"
   folder_1="$verf_loc/$verfset/" 
   folder_2="$verf_loc/$verfset2/"
-  python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index False && echo "No differences found in produced images"
+  python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index 0 && echo "No differences found" 
   echo "EXIT_CODE_FROM_JOB $?"
   exit 0
 #Do selective compare if other arguments
