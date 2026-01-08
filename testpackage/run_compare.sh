@@ -37,12 +37,11 @@ if [[ -f $verf_loc/$verfset/.lockfile ]]; then
   echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
   exit 1
 fi
-echo "Comparing against $verfset"
 
 #Do verf_set compare 
 if [ $@ == 'verf_set' ]; then
   verfset2=$(ls -lht $verf_loc | grep ^d | sed -n 2p | grep -Po '\w+$')
-  echo "Comparing two latest verification sets"
+  echo "Comparing two latest verification sets $verfset and $verfset2"
   folder_1="$verf_loc/$verfset/" 
   folder_2="$verf_loc/$verfset2/"
   python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
@@ -53,6 +52,7 @@ elif [ $@ ]; then
   check=true
 fi
 
+echo "Comparing against $verfset"
 
 
 if $check;
