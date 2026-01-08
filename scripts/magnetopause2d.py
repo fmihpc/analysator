@@ -166,7 +166,7 @@ def main():
                 ax.plot(magnetopause[:,0], magnetopause[:,1], color='cyan', linewidth=1.0) 
 
 
-    plot_colormap.plot_colormap(
+    plot_colormap(
         filename=fileLocation+fileN,
         outputdir=outdir,
         nooverwrite=None,
