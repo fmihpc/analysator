@@ -59,7 +59,8 @@ jobs:
             echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
             echo "Running $DIFFRESULT"
             sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh $DIFFRESULT
-
+            echo "JOBID=$SLURM_JOB_ID"
+            sacct -j $SLURM_JOB_ID -o job,state,node | grep FAILED
             cat testpackage_run.txt
             . CI_env/bin/activate
             python ./testpackage/testpackage_get_job_error.py testpackage_run.txt

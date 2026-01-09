@@ -21,6 +21,7 @@ source CI_env/bin/activate
 module load libglvnd/1.7.0-GCCcore-13.3.0
 module list
 
+echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
 verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
 
 #if pass we do not check for anything
