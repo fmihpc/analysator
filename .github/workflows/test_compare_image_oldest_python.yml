@@ -36,7 +36,7 @@ jobs:
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
-              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
+              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-GCC.+' | grep -Po 'Python'/$PYTHON | head -n1)
               if [[ ! $VERSIONS_MATCH ]]; then          
                 MINOR=$(( $MINOR + 1 ))
                 PYTHON=$MAJOR.$MINOR
