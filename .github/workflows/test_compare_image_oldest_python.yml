@@ -36,7 +36,7 @@ jobs:
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
-              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-GCC.+' | grep -Po 'Python'/$PYTHON | head -n1)
+              VERSIONS_MATCH=$(echo "$AVAILABLE_VERSIONS" | grep -Po 'Python/.+?-GCC.+' | grep -P 'Python'/$PYTHON | head -n1)
               if [[ ! $VERSIONS_MATCH ]]; then          
                 MINOR=$(( $MINOR + 1 ))
                 PYTHON=$MAJOR.$MINOR
@@ -47,8 +47,9 @@ jobs:
                 fi
               fi
             done
-            echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
-            module load Python/$PYTHON
+            echo "Found $VERSIONS_MATCH"
+            echo "PYTHON=$VERSIONS_MATCH" >> $GITHUB_OUTPUT
+            module load $VERSIONS_MATCH
             module list Python
         - name: Install dependencies
           timeout-minutes: 5
