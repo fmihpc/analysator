@@ -36,7 +36,7 @@ jobs:
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
-              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
+              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-GCC.+' | grep -Po 'Python'/$PYTHON | head -n1)
               if [[ ! $VERSIONS_MATCH ]]; then          
                 MINOR=$(( $MINOR + 1 ))
                 PYTHON=$MAJOR.$MINOR
@@ -67,6 +67,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module purge
             module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module list
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
@@ -88,7 +89,9 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
+            module purge
             module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module list
             . CI_env/bin/activate
             sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
             cat testpackage_compare.txt
