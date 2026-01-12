@@ -47,7 +47,7 @@ jobs:
                 fi
               fi
             done
-            echo "Found $VERSIONS_MATCH"
+            echo "::warning::Found $VERSIONS_MATCH"
             echo "PYTHON=$VERSIONS_MATCH" >> $GITHUB_OUTPUT
             module load $VERSIONS_MATCH
             module list Python
