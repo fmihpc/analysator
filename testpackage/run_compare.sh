@@ -16,7 +16,11 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 hostname
 
 module purge
-module load Python/3.10.4-GCCcore-11.3.0
+if [[ $1 == 'old_python' ]]; then
+  module load $2
+else
+  module load Python/3.10.4-GCCcore-11.3.0
+fi
 source CI_env/bin/activate
 module load libglvnd/1.7.0-GCCcore-13.3.0
 module list
@@ -48,6 +52,9 @@ if [[ $@ == 'verf_set' ]]; then
   python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index 0 && echo "No differences found" 
   echo "EXIT_CODE_FROM_JOB $?"
   exit 0
+#If old_python is used, run all
+elif [[ $1 == 'old_python' ]]; then
+  check=false
 #Do selective compare if other arguments
 elif [ $@ ]; then
   check=true
