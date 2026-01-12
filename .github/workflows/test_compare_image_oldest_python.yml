@@ -57,7 +57,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
             uv venv CI_env
             . CI_env/bin/activate
@@ -67,7 +67,7 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
@@ -91,7 +91,7 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
             . CI_env/bin/activate
             sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
