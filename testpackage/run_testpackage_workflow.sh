@@ -39,7 +39,7 @@ export PTOUTPUTDIR=$PWD/produced_plots/
 
 if $older_python; then
   echo "::warning:: Running with older python version $2"
-  python ./testpackage/testpackage_commons $jobcount $index 
+  python ./testpackage/testpackage_commons.py $jobcount $index 
   echo "EXIT_CODE_FROM_JOB $?"
   exit 0
 fi
