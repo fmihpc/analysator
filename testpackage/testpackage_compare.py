@@ -11,7 +11,7 @@ def compare_images(a,b):
     return im1.shape == im2.shape and not(np.bitwise_xor(im1,im2).any())
 
 
-def compare_images_in_folders(a,b,jobcount,jobcurr):
+def compare_images_in_folders(a,b,jobcount,jobcurr,error_mode):
 
     #do the comparisons
     
@@ -68,7 +68,6 @@ def compare_images_in_folders(a,b,jobcount,jobcurr):
         except Exception as e:
             raise SystemError(f"Error calling compare_images({file},{file.replace(a,b)}):"+str(e))
 
-
     #Print unique and missing files
     if jobcurr==0:
         for file in unique_files:
@@ -81,13 +80,17 @@ def compare_images_in_folders(a,b,jobcount,jobcurr):
             print("::warning::Found new file(s) produced by the code!")
 
         if len(missing_files)!=0:
-            raise SystemError("Found file(s) **not** produced by the code!")
-
+            if error_mode:
+                raise SystemError("Found file(s) **not** produced by the code!")
+            elif not error_mode:
+                print("::warning::Found file(s) **not** produced by the code!")
 
     if different:
-        print(f"::error title=Plot(s) differ::Produced plots not in agreement with the verfication set {a}")
-        raise SystemError("Images Differ")
-
+        if error_mode:
+            print(f"::error title=Plot(s) differ::Produced plots not in agreement with the verfication set {a}")
+            raise SystemError("Images Differ")
+        elif not error_mode:
+            print(f"::warning title=Plot(s) differ::Produced new verification set {a} not in agreement with the old verfication set {b}")
 
 
 if __name__=='__main__':
@@ -102,13 +105,13 @@ if __name__=='__main__':
    
     parser.add_argument("jobcount",help="Number of parallel jobs to use",default=1,nargs='?',type=int)
     parser.add_argument("jobindex",help="Index of the job to run",default=0,nargs='?',type=int)
-    
+    parser.add_argument("errormode",help="handle differing files as errors.",default=1,nargs='?',type=int) 
    
     args= parser.parse_args()
     a,b = args.folder_a,args.folder_b
-
+    error_mode=args.errormode
     jobcount=args.jobcount
     jobindex=args.jobindex
-
-    compare_images_in_folders(a,b,jobcount,jobindex)
+    error_mode=bool(error_mode)
+    compare_images_in_folders(a,b,jobcount,jobindex,error_mode)
     

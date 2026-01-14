@@ -36,7 +36,7 @@ jobs:
             while [[ ! $VERSIONS_MATCH ]]
             do
               echo "Trying to find module for Python/$PYTHON"
-              VERSIONS_MATCH=$(echo $AVAILABLE_VERSIONS | grep -Po 'Python/.+?-' | grep -Po 'Python'/$PYTHON)
+              VERSIONS_MATCH=$(echo "$AVAILABLE_VERSIONS" | grep -Po 'Python/.+?-GCC.+' | grep -P 'Python'/$PYTHON | head -n1)
               if [[ ! $VERSIONS_MATCH ]]; then          
                 MINOR=$(( $MINOR + 1 ))
                 PYTHON=$MAJOR.$MINOR
@@ -47,8 +47,9 @@ jobs:
                 fi
               fi
             done
-            echo "PYTHON=$PYTHON" >> $GITHUB_OUTPUT
-            module load Python/$PYTHON
+            echo "::warning::Found $VERSIONS_MATCH"
+            echo "PYTHON=$VERSIONS_MATCH" >> $GITHUB_OUTPUT
+            module load $VERSIONS_MATCH
             module list Python
         - name: Install dependencies
           timeout-minutes: 5
@@ -56,7 +57,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
             uv venv CI_env
             . CI_env/bin/activate
@@ -66,15 +67,22 @@ jobs:
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module load ${{ steps.pyversion.outputs.PYTHON }}
+            module list
             verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
             verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
             if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
               echo -e ".lockfile found in $verf_loc/$verfset, not running test, as the verification set generation is likely still ongoing\n Check ongoing actions and/or re-run verification set generation."
               exit 1
             fi 
-            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh
-
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh old_python ${{ steps.pyversion.outputs.PYTHON }} > jobid.txt
+            export JOBID=$(grep -Po '\d+' jobid.txt)
+            export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+            if [[ $SACCT_LOG ]]; then
+              echo "Some job failed on a node"
+              echo $SACCT_LOG 
+              exit 1
+            fi
             cat testpackage_run.txt
             . CI_env/bin/activate
             python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
@@ -82,9 +90,11 @@ jobs:
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
-            module load Python/${{ steps.pyversion.outputs.PYTHON }}
+            module purge
+            module load ${{ steps.pyversion.outputs.PYTHON }}
+            module list
             . CI_env/bin/activate
-            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh old_python ${{ steps.pyversion.outputs.PYTHON }}
             cat testpackage_compare.txt
             python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
         - name: scancel dangling job upon cancellation

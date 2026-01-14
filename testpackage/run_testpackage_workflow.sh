@@ -19,9 +19,14 @@ hostname
 
 module purge            
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
-
+older_python=false
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
-module load Python/3.10.4-GCCcore-11.3.0
+if [[ $1 == "old_python" ]]; then
+  module load $2
+  older_python=true
+else
+  module load Python/3.10.4-GCCcore-11.3.0
+fi
 source CI_env/bin/activate
 
 module list
@@ -32,6 +37,11 @@ export PTNONINTERACTIVE=1
 export PTOUTPUTDIR=$PWD/produced_plots/
 
 
-
+if $older_python; then
+  echo "::warning:: Running with older python version $2"
+  python ./testpackage/testpackage_commons.py $jobcount $index 
+  echo "EXIT_CODE_FROM_JOB $?"
+  exit 0
+fi
 python ./testpackage/testpackage_commons.py $jobcount $index $@
 echo "EXIT_CODE_FROM_JOB $?"
