@@ -70,7 +70,7 @@ def plot_colormap(filename=None,
                   highres=None,
                   vectors=None, vectordensity=100, vectorcolormap='gray', vectorsize=1.0,
                   streamlines=None, streamlinedensity=1, streamlinecolor='white',streamlinethick=1.0,
-                  axes=None, cbaxes=None, useimshow=False, imshowinterp='none', flipxaxis=False,
+                  axes=None, cbaxes=None,cb_horizontal=False, useimshow=False, imshowinterp='none', flipxaxis=False,
                   ):
 
     ''' Plots a coloured plot with axes and a colour bar.
@@ -196,6 +196,7 @@ def plot_colormap(filename=None,
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
         :kword cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
         :kword useimshow:   Use imshow for raster background instead (default: False)
         :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
         :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
@@ -248,8 +249,7 @@ def plot_colormap(filename=None,
         filedir = './'
     if (fluxdir == ''):
         fluxdir = './'
-    if (outputdir == ''):
-        outputdir = './'
+
 
     # Input file or object
     if filename:
@@ -261,8 +261,7 @@ def plot_colormap(filename=None,
     elif vlsvobj:
         f=vlsvobj
     else:
-        logging.info("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("Error, needs a .vlsv file name, python object, or directory and step")
 
     # Flux function files
     if fluxdir:
@@ -277,11 +276,11 @@ def plot_colormap(filename=None,
                 if not os.path.exists(fluxfile):
                     fluxfile = fluxdir+'bulk.'+filename[-12:-5]+'.bin'
             else:
-                logging.info("Requested flux lines via directory but working from vlsv object, cannot find step.")
+                logging.warning("Requested flux lines via directory but working from vlsv object, cannot find step.")
 
     if fluxfile:
         if not os.path.exists(fluxfile):
-            logging.info("Error locating flux function file!")
+            logging.warning("Could not locate flux function file!")
             fluxfile=None
                 
     if operator is None:
@@ -377,49 +376,12 @@ def plot_colormap(filename=None,
     # Activate diff mode?
     if diff:
         if (expression or external or pass_vars or pass_times or pass_full):
-             logging.info("attempted to perform diff with one of the following active:")
-             logging.info("expression or external or pass_vars or pass_times or pass_full. Exiting.")
-             return -1
+             raise RuntimeError("attempted to perform diff with one of the following active:\n " \
+                            "expression or external or pass_vars or pass_times or pass_full. ")
         expression=pt.plot.plot_helpers.expr_Diff
         pass_vars.append(var)
         varstr="DIFF_"+var.replace("/","_")
         pass_times=[1,0]
-
-    # File output checks
-    if not draw and not axes:
-        if not outputfile: # Generate filename
-            if not outputdir: # default initial path
-                outputdir=pt.plot.defaultoutputdir
-            # Sub-directories can still be defined in the "run" variable
-            outputfile = outputdir+run+"_map_"+varstr+operatorfilestr+stepstr+".png"
-        else: 
-            if outputdir:
-                outputfile = outputdir+outputfile
-
-        # Re-check to find actual target sub-directory
-        outputprefixind = outputfile.rfind('/')
-        if outputprefixind >= 0:            
-            outputdir = outputfile[:outputprefixind+1]
-
-        # Ensure output directory exists
-        if not os.path.exists(outputdir):
-            try:
-                os.makedirs(outputdir)
-            except:
-                pass
-
-        if not os.access(outputdir, os.W_OK):
-            logging.info("No write access for directory "+outputdir+"! Exiting.")
-            return
-
-        # Check if target file already exists and overwriting is disabled
-        if (nooverwrite and os.path.exists(outputfile)):            
-            if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-                logging.info("Found existing file "+outputfile+". Skipping.")
-                return
-            else:
-                logging.info("Found existing file "+outputfile+" of size zero. Re-rendering.")
-
 
     Re = 6.371e+6 # Earth radius in m
     #read in mesh size and cells in ordinary space
@@ -487,7 +449,7 @@ def plot_colormap(filename=None,
 
         cb_title_use = datamap_info.latex
         # Check if vscale results in standard unit
-        vscale, _, datamap_unit_latex = datamap_info.get_scaled_units(vscale=vscale)
+        vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
         
         # Add unit to colorbar title
         if datamap_unit_latex:
@@ -497,8 +459,7 @@ def plot_colormap(filename=None,
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(cb_title_use))
         # Verify data shape
         if np.ndim(datamap)==0:
-            logging.info("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
-            return -1
+            raise ValueError("Error, read only single value from vlsv file! datamap.shape being " + str(datamap.shape))
         # fsgrid reader returns array in correct shape but needs to be transposed
         if var.startswith('fg_'):
             datamap = np.swapaxes(datamap, 0,1)
@@ -511,7 +472,7 @@ def plot_colormap(filename=None,
             elif np.ndim(datamap)==3:  # tensor variable
                 datamap = datamap[cellids.argsort()].reshape([sizes[1],sizes[0],datamap.shape[1],datamap.shape[2]])
             else:
-                logging.info("Error in reshaping datamap!") 
+                raise ValueError("Unsupported datamap dimensionality, datamap shape = " +str(datamap.shape))
     else:
         # Expression set, use generated or provided colorbar title
         cb_title_use = pt.plot.mathmode(pt.plot.bfstring(pt.plot.rmstring(expression.__name__.replace(r"_",r"\_")) +operatorstr))
@@ -563,14 +524,16 @@ def plot_colormap(filename=None,
             reqvariables = expression(None,True)
             for i in reqvariables:
                 if not (i in pass_vars): pass_vars.append(i)
-        except:
+        except Exception as e:
+            logging.warning("Expression " + str(expression)+ " failed with the following exception:" + str(e))
             pass
     if external: # Check the external
         try:
             reqvariables = external(None,None,None,None,True)
             for i in reqvariables:
                 if not (i in pass_vars): pass_vars.append(i)
-        except:
+        except Exception as e:
+            logging.warning("External "+ str(external)+ " failed with the following exception:" + str(e))
             pass
     # If expression or external routine need variables, read them from the file.
 #    if pass_vars:
@@ -587,8 +550,8 @@ def plot_colormap(filename=None,
             else:
                 pass_map = f.read_variable(mapval)
             if np.ndim(pass_map)==0:
-                logging.info("Error, read only single value from vlsv file! pass_map.shape being " + str(pass_map.shape))
-                return -1
+                raise ValueError("Error, read only single value from vlsv file! pass_map.shape being " + str(pass_map.shape))
+
             # fsgrid reader returns array in correct shape.
             # For vlasov grid reader, reorder and reshape.
             if not mapval.startswith('fg_'):
@@ -599,7 +562,7 @@ def plot_colormap(filename=None,
                 elif np.ndim(pass_map)==3:  # tensor variable
                     pass_map = pass_map[cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                 else:
-                    logging.info("Error in reshaping pass_map!")
+                    raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
             if np.ma.is_masked(maskgrid):
                 if np.ndim(pass_map)==2:
                     pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
@@ -611,7 +574,7 @@ def plot_colormap(filename=None,
                     pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                     pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                 else:
-                    logging.info("Error in masking pass_maps!")
+                    raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
             pass_maps[mapval] = pass_map # add to the dictionary
     else:
         # Or gather over a number of time steps
@@ -625,16 +588,15 @@ def plot_colormap(filename=None,
             if filename: # parse from filename
                 currstep = int(filename[-12:-5])
             else:
-                logging.info("Error, cannot determine current step for time extent extraction!")
-                return
+                raise ValueError("Error, cannot determine current step for time extent extraction!")
         # define relative time step selection
         if np.ndim(pass_times)==0:
             dsteps = np.arange(-abs(int(pass_times)),abs(int(pass_times))+1)
         elif np.ndim(pass_times)==1 and len(pass_times)==2:
             dsteps = np.arange(-abs(int(pass_times[0])),abs(int(pass_times[1]))+1)
         else:
-            logging.info("Invalid value given to pass_times")
-            return
+            raise ValueError("Invalid value given to pass_times")
+
         # Loop over requested times
         for ds in dsteps:
             if diff:
@@ -660,8 +622,8 @@ def plot_colormap(filename=None,
                 else:
                     pass_map = fstep.read_variable(mapval)
                 if np.ndim(pass_map)==0:
-                    logging.info("Error, read only single value from vlsv file! pass_map.shape being " + str(pass_map.shape))
-                    return -1
+                    raise ValueError("Error, read only single value from vlsv file! pass_map.shape being " + str(pass_map.shape))
+
                 # fsgrid reader returns array in correct shape. 
                 # For vlasov grid reader, reorder and reshape.
                 if not mapval.startswith('fg_'):
@@ -672,7 +634,7 @@ def plot_colormap(filename=None,
                     elif np.ndim(pass_map)==3:  # tensor variable
                         pass_map = pass_map[step_cellids.argsort()].reshape([sizes[1],sizes[0],pass_map.shape[1],pass_map.shape[2]])
                     else:
-                        logging.info("Error in reshaping pass_map!") 
+                        raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
                 if np.ma.is_masked(maskgrid):
                     if np.ndim(pass_map)==2:
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
@@ -684,7 +646,7 @@ def plot_colormap(filename=None,
                         pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
                         pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
                     else:
-                        logging.info("Error in masking pass_maps!") 
+                        raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
                 pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # colorbar title for diffs:
@@ -714,8 +676,8 @@ def plot_colormap(filename=None,
             if operator=='y': operator = '1'
             if operator=='z': operator = '2'
             if not operator.isdigit():
-                logging.info("Error parsing operator for custom expression!")
-                return
+                raise ValueError("Error parsing operator for custom expression!")
+                
             elif np.ndim(datamap)==3:
                 datamap = datamap[:,:,int(operator)]
                 
@@ -723,24 +685,23 @@ def plot_colormap(filename=None,
     if np.ndim(datamap)==3: # vector
         if datamap.shape[2]!=3:
             # This may also catch 3D simulation fsgrid variables
-            logging.info("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
-            return -1
+            raise ValueError("Error, expected array of 3-element vectors, found array of shape " + str(datamap.shape))
+            
         # take magnitude of three-element vectors
         datamap = np.linalg.norm(datamap, axis=-1)
     if np.ndim(datamap)==4: # tensor
         if datamap.shape[2]!=3 or datamap.shape[3]!=3:
             # This may also catch 3D simulation fsgrid variables
-            logging.info("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
-            return -1
+            raise ValueError("Error, expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
+            
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
     if np.ndim(datamap)>=5: # Too many dimensions
-        logging.info("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
-        return -1
+        raise ValueError("Error, too many dimensions in datamap, found array of shape " + str(datamap.shape))
+
     if np.ndim(datamap)!=2:
         # Array dimensions not as expected
-        logging.info("Error reading variable "+var+"! Found array of shape " + str(datamap.shape) + ". Exiting.")
-        return -1
+        raise ValueError("Error reading variable "+var+"! Found array of shape " + str(datamap.shape) + ". Exiting.")
         
     # Scale final generated datamap if requested
     datamap = datamap * vscale
@@ -814,8 +775,8 @@ def plot_colormap(filename=None,
 
     # If both values are zero, we have an empty array
     if vmaxuse==vminuse==0:
-        logging.info("Error, requested array is zero everywhere. Exiting.")
-        return 0
+        raise ValueError("Error, requested array is zero everywhere. Exiting.")
+        
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -852,7 +813,7 @@ def plot_colormap(filename=None,
         if symlog is not None:
             if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                logging.info("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                logging.warning("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
                 #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
@@ -866,7 +827,7 @@ def plot_colormap(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -1000,7 +961,7 @@ def plot_colormap(filename=None,
             except:
                ff_b = f.read_variable("vg_b_vol", cellids=cid)
             if (ff_b.size!=3):
-               logging.info("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
+               logging.warning("Error reading fg_b or vg_b_vol data for fluxfunction normalization!")
 
             if f.check_variable("moments"): # restart file
                 ff_v = f.read_variable("vg_restart_v", cellids=cid)
@@ -1154,9 +1115,14 @@ def plot_colormap(filename=None,
         else:
             # Split existing axes to make room for colorbar
             divider = make_axes_locatable(ax1)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
-            cbdir="right"; horalign="left"
-
+            if cb_horizontal:
+                cax = divider.append_axes("bottom", size="4%", pad=0.55*scale)     
+                ax1.xaxis.set_label_coords(0.5,-0.18)
+                horalign="center"
+            else:
+                cax = divider.append_axes("right", size="5%", pad=0.05)           
+                horalign="left"
+            cbdir="right"
         # Set flag which affects colorbar decimal precision
         if lin is None:
             pt.plot.cb_linear = False
@@ -1165,10 +1131,10 @@ def plot_colormap(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         else:
             #cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            cb = plt.colorbar(fig1, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation='horizontal' if cb_horizontal else 'vertical')
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
         # Ensure minor tick marks are off
@@ -1176,7 +1142,7 @@ def plot_colormap(filename=None,
             cb.minorticks_off()
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
@@ -1188,6 +1154,7 @@ def plot_colormap(filename=None,
             fig.canvas.draw() # draw to get tick positions
 
         # Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric
+        # Might need additions for horizontal cb?
         if symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2):
             cbt=cb.ax.yaxis.get_ticklabels()
             (cbtx,cbty) = cbt[len(cbt)//2-1].get_position() # just below zero
@@ -1330,11 +1297,14 @@ def plot_colormap(filename=None,
         
     # Save output or draw on-screen
     if not draw and not axes:
+        outputfile_default=run+"_map_"+varstr+operatorfilestr+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile, outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            logging.info("Error with attempting to save figure.")
-        logging.info(outputfile+"\n")
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        except Exception as e:
+            logging.warning("Error with attempting to save figure: "+str(e))
+            raise e
+        logging.info(savefigname+"\n")
         plt.close()
     elif not axes:
         # Draw on-screen
