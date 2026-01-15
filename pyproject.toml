@@ -26,14 +26,12 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "vtk>=9.2",
     "yt",
     "rtree"
 ]
 [project.optional-dependencies]
 none = [
-]
-vtk = [
-    "vtk>=9.2",
 ]
 all = [
     "analysator[vtk]",
