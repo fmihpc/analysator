@@ -73,6 +73,11 @@ try:
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 
+def register_colormaps():
+    ''' Register included colormaps to matplotlib. Required if you are relying on colormaps included in analysator and you are not using analysator.plot functions.
+    '''
+    import analysator.plot.colormaps
+
 try:
    #import miscellaneous
    miscellaneous=lazyimport("analysator.miscellaneous")
