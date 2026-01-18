@@ -34,14 +34,12 @@ dependencies = [
 none = [
 ]
 all = [
-    "analysator[vtk]",
 ]
 bvtk = [
     "vtk==9.2.6",
 ]
 testpackage = [
     "opencv-python",
-    "analysator[vtk]",
 ]
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
