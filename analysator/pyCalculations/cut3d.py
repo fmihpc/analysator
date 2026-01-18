@@ -27,6 +27,7 @@
 
 import numpy as np
 import logging
+from ids3d import ids3d_box
 
 def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="pass", trim_array=False ):
    ''' Retrieves variables for the given 3d cut
@@ -78,11 +79,32 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
    zcells = mesh_size[2]
    ##################################################
 
-   cell_lengths = np.array([
-                           (xmax-xmin)/(float)(xcells),
-                           (ymax-ymin)/(float)(ycells),
-                           (zmax-zmin)/(float)(zcells)
-                           ])
+# use this instead...
+#def ids3d_box(cellids, low, up, reflevel,
+#          xsize, ysize, zsize,
+#          spatial_mesh_extent):
+#    """Returns lists of CellIDs and the corresponding indices inside a rectangular 3D box.
+#    :param cellids:             List of cellids in the simulation box
+#    :param low:                 An array holding the lower boundaries of the requested box
+#    :param up:                  An array holding the upper boundaries of the requested box
+#    :param reflevel:            Highest refinement level in the simulation
+#    :param xsize:               Number of cells in x direction
+#    :param ysize:               Number of cells in y direction
+#    :param zsize:               Number of cells in z direction
+#    :param spatial_mesh_extent: Smallest and largest values of each spatial component
+#    """
+
+
+
+   cids = vlsvReader.read_variable("CellID")
+   coords = vlsvReader.get_cell_coordinates(cids)
+   
+   # start by finding the contained cellids
+   ids,indices = ids3d_box(cids, min_coordinates, max_coordinates, vlsvReader.get_max_refinement_level(),
+                           xcells, ycells, zcells, mesh_limits)
+
+   # adjust cell_lengths to smallest dxs found
+   cell_lengths = np.min(vlsvReader.read_variable("vg_dx", cellids=ids),axis=0)
 
    # Create 3d array (This array will be returned)
    array_dimensions = np.array([
