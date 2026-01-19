@@ -270,6 +270,31 @@ def textbfstring(string):
             return r'\textbf{'+string+'}'
     # LaTex output off
     return string
+
+#Draws sharp contour lines along cell edges (xmeshpass,ymeshpass), for some dpi+linewidth combinations antialiasing True causes issues
+def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5,linestyle='solid',colors='black',antialiased=False):
+    x=np.array(XmeshPass[0])
+    y=np.array([li[0] for li in YmeshPass])
+
+    v = np.diff(heightmap > threshold, axis=1)
+    h = np.diff(heightmap > threshold, axis=0)
+
+    # From https://stackoverflow.com/questions/63458863/way-to-contour-outer-edge-of-selected-grid-region-in-python
+    # Check that at least one spot exceeds threshold or the below will crash.
+    if np.max(heightmap) > threshold:
+        
+        l = np.argwhere(v.T)
+        vlines = np.array(list(zip(np.stack((x[l[:, 0]+1], y[l[:, 1]])).T,
+                                    np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
+        l = np.argwhere(h.T)
+        hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
+                                    np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
+        lines = np.vstack((vlines, hlines))
+
+        ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
+
+    
+    return 0
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
         check=False
         if not outputfile:

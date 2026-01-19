@@ -3346,7 +3346,7 @@ class VlsvReader(object):
 
       return self.read(name=name, tag="PARAMETER")
 
-   def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True):
+   def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True, setThreshold=None):
       '''
       Read the velocity space of a given cell and return a dense VDF as a numpy array (along with datacube edges)
       
@@ -3361,6 +3361,29 @@ class VlsvReader(object):
       maps = list(zip(*velocity_cell_map.items()))
       velocity_cell_ids = np.array(maps[0],dtype=np.int64)
       velocity_cell_values = np.array(maps[1], dtype=np.float32)
+
+      if setThreshold is None:
+         # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
+         # cells as well.
+         if self.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
+             setThreshold = self.read_variable('MinValue',cellid)
+             logging.info("Found a vlsv file MinValue of "+str(setThreshold))
+         elif self.check_variable(pop+"/EffectiveSparsityThreshold") == True:
+             setThreshold = self.read_variable(pop+"/EffectiveSparsityThreshold",cellid)
+             logging.info("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
+         elif self.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+             setThreshold = self.read_variable(pop+"/vg_effectivesparsitythreshold",cellid)
+             logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
+         else:
+             logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+             logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
+             setThreshold = 1.e-16
+      ii_f = np.where(velocity_cell_values >= setThreshold)
+      logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
+
+      velocity_cell_ids = velocity_cell_ids[ii_f]
+      velocity_cell_values = velocity_cell_values[ii_f]
+
       velocity_cell_coordinates = self.get_velocity_cell_coordinates(velocity_cell_ids, pop)
       velocity_cell_indices = self.get_velocity_cell_indices(velocity_cell_coordinates, pop)
 
