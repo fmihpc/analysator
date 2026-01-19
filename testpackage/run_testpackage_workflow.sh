@@ -1,10 +1,10 @@
 #!/bin/bash -l
-#SBATCH -t 00:45:00
+#SBATCH -t 01:00:00
 #SBATCH -J analysator_testpackage
-#SBATCH --constraint="carrington|ukko"
+#SBATCH --constraint="carrington"
 #SBATCH -p short
 #SBATCH -n 1
-#SBATCH --array=1-10
+#SBATCH --array=1-14
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=64000
 
