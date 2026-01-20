@@ -35,7 +35,7 @@ f=open("diff_log.txt","w")
 #Override if there are many changes -> run all tests
 run_all=False
 testpackage_check=True
-if len(git_diff)>10:
+if len(git_diff)>20:
     f.write(f"Multiple ({len(git_diff)}) changes, will run all tests\n")
     run_all=True
 
