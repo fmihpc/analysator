@@ -49,6 +49,8 @@ if len(git_diff)>30:
 
 output=[]
 for diff_line in git_diff:
+    if run_all:
+        break
     for key,val in file_checks.items():
         if key.lower() in diff_line.lower():
             if 'testpackage_' in key.lower() and testpackage_check:
