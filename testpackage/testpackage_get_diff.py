@@ -25,9 +25,17 @@ file_checks = {
 "colormaps.py":None,
 "calculations":None,
 "vlsv":None,
-"testpackage_":None,
+"testpackage_commons.py":None,
+"testpackage_compare.py":None,
+"testpackage_workflow.sh":None,
+"testpackage_get_job_error.py":"plot_vdf",#Doubt this needs all, just some
+"testpackage_get_diff.py":None,
+"testpackage_helpers.py":None,
+"testpackage_custom_expr.py":None,
 "MayaVi":None,
+"run_compare.sh":None,
 "compare_images.yml":None,
+"compare_images_full.yml":None,
 "miscellaneous":None,
 }
 
@@ -35,7 +43,7 @@ f=open("diff_log.txt","w")
 #Override if there are many changes -> run all tests
 run_all=False
 testpackage_check=True
-if len(git_diff)>20:
+if len(git_diff)>30:
     f.write(f"Multiple ({len(git_diff)}) changes, will run all tests\n")
     run_all=True
 
