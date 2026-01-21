@@ -54,7 +54,7 @@ jobs:
             export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
             if [[ $SACCT_LOG ]]; then
               echo "Some job failed on a node"
-              echo $SACCT_LOG 
+              echo "$SACCT_LOG"
               exit 1
             fi
             cat testpackage_run.txt
