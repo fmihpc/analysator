@@ -58,9 +58,10 @@ for diff_line in git_diff:
                 f.write(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!\n')
             if not val:
                 run_all=True
-            elif type(val) is list: 
+            elif type(val) is list:
+                output+=list(set(val)-set(output))
                 output.extend(val)
-            else:
+            elif val not in output:
                 output.append(val)
 
 f.close()
