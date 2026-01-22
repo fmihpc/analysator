@@ -61,7 +61,7 @@ jobs:
             MAX_ARRAY=14
             TOTAL_TESTS=$(ls ./testpackage/testpackage_definitions/ | wc -l) 
             if [[ $DIFFRESULT && $DIFFRESULT != "pass" ]]; then
-              NUM_OF_TESTS=$($DIFFRESULT | sed -e 's/ /\n/g' | wc -l)
+              NUM_OF_TESTS=$(echo $DIFFRESULT | sed -e 's/ /\n/g' | wc -l)
               ARRAY_SIZE=$(( NUM_OF_TESTS*(MAX_ARRAY+TOTAL_TESTS-1)/TOTAL_TESTS )) #Rounding up 
             else
               ARRAY_SIZE=$MAX_ARRAY
