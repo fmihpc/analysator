@@ -3365,19 +3365,7 @@ class VlsvReader(object):
       if setThreshold is None:
          # Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer
          # cells as well.
-         if self.check_variable('MinValue') == True: # Sparsity threshold used to be saved as MinValue
-             setThreshold = self.read_variable('MinValue',cellid)
-             logging.info("Found a vlsv file MinValue of "+str(setThreshold))
-         elif self.check_variable(pop+"/EffectiveSparsityThreshold") == True:
-             setThreshold = self.read_variable(pop+"/EffectiveSparsityThreshold",cellid)
-             logging.info("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(setThreshold))
-         elif self.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
-             setThreshold = self.read_variable(pop+"/vg_effectivesparsitythreshold",cellid)
-             logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(setThreshold))
-         else:
-             logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
-             logging.info("Using a default value of 1.e-16. Override with setThreshold=value.")
-             setThreshold = 1.e-16
+         setThreshold = self.get_sparsity_for_cid(cellid,pop)
       ii_f = np.where(velocity_cell_values >= setThreshold)
       logging.info("Dropping velocity cells under setThreshold value "+str(setThreshold))
 
@@ -3409,6 +3397,35 @@ class VlsvReader(object):
 
       return da, edges
 
+   def read_compression(self):
+      ''''
+       0 => "MLP",
+       1 => "MLPMULTI",
+       2 => "ZFP",
+       3 => "OCTREE",
+       _ => "None",
+      '''
+      try:
+         compression=self.read_parameter("COMPRESSION")
+      except:
+         compression = 4
+      return compression
+
+   def get_sparsity_for_cid(self,cellid,pop):
+      if self.check_variable('MinValue') == True:
+         val = self.read_variable('MinValue',cellid)
+         logging.info("Found a vlsv file MinValue of "+str(val))
+      elif self.check_variable(pop+"/EffectiveSparsityThreshold") == True:
+         val = self.read_variable(pop+"/EffectiveSparsityThreshold",cellid)
+         logging.info("Found a vlsv file value "+pop+"/EffectiveSparsityThreshold"+" of "+str(val))
+      elif self.check_variable(pop+"/vg_effectivesparsitythreshold") == True:
+         val = self.read_variable(pop+"/vg_effectivesparsitythreshold",cellid)
+         logging.info("Found a vlsv file value "+pop+"/vg_effectivesparsitythreshold"+" of "+str(val))
+      else:
+         logging.warning("Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.")
+         logging.info("Using a default value of 1.e-16. Override with val=value.")
+         val = 1.e-16
+      return val
 
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
@@ -3472,19 +3489,38 @@ class VlsvReader(object):
       for child in self.__xml_root:
          # Read in avgs
          if "name" in child.attrib and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
-            vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
-            element_size = ast.literal_eval(child.attrib["datasize"])
-            datatype = child.attrib["datatype"]
 
-            # Navigate to the correct position
-            offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
-            fptr.seek(offset_avgs)
-
-            if datatype == "float" and element_size == 4:
-               data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
-            if datatype == "float" and element_size == 8:
-               data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
+            compression_type=self.read_compression();
+            match compression_type:
+               case 0:
+                  assert False, "Compression method MLP not yet implemented!"
+               case 1:
+                  assert False, "Compression method MLPMULTI not yet implemented!"
+               case 2:
+                  import zfpy
+                  vdf_byte_size=int(self.read_parameter("VDF_BYTE_SIZE"))
+                  bpc = self.read(mesh="SpatialGrid",tag="BYTESPERCELL", name=pop)
+                  amount=bpc[cells_with_blocks_index] 
+                  loc = ast.literal_eval(child.text) + np.sum(bpc[0:cells_with_blocks_index]) 
+                  fptr.seek(loc)
+                  compressed_data  = np.fromfile(fptr, dtype = np.ubyte, count = amount) 
+                  vector_size=np.pow(self.get_WID(),3)
+                  if vdf_byte_size==4:
+                     data_avgs = zfpy._decompress(compressed_data, zfpy.type_float, [num_of_blocks*vector_size,], out = None, tolerance =self.get_sparsity_for_cid(cellid,pop), rate = -1, precision = -1)
+                  else:
+                     data_avgs = zfpy._decompress(compressed_data, zfpy.type_double, [num_of_blocks*vector_size,], out = None, tolerance =self.get_sparsity_for_cid(cellid,pop), rate = -1, precision = -1)
+               case 3:
+                     assert False, "Compression method OCTREE not yet implemented!"
+               case 4:
+                  vector_size = ast.literal_eval(child.attrib["vectorsize"])
+                  element_size = ast.literal_eval(child.attrib["datasize"])
+                  datatype = child.attrib["datatype"]
+                  offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
+                  fptr.seek(offset_avgs)
+                  if datatype == "float" and element_size == 4:
+                     data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
+                  if datatype == "float" and element_size == 8:
+                     data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
