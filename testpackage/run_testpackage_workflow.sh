@@ -21,6 +21,8 @@ module purge
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 older_python=false
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
+echo $SLURM_ARRAY_JOB_ID
+
 if [[ $1 == "old_python" ]]; then
   module load $2
   older_python=true
