@@ -875,42 +875,22 @@ def plot_colormap3dslice(filename=None,
     if expression:
         datamap = expression(pass_maps)
         if pass3d:
-            if np.ndim(datamap)==3:
+            if np.ndim(datamap) in [3,4,5]:
                 if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:]
+                    datamap = datamap[fgslice[0],...]
                 elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:]
+                    datamap = datamap[:,fgslice[1],...]
                 elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2]]
-            elif np.ndim(datamap)==4: # vector variable
-                if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:,:]
-                elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:,:]
-                elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2],:]
-            elif np.ndim(datamap)==5:  # tensor variable
-                if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:,:,:]
-                elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:,:,:]
-                elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2],:,:]
+                    datamap = datamap[:,:,fgslice[2],...]
             else:
                 raise RuntimeError("Error in reshaping pass_maps!")
             datamap = np.squeeze(datamap)
             datamap = np.swapaxes(datamap, 0,1)
 
             if np.ma.is_masked(maskgrid):
-                if np.ndim(datamap)==2:
-                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:]
-                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1]
-                elif np.ndim(datamap)==3: # vector variable
-                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:]
-                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:]
-                elif np.ndim(datamap)==4:  # tensor variable
-                    datamap = datamap[MaskX[0]:MaskX[-1]+1,:,:,:]
-                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1,:,:]
+                if np.ndim(datamap) in [2,3,4]:
+                    datamap = datamap[MaskX[0]:MaskX[-1]+1,...]
+                    datamap = datamap[:,MaskY[0]:MaskY[-1]+1,...]
         # Handle operators
 
         if (operator and (operator != 'pass') and (operator != 'magnitude')):
