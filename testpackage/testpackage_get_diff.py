@@ -60,7 +60,6 @@ for diff_line in git_diff:
                 run_all=True
             elif type(val) is list:
                 output+=list(set(val)-set(output))
-                output.extend(val)
             elif val not in output:
                 output.append(val)
 
