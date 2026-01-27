@@ -27,7 +27,6 @@ dependencies = [
     "packaging",
     "scikit-image",
     "zfpy",
-    "struct",
 ]
 [project.optional-dependencies]
 none = [
