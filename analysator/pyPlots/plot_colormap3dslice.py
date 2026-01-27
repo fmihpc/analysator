@@ -814,27 +814,19 @@ def plot_colormap3dslice(filename=None,
                         # vlasov grid, AMR
                         pass_map = fstep.read_variable(mapval)
                         pass_map = pass_map[step_indexids] # sort
-                        if pass3d:
-                            if np.ndim(pass_map)==1:
-                                pass_shape = None
-                            elif np.ndim(pass_map)==2: # vector variable
-                                pass_shape = pass_map.shape[1]
-                            elif np.ndim(pass_map)==3:  # tensor variable
-                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
-                            else:
-                                raise RuntimeError("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d2(step_cellids, pass_map, meshReflevel, xsize, ysize, zsize, pass_shape)
-                        else:
+                        if not pass3d:
                             pass_map = pass_map[step_indexlist] # find required cells
-                            if np.ndim(pass_map)==1:
-                                pass_shape = None
-                            elif np.ndim(pass_map)==2: # vector variable
-                                pass_shape = pass_map.shape[1]
-                            elif np.ndim(pass_map)==3:  # tensor variable
-                                pass_shape = (pass_map.shape[1], pass_map.shape[2])
-                            else:
-                                raise RuntimeError("Error in reshaping pass_maps!")
-                            pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
+
+                        if np.ndim(pass_map)==1:
+                            pass_shape = None
+                        elif np.ndim(pass_map)==2: # vector variable
+                            pass_shape = pass_map.shape[1]
+                        elif np.ndim(pass_map)==3:  # tensor variable
+                            pass_shape = (pass_map.shape[1], pass_map.shape[2])
+                        else:
+                            raise RuntimeError("Error in reshaping pass_maps!")
+
+                        pass_map = ids3d.idmesh3d(step_cellids if pass3d else step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
                         if np.ndim(pass_map) in [2,3,4]:
