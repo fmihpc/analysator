@@ -812,27 +812,13 @@ def plot_colormap3dslice(filename=None,
                         # fsgrid reader returns array in correct shape but needs to be sliced and transposed
                         pass_map = fstep.read_fsgrid_variable(mapval)
                         if not pass3d:
-                            if np.ndim(pass_map)==3:
+                            if np.ndim(pass_map) in [3,4,5]:
                                 if fgslice[0]>=0:
-                                    pass_map = pass_map[fgslice[0],:,:]
+                                    pass_map = pass_map[fgslice[0],...]
                                 elif fgslice[1]>=0:
-                                    pass_map = pass_map[:,fgslice[1],:]
+                                    pass_map = pass_map[:,fgslice[1],...]
                                 elif fgslice[2]>=0:
-                                    pass_map = pass_map[:,:,fgslice[2]]
-                            elif np.ndim(pass_map)==4: # vector variable
-                                if fgslice[0]>=0:
-                                    pass_map = pass_map[fgslice[0],:,:,:]
-                                elif fgslice[1]>=0:
-                                    pass_map = pass_map[:,fgslice[1],:,:]
-                                elif fgslice[2]>=0:
-                                    pass_map = pass_map[:,:,fgslice[2],:]
-                            elif np.ndim(pass_map)==5:  # tensor variable
-                                if fgslice[0]>=0:
-                                    pass_map = pass_map[fgslice[0],:,:,:,:]
-                                elif fgslice[1]>=0:
-                                    pass_map = pass_map[:,fgslice[1],:,:,:]
-                                elif fgslice[2]>=0:
-                                    pass_map = pass_map[:,:,fgslice[2],:,:]
+                                    pass_map = pass_map[:,:,fgslice[2],...]
                             else:   
                                 raise RuntimeError("Error in reshaping pass_maps!")
                             pass_map = np.squeeze(pass_map)
@@ -864,15 +850,9 @@ def plot_colormap3dslice(filename=None,
                             pass_map = ids3d.idmesh3d(step_idlist, pass_map, meshReflevel, xsize, ysize, zsize, xyz, pass_shape)
 
                     if np.ma.is_masked(maskgrid) and not pass3d:
-                        if np.ndim(pass_map)==2:
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                        elif np.ndim(pass_map)==3: # vector variable
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                        elif np.ndim(pass_map)==4:  # tensor variable
-                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                        if np.ndim(pass_map) in [2,3,4]:
+                            pass_map = pass_map[MaskX[0]:MaskX[-1]+1,...]
+                            pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,...]
                     pass_maps[-1][mapval] = pass_map # add to the dictionary
 
     # colorbar title for diffs:
