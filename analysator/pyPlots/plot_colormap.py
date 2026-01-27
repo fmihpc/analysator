@@ -564,15 +564,9 @@ def plot_colormap(filename=None,
                 else:
                     raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
             if np.ma.is_masked(maskgrid):
-                if np.ndim(pass_map)==2:
-                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                elif np.ndim(pass_map)==3: # vector variable
-                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                elif np.ndim(pass_map)==4:  # tensor variable
-                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                if np.ndim(pass_map) in [2,3,4]:
+                    pass_map = pass_map[MaskX[0]:MaskX[-1]+1,...]
+                    pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,...]
                 else:
                     raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
             pass_maps[mapval] = pass_map # add to the dictionary
@@ -636,15 +630,9 @@ def plot_colormap(filename=None,
                     else:
                         raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
                 if np.ma.is_masked(maskgrid):
-                    if np.ndim(pass_map)==2:
-                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:]
-                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1]
-                    elif np.ndim(pass_map)==3: # vector variable
-                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:]
-                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:]
-                    elif np.ndim(pass_map)==4:  # tensor variable
-                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,:,:,:]
-                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,:,:]
+                    if np.ndim(pass_map) in [2,3,4]:
+                        pass_map = pass_map[MaskX[0]:MaskX[-1]+1,...]
+                        pass_map = pass_map[:,MaskY[0]:MaskY[-1]+1,...]
                     else:
                         raise ValueError("Unsupported pass_map dimensionality, pass_map shape = " +str(pass_map.shape))
                 pass_maps[-1][mapval] = pass_map # add to the dictionary
