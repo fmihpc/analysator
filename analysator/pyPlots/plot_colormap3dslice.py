@@ -897,9 +897,7 @@ def plot_colormap3dslice(filename=None,
             raise ValueError("expected array of 3x3 tensors, found array of shape " + str(datamap.shape))
         # take trace
         datamap = datamap[:,:,0,0]+datamap[:,:,1,1]+datamap[:,:,2,2]
-    if np.ndim(datamap)>=5: # Too many dimensions
-        raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap.shape))
-    if np.ndim(datamap)!=2: # Too many dimensions
+    if np.ndim(datamap)>=5 or np.ndim(datamap)!=2: # Too many dimensions
         raise ValueError(" too many dimensions in datamap, found array of shape " + str(datamap.shape))
         
     # Scale final generated datamap if requested
