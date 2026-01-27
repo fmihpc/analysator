@@ -50,8 +50,7 @@ if [[ $@ == 'verf_set' ]]; then
   folder_1="$verf_loc/$verfset/" 
   folder_2="$verf_loc/$verfset2/"
   python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index 0 && echo "No differences found" 
-  echo "EXIT_CODE_FROM_JOB $?"
-  exit 0
+  exit $?
 #If old_python is used, run all
 elif [[ $1 == 'old_python' ]]; then
   check=false
@@ -71,7 +70,7 @@ then
       folder_1="$verf_loc/$verfset/$i/" 
       folder_2="${PWD}/produced_plots/$i/"
       python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
-      echo "EXIT_CODE_FROM_JOB $?"
+      exit $?
   done
   exit 0
 else
@@ -79,5 +78,5 @@ else
   folder_1="$verf_loc/$verfset/" 
   folder_2="${PWD}/produced_plots/"
   python3 ./testpackage/testpackage_compare.py ${folder_1} ${folder_2} $jobcount $index && echo "No differences found in produced images"
-  echo "EXIT_CODE_FROM_JOB $?"
+  exit $?  
 fi

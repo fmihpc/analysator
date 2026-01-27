@@ -22,6 +22,5 @@ export PTOUTPUTDIR=$1
 
 python ./testpackage/testpackage_commons.py $jobcount $index
 
-echo "EXIT_CODE_FROM_JOB $?"
-
+exit $?
 
