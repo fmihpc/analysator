@@ -1,4 +1,3 @@
-#s 
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
@@ -852,18 +851,10 @@ class VlsvReader(object):
       blockidsexist = False
       foundpop = False
       for child in self.__xml_root:
-         if child.tag == "BLOCKIDS":
+         if child.tag == "BLOCKVARIABLE":
             if "name" in child.attrib:
-               if popname.lower() == child.attrib["name"].lower():
+               if popname.lower() == child.attrib["name"].lower(): # avgs
                   foundpop = True
-            else:
-               blockidsexist = True
-      if blockidsexist:
-         for child in self.__xml_root:
-            if child.tag == "BLOCKVARIABLE":
-               if "name" in child.attrib:
-                  if popname.lower() == child.attrib["name"].lower(): # avgs
-                     foundpop = True
       return foundpop
 
    def get_all_variables( self ):
@@ -3427,6 +3418,35 @@ class VlsvReader(object):
          val = 1.e-16
       return val
 
+
+   # Taken from https://github.com/kstppd/vlsvrs/blob/e07a7039d49e824e4644f410038bddec6463e579/src/vlsv_reader.rs#L1350
+   def parse_octree_state(self, octree_bytes):
+       import struct
+       offset = 0
+       buffer_len = len(octree_bytes)
+       def read_struct(fmt, size):
+           nonlocal offset
+           if offset + size > buffer_len:
+               raise ValueError("Overflow")
+           val = struct.unpack_from(f"<{fmt}", octree_bytes, offset)
+           offset += size
+           return val
+       (n_ignored_blocks,) = read_struct("Q", 8)
+       blocks_to_ignore = []
+       if n_ignored_blocks > 0:
+           fmt_str = f"{n_ignored_blocks}I"
+           size_needed = n_ignored_blocks * 4
+           blocks_to_ignore = list(read_struct(fmt_str, size_needed))
+       bbox_shape = list(read_struct("3Q", 24))
+       bbox_lims = list(read_struct("6d", 48))
+       return {
+           "blocks_to_ignore": blocks_to_ignore,
+           "bbox_shape": bbox_shape,
+           "bbox_lims": bbox_lims,
+           "read_index": offset,
+       }
+
+
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
       
@@ -3489,39 +3509,142 @@ class VlsvReader(object):
       for child in self.__xml_root:
          # Read in avgs
          if "name" in child.attrib and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
+            compression_type = self.read_compression()
+            if compression_type == 0:  # MLP
+                assert False, "Compression method MLP not yet implemented!"
 
-            compression_type=self.read_compression();
-            match compression_type:
-               case 0:
-                  assert False, "Compression method MLP not yet implemented!"
-               case 1:
-                  assert False, "Compression method MLPMULTI not yet implemented!"
-               case 2:
-                  import zfpy
-                  vdf_byte_size=int(self.read_parameter("VDF_BYTE_SIZE"))
-                  bpc = self.read(mesh="SpatialGrid",tag="BYTESPERCELL", name=pop)
-                  amount=bpc[cells_with_blocks_index] 
-                  loc = ast.literal_eval(child.text) + np.sum(bpc[0:cells_with_blocks_index]) 
-                  fptr.seek(loc)
-                  compressed_data  = np.fromfile(fptr, dtype = np.ubyte, count = amount) 
-                  vector_size=np.pow(self.get_WID(),3)
-                  if vdf_byte_size==4:
-                     data_avgs = zfpy._decompress(compressed_data, zfpy.type_float, [num_of_blocks*vector_size,], out = None, tolerance =self.get_sparsity_for_cid(cellid,pop), rate = -1, precision = -1)
-                  else:
-                     data_avgs = zfpy._decompress(compressed_data, zfpy.type_double, [num_of_blocks*vector_size,], out = None, tolerance =self.get_sparsity_for_cid(cellid,pop), rate = -1, precision = -1)
-               case 3:
-                     assert False, "Compression method OCTREE not yet implemented!"
-               case 4:
-                  vector_size = ast.literal_eval(child.attrib["vectorsize"])
-                  element_size = ast.literal_eval(child.attrib["datasize"])
-                  datatype = child.attrib["datatype"]
-                  offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
-                  fptr.seek(offset_avgs)
-                  if datatype == "float" and element_size == 4:
-                     data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
-                  if datatype == "float" and element_size == 8:
-                     data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
-            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
+            elif compression_type == 1:  # MLPMULTI
+                assert False, "Compression method MLPMULTI not yet implemented!"
+
+            elif compression_type == 2:  # ZFP
+                import zfpy
+
+                vdf_byte_size = int(self.read_parameter("VDF_BYTE_SIZE"))
+                bpc = self.read(mesh="SpatialGrid", tag="BYTESPERCELL", name=pop)
+                amount = bpc[cells_with_blocks_index]
+                loc = ast.literal_eval(child.text) + np.sum(bpc[0:cells_with_blocks_index])
+                fptr.seek(loc)
+                compressed_data = np.fromfile(fptr, dtype=np.ubyte, count=amount)
+                vector_size = np.pow(self.get_WID(), 3)
+
+                if vdf_byte_size == 4:
+                    data_avgs = zfpy._decompress(
+                        compressed_data,
+                        zfpy.type_float,
+                        [
+                            num_of_blocks * vector_size,
+                        ],
+                        out=None,
+                        tolerance=self.get_sparsity_for_cid(cellid, pop),
+                        rate=-1,
+                        precision=-1,
+                    )
+                else:
+                    data_avgs = zfpy._decompress(
+                        compressed_data,
+                        zfpy.type_double,
+                        [
+                            num_of_blocks * vector_size,
+                        ],
+                        out=None,
+                        tolerance=self.get_sparsity_for_cid(cellid, pop),
+                        rate=-1,
+                        precision=-1,
+                    )
+
+            elif compression_type == 3:  # OCTREE
+                import ctypes
+                from ctypes import POINTER, c_float, c_ubyte, c_size_t, c_uint64
+
+                lib = ctypes.CDLL("libtoctree_compressor.so")
+                lib.uncompress_with_toctree_method.argtypes = [
+                    POINTER(c_float),
+                    c_size_t,
+                    c_size_t,
+                    c_size_t,
+                    POINTER(c_ubyte),
+                    c_uint64,
+                ]
+                vdf_byte_size = int(self.read_parameter("VDF_BYTE_SIZE"))
+                bpc = self.read(mesh="SpatialGrid", tag="BYTESPERCELL", name=pop)
+                amount = bpc[cells_with_blocks_index]
+                loc = ast.literal_eval(child.text) + np.sum(bpc[0:cells_with_blocks_index])
+
+                fptr.seek(loc)
+                octree_bytes = np.fromfile(fptr, dtype=np.uint8, count=amount)
+                octree_state = self.parse_octree_state(octree_bytes)
+                read_index = octree_state["read_index"]
+                nx, ny, nz = octree_state["bbox_shape"]
+
+                octree_core = octree_bytes[read_index:].copy()
+                core_ptr = octree_core.ctypes.data_as(POINTER(c_ubyte))
+                core_len = octree_core.nbytes
+
+                cropped_vdf = np.zeros((nx, ny, nz), dtype=np.float32)
+                output_ptr = cropped_vdf.ctypes.data_as(POINTER(c_float))
+
+                lib.uncompress_with_toctree_method(output_ptr, nx, ny, nz, core_ptr, core_len)
+
+                nx, ny, nz = cropped_vdf.shape
+                dv = self.get_velocity_mesh_dv(pop)
+                WID = self.get_WID()
+                WID2 = WID * WID
+                WID3 = WID2 * WID
+                Nb = self.get_velocity_mesh_size(pop)
+                Nb_x, Nb_y, Nb_z = int(Nb[0]), int(Nb[1]), int(Nb[2])
+                global_shape = self.get_velocity_mesh_size(pop) * self.get_WID()
+                g_Nx, g_Ny, g_Nz = int(global_shape[0]), int(global_shape[1]), int(global_shape[2])
+                cropped_vx_min, cropped_vy_min, cropped_vz_min, _, _, _ = octree_state["bbox_lims"]
+                global_vx_min, global_vy_min, global_vz_min, _, _, _ = (
+                    self.get_velocity_mesh_extent(pop)
+                )
+                offset_i = int(round((cropped_vx_min - global_vx_min) / dv[0]))
+                offset_j = int(round((cropped_vy_min - global_vy_min) / dv[1]))
+                offset_k = int(round((cropped_vz_min - global_vz_min) / dv[2]))
+
+                velocity_cells = {}
+                for k in range(nz):
+                    for j in range(ny):
+                        for i in range(nx):
+                            gi = i + offset_i
+                            gj = j + offset_j
+                            gk = k + offset_k
+                            if not (0 <= gi < g_Nx and 0 <= gj < g_Ny and 0 <= gk < g_Nz):
+                                continue
+                            val = cropped_vdf[i, j, k]
+                            if val < self.get_sparsity_for_cid(cellid, pop):
+                                continue
+                            bi = gi // WID
+                            bj = gj // WID
+                            bk = gk // WID
+                            li = gi % WID
+                            lj = gj % WID
+                            lk = gk % WID
+                            local_id = lk * WID2 + lj * WID + li
+                            velocity_block_id = bk * (Nb_y * Nb_x) + bj * Nb_x + bi
+                            global_id = local_id + WID3 * velocity_block_id
+                            velocity_cells[int(global_id)] = float(val)
+                return velocity_cells # we rrturn early here since we have already constructed the velocity_cells thingy 
+
+            elif compression_type == 4: # No asterix compression used here 
+                vector_size = ast.literal_eval(child.attrib["vectorsize"])
+                element_size = ast.literal_eval(child.attrib["datasize"])
+                datatype = child.attrib["datatype"]
+                offset_avgs = int(
+                    offset * vector_size * element_size + ast.literal_eval(child.text)
+                )
+                fptr.seek(offset_avgs)
+
+                if datatype == "float" and element_size == 4:
+                    data_avgs = np.fromfile(
+                        fptr, dtype=np.float32, count=vector_size * num_of_blocks
+                    )
+                elif datatype == "float" and element_size == 8:
+                    data_avgs = np.fromfile(
+                        fptr, dtype=np.float64, count=vector_size * num_of_blocks
+                    )
+
+            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)            
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
