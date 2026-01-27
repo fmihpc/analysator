@@ -567,27 +567,14 @@ def plot_colormap3dslice(filename=None,
 
         if var.startswith('fg_'):
             # fsgrid reader returns array in correct shape but needs to be sliced and transposed
-            if np.ndim(datamap)==3:
+            if np.ndim(datamap) in [3,4,5]:
                 if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:]
+                    datamap = datamap[fgslice[0],...]
                 elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:]
+                    datamap = datamap[:,fgslice[1],...]
                 elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2]]
-            elif np.ndim(datamap)==4: # vector variable
-                if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:,:]
-                elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:,:]
-                elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2],:]
-            elif np.ndim(datamap)==5:  # tensor variable
-                if fgslice[0]>=0:
-                    datamap = datamap[fgslice[0],:,:,:,:]
-                elif fgslice[1]>=0:
-                    datamap = datamap[:,fgslice[1],:,:,:]
-                elif fgslice[2]>=0:
-                    datamap = datamap[:,:,fgslice[2],:,:]
+                    datamap = datamap[:,:,fgslice[2],...]
+
             else:
                 raise RuntimeError("Error in reshaping fsgrid datamap!") 
             datamap = np.squeeze(datamap)
