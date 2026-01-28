@@ -521,14 +521,11 @@ class VlsvReader(object):
          # Read in block values
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
             offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
-#            for i in range(0, cells_with_blocks_index[0]):
-#               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
@@ -541,7 +538,6 @@ class VlsvReader(object):
          # (note the special treatment in case the population is named 'avgs'
          if (pop == 'avgs' or ("name" in child.attrib) and (child.attrib["name"] == pop)) and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
@@ -595,7 +591,6 @@ class VlsvReader(object):
       # Navigate to the correct position:
       from copy import copy
       offset = 0
-      #self.__fileindex_for_cellid_blocks[pop] = {}
       self.__fileindex_for_cellid_blocks[pop] = dict.fromkeys(cells_with_blocks) # should be faster but negligible difference
       for i in range(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
@@ -652,7 +647,6 @@ class VlsvReader(object):
                else:
                   in_vars = self.check_variable(popvar)
 
-               # print(popvar," is in vars: ",in_vars)
                if in_vars:
                   self.__available_reducers.add(popvar)
                   break
