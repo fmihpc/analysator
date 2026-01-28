@@ -1639,12 +1639,10 @@ class VlsvReader(object):
       if value_length > 1:
          read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
-         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
       else:
          read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)[:,np.newaxis]
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
-         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-      # ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
+
       nvals = len(lower_cell_ids_unique)
       ngbrvalues = np.reshape(ngbrvalues, (nvals,2,2,2,*value_shape))
 
