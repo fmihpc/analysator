@@ -112,7 +112,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          isum = isum + 2**(3*i) * xc * yc * zc
          cid_offsets[i+1] = isum
 
-      # print(cid_offsets)
       max_ref_level = f.get_max_refinement_level()
       xcells = np.zeros((max_ref_level+1), dtype=np.int64)
       ycells = np.zeros((max_ref_level+1), dtype=np.int64)
@@ -124,11 +123,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       mins = np.array([f._VlsvReader__xmin,f._VlsvReader__ymin,f._VlsvReader__zmin])
 
       f._VlsvReader__read_fileindex_for_cellid()
-
-      # cidArray = vtk.vtkDoubleArray()
-      # cidArray.SetName('CellID')
-      # cidArray.SetNumberOfValues(0)
-      # self.GetCellData().AddArray(cidArray)
 
 
       f.read_variable_to_cache("CellID")
@@ -142,7 +136,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       delta = np.array([[0,0,0],[1,0,0],[0,1,0],[1,1,0],
                [0,0,1],[1,0,1],[0,1,1],[1,1,1]],dtype=np.int32)
       
-      # @jit(nopython=True)
       def get_cell_indices(cellids, reflevels):
          ''' Single-cellid specialization with external constants.
          Returns a given cell's indices as a numpy array
@@ -156,15 +149,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          .. note:: The cell ids go from 1 .. max not from 0
          '''
 
-         # # Calculating the index of the first cell at this reflevel
-         # index_at_reflevel = np.zeros(max_refinement_level+1, dtype=np.int64)
-         # isum = 0
-         # for i in range(0,max_refinement_level):
-         #    isum = isum + 2**(3*i) * xcells * ycells * zcells
-         #    index_at_reflevel[i+1] = isum
-
-         # Get cell indices
-         # print(cellids, reflevels, cid_offsets)
          
          cellids = cellids - 1 - cid_offsets[reflevels]
          cellindices = np.full(3, -1,dtype=np.int32)
@@ -172,7 +156,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          cellindices[1] = ((cellids)//(xcells[reflevels]))%(ycells[reflevels])
          cellindices[2] = (cellids)//(xcells[reflevels]*ycells[reflevels])
 
-         # print(cellindices, f.get_cell_indices(cellids,reflevels))
 
          return cellindices
 
@@ -183,67 +166,33 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
                                                (zmax - zmin)/(zcells[level])],np.int32))
           
          
-      # @jit(nopython=True)
       def children(cid, level):
-         # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
          cellids = cid - 1 - cid_offsets[level]
          cellind = np.full(3, -1,dtype=np.int32)
          cellind[0] = (cellids)%(xcells[level])
          cellind[1] = ((cellids)//(xcells[level]))%(ycells[level])
          cellind[2] = (cellids)//(xcells[level]*ycells[level])
 
-         # cellcoordinates = mins + (cellind + 0.25)*cell_lengths_levels[level]
-         # cellind = np.int64(np.divide((cellcoordinates - mins),cell_lengths_levels[level+1]))
          cellind = cellind*2
          out = np.zeros((8,),dtype=np.int64)
-         # c = np.array((0,1,2,3,4,5,6,7))
          out[:] = cid_offsets[level+1] + (cellind[0] + delta[:,0]) + xcells[level+1]*(cellind[1] + delta[:,1]) + (cellind[2] + delta[:,2])*xcells[level+1]*ycells[level+1] + 1
-         # out2 = [int(cid_offsets[level+1] + (cellind + delta[c])[0] + xcells[level+1]*(cellind + delta[c])[1] + (cellind + delta[c])[2]*xcells[level+1]*ycells[level+1] + 1) for c in range(8)]
-         # print(out, out2)
          return out           
 
 
       def refine_cell(cid, level):
-
-         # cellind = get_cell_indices(cid, level)
-         # cellcoordinates = mins + (cellind + 0.25)*cell_lengths_levels[level]
-
-         # cellind = np.array(np.divide((cellcoordinates - mins),cell_lengths_levels[level+1]), dtype = np.int32)
-
          childs = children(cid,level)
          for c,cellid in enumerate(childs):
-               # print(c)
                cursor.ToChild(c)  # cell 0/0
-               # print(cellind, delta[c])
-               # ci = cellind + delta[c]
-               # print(ci)
-               # cellid = int(cid_offsets[level+1] + ci[0] + xcells[level+1]*ci[1] + ci[2]*xcells[level+1]*ycells[level+1] + 1)
-               # print(f.get_cell_indices(cid, reflevels = level))
                if (cellid in fileindex_for_cellid.keys()):
                   # Assigns an index for the value of the cell pointed to by the current cursor state 
                   idx = cursor.GetGlobalNodeIndex()
-                  # print(idx, cellid)
-                  # self.GetCellData().SetActiveScalars('CellID')
-                  # cidArray.InsertTuple1(idx, cellid)
-                  # self.GetCellData().SetActiveScalars('fileIndex')
-                  # self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])
-                  # numvalues += 1
                   self.idxToFileIndex[idx] = fileindex_for_cellid[cellid]
-                  # ave += np.array([var_x(cellid, 'proton/vg_v'),*var(cellid, 'vg_b_vol')])
                else:
-                  # print(cellid)
                   idx = cursor.GetGlobalNodeIndex()
                   cursor.SubdivideLeaf()  # cell 0
-                  # print(cellid, "not found, refining again")
                   refine_cell(cellid, level+1)
-                  # ave += refval
-                  # htg.GetCellData().SetActiveScalars('vg_v')
-                  #scalarArray.InsertTuple1(idx, refval[0])
-                  # htg.GetCellData().SetActiveVectors('vg_b_vol')
-                  #vectorArray.InsertTuple3(idx, *refval[1:])
 
                cursor.ToParent()  # cell 0
-               # idx = cursor.GetGlobalNodeIndex()
 
 
          return #ave/8
@@ -253,30 +202,14 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          if (cellid in fileindex_for_cellid.keys()):
                # Assigns an index for the value of the cell pointed to by the current cursor state 
                idx = cursor.GetGlobalNodeIndex()
-               # self.GetCellData().SetActiveScalars('CellID')
-               # print(idx, cid)
-               # cidArray.InsertTuple1(idx, cellid)
-               # self.GetCellData().SetActiveScalars('fileIndex')
-               # self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])
-               # numvalues += 1
                self.idxToFileIndex[idx] = fileindex_for_cellid[cellid]
          # Cell not in list -> must be refined (assume cid is in basegrid)
          else:
                idx = cursor.GetGlobalNodeIndex()
 
-               # print(cid , "not found, refining")
                cursor.SubdivideLeaf()  # cell 0
                refine_cell(cellid, 0)
-               # self.GetCellData().SetActiveScalars('vg_v')
-               #scalarArray.InsertTuple1(idx, ave[0])
-               # self.GetCellData().SetActiveVectors('vg_b_vol')
-               #vectorArray.InsertTuple3(idx, *ave[1:])
-
-               # pass
-               # idx = cursor.GetGlobalNodeIndex()
-               # scalarArray.InsertTuple1(idx, vardummy(cid))
-
-
+  
       def loop():
          offsetIndex = 0
 
@@ -285,7 +218,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             # Set cursor on cell #0 and set the start index
             self.InitializeNonOrientedCursor(cursor, basegridIdx, True)
             cursor.SetGlobalIndexStart(offsetIndex)  # cell 0
-            # print("handling ",cid)
             handle_cell(cid)
 
             offsetIndex += cursor.GetTree().GetNumberOfVertices()
@@ -296,7 +228,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       import pstats
       from pstats import SortKey
       
-      # with cProfile.Profile() as pr:
       reinit = False
 
       try:
@@ -327,25 +258,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          writer.Write()
          
 
-      # if not reinit:
-      #    for idx,fileIndex in self.idxToFileIndex.items():
-      #       self.fileIndexArray.InsertTuple1(idx, fileIndex)
-      # else:
-
-            
-         # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
-         # ps.print_stats()
-         # self >> writer
-         # writer.Write()
-         
-      
-
-         t1 = time.time()
-         
-         # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
-         # ps.print_stats()
-         # print("Actual time elapsed:", time.time()-t0, "of which", time.time()-t1, "spent adding an array")
-      
       print("pre-calling the jit function to pre-compile")
       children(1,0)
       
@@ -358,43 +270,34 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          print("Building descriptor")
          subdivided = [[] for l in range(max_ref_level+1)]
          idx = 0
-         # with cProfile.Profile() as pr:
          for c in range(1,int(np.prod(basegridsize))+1):
             if c in fileindex_for_cellid.keys():
-               # self.__descriptor += "."
                descr.write(".")
                self.idxToFileIndex[idx] = fileindex_for_cellid[c]
                self.idxToCellID[idx] = c
             else:
-               # self.__descriptor += "R"
                descr.write("R")
                subdivided[0].append(c)
             idx += 1
 
-         # self.__descriptor += "|"
          descr.write("|")
          for l in range(1,max_ref_level+1):
             for c in subdivided[l-1]:
                for child in children(c, l-1):
                   if child in fileindex_for_cellid.keys():
-                     # self.__descriptor += "."
                      descr.write(".")
                      self.idxToFileIndex[idx] = fileindex_for_cellid[child]
                      self.idxToCellID[idx] = c
                   else:
-                     # self.__descriptor += "R"
                      descr.write("R")
                      subdivided[l].append(child)
                   idx += 1
             if l < max_ref_level:
-               # self.__descriptor += "|"
                descr.write("|")
          self.__descriptor = descr.getvalue()
-            # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE)
-            # ps.print_stats()
+
          print("Actual time spent:",time.time()-t0)
-         # self.SetDimensions([len(nodeCoordinatesX),len(nodeCoordinatesY),len(nodeCoordinatesZ)])
-         # self.SetBranchFactor(2)
+
          print("Building with vtkHyperTreeGridSource and descriptor, len ", len(self.__descriptor))
 
       if reinit:
@@ -403,10 +306,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
 
       if True:
          with cProfile.Profile() as pr:
-            # src = vtk.vtkHyperTreeGridSource(max_depth = max_ref_level+1,
-            #                                  dimensions=(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1)),
-            #                                  grid_scale = (f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz),
-            #                                  branch_factor = 2,)
+
             src = vtk.vtkHyperTreeGridSource()
             src.SetMaxDepth(max_ref_level+1)
             src.SetDimensions(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1))
@@ -414,7 +314,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             src.SetBranchFactor(2)
             self.__descriptor = src.ConvertDescriptorStringToBitArray(self.__descriptor)
             src.SetDescriptorBits(self.__descriptor)
-            # src.SetDescriptor(self.__descriptor)
 
             src.Update()
 
@@ -424,10 +323,7 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             htg.SetZCoordinates(zValues)
    
 
-            # ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()
-            # ps.print_stats()
 
-            # ahtg = src.GetOutput()
             print("foo")
             writer = vtk.vtkXMLHyperTreeGridWriter()
             writer.SetFileName("output_FID_2.htg")
@@ -442,67 +338,16 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
             print("foo2")
             self.CopyStructure(htg)
             
-            
-            
-            # #    # Hyper tree grid to unstructured grid filter.
-            # htg2ug = vtk.vtkHyperTreeGridToUnstructuredGrid()
-            # # # # data = src.RequestData()
-            
 
-            # # # shrink = vtk.vtkShrinkFilter(shrink_factor=0.5)
-
-            # mapper = vtk.vtkDataSetMapper()
-
-            # # # # src >> htg2ug >> shrink >> mapper
-            # src >> htg2ug >> mapper
-            # # htg2ug.SetInputData(src.GetHyperTreeGridOutput())
-            # # htg2ug.SetInputData(self)
-            # # mapper.SetInputData(htg2ug.GetOutput())
-
-            # actor = vtk.vtkActor()#(mapper=mapper)
-            # actor.SetMapper(mapper)
-            
-            # #actor.property.diffuse_color = vtk.colors.GetColor3d('Burlywood')
-            # import vtkmodules.vtkCommonColor as vtkCommonColor
-            # colors = vtkCommonColor.vtkNamedColors()
-            
-            # actor.property.diffuse_color = colors.GetColor3d('Burlywood')
-
-            # renderer = vtk.vtkRenderer()#background=vtk.colors.GetColor3d('SlateGray'))
-            # renderer.background = colors.GetColor3d('SlateGray')
-            # render_window = vtk.vtkRenderWindow()#(size=(640, 480), window_name='HyperTreeGridSource')
-            # render_window.SetSize(640,480)
-            # render_window.AddRenderer(renderer)
-            # interactor = vtk.vtkRenderWindowInteractor()
-            # interactor.render_window = render_window
-
-            # renderer.AddActor(actor)
-            # renderer.ResetCamera()
-            # renderer.GetActiveCamera().Azimuth(150)
-            # renderer.GetActiveCamera().Elevation(30)
-            # renderer.ResetCameraClippingRange()
-
-            # render_window.Render()
-            # interactor.Start()
-            # time.sleep(20)
-            # render_window.Close()
-
-
-      # self.
-      # if not reinit:
       self.fileIndexArray = vtk.vtkDoubleArray()
       self.fileIndexArray.SetName('fileIndex')
       
       self.GetCellData().AddArray(self.fileIndexArray)
 
-      # self.fileIndexArray.SetNumberOfValues(1)
-      # self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))
 
       for idx,fileIndex in self.idxToFileIndex.items():
          self.fileIndexArray.InsertTuple1(idx, fileIndex)
-      # self.addArrayFromVlsv("CellID")
 
-      # print(ahtg)
 
 
    def findVariablesFromVlsv(self, getReducers = False):
@@ -513,11 +358,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          vars_set = set(vars)
          vars_set.update(reducers)
          vars = list(vars_set)
-
-      # for var in vars:
-      #    array = vtk.vtkDoubleArray()
-      #    array.SetName(var)
-      #    self.GetCellData().AddArray(array)
 
       return vars
 
@@ -534,7 +374,6 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
          return True
 
       array = vtk.vtkDoubleArray()
-      # cidArray2.DeepCopy(fileIndexArray)
       data = self.vlsvreader.read_variable(varname)
       
       test_var = data[0]
@@ -550,17 +389,11 @@ class vtkVlsvHyperTreeGrid(vtk.vtkHyperTreeGrid):
       else:
          logging.warning("Weird output from " + varname)
          return False
-         # varlen = 0
-         # print("test var is ", test_var, 'for', varname)
 
       
-      # varlen = data[:,np.newaxis].shape[1]
-      # print(varlen)
       array.SetNumberOfComponents(varlen)
       array.SetNumberOfTuples(self.fileIndexArray.GetNumberOfTuples())
       array.SetName(varname)
-      # print(cidArray2)
-      # newdata = np.array([ciddata[self.idxToFileIndex[idx]] for idx in self.idxToFileIndex.keys()])
       if varlen == 1:
          for idx,fileIndex in self.idxToFileIndex.items():
             array.SetTuple1(idx, data[fileIndex])
@@ -682,9 +515,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             subdivided[0].append(c)
          idx += 1
 
-      # @jit(nopython=True)
       def children(cid, level):
-         # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
          cellids = cid - 1 - cid_offsets[level]
          cellind = np.full(3, -1,dtype=np.int32)
          cellind[0] = (cellids)%(xcells[level])
@@ -721,7 +552,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             raise Exception("reinit = True")
          with open(self.__metafile,'rb') as mfile:
             data = pickle.load(mfile)
-            # print(data)
             self.__idxToFileIndex = data['idxToFileIndexMap']
             self.__descriptor = data['descr']
       except Exception as e:
@@ -746,8 +576,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       src.SetGridScale(f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz)
       src.SetBranchFactor(2)
       
-      #descr = src.ConvertDescriptorStringToBitArray(descr)
-      #src.SetDescriptorBits(descr)
+
       src.SetDescriptor(descr)
 
       src.Update()
@@ -808,8 +637,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def RequestInformation(self, request, inInfo, outInfo):
 
       info = outInfo.GetInformationObject(0)
-      # print("VlsvVtkReader RequestInformation:")
-      # print(info)
+
       if self.__htg is None:
          print("Creating htg via RequestInformation")
          self.__htg = self.getHTG()
@@ -820,9 +648,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
                self._arrayselection.AddArray(name)
                self._arrayselection.DisableArray(name)
                self.__cellarrays.append(name)
-         # self.__htg.addArrayFromVlsv("vg_beta_star")
-         # self.__htg.GetCellData().SetActiveScalars("vg_beta_star")
-
       dims = self.__htg.GetExtent()
       info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(), *dims)
 
@@ -915,11 +740,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    
    def ReadAllScalarsOn(self):
       self._arrayselection.EnableAllArrays()
-      # for name in self.__cellarrays:
-         
-      #    self.__htg.addArrayFromVlsv(name)
-
-
    def GetDataArraySelection(self):
       return self._arrayselection
 
@@ -929,8 +749,7 @@ def __main__():
    # This initializes a hypertreegrid from the given reader.
    reader = VlsvVtkReader()
    reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
-   # reader.SetFileName("/home/mjalho/bulk1.0001418.vlsv")
-   # reader.ReadAllScalarsOn()
+
    reader.Update()
    cf = vtk.vtkHyperTreeGridContour()
    cf.SetInputConnection(reader.GetOutputPort())
@@ -950,19 +769,9 @@ def __main__():
    renWin.AddRenderer(ren)
    renWin.SetSize(600, 600)
 
-   # renWin.Render()
-   
-   # time.sleep(10)
-   
+
    htg = reader.GetOutputDataObject(0)
-   # print(htg)
-   # htg.__vtkVlsvHyperTreeGrid_VlsvAddArray('vg_b_vol')
-   # htg = reader.GetOutputData()
-   # print(htg)
-   # These functions grab one SpatialGrid variable and map that to 
-   # the hypertreegrid. Variable vector sizes of 1,2,3,4,9 supported.
-   # htg.addArrayFromVlsv("vg_b_vol")
-   # htg.addArrayFromVlsv("vg_beta_star")
+
 
    writer = vtk.vtkXMLHyperTreeGridWriter()
    writer.SetFileName("output_FID.htg")
