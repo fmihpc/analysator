@@ -43,6 +43,7 @@ jobs:
             mkdir $DATAPATH
             touch $DATAPATH/.lockfile
             sbatch -W -o testpackage_gen_verf.txt --job-name gen_verf_plots ./testpackage/run_testpackage_generate_verf_set.sh $DATAPATH > jobid.txt
+            cat testpackage_gen_verf.txt
             export JOBID=$(grep -Po '\d+' jobid.txt)
             export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
             if [[ $SACCT_LOG ]]; then
@@ -50,16 +51,20 @@ jobs:
               echo $SACCT_LOG 
               exit 1
             fi
-            cat testpackage_gen_verf.txt
 
-            python ./testpackage/testpackage_get_job_error.py testpackage_gen_verf.txt
             rm $DATAPATH/.lockfile
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
-            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh verf_set 
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh verf_set > jobid1.txt
             cat testpackage_compare.txt
-            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
-     
+
+            export JOBID=$(grep -Po '\d+' jobid1.txt)
+            export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+            if [[ $SACCT_LOG ]]; then
+              echo "Some job failed on a node, try to take a look at the slurm log."
+              echo "$SACCT_LOG" 
+              exit 1
+            fi
