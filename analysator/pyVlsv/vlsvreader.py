@@ -81,20 +81,9 @@ def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if prune_unique:
       unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
 
-      # these are all about the same...
-      # if (unique_keys.ndim == 1):
+      
       mask = np.array([k in dictionary.keys() for k in unique_keys],dtype=bool)
-      # else: # and this isn't worth it?
-      #    mask = np.array([tuple(k) in dictionary.keys() for k in unique_keys],dtype=bool)
 
-      # mask = np.empty(query_keys.shape, dtype=bool)
-      # for i,k in enumerate(query_keys):
-      #    mask[i] = [k in dictionary.keys() for k in query_keys],dtype=bool)
-
-      # mask = np.array(list(map(lambda c: c in dictionary.keys(),query_keys)), dtype=bool)
-
-      # dlambda = np.frompyfunc(lambda c: c in dictionary.keys(),1,1)
-      # mask = np.array(dlambda(query_keys),dtype=bool)
       mask = mask[indices]
    else:
       mask = np.array([k in dictionary.keys() for k in query_keys],dtype=bool)
@@ -478,7 +467,6 @@ class VlsvReader(object):
       #Check if it is not iterable. If it is a scale then make it a list
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
-      # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid] = index
 
