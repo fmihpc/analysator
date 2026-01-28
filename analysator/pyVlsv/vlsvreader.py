@@ -2015,7 +2015,6 @@ class VlsvReader(object):
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
 
-      #if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
       if name.lower()[0:3]=="ig_":
          if not cellids == -1:
             logging.warning("CellID requests not supported for ionosphere variables! Aborting.")
@@ -2380,7 +2379,6 @@ class VlsvReader(object):
 
       :returns: a list of unique cell ids
       '''
-      # cids = [int(self.get_cellid(coord)) for coord in coords]
       cids = self.get_cellid(coords)
 
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
