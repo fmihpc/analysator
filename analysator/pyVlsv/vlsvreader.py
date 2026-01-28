@@ -2763,8 +2763,6 @@ class VlsvReader(object):
       vertices_todo = set().union(*cell_vertex_sets.values())
       neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
       for c,verts in cell_vertex_sets.items():
-         # neighbor_tuples = self.build_dual_from_vertices(verts)
-         # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
          cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
       
       self.__cell_neighbours.update(cell_neighbor_sets)
