@@ -24,7 +24,7 @@
 import analysator as pt
 import numpy as np
 import sys, os
-from output import output_1d
+from .output import output_1d
 import logging
 
 def pitch_angles( vlsvReader,

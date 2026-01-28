@@ -1183,5 +1183,8 @@ for _f in _SCMfiles:
             plt.register_cmap(cmap=_cm)
             plt.register_cmap(cmap=_cm.reversed())
     except Exception as e:
-        logging.warning("Problem registering colormap " + _cm_name + ". Produced exception was:\n"+str(e))
+        if "is already registered" in str(e):
+            pass
+        else:
+            logging.warning("Problem registering colormap " + _cm_name + ". Produced exception was:\n"+str(e))
 

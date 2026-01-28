@@ -12,13 +12,12 @@ from matplotlib.colors import LightSource
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+from . import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from packaging.version import Version
 
-
-import ids3d
+from ..calculations import ids3d
 #from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 import mpl_toolkits.mplot3d.art3d as art3d

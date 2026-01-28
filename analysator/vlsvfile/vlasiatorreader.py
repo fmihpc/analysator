@@ -27,11 +27,11 @@ import xml.etree.ElementTree as ET
 import ast
 import numpy as np
 import os
-from reduction import datareducers,data_operators
-from vlsvwriter import VlsvWriter
-from variable import get_data
+from .reduction import datareducers,data_operators
+from .vlsvwriter import VlsvWriter
+from ..calculations.variable import get_data
 from operator import itemgetter
-from vlsvreader import VlsvReader
+from .vlsvreader import VlsvReader
 
 class VlasiatorReader(VlsvReader):
    ''' Class for reading VLSV files with support for Vlasiator velocity space and structures

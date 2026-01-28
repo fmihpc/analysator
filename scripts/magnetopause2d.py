@@ -4,7 +4,7 @@ Finds the magnetopause position by tracing steamines of the plasma flow for two-
 
 import numpy as np
 import analysator as pt
-import plot_colormap
+from analysator.plot import plot_colormap
 import yt
 from yt.visualization.api import Streamlines
 
@@ -166,7 +166,7 @@ def main():
                 ax.plot(magnetopause[:,0], magnetopause[:,1], color='cyan', linewidth=1.0) 
 
 
-    plot_colormap.plot_colormap(
+    plot_colormap(
         filename=fileLocation+fileN,
         outputdir=outdir,
         nooverwrite=None,

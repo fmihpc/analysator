@@ -1,11 +1,11 @@
 '''
 Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.
 '''
-from pyCalculations import ids3d
+from analysator.calculations import ids3d
 import matplotlib.pyplot as plt
 import numpy as np
 import analysator as pt
-import plot_colormap3dslice
+from analysator.plot import plot_colormap3dslice
 import yt
 import math
 from mpl_toolkits import mplot3d
@@ -322,7 +322,7 @@ def main():
             ax.plot(xz_slice[:,0], xz_slice[:,2],  color='limegreen', linewidth=1.5)
 
 
-        plot_colormap3dslice.plot_colormap3dslice(
+        plot_colormap3dslice(
         filename=fileLocation+fileN,
         outputdir=outdir,
         run=run,
@@ -342,7 +342,7 @@ def main():
                 return ['vg_v']
             ax.plot(xy_slice[:,0], xy_slice[:,1], color='limegreen', linewidth=1.5)
 
-        plot_colormap3dslice.plot_colormap3dslice(
+        plot_colormap3dslice(
         filename=fileLocation+fileN,
         outputdir=outdir,
         run=run,
