@@ -26,6 +26,7 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "zfpy",
 ]
 [project.optional-dependencies]
 none = [
