@@ -1,4 +1,4 @@
-#s 
+#
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
@@ -30,8 +30,11 @@ import os
 import sys
 import re
 import numbers
+import pickle # for caching linked readers, switch to VLSV/XML at some point - h5py?
+# import h5py
 
 import vlsvvariables
+import vlsvcache
 from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
 try:
    from collections.abc import Iterable
@@ -48,31 +51,7 @@ from operator import itemgetter
 
 interp_method_aliases = {"trilinear":"linear"}
 
-class PicklableFile(object):
-   def __init__(self, fileobj):
-      self.fileobj = fileobj
-
-   def __getattr__(self, key):
-      return getattr(self.fileobj, key)
-
-   def __getstate__(self):
-      ret = self.__dict__.copy()
-      ret['_file_name'] = self.fileobj.name
-      ret['_file_mode'] = self.fileobj.mode
-      if self.fileobj.closed:
-         ret['_file_pos'] = 0
-      else:
-         ret['_file_pos'] = self.fileobj.tell()
-      del ret['fileobj']
-      return ret
-
-   def __setstate__(self, dict):
-      self.fileobj = open(dict['_file_name'], dict['_file_mode'])
-      self.fileobj.seek(dict['_file_pos'])
-      del dict['_file_name']
-      del dict['_file_mode']
-      del dict['_file_pos']
-      self.__dict__.update(dict)
+neighbors_cache_file = "neighbors_cache.pkl"
 
 def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if query_keys.shape[0] == 0:
@@ -114,7 +93,7 @@ def fsGlobalIdToGlobalIndex(globalids, bbox):
 # Read in the global ids and indices for FsGrid cells, returns
 # min and max corners of the fsGrid chunk by rank
 def fsReadGlobalIdsPerRank(reader):
-   numWritingRanks = reader.read_parameter("numWritingRanks")
+   numWritingRanks = reader.get_numWritingRanks("fsgrid")
    rawData = reader.read(tag="MESH", name="fsgrid")
    bbox = reader.read(tag="MESH_BBOX", mesh="fsgrid")
    sizes = reader.read(tag="MESH_DOMAIN_SIZES", mesh="fsgrid")
@@ -181,27 +160,44 @@ class VlsvReader(object):
       if (hasattr(self, "__fptr")) and self.__fptr is not None:
          self.__fptr.close()
 
-   def __init__(self, file_name, fsGridDecomposition=None):
+   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
-          :param fsGridDecomposition: Either None or a len-3 list of ints.
+          :kword fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
+          :kword file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
       '''
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
+      self.file_cache = file_cache
       try:
-         self.__fptr = PicklableFile(open(self.file_name,"rb"))
+         self.__fptr = vlsvcache.PicklableFile(open(self.file_name,"rb"))
       except FileNotFoundError as e:
          logging.info("File not found: " + self.file_name)
          raise e
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
+      self.__full_fileindex_for_cellid = False
+      self.__cellid_spatial_index=None
+      self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
+      self.__loaded_fileindex_ranks = set()
 
+      self.__metadata_cache = vlsvcache.MetadataFileCache(self)
+
+      self.__metadata_read = False  
+      self.__metadata_dict = {} # Used for reading in and storing derived/other metadata such as linked file paths
+      self.__linked_files = set()
+      self.__linked_readers = set()
+      
+      
+      
+      self.__mesh_domain_sizes = {}
       self.__max_spatial_amr_level = -1
+      self.__grid_epsilon = None
       self.__fsGridDecomposition = fsGridDecomposition
 
       self.use_dict_for_blocks = False
@@ -212,7 +208,8 @@ class VlsvReader(object):
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
-      self.variable_cache = {} # {(varname, operator):data}
+      self.__variable_cache = vlsvcache.VariableCache(self) # {(varname, operator):data}
+      self.__params_cache = {} # {name:data}
 
       self.__pops_init = False
 
@@ -220,7 +217,7 @@ class VlsvReader(object):
       self.__unavailable_reducers = set() # Set of strings of datareducer names
       self.__current_reducer_tree_nodes = set() # Set of strings of datareducer names
 
-      self.__read_xml_footer()
+      
                               # vertex-indices is a 3-tuple of integers
       self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
@@ -229,6 +226,13 @@ class VlsvReader(object):
       self.__cell_neighbours = {} # cellid : set of cellids (all neighbors sharing a vertex)
       self.__cell_duals = {} # cellid : tuple of vertex-indices that span this cell
       self.__regular_neighbor_cache = {} # cellid-of-low-corner : (8,) np.array of cellids)
+      self.__neighbors_cache_len = 0
+      self.__neighbors_cache_available = os.path.isfile(os.path.join(self.get_cache_folder(),neighbors_cache_file))
+      self.__neighbors_cache_loaded = False
+
+      # Start calling functions only after initializing trivial members
+      self.get_linked_readers()
+      self.__read_xml_footer()
 
       # Check if the file is using new or old vlsv format
       # Read parameters (Note: Reading the spatial cell locations and
@@ -314,6 +318,150 @@ class VlsvReader(object):
 
 
       self.__fptr.close()
+
+   def get_grid_epsilon(self):
+      if self.__grid_epsilon is None:
+         # one-thousandth of the max refined cell; self.get_max_refinement_level() however reads all cellids, so just temp here by assuming 8 refinement levels.. which is plenty for now
+         self.__grid_epsilon = 1e-3*np.array([self.__dx, self.__dy, self.__dz])/2**8 
+      return self.__grid_epsilon
+
+
+   def get_metadata_filename(self):
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_metadata.pkl")
+      return s
+
+   # def get_h5_metadata(self, key, default):
+   #    ''' Read metadata from hdf5 metadata file, and if not available,
+   #    return the given default value.
+
+   #    :param data: str, a key to stored metadata.
+   #    :param default: value to return if key does not exist
+
+   #    '''
+
+   #    if type(key) == type(("a tuple",)):
+   #       print("tuple reader not implemented")
+   #    elif type(key) == type("a string"):
+   #       print("Reading str-keyed data")
+   #    else:
+   #       raise TypeError("key must be str or tuple")      
+
+   #    if not self.__metadata_read:
+   #       try:
+   #          fn = self.get_metadata_filename()
+   #          with open(fn,'rb') as f:
+   #             self.__metadata_dict = pickle.load(f)
+   #       except:
+   #          logging.debug("No metadata file found.")
+   #       self.__metadata_read = True
+      
+   #    return self.__metadata_dict.get(key,default)   
+
+
+   def get_reader_metadata(self, key, default):
+      ''' Read metadata from metadata file, and if not available,
+      return the given default value.
+
+      :param data: str, a key to stored metadata.
+      :param default: value to return if key does not exist
+
+      '''
+      
+
+      if not self.__metadata_read:
+         try:
+            fn = self.get_metadata_filename()
+            with open(fn,'rb') as f:
+               self.__metadata_dict = pickle.load(f)
+         except:
+            logging.debug("No metadata file found.")
+         self.__metadata_read = True
+      
+      return self.__metadata_dict.get(key,default)
+   
+   def add_metadata(self, key, value):
+      self.__metadata_dict[key] = value
+      self.save_metadata()
+
+   def save_metadata(self):
+      fn = self.get_metadata_filename()
+      try:
+         with open(fn,'wb') as f:
+            pickle.dump(self.__metadata_dict,f)
+      except Exception as e:
+         logging.warning("Could not save metadata file, error: "+str(e))
+
+   def get_linked_readers_filename(self):
+      '''Need to go to a consolidated metadata handler'''
+      pth, base = os.path.split(self.file_name)
+      
+      s = os.path.join(self.__metadata_cache.get_cache_folder(),base[:-5]+"_linked_readers.txt")
+      return s
+
+   def get_linked_readers(self, reload=False):
+      self.__linked_files = self.get_reader_metadata("linked_reader_files", set())
+      if len(self.__linked_files)==0 or reload:
+         if(os.path.isfile(self.get_linked_readers_filename())):
+            with open(self.get_linked_readers_filename(), 'r') as f:
+               l = f.readlines()
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+               self.__linked_files.update(l)
+               print(l)
+
+      else:
+         self.add_linked_readers()
+
+         self.add_metadata("linked_reader_files",self.__linked_files)
+
+      return self.__linked_readers
+
+
+   def add_linked_file(self, fname):
+      if os.path.exists(fname):
+         self.__linked_files.add(VlsvReader(fname))
+      else:
+         logging.warning("Could not link "+fname+" (path does not exist)")
+
+   def add_linked_reader(self, fname):
+      if os.path.exists(fname):
+         for reader in self.__linked_readers:
+            if fname == reader.file_name:
+               return
+         self.__linked_readers.add(VlsvReader(fname))
+      else:
+         logging.warning("Could not link "+fname+" (path does not exist)")
+
+   def add_linked_readers(self):
+      for fname in self.__linked_files:
+         self.add_linked_reader(fname)
+
+   def save_linked_readers_file(self, overwrite = False):
+      fn = self.get_linked_readers_filename()
+      if not overwrite: # Load existing linked reader to not overwrite everything
+         self.get_linked_readers()
+
+      logging.info("Saving linked readers to "+fn)
+      dn = os.path.dirname(fn)
+      if not os.path.isdir(dn):
+            os.mkdir(dn)
+      with open(fn,'w') as f:
+         lines = []
+         for line in self.__linked_files:
+            lines += (line+os.linesep) # gather from set and insert line swap
+         f.writelines(lines)
+
+   def clear_linked_readers(self):
+      self.__linked_files.clear()
+      self.__linked_readers.clear()
+
+   def clear_linked_readers_file(self):
+      fn = self.get_linked_readers_filename()
+      if os.path.exists(fn):
+         os.remove(fn)
+      else:
+         logging.info("Tried to remove nonexisting linked reader file "+fn)
 
    def __popmesh(self, popname):
       ''' Get the population-specific vspace mesh info object, and initialize it if it does not exist
@@ -470,9 +618,10 @@ class VlsvReader(object):
    def __read_fileindex_for_cellid(self):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
       """
-      if not self.__fileindex_for_cellid == {}:
+      if self.__full_fileindex_for_cellid:
          return
-      
+
+      # print("fileindex!")
       cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
       #Check if it is not iterable. If it is a scale then make it a list
@@ -481,6 +630,7 @@ class VlsvReader(object):
       # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid] = index
+      self.__full_fileindex_for_cellid = True
 
    def __read_blocks(self, cellid, pop="proton"):
       ''' Read raw velocity block data from the open file.
@@ -691,18 +841,24 @@ class VlsvReader(object):
 
    def get_variables(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(set(reader.get_variables()))
 
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             name = child.attrib["name"]
-            varlist.append(name)
+            varlist.add(name)
 
-      return varlist
+      return list(varlist)
    
    def get_reducers(self):
 
-      varlist = []
+      varlist = set()
+
+      for reader in self.__linked_readers:
+         varlist.update(reader.get_reducers())
 
       reducer_max_len = 0
       
@@ -718,11 +874,11 @@ class VlsvReader(object):
             if self.__check_datareducer(name,reducer):
                if name[:3] == 'pop':
                   for pop in self.active_populations:
-                     varlist.append(pop+'/'+name[4:])
+                     varlist.add(pop+'/'+name[4:])
                else:
-                  varlist.append(name)
+                  varlist.add(name)
 
-      return varlist
+      return list(varlist)
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -807,6 +963,27 @@ class VlsvReader(object):
                return True
       return False
 
+   def linked_readers_check_variable(self, name):
+      ''' Test all linked variables if any of them returns True on test function
+      
+      :param fun: Function to pass to linked readers (VlsvReader member function/first param VlsvReader)
+      :param args: arguments to pass to fun
+      :param kwargs: keyword arguments to pass to fun
+      '''
+
+      ret = False
+      for reader in self.__linked_readers:
+         try:
+            ret = reader.check_variable(name)
+         except Exception as e: # Let's not care if a sidecar file does not contain something
+            pass
+         if ret:
+            return ret
+         else:
+            continue
+
+      return False
+
    def check_variable( self, name ):
       ''' Checks if a given variable is in the vlsv reader
 
@@ -826,6 +1003,9 @@ class VlsvReader(object):
                 # Variable not in the vlsv file
                 plot_B_vol()
       '''
+      if self.linked_readers_check_variable(name):
+         return True
+
       for child in self.__xml_root:
          if child.tag == "VARIABLE" and "name" in child.attrib:
             if child.attrib["name"].lower() == name.lower():
@@ -887,6 +1067,68 @@ class VlsvReader(object):
       # if len( self.__fileindex_for_cellid ) == 0:
       self.__read_fileindex_for_cellid()
       return self.__fileindex_for_cellid
+
+   def get_mesh_domain_sizes(self, mesh):
+
+      if mesh not in self.__mesh_domain_sizes.keys():
+         self.__mesh_domain_sizes[mesh] = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh=mesh)
+      return self.__mesh_domain_sizes[mesh]
+      
+   def get_numWritingRanks(self, mesh):
+      ''' Get the number of writing ranks. This does not exist for all outputfiles eerywhere.
+      '''
+      ranks = None
+      if "numWritingRanks" in self.__params_cache.keys():
+         return self.__params_cache["numWritingRanks"]
+      else:
+         try: 
+            ranks = self.read_parameter("numWritingRanks")
+         except:
+            ranks = self.read_attribute(mesh=mesh, attribute="arraysize", tag="MESH_DOMAIN_SIZES")
+            self.__params_cache["numWritingRanks"] = ranks
+
+         return ranks
+      
+
+   def __read_fileindex_for_cellid_rank(self, rank):
+      """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
+      """
+      # print("filling rank",rank)
+
+      if rank > self.get_numWritingRanks("SpatialGrid"):
+         raise ValueError("Tried to read rank "+rank+" out of "+self.get_numWritingRanks("SpatialGrid"))
+         
+      if not self.__rankwise_fileindex_for_cellid.get(rank,{}) == {}:
+         return
+      
+      mesh_domain_sizes = self.get_mesh_domain_sizes("SpatialGrid")
+      n_domain_cells = mesh_domain_sizes[:,0]-mesh_domain_sizes[:,1]
+      domain_offsets = np.cumsum(np.hstack((np.array([0]),n_domain_cells[:-1])))
+
+      cellids = self.read_cellids_with_offset(domain_offsets[rank],n_domain_cells[rank])
+
+      #Check if it is not iterable. If it is a scale then make it a list
+      if(not isinstance(cellids, Iterable)):
+         cellids=[ cellids ]
+      self.__rankwise_fileindex_for_cellid[rank] = {cellid: domain_offsets[rank]+index for index,cellid in enumerate(cellids)}
+      self.__loaded_fileindex_ranks.add(rank)
+      self.__fileindex_for_cellid.update(self.__rankwise_fileindex_for_cellid[rank])
+
+
+   def get_cellid_locations_rank(self, rank):
+      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. 
+         So far this pipeline will update the main fileindex, as it is not too heavy an operation - but
+         moving towards handling data more rankwise may be nice some time in the future.
+
+         :param rank: Find (and initialize) fileindex for cells contained by this rank
+
+      '''
+      # if len( self.__fileindex_for_cellid ) == 0:
+      self.__read_fileindex_for_cellid_rank(rank)
+      return self.__rankwise_fileindex_for_cellid[rank]
+
+
+
 
    def print_version(self):
       '''
@@ -1057,6 +1299,105 @@ class VlsvReader(object):
          
       raise ValueError("Variable or attribute not found")
 
+   def read_with_offset(self, datatype,variable_offset, read_size, read_offsets, element_size, vector_size):
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
+      if len(read_offsets) !=1:
+         arraydata = []
+      for r_offset in read_offsets:
+         use_offset = int(variable_offset + r_offset)
+         fptr.seek(use_offset)
+         if datatype == "float" and element_size == 4:
+            data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
+         if datatype == "float" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.float64, count=vector_size*read_size)
+         if datatype == "int" and element_size == 4:
+            data = np.fromfile(fptr, dtype=np.int32, count=vector_size*read_size)
+         if datatype == "int" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.int64, count=vector_size*read_size)
+         if datatype == "uint" and element_size == 4:
+            data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*read_size)
+         if datatype == "uint" and element_size == 8:
+            data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
+         if len(read_offsets)!=1:
+            arraydata.append(data)
+      if len(read_offsets) !=1:
+         data = np.array(arraydata)
+
+      return data
+
+   def get_read_offsets(self, cellids, array_size, element_size, vector_size):
+      ''' Figure out somewhat optimal offsets for read operations
+      '''
+
+      # if isinstance(cellids, numbers.Number):
+      #    if cellids >= 0:
+      #       read_filelayout = True
+      #    else: # cellids = -1
+      #       read_filelayout = False
+      # else:
+      #    read_filelayout = True
+      #    # Here could be a conditional optimization for unique CellIDs,
+      #    # but it actually makes a very large query slower.
+
+      # if (len( self.__fileindex_for_cellid ) == 0) and read_filelayout:
+      #    # Do we need to construct the cellid index?
+      #    self.__read_fileindex_for_cellid()
+      # Define efficient method to read data in
+      reorder_data = False
+      if not isinstance(cellids, numbers.Number):
+         # Read multiple specified cells
+         # If we're reading a large amount of single cells, it'll be faster to just read all
+         # data from the file system and sort through it. For the CSC disk system, this
+         # becomes more efficient for over ca. 5000 cellids.
+         if len(cellids) >5000: # TODO re-evaluate threshold
+            reorder_data = True
+            result_size = len(cellids)
+            read_size = array_size
+            read_offsets = [0]
+         else: # Read multiple cell ids one-by-one
+            try:
+               result_size = len(cellids)
+               read_size = 1
+               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+            except:
+               self.__read_fileindex_for_cellid()
+               result_size = len(cellids)
+               read_size = 1
+               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+      else: # single cell or all cells
+         if cellids < 0: # -1, read all cells
+            result_size = array_size
+            read_size = array_size
+            read_offsets = [0]
+         else: # single cell id
+            if self.__full_fileindex_for_cellid: # Fileindex already exists, we might as well use it
+               result_size = 1
+               read_size = 1
+               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            elif self.__cellid_spatial_index != None:
+               # Here a faster alternative
+               result_size = 1
+               read_size = 1
+               eps = self.get_grid_epsilon()
+               qp = self.get_cell_coordinates(cellids)
+               qqp = np.hstack((qp-eps,qp+eps))
+               pq = np.array([qqp[0],qqp[3],qqp[1],qqp[4],qqp[2],qqp[5]])
+               rankids = self.__cellid_spatial_index.intersection()
+               read_offsets = None
+               for rankid in rankids:
+                  indexdict = self.get_cellid_locations_rank(rankid)
+                  if cellids in indexdict.keys():
+                     read_offsets = [indexdict[cellids]*element_size*vector_size]
+            else:
+               self.__read_fileindex_for_cellid()
+               result_size = 1
+               read_size = 1
+               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+
+      return read_size, read_offsets, result_size, reorder_data
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
       ''' Read data from the open vlsv file. 
@@ -1080,24 +1421,9 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-
       if tag == "VARIABLE":
-         if (name,operator) in self.variable_cache.keys():
+         if (name,operator) in self.__variable_cache.keys():
             return self.read_variable_from_cache(name, cellids, operator)
-
-      if isinstance(cellids, numbers.Number):
-         if cellids >= 0:
-            read_filelayout = True
-         else: # cellids = -1
-            read_filelayout = False
-      else:
-         read_filelayout = True
-         # Here could be a conditional optimization for unique CellIDs,
-         # but it actually makes a very large query slower.
-
-      if (len( self.__fileindex_for_cellid ) == 0) and read_filelayout:
-         # Do we need to construct the cellid index?
-         self.__read_fileindex_for_cellid()
         
       # Get population and variable names from data array name 
       if '/' in name:
@@ -1136,58 +1462,15 @@ class VlsvReader(object):
             datatype = child.attrib["datatype"]
             variable_offset = ast.literal_eval(child.text)
 
-            # Define efficient method to read data in
-            reorder_data = False
-            arraydata = []
-            try: # try-except to see how many cellids were given
-               lencellids=len(cellids) 
-               # Read multiple specified cells
-               # If we're reading a large amount of single cells, it'll be faster to just read all
-               # data from the file system and sort through it. For the CSC disk system, this
-               # becomes more efficient for over ca. 5000 cellids.
-               if lencellids>5000: 
-                  reorder_data = True
-                  result_size = len(cellids)
-                  read_size = array_size
-                  read_offsets = [0]
-               else: # Read multiple cell ids one-by-one
-                  result_size = len(cellids)
-                  read_size = 1
-                  read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
-            except: # single cell or all cells
-               if cellids < 0: # -1, read all cells
-                  result_size = array_size
-                  read_size = array_size
-                  read_offsets = [0]
-               else: # single cell id
-                  result_size = 1
-                  read_size = 1
-                  read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-            
-            if self.__fptr.closed:
-               fptr = open(self.file_name,"rb")
+            if not isinstance(cellids, numbers.Number):
+               cellids = np.array(cellids, dtype=np.int64)
+               cellids_nonzero = cellids[cellids!=0]
             else:
-               fptr = self.__fptr
+               cellids_nonzero = cellids
 
-            for r_offset in read_offsets:
-               use_offset = int(variable_offset + r_offset)
-               fptr.seek(use_offset)
-               if datatype == "float" and element_size == 4:
-                  data = np.fromfile(fptr, dtype = np.float32, count=vector_size*read_size)
-               if datatype == "float" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.float64, count=vector_size*read_size)
-               if datatype == "int" and element_size == 4:
-                  data = np.fromfile(fptr, dtype=np.int32, count=vector_size*read_size)
-               if datatype == "int" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.int64, count=vector_size*read_size)
-               if datatype == "uint" and element_size == 4:
-                  data = np.fromfile(fptr, dtype=np.uint32, count=vector_size*read_size)
-               if datatype == "uint" and element_size == 8:
-                  data = np.fromfile(fptr, dtype=np.uint64, count=vector_size*read_size)
-               if len(read_offsets)!=1:
-                  arraydata.append(data)
-
-            fptr.close()
+            read_size, read_offsets, result_size, reorder_data = self.get_read_offsets(cellids_nonzero, array_size, element_size, vector_size)
+            
+            data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
 
             if len(read_offsets)==1 and reorder_data:
                # Many single cell id's requested
@@ -1195,17 +1478,26 @@ class VlsvReader(object):
                arraydata = np.array(data)
                if vector_size > 1:
                   arraydata=arraydata.reshape(-1, vector_size)
-                  
-               append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids]
+
+               mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
+               
+               self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
+
+               append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
                data = arraydata[append_offsets,...]
                data = np.squeeze(data)
 
             if len(read_offsets)!=1:
                # Not-so-many single cell id's requested
-               data = np.squeeze(np.array(arraydata))
+               data = np.squeeze(np.array(data))
 
             if vector_size > 1:
                data=data.reshape(result_size, vector_size)
+
+            if not isinstance(cellids, numbers.Number):
+               data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               data_out[cellids!=0,...] = data
+               data = data_out
             
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
@@ -1325,9 +1617,49 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!") 
+         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name) 
 
+   def read_cellids_with_offset(self, start, ncells):
+      import ast
+      tag="VARIABLE"
+      name="cellid"
+      mesh="SpatialGrid"
+      if self.__fptr.closed:
+         fptr = open(self.file_name,"rb")
+      else:
+         fptr = self.__fptr
 
+    # Seek for requested data in VLSV file
+      for child in self.__xml_root:
+         if tag != "":
+            if child.tag != tag:
+               continue
+         # Verify that any requested name or mesh matches those of the data
+         if name != "":
+            if not "name" in child.attrib:
+               continue
+            if child.attrib["name"].lower() != name:
+               continue
+         if mesh != "":
+            if not "mesh" in child.attrib:
+               continue
+            if child.attrib["mesh"] != mesh:
+               continue
+         if child.tag == tag:
+            # Found the requested data entry in the file
+            vector_size = ast.literal_eval(child.attrib["vectorsize"])
+            array_size = ast.literal_eval(child.attrib["arraysize"])
+            element_size = ast.literal_eval(child.attrib["datasize"])
+            datatype = child.attrib["datatype"]
+            variable_offset = ast.literal_eval(child.text)
+
+            result_size = ncells
+            read_size = ncells
+            read_offsets = [start*element_size*vector_size]
+                  
+            data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
+
+            return data
 
    def read_metadata(self, name="", tag="", mesh=""):
       ''' Read variable metadata from the open vlsv file. 
@@ -1595,7 +1927,10 @@ class VlsvReader(object):
       closest_cell_ids = self.get_cellid(coordinates)
 
       if method.lower() == "nearest":
-         final_values = self.read_variable(name, cellids=closest_cell_ids, operator=operator)
+         if(coordinates.shape[0] > 1):
+            final_values = self.read_variable(name, cellids=closest_cell_ids, operator=operator)
+         else: # no need to re-read if we did the test_variable already!
+            final_values = test_variable
          if stack:
             return final_values.squeeze()
          else:
@@ -1801,6 +2136,37 @@ class VlsvReader(object):
       else:
          return [self.downsample_fsgrid_subarray(cid, var) for cid in cellids]
 
+   def get_fsgrid_decomposition(self):
+      # Try if in metadata
+      self.__fsGridDecomposition = self.get_reader_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+      if(self.__fsGridDecomposition is not None):
+         print("read ",self.__fsGridDecomposition)
+
+      if self.__fsGridDecomposition is None:
+         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
+         if self.__fsGridDecomposition is not None:
+            logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
+         else:
+            logging.info("Did not find FsGrid decomposition from vlsv file.")
+       
+      # If decomposition is None even after reading, we need to calculate it:
+      if self.__fsGridDecomposition is None:
+         logging.info("Calculating fsGrid decomposition from the file")
+         self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
+         logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
+      else:
+         # Decomposition is a list (or fail assertions below) - use it instead
+         pass
+      
+      numWritingRanks = self.get_numWritingRanks("SpatialGrid")
+      assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
+      assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
+      
+      self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+
+      return self.__fsGridDecomposition
+               
+
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
        Arguments:
@@ -1819,7 +2185,7 @@ class VlsvReader(object):
        rawData = self.read(mesh='fsgrid', name=name, tag="VARIABLE", operator=operator)
 
        # Determine fsgrid domain decomposition
-       numWritingRanks = self.read_parameter("numWritingRanks")
+       numWritingRanks = self.get_numWritingRanks("SpatialGrid")
        if len(rawData.shape) > 1:
          orderedData = np.zeros([bbox[0],bbox[1],bbox[2],rawData.shape[1]])
        else:
@@ -1841,26 +2207,7 @@ class VlsvReader(object):
                return n_per_task
 
        currentOffset = 0;
-       if self.__fsGridDecomposition is None:
-         self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
-         if self.__fsGridDecomposition is not None:
-            logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
-         else:
-            logging.info("Did not find FsGrid decomposition from vlsv file.")
-       
-       # If decomposition is None even after reading, we need to calculate it:
-       if self.__fsGridDecomposition is None:
-          logging.info("Calculating fsGrid decomposition from the file")
-          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
-          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-       else:
-          # Decomposition is a list (or fail assertions below) - use it instead
-          pass
-          
-       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
-       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
-               
-          
+       self.get_fsgrid_decomposition()
 
        for i in range(0,numWritingRanks):
            x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
@@ -1961,26 +2308,7 @@ class VlsvReader(object):
          .. seealso:: :func:`read_variable`
       '''
 
-      var_data = self.variable_cache[(name,operator)]
-      if var_data.ndim == 2:
-         value_len = var_data.shape[1]
-      else:
-         value_len = 1
-         
-      if isinstance(cellids, numbers.Number):
-         if cellids == -1:
-            return var_data
-         else:
-            return var_data[self.__fileindex_for_cellid[cellids]]
-      else:
-         if(len(cellids) > 0):
-            indices = np.array(itemgetter(*cellids)(self.__fileindex_for_cellid),dtype=np.int64)
-         else:
-            indices = np.array([],dtype=np.int64)
-         if value_len == 1:
-            return var_data[indices]
-         else:
-            return var_data[indices,:]
+      return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
          
          
    def read_variable_to_cache(self, name, operator="pass"):
@@ -1992,9 +2320,10 @@ class VlsvReader(object):
       '''
 
       # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
-      self.variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
+      self.__variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
       # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
       self.__read_fileindex_for_cellid()
+      return self.__variable_cache[(name,operator)]
 
    def read_variable(self, name, cellids=-1,operator="pass"):
       ''' Read variables from the open vlsv file. 
@@ -2007,6 +2336,8 @@ class VlsvReader(object):
       .. seealso:: :func:`read` :func:`read_variable_info`
       '''
       cellids = get_data(cellids)
+      if((name,operator) in self.__variable_cache.keys()):
+         return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
 
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
@@ -2022,8 +2353,14 @@ class VlsvReader(object):
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
       
-      if((name,operator) in self.variable_cache.keys()):
-         return self.read_variable_from_cache(name,cellids,operator)
+
+      for reader in self.__linked_readers:
+         try:
+            res = reader.read_variable(name=name, cellids=cellids, operator=operator)
+            print(self.file_name, 'read_variable', name, res)
+            return res
+         except:
+            pass
 
       # Passes the list of cell id's onwards - optimization for reading is done in the lower level read() method
       return self.read(mesh="SpatialGrid", name=name, tag="VARIABLE", operator=operator, cellids=cellids)
@@ -2117,16 +2454,20 @@ class VlsvReader(object):
       ''' Returns the maximum refinement level of the AMR
       '''
       if self.__max_spatial_amr_level < 0:
-         # Read the file index for cellid
-         cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
-         maxcellid = np.int64(np.amax([cellids]))
+         try:
+            self.__max_spatial_amr_level = self.read_attribute(name="SpatialGrid", attribute="max_refinement_level",tag="MESH")
+         except:
+            # Read the file index for cellid - should maybe rather be runtime?
+            cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
+            maxcellid = np.int64(np.amax([cellids]))
 
-         AMR_count = np.int64(0)
-         while (maxcellid > 0):
-            maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
-            AMR_count += 1
-            
-         self.__max_spatial_amr_level = AMR_count - 1
+            AMR_count = np.int64(0)
+            while (maxcellid > 0):
+               maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
+               AMR_count += 1
+               
+            self.__max_spatial_amr_level = AMR_count - 1
+
       return self.__max_spatial_amr_level
 
    def get_amr_level(self,cellid):
@@ -2387,6 +2728,73 @@ class VlsvReader(object):
       cidsout = np.array(list(OrderedDict.fromkeys(cids)))
       return cidsout
    
+   def do_partial_fileindex_update(self, coords):
+      ''' Ensure the cellids corresponding to coords or within query_window are mapped in the __fileindex_for_cellid dict.
+
+      Tries to minimize the additional construction of the fileindex hashtable by spatial indexing.
+      '''
+      if hasattr(self,"skipread"):
+         return
+      if coords.shape[0] == 0:
+         return
+
+      if self.get_cellid_spatial_index() == None:
+         
+         self.__read_fileindex_for_cellid()
+         return
+
+      # If the query bounding box volume is small, we really should use spatial indexing instead of loading the whole
+      # domain
+      volume_threshold = 0.01
+      rank_ratio_threshold = 1./8.
+
+      mins = np.min(coords, axis=0)-self.get_grid_epsilon()
+      maxs = np.max(coords, axis=0)+self.get_grid_epsilon()
+      query_window = np.array([mins[0],maxs[0],mins[1],maxs[1],mins[2],maxs[2]])
+
+
+      if(coords.shape[0] == 1):
+         rankids = set(self.__cellid_spatial_index.intersection(query_window))
+         rankids = rankids - self.__loaded_fileindex_ranks
+         for rankid in rankids:
+            self.get_cellid_locations_rank(rankid)
+
+
+      query_volume = np.prod(maxs-mins)
+      full_domain_extents = self.get_fsgrid_mesh_extent()
+      full_domain_mins = full_domain_extents[0:3]
+      full_domain_maxs = full_domain_extents[3:6]
+      full_domain_volume = np.prod(full_domain_maxs-full_domain_mins)
+      
+      if query_volume < volume_threshold*full_domain_volume: # If we are querying a small volume, it is fast to do a partial update.
+         rankids = set(self.__cellid_spatial_index.intersection(query_window))
+         rankids = rankids - self.__loaded_fileindex_ranks
+         if(len(rankids)>0):
+            # print("single box")
+            for rankid in rankids:
+               self.get_cellid_locations_rank(rankid)
+      else:
+         if coords.shape[0] > 0.001*self.read_attribute(name="CellID",mesh="SpatialGrid",attribute="arraysize",tag="VARIABLE"):
+            # Guess that there are too many cellids to handle even the intersection search sensibly
+            self.__read_fileindex_for_cellid()
+         else:
+            query_windows = np.zeros((coords.shape[0],6))
+            query_windows[:,0::2] = coords - self.get_grid_epsilon()
+            query_windows[:,1::2] = coords + self.get_grid_epsilon()
+            rankids = set()
+            for qw in query_windows: # There is a bulk intersection_v function but it does not work?
+               rankids.update(self.__cellid_spatial_index.intersection(qw))
+            rankids = rankids - self.__loaded_fileindex_ranks
+            # print(len(rankids), "ranks to load")
+            if len(rankids) < self.get_numWritingRanks("SpatialGrid")*rank_ratio_threshold:
+               # print("few ranks")
+               for rankid in rankids:
+                  self.get_cellid_locations_rank(rankid)
+            else: # Fallback: read everything
+               # print("Fallback")
+               self.__read_fileindex_for_cellid()
+
+
    def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
 
@@ -2407,7 +2815,12 @@ class VlsvReader(object):
 
       # If needed, read the file index for cellid
       # if len(self.__fileindex_for_cellid) == 0:
-      self.__read_fileindex_for_cellid()
+      if hasattr(self,"skipread"):
+         pass
+      else:
+         self.do_partial_fileindex_update(coordinates)
+
+
       #good_ids = self.read_variable("CellID")
       # good_ids = np.array(list(self.__fileindex_for_cellid.keys()))
       # good_ids.sort()
@@ -2725,12 +3138,14 @@ class VlsvReader(object):
 
       '''
 
-      mask = ~dict_keys_exist(self.__cell_vertices,cids,prune_unique=False)
-      coords = self.get_cell_coordinates(cids[mask])
-      vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
+      mask = ~dict_keys_exist(self.__cell_corner_vertices,cids,prune_unique=False)
+      
       cell_vertex_sets = {}
 
       if(len(cids[mask]) > 0): 
+         coords = self.get_cell_coordinates(cids[mask])
+         vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
+
          ii = 0
          for x in [-1,1]:
             for y in [-1,1]:
@@ -2747,7 +3162,7 @@ class VlsvReader(object):
             
          self.__cell_corner_vertices.update(cell_vertex_sets)
 
-      for i, c in enumerate(cids[~mask]):
+      for c in cids[~mask]:
          cell_vertex_sets[c] = self.__cell_corner_vertices[c]
 
       return cell_vertex_sets
@@ -2757,20 +3172,23 @@ class VlsvReader(object):
    def build_cell_neighborhoods(self, cids):
 
       mask = ~dict_keys_exist(self.__cell_neighbours, cids, prune_unique=False)
-      cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
-
-      cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
-      vertices_todo = set().union(*cell_vertex_sets.values())
-      neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
-      for c,verts in cell_vertex_sets.items():
-         # neighbor_tuples = self.build_dual_from_vertices(verts)
-         # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
-         cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
       
-      self.__cell_neighbours.update(cell_neighbor_sets)
+      cell_neighbor_sets = {}
+      
+      if len(cids[mask]) > 0:
+         cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
+         cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
+         vertices_todo = set().union(*cell_vertex_sets.values())
+         neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
+         for c in cell_vertex_sets.keys():
+            # neighbor_tuples = self.build_dual_from_vertices(verts)
+            # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
+            cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
+         
+         self.__cell_neighbours.update(cell_neighbor_sets)
 
       for c in cids[~mask]:
-         cell_neighbor_sets[c] = self.__cell_neighbors[c]
+         cell_neighbor_sets[c] = self.__cell_neighbours[c]
 
       return cell_neighbor_sets
 
@@ -3335,16 +3753,20 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable` :func:`read_variable_info`
       '''
-      
-      # Special handling for time
-      if name=="time":
-         if self.check_parameter(name="t"):
-            return self.read(name="t", tag="PARAMETER")
-      if name=="t":
-         if self.check_parameter(name="time"):
-            return self.read(name="time", tag="PARAMETER")
 
-      return self.read(name=name, tag="PARAMETER")
+      if name in self.__params_cache.keys():
+         return self.__params_cache[name]
+      else:
+         # Special handling for time
+         if name=="time":
+            if self.check_parameter(name="t"):
+               return self.read(name="t", tag="PARAMETER")
+         if name=="t":
+            if self.check_parameter(name="time"):
+               return self.read(name="time", tag="PARAMETER")
+         val = self.read(name=name, tag="PARAMETER")
+         self.__params_cache[name] = val
+         return val
 
    def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True, setThreshold=None):
       '''
@@ -3866,4 +4288,116 @@ class VlsvReader(object):
       '''
       self.__fileindex_for_cellid = {}
 
+   def get_mesh_domain_extents(self, mesh):
+      if (mesh == 'fsgrid'):
+         raise NotImplementedError
+      elif (mesh == 'ionosphere'):
+         raise NotImplementedError
+      elif (mesh == 'SpatialGrid'):
+         MESH_DOMAIN_SIZES = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh="SpatialGrid")
+         n_domain_cells = MESH_DOMAIN_SIZES[:,0]-MESH_DOMAIN_SIZES[:,1]
+         cids_all = self.read_variable("CellID")
+         lowcorners_all = self.read_variable("vg_coordinates_cell_lowcorner")
+         dxs_all = self.read_variable("vg_dx")
+         
 
+         extents = np.zeros((MESH_DOMAIN_SIZES.shape[0],6))
+         start = 0
+         end = 0
+         for i, ncells in enumerate(n_domain_cells):
+            end = start+ncells
+            cids = cids_all[start:end]
+            lowcorners = lowcorners_all[start:end,:]
+            dxs = dxs_all[start:end,:]
+            highcorners = lowcorners+dxs
+            mins = np.min(lowcorners,axis=0)
+            maxs = np.max(highcorners,axis=0)
+
+            extents[i,:] = [mins[0],maxs[0],mins[1],maxs[1],mins[2],maxs[2]]
+
+            start = end
+
+         return extents.reshape((-1),order="C")
+         
+      else:
+         raise ValueError
+   
+   def get_cache_folder(self):
+
+      fn = self.file_name
+
+      head,tail = os.path.split(fn)
+      path = head
+      numslist = re.findall(r'\d+(?=\.vlsv)', tail)
+
+      if(len(numslist) == 0):
+         path = os.path.join(path,"vlsvcache",tail[:-5])
+      else:
+         nums = numslist[-1]
+         head, tail = tail.split(nums)
+
+         leading_zero = True
+         path = os.path.join(path,"vlsvcache",head[:-1])
+         for i,n in enumerate(nums):
+            if n == '0' and leading_zero: continue
+            if leading_zero:
+               fmt = "{:07d}"
+            else:
+                fmt = "{:0"+str(7-i)+"d}"
+            path = os.path.join(path, fmt.format(int(n)*10**(len(nums)-i-1)))
+            leading_zero = False
+
+      # print(path)
+      return path
+
+   def cache_neighbor_stencils(self):
+      self.load_neighbor_stencils_from_filecache()
+      path = self.get_cache_folder()
+      os.makedirs(path,exist_ok=True) 
+      cache_file_neighbors = os.path.join(path, "neighbors_cache.pkl")
+      with open(cache_file_neighbors,'wb') as cache:
+            pickle.dump({
+               "cell_neighbours": self.__cell_neighbours,
+               "cell_vertices":self.__cell_vertices,
+               "cell_corner_vertices":self.__cell_corner_vertices}
+               ,cache)
+
+   def load_neighbor_stencils_from_filecache(self):
+      if self.__neighbors_cache_available and not self.__neighbors_cache_loaded:
+         path = self.get_cache_folder()
+         cache_file_neighbors = os.path.join(path, "neighbors_cache.pkl")
+         if(os.path.isfile(cache_file_neighbors)):
+            with open(cache_file_neighbors,'rb') as cache:
+               loaded = pickle.load(cache)
+               
+               self.__cell_neighbours.update(loaded["cell_neighbours"])
+               self.__cell_vertices.update(loaded["cell_vertices"])
+               self.__cell_corner_vertices.update(loaded["cell_corner_vertices"])
+               self.__neighbors_cache_len = len(self.__cell_neighbours)
+         else:
+            self.__neighbors_cache_loaded = True
+
+   def set_cellid_spatial_index(self, force=False):
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+
+   def get_cellid_spatial_index(self, force=False):
+      if not force:
+         if self.__cellid_spatial_index is None:   
+            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
+         else:
+            pass
+      else:
+         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+
+      return self.__cellid_spatial_index
+
+   def clear_cache_folder(self):
+      path = self.get_cache_folder()
+      import shutil
+      shutil.rmtree(path)
+
+   def cache_optimization_files(self, force=False):
+      ''' Create cached optimization files for this reader object (e.g. spatial index)
+      
+      '''
+      self.__metadata_cache.set_cellid_spatial_index(force)

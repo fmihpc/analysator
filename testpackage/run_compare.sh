@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -t 00:30:00
 #SBATCH -J analysator_testpackage_compare
-#SBATCH --constraint="ukko|carrington"
+#SBATCH --constraint="carrington"
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=1-10
