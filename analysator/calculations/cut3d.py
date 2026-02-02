@@ -27,7 +27,7 @@
 
 import numpy as np
 import logging
-from ids3d import ids3d_box
+from analysator.calculations.ids3d import ids3d_box
 
 def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="pass", trim_array=False ):
    ''' Retrieves variables for the given 3d cut

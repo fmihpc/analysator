@@ -31,18 +31,18 @@ import sys
 import re
 import numbers
 
-import vlsvvariables
-from reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
+from . import vlsvvariables
+from .reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
 try:
    from collections.abc import Iterable
 except ImportError:
    from collections import Iterable
 from collections import OrderedDict
-from vlsvwriter import VlsvWriter
-from variable import get_data
+from .vlsvwriter import VlsvWriter
+from ..calculations.variable import get_data
 import warnings
 import time
-from interpolator_amr import AMRInterpolator, supported_amr_interpolators
+from ..calculations.interpolator_amr import AMRInterpolator, supported_amr_interpolators
 from operator import itemgetter
 
 
@@ -2038,7 +2038,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_variable`
       '''
-      from variable import VariableInfo
+      from analysator.calculations.variable import VariableInfo
 
       # Force lowercase
       name = name.lower()
@@ -2593,7 +2593,7 @@ class VlsvReader(object):
       :returns: duals (numpy array of N 3-tuples), ksis (numpy array of interpolation weights (N, 8))
       '''
 
-      from pyCalculations.interpolator_amr import find_ksi
+      from analysator.calculations.interpolator_amr import find_ksi
 
       # start the search from the vertices 
       if cellids is None:

@@ -33,11 +33,11 @@ from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+import analysator.plot.colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import matplotlib.path as mpath
-import ids3d
+import analysator.calculations.ids3d as ids3d
 
 # Different style scientific format for colour bar ticks
 def fmt(x, pos):
