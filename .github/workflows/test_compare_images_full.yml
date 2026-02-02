@@ -1,0 +1,83 @@
+#This workflow will install python and run the full analysator testpackage with image comparison for the results
+
+name: Turso compare all images
+
+on:
+  push:
+    branches: [ master, dev]
+  schedule:
+    - cron: '0 8 * * MON'
+  workflow_dispatch:
+
+
+jobs:
+
+  turso_system:
+        if: github.repository_owner == 'fmihpc'
+        runs-on: carrington
+        timeout-minutes: 120
+        strategy:
+          fail-fast: false
+          max-parallel: 2
+          matrix:
+            extras: ["testpackage"]
+        steps:
+        - uses: actions/checkout@v4
+          timeout-minutes: 5
+        - name: Install uv
+          uses: astral-sh/setup-uv@v6
+          timeout-minutes: 5
+        - name: Install dependencies
+          timeout-minutes: 5
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            export UV_LINK_MODE=copy
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            uv venv CI_env
+            . CI_env/bin/activate
+            uv pip install --editable ../analysator[${{ matrix.extras }}]
+        - name: Produce plots
+          id: run_cl
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            verf_loc="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets"
+            verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
+            if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
+              echo -e ".lockfile found in $verf_loc/$verfset, not running test, as the verification set generation is likely still ongoing\n Check ongoing actions and/or re-run verification set generation."
+              exit 1
+            fi 
+            sbatch -W -o testpackage_run.txt --job-name gen_plots ./testpackage/run_testpackage_workflow.sh > jobid.txt
+            cat testpackage_run.txt
+            export JOBID=$(grep -Po '\d+' jobid.txt)
+            export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+            if [[ $SACCT_LOG ]]; then
+              echo "Some job failed on a node, try to take a look at the slurm log."
+              echo "$SACCT_LOG"
+              exit 1
+            fi
+            
+        - name: Comparing plotted data
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            module load Python/3.10.4-GCCcore-11.3.0
+            . CI_env/bin/activate
+            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh > jobid1.txt
+            cat testpackage_compare.txt
+            export JOBID=$(grep -Po '\d+' jobid1.txt)
+            export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+            if [[ $SACCT_LOG ]]; then
+              echo "Some job failed on a node, try to take a look at the slurm log."
+              echo "$SACCT_LOG" 
+              exit 1
+            fi
+
+
+        - name: scancel dangling job upon cancellation
+          if: cancelled()
+          run: |
+            scancel ${{ steps.run_cl.outputs.SLURM_JOB_ID }}
+            
+  

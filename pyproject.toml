@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "analysator"
-version = "0.9.6"
+version = "0.9.8"
 authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
@@ -39,7 +39,10 @@ all = [
 bvtk = [
     "vtk==9.2.6",
 ]
-
+testpackage = [
+    "opencv-python",
+    "analysator[vtk]",
+]
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"
