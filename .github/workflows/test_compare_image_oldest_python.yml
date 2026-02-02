@@ -76,7 +76,8 @@ jobs:
               exit 1
             fi 
 
-            .github/workflows/make_sbatch_job.sh testpackage_run.txt 
+            .github/workflows/make_sbatch_job.sh testpackage_run.txt old_python ${{ steps.pyversion.outputs.PYTHON }} 
+
             
         - name: Comparing plotted data
           run: |
@@ -85,7 +86,7 @@ jobs:
             module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
             . CI_env/bin/activate
-            .github/workflows/make_sbatch_job.sh testpackage_compare.txt 
+            .github/workflows/make_sbatch_job.sh testpackage_compare.txt old_python ${{ steps.pyversion.outputs.PYTHON }} 
 
         - name: scancel dangling job upon cancellation
           if: cancelled()
