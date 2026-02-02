@@ -68,7 +68,7 @@ jobs:
               ARRAY_SIZE=$MAX_ARRAY
             fi
 
-            .github/workflows/make_sbatch_job testpackage_run.txt 
+            .github/workflows/make_sbatch_job.sh testpackage_run.txt 
 
             
         - name: Comparing plotted data
