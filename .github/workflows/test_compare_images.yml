@@ -57,7 +57,6 @@ jobs:
               cat diff_log.txt
             fi
             echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
-            echo "Running $DIFFRESULT"
             MAX_ARRAY=14
             TOTAL_TESTS=$(ls ./testpackage/testpackage_definitions/ | wc -l) 
             if [[ $DIFFRESULT && $DIFFRESULT != "pass" ]]; then
@@ -68,6 +67,7 @@ jobs:
               ARRAY_SIZE=$MAX_ARRAY
             fi
             export ARRAY_SIZE=$ARRAY_SIZE
+            echo "Running $DIFFRESULT, ARRAY_SIZE $ARRAY_SIZE"
             .github/workflows/make_sbatch_job.sh run_testpackage_workflow $DIFFRESULT 
 
             
