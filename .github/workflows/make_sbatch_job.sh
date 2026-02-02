@@ -8,10 +8,10 @@ fi
 #   first with srun (in case the file has not yet updated on the front end)
 #   second if srun fails (in case communication failure) it tries to cat it on the frontend (may be empty if file has not been updated pyproject)
 
-sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || srun --pty cat $1 || cat $1
+sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || srun cat $1 || cat $1
 
 #in case we do exit 0 successfully
-srun --pty cat $1 || cat $1
+srun cat $1 || cat $1
 
 #It is possible that the sbatch command above returns exit 0 if only for example 1 of the array jobs failed but not all, in such a case we check sacct
 #   It is also possible that the node never ran it and silently failed which is visible on sacct
