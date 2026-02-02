@@ -15,6 +15,11 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 
 hostname
 
+
+echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+exit 1
+
 module purge
 if [[ $1 == 'old_python' ]]; then
   module load $2

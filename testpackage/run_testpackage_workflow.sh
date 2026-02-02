@@ -17,6 +17,10 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 hostname
 
 
+echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+exit 1
+
 module purge            
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 older_python=false
