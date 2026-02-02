@@ -15,7 +15,8 @@ srun cat $1 || cat $1
 
 #It is possible that the sbatch command above returns exit 0 if only for example 1 of the array jobs failed but not all, in such a case we check sacct
 #   It is also possible that the node never ran it and silently failed which is visible on sacct
-export JOBID=$(srun grep -Po '\d+' jobid1.txt || grep -Po '\d+' jobid_$1)
+#Additionally note that JOBID is saved by the run scripts HOWEVER if a nodes silently fails it may not get passed to the github output
+export JOBID=$(srun grep -Po '\d+' jobid_$1 || grep -Po '\d+' jobid_$1)
 export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
 if [[ $SACCT_LOG ]]; then
   echo "Some job failed on a node, try to take a look at the slurm log."
