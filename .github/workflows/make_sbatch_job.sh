@@ -2,7 +2,7 @@
 if [[ ! $ARRAY_SIZE ]]; then
     ARRAY_SIZE=14 
 fi
-sbatch -W -o --array=1-$ARRAY_SIZE "$1" ./testpackage/run_compare.sh $2 > jobid_$1 || srun --pty cat $1 || cat $1
+sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/run_compare.sh $2 > jobid_$1 || srun --pty cat $1 || cat $1
 srun --pty cat $1 || cat $1
 export JOBID=$(srun grep -Po '\d+' jobid1.txt || grep -Po '\d+' jobid_$1)
 export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
