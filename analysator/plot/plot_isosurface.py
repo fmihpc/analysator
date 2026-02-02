@@ -38,10 +38,11 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.ticker import LinearLocator
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+from . import colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from packaging.version import Version
-import ids3d
+from ..calculations import ids3d
+
 import re
 
 def plot_isosurface(filename=None,

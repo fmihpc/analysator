@@ -74,7 +74,7 @@ def plot_variables( x, y, figure=[] ):
    y_dim = len(np.shape(y))
    if x_dim != y_dim:
       if x_dim == y_dim - 1:
-         from variable import get_data, get_name, get_units
+         from ..calculations.variable import get_data, get_name, get_units 
          new_x = [get_data(x) for i in range(len(y)-1)]
          new_x.append(x)
          return plot_multiple_variables( new_x, y, figure, clean_xticks=True )
@@ -142,7 +142,7 @@ def plot_multiple_variables( variables_x_list, variables_y_list, figure=[], clea
          fig.add_subplot(length_of_list,1,i+1)
 
    axes = fig.get_axes()
-   from variable import get_data, get_name, get_units
+   from analysator.calculations.variable import get_data, get_name, get_units
    for i in range(length_of_list):
       
       x = variables_x_list[i]

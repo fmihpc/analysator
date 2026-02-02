@@ -28,7 +28,7 @@ import ast
 import numpy as np
 import os
 import warnings
-from reduction import datareducers,data_operators
+from .reduction import datareducers,data_operators
 import warnings
 
 class VlsvWriter(object):
