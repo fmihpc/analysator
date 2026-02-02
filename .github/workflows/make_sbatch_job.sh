@@ -2,8 +2,19 @@
 if [[ ! $ARRAY_SIZE ]]; then
     ARRAY_SIZE=14 
 fi
-sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/run_compare.sh $2 > jobid_$1 || srun --pty cat $1 || cat $1
+# cmd argument $1 is used for the file name of the script to run, log file, jobid 
+
+#if sbatch fails as it gets the error code from python it tries to print the log 
+#   first with srun (in case the file has not yet updated on the front end)
+#   second if srun fails (in case communication failure) it tries to cat it on the frontend (may be empty if file has not been updated pyproject)
+
+sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || srun --pty cat $1 || cat $1
+
+#in case we do exit 0 successfully
 srun --pty cat $1 || cat $1
+
+#It is possible that the sbatch command above returns exit 0 if only for example 1 of the array jobs failed but not all, in such a case we check sacct
+#   It is also possible that the node never ran it and silently failed which is visible on sacct
 export JOBID=$(srun grep -Po '\d+' jobid1.txt || grep -Po '\d+' jobid_$1)
 export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
 if [[ $SACCT_LOG ]]; then
