@@ -67,7 +67,7 @@ jobs:
             else
               ARRAY_SIZE=$MAX_ARRAY
             fi
-
+            export ARRAY_SIZE=$ARRAY_SIZE
             .github/workflows/make_sbatch_job.sh testpackage_run.txt 
 
             
