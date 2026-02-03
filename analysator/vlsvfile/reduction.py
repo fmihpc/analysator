@@ -25,10 +25,10 @@
 '''
 import logging
 import numpy as np
-from reducer import DataReducerVariable
-from rotation import rotateTensorToVector, rotateArrayTensorToVector
-from gyrophaseangle import gyrophase_angles
-import vlsvvariables
+from .reducer import DataReducerVariable
+from ..calculations.rotation import rotateTensorToVector, rotateArrayTensorToVector
+from ..calculations.gyrophaseangle import gyrophase_angles
+from . import vlsvvariables
 import sys
 import math
 import analysator as pt
@@ -1601,4 +1601,4 @@ deprecated_datareducers['pop/vg_agyrotropy'] = "Previous pop/vg_agyrotropy reduc
 deprecated_datareducers['pop/vg_agyrotropy_nonthermal'] = "Previous pop/vg_agyrotropy_nonthermal reducers were broken, use pop/vg_gyrotropy_nonthermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
 deprecated_datareducers['pop/vg_agyrotropy_thermal'] = "Previous pop/vg_agyrotropy_thermal reducers were broken, use pop/vg_gyrotropy_thermal instead. See link (https://github.com/fmihpc/analysator/pull/262)"
 
-import reduction_sidecar
+from . import reduction_sidecar

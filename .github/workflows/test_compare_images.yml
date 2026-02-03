@@ -57,7 +57,6 @@ jobs:
               cat diff_log.txt
             fi
             echo "DIFFRESULT=$DIFFRESULT" >> $GITHUB_OUTPUT
-            echo "Running $DIFFRESULT"
             MAX_ARRAY=14
             TOTAL_TESTS=$(ls ./testpackage/testpackage_definitions/ | wc -l) 
             if [[ $DIFFRESULT && $DIFFRESULT != "pass" ]]; then
@@ -67,26 +66,18 @@ jobs:
             else
               ARRAY_SIZE=$MAX_ARRAY
             fi
-            sbatch -W -o testpackage_run.txt --array=1-$ARRAY_SIZE --job-name gen_plots ./testpackage/run_testpackage_workflow.sh $DIFFRESULT > jobid.txt
-            export JOBID=$(grep -Po '\d+' jobid.txt)
-            export SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
-            if [[ $SACCT_LOG ]]; then
-              echo "Some job failed on a node"
-              echo "$SACCT_LOG" 
-              exit 1
-            fi
-            cat testpackage_run.txt
-            . CI_env/bin/activate
-            python ./testpackage/testpackage_get_job_error.py testpackage_run.txt
+            export ARRAY_SIZE=$ARRAY_SIZE
+            echo "Running $DIFFRESULT, ARRAY_SIZE $ARRAY_SIZE"
+            .github/workflows/make_sbatch_job.sh run_testpackage_workflow $DIFFRESULT 
+
             
         - name: Comparing plotted data
           run: |
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
-            sbatch -W -o "testpackage_compare.txt" ./testpackage/run_compare.sh ${{ steps.run_cl.outputs.DIFFRESULT }}
-            cat testpackage_compare.txt
-            python ./testpackage/testpackage_get_job_error.py testpackage_compare.txt
+            .github/workflows/make_sbatch_job.sh run_compare ${{ steps.run_cl.outputs.DIFFRESULT }}
+
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |

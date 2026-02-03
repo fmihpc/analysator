@@ -36,11 +36,11 @@ from matplotlib.ticker import LogLocator
 from matplotlib.patches import Circle, Wedge
 from matplotlib.collections import LineCollection
 import matplotlib.ticker as mtick
-import colormaps as cmaps
+import analysator.plot.colormaps as cmaps
 from matplotlib.cbook import get_sample_data
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import analysator.calculations.ids3d as ids3d
 from distutils.version import LooseVersion, StrictVersion
-import ids3d
 
 def plot_colormap3dslice(filename=None,
                   vlsvobj=None,

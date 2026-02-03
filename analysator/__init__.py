@@ -12,12 +12,10 @@ backend_interactive=""
 logging.basicConfig(format='%(levelname)s: %(message)s', level=os.environ.get('ANALYSATOR_LOG_LEVEL', 'INFO').upper())
 
 # Input current folder's path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+#sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # Input folder paths
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "miscellaneous")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyCalculations")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyPlots")
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyVlsv")
+
 if os.getenv('PTMAYAVI2') != None:
    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + "/" + "pyMayaVi")
 
@@ -48,12 +46,12 @@ def lazyimport(module_name):
 
 # Import modules
 try:
-   calculations=lazyimport("calculations")
+   calculations=lazyimport("analysator.calculations")
 except ImportError as e:
    logging.info("Note: Did not import calculations module: " + str(e))
 
 try:
-   vlsvfile=lazyimport("vlsvfile")
+   vlsvfile=lazyimport("analysator.vlsvfile")
 except ImportError as e:
    logging.info("Note: Did not import vlsvfile module: " + str(e))
 
@@ -71,13 +69,18 @@ if os.getenv('PTNONINTERACTIVE') == None: #was ineq
 
 try:
    #import plot
-   plot=lazyimport("plot")
+   plot=lazyimport("analysator.plot")
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
 
+def register_colormaps():
+    ''' Register included colormaps to matplotlib. Required if you are relying on colormaps included in analysator and you are not using analysator.plot functions.
+    '''
+    import analysator.plot.colormaps
+
 try:
    #import miscellaneous
-   miscellaneous=lazyimport("miscellaneous")
+   miscellaneous=lazyimport("analysator.miscellaneous")
 except ImportError as e:
    logging.info("Note: Did not import miscellaneous: " + str(e))
 

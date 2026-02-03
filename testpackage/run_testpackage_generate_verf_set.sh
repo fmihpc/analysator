@@ -14,6 +14,7 @@ index=$(( $SLURM_ARRAY_TASK_ID - $SLURM_ARRAY_TASK_MIN ))
 hostname
 
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
+echo $SLURM_ARRAY_JOB_ID
 source CI_env/bin/activate
 export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 
@@ -22,6 +23,5 @@ export PTOUTPUTDIR=$1
 
 python ./testpackage/testpackage_commons.py $jobcount $index
 
-echo "EXIT_CODE_FROM_JOB $?"
-
+exit $?
 
