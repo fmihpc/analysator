@@ -13,7 +13,7 @@ sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || sru
 #in case we do exit 0 successfully
 LOG=$(srun cat $1 || cat $1)
 if [[ ! $LOG ]]; then
-  echo "::warning::Log file could not be read: srun failed and cat returned and empty logfile." 
+  echo "::warning::Log file could not be read: srun failed and cat returned and empty logfile. Exit code $?" 
   exit 1
 fi
 #It is possible that the sbatch command above returns exit 0 if only for example 1 of the array jobs failed but not all, in such a case we check sacct
@@ -21,7 +21,7 @@ fi
 #Additionally note that JOBID is saved by the run scripts HOWEVER if a nodes silently fails it may not get passed to the github output
 JOBID=$(srun grep -Po '\d+' jobid_$1 || grep -Po '\d+' jobid_$1)
 if [[ $? -ne 0 ]] || [[ ! $JOBID ]]; then 
-  echo "::error::Jobid could not be found, exiting." 
+  echo "::error::Jobid could not be found, exiting. Exit code $?" 
   exit 1
 fi
 SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
