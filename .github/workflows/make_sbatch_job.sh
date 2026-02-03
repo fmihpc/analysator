@@ -16,6 +16,7 @@ if [[ ! $LOG ]]; then
   echo "::warning::Log file could not be read: srun failed and cat returned and empty logfile. Exit code $?" 
   exit 1
 fi
+echo "$LOG"
 #It is possible that the sbatch command above returns exit 0 if only for example 1 of the array jobs failed but not all, in such a case we check sacct
 #   It is also possible that the node never ran it and silently failed which is visible on sacct
 #Additionally note that JOBID is saved by the run scripts HOWEVER if a nodes silently fails it may not get passed to the github output
