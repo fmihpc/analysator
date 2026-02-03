@@ -39,9 +39,6 @@ file_checks = {
 "miscellaneous":None,
 }
 
-file_checks = { ".yml":["plot_colormap","plot_threeslice"] 
-}
-
 f=open("diff_log.txt","w")
 #Override if there are many changes -> run all tests
 run_all=False
