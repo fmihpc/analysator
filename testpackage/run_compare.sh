@@ -56,7 +56,7 @@ if [[ $@ == 'verf_set' ]]; then
 elif [[ $1 == 'old_python' ]]; then
   check=false
 #Do selective compare if other arguments
-elif [ $@ ]; then
+elif [[ $@ ]]; then
   check=true
 fi
 
