@@ -68,7 +68,7 @@ def plot_colormap3dslice(filename=None,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fsaved=None, fsavedlinewidth=0.5, fsavedcolour="black", fsavedlinestyle="solid",
                   fluxrope=0, fluxropelinewidth=0.5, fluxropecolour=None, fluxropelinestyle=None,
-                  amr=None, amrlinewidths=None, amrcolours=None, amrlinestyles=None,
+                  amr=None, amrlinewidths=0.5, amrcolours='black', amrlinestyles='solid',
                   nomask=None,
                   Earth=None,
                   highres=None,
@@ -1261,7 +1261,10 @@ def plot_colormap3dslice(filename=None,
             AMRmap = np.ma.array(AMRmap, mask=XYmask)
 
         for i,val in enumerate(amr):
-            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
+            try:
+                pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
+            except:
+                logging.info(f"AMR level {val} not found in the selected region!")
           
 
     if Earth:
