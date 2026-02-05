@@ -115,7 +115,8 @@ class FileCache:
          leading_zero = True
          path = os.path.join(path,"vlsvcache",head[:-1])
          for i,n in enumerate(nums):
-            if n == '0' and leading_zero: continue
+            if n == '0' and leading_zero and i!=len(nums)-1: 
+                continue
             if leading_zero:
                fmt = "{:07d}"
             else:
