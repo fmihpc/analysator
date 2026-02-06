@@ -25,7 +25,7 @@ if [[ $? -ne 0 ]] || [[ ! $JOBID ]]; then
   echo "::error::Jobid could not be found, exiting. Exit code $?" 
   exit 1
 fi
-SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+SACCT_LOG=$(sacct -j $JOBID -o job,state,node,exit | grep FAILED) 
 if [[ $SACCT_LOG ]]; then
   echo "::error::Some job failed on a node, try to take a look at the slurm log."
   echo "$SACCT_LOG" 
