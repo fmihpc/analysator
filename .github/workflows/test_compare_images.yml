@@ -67,6 +67,8 @@ jobs:
               ARRAY_SIZE=$MAX_ARRAY
             fi
             export ARRAY_SIZE=$ARRAY_SIZE
+            
+            echo "ARRAY_SIZE=$ARRAY_SIZE" >> $GITHUB_OUTPUT
             echo "Running $DIFFRESULT, ARRAY_SIZE $ARRAY_SIZE"
             .github/workflows/make_sbatch_job.sh run_testpackage_workflow $DIFFRESULT 
 
@@ -76,6 +78,8 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
+            export ARRAY_SIZE=${{ steps.run_cl.outputs.ARRAY_SIZE }}
+            echo "ARRAY_SIZE $ARRAY_SIZE"
             .github/workflows/make_sbatch_job.sh run_compare ${{ steps.run_cl.outputs.DIFFRESULT }}
 
         - name: scancel dangling job upon cancellation
