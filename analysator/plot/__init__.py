@@ -58,7 +58,7 @@ from .plot_ionosphere import plot_ionosphere
 import platform
 from packaging.version import Version
 from numbers import Number
-
+import logging
 try:
     from .plot_isosurface import plot_isosurface, plot_neutral_sheet
     if Version(platform.python_version()) < Version("3.7"):
@@ -292,7 +292,9 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
         lines = np.vstack((vlines, hlines))
 
         ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
-
+    else: 
+        logging.info(f"No values found above the threshold={threshold} in heightmap.") 
+        return 1
     
     return 0
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
