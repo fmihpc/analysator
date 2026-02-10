@@ -334,8 +334,8 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
             except FileExistsError: 
                 #Parallel jobs might try to create dir simultaneously.
                 pass
-            except:
-                raise IOError("Could not create output directory "+outputdir+" Exiting.")
+            except Exception as e:
+                raise IOError("Could not create output directory "+outputdir+": "+str(e))
         if not os.access(outputdir, os.W_OK):
             raise IOError("No write access for directory "+outputdir+" Exiting.")
 
