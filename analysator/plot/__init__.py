@@ -290,8 +290,8 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
         hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
                                     np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
         lines = np.vstack((vlines, hlines))
-
-        ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
+        if lines:
+            ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
     else:
        return 1
     
