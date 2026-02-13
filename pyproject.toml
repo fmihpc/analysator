@@ -9,7 +9,7 @@ authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
 ]
-maintainters = [
+maintainers = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
 ]
 description = "Tools for reading and analysing Vlasiator .vlsv output files."
