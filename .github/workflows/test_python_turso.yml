@@ -24,6 +24,7 @@ jobs:
         steps:
         - uses: actions/checkout@v4
           timeout-minutes: 5
+        - uses: actions/setup-python@v5
         - name: Install uv
           uses: astral-sh/setup-uv@v6
           timeout-minutes: 5
