@@ -92,42 +92,4 @@ test=chp.test(fileindex_for_cellid,xc,yc,zc,max_ref_level)
 print(time.time()-now)
 print(test[0]==var[0])
 print(test[1]==var[1])
-# cid_offset= np.zeros(max_ref_level+1,dtype=np.int64)
-# isum=0
-# for i in range(0,max_ref_level):
-#     isum+=2**(3*i)*xc*yc*zc
-#     cid_offset[i+1]=isum
-#
-# xcells = np.zeros((max_ref_level+1),dtype=np.int64)
-# ycells = np.zeros((max_ref_level+1),dtype=np.int64)
-# zcells = np.zeros((max_ref_level+1),dtype=np.int64)
-#
-# for r in range(max_ref_level+1):
-#     xcells[r] = xc*2**(r)
-#     ycells[r] = yc*2**(r)
-#     zcells[r] = zc*2**(r)
-#
-# delta = np.array([[0,0,0],[1,0,0],[0,1,0],[1,1,0]
-#                   ,[0,0,1],[1,0,1],[0,1,1],[1,1,1]],dtype=np.int32
-#                   )
-# now=time.time()
-# idxToFileIndex = {} 
-# from io import StringIO
-# descr=StringIO()
-# #print(fileindex_for_cellid)
-# idx=0
-# subdivided = [[] for l in range(max_ref_level+1)]
-# for c in range(1,int(np.prod(f.get_spatial_mesh_size()))+1):
-#     if c in fileindex_for_cellid.keys():
-#         descr.write(".")
-#         idxToFileIndex[idx] = fileindex_for_cellid[c]
-#     else:
-#         descr.write("R")
-#         subdivided[0].append(c)
-#     idx += 1
-# print(time.time()-now)
-# # po=chp.test(a,np.array([-1,-2,-3,-4,-5,-6,-7]))
-# a=np.array([1,2,3,4,5,6,7],dtype=np.float32)
-#
-# print("-------------------------")
 
