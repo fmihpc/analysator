@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling","numpy"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,7 +9,7 @@ authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
 ]
-maintainters = [
+maintainers = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
 ]
 description = "Tools for reading and analysing Vlasiator .vlsv output files."
@@ -28,8 +28,10 @@ dependencies = [
     "scikit-image",
     "vtk>=9.2",
     "yt",
-    "rtree"
+    "rtree",
+    "cpphelpers @ {root:uri}/analysator/cpphelpers/"
 ]
+
 [project.optional-dependencies]
 none = [
 ]
@@ -50,3 +52,8 @@ packages = ["./analysator","./pytools"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["./analysator","./pytools"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+
