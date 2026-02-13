@@ -1,4 +1,5 @@
 #define PY_SSIZE_T_CLEAN
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include <cstdint>
 #include <iostream>
@@ -79,9 +80,9 @@ static int convertToUnordMap(PyObject *dict,
 }
 
 static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
-  int max_ref_level;
+  unsigned int max_ref_level;
   PyObject *fileindex_for_cellid;
-  int xc, yc, zc;
+  unsigned int xc, yc, zc;
 
   stringstream descr; //would vector with push_back be faster?
   // O!|OO (1 required arg (PythonObject) with 2 optional (not sure why we need
@@ -96,7 +97,7 @@ static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
   vector<int64_t> ycells(max_ref_level + 1, 0);
   vector<int64_t> zcells(max_ref_level + 1, 0);
   //bitshift very cool
-  for (int r = 0; r < max_ref_level + 1; r++) {
+  for (size_t r = 0; r < max_ref_level + 1; r++) {
     xcells[r] = xc << r;
     ycells[r] = yc << r;
     zcells[r] = zc << r;
