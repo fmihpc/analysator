@@ -24,19 +24,14 @@ jobs:
         steps:
         - uses: actions/checkout@v4
           timeout-minutes: 5
-        - uses: actions/setup-python@v5
-          with:  
-            python-version: "3.11.1"
         - name: Install uv
           uses: astral-sh/setup-uv@v6
-          with:  
-            python-version: "3.11.1"
           timeout-minutes: 5
         - name: Install dependencies
           timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
-            uv venv CI_env
+            uv venv -p 3.10 CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
