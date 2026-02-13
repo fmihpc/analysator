@@ -13,9 +13,9 @@ using namespace std;
 // C's % operator is "remainder" operator not modulus like Python's % (not sure
 // if there is implementation of this in stnadard library, but its not big so
 // here it is)
-static int mod(int a, int b) { return ((a % b) + b) % b; }
-
-static int floordiv(int a, int b) {
+constexpr int mod(int a, int b) noexcept { return ((a % b) + b) % b; }
+constexpr int CHILDS = 8;
+constexpr int floordiv(int a, int b) noexcept {
   int q = a / b;
   int r = a % b;
   if ((r != 0) && ((r > 0) != (b > 0))) {
@@ -27,29 +27,29 @@ static int floordiv(int a, int b) {
 //Convert unordered_map into a Python dictionary
 static PyObject *convertToDict(unordered_map<int, uint64_t> &map) {
   PyObject *dict = PyDict_New();
-  for (const auto &it : map) {
+  for (const auto &it : map) { //structured binding?
     PyObject *key = PyLong_FromLongLong(it.first);
     PyObject *val = PyLong_FromLongLong(it.second);
-    PyDict_SetItem(dict, key, val);
+    PyDict_SetItem(dict, key, val); //error code handling?
     Py_DECREF(key);
     Py_DECREF(val);
   }
   return dict;
 }
 
-
-static void children(int cid, int level, vector<int64_t> &cid_offsets,
+//could be changed to span?
+static void children(const int cid, const int level, vector<int64_t> &cid_offsets,
                      vector<int64_t> &xcells, vector<int64_t> &ycells,
-                     vector<int64_t> &zcells, vector<int64_t> &out) {
-  vector<vector<int32_t>> delta = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
-                                   {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}};
+                     vector<int64_t> &zcells, vector<int64_t> &out,
+                     const vector<vector<int32_t>>& delta
+                     ) {
   long cellid = cid - 1 - cid_offsets[level];
-  vector<int32_t> cellind(3, -1);
+  vector<int32_t> cellind(3, -1); //could be reused
   cellind[0] = mod(cellid, (xcells[level])) * 2;
   cellind[1] = mod(floordiv(cellid, xcells[level]), (ycells[level])) * 2;
   cellind[2] = floordiv(cellid, xcells[level] * ycells[level]) * 2;
   //children vector always size 8 (hopefully)
-  for (size_t i = 0; i < 8; ++i) {
+  for (size_t i = 0; i < CHILDS; ++i) {
     out[i] =
         cid_offsets[level + 1] + (cellind[0] + delta[i][0]) +
         xcells[level + 1] * (cellind[1] + delta[i][1]) +
@@ -82,7 +82,8 @@ static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
   int max_ref_level;
   PyObject *fileindex_for_cellid;
   int xc, yc, zc;
-  stringstream descr;
+
+  stringstream descr; //would vector with push_back be faster?
   // O!|OO (1 required arg (PythonObject) with 2 optional (not sure why we need
   // ! on the first one))
   //  more args O!|O|i for integer
@@ -94,11 +95,11 @@ static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
   vector<int64_t> xcells(max_ref_level + 1, 0);
   vector<int64_t> ycells(max_ref_level + 1, 0);
   vector<int64_t> zcells(max_ref_level + 1, 0);
-
+  //bitshift very cool
   for (int r = 0; r < max_ref_level + 1; r++) {
-    xcells[r] = xc * pow(2, r);
-    ycells[r] = yc * pow(2, r);
-    zcells[r] = zc * pow(2, r);
+    xcells[r] = xc << r;
+    ycells[r] = yc << r;
+    zcells[r] = zc << r;
   }
   unordered_map<int, uint64_t> idxToFileIndex;
   unordered_map<int, uint64_t> fileindex_for_cellid_map;
@@ -113,7 +114,7 @@ static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
     isum = isum + pow(2, 3 * p) * xc * yc * zc;
     cid_offsets[p + 1] = isum;
   }
-  for (int c = 1; c < xc * yc * zc + 1; c++) {
+  for (size_t c = 1; c < xc * yc * zc + 1; c++) {
     if (fileindex_for_cellid_map.find(c) != fileindex_for_cellid_map.end()) {
       // Write
       descr.put('.');
@@ -124,13 +125,16 @@ static PyObject *pyBuildDescriptor(PyObject *self, PyObject *args) {
     }
     idx = idx + 1;
   }
-  vector<int64_t> childs(8, 0);
+  static const vector<vector<int32_t>> delta = {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {1, 1, 0},
+                                   {0, 0, 1}, {1, 0, 1}, {0, 1, 1}, {1, 1, 1}}; //array preferable?
+
+  vector<int64_t> childs(8, 0); //array preferabl?
   descr.put('|');
-  for (int l = 1; l < max_ref_level + 1; l++) {
+  for (size_t l = 1; l < max_ref_level + 1; l++) {
     auto &vecptr = subdivided[l - 1];
     auto &subd = subdivided[l];
     for (int it : vecptr) {
-      children(it, l - 1, cid_offsets, xcells, ycells, zcells, childs);
+      children(it, l - 1, cid_offsets, xcells, ycells, zcells, childs, delta);
       for (int64_t child : childs) {
         auto it2 = fileindex_for_cellid_map.find(child);
         if (it2 != fileindex_for_cellid_map.end()) {
