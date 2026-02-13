@@ -29,7 +29,7 @@ dependencies = [
     "vtk>=9.2",
     "yt",
     "rtree",
-    "cpphelpers @ {root:uri}/plugins/vtkloop/"
+    "cpphelpers @ {root:uri}/analysator/cpphelpers/"
 ]
 
 [project.optional-dependencies]
