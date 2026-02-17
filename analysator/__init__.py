@@ -68,7 +68,6 @@ if os.getenv('PTNONINTERACTIVE') == None: #was ineq
          logging.info("Note: Did not import (outdated MayaVi2) grid module: " + str(e))
 
 try:
-   #import plot
    plot=lazyimport("analysator.plot")
 except ImportError as e:
    logging.info("Note: Did not import plot module: " + str(e))
@@ -79,7 +78,6 @@ def register_colormaps():
     import analysator.plot.colormaps
 
 try:
-   #import miscellaneous
    miscellaneous=lazyimport("analysator.miscellaneous")
 except ImportError as e:
    logging.info("Note: Did not import miscellaneous: " + str(e))
