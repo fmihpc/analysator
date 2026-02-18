@@ -3457,6 +3457,7 @@ class VlsvReader(object):
       '''
       if self.read_compression() > 0:
           if HAS_VLSVRS:
+              logging.info("reading in compressed VDF using vlsvrs")
               velocity_cells = self.f_vlsvrs.read_vdf_sparse(cellid, pop)
               return velocity_cells
           else:
