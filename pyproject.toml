@@ -27,7 +27,7 @@ dependencies = [
     "packaging",
     "scikit-image",
     "zfpy",
-    "vlsvrs @ git+https://github.com/kstppd/vlsvrs.git@master#recursive=1"
+    "vlsvrs @ git+https://github.com/kstppd/vlsvrs.git@master#recursive=1 ; python_version > '3.9'"
 ]
 [project.optional-dependencies]
 none = [

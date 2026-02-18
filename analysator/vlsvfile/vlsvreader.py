@@ -29,7 +29,11 @@ import os
 import sys
 import re
 import numbers
-import vlsvrs
+try:
+   import vlsvrs
+   HAS_VLSVRS = True
+except ImportError:
+   HAS_VLSVRS = False
 
 from . import vlsvvariables
 from .reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
@@ -200,8 +204,8 @@ class VlsvReader(object):
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
-      self.f_vlsvrs = vlsvrs.VlsvFile(self.file_name)
-
+      if HAS_VLSVRS:
+         self.f_vlsvrs = vlsvrs.VlsvFile(self.file_name)
 
       self.__max_spatial_amr_level = -1
       self.__fsGridDecomposition = fsGridDecomposition
@@ -3452,9 +3456,12 @@ class VlsvReader(object):
       .. seealso:: :func:`read_blocks`
       '''
       if self.read_compression() > 0:
-         velocity_cells = self.f_vlsvrs.read_vdf_sparse(cellid, pop)
-         return velocity_cells
-      
+          if HAS_VLSVRS:
+              velocity_cells = self.f_vlsvrs.read_vdf_sparse(cellid, pop)
+              return velocity_cells
+          else:
+              raise ImportError("Compressed VDF reading requires 'vlsvrs', which is only available on Python > 3.9." )      
+           
       if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
             self.__set_cell_offset_and_blocks(pop) 
