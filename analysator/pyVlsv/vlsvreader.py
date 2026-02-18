@@ -200,7 +200,7 @@ class VlsvReader(object):
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
-      self.f_vlsv = vlsvrs.VlsvFile(self.file_name)
+      self.f_vlsvrs = vlsvrs.VlsvFile(self.file_name)
 
 
       self.__max_spatial_amr_level = -1
@@ -3451,7 +3451,7 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_blocks`
       '''
-      return self.f_vlsv.read_vdf_sparse(cellid, pop)
+      return self.f_vlsvrs.read_vdf_sparse(cellid, pop)
       
       if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
