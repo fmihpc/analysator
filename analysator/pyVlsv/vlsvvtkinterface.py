@@ -28,7 +28,6 @@ import os
 import pickle
 from operator import itemgetter
 import numbers
-from warnings import deprecated
 import analysator as pt
 try:
    import vtk
@@ -643,7 +642,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def GetFileName(self):
       return self.__FileName
 
-   @deprecated("The 'buildDescriptor' should be used instead as it is faster, this may be removed in the future but is still here in case")
    def buildDescriptorPython(self):
       f = self.__reader
       f._VlsvReader__read_fileindex_for_cellid()
@@ -716,7 +714,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             descr.write("|")
 
       return descr.getvalue(), idxToFileIndex
-    
+
    def buildDescriptor(self):
         import cpphelpers
         f = self.__reader
