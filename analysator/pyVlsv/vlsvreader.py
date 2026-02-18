@@ -3451,7 +3451,9 @@ class VlsvReader(object):
 
       .. seealso:: :func:`read_blocks`
       '''
-      return self.f_vlsvrs.read_vdf_sparse(cellid, pop)
+      if self.read_compression() > 0:
+         velocity_cells = self.f_vlsvrs.read_vdf_sparse(cellid, pop)
+         return velocity_cells
       
       if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
@@ -3503,7 +3505,7 @@ class VlsvReader(object):
                     fptr, dtype=np.float64, count=vector_size * num_of_blocks
                 )
 
-         data_avgs = data_avgs.reshape(num_of_blocks, vector_size)            
+            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)            
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
