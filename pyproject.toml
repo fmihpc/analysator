@@ -27,6 +27,7 @@ dependencies = [
     "packaging",
     "scikit-image",
     "zfpy",
+    "vlsvrs @ git+https://github.com/kstppd/vlsvrs.git@master#recursive=1"
 ]
 [project.optional-dependencies]
 none = [
@@ -36,6 +37,7 @@ vtk = [
 ]
 all = [
     "analysator[vtk]",
+    "vlsvrs @ git+https://github.com/kstppd/vlsvrs.git"
 ]
 bvtk = [
     "vtk==9.2.6",
@@ -53,3 +55,6 @@ packages = ["./analysator","./pytools"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["./analysator","./pytools"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
