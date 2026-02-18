@@ -33,6 +33,7 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             uv venv CI_env
             . CI_env/bin/activate
+            uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
           run: |
