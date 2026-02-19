@@ -14,9 +14,9 @@ using namespace std;
 // C's % operator is "remainder" operator not modulus like Python's % (not sure
 // if there is implementation of this in stnadard library, but its not big so
 // here it is)
-constexpr int mod(const int a,const int b) noexcept { return ((a % b) + b) % b; }
+constexpr int mod(int a,int b) noexcept { return ((a % b) + b) % b; }
 constexpr int CHILDS = 8;
-constexpr int floordiv(const int a,const int b) noexcept {
+constexpr int floordiv(int a,int b) noexcept {
   int q = a / b;
   int r = a % b;
   if ((r != 0) && ((r > 0) != (b > 0))) {
@@ -39,7 +39,7 @@ static PyObject *convertToDict(const unordered_map<int, uint64_t> &map) {
 }
 
 //could be changed to span?
-static void children(const int cid, const int level, const vector<int64_t> &cid_offsets,
+static void children(int cid, int level, const vector<int64_t> &cid_offsets,
                      const vector<int64_t> &xcells, const vector<int64_t> &ycells,
                      const vector<int64_t> &zcells, vector<int64_t> &out,
                      const vector<vector<int32_t>>& delta
