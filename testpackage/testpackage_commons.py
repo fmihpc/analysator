@@ -31,7 +31,7 @@ if "pass" in funcs_to_use:
     print("No significant changes made, the testpackage will not be run!")
     quit()
 
-datalocation = "/wrk-kappa/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
+datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
 runs = []
 
 
