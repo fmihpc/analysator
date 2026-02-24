@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -t 01:00:00
 #SBATCH -J analysator_testpackage
-#SBATCH --constraint="carrington"
+#SBATCH --constraint="carrington|ukko"
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=1-14
@@ -18,9 +18,11 @@ hostname
 
 
 module purge            
-export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
+export PATH=/turso/group/spacephysics/analysator/CI/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 older_python=false
 echo "SLURM_JOB_ID=$SLURM_ARRAY_JOB_ID" >> $GITHUB_OUTPUT
+echo $SLURM_ARRAY_JOB_ID
+
 if [[ $1 == "old_python" ]]; then
   module load $2
   older_python=true
@@ -40,8 +42,7 @@ export PTOUTPUTDIR=$PWD/produced_plots/
 if $older_python; then
   echo "::warning:: Running with older python version $2"
   python ./testpackage/testpackage_commons.py $jobcount $index 
-  echo "EXIT_CODE_FROM_JOB $?"
-  exit 0
+  exit $?
 fi
 python ./testpackage/testpackage_commons.py $jobcount $index $@
-echo "EXIT_CODE_FROM_JOB $?"
+exit $?
