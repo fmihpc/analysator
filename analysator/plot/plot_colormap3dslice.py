@@ -68,7 +68,7 @@ def plot_colormap3dslice(filename=None,
                   pass_vars=None, pass_times=None, pass_full=False,
                   fsaved=None, fsavedlinewidth=0.5, fsavedcolour="black", fsavedlinestyle="solid",
                   fluxrope=0, fluxropelinewidth=0.5, fluxropecolour=None, fluxropelinestyle=None,
-                  amr=None, amrlinewidths=None, amrcolours=None, amrlinestyles=None,
+                  amr=None, amrlinewidths=0.5, amrcolours='black', amrlinestyles='solid',
                   nomask=None,
                   Earth=None,
                   highres=None,
@@ -1174,6 +1174,14 @@ def plot_colormap3dslice(filename=None,
             AMRmap = AMRmap[:,MaskY[0]:MaskY[-1]+1]
         if XYmask.any():
             AMRmap = np.ma.array(AMRmap, mask=XYmask)
+        
+        if len(amr)>1:
+            if len(amrcolourslist)==1:
+                amrcolourslist[1:len(amr)]=[amrcolours for _ in range(len(amr)-1)]
+            if len(amrlinestyleslist)==1:
+                amrlinestyleslist[1:len(amr)]=[amrlinestyles for _ in range(len(amr)-1)]
+            if len(amrlinewidthslist)==1:
+                amrlinewidthslist[1:len(amr)]=[amrlinewidths for _ in range(len(amr)-1)]
 
         for i,val in enumerate(amr):
             pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
