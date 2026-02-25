@@ -26,7 +26,7 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
-    "vlsvrs @ git+https://github.com/kstppd/vlsvrs.git@analysator#recursive=1 ; python_version > '3.9'"
+    "vlsvrs; python_version > '3.9'"
 ]
 [project.optional-dependencies]
 none = [
