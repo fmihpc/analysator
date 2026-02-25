@@ -27,6 +27,7 @@ dependencies = [
     "packaging",
     "scikit-image",
     "vlsvrs; python_version > '3.9'"
+    "vlsvrs @ git+https://github.com/fmihpc/analysator-backends.git@master#recursive=1 ; python_version > '3.9'"
 ]
 [project.optional-dependencies]
 none = [
