@@ -75,75 +75,75 @@ def plot_colormap(filename=None,
 
     ''' Plots a coloured plot with axes and a colour bar.
 
-        :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-        :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-        :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-        :kword step:        output step index, used for constructing output (and possibly input) filename
-        :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+        :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.
+        :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead
+        :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name
+        :kwarg step:        output step index, used for constructing output (and possibly input) filename
+        :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                             If directory does not exist, it will be created. If the string does not end in a
                             forward slash, the final part will be used as a prefix for the files.
-        :kword outputfile:  Singular output file name
+        :kwarg outputfile:  Singular output file name
 
-        :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
+        :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
-        :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
+        :kwarg var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                             E, B, v, V or others. Accepts any variable known by analysator.
                             Per-population variables are simply given as "proton/rho" etc
-        :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
+        :kwarg operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                             the queried component, or otherwise the magnitude. 
-        :kword op:          duplicate of operator
+        :kwarg op:          duplicate of operator
             
-        :kword boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
-        :kword boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
-        :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
+        :kwarg boxm:        zoom box extents [x0,x1,y0,y1] in metres (default and truncate to: whole simulation box)
+        :kwarg boxre:       zoom box extents [x0,x1,y0,y1] in Earth radii (default and truncate to: whole simulation box)
+        :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                             magma, parula, nipy_spectral, RdBu, bwr
-        :kword run:         run identifier, used for constructing output filename
-        :kword title:       string to use as plot title instead of time.
+        :kwarg run:         run identifier, used for constructing output filename
+        :kwarg title:       string to use as plot title instead of time.
                             Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                             for microsecond accuracy. "sec" is integer second accuracy.
-        :kword cbtitle:     string to use as colorbar title instead of map name
-        :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
-        :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
+        :kwarg cbtitle:     string to use as colorbar title instead of map name
+        :kwarg axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+        :kwarg tickinterval: Interval at which to have ticks on axes (not colorbar)
 
-        :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
-        :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
+        :kwarg usesci:      Use scientific notation for colorbar ticks? (default: True)
+        :kwarg vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                             min and max values for whole plot (non-zero rho regions only) are used.
-        :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
-        :kword lin:         Flag for using linear colour scaling instead of log. If an integer, defines number
+        :kwarg symmetric:   Set the absolute value of vmin and vmax to the greater of the two
+        :kwarg lin:         Flag for using linear colour scaling instead of log. If an integer, defines number
                             of colorbar ticks.
-        :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+        :kwarg symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                             Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                             A given of 0 or True translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
                             result in the innermost tick marks overlapping. In this case, using a larger value for 
                             symlog is suggested.
-        :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+        :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                             string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-        :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
-        :kword Earth:       If set, draws an earth at (0,0)
-        :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
+        :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+        :kwarg Earth:       If set, draws an earth at (0,0)
+        :kwarg highres:     Creates the image in high resolution, scaled up by this value (suitable for print). 
 
-        :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
+        :kwarg draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
-        :kword noborder:    Plot figure edge-to-edge without borders (default off)
-        :kword noxlabels:   Suppress x-axis labels and title
-        :kword noylabels:   Suppress y-axis labels and title
-        :kword scale:       Scale text size (default=1.0)
-        :kword thick:       line and axis thickness, default=1.0
-        :kword nocb:        Set to suppress drawing of colourbar
-        :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+        :kwarg noborder:    Plot figure edge-to-edge without borders (default off)
+        :kwarg noxlabels:   Suppress x-axis labels and title
+        :kwarg noylabels:   Suppress y-axis labels and title
+        :kwarg scale:       Scale text size (default=1.0)
+        :kwarg thick:       line and axis thickness, default=1.0
+        :kwarg nocb:        Set to suppress drawing of colourbar
+        :kwarg internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
                             string, tries to use that as the location, e.g. "NW","NE","SW","SW"
 
-        :kword external:    Optional function to use for external plotting of e.g. contours. The function
+        :kwarg external:    Optional function to use for external plotting of e.g. contours. The function
                             receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
                             If the function accepts a fifth variable, if set to true, it is expected to 
                             return a list of required variables for constructing the pass_maps dictionary.
-        :kword expression:  Optional function which calculates a custom expression to plot. The function
+        :kwarg expression:  Optional function which calculates a custom expression to plot. The function
                             receives the same dictionary of numpy arrays as external, as an argument pass_maps,
                             the contents of which are maps of variables. Each is either of size [ysize,xsize]
                             or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                             If the function accepts a second variable, if set to true, it is expected to 
                             return a list of required variables for pass_maps.
-        :kword diff:        Instead of a regular plot, plot the difference between the selected plot type for
+        :kwarg diff:        Instead of a regular plot, plot the difference between the selected plot type for
                             the regular source file and the file given by this keyword. This overides external
                             and expression keywords, as well as related pass_vars, pass_times, and pass_full.
 
@@ -151,15 +151,15 @@ def plot_colormap(filename=None,
         for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
         on, see the plot_helpers.py file.
 
-        :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+        :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                             or from tesla to nanotesla. Guesses correct units for colourbar for some known
                             variables. Set to None to search for a default scaling settings.
-        :kword absolute:    Plot the absolute of the evaluated variable
+        :kwarg absolute:    Plot the absolute of the evaluated variable
 
-        :kword pass_vars:   Optional list of map names to pass to the external/expression functions 
+        :kwarg pass_vars:   Optional list of map names to pass to the external/expression functions 
                             as a dictionary of numpy arrays. Each is either of size [ysize,xsize] or 
                             for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
-        :kword pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
+        :kwarg pass_times:  Integer, how many timesteps in each direction should be passed to external/expression
                             functions in pass_vars (e.g. pass_times=1 passes the values of three timesteps). If
                             pass_times has two values, the first is the extent before, the second after.
                             (e.g. pass_times=[2,1] passes the values of two preceding and one following timesteps
@@ -168,38 +168,38 @@ def plot_colormap(filename=None,
                             a dictionary of numpy arrays as for regular pass_vars. An additional dictionary entry is
                             added as 'dstep' which gives the timestep offset from the master frame.
                             Does not work if working from a vlsv-object.
-        :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
+        :kwarg pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
-        :kword fluxfile:    Filename to plot fluxfunction from
-        :kword flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant 
+        :kwarg fluxfile:    Filename to plot fluxfunction from
+        :kwarg flux_levels: A list of flux function values to plot as the contours (default: None, a set of constant 
                             intervals: np.linspace(-10,10,fluxlines*60))
-        :kword fluxdir:     Directory in which fluxfunction files can be found
-        :kword fluxthick:   Scale fluxfunction line thickness
-        :kword fluxlines:   Relative density of fluxfunction contours
-        :kword fluxlinecolor: Set flux line color (default black)
-        :kword fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
-        :kword nomask:      Do not mask plotting based on proton density
+        :kwarg fluxdir:     Directory in which fluxfunction files can be found
+        :kwarg fluxthick:   Scale fluxfunction line thickness
+        :kwarg fluxlines:   Relative density of fluxfunction contours
+        :kwarg fluxlinecolor: Set flux line color (default black)
+        :kwarg fsaved:      Overplot locations of fSaved. If keyword is set to a string, that will be the colour used.
+        :kwarg nomask:      Do not mask plotting based on proton density
 
-        :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
-        :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
-        :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
-        :kword vectorsize:  Scaling of vector sizes
+        :kwarg vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
+        :kwarg vectordensity: Aim for how many vectors to show in plot window (default 100)
+        :kwarg vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+        :kwarg vectorsize:  Scaling of vector sizes
 
-        :kword streamlines: Set to a vector variable to overplot as streamlines
-        :kword streamlinedensity: Set streamline density (default 1)
-        :kword streamlinecolor: Set streamline color (default white)
-        :kword streamlinethick: Set streamline thickness
+        :kwarg streamlines: Set to a vector variable to overplot as streamlines
+        :kwarg streamlinedensity: Set streamline density (default 1)
+        :kwarg streamlinecolor: Set streamline color (default white)
+        :kwarg streamlinethick: Set streamline thickness
 
-        :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+        :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.
                             It is recommended to either also provide cbaxes or activate nocb, unless one wants a colorbar
                             to be automatically added next to the panel (but this may affect the overall layout)
                             Note that the aspect ratio of the colormap is made equal in any case, hence the axes
                             proportions may change if the box and axes size are not designed to match by the user
-        :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-        :kword cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
-        :kword useimshow:   Use imshow for raster background instead (default: False)
-        :kword imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
-        :kword flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
+        :kwarg cbaxes:      Provide the routine a set of axes for the colourbar.
+        :kwarg cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
+        :kwarg useimshow:   Use imshow for raster background instead (default: False)
+        :kwarg imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
+        :kwarg flipxaxis:   Invert output plot x/horizontal axis so that e.g. the Sun is on the left (default: False)
 
         :returns:           Outputs an image to a file or to the screen.
 

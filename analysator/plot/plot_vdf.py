@@ -432,96 +432,96 @@ def plot_vdf(filename=None,
 
     ''' Plots a coloured 2D plot of a VDF (a slice of given thickness or fully projected) with axes and a colour bar.
 
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.
+    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead
+    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name
+    :kwarg step:        output step index, used for constructing output (and possibly input) filename
+    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist
+    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist
 
-    :kword cellids:     LIST of cell IDs to plot VDF for
-    :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
-    :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
-    :kword pop:         Population to plot, default proton
+    :kwarg cellids:     LIST of cell IDs to plot VDF for
+    :kwarg coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
+    :kwarg coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
+    :kwarg pop:         Population to plot, default proton
 
-    :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
+    :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
-    :kword run:         run identifier, used for constructing output filename
-    :kword title:       string to use as plot title instead of time.
+    :kwarg run:         run identifier, used for constructing output filename
+    :kwarg title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
-    :kword cbtitle:     string to use as colorbar title instead of phase space density of flux
+    :kwarg cbtitle:     string to use as colorbar title instead of phase space density of flux
 
-    :kword contours:    Set to number of contours to draw
+    :kwarg contours:    Set to number of contours to draw
 
-    :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
+    :kwarg fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
 
-    :kword box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
-    :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
-    :kword axiskmps:    Plot v-axes using 10^{axiskmps} km/s (default: km/s, when the kword has a value)
-    :kword tickinterval: Interval at which to have ticks on axes
+    :kwarg box:         extents of plotted velocity grid as [x0,x1,y0,y1] (in m/s)
+    :kwarg axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
+    :kwarg axiskmps:    Plot v-axes using 10^{axiskmps} km/s (default: km/s, when the kwarg has a value)
+    :kwarg tickinterval: Interval at which to have ticks on axes
 
-    :kword xy:          Perform slice in x-y-direction
-    :kword xz:          Perform slice in x-z-direction
-    :kword yz:          Perform slice in y-z-direction
-    :kword normal:      Perform slice in plane perpendicular to given vector
-    :kword normalx:     X-axis direction for slice in plane perpendicular to given vector
+    :kwarg xy:          Perform slice in x-y-direction
+    :kwarg xz:          Perform slice in x-z-direction
+    :kwarg yz:          Perform slice in y-z-direction
+    :kwarg normal:      Perform slice in plane perpendicular to given vector
+    :kwarg normalx:     X-axis direction for slice in plane perpendicular to given vector
 
-    :kword bpara:       Perform slice in B_para / B_perp2 plane
-    :kword bpara1:       Perform slice in B_para / B_perp1 plane
-    :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
+    :kwarg bpara:       Perform slice in B_para / B_perp2 plane
+    :kwarg bpara1:       Perform slice in B_para / B_perp1 plane
+    :kwarg bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
 
-    :kword coordswap:   Swap the parallel and perpendicular coordinates
-    :kword bvector:     Plot a magnetic field vector projection in-plane
-    :kword bvectorscale: Scale of bvector (default: 0.2 in units of axis lengths)
+    :kwarg coordswap:   Swap the parallel and perpendicular coordinates
+    :kwarg bvector:     Plot a magnetic field vector projection in-plane
+    :kwarg bvectorscale: Scale of bvector (default: 0.2 in units of axis lengths)
 
-    :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
+    :kwarg cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
-    :kword cpeak:       Center plot on velocity associated with highest (peak) phase-space density for
+    :kwarg cpeak:       Center plot on velocity associated with highest (peak) phase-space density for
                         this population)
-    :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
+    :kwarg center:      Center plot on provided 3-element velocity vector position (in m/s)
                         If set instead to "bulk" will center on bulk velocity
                         If set instead to "peak" will center on velocity with highest phase-space density
-    :kword wflux:       Plot flux instead of distribution function
-    :kword slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
+    :kwarg wflux:       Plot flux instead of distribution function
+    :kwarg slicethick:  Thickness of slice as multiplier of cell size (default: 1 or minimum for good coverage).
                         This can be set to zero in order to project the whole VDF to a plane.
-    :kword reducer:     How to reduce to 2D - default 'integrate' for LOS integration
+    :kwarg reducer:     How to reduce to 2D - default 'integrate' for LOS integration
                         and reduced units, 'average' for old (slightly questionable) behaviour
-    :kword resampler:   Resample onto a regular grid? Default: yes, use False to disable.
-    :kword cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
-    :kword setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
+    :kwarg resampler:   Resample onto a regular grid? Default: yes, use False to disable.
+    :kwarg cellsize:    Plotting grid cell size as multiplier of input cell size (default: 1 or minimum for good coverage)
+    :kwarg setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
                         Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
                         with values below the sparsity threshold
 
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
-    :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
-    :kword nocb:        Suppress plotting of colourbar legend
-    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+    :kwarg draw:        Draw image on-screen instead of saving to file (requires x-windowing)
+    :kwarg nocb:        Suppress plotting of colourbar legend
+    :kwarg internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
 
-    :kword biglabel:    Plot large label (in top-left corner)
-    :kword biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
+    :kwarg biglabel:    Plot large label (in top-left corner)
+    :kwarg biglabloc:   Move large label to: 0: NW 1: NE 2: SE 3: SW corner
 
-    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
-    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-    :kword cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
-    :kword noborder:    Plot figure edge-to-edge without borders (default off)
-    :kword noxlabels:   Suppress x-axis labels and title
-    :kword noylabels:   Suppress y-axis labels and title
-    :kword scale:       Scale text size everywhere (default=1.0)
-    :kword scale_text:  Most text additional scale factor (default=8.0)
-    :kword scale_title: Title additional scale factor (default=10.0)
-    :kword scale_cb:    Colour bar text additional scale factor (default=5.0)
-    :kword scale_label: Big label text additional scale factor (default=12.0)
-    :kword thick:       line and axis thickness, default=1.0
-    :kword figsize:     Set figure size, default=None which will use [4.0,3.15*ratio]
+    :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+    :kwarg cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kwarg cb_horizontal: If true, use a horizontal colorbar (this will look stupid unless you specify cbaxes)
+    :kwarg noborder:    Plot figure edge-to-edge without borders (default off)
+    :kwarg noxlabels:   Suppress x-axis labels and title
+    :kwarg noylabels:   Suppress y-axis labels and title
+    :kwarg scale:       Scale text size everywhere (default=1.0)
+    :kwarg scale_text:  Most text additional scale factor (default=8.0)
+    :kwarg scale_title: Title additional scale factor (default=10.0)
+    :kwarg scale_cb:    Colour bar text additional scale factor (default=5.0)
+    :kwarg scale_label: Big label text additional scale factor (default=12.0)
+    :kwarg thick:       line and axis thickness, default=1.0
+    :kwarg figsize:     Set figure size, default=None which will use [4.0,3.15*ratio]
 
     :returns:           Outputs an image to a file or to the screen.
 

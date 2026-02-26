@@ -264,60 +264,60 @@ def plot_vdf_profiles(filename=None,
 
     ''' Plots vdf values along axis-aligned lines (see axis definitions).
 
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.
+    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead
+    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name
+    :kwarg step:        output step index, used for constructing output (and possibly input) filename
+    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final parti will be used as a perfix for the files.
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
+    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    
      
-    :kword cellids:     LIST of cell IDs to plot VDF for
-    :kword coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
-    :kword coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
-    :kword pop:         Population to plot, default proton
+    :kwarg cellids:     LIST of cell IDs to plot VDF for
+    :kwarg coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
+    :kwarg coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
+    :kwarg pop:         Population to plot, default proton
 
-    :kword run:         run identifier, used for constructing output filename
-    :kword title:       string to use as plot title instead of time.
+    :kwarg run:         run identifier, used for constructing output filename
+    :kwarg title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
-    :kword fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
+    :kwarg fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot are used.
-    :kword vmin,vmax:   min and max values for x-axis
+    :kwarg vmin,vmax:   min and max values for x-axis
 
-    :kword axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
-    :kword tickinterval: Interval at which to have ticks on axes
-    :kword lin:         Plot using linear y-axis (default log)
+    :kwarg axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)
+    :kwarg tickinterval: Interval at which to have ticks on axes
+    :kwarg lin:         Plot using linear y-axis (default log)
    
-    :kword xy:          Perform slice in x-y-direction
-    :kword xz:          Perform slice in x-z-direction
-    :kword yz:          Perform slice in y-z-direction
-    :kword normal:      Perform slice in plane perpendicular to given vector
-    :kword bpara:       Perform slice in B_para / B_perp2 plane
-    :kword bpara1:       Perform slice in B_para / B_perp1 plane
-    :kword bperp:       Perform slice in B_perp1 / B_perp2 plane
+    :kwarg xy:          Perform slice in x-y-direction
+    :kwarg xz:          Perform slice in x-z-direction
+    :kwarg yz:          Perform slice in y-z-direction
+    :kwarg normal:      Perform slice in plane perpendicular to given vector
+    :kwarg bpara:       Perform slice in B_para / B_perp2 plane
+    :kwarg bpara1:       Perform slice in B_para / B_perp1 plane
+    :kwarg bperp:       Perform slice in B_perp1 / B_perp2 plane
                         If no plane is given, default is simulation plane (for 2D simulations)
 
-    :kword cbulk:       Center plot on position of total bulk velocity (or if not available,
+    :kwarg cbulk:       Center plot on position of total bulk velocity (or if not available,
                         bulk velocity for this population)
-    :kword cpeak:       Center plot on velocity with highest phase-space density
-    :kword center:      Center plot on provided 3-element velocity vector position (in m/s)
+    :kwarg cpeak:       Center plot on velocity with highest phase-space density
+    :kwarg center:      Center plot on provided 3-element velocity vector position (in m/s)
                         If set instead to "bulk" will center on bulk velocity
                         If set instead to "peak" will center on velocity with highest phase-space density
-    :kword setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
+    :kwarg setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file
                         Useful if EffectiveSparsityThreshold wasn't saved, or user wants to draw buffer cells
                         with values below the sparsity threshold
 
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
-    :kword draw:        Draw image on-screen instead of saving to file (requires x-windowing)
-    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+    :kwarg draw:        Draw image on-screen instead of saving to file (requires x-windowing)
+    :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.
 
-    :kword scale:       Scale text size (default=1.0)
-    :kword thick:       line and axis thickness, default=1.0
+    :kwarg scale:       Scale text size (default=1.0)
+    :kwarg thick:       line and axis thickness, default=1.0
     
 
     :returns:           Outputs an image to a file or to the screen.
