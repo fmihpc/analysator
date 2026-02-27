@@ -42,6 +42,6 @@ and open it in your favourite browser.
 Sphinx coverage stats
 ---------------------
 
-.. include:: _build/coverage/python.txt
+.. include:: coverage.rst
    :literal:
 
