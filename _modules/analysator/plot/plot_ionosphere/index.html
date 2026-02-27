@@ -1,0 +1,741 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.plot.plot_ionosphere &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+          <li class="breadcrumb-item"><a href="../">analysator.plot</a></li>
+      <li class="breadcrumb-item active">analysator.plot.plot_ionosphere</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.plot.plot_ionosphere</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mtick</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpath</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.patches</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">patches</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.projections</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">projections</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1.inset_locator</span><span class="w"> </span><span class="kn">import</span> <span class="n">inset_axes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_axes_locatable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaxNLocator</span><span class="p">,</span> <span class="n">MultipleLocator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogLocator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoundaryNorm</span><span class="p">,</span><span class="n">LogNorm</span><span class="p">,</span><span class="n">SymLogNorm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.cbook</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_sample_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+
+
+<div class="viewcode-block" id="plot_ionosphere">
+<a class="viewcode-back" href="../../../../plot/#analysator.plot.plot_ionosphere">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_ionosphere</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">vlsvobj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">filedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">nooverwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">var</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">colormap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">symmetric</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">usesci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">lin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">symlog</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nocb</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">internalcb</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">minlatitude</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span>
+                  <span class="n">cbtitle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cbaxes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">cb_horizontal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">thick</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">vscale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                  <span class="n">wmark</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">wmarkb</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">viewdir</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span><span class="n">draw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">axes</span><span class="o">=</span><span class="kc">None</span>
+      <span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Plots a 2d projection of an ionosphere variable</span>
+
+<span class="sd">    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.</span>
+<span class="sd">    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead</span>
+<span class="sd">    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name</span>
+<span class="sd">    :kwarg step:        output step index, used for constructing output (and possibly input) filename</span>
+<span class="sd">    :kwarg run:         run identifier, used for constructing output filename</span>
+<span class="sd">    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)</span>
+<span class="sd">                        If directory does not exist, it will be created. If the string does not end in a</span>
+<span class="sd">                        forward slash, the final part will be used as a prefix for the files.</span>
+<span class="sd">    :kwarg outputfile:  Singular output file name</span>
+<span class="sd">    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    </span>
+<span class="sd">    :kwarg var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,</span>
+<span class="sd">                        E, B, v, V or others. Accepts any variable known by analysator.</span>
+<span class="sd">                        Per-population variables are simply given as &quot;proton/rho&quot; etc</span>
+<span class="sd">    :kwarg operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either</span>
+<span class="sd">                        the queried component, or otherwise the magnitude. </span>
+<span class="sd">    :kwarg op:          duplicate of operator</span>
+<span class="sd">    :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,</span>
+<span class="sd">                        magma, parula, nipy_spectral, RdBu, bwr</span>
+<span class="sd">    :kwarg vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,</span>
+<span class="sd">                        min and max values for whole plot (non-zero rho regions only) are used.</span>
+<span class="sd">    :kwarg symmetric:   Set the absolute value of vmin and vmax to the greater of the two</span>
+<span class="sd">    :kwarg absolute:    Plot the absolute of the evaluated variable</span>
+<span class="sd">    :kwarg usesci:      Use scientific notation for colorbar ticks? (default: True)</span>
+<span class="sd">    :kwarg lin:         Flag for using linear colour scaling instead of log</span>
+<span class="sd">    :kwarg symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.</span>
+<span class="sd">                        Allows symmetric quasi-logarithmic plots of e.g. transverse field components.</span>
+<span class="sd">                        A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can</span>
+<span class="sd">                        result in the innermost tick marks overlapping. In this case, using a larger value for </span>
+<span class="sd">                        symlog is suggested.</span>
+<span class="sd">    :kwarg nocb:        Set to suppress drawing of colourbar</span>
+<span class="sd">    :kwarg internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text</span>
+<span class="sd">                        string, tries to use that as the location, e.g. &quot;NW&quot;,&quot;NE&quot;,&quot;SW&quot;,&quot;SW&quot;</span>
+<span class="sd">    :kwarg minlatitude: Minimum plot latitude (default=60 degrees)</span>
+<span class="sd">    :kwarg title:       string to use as plot title instead of time.</span>
+<span class="sd">                        Special case: Set to &quot;msec&quot; to plot time with millisecond accuracy or &quot;musec&quot;</span>
+<span class="sd">                        for microsecond accuracy. &quot;sec&quot; is integer second accuracy.</span>
+<span class="sd">    :kwarg cbtitle:     string to use as colorbar title instead of map name</span>
+<span class="sd">    :kwarg viewdir:     view direction onto the sphere. Positive value: North pole. Negative values: South pole.</span>
+<span class="sd">    :kwarg scale:       Scale text size (default=1.0)</span>
+<span class="sd">    :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3</span>
+<span class="sd">                        or from tesla to nanotesla. Guesses correct units for colourbar for some known</span>
+<span class="sd">                        variables.</span>
+<span class="sd">    :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.</span>
+<span class="sd">    :kwarg cbaxes:      Provide the routine a set of axes for the colourbar.</span>
+<span class="sd">    :kwarg cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.</span>
+<span class="sd">    :kwarg thick:       line and axis thickness, default=1.0</span>
+<span class="sd">    :kwarg draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)</span>
+<span class="sd">    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text</span>
+<span class="sd">                        string, tries to use that as the location, e.g. &quot;NW&quot;,&quot;NE&quot;,&quot;SW&quot;,&quot;SW&quot;</span>
+<span class="sd">    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#IONOSPHERE_RADIUS=6471e3 # R_E + 100 km</span>
+    <span class="c1"># Verify the location of this watermark image</span>
+    <span class="n">watermarkimage</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;logo_color.png&#39;</span><span class="p">)</span>
+    <span class="n">watermarkimageblack</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;logo_black.png&#39;</span><span class="p">)</span>
+
+
+    <span class="c1"># Change certain falsy values:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lin</span> <span class="ow">and</span> <span class="n">lin</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">lin</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">log</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">lin</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">symlog</span> <span class="ow">and</span> <span class="n">symlog</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">symlog</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">symlog</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">filedir</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">filedir</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">outputdir</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">outputdir</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span>
+
+    <span class="c1"># Input file or object</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">((</span><span class="n">filedir</span><span class="o">!=</span><span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">step</span><span class="o">!=</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">filedir</span><span class="o">+</span><span class="s1">&#39;bulk*&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.vlsv&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">vlsvobj</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">vlsvobj</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;needs a .vlsv file name, python object, or directory and step&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">operator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">operator</span><span class="o">=</span><span class="n">op</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">colormap</span><span class="p">:</span>
+        <span class="c1"># Default values</span>
+        <span class="n">colormap</span><span class="o">=</span><span class="s2">&quot;bwr&quot;</span>
+
+    <span class="n">cmapuse</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">colormap</span><span class="p">)</span>
+
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Most text</span>
+    <span class="n">fontsize2</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Time title</span>
+    <span class="n">fontsize3</span><span class="o">=</span><span class="mi">8</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Colour bar ticks and title</span>
+
+    <span class="c1"># Plot title with time</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">timeval</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># The ionosphere solver miniApp writes outputfiles without a valid</span>
+        <span class="c1"># time value.</span>
+        <span class="n">timeval</span><span class="o">=</span><span class="kc">None</span>
+
+    <span class="c1"># Plot title with time</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;msec&quot;</span> <span class="ow">or</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;musec&quot;</span><span class="p">:</span>        
+        <span class="k">if</span> <span class="n">timeval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>    
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.1f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;sec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.0f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;msec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.3f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;musec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.6f}</span><span class="s1">&#39;</span>
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s2">&quot;t=&quot;</span><span class="o">+</span><span class="n">timeformat</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeval</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; s &#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">+</span><span class="n">title</span>
+
+    <span class="k">if</span> <span class="n">viewdir</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="s2">&quot;Northern</span><span class="se">\\</span><span class="s2">; hemisphere, &quot;</span> <span class="o">+</span> <span class="n">plot_title</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="s2">&quot;Southern</span><span class="se">\\</span><span class="s2">; hemisphere, &quot;</span> <span class="o">+</span> <span class="n">plot_title</span>
+
+    <span class="c1"># step, used for file name</span>
+    <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="c1"># If run name isn&#39;t given, just put &quot;plot&quot; in the output file name</span>
+    <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">run</span><span class="o">=</span><span class="s1">&#39;plot&#39;</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="c1"># If working within CSC filesystem, make a guess:</span>
+            <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;/proj/vlasov/3D/&quot;</span><span class="p">:</span>
+                <span class="n">run</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">19</span><span class="p">]</span>
+
+    <span class="c1"># Verify validity of operator</span>
+    <span class="n">operatorstr</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    <span class="n">operatorfilestr</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">operator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># .isdigit checks if the operator is an integer (for taking an element from a vector)</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operator</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span> <span class="ow">and</span> <span class="n">operator</span> <span class="o">!=</span> <span class="s1">&#39;magnitude&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">operator</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unknown operator &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">operator</span><span class="p">))</span>
+            <span class="n">operator</span><span class="o">=</span><span class="kc">None</span>
+            <span class="n">operatorstr</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">operator</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span><span class="p">:</span>
+            <span class="c1"># For components, always use linear scale, unless symlog is set</span>
+            <span class="n">operatorstr</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">operator</span>
+            <span class="n">operatorfilestr</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">operator</span>
+            <span class="k">if</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">lin</span><span class="o">=</span><span class="kc">True</span>
+        <span class="c1"># index a vector</span>
+        <span class="k">if</span> <span class="n">operator</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="n">operator</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
+            <span class="n">operatorstr</span><span class="o">=</span><span class="s1">&#39;_{&#39;</span><span class="o">+</span><span class="n">operator</span><span class="o">+</span><span class="s1">&#39;}&#39;</span>
+            <span class="n">operatorfilestr</span><span class="o">=</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">operator</span>
+        <span class="c1"># Note: operator magnitude gets operatorstr=&#39;&#39;</span>
+
+    <span class="c1"># Output file name</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">var</span><span class="p">:</span>
+        <span class="c1"># If no expression or variable given, defaults to FACs</span>
+        <span class="n">var</span><span class="o">=</span><span class="s1">&#39;ig_fac&#39;</span>
+    <span class="n">varstr</span><span class="o">=</span><span class="n">var</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+
+
+    <span class="c1"># The plot will be saved in a new figure </span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span> <span class="o">!=</span> <span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">:</span> <span class="c1">#&#39;Agg&#39;:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">)</span>
+
+    <span class="c1"># Select plotting back-end based on on-screen plotting or direct to file without requiring x-windowing</span>
+    <span class="c1"># If axes are provided, leave backend as-is.</span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">draw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span> <span class="o">!=</span> <span class="n">pt</span><span class="o">.</span><span class="n">backend_interactive</span><span class="p">:</span> <span class="c1">#&#39;TkAgg&#39;: </span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">backend_interactive</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span> <span class="o">!=</span> <span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">:</span> <span class="c1">#&#39;Agg&#39;:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">)</span>  
+
+    <span class="c1"># Read ionosphere mesh node coordinates</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_node_coords</span><span class="p">()</span>
+    
+    <span class="c1"># Read the ionosphere radius from the VLSV file</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ionosphere_radius</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;ionosphere_radius&quot;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Recalculate the radius of the ionospheric grid</span>
+        <span class="n">ionosphere_radius</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+
+    <span class="c1"># Read ionosphere mesh connectivity</span>
+    <span class="n">elements</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_element_corners</span><span class="p">()</span>
+    <span class="c1"># Read selected variable valus</span>
+    <span class="k">if</span> <span class="n">operator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+       <span class="n">operator</span><span class="o">=</span><span class="s2">&quot;pass&quot;</span>
+    <span class="n">datamap_info</span><span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable_info</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="n">operator</span><span class="p">)</span>
+    <span class="c1"># Correction for broken ionosphere units</span>
+    <span class="n">datamap_info</span><span class="o">.</span><span class="n">latex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">text&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">mathrm&quot;</span><span class="p">,</span> <span class="n">datamap_info</span><span class="o">.</span><span class="n">latex</span><span class="p">)</span>
+    <span class="n">datamap_info</span><span class="o">.</span><span class="n">latexunits</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">mho&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\\\\</span><span class="s2">Omega^{-1}&quot;</span><span class="p">,</span> <span class="n">datamap_info</span><span class="o">.</span><span class="n">latexunits</span><span class="p">)</span>
+    <span class="n">cb_title_use</span> <span class="o">=</span> <span class="n">datamap_info</span><span class="o">.</span><span class="n">latex</span>
+    <span class="c1"># Check if vscale results in standard unit</span>
+    <span class="n">vscale</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">datamap_unit_latex</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">get_scaled_units</span><span class="p">(</span><span class="n">vscale</span><span class="o">=</span><span class="n">vscale</span><span class="p">,</span><span class="n">variable_info</span><span class="o">=</span><span class="n">datamap_info</span><span class="p">)</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">datamap_info</span><span class="o">.</span><span class="n">data</span><span class="o">*</span><span class="n">vscale</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;reading variable &#39;&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&#39; from vlsv file! values.shape being&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+
+    <span class="c1"># Add unit to colorbar title</span>
+    <span class="k">if</span> <span class="n">datamap_unit_latex</span><span class="p">:</span>
+       <span class="n">cb_title_use</span> <span class="o">=</span> <span class="n">cb_title_use</span> <span class="o">+</span> <span class="sa">r</span><span class="s2">&quot;\,[&quot;</span><span class="o">+</span><span class="n">datamap_unit_latex</span><span class="o">+</span><span class="s2">&quot;]&quot;</span>
+
+    <span class="k">if</span> <span class="n">viewdir</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="n">ionosphere_radius</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="o">-</span><span class="n">coords</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="n">ionosphere_radius</span><span class="p">))</span>
+    <span class="n">theta</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">coords</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span><span class="n">coords</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Project nodes and elements into view plane</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">viewdir</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mask</span><span class="o">+=</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span><span class="o">+=</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">coords</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mask</span><span class="o">+=</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span><span class="o">+=</span><span class="p">[</span><span class="kc">True</span><span class="p">]</span>
+
+    <span class="c1"># Build mesh triangulation</span>
+    <span class="n">tri</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">tri</span><span class="o">.</span><span class="n">Triangulation</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">r</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="n">elements</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+
+    <span class="c1"># Allow title override</span>
+    <span class="k">if</span> <span class="n">cbtitle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Here allow underscores for manual math mode</span>
+        <span class="n">cb_title_use</span> <span class="o">=</span> <span class="n">cbtitle</span>
+
+    <span class="c1"># If automatic range finding is required, find min and max of array</span>
+    <span class="k">if</span> <span class="n">vmin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vminuse</span><span class="o">=</span><span class="n">vmin</span>
+    <span class="k">else</span><span class="p">:</span> 
+        <span class="n">vminuse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vmaxuse</span><span class="o">=</span><span class="n">vmax</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vmaxuse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="c1"># Ionospheric special handling: if we have negative values, let&#39;s turn on linear mode.</span>
+    <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">vminuse</span><span class="o">&lt;=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">lin</span><span class="o">=</span><span class="kc">True</span>
+
+    <span class="c1"># If both values are zero, we have an empty array</span>
+    <span class="k">if</span> <span class="n">vmaxuse</span><span class="o">==</span><span class="n">vminuse</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>        
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;requested array is zero everywhere. Exiting.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric</span>
+    <span class="c1"># e.g. to plot transverse field components. Always done for symlog.</span>
+    <span class="k">if</span> <span class="n">vmin</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">symmetric</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">vminuse</span><span class="o">/</span><span class="n">vmaxuse</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">absval</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">vminuse</span><span class="p">),</span><span class="nb">abs</span><span class="p">(</span><span class="n">vmaxuse</span><span class="p">))</span>
+            <span class="n">vminuse</span> <span class="o">=</span> <span class="o">-</span><span class="n">absval</span>
+            <span class="n">vmaxuse</span> <span class="o">=</span> <span class="n">absval</span>
+
+    <span class="c1"># Ensure that lower bound is valid for logarithmic plots</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">vminuse</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">symlog</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Drop negative and zero values</span>
+        <span class="n">vminuse</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Special case of very small vminuse values</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">vmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">vmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">vminuse</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">vminuse</span> <span class="o">&lt;</span> <span class="n">vmaxuse</span><span class="o">*</span><span class="mf">1.e-5</span><span class="p">):</span>
+        <span class="n">vminuse</span> <span class="o">=</span> <span class="n">vmaxuse</span><span class="o">*</span><span class="mf">1e-5</span>
+        <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vminuse</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># If symlog scaling is set:</span>
+    <span class="k">if</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">symlog</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">linthresh</span> <span class="o">=</span> <span class="n">symlog</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">linthresh</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">vminuse</span><span class="p">),</span><span class="nb">abs</span><span class="p">(</span><span class="n">vmaxuse</span><span class="p">))</span><span class="o">*</span><span class="mf">1.e-2</span>
+
+    <span class="c1"># Lin or log colour scaling, defaults to lin</span>
+    <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Special SymLogNorm case</span>
+        <span class="k">if</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.3.0&quot;</span><span class="p">):</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">SymLogNorm</span><span class="p">(</span><span class="n">linthresh</span><span class="o">=</span><span class="n">linthresh</span><span class="p">,</span> <span class="n">linscale</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vminuse</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmaxuse</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;colormap SymLogNorm uses base-e but ticks are calculated with base-10.&quot;</span><span class="p">)</span>
+                <span class="c1">#TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">SymLogNorm</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">linthresh</span><span class="o">=</span><span class="n">linthresh</span><span class="p">,</span> <span class="n">linscale</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vminuse</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmaxuse</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">maxlog</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vmaxuse</span><span class="p">)))</span>
+            <span class="n">minlog</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="o">-</span><span class="n">vminuse</span><span class="p">)))</span>
+            <span class="n">logthresh</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">linthresh</span><span class="p">)))</span>
+            <span class="n">logstep</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">ticks</span><span class="o">=</span><span class="p">([</span><span class="o">-</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">logthresh</span><span class="p">,</span> <span class="n">minlog</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">logstep</span><span class="p">)][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="o">+</span><span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+                    <span class="o">+</span><span class="p">[(</span><span class="mi">10</span><span class="o">**</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">logthresh</span><span class="p">,</span> <span class="n">maxlog</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">logstep</span><span class="p">)]</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Logarithmic plot</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">LogNorm</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vminuse</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">vmaxuse</span><span class="p">)</span>
+            <span class="n">ticks</span> <span class="o">=</span> <span class="n">LogLocator</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">subs</span><span class="o">=</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,)</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span> <span class="c1"># where to show labels</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Linear</span>
+        <span class="n">linticks</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lin</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">linticks</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">lin</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">linticks</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># old default was to set lin=1 for seven linear ticks</span>
+                <span class="n">linticks</span> <span class="o">=</span> <span class="mi">7</span>
+                
+        <span class="n">levels</span> <span class="o">=</span> <span class="n">MaxNLocator</span><span class="p">(</span><span class="n">nbins</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">tick_values</span><span class="p">(</span><span class="n">vminuse</span><span class="p">,</span><span class="n">vmaxuse</span><span class="p">)</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">BoundaryNorm</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">ncolors</span><span class="o">=</span><span class="n">cmapuse</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">vminuse</span><span class="p">,</span><span class="n">vmaxuse</span><span class="p">,</span><span class="n">num</span><span class="o">=</span><span class="n">linticks</span><span class="p">)</span>
+
+    <span class="c1"># Creating a new figure and axes </span>
+    <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nocb</span><span class="p">:</span>
+        <span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span><span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+        <span class="n">ax_cartesian</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.8</span><span class="p">,</span><span class="mf">0.8</span><span class="p">],</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">),(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">)),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">),(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">)),</span> <span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+        <span class="c1">#ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))</span>
+        <span class="n">ax_polar</span> <span class="o">=</span> <span class="n">inset_axes</span><span class="p">(</span><span class="n">parent_axes</span><span class="o">=</span><span class="n">ax_cartesian</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">axes_class</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">get_projection_class</span><span class="p">(</span><span class="s1">&#39;polar&#39;</span><span class="p">),</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_frame_on</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+        <span class="n">ax_cartesian</span> <span class="o">=</span> <span class="n">inset_axes</span><span class="p">(</span><span class="n">parent_axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;80%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;80%&quot;</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;center&#39;</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="s1">&#39;center left&#39;</span><span class="p">)</span>
+        <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">),(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">))</span>
+        <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">),(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">))</span>
+        <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+        <span class="n">ax_polar</span> <span class="o">=</span> <span class="n">inset_axes</span><span class="p">(</span><span class="n">parent_axes</span><span class="o">=</span><span class="n">ax_cartesian</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">axes_class</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">get_projection_class</span><span class="p">(</span><span class="s1">&#39;polar&#39;</span><span class="p">),</span> <span class="n">borderpad</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_frame_on</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+    <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+    <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+    <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+
+    <span class="c1">## Build a circle to map away the regions we&#39;re not interested in</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_circle</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">mpath</span><span class="o">.</span><span class="n">Path</span>
+    <span class="n">inside_vertices</span> <span class="o">=</span> <span class="n">make_circle</span><span class="p">(</span><span class="mi">90</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">)</span>
+    <span class="n">outside_vertices</span> <span class="o">=</span> <span class="n">make_circle</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">pathCodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">inside_vertices</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">mpath</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">code_type</span><span class="p">)</span> <span class="o">*</span> <span class="n">mpath</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">LINETO</span>
+    <span class="n">pathCodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">mpath</span><span class="o">.</span><span class="n">Path</span><span class="o">.</span><span class="n">MOVETO</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">mpath</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">inside_vertices</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">outside_vertices</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pathCodes</span><span class="p">,</span><span class="n">pathCodes</span><span class="p">)))</span>
+    <span class="n">clippingcircle</span><span class="o">=</span> <span class="n">patches</span><span class="o">.</span><span class="n">PathPatch</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;#ffffff&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;grey&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1">### THE ACTUAL PLOT HAPPENS HERE ###</span>
+    <span class="c1">#contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">tri</span><span class="o">.</span><span class="n">triangles</span><span class="p">)):</span>
+        <span class="n">shading</span> <span class="o">=</span> <span class="s1">&#39;flat&#39;</span>
+    <span class="k">elif</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">tri</span><span class="o">.</span><span class="n">x</span><span class="p">)):</span>
+        <span class="n">shading</span> <span class="o">=</span> <span class="s1">&#39;gouraud&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of values (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot;) matches neither number of elements (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tri</span><span class="o">.</span><span class="n">triangles</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot;) or number of points (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tri</span><span class="o">.</span><span class="n">x</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot;)&quot;</span><span class="p">)</span>
+    
+    <span class="n">contours</span> <span class="o">=</span> <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">tripcolor</span><span class="p">(</span><span class="n">tri</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmapuse</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="n">shading</span><span class="p">)</span>
+    <span class="n">ax_cartesian</span><span class="o">.</span><span class="n">add_patch</span><span class="p">(</span><span class="n">clippingcircle</span><span class="p">)</span>
+
+    <span class="c1"># Draw polar grid over it</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">gridlatitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">90.</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">,</span><span class="mf">10.</span><span class="p">)</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_rmax</span><span class="p">(</span><span class="mf">90.</span><span class="o">-</span><span class="n">minlatitude</span><span class="p">);</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_rgrids</span><span class="p">(</span><span class="n">gridlatitudes</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="mf">90.</span><span class="o">-</span><span class="n">x</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;°&quot;</span><span class="p">,</span> <span class="n">gridlatitudes</span><span class="p">),</span><span class="n">angle</span><span class="o">=</span><span class="mi">225</span><span class="p">)</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_thetagrids</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mi">360</span><span class="p">,</span> <span class="mi">13</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;24h&quot;</span><span class="p">,</span><span class="s2">&quot;2h&quot;</span><span class="p">,</span><span class="s2">&quot;4h&quot;</span><span class="p">,</span><span class="s2">&quot;6h&quot;</span><span class="p">,</span><span class="s2">&quot;8h&quot;</span><span class="p">,</span><span class="s2">&quot;10h&quot;</span><span class="p">,</span><span class="s2">&quot;12h&quot;</span><span class="p">,</span><span class="s2">&quot;14h&quot;</span><span class="p">,</span><span class="s2">&quot;16h&quot;</span><span class="p">,</span><span class="s2">&quot;18h&quot;</span><span class="p">,</span><span class="s2">&quot;20h&quot;</span><span class="p">,</span><span class="s2">&quot;22h&quot;</span><span class="p">,</span><span class="s2">&quot;24h&quot;</span><span class="p">])</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_theta_zero_location</span><span class="p">(</span><span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ax_polar</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="n">fontsize2</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+
+    <span class="c1"># Title and plot limits</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_title</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">mathmode</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bfstring</span><span class="p">(</span><span class="n">plot_title</span><span class="p">))</span>
+        <span class="n">ax_polar</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">plot_title</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize2</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Colourbar title</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cb_title_use</span><span class="p">)</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">cb_title_use</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">mathmode</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bfstring</span><span class="p">(</span><span class="n">cb_title_use</span><span class="p">))</span>
+
+    <span class="c1"># Set flag which affects colorbar decimal precision</span>
+    <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cb_linear</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cb_linear</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Creating colorbar axes</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">nocb</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cbaxes</span><span class="p">:</span> 
+            <span class="c1"># Colorbar axes are provided</span>
+            <span class="n">cax</span> <span class="o">=</span> <span class="n">cbaxes</span>
+            <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;right&quot;</span>
+            <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;center&quot;</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="s2">&quot;left&quot;</span>
+        <span class="k">elif</span> <span class="n">internalcb</span><span class="p">:</span>
+            <span class="c1"># Colorbar within plot area</span>
+            <span class="n">cbloc</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">;</span> <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;right&quot;</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">internalcb</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">internalcb</span><span class="o">==</span><span class="s2">&quot;NE&quot;</span><span class="p">:</span>
+                    <span class="n">cbloc</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span> <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">;</span> <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;right&quot;</span>
+                <span class="k">if</span> <span class="n">internalcb</span><span class="o">==</span><span class="s2">&quot;NW&quot;</span><span class="p">:</span>
+                    <span class="n">cbloc</span><span class="o">=</span><span class="mi">2</span><span class="p">;</span> <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">;</span> <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+                <span class="k">if</span> <span class="n">internalcb</span><span class="o">==</span><span class="s2">&quot;SW&quot;</span><span class="p">:</span> 
+                    <span class="n">cbloc</span><span class="o">=</span><span class="mi">3</span><span class="p">;</span> <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">;</span> <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+                <span class="k">if</span> <span class="n">internalcb</span><span class="o">==</span><span class="s2">&quot;SE&quot;</span><span class="p">:</span> 
+                    <span class="n">cbloc</span><span class="o">=</span><span class="mi">4</span><span class="p">;</span> <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">;</span>  <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;right&quot;</span>
+            <span class="c1"># borderpad default value is 0.5, need to increase it to make room for colorbar title</span>
+            <span class="n">cax</span> <span class="o">=</span> <span class="n">inset_axes</span><span class="p">(</span><span class="n">ax_polar</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;5%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;35%&quot;</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">cbloc</span><span class="p">,</span> <span class="n">borderpad</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                             <span class="n">bbox_transform</span><span class="o">=</span><span class="n">ax_polar</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.85</span><span class="p">,</span><span class="mf">0.92</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Split existing axes to make room for colorbar</span>
+            <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cb_horizontal</span><span class="p">:</span>
+                    <span class="n">cax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.6</span><span class="p">,</span><span class="mf">0.03</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.8</span><span class="p">,</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.03</span><span class="p">,</span><span class="mf">0.6</span><span class="p">])</span>
+                    <span class="c1">#The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cax</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">inset_axes</span><span class="p">([</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.2</span><span class="p">,</span><span class="mf">0.03</span><span class="p">,</span><span class="mf">0.6</span><span class="p">])</span>
+            <span class="n">cbdir</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">;</span> <span class="n">horalign</span><span class="o">=</span><span class="s2">&quot;left&quot;</span>
+
+        <span class="c1"># Set flag which affects colorbar decimal precision</span>
+        <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cb_linear</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cb_linear</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># First draw colorbar</span>
+        <span class="k">if</span> <span class="n">usesci</span><span class="p">:</span>
+            <span class="n">cb</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="n">ticks</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">mtick</span><span class="o">.</span><span class="n">FuncFormatter</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cbfmtsci</span><span class="p">),</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">,</span> <span class="n">drawedges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter(&#39;%4.2f&#39;), cax=cax, drawedges=False)</span>
+            <span class="n">cb</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">contours</span><span class="p">,</span> <span class="n">ticks</span><span class="o">=</span><span class="n">ticks</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">mtick</span><span class="o">.</span><span class="n">FuncFormatter</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">cbfmt</span><span class="p">),</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">,</span> <span class="n">drawedges</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">outline</span><span class="o">.</span><span class="n">set_linewidth</span><span class="p">(</span><span class="n">thick</span><span class="p">)</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="n">cbdir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cbaxes</span><span class="p">:</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="n">fontsize3</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="n">thick</span><span class="p">,</span><span class="n">rotation</span><span class="o">=</span><span class="mi">30</span> <span class="k">if</span> <span class="n">cb_horizontal</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">cb_title</span> <span class="o">=</span> <span class="n">cax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">cb_title_use</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize3</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="n">horalign</span><span class="p">)</span>
+            <span class="n">cb_title</span><span class="o">.</span><span class="n">set_position</span><span class="p">((</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="o">+</span><span class="mf">0.025</span><span class="o">*</span><span class="n">scale</span><span class="p">))</span> <span class="c1"># avoids having colourbar title too low when fontsize is increased</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">3</span><span class="o">*</span><span class="n">thick</span><span class="p">)</span>
+            <span class="n">cb_title</span> <span class="o">=</span> <span class="n">cax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">cb_title_use</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">,</span> <span class="n">horizontalalignment</span><span class="o">=</span><span class="n">horalign</span><span class="p">)</span>
+        <span class="c1"># Ensure minor tick marks are off</span>
+        <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cb</span><span class="o">.</span><span class="n">minorticks_off</span><span class="p">()</span>
+
+        <span class="c1"># Perform intermediate draw if necessary to gain access to ticks</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">symlog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">vminuse</span><span class="o">/</span><span class="n">vmaxuse</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">0.2</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">lin</span> <span class="ow">and</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span> <span class="c1"># draw to get tick positions</span>
+
+        <span class="c1"># Adjust placement of innermost ticks for symlog if it indeed is (quasi)symmetric</span>
+        <span class="k">if</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">vminuse</span><span class="o">/</span><span class="n">vmaxuse</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_ticklabels</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">cbt</span><span class="o">=</span><span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_ticklabels</span><span class="p">()</span>
+            <span class="p">(</span><span class="n">cbtx</span><span class="p">,</span><span class="n">cbty</span><span class="p">)</span> <span class="o">=</span> <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span> <span class="c1"># just below zero</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">cbty</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_va</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">cbtx</span><span class="p">,</span><span class="n">cbty</span><span class="p">)</span> <span class="o">=</span> <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span> <span class="c1"># just above zero</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">cbty</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_va</span><span class="p">(</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">&gt;=</span><span class="mi">7</span><span class="p">:</span> <span class="c1"># If we have at least seven ticks, may want to adjust next ones as well</span>
+                <span class="p">(</span><span class="n">cbtx</span><span class="p">,</span><span class="n">cbty</span><span class="p">)</span> <span class="o">=</span> <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span> <span class="c1"># second below zero</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">cbty</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span> <span class="o">&lt;</span> <span class="mf">0.15</span><span class="p">:</span>
+                    <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_va</span><span class="p">(</span><span class="s2">&quot;top&quot;</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">cbtx</span><span class="p">,</span><span class="n">cbty</span><span class="p">)</span> <span class="o">=</span> <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span> <span class="c1"># second above zero</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">0.5</span><span class="o">-</span><span class="n">cbty</span><span class="p">)</span><span class="o">/</span><span class="n">scale</span> <span class="o">&lt;</span> <span class="mf">0.15</span><span class="p">:</span>
+                    <span class="n">cbt</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">cbt</span><span class="p">)</span><span class="o">//</span><span class="mi">2</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_va</span><span class="p">(</span><span class="s2">&quot;bottom&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Adjust precision for colorbar ticks</span>
+        <span class="n">thesetickvalues</span> <span class="o">=</span> <span class="n">cb</span><span class="o">.</span><span class="n">locator</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">thesetickvalues</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span>
+            <span class="n">precision_b</span><span class="o">=</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mintickinterval</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">thesetickvalues</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">thesetickvalues</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># find smallest interval</span>
+            <span class="k">for</span> <span class="n">ticki</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">thesetickvalues</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">mintickinterval</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">mintickinterval</span><span class="p">,</span><span class="nb">abs</span><span class="p">(</span><span class="n">thesetickvalues</span><span class="p">[</span><span class="n">ticki</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">thesetickvalues</span><span class="p">[</span><span class="n">ticki</span><span class="p">]))</span>
+            <span class="n">precision_a</span><span class="p">,</span> <span class="n">precision_b</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.1e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mintickinterval</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+            <span class="c1"># e.g. 9.0e-1 means we need precision 1</span>
+            <span class="c1"># e.g. 1.33e-1 means we need precision 3?</span>
+        <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">decimalprecision_cblin</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">precision_b</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span> <span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">decimalprecision_cblin</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="nb">abs</span><span class="p">(</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">precision_b</span><span class="p">)))</span>
+        <span class="n">cb</span><span class="o">.</span><span class="n">update_ticks</span><span class="p">()</span>
+
+        <span class="c1"># if too many subticks in logarithmic colorbar:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lin</span> <span class="ow">and</span> <span class="n">symlog</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nlabels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_ticklabels</span><span class="p">())</span>
+            <span class="c1"># Force less ticks for internal colorbars</span>
+            <span class="k">if</span> <span class="n">internalcb</span><span class="p">:</span> 
+                <span class="n">nlabels</span> <span class="o">=</span> <span class="n">nlabels</span> <span class="o">*</span> <span class="mf">1.5</span>
+            <span class="n">valids</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="s1">&#39;4&#39;</span><span class="p">,</span><span class="s1">&#39;5&#39;</span><span class="p">,</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="s1">&#39;7&#39;</span><span class="p">,</span><span class="s1">&#39;8&#39;</span><span class="p">,</span><span class="s1">&#39;9&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">nlabels</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">valids</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;3&#39;</span><span class="p">,</span><span class="s1">&#39;4&#39;</span><span class="p">,</span><span class="s1">&#39;5&#39;</span><span class="p">,</span><span class="s1">&#39;6&#39;</span><span class="p">,</span><span class="s1">&#39;8&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">nlabels</span> <span class="o">&gt;</span> <span class="mi">19</span><span class="p">:</span>
+                <span class="n">valids</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span><span class="s1">&#39;2&#39;</span><span class="p">,</span><span class="s1">&#39;5&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">nlabels</span> <span class="o">&gt;</span> <span class="mi">28</span><span class="p">:</span>
+                <span class="n">valids</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">]</span>
+            <span class="c1"># for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:</span>
+            <span class="k">for</span> <span class="n">labi</span><span class="p">,</span><span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cb</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">get_ticklabels</span><span class="p">()):</span>
+                <span class="n">labeltext</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;{&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;}&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\mbox{\textbf{--}}&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">labeltext</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">firstdigit</span> <span class="o">=</span> <span class="n">labeltext</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">firstdigit</span> <span class="ow">in</span> <span class="n">valids</span><span class="p">:</span> 
+                    <span class="n">label</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Add Vlasiator watermark</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">wmark</span> <span class="ow">or</span> <span class="n">wmarkb</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">wmark</span><span class="p">:</span>
+            <span class="n">wm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">get_sample_data</span><span class="p">(</span><span class="n">watermarkimage</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wmark</span><span class="o">=</span><span class="n">wmarkb</span> <span class="c1"># for checking for placement</span>
+            <span class="n">wm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">get_sample_data</span><span class="p">(</span><span class="n">watermarkimageblack</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">wmark</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+            <span class="n">anchor</span> <span class="o">=</span> <span class="n">wmark</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;NW&quot;</span>
+        <span class="c1"># Allowed region and anchor used in tandem for desired effect</span>
+        <span class="k">if</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;NW&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;W&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;SW&quot;</span><span class="p">:</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;NE&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;E&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;SE&quot;</span><span class="p">:</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.69</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;N&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;C&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;S&quot;</span><span class="p">:</span>
+            <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+        <span class="n">newax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">rect</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="n">anchor</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">newax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wm</span><span class="p">)</span>
+        <span class="n">newax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Adjust layout. Uses tight_layout() but in fact this ensures </span>
+    <span class="c1"># that long titles and tick labels are still within the plot area.</span>
+    <span class="c1"># if axes is None: # This causes a matplotlib warning, and the following &quot;bbox_inches=&#39;tight&#39;&quot; should anyway do the same thing</span>
+    <span class="c1">#     plt.tight_layout(pad=0.01)</span>
+    <span class="n">savefig_pad</span><span class="o">=</span><span class="mf">0.01</span>
+    <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span>
+
+    <span class="c1"># Save output or draw on-screen</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">draw</span> <span class="ow">and</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">viewdir</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">outputpole</span> <span class="o">=</span> <span class="s2">&quot;_north&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputpole</span> <span class="o">=</span> <span class="s2">&quot;_south&quot;</span>
+        <span class="n">outputfile_default</span> <span class="o">=</span> <span class="n">run</span><span class="o">+</span><span class="s2">&quot;_ionosphere_&quot;</span><span class="o">+</span><span class="n">varstr</span><span class="o">+</span><span class="n">operatorfilestr</span><span class="o">+</span><span class="n">outputpole</span><span class="o">+</span><span class="n">stepstr</span><span class="o">+</span><span class="s2">&quot;.png&quot;</span>
+        <span class="n">savefigname</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">output_path</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span><span class="n">outputfile_default</span><span class="p">,</span><span class="n">outputdir</span><span class="p">,</span><span class="n">nooverwrite</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">savefigname</span><span class="p">,</span><span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="n">bbox_inches</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="n">savefig_pad</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Encountered the following exception from Matplotlib while trying to save a figure:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Error attempting to save figure: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">())</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2"> There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">savefigname</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">draw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Draw on-screen</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Draw complete!&#39;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

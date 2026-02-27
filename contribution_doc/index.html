@@ -1,0 +1,267 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing to documentation &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Credits" href="../about/" />
+    <link rel="prev" title="Contributing code" href="../contribution_code/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing to documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#guiding-principles">Guiding principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-building-and-deployment">Automatic building and deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-documentation">Building documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sphinx-coverage-stats">Sphinx coverage stats</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Contributing to documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/contribution_doc.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing-to-documentation">
+<h1>Contributing to documentation<a class="headerlink" href="#contributing-to-documentation" title="Link to this heading"></a></h1>
+<section id="guiding-principles">
+<h2>Guiding principles<a class="headerlink" href="#guiding-principles" title="Link to this heading"></a></h2>
+<p>We recommend documentation contributors to familiarise themselves with the [Diátaxis](<a class="reference external" href="https://diataxis.fr/">https://diataxis.fr/</a>) framework when deciding which type of documentation to write. The key approach is to distinguish between four fundamentally different categories of documentation: tutorials, how-to guides, explanation material, and reference material. But most importantly, the idea is to work on documentation piece by piece whenever the occasion presents itself. If you find a mistake in the documentation, if you write new code and its documentation, if you contribute a tutorial – all of this is welcome in any stage of readiness! <strong>A contribution to improve the documentation, however small, is better than no contribution at all.</strong></p>
+</section>
+<section id="automatic-building-and-deployment">
+<h2>Automatic building and deployment<a class="headerlink" href="#automatic-building-and-deployment" title="Link to this heading"></a></h2>
+<p>This documentation is generated via Sphinx-autodoc from the Analysator source. This page is a work in progress, with docstrings and the documentation layout in flux. Contributions via the Analysator repository are welcome.</p>
+<p>Add your content using <code class="docutils literal notranslate"><span class="pre">reStructuredText</span></code> syntax. See the
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html">reStructuredText</a>
+documentation for details.</p>
+<p>Documentation is automatically built and deployed using Sphinx as part of the continuous integration of the repository.</p>
+</section>
+<section id="building-documentation">
+<h2>Building documentation<a class="headerlink" href="#building-documentation" title="Link to this heading"></a></h2>
+<p>When you create new documentation, before posting a pull request, please build the documentation locally and check the results.</p>
+<p>In order to build the documentation, you need to install a few packages:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">CI_env</span>
+<span class="o">.</span> <span class="n">CI_env</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">../</span><span class="n">analysator</span><span class="p">[</span><span class="nb">all</span><span class="p">]</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">sphinx</span> <span class="n">numba</span> <span class="n">yt</span> <span class="n">geopack</span> <span class="n">sphinx</span><span class="o">-</span><span class="n">rtd</span><span class="o">-</span><span class="n">theme</span>
+</pre></div>
+</div>
+<p>after which you can generate e.g. the html documentation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">Documentation</span><span class="o">/</span><span class="n">sphinx</span>
+<span class="n">make</span> <span class="n">dirhtml</span>
+</pre></div>
+</div>
+<p>and open it in your favourite browser.</p>
+</section>
+<section id="sphinx-coverage-stats">
+<h2>Sphinx coverage stats<a class="headerlink" href="#sphinx-coverage-stats" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Undocumented</span> <span class="n">Python</span> <span class="n">objects</span>
+<span class="o">===========================</span>
+
+<span class="n">Statistics</span>
+<span class="o">----------</span>
+
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">Module</span>                   <span class="o">|</span> <span class="n">Coverage</span> <span class="o">|</span> <span class="n">Undocumented</span> <span class="o">|</span>
+<span class="o">+==========================+==========+==============+</span>
+<span class="o">|</span> <span class="n">analysator</span>               <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">analysator</span><span class="o">.</span><span class="n">calculations</span>  <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">analysator</span><span class="o">.</span><span class="n">miscellaneous</span> <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">analysator</span><span class="o">.</span><span class="n">plot</span>          <span class="o">|</span> <span class="mf">16.67</span><span class="o">%</span>   <span class="o">|</span> <span class="mi">10</span>           <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">analysator</span><span class="o">.</span><span class="n">vlsvfile</span>      <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">biot_savart</span>              <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">cutthrough_timeseries</span>    <span class="o">|</span> <span class="mf">0.00</span><span class="o">%</span>    <span class="o">|</span> <span class="mi">2</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">gics</span>                     <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">magnetopause2d</span>           <span class="o">|</span> <span class="mf">0.00</span><span class="o">%</span>    <span class="o">|</span> <span class="mi">5</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">magnetopause3d</span>           <span class="o">|</span> <span class="mf">12.50</span><span class="o">%</span>   <span class="o">|</span> <span class="mi">7</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">obliqueshock</span>             <span class="o">|</span> <span class="mf">33.33</span><span class="o">%</span>   <span class="o">|</span> <span class="mi">2</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">obliqueshock_nif</span>         <span class="o">|</span> <span class="mf">50.00</span><span class="o">%</span>   <span class="o">|</span> <span class="mi">1</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">shue</span>                     <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">tsyganenko</span>               <span class="o">|</span> <span class="mf">100.00</span><span class="o">%</span>  <span class="o">|</span> <span class="mi">0</span>            <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+<span class="o">|</span> <span class="n">TOTAL</span>                    <span class="o">|</span> <span class="mf">55.74</span><span class="o">%</span>   <span class="o">|</span> <span class="mi">27</span>           <span class="o">|</span>
+<span class="o">+--------------------------+----------+--------------+</span>
+
+<span class="n">analysator</span><span class="o">.</span><span class="n">plot</span>
+<span class="o">---------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">axisfmt</span>
+ <span class="o">*</span> <span class="n">bfstring</span>
+ <span class="o">*</span> <span class="n">cbfmt</span>
+ <span class="o">*</span> <span class="n">cbfmtsci</span>
+ <span class="o">*</span> <span class="n">cell_edgecontours</span>
+ <span class="o">*</span> <span class="n">get_cmap</span>
+ <span class="o">*</span> <span class="n">mathmode</span>
+ <span class="o">*</span> <span class="n">output_path</span>
+ <span class="o">*</span> <span class="n">rmstring</span>
+ <span class="o">*</span> <span class="n">textbfstring</span>
+
+<span class="n">cutthrough_timeseries</span>
+<span class="o">---------------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">jplots</span>
+ <span class="o">*</span> <span class="n">main</span>
+
+<span class="n">magnetopause2d</span>
+<span class="o">--------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">interpolate</span>
+ <span class="o">*</span> <span class="n">main</span>
+ <span class="o">*</span> <span class="n">make_magnetopause</span>
+ <span class="o">*</span> <span class="n">make_streamlines</span>
+ <span class="o">*</span> <span class="n">polar_to_cartesian</span>
+
+<span class="n">magnetopause3d</span>
+<span class="o">--------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">cartesian_to_polar</span>
+ <span class="o">*</span> <span class="n">interpolate</span>
+ <span class="o">*</span> <span class="n">main</span>
+ <span class="o">*</span> <span class="n">make_magnetopause</span>
+ <span class="o">*</span> <span class="n">make_streamlines</span>
+ <span class="o">*</span> <span class="n">polar_to_cartesian</span>
+ <span class="o">*</span> <span class="n">to_Re</span>
+
+<span class="n">obliqueshock</span>
+<span class="o">------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">newtonmethod</span>
+ <span class="o">*</span> <span class="n">polynome</span>
+
+<span class="n">obliqueshock_nif</span>
+<span class="o">----------------</span>
+
+<span class="n">Functions</span><span class="p">:</span>
+ <span class="o">*</span> <span class="n">polynome</span>
+
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../contribution_code/" class="btn btn-neutral float-left" title="Contributing code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../about/" class="btn btn-neutral float-right" title="Credits" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

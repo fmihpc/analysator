@@ -1,0 +1,491 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.cutthrough &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.cutthrough</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.cutthrough</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="c1"># Cut-throughs from vlsv files</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cellids_coordinates_distances</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xcells</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ycells</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zcells</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span> <span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates coordinates to be used in the cut_through. The coordinates are calculated so that every cell gets picked in the coordinates.</span>
+<span class="sd">       :param vlsvReader:       Some open VlsvReader</span>
+<span class="sd">       :type vlsvReader:        :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">       :param point1:           The starting point of a cut-through line</span>
+<span class="sd">       :param point2:           The ending point of a cut-through line</span>
+<span class="sd">       :returns: Coordinates of for the cell cut-through as well as cell ids and distances. NB: Last CID is a duplicate.</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point1</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+   <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point2</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+   <span class="n">distances</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+   <span class="n">cellids</span> <span class="o">=</span> <span class="p">[</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point1</span><span class="p">)]</span>
+
+   <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">point1</span><span class="p">]</span>
+
+   <span class="n">epsilon</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">float_info</span><span class="o">.</span><span class="n">epsilon</span><span class="o">*</span><span class="mi">2</span>
+
+   <span class="n">iterator</span> <span class="o">=</span> <span class="n">point1</span>
+
+   <span class="c1"># Special case: both points in the same cell. </span>
+   <span class="c1">#if(vlsvReader.get_cellid(point1) == vlsvReader.get_cellid(point2)):</span>
+   <span class="c1">#   cellids.append(vlsvReader.get_cellid(point2))</span>
+      
+    
+
+   <span class="n">unit_vector</span> <span class="o">=</span> <span class="p">(</span><span class="n">point2</span> <span class="o">-</span> <span class="n">point1</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">point2</span> <span class="o">-</span> <span class="n">point1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span>
+   <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="c1"># Get the cell id</span>
+      <span class="n">cellid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">cellid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid cell id!&quot;</span><span class="p">)</span>
+      <span class="c1"># Get the max and min boundaries:</span>
+      <span class="n">min_bounds</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">cell_lengths</span>
+      <span class="n">max_bounds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">min_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">cell_lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)])</span>
+      <span class="c1"># Check which boundary we hit first when we move in the unit_vector direction:</span>
+      <span class="n">coefficients_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">((</span><span class="n">min_bounds</span> <span class="o">-</span> <span class="n">iterator</span><span class="p">),</span> <span class="n">unit_vector</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">min_bounds</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">float_info</span><span class="o">.</span><span class="n">max</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">unit_vector</span><span class="o">==</span><span class="mf">0.0</span><span class="p">))</span>
+      <span class="n">coefficients_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">((</span><span class="n">max_bounds</span> <span class="o">-</span> <span class="n">iterator</span><span class="p">),</span> <span class="n">unit_vector</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">min_bounds</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">float_info</span><span class="o">.</span><span class="n">max</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">unit_vector</span><span class="o">==</span><span class="mf">0.0</span><span class="p">))</span>
+      <span class="c1"># Remove negative coefficients:</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+         <span class="k">if</span> <span class="n">coefficients_min</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">coefficients_min</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">float_info</span><span class="o">.</span><span class="n">max</span>
+         <span class="k">if</span> <span class="n">coefficients_max</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">coefficients_max</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">float_info</span><span class="o">.</span><span class="n">max</span>
+
+
+
+      <span class="c1"># Find the minimum coefficient for calculating the minimum distance from a boundary</span>
+      <span class="n">coefficient</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="nb">min</span><span class="p">(</span><span class="n">coefficients_min</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">coefficients_max</span><span class="p">)])</span> <span class="o">*</span> <span class="mf">1.000001</span>
+
+      <span class="c1"># Get the cell id in the new coordinates</span>
+      <span class="n">newcoordinate</span> <span class="o">=</span> <span class="n">iterator</span> <span class="o">+</span> <span class="n">coefficient</span> <span class="o">*</span> <span class="n">unit_vector</span>
+
+      <span class="c1"># Check to make sure the iterator is not moving past point2 - if it is, use point2 instead:</span>
+      <span class="k">if</span> <span class="nb">min</span><span class="p">((</span><span class="n">point2</span> <span class="o">-</span> <span class="n">newcoordinate</span><span class="p">)</span><span class="o">*</span> <span class="n">unit_vector</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="n">newcoordinate</span> <span class="o">=</span> <span class="n">point2</span>
+
+      <span class="n">newcellid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span> <span class="n">newcoordinate</span> <span class="p">)</span>
+      <span class="c1"># Check if valid cell id:</span>
+      <span class="k">if</span> <span class="n">newcellid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="k">break</span>
+      <span class="c1"># Append the cell id:</span>
+      <span class="n">cellids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">newcellid</span> <span class="p">)</span>
+
+
+      <span class="c1"># Append the coordinate:</span>
+      <span class="n">coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">newcoordinate</span> <span class="p">)</span>
+
+      <span class="c1"># Append the distance:</span>
+      <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">newcoordinate</span> <span class="o">-</span> <span class="n">point1</span> <span class="p">)</span> <span class="p">)</span>
+
+
+      <span class="c1"># Move the iterator to the next cell. Note: Epsilon is here to ensure there are no bugs with float rounding</span>
+      <span class="n">iterator</span> <span class="o">=</span> <span class="n">iterator</span> <span class="o">+</span> <span class="n">coefficient</span> <span class="o">*</span> <span class="n">unit_vector</span>
+      <span class="c1"># Check to make sure the iterator is not moving past point2:</span>
+      <span class="k">if</span> <span class="nb">min</span><span class="p">((</span><span class="n">point2</span> <span class="o">-</span> <span class="n">iterator</span><span class="p">)</span><span class="o">*</span> <span class="n">unit_vector</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="k">break</span>
+   <span class="c1"># Return the coordinates, cellids and distances for processing</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+   <span class="k">return</span> <span class="n">output_1d</span><span class="p">(</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cellids</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;CellID&quot;</span><span class="p">,</span> <span class="s2">&quot;distances&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">]</span> <span class="p">)</span>
+
+
+<div class="viewcode-block" id="cut_through">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.cut_through">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_through</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span> <span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2</span>
+
+<span class="sd">       :param vlsvReader:       Some open VlsvReader</span>
+<span class="sd">       :type vlsvReader:        :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">       :param point1:           The starting point of a cut-through line</span>
+<span class="sd">       :param point2:           The ending point of a cut-through line</span>
+<span class="sd">       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]. NB. Last cellid is a duplicate.</span>
+
+<span class="sd">       .. code-block:: python</span>
+
+<span class="sd">          Example:</span>
+<span class="sd">          vlsvReader = VlsvReader(\&quot;testfile.vlsv\&quot;)</span>
+<span class="sd">          cut_through = cut_through(vlsvReader, [0,0,0], [2,5e6,0])</span>
+<span class="sd">          cellids = cut_through[0]</span>
+<span class="sd">          distances = cut_through[1]</span>
+<span class="sd">          logging.info \&quot;Cell ids: \&quot; + str(cellids)</span>
+<span class="sd">          logging.info \&quot;Distance from point 1 for every cell: \&quot; + str(distances)</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="c1"># Transform point1 and point2 into numpy array:</span>
+   <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span>
+   <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span>
+   <span class="c1"># Get parameters from the file to determine a good length between points (step length):</span>
+   <span class="c1"># Get xmax, xmin and xcells_ini</span>
+   <span class="n">mesh_limits</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+   <span class="n">mesh_size</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+   <span class="n">xmax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+   <span class="n">xmin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">xcells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="c1"># Do the same for y</span>
+   <span class="n">ymax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+   <span class="n">ymin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">ycells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="c1"># And for z</span>
+   <span class="n">zmax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+   <span class="n">zmin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+   <span class="n">zcells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+   <span class="c1"># Make sure point1 and point2 are inside bounds</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;point1 in cut_through out of bounds!&quot;</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;point2 in cut_through out of bounds!&quot;</span><span class="p">)</span>
+
+   <span class="c1">#Calculate cell lengths:</span>
+   <span class="n">cell_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">xcells</span><span class="p">),</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">ycells</span><span class="p">),</span> <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">zcells</span><span class="p">)])</span>
+
+   <span class="c1"># Get list of coordinates for the cells:</span>
+   <span class="k">return</span> <span class="n">get_cellids_coordinates_distances</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xcells</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ycells</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zcells</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span> <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_through_swath</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">normal</span><span class="p">):</span>
+
+   <span class="n">init_cut</span> <span class="o">=</span> <span class="n">cut_through</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">)</span>
+   <span class="n">init_cids</span> <span class="o">=</span> <span class="n">init_cut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+   <span class="c1"># logging.info(&#39;swath initial CellIds&#39;, init_cids)</span>
+
+   <span class="c1">#find the other vector spanning the swath</span>
+   <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span>
+   <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normal</span><span class="p">))</span>
+   <span class="n">w</span> <span class="o">=</span> <span class="n">width</span><span class="o">*</span><span class="n">w</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+   <span class="n">out_cids</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="k">for</span> <span class="n">cid</span> <span class="ow">in</span> <span class="n">init_cids</span><span class="p">:</span>
+      <span class="n">mid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
+      <span class="n">p1</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">-</span> <span class="n">w</span><span class="o">/</span><span class="mi">2</span>
+      <span class="n">p2</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="n">w</span><span class="o">/</span><span class="mi">2</span>
+      <span class="n">temp_cut</span> <span class="o">=</span> <span class="n">cut_through_step</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+      <span class="n">out_cids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp_cut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+   <span class="n">init_cut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out_cids</span><span class="p">)</span>
+   <span class="c1"># logging.info(init_cut[0])</span>
+   <span class="k">return</span> <span class="n">init_cut</span>
+
+<div class="viewcode-block" id="cut_through_step">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.cut_through_step">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_through_step</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span> <span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Returns cell ids and distances from point 1 to point 2, returning not every cell in a line</span>
+<span class="sd">       but rather the amount of cells which corresponds with the largest axis-aligned component of the line.</span>
+
+<span class="sd">       :param vlsvReader:       Some open VlsvReader</span>
+<span class="sd">       :type vlsvReader:        :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">       :param point1:           The starting point of a cut-through line</span>
+<span class="sd">       :param point2:           The ending point of a cut-through line</span>
+<span class="sd">       :returns: an array containing cell ids, coordinates and distances in the following format: [cell ids, distances, coordinates]</span>
+
+<span class="sd">       .. code-block:: python</span>
+
+<span class="sd">          Example:</span>
+<span class="sd">          vlsvReader = VlsvReader(\&quot;testfile.vlsv\&quot;)</span>
+<span class="sd">          cut_through = cut_through_step(vlsvReader, [0,0,0], [2,5e6,0])</span>
+<span class="sd">          cellids = cut_through[0]</span>
+<span class="sd">          distances = cut_through[1]</span>
+<span class="sd">          logging.info \&quot;Cell ids: \&quot; + str(cellids)</span>
+<span class="sd">          logging.info \&quot;Distance from point 1 for every cell: \&quot; + str(distances)</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="c1"># Transform point1 and point2 into numpy array:</span>
+   <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span>
+   <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span>
+
+   <span class="c1"># Make sure point1 and point2 are inside bounds</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;point1 in cut_through_step out of bounds!&quot;</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;point2 in cut_through_step out of bounds!&quot;</span><span class="p">)</span>
+   
+   <span class="c1"># Find path</span>
+   <span class="n">distances</span> <span class="o">=</span> <span class="n">point2</span><span class="o">-</span><span class="n">point1</span>
+   <span class="n">largestdistance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+   <span class="n">largestindex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">distances</span><span class="p">))</span>
+   <span class="n">derivative</span> <span class="o">=</span> <span class="n">distances</span><span class="o">/</span><span class="nb">abs</span><span class="p">(</span><span class="n">distances</span><span class="p">[</span><span class="n">largestindex</span><span class="p">])</span>
+
+   <span class="c1"># Re=6371000.</span>
+   <span class="c1"># logging.info(&quot;distances&quot;,distances/Re)</span>
+   <span class="c1"># logging.info(&quot;largestindex&quot;,largestindex)</span>
+   <span class="c1"># logging.info(&quot;derivative&quot;,derivative)</span>
+
+   <span class="c1"># Get parameters from the file to determine a good length between points (step length):</span>
+   <span class="c1"># Get xmax, xmin and xcells_ini   </span>
+   <span class="p">[</span><span class="n">xcells</span><span class="p">,</span> <span class="n">ycells</span><span class="p">,</span> <span class="n">zcells</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+   <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+
+   <span class="c1"># Calculate cell lengths:</span>
+   <span class="n">cell_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">xcells</span><span class="p">),</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">ycells</span><span class="p">),</span> <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">zcells</span><span class="p">)])</span>
+
+
+   <span class="c1"># Initialize lists</span>
+   <span class="n">distances</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">cellids</span> <span class="o">=</span> <span class="p">[</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point1</span><span class="p">)]</span>
+   <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">point1</span><span class="p">]</span>
+   <span class="n">finalcellid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span>
+   <span class="c1">#logging.info(&quot; cellids init &quot;,cellids,finalcellid)</span>
+
+   <span class="c1"># Loop until final cellid is reached</span>
+   <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">newcoordinate</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">cell_lengths</span><span class="o">*</span><span class="n">derivative</span>
+      <span class="n">newcellid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span> <span class="n">newcoordinate</span> <span class="p">)</span>
+
+      <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">newcoordinate</span> <span class="o">-</span> <span class="n">point1</span> <span class="p">)</span> <span class="p">)</span>
+      <span class="n">coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newcoordinate</span><span class="p">)</span>
+      <span class="n">cellids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newcellid</span><span class="p">)</span>
+      <span class="c1">#logging.info(distances[-1]/Re,np.array(coordinates[-1])/Re,cellids[-1])</span>
+
+      <span class="k">if</span> <span class="n">newcellid</span><span class="o">==</span><span class="n">finalcellid</span><span class="p">:</span>
+         <span class="k">break</span>
+      <span class="k">if</span> <span class="n">distances</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;</span><span class="n">largestdistance</span><span class="p">:</span>
+         <span class="k">break</span>
+      
+   <span class="c1"># Return the coordinates, cellids and distances for processing</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+   <span class="k">return</span> <span class="n">output_1d</span><span class="p">(</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cellids</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;CellID&quot;</span><span class="p">,</span> <span class="s2">&quot;distances&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">]</span> <span class="p">)</span></div>
+
+     
+
+<span class="c1"># Take a curve (list of 3-coords), return cells and distances along curve as with cut_through.</span>
+<span class="c1"># NB: calls get_cells_coordinates_distances for each curve segment. Feel free to optimize your curves beforehand.</span>
+<div class="viewcode-block" id="cut_through_curve">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.cut_through_curve">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cut_through_curve</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">curve</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Returns cell ids and distances from point 1 for every cell in a line between given point1 and point2</span>
+
+<span class="sd">       :param vlsvReader:       Some open VlsvReader</span>
+<span class="sd">       :type vlsvReader:        :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">       :param point1:           The starting point of a cut-through line</span>
+<span class="sd">       :returns: an array containing cell ids, edge distances, and the coordinates of edges in the following format: [cell ids, distances, coordinates]. NB. Last cellid is a duplicate.</span>
+
+<span class="sd">       .. code-block:: python</span>
+
+<span class="sd">          Example:</span>
+<span class="sd">          vlsvReader = VlsvReader(\&quot;testfile.vlsv\&quot;)</span>
+<span class="sd">          cut_through_curve = cut_through(vlsvReader, [[0,0,0], [2,5e6,0]])</span>
+<span class="sd">          cellids = cut_through[0]</span>
+<span class="sd">          distances = cut_through[1]</span>
+<span class="sd">          logging.info \&quot;Cell ids: \&quot; + str(cellids)</span>
+<span class="sd">          logging.info \&quot;Distance from point 1 for every cell: \&quot; + str(distances)</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="c1"># init cut_through static values, then do what cut_through does for each segment</span>
+   <span class="c1"># Get parameters from the file to determine a good length between points (step length):</span>
+   <span class="c1"># Get xmax, xmin and xcells_ini</span>
+   <span class="n">mesh_limits</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+   <span class="n">mesh_size</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+   <span class="n">xmax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+   <span class="n">xmin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">xcells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="c1"># Do the same for y</span>
+   <span class="n">ymax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+   <span class="n">ymin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">ycells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="c1"># And for z</span>
+   <span class="n">zmax</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+   <span class="n">zmin</span> <span class="o">=</span> <span class="n">mesh_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+   <span class="n">zcells</span> <span class="o">=</span> <span class="n">mesh_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+
+   <span class="c1">#Calculate cell lengths:</span>
+   <span class="n">cell_lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">xcells</span><span class="p">),</span> <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">ycells</span><span class="p">),</span> <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">zcells</span><span class="p">)])</span>
+
+   <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">):</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;less than 2 points in a curve&quot;</span><span class="p">)</span>
+
+   <span class="n">cellIds</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="n">coords</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+     <span class="n">point1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+     <span class="n">point2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">curve</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+     <span class="c1"># Make sure point1 and point2 are inside bounds</span>
+     <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+       <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;point1 in cut_through_curve out of bounds&#39;</span><span class="p">)</span>
+     <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">point2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+       <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;point1 in cut_through_curve out of bounds&#39;</span><span class="p">)</span>
+     <span class="n">cut</span> <span class="o">=</span> <span class="n">get_cellids_coordinates_distances</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">xmin</span><span class="p">,</span> <span class="n">xcells</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">ycells</span><span class="p">,</span> <span class="n">zmax</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">zcells</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">,</span> <span class="n">point1</span><span class="p">,</span> <span class="n">point2</span><span class="p">)</span>
+     <span class="n">ccid</span> <span class="o">=</span> <span class="n">cut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+     <span class="n">cedges</span> <span class="o">=</span> <span class="n">cut</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+     <span class="k">try</span><span class="p">:</span>
+       <span class="n">edgestart</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+     <span class="k">except</span><span class="p">:</span>
+       <span class="n">edgestart</span> <span class="o">=</span> <span class="mi">0</span>
+     <span class="k">for</span> <span class="n">ci</span><span class="p">,</span><span class="n">citer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ccid</span><span class="p">):</span>
+       <span class="n">cellIds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">citer</span><span class="p">)</span>
+       <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edgestart</span><span class="o">+</span><span class="n">cedges</span><span class="p">[</span><span class="n">ci</span><span class="p">])</span>
+       <span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cut</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ci</span><span class="p">])</span>
+
+   <span class="c1">#logging.info(&#39;sum of diffs&#39;, np.sum(np.diff(edges)))</span>
+   <span class="c1">#reduce the cellIDs and edges</span>
+   <span class="n">reduct</span> <span class="o">=</span> <span class="kc">True</span>
+   <span class="k">if</span> <span class="n">reduct</span><span class="p">:</span>
+     <span class="n">rCellIds</span> <span class="o">=</span> <span class="p">[</span><span class="n">cellIds</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+     <span class="n">rEdges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+     <span class="n">rCoords</span> <span class="o">=</span> <span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+     <span class="n">cid0</span> <span class="o">=</span> <span class="n">cellIds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cellIds</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+       <span class="n">c1</span> <span class="o">=</span> <span class="n">cellIds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+       <span class="k">if</span><span class="p">(</span><span class="n">cid0</span> <span class="o">==</span> <span class="n">c1</span><span class="p">):</span>
+         <span class="n">rEdges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+         <span class="n">rCoords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+         <span class="k">continue</span>
+       <span class="n">rCellIds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+       <span class="n">rEdges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+       <span class="n">rCoords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+       <span class="n">cid0</span> <span class="o">=</span> <span class="n">c1</span>
+     <span class="n">rEdges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edges</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+     <span class="n">rCoords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+     <span class="c1">#logging.info(&#39;sum of r-diffs&#39;, np.sum(np.diff(rEdges)))</span>
+   <span class="k">else</span><span class="p">:</span>
+     <span class="n">rCellIds</span> <span class="o">=</span> <span class="n">cellIds</span>
+     <span class="n">rEdges</span> <span class="o">=</span> <span class="n">edges</span>
+     <span class="n">rCoords</span> <span class="o">=</span> <span class="n">coords</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+   <span class="k">return</span> <span class="n">output_1d</span><span class="p">(</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rCellIds</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rEdges</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rCoords</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)],</span> <span class="p">[</span><span class="s2">&quot;CellID&quot;</span><span class="p">,</span> <span class="s2">&quot;distances&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">]</span> <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

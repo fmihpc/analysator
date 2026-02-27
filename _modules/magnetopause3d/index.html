@@ -1,0 +1,501 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>magnetopause3d &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">magnetopause3d</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for magnetopause3d</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Finds the magnetopause position by tracing steamines of the plasma flow for three-dimensional Vlasiator runs. Needs the yt package.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">analysator.calculations</span><span class="w"> </span><span class="kn">import</span> <span class="n">ids3d</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">analysator.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_colormap3dslice</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">yt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits</span><span class="w"> </span><span class="kn">import</span> <span class="n">mplot3d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">yt.visualization.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Streamlines</span>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">to_Re</span><span class="p">(</span><span class="n">m</span><span class="p">):</span> <span class="c1">#meters to Re</span>
+    <span class="k">return</span> <span class="n">m</span><span class="o">/</span><span class="mi">6371000</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cartesian_to_polar</span><span class="p">(</span><span class="n">cartesian_coords</span><span class="p">):</span> <span class="c1"># for segments of plane</span>
+    <span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">cartesian_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cartesian_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">z</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="c1">#angle in degrees</span>
+    <span class="k">if</span> <span class="n">phi</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">+</span><span class="mi">360</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">polar_to_cartesian</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="n">streamline</span><span class="p">,</span> <span class="n">x_points</span><span class="p">):</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">streamline</span><span class="p">)</span>
+
+    <span class="c1"># set arrays for interpolation</span>
+    <span class="n">xp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">yp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span><span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">zp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span><span class="mi">2</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1">#interpolate z from xz-plane</span>
+    <span class="n">z_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_points</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">zp</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+    <span class="c1">#interpolate y from xy-plane</span>
+    <span class="n">y_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_points</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">yp</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_points</span><span class="p">,</span> <span class="n">y_points</span><span class="p">,</span> <span class="n">z_points</span><span class="p">])</span>
+
+
+
+
+<div class="viewcode-block" id="make_surface">
+<a class="viewcode-back" href="../../magnetopause3d/#magnetopause3d.make_surface">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_surface</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Defines surface constructed of input coordinates as triangles</span>
+<span class="sd">    Returns list of verts and vert indices of surface triangles</span>
+
+<span class="sd">    coordinates must be in form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...</span>
+<span class="sd">    where cij = [xij, yij, zij], i marks slice, j marks yz-plane (x_coord) index </span>
+
+<span class="sd">    How it works:</span>
+<span class="sd">    Three points make a triangle, triangles make the surface.</span>
+<span class="sd">    For every two planes next to each other:</span>
+<span class="sd">    - take every other point from plane1, every other from plane2 (in order!)</span>
+<span class="sd">    - from list of points: every three points closest to each other make a surface</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    plane 1: [v1, v2, v3, v4]</span>
+<span class="sd">    plane 2: [v5, v6, v7, v8]</span>
+
+<span class="sd">    -&gt; list: [v1, v5, v2, v6, v3,...]</span>
+<span class="sd">    -&gt; triangles:</span>
+<span class="sd">    v1 v5 v2</span>
+<span class="sd">    v5 v2 v6</span>
+<span class="sd">    v2 v6 v3</span>
+<span class="sd">    .</span>
+<span class="sd">    .</span>
+<span class="sd">    .</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">verts</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#points</span>
+    <span class="n">faces</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1">#surface triangles</span>
+
+    <span class="n">slices_in_plane</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">planes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+    <span class="c1">#get points</span>
+    <span class="k">for</span> <span class="n">plane</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">vert</span> <span class="ow">in</span> <span class="n">plane</span><span class="p">:</span>
+            <span class="n">verts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vert</span><span class="p">)</span>
+
+    <span class="c1">#get triangle (face) indices</span>
+    <span class="c1">#Let&#39;s consider the area between the first two planes</span>
+    <span class="c1">#ind1, ind2, ind3 for triangle indices</span>
+    <span class="n">ind1</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">#starts from plane 1</span>
+    <span class="n">ind2</span> <span class="o">=</span> <span class="n">slices_in_plane</span> <span class="c1">#starts from plane 2</span>
+    <span class="n">ind3</span> <span class="o">=</span> <span class="mi">1</span> <span class="c1">#starts from plane 1</span>
+    <span class="n">first_triangles</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">first_triangles</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">slices_in_plane</span><span class="p">):</span>
+        <span class="n">first_triangles</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">ind1</span><span class="p">,</span> <span class="n">ind2</span><span class="p">,</span> <span class="n">ind3</span><span class="p">])</span>
+        <span class="n">ind1</span> <span class="o">=</span> <span class="n">ind2</span>
+        <span class="n">ind2</span> <span class="o">=</span> <span class="n">ind3</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ind3</span> <span class="o">==</span> <span class="p">(</span><span class="n">slices_in_plane</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="c1">#max index, go over to plane 1 first index</span>
+            <span class="n">ind3</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">ind3</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span> <span class="c1">#last round, go to plane 2 first index</span>
+            <span class="n">ind3</span> <span class="o">=</span> <span class="n">slices_in_plane</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ind3</span> <span class="o">=</span> <span class="n">ind1</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">first_triangles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">first_triangles</span><span class="p">)</span>
+    
+    <span class="c1">#Now the rest of the triangles are just the first triangles + (index of area * slices_in_plane)</span>
+    <span class="k">for</span> <span class="n">area_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">planes</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">next_triangles</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">slices_in_plane</span><span class="o">*</span><span class="n">area_index</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">first_triangles</span><span class="p">]</span>
+        <span class="n">faces</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">next_triangles</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">verts</span><span class="p">,</span> <span class="n">faces</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_streamlines</span><span class="p">(</span><span class="n">vlsvFileName</span><span class="p">):</span>
+    <span class="c1">## make streamlines</span>
+    <span class="n">boxre</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            
+    <span class="c1"># bulk file</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">vlsvFileName</span><span class="p">)</span>
+
+    <span class="c1">#get box coordinates from data</span>
+    <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+    <span class="p">[</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+    <span class="p">[</span><span class="n">xsizefs</span><span class="p">,</span> <span class="n">ysizefs</span><span class="p">,</span> <span class="n">zsizefs</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_fsgrid_mesh_size</span><span class="p">()</span>
+    <span class="n">simext_m</span> <span class="o">=</span><span class="p">[</span><span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">,</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">,</span><span class="n">zmin</span><span class="p">,</span><span class="n">zmax</span><span class="p">]</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xsize</span><span class="p">,</span><span class="n">ysize</span><span class="p">,</span><span class="n">zsize</span><span class="p">])</span>
+    <span class="n">sizesfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xsizefs</span><span class="p">,</span><span class="n">ysizefs</span><span class="p">,</span><span class="n">zsizefs</span><span class="p">])</span>
+
+    <span class="n">simext</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">to_Re</span><span class="p">,</span> <span class="n">simext_m</span><span class="p">))</span>
+    <span class="n">boxcoords</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">simext</span><span class="p">)</span>
+
+    <span class="n">cellids</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+    <span class="n">indexids</span> <span class="o">=</span> <span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+    <span class="n">cellids</span> <span class="o">=</span> <span class="n">cellids</span><span class="p">[</span><span class="n">indexids</span><span class="p">]</span>
+
+    <span class="n">reflevel</span> <span class="o">=</span> <span class="n">ids3d</span><span class="o">.</span><span class="n">refinement_level</span><span class="p">(</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">,</span> <span class="n">cellids</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+
+    <span class="c1">#Read the data from vlsv-file</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_v&quot;</span><span class="p">)</span>
+
+    <span class="c1">#from m to Re</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">to_Re</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">j</span> <span class="p">]</span><span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">V</span><span class="p">])</span>
+
+
+    <span class="n">V</span> <span class="o">=</span> <span class="n">V</span><span class="p">[</span><span class="n">indexids</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">V</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">V</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span> <span class="c1"># vector variable</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">V</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>  <span class="c1"># tensor variable</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">V</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+
+    <span class="n">Vdpoints</span> <span class="o">=</span> <span class="n">ids3d</span><span class="o">.</span><span class="n">idmesh3d2</span><span class="p">(</span><span class="n">cellids</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">reflevel</span><span class="p">,</span> <span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+
+
+    <span class="n">Vxs</span> <span class="o">=</span> <span class="n">Vdpoints</span><span class="p">[:,:,:,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Vys</span> <span class="o">=</span> <span class="n">Vdpoints</span><span class="p">[:,:,:,</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">Vzs</span> <span class="o">=</span> <span class="n">Vdpoints</span><span class="p">[:,:,:,</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">Vx</span><span class="o">=</span><span class="n">Vxs</span><span class="p">,</span><span class="n">Vy</span><span class="o">=</span><span class="n">Vys</span><span class="p">,</span><span class="n">Vz</span><span class="o">=</span><span class="n">Vzs</span><span class="p">)</span>
+
+    <span class="c1">#Create streamline seeds (starting points for streamlines)</span>
+    <span class="n">seedN</span> <span class="o">=</span> <span class="mi">50</span> <span class="c1">#seeds per row, final seed count will be seedN*seedN !</span>
+    <span class="n">streamline_seeds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">seedN</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+    <span class="c1">#range: np.arange(from, to, step)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">seedN</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">t</span><span class="p">:</span>
+            <span class="n">streamline_seeds</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">k</span><span class="o">+</span><span class="mi">1</span>
+
+
+    <span class="c1">#dataset in yt-form</span>
+    <span class="n">yt_dataset</span> <span class="o">=</span> <span class="n">yt</span><span class="o">.</span><span class="n">load_uniform_grid</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">sizesfs</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boxcoords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                    <span class="p">[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+                    <span class="p">[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">5</span><span class="p">]]]))</span>
+                                    
+
+    <span class="c1"># data, seeds, dictionary positions, length of streamlines</span>
+    <span class="n">streamlines_pos</span> <span class="o">=</span> <span class="n">yt</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">Streamlines</span><span class="p">(</span><span class="n">yt_dataset</span><span class="p">,</span> <span class="n">streamline_seeds</span><span class="p">,</span>
+                                                    <span class="s2">&quot;Vx&quot;</span><span class="p">,</span> <span class="s2">&quot;Vy&quot;</span><span class="p">,</span> <span class="s2">&quot;Vz&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># make the streamlines</span>
+    <span class="n">streamlines_pos</span><span class="o">.</span><span class="n">integrate_through_volume</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">streamlines_pos</span><span class="o">.</span><span class="n">streamlines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_magnetopause</span><span class="p">(</span><span class="n">streams</span><span class="p">):</span>
+    <span class="n">streampoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">streams</span><span class="p">,</span> <span class="p">(</span><span class="n">streams</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">streams</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span> <span class="c1">#all the points in one array</span>
+    
+    <span class="c1">## find the subsolar dayside point in the x-axis</span>
+    <span class="c1">## do this by finding a stremline point on positive x axis closest to the Earth</span>
+    <span class="n">x_axis_points</span> <span class="o">=</span> <span class="n">streampoints</span><span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">streampoints</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">streampoints</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">)]</span>
+    <span class="n">subsolar_x</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x_axis_points</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1">## define points in the x axis where to find magnetopause points on the yz-plane</span>
+    <span class="n">x_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">subsolar_x</span><span class="p">,</span> <span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1">## interpolate more exact points for streamlines at exery x_point</span>
+    <span class="n">new_streampoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">streams</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span> <span class="c1"># new array for keeping interpolated streamlines in form new_streampoints[x_point, streamline, y and z -coordinates] </span>
+    <span class="n">i</span><span class="o">=</span><span class="mi">0</span> <span class="c1"># streamline</span>
+    <span class="k">for</span> <span class="n">stream</span> <span class="ow">in</span> <span class="n">streams</span><span class="p">:</span>
+        <span class="n">interpolated_streamline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">x_points</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">interpolated_streamline</span><span class="p">)</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span> <span class="c1"># don&#39;t use &#39;discarded&#39; streamlines, see function interpolate()</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">)):</span>
+                <span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">interpolated_streamline</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">],</span> <span class="n">interpolated_streamline</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">new_streampoints</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+
+
+    <span class="c1">## create a list of streamline points in polar coordinates (for every x_point)</span>
+    <span class="n">polar_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">new_streampoints</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">new_streampoints</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">new_streampoints</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">cartesian_to_polar</span><span class="p">(</span><span class="n">new_streampoints</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span>
+
+
+    <span class="c1">## now start making the magnetopause</span>
+    <span class="c1">## in each x_point, divide the plane into sectors and look for the closest streamline to x-axis in the sector</span>
+    <span class="n">sector_n</span> <span class="o">=</span> <span class="mi">36</span>
+
+    <span class="c1">## if given sector number isn&#39;t divisible by 4, make it so because we want to have magnetopause points at exactly y=0 and z=0 for 2d slices of the whole thing</span>
+    <span class="k">while</span> <span class="n">sector_n</span><span class="o">%</span><span class="mi">4</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sector_n</span> <span class="o">+=</span><span class="mi">1</span>
+
+    <span class="n">sector_width</span> <span class="o">=</span> <span class="mi">360</span><span class="o">/</span><span class="n">sector_n</span>
+    <span class="n">magnetopause</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">),</span> <span class="n">sector_n</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x_point</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_points</span><span class="p">):</span> <span class="c1">#loop over every chosen x-axis point</span>
+        <span class="c1"># divide the yz-plane into sectors</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">mean_sector_angle</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">360</span><span class="p">,</span> <span class="n">sector_width</span><span class="p">)):</span>
+            <span class="n">min_angle</span> <span class="o">=</span> <span class="n">mean_sector_angle</span><span class="o">-</span><span class="n">sector_width</span><span class="o">/</span><span class="mi">2</span>
+            <span class="n">max_angle</span> <span class="o">=</span> <span class="n">mean_sector_angle</span><span class="o">+</span><span class="n">sector_width</span><span class="o">/</span><span class="mi">2</span>
+
+            <span class="c1"># find points that are in the sector</span>
+            <span class="k">if</span> <span class="n">mean_sector_angle</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># special case as the first sector needs streamlines around phi=0</span>
+                <span class="n">min_angle</span> <span class="o">=</span> <span class="n">min_angle</span><span class="o">+</span><span class="mi">360</span>
+                <span class="c1"># divide into phi&lt;360 and phi&gt;0</span>
+                <span class="n">sector1</span> <span class="o">=</span> <span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">360</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">min_angle</span><span class="p">)]</span>
+                <span class="n">sector2</span> <span class="o">=</span> <span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)]</span>
+                <span class="n">sector_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sector1</span><span class="p">,</span> <span class="n">sector2</span><span class="p">))</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sector_points</span> <span class="o">=</span> <span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_angle</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">polar_coords</span><span class="p">[</span><span class="n">i</span><span class="p">,:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">min_angle</span><span class="p">)]</span>
+
+            <span class="c1"># discard &#39;points&#39; with r=0 and check that there&#39;s at least one streamline point in the sector</span>
+            <span class="n">sector_points</span> <span class="o">=</span> <span class="n">sector_points</span><span class="p">[</span><span class="n">sector_points</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">sector_points</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No streamlines found in the sector&#39;</span><span class="p">)</span>
+
+            <span class="c1"># find the points closest to the x-axis</span>
+            <span class="n">closest_point_radius</span> <span class="o">=</span> <span class="n">sector_points</span><span class="p">[</span><span class="n">sector_points</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">argmin</span><span class="p">(),</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># smallest radius</span>
+            
+            <span class="c1"># return to cartesian coordinates and save as a magnetopause point at the middle of the sector</span>
+            <span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">polar_to_cartesian</span><span class="p">(</span><span class="n">closest_point_radius</span><span class="p">,</span> <span class="n">mean_sector_angle</span><span class="p">)</span>
+            <span class="n">magnetopause</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">,:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_point</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">]</span>
+
+
+    <span class="c1"># make a tip point for the magnetopause for prettier 3d plots </span>
+    <span class="n">tip</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">subsolar_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">tips</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tip</span><span class="p">,</span> <span class="p">(</span><span class="n">magnetopause</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">magnetopause</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(([</span><span class="n">tips</span><span class="p">],</span> <span class="n">magnetopause</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">magnetopause</span>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="c1">## get bulk data</span>
+    <span class="n">run</span> <span class="o">=</span>  <span class="s1">&#39;EGI&#39;</span>
+    <span class="n">fileLocation</span><span class="o">=</span><span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/&quot;</span><span class="o">+</span><span class="n">run</span><span class="o">+</span><span class="s2">&quot;/bulk/&quot;</span>
+    <span class="n">fileN</span> <span class="o">=</span> <span class="s2">&quot;bulk5.0000070.vlsv&quot;</span> 
+
+    <span class="c1">## STREAMLINES</span>
+    <span class="n">streams</span> <span class="o">=</span> <span class="n">make_streamlines</span><span class="p">(</span><span class="n">fileLocation</span><span class="o">+</span><span class="n">fileN</span><span class="p">)</span>
+    <span class="c1">## MAGNETOPAUSE</span>
+    <span class="n">magnetopause</span> <span class="o">=</span> <span class="n">make_magnetopause</span><span class="p">(</span><span class="n">streams</span><span class="p">)</span>
+
+
+    <span class="c1">## PLOTTING</span>
+    <span class="n">outdir</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+
+    <span class="c1">## take separate arrays for different 2d slice plots</span>
+    <span class="n">slices</span> <span class="o">=</span> <span class="n">magnetopause</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">quarter_slice</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">slices</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># xy plane: z=0</span>
+    <span class="n">xy_slice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">magnetopause</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">magnetopause</span><span class="p">[:,</span><span class="mi">2</span><span class="o">*</span><span class="n">quarter_slice</span><span class="p">]))</span>
+    <span class="c1"># xz plane: y=0</span>
+    <span class="n">xz_slice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">magnetopause</span><span class="p">[:,</span><span class="n">quarter_slice</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">magnetopause</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">quarter_slice</span><span class="p">]))</span>
+
+
+    <span class="c1">#2D plots</span>
+    <span class="c1"># analysator 3dcolormapslice y=0</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">external_plot</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span><span class="n">XmeshXY</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">YmeshXY</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pass_maps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">requestvariables</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">requestvariables</span><span class="o">==</span><span class="kc">True</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;vg_v&#39;</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xz_slice</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">xz_slice</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span>  <span class="n">color</span><span class="o">=</span><span class="s1">&#39;limegreen&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+
+
+        <span class="n">plot_colormap3dslice</span><span class="p">(</span>
+        <span class="n">filename</span><span class="o">=</span><span class="n">fileLocation</span><span class="o">+</span><span class="n">fileN</span><span class="p">,</span>
+        <span class="n">outputdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+        <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="p">,</span>
+        <span class="n">nooverwrite</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">boxre</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="mi">21</span><span class="p">],</span>
+        <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">draw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">usesci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">Earth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">external</span> <span class="o">=</span> <span class="n">external_plot</span><span class="p">,</span>
+        <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">,</span>
+        <span class="n">normal</span><span class="o">=</span><span class="s1">&#39;y&#39;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># analysator 3dcolormapslice z=0</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">external_plot</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span><span class="n">XmeshXY</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">YmeshXY</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pass_maps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">requestvariables</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">requestvariables</span><span class="o">==</span><span class="kc">True</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="s1">&#39;vg_v&#39;</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xy_slice</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy_slice</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;limegreen&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+
+        <span class="n">plot_colormap3dslice</span><span class="p">(</span>
+        <span class="n">filename</span><span class="o">=</span><span class="n">fileLocation</span><span class="o">+</span><span class="n">fileN</span><span class="p">,</span>
+        <span class="n">outputdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+        <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="p">,</span>
+        <span class="n">nooverwrite</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">boxre</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="o">-</span><span class="mi">21</span><span class="p">,</span><span class="mi">21</span><span class="p">],</span>
+        <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">draw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">usesci</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">Earth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">external</span> <span class="o">=</span> <span class="n">external_plot</span><span class="p">,</span>
+        <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">,</span>
+        <span class="n">normal</span><span class="o">=</span><span class="s1">&#39;z&#39;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 3D plot</span>
+    <span class="c1"># matplotlib 3d surface plot for single image</span>
+    <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">verts</span><span class="p">,</span> <span class="n">faces</span> <span class="o">=</span> <span class="n">make_surface</span><span class="p">(</span><span class="n">magnetopause</span><span class="p">)</span>
+        <span class="n">verts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">verts</span><span class="p">)</span>
+        
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">plot_trisurf</span><span class="p">(</span><span class="n">verts</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">verts</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">faces</span><span class="p">,</span> <span class="n">verts</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">antialiased</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">view_init</span><span class="p">(</span><span class="n">azim</span><span class="o">=-</span><span class="mi">60</span><span class="p">,</span> <span class="n">elev</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outdir</span><span class="o">+</span><span class="n">run</span><span class="o">+</span><span class="s1">&#39;_3d_magnetopause.png&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+Undocumented Python objects
+===========================
+
+Statistics
+----------
+
++--------------------------+----------+--------------+
+| Module                   | Coverage | Undocumented |
++==========================+==========+==============+
+| analysator               | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| analysator.calculations  | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| analysator.miscellaneous | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| analysator.plot          | 16.67%   | 10           |
++--------------------------+----------+--------------+
+| analysator.vlsvfile      | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| biot_savart              | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| cutthrough_timeseries    | 0.00%    | 2            |
++--------------------------+----------+--------------+
+| gics                     | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| magnetopause2d           | 0.00%    | 5            |
++--------------------------+----------+--------------+
+| magnetopause3d           | 12.50%   | 7            |
++--------------------------+----------+--------------+
+| obliqueshock             | 33.33%   | 2            |
++--------------------------+----------+--------------+
+| obliqueshock_nif         | 50.00%   | 1            |
++--------------------------+----------+--------------+
+| shue                     | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| tsyganenko               | 100.00%  | 0            |
++--------------------------+----------+--------------+
+| TOTAL                    | 55.74%   | 27           |
++--------------------------+----------+--------------+
+
+analysator.plot
+---------------
+
+Functions:
+ * axisfmt
+ * bfstring
+ * cbfmt
+ * cbfmtsci
+ * cell_edgecontours
+ * get_cmap
+ * mathmode
+ * output_path
+ * rmstring
+ * textbfstring
+
+cutthrough_timeseries
+---------------------
+
+Functions:
+ * jplots
+ * main
+
+magnetopause2d
+--------------
+
+Functions:
+ * interpolate
+ * main
+ * make_magnetopause
+ * make_streamlines
+ * polar_to_cartesian
+
+magnetopause3d
+--------------
+
+Functions:
+ * cartesian_to_polar
+ * interpolate
+ * main
+ * make_magnetopause
+ * make_streamlines
+ * polar_to_cartesian
+ * to_Re
+
+obliqueshock
+------------
+
+Functions:
+ * newtonmethod
+ * polynome
+
+obliqueshock_nif
+----------------
+
+Functions:
+ * polynome
+

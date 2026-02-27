@@ -1,0 +1,235 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.miscellaneous.vtkwriter &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.miscellaneous.vtkwriter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.miscellaneous.vtkwriter</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+ 
+
+<div class="viewcode-block" id="write_vtk_file">
+<a class="viewcode-back" href="../../../../miscellaneous/#analysator.miscellaneous.write_vtk_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_vtk_file</span><span class="p">(</span> <span class="n">filename</span><span class="p">,</span> <span class="n">point_data</span> <span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Writes a line into a VTK file with given points</span>
+
+<span class="sd">       :param filename:      Name of the file e.g. &quot;test.vtk&quot;</span>
+<span class="sd">       :param points:        Points in a line in array format</span>
+
+<span class="sd">       .. code-block:: python</span>
+
+<span class="sd">          # Example usage:</span>
+<span class="sd">          import analysator as pt</span>
+<span class="sd">          filename = &quot;test.vtk&quot;</span>
+<span class="sd">          point_data = [[0.,0.,0.], [1.,1.,1.], [2.,2.,2.], [3.,3.,3.], [4.,4.,4.]]</span>
+<span class="sd">          pt.miscellaneous.write_vtk_file( filename=filename, point_data=point_data )</span>
+
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtk</span>
+   
+   <span class="c1"># Create a line object</span>
+   <span class="c1">#######################################</span>
+   <span class="c1"># Create a vtkPoints object and store the points in it</span>
+   <span class="n">points</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPoints</span><span class="p">()</span>
+   <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">point_data</span><span class="p">:</span>
+      <span class="n">points</span><span class="o">.</span><span class="n">InsertNextPoint</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+   
+   <span class="c1"># Create a cell array to store the lines in and add the lines to it</span>
+   <span class="n">lines</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkCellArray</span><span class="p">()</span>
+   
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">point_data</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+     <span class="n">line</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkLine</span><span class="p">()</span>
+     <span class="n">line</span><span class="o">.</span><span class="n">GetPointIds</span><span class="p">()</span><span class="o">.</span><span class="n">SetId</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">)</span>
+     <span class="n">line</span><span class="o">.</span><span class="n">GetPointIds</span><span class="p">()</span><span class="o">.</span><span class="n">SetId</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+     <span class="n">lines</span><span class="o">.</span><span class="n">InsertNextCell</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+   
+   <span class="c1"># Create a polydata to store everything in</span>
+   <span class="n">linesPolyData</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPolyData</span><span class="p">()</span>
+   
+   <span class="c1"># Add the points to the dataset</span>
+   <span class="n">linesPolyData</span><span class="o">.</span><span class="n">SetPoints</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+   
+   <span class="c1"># Add the lines to the dataset</span>
+   <span class="n">linesPolyData</span><span class="o">.</span><span class="n">SetLines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+   <span class="c1">#######################################</span>
+   
+   
+   <span class="c1"># Write the Line object</span>
+   <span class="c1">#######################################</span>
+   <span class="n">polyDataWriter</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPolyDataWriter</span><span class="p">()</span>
+   <span class="n">polyDataWriter</span><span class="o">.</span><span class="n">SetFileName</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+   <span class="n">polyDataWriter</span><span class="o">.</span><span class="n">SetInput</span><span class="p">(</span><span class="n">linesPolyData</span><span class="p">)</span>
+   <span class="n">polyDataWriter</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span></div>
+
+   <span class="c1">#######################################</span>
+
+<span class="c1">#   # Read and visualize the written line</span>
+<span class="c1">#   #######################################</span>
+<span class="c1">#   reader = vtk.vtkPolyDataReader()</span>
+<span class="c1">#   reader.SetFileName(filename)</span>
+<span class="c1">#    </span>
+<span class="c1">#   mapper = vtk.vtkPolyDataMapper()</span>
+<span class="c1">#   if vtk.VTK_MAJOR_VERSION &lt;= 5:</span>
+<span class="c1">#       mapper.SetInput(reader.GetOutput())</span>
+<span class="c1">#   else:</span>
+<span class="c1">#       mapper.SetInputConnection(reader.GetOutputPort())</span>
+<span class="c1">#    </span>
+<span class="c1">#   actor = vtk.vtkActor()</span>
+<span class="c1">#   actor.SetMapper(mapper)</span>
+<span class="c1">#   </span>
+<span class="c1">#   # Create a rendering window and renderer</span>
+<span class="c1">#   ren = vtk.vtkRenderer()</span>
+<span class="c1">#   renWin = vtk.vtkRenderWindow()</span>
+<span class="c1">#   renWin.AddRenderer(ren)</span>
+<span class="c1">#    </span>
+<span class="c1">#   # Create a renderwindowinteractor</span>
+<span class="c1">#   iren = vtk.vtkRenderWindowInteractor()</span>
+<span class="c1">#   iren.SetRenderWindow(renWin)</span>
+<span class="c1">#    </span>
+<span class="c1">#   # Assign actor to the renderer</span>
+<span class="c1">#   ren.AddActor(actor)</span>
+<span class="c1">#    </span>
+<span class="c1">#   # Enable user interface interactor</span>
+<span class="c1">#   iren.Initialize()</span>
+<span class="c1">#   renWin.Render()</span>
+<span class="c1">#   iren.Start()</span>
+<span class="c1">#   #######################################</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

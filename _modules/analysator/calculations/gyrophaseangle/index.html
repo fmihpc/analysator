@@ -1,0 +1,248 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.gyrophaseangle &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.gyrophaseangle</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.gyrophaseangle</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">rotateVectorToVector</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="gyrophase_angles_from_file">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.gyrophase_angles_from_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gyrophase_angles_from_file</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates the gyrophase angle angle distribution for a given cell with a given file</span>
+<span class="sd">   :param vlsvReader:        Some VlsvReader class with a file open</span>
+<span class="sd">   :type vlsvReader:         :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">   :param cellid:            The cell id whose gyrophase angle the user wants NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">   :returns: gyrophase angles and avgs [gyro_angles, avgs]</span>
+<span class="sd">   </span>
+<span class="sd">   .. code-block:: python</span>
+<span class="sd">   </span>
+<span class="sd">   # Example usage:</span>
+<span class="sd">   vlsvReader = VlsvReader(&quot;fullf.0001.vlsv&quot;)</span>
+<span class="sd">   result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924)</span>
+<span class="sd">   # Plot the data</span>
+<span class="sd">   import matplotlib.pyplot as plt</span>
+<span class="sd">   plt.hist(result[0].data, weights=result[1].data, bins=100, log=False)</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="c1"># Read the velocity cells:</span>
+   <span class="n">velocity_cell_data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_velocity_cells</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">velocity_cell_data</span> <span class="o">==</span> <span class="p">[]:</span>
+      <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+      <span class="k">return</span> <span class="n">output_1d</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="p">[</span><span class="s2">&quot;Gyrophase_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+   <span class="c1"># Read bulk velocity:</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span> <span class="s2">&quot;rho&quot;</span> <span class="p">):</span>
+      <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+         <span class="n">bulk_velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;rho_v&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span> <span class="o">/</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">),</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+         <span class="k">return</span> <span class="n">output_1d</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="p">[</span><span class="s2">&quot;Gyrophase_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">moments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;moments&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">))</span>
+      <span class="k">if</span> <span class="n">moments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+         <span class="n">bulk_velocity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">moments</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">moments</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+         <span class="k">return</span> <span class="n">output_1d</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="p">[</span><span class="s2">&quot;Gyrophase_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+   <span class="c1"># Calculate the gyrophase angles for the data:</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span> <span class="s2">&quot;B&quot;</span> <span class="p">):</span>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;background_B&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span> <span class="o">+</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;perturbed_B&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+      <span class="n">B_unit</span> <span class="o">=</span> <span class="n">B</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+      <span class="k">return</span> <span class="n">output_1d</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="p">[</span><span class="s2">&quot;Gyrophase_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+   <span class="c1"># Get cells:</span>
+   <span class="n">vcellids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+   <span class="c1"># Get a list of velocity coordinates:</span>
+   <span class="n">velocity_coordinates</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">vcellids</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">gyrophase_angles</span><span class="p">(</span><span class="n">bulk_velocity</span><span class="p">,</span> <span class="n">B_unit</span><span class="p">,</span> <span class="n">velocity_cell_data</span><span class="p">,</span> <span class="n">velocity_coordinates</span><span class="p">)</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gyrophase_angles</span><span class="p">(</span><span class="n">bulk_velocity</span><span class="p">,</span> <span class="n">B_unit</span><span class="p">,</span> <span class="n">velocity_cell_data</span><span class="p">,</span> <span class="n">velocity_coordinates</span><span class="p">,</span> <span class="n">plasmaframe</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cosine</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates the gyrophase angle angle distribution for a given cell</span>
+<span class="sd">   </span>
+<span class="sd">   :param bulk_velocity: TODO</span>
+<span class="sd">   :param B_unit: TODO</span>
+<span class="sd">   :param velocity_coordinates: TODO</span>
+<span class="sd">   :param cosine:            True if returning the gyrophase angles as a cosine plot</span>
+<span class="sd">   :param plasmaframe:       True if the user wants to get the gyrophase angle distribution in the plasma frame, default True</span>
+<span class="sd">   :returns: gyrophase angles and avgs [gyro_angles, avgs]</span>
+<span class="sd">   </span>
+<span class="sd">   .. code-block:: python</span>
+<span class="sd">   </span>
+<span class="sd">   # Example usage:</span>
+<span class="sd">   vlsvReader = VlsvReader(&quot;fullf.0001.vlsv&quot;)</span>
+<span class="sd">   result = gyrophase_angles_from_file( vlsvReader=vlsvReader, cellid=1924, cosine=True, plasmaframe=False )</span>
+<span class="sd">   # Plot the data</span>
+<span class="sd">   import matplotlib.pyplot as plt</span>
+<span class="sd">   plt.hist(result[0].data, weights=result[1].data, bins=100, log=False)</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   
+   <span class="c1"># Get avgs data:</span>
+   <span class="n">avgs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+   <span class="c1"># Shift to plasma frame</span>
+   <span class="k">if</span> <span class="n">plasmaframe</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">velocity_coordinates</span> <span class="o">=</span> <span class="n">velocity_coordinates</span> <span class="o">-</span> <span class="n">bulk_velocity</span>
+   <span class="c1"># Get norms:</span>
+   <span class="n">v_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">velocity_coordinates</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+   <span class="c1"># Get the angles:</span>
+   <span class="n">v_rotated</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">velocity_coordinates</span><span class="p">,</span> <span class="n">B_unit</span><span class="p">)</span>
+   <span class="n">v_rotated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">cosine</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">gyro_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]))</span>
+      <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">gyro_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">360</span>
+      <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;degree&quot;</span>
+   <span class="c1"># Return the gyrophase angles and avgs values:</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+   <span class="k">return</span> <span class="n">output_1d</span><span class="p">([</span><span class="n">gyro_angles</span><span class="p">,</span> <span class="n">avgs</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Gyrophase_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="n">units</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">])</span>
+   <span class="c1">#plt.hist(gyro_angles, weights=avgs, bins=bins, log=log)</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

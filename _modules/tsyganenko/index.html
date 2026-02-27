@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tsyganenko &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">tsyganenko</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tsyganenko</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopack</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopack.geopack</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="spherical_to_cartesian">
+<a class="viewcode-back" href="../../tsyganenko/#tsyganenko.spherical_to_cartesian">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spherical_to_cartesian</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    r &gt; 0</span>
+<span class="sd">    0 &lt; theta &lt; pi</span>
+<span class="sd">    -pi &lt; phi &lt; pi</span>
+<span class="sd">    all are assumed to be numpy arrays of equal dimensions</span>
+
+<span class="sd">    returns:  x, y, z   [tuple]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span></div>
+
+
+
+<div class="viewcode-block" id="tsyganenko_trace">
+<a class="viewcode-back" href="../../tsyganenko/#tsyganenko.tsyganenko_trace">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tsyganenko_trace</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">Txx</span> <span class="o">=</span> <span class="s1">&#39;t01&#39;</span><span class="p">,</span> <span class="n">InternalB</span><span class="o">=</span><span class="s1">&#39;dipole&#39;</span><span class="p">,</span> <span class="n">Dst</span> <span class="o">=</span> <span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="n">Kp</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">Vx_sw</span> <span class="o">=</span> <span class="o">-</span><span class="mf">750.</span><span class="p">,</span> <span class="n">N_sw</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">Bx_imf</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">By_imf</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">Bz_imf</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.</span><span class="p">,</span> <span class="n">R_inner</span> <span class="o">=</span> <span class="mf">0.99</span><span class="p">,</span> <span class="n">R_outer</span><span class="o">=</span><span class="mf">4.8</span><span class="p">,</span> <span class="nb">dir</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">maxloop</span><span class="o">=</span><span class="mi">20000</span> <span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Wrapper for Geopack&#39;s trace() routine, for tracing field lines along Tsyganenko model</span>
+<span class="sd">    </span>
+<span class="sd">    Inputs:</span>
+<span class="sd">        x0: initial x-coordinate (GSE) of field tracing [R_E]  (float)</span>
+<span class="sd">        y0: initial y-coordinate (GSE) of field tracing [R_E]  (float)</span>
+<span class="sd">        z0: initial z-coordinate (GSE) of field tracing [R_E]  (float)</span>
+
+<span class="sd">        --Keywords--</span>
+
+<span class="sd">        Txx:</span>
+<span class="sd">          (external) field model, by Tsyganenko publication year. options: &#39;t89&#39;, &#39;t96&#39;, &#39;t01&#39;</span>
+<span class="sd">            Need to test: does &#39;t04&#39; work? Is geomagnetic activity estimated with Kp or Dst in that case?</span>
+
+<span class="sd">        InternalB: internal model. options: &#39;dipole&#39;, &#39;igrf&#39;</span>
+<span class="sd">        Dst: Dst index in nT (geomagnetic activity), used for Txx= &#39;t96&#39;, &#39;t01&#39; (&#39;t04&#39;?)</span>
+<span class="sd">        Kp: Kp index 0-9 (geomagnetic activity), used for Txx=&#39;T89&#39;</span>
+<span class="sd">        Vx_sw: solar wind x-component of velocity [km/s] (GSE), other components assumed zero</span>
+<span class="sd">        N_sw: solar wind density [cm-3]</span>
+<span class="sd">        Bx_imf: driving solar wind imf Bx [nT] (GSE)</span>
+<span class="sd">        By_imf: driving solar wind GSE imf By [nT] (GSE)</span>
+<span class="sd">        Bz_imf: driving solar wind GSE imf Bz [nT] (GSE)</span>
+<span class="sd">        R_inner: inner radius [R_E] of the tracing, if the tracing goes r&lt;R_inner it stops</span>
+<span class="sd">        R_outer: outer radius [R_E] of the tracing, if the tracing goes r&gt;R_outer it stops</span>
+
+<span class="sd">        dir: direction of the tracing relative to the magnetic field direction (parallel: dir= 1, anti-parallel: dir= -1)</span>
+<span class="sd">             If unspecified (dir=None), dir traces against the field when z0&gt;0 with the field when z0&lt;0</span>
+
+<span class="sd">             \\*\\*\\* this is the opposite convention used by geopack&#39;s trace() function?</span>
+<span class="sd">                 From geopack.py docs: &quot;dir: Direction of tracing. dir = -1 for parallel; dir = 1 for anti-parallel.&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        6-element tuple x,y,z,xx,yy,zz</span>
+<span class="sd">        x: final x-coordinate(s) of field tracing [R_E]</span>
+<span class="sd">        y: final y-coordinate(s) of field tracing [R_E]</span>
+<span class="sd">        z: final z-coordinate(s) of field tracing [R_E]</span>
+<span class="sd">        xx: numpy array containing the traced field line x-coordinates </span>
+<span class="sd">        yy: numpy array containing the traced field line y-coordinates </span>
+<span class="sd">        zz: numpy array containing the traced field line z-coordinates </span>
+
+<span class="sd">        ** All inputs and outputs are in GSE coordinate system **</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        x,y,z,xx,yy,zz = tsyganenko_trace(0,0, 1., Txx = &#39;t01&#39;, Dst = -80, Kp = 4, Vx_sw = -750., N_sw = 4., Bx_imf = 0., By_imf = 0., Bz_imf = -10., R_inner = 1., R_outer=5., dir = None, maxloop = 20000 )</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">        Earth&#39;s dipole is assumed to point (~exactly) in the -z GSE direction</span>
+
+<span class="sd">        Default solar wind and IMF parameters are for the EGI Vlasiator run, see Grandin et al. (2022?)</span>
+<span class="sd">    </span>
+<span class="sd">            Other runs:</span>
+<span class="sd">            </span>
+<span class="sd">            EGL (note: pulse arrives at magnetopause at roughly t=857 sec)</span>
+<span class="sd">             (~before pulse arrival): Dst = -30 (Grandin et al. 2022), N_sw = 1, Bz_imf = -5</span>
+<span class="sd">             (~after pulse arrival):  Dst = -80 (Horaites et al.), N_sw = 4, Bz_imf = -10</span>
+<span class="sd">    </span>
+<span class="sd">        The geopack package doesn&#39;t allow for easy specification of the dipole tilt angle.</span>
+<span class="sd">        Rather, a UT was found when the tilt was nearly zero (see gp.recalc() line below)</span>
+<span class="sd">        The specified UT results in a tilt angle of theta~1e-5 radians, or 6e-4 degrees</span>
+<span class="sd">        Technically, the solutions should be rotated back by theta, to be compared with Vlasiator&#39;s zero-tilt runs</span>
+<span class="sd">        But this small theta is within tolerance for most applications.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Constants</span>
+
+    <span class="n">mass_p</span> <span class="o">=</span> <span class="mf">1.660539e-27</span> <span class="c1"># kg</span>
+    <span class="n">mass_e</span> <span class="o">=</span> <span class="mf">9.109384e-31</span> <span class="c1"># kg</span>
+    <span class="n">qe</span> <span class="o">=</span> <span class="mf">1.602177e-19</span> <span class="c1"># C</span>
+    <span class="n">erg</span> <span class="o">=</span> <span class="mf">6.2415e11</span> <span class="c1"># eV</span>
+    <span class="n">deg2rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span>
+
+    <span class="c1"># =======================</span>
+    <span class="c1"># Parameters used in the T01 (or T96) model</span>
+
+    <span class="c1">#P_sw = (2e-6)*N_sw*Vx_sw**2 # in nPa, OMNI formula            (CHANGE: why 2 in coefficient?)</span>
+    <span class="n">P_sw</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e21</span><span class="p">)</span><span class="o">*</span><span class="n">mass_p</span><span class="o">*</span><span class="n">N_sw</span><span class="o">*</span><span class="n">Vx_sw</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># [nPa] dynamic pressure </span>
+
+    <span class="n">Bs_sw</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="o">-</span><span class="n">Bz_imf</span><span class="p">)</span> <span class="c1"># southward component (0 if Bz_imf &gt; 0)</span>
+    <span class="n">Bperp_imf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">By_imf</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Bz_imf</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># perp B-component   (V_sw is in -x direction)</span>
+    <span class="n">hBperp_sw</span> <span class="o">=</span> <span class="p">(</span><span class="n">Bperp_imf</span><span class="o">/</span><span class="mf">40.</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">(</span><span class="n">Bperp_imf</span><span class="o">/</span><span class="mf">40.</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">Bz_imf</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+        <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">By_imf</span><span class="o">/</span><span class="nb">abs</span><span class="p">(</span><span class="n">Bz_imf</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">Bz_imf</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span> <span class="c1"># the +1e-3 is to get +180 deg if By_imf = 0 and Bz_imf &lt; 0</span>
+        <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">By_imf</span><span class="o">+</span><span class="mf">1e-3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">By_imf</span><span class="o">/</span><span class="n">Bz_imf</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># case with Bz_imf = 0; here if By_imf = 0 the clock angle is undefined, so 0 is as acceptable as +/-90 deg</span>
+        <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">By_imf</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span>
+    
+    <span class="n">G1</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="o">*</span> <span class="n">hBperp_sw</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">clockangle</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">G2</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="o">*</span> <span class="n">Bs_sw</span>
+    
+    <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t89&#39;</span><span class="p">:</span>
+        <span class="n">paramTxx</span> <span class="o">=</span> <span class="n">Kp</span><span class="o">+</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">paramTxx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">P_sw</span><span class="p">,</span><span class="n">Dst</span><span class="p">,</span><span class="n">By_imf</span><span class="p">,</span><span class="n">Bz_imf</span><span class="p">,</span><span class="n">G1</span><span class="p">,</span><span class="n">G2</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">])</span> 
+
+    <span class="c1"># --- Mapping using geopack (dipole + T89) ---</span>
+
+    <span class="n">t_zerotilt</span> <span class="o">=</span> <span class="mi">1583962800</span> <span class="c1"># 11 March 2020, 21:40 UT</span>
+    <span class="n">gp</span><span class="o">.</span><span class="n">recalc</span><span class="p">(</span><span class="n">t_zerotilt</span><span class="p">,</span><span class="n">vxgse</span><span class="o">=</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="c1"># field initialisation at time with ~zero dipole tilt</span>
+   
+    <span class="c1">## convert initial position from GSE to GSM coordinate system</span>
+    <span class="c1">#x0_gsm = x0; y0_gsm = -y0; z0_gsm = -z0                  # y-&gt; -y, z-&gt; -z</span>
+    <span class="c1"># in zero-tilt case, GSE = GSM, see https://www.spenvis.oma.be/help/background/coortran/coortran.html</span>
+    <span class="n">x0_gsm</span> <span class="o">=</span> <span class="n">x0</span><span class="p">;</span> <span class="n">y0_gsm</span> <span class="o">=</span> <span class="n">y0</span><span class="p">;</span> <span class="n">z0_gsm</span> <span class="o">=</span> <span class="n">z0</span>
+
+    <span class="k">if</span> <span class="nb">dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">z0_gsm</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>         <span class="c1"># trace outwards by default (when R_inner = 1)</span>
+                                            <span class="c1"># (B-field is radial at northern magnetic hemisphere)</span>
+
+<span class="c1">#    gp_dir = -dir                           # Geopack&#39;s trace() has a weird convention for the tracing direction (dir)</span>
+
+<span class="c1">#    x_gsm, y_gsm, z_gsm, xx_gsm, yy_gsm, zz_gsm = gp.trace(xi=x0_gsm,yi=y0_gsm,zi=z0_gsm,dir=gp_dir,r0=R_inner,</span>
+<span class="c1">#                                                           rlim=R_outer,inname=InternalB,exname=Txx,parmod=paramTxx)</span>
+
+    <span class="n">x_gsm</span><span class="p">,</span> <span class="n">y_gsm</span><span class="p">,</span> <span class="n">z_gsm</span><span class="p">,</span> <span class="n">xx_gsm</span><span class="p">,</span> <span class="n">yy_gsm</span><span class="p">,</span> <span class="n">zz_gsm</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">xi</span><span class="o">=</span><span class="n">x0_gsm</span><span class="p">,</span><span class="n">yi</span><span class="o">=</span><span class="n">y0_gsm</span><span class="p">,</span><span class="n">zi</span><span class="o">=</span><span class="n">z0_gsm</span><span class="p">,</span><span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="p">,</span><span class="n">r0</span><span class="o">=</span><span class="n">R_inner</span><span class="p">,</span>
+                                                           <span class="n">rlim</span><span class="o">=</span><span class="n">R_outer</span><span class="p">,</span><span class="n">inname</span><span class="o">=</span><span class="n">InternalB</span><span class="p">,</span><span class="n">exname</span><span class="o">=</span><span class="n">Txx</span><span class="p">,</span><span class="n">parmod</span><span class="o">=</span><span class="n">paramTxx</span><span class="p">,</span> <span class="n">maxloop</span><span class="o">=</span><span class="n">maxloop</span><span class="p">)</span>
+
+    <span class="c1"># convert final position from GSM to GSE coordinate system</span>
+    <span class="c1">#x_gse = x_gsm;   y_gse = -y_gsm;   z_gse = -z_gsm         # y-&gt; -y, z-&gt; -z</span>
+    <span class="c1">#xx_gse = xx_gsm; yy_gse = -yy_gsm; zz_gse = -zz_gsm       # &quot;&quot;</span>
+    <span class="c1"># in zero-tilt case, GSE = GSM, see https://www.spenvis.oma.be/help/background/coortran/coortran.html</span>
+    <span class="n">x_gse</span> <span class="o">=</span> <span class="n">x_gsm</span><span class="p">;</span>   <span class="n">y_gse</span> <span class="o">=</span> <span class="n">y_gsm</span><span class="p">;</span>   <span class="n">z_gse</span> <span class="o">=</span> <span class="n">z_gsm</span>
+    <span class="n">xx_gse</span> <span class="o">=</span> <span class="n">xx_gsm</span><span class="p">;</span> <span class="n">yy_gse</span> <span class="o">=</span> <span class="n">yy_gsm</span><span class="p">;</span> <span class="n">zz_gse</span> <span class="o">=</span> <span class="n">zz_gsm</span>
+
+    <span class="k">return</span> <span class="n">x_gse</span><span class="p">,</span> <span class="n">y_gse</span><span class="p">,</span> <span class="n">z_gse</span><span class="p">,</span> <span class="n">xx_gse</span><span class="p">,</span> <span class="n">yy_gse</span><span class="p">,</span> <span class="n">zz_gse</span></div>
+
+    
+
+<div class="viewcode-block" id="tsyganenko_open">
+<a class="viewcode-back" href="../../tsyganenko/#tsyganenko.tsyganenko_open">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tsyganenko_open</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">R_inner</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">R_outer</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Checks whether the field line starting at radius ~R_inner</span>
+<span class="sd">    will trace out to beyond R_outer. R_outer is chosen to be large, so if </span>
+<span class="sd">    a magnetic field line makes it out this far, it may be assumed to be open</span>
+<span class="sd">    If the tracing crosses R_inner, the field line is closed</span>
+
+<span class="sd">    Inputs: </span>
+<span class="sd">       phi: ~longitude, in degrees                    -180&lt;=phi&lt;=180</span>
+<span class="sd">       lat: geographic latitude, in degrees           -90&lt;=lat&lt;=90</span>
+
+<span class="sd">           e.g.,</span>
+<span class="sd">              (phi=0, lat = 0) corresponds with subsolar point</span>
+<span class="sd">              (phi=anything, lat = 90) corresponds with geographic north pole </span>
+
+<span class="sd">       R_inner: inner radius [R_E] of the tracing, if the tracing goes r&lt;R_inner it stops</span>
+<span class="sd">       R_outer: outer radius [R_E] of the tracing, if the tracing goes r&gt;R_outer it stops</span>
+
+<span class="sd">       Keywords (and kwargs) all get passed to tsyganenko_trace()</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Boolean---</span>
+<span class="sd">            True (if open)</span>
+<span class="sd">            False (if closed)</span>
+
+<span class="sd">    Example: </span>
+<span class="sd">        tsyganenko_open(0, 45)   # returns False</span>
+<span class="sd">        tsyganenko_open(0, 80)   # returns True</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1">#convert phi, lat to cartesian</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="mi">90</span> <span class="o">-</span> <span class="n">lat</span>   <span class="c1"># &quot;co-latitude&quot;</span>
+    <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span> <span class="o">=</span> <span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">R_inner</span><span class="o">*</span><span class="mf">1.01</span><span class="p">,</span> <span class="n">theta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span><span class="p">,</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">180</span> <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Cartesian coords : &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">)))</span>
+    <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span><span class="n">xx</span><span class="p">,</span><span class="n">yy</span><span class="p">,</span><span class="n">zz</span> <span class="o">=</span> <span class="n">tsyganenko_trace</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span><span class="p">,</span> <span class="n">R_inner</span> <span class="o">=</span> <span class="n">R_inner</span><span class="p">,</span> <span class="n">R_outer</span> <span class="o">=</span> <span class="n">R_outer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Trace: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)))</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">R_inner</span><span class="o">*</span><span class="mf">1.01</span><span class="p">:</span>
+        <span class="c1"># otherwise, the results will be spurious</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">r</span><span class="o">&gt;</span><span class="n">R_inner</span><span class="o">*</span><span class="mf">1.01</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">r</span><span class="o">&lt;</span><span class="n">R_outer</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">):</span>
+        <span class="c1"># note, maxloop keyword needs to be large enough so that one of the boundaries R_inner or R_outer is reached</span>
+        <span class="c1"># in this case, the field line connectivity is undetermined, should try again with larger maxloop</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">r</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">R_outer</span> <span class="o">*</span> <span class="mf">0.99</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="tsyganenko_ocb">
+<a class="viewcode-back" href="../../tsyganenko/#tsyganenko.tsyganenko_ocb">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tsyganenko_ocb</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">lat_range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">90</span><span class="p">],</span> <span class="n">nsteps</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Find the open/closed field line boundary (OCB)</span>
+<span class="sd">    algorithm uses a binary search within a specified latitude range</span>
+
+<span class="sd">    Inputs:</span>
+<span class="sd">        phi: ~longitude, in degrees                                                     -180&lt;=phi&lt;=180</span>
+<span class="sd">        lat_range: 2-element list or numpy array, </span>
+
+<span class="sd">                   containing min. and max. latidues [degrees] to search within         -90&lt;=lat&lt;=90</span>
+
+<span class="sd">        kwargs are passed to tsyanenko_open()</span>
+<span class="sd">  </span>
+<span class="sd">    Returns:</span>
+
+<span class="sd">        Estimate of the OCB latitude at the given phi, in degrees</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Algorithm assumes OBC latitude is a single-valued function of phi</span>
+
+<span class="sd">        Theoretical accuracy of the OCB determination is ~ (lat_range[1]-lat_range[0]) / 2^nsteps</span>
+
+<span class="sd">    Example:   # dayside (noon) cusp</span>
+
+<span class="sd">        tsyganenko_ocb(0, lat_range = [60,80], nsteps = 10, </span>
+<span class="sd">                       Txx = &#39;t01&#39;, Dst = -80, Kp = 4, Vx_sw = -750., N_sw = 4., Bx_imf = 0., By_imf = 0., Bz_imf = -10., </span>
+<span class="sd">                       R_inner = 1., R_outer=15., dir = None, maxloop = 10000)</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">lat_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">lat_range</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Both elements of lat_range must have the same sign! (search within a single hemisphere)&#39;</span><span class="p">)</span>
+
+    <span class="n">lat_guess</span> <span class="o">=</span> <span class="p">(</span><span class="n">lat_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">lat_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span>
+    <span class="n">lat_delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">lat_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">lat_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nsteps</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">lat_guess</span><span class="p">)</span>
+        <span class="n">tf</span> <span class="o">=</span> <span class="n">tsyganenko_open</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">lat_guess</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">tf</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tf</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># field line open, OCB is more equatorward</span>
+            <span class="n">lat_guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">lat_guess</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">lat_guess</span><span class="p">)</span> <span class="o">-</span> <span class="n">lat_delta</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tf</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="c1"># field line closed, OCB is more poleward</span>
+            <span class="n">lat_guess</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">lat_guess</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">lat_guess</span><span class="p">)</span> <span class="o">+</span> <span class="n">lat_delta</span><span class="p">)</span>
+        <span class="n">lat_delta</span> <span class="o">/=</span> <span class="mf">2.</span>
+    <span class="k">return</span> <span class="n">lat_guess</span></div>
+
+
+
+
+
+
+<div class="viewcode-block" id="tsyganenko_b">
+<a class="viewcode-back" href="../../tsyganenko/#tsyganenko.tsyganenko_b">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tsyganenko_b</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">Txx</span> <span class="o">=</span> <span class="s1">&#39;t01&#39;</span><span class="p">,</span> <span class="n">InternalB</span><span class="o">=</span><span class="s1">&#39;dipole&#39;</span><span class="p">,</span> <span class="n">Dst</span> <span class="o">=</span> <span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="n">Kp</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">Vx_sw</span> <span class="o">=</span> <span class="o">-</span><span class="mf">750.</span><span class="p">,</span> <span class="n">N_sw</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span> <span class="n">Bx_imf</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">By_imf</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">Bz_imf</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.</span> <span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Wrapper for Geopack&#39;s trace() routine, for tracing field lines along Tsyganenko model</span>
+<span class="sd">    </span>
+<span class="sd">    Inputs:</span>
+<span class="sd">        x0: x-coordinate(s) (GSE) to evaluate the field [R_E]  (float)</span>
+<span class="sd">        y0: y-coordinate(s) (GSE) to evaluate the field [R_E]  (float)</span>
+<span class="sd">        z0: z-coordinate(s) (GSE) to evaluate the field [R_E]  (float)</span>
+
+<span class="sd">        --Keywords--</span>
+
+<span class="sd">        Txx: (external) field model, by Tsyganenko publication year. options: &#39;t89&#39;, &#39;t96&#39;, &#39;t01&#39;</span>
+<span class="sd">            Need to test: does &#39;t04&#39; work? Is geomagnetic activity estimated with Kp or Dst in that case?</span>
+
+<span class="sd">        InternalB: internal model. options: &#39;dipole&#39;, &#39;igrf&#39;</span>
+<span class="sd">        Dst: Dst index in nT (geomagnetic activity), used for Txx= &#39;t96&#39;, &#39;t01&#39; (&#39;t04&#39;?)</span>
+<span class="sd">        Kp: Kp index 0-9 (geomagnetic activity), used for Txx=&#39;T89&#39;</span>
+<span class="sd">        Vx_sw: solar wind x-component of velocity [km/s] (GSE), other components assumed zero</span>
+<span class="sd">        N_sw: solar wind density [cm-3]</span>
+<span class="sd">        Bx_imf: driving solar wind imf Bx [nT] (GSE)</span>
+<span class="sd">        By_imf: driving solar wind GSE imf By [nT] (GSE)</span>
+<span class="sd">        Bz_imf: driving solar wind GSE imf Bz [nT] (GSE)</span>
+<span class="sd">        R_inner: inner radius [R_E] of the tracing, if the tracing goes r&lt;R_inner it stops</span>
+<span class="sd">        R_outer: outer radius [R_E] of the tracing, if the tracing goes r&gt;R_outer it stops</span>
+
+<span class="sd">        dir: direction of the tracing relative to the magnetic field direction (parallel: dir= 1, anti-parallel: dir= -1)</span>
+<span class="sd">             If unspecified (dir=None), dir traces against the field when z0&gt;0 with the field when z0&lt;0</span>
+
+<span class="sd">             \\*\\*\\* this is the opposite convention used by geopack&#39;s trace() function?</span>
+<span class="sd">                 From geopack.py docs: &quot;dir: Direction of tracing. dir = -1 for parallel; dir = 1 for anti-parallel.&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        3-element tuple bx,by,bz</span>
+<span class="sd">        bx: x-component(s) of field [nT]</span>
+<span class="sd">        by: y-component(s) of field [nT]</span>
+<span class="sd">        bz: z-component(s) of field [nT]</span>
+
+<span class="sd">        ** All positional inputs can either be single values or numpy arrays (or lists) **</span>
+<span class="sd">        ** Depending on the inputs, the outputs bx, by, bz will either be single numbers or numpy arrays **</span>
+<span class="sd">        ** All inputs and outputs are in GSE coordinate system **</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        bx,by,bz = tsyganenko_b(0,0, 1., Txx = &#39;t01&#39;, Dst = -80, Kp = 4, Vx_sw = -750., N_sw = 4., Bx_imf = 0., By_imf = 0., Bz_imf = -10. )</span>
+
+<span class="sd">        bx,by,bz = tsyganenko_b([0,0,0],[0,0,0], [1.,2,3], Txx = &#39;t01&#39;, Dst = -80, Kp = 4, Vx_sw = -750., N_sw = 4., Bx_imf = 0., By_imf = 0., Bz_imf = -10. )</span>
+
+<span class="sd">    Notes:</span>
+
+<span class="sd">        Earth&#39;s dipole is assumed to point (~exactly) in the -z GSE direction</span>
+
+<span class="sd">        Default solar wind and IMF parameters are for the EGI Vlasiator run, see Grandin et al. (2022?)</span>
+<span class="sd">    </span>
+<span class="sd">            Other runs:</span>
+
+<span class="sd">            EGL (note: pulse arrives at magnetopause at roughly t=857 sec)</span>
+<span class="sd">             (~before pulse arrival): Dst = -30 (Grandin et al. 2022), N_sw = 1, Bz_imf = -5</span>
+<span class="sd">             (~after pulse arrival):  Dst = -80 (Horaites et al.), N_sw = 4, Bz_imf = -10</span>
+<span class="sd">    </span>
+<span class="sd">        The geopack package doesn&#39;t allow for easy specification of the dipole tilt angle.</span>
+<span class="sd">        Rather, a UT was found when the tilt was nearly zero (see gp.recalc() line below)</span>
+<span class="sd">        The specified UT results in a tilt angle of theta~1e-5 radians, or 6e-4 degrees</span>
+<span class="sd">        Technically, the solutions should be rotated back by theta, to be compared with Vlasiator&#39;s zero-tilt runs</span>
+<span class="sd">        But this small theta is within tolerance for most applications.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># if x, y, z arr arrays</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">tsyganenko_b</span><span class="p">,</span> <span class="n">Txx</span> <span class="o">=</span> <span class="n">Txx</span><span class="p">,</span> <span class="n">InternalB</span><span class="o">=</span><span class="n">InternalB</span><span class="p">,</span> <span class="n">Dst</span> <span class="o">=</span> <span class="n">Dst</span><span class="p">,</span> <span class="n">Kp</span> <span class="o">=</span> <span class="n">Kp</span><span class="p">,</span>
+                              <span class="n">Vx_sw</span> <span class="o">=</span> <span class="n">Vx_sw</span><span class="p">,</span> <span class="n">N_sw</span> <span class="o">=</span> <span class="n">N_sw</span><span class="p">,</span> <span class="n">Bx_imf</span> <span class="o">=</span> <span class="n">Bx_imf</span><span class="p">,</span> <span class="n">By_imf</span> <span class="o">=</span> <span class="n">By_imf</span><span class="p">,</span> <span class="n">Bz_imf</span> <span class="o">=</span> <span class="n">Bz_imf</span><span class="p">)</span>
+        <span class="n">barray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="p">)))</span>
+        <span class="k">return</span> <span class="n">barray</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">barray</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">barray</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>    <span class="c1"># bx, by, bz (arrays)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1">#if x,y, z are single values (not arrays), run the program below</span>
+    <span class="c1"># Constants    </span>
+        <span class="n">mass_p</span> <span class="o">=</span> <span class="mf">1.660539e-27</span> <span class="c1"># kg</span>
+        <span class="n">mass_e</span> <span class="o">=</span> <span class="mf">9.109384e-31</span> <span class="c1"># kg</span>
+        <span class="n">qe</span> <span class="o">=</span> <span class="mf">1.602177e-19</span> <span class="c1"># C</span>
+        <span class="n">erg</span> <span class="o">=</span> <span class="mf">6.2415e11</span> <span class="c1"># eV</span>
+        <span class="n">deg2rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span>
+    
+        <span class="c1"># =======================</span>
+        <span class="c1"># Parameters used in the T01 (or T96) model</span>
+    
+        <span class="c1">#P_sw = (2e-6)*N_sw*Vx_sw**2 # in nPa, OMNI formula            (CHANGE: why 2 in coefficient?)</span>
+        <span class="n">P_sw</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e21</span><span class="p">)</span><span class="o">*</span><span class="n">mass_p</span><span class="o">*</span><span class="n">N_sw</span><span class="o">*</span><span class="n">Vx_sw</span><span class="o">**</span><span class="mi">2</span> <span class="c1"># [nPa] dynamic pressure </span>
+    
+        <span class="n">Bs_sw</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="o">-</span><span class="n">Bz_imf</span><span class="p">)</span> <span class="c1"># southward component (0 if Bz_imf &gt; 0)</span>
+        <span class="n">Bperp_imf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">By_imf</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Bz_imf</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># perp B-component   (V_sw is in -x direction)</span>
+        <span class="n">hBperp_sw</span> <span class="o">=</span> <span class="p">(</span><span class="n">Bperp_imf</span><span class="o">/</span><span class="mf">40.</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">+</span> <span class="p">(</span><span class="n">Bperp_imf</span><span class="o">/</span><span class="mf">40.</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">Bz_imf</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">By_imf</span><span class="o">/</span><span class="nb">abs</span><span class="p">(</span><span class="n">Bz_imf</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">Bz_imf</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span> <span class="c1"># the +1e-3 is to get +180 deg if By_imf = 0 and Bz_imf &lt; 0</span>
+            <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">By_imf</span><span class="o">+</span><span class="mf">1e-3</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">By_imf</span><span class="o">/</span><span class="n">Bz_imf</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># case with Bz_imf = 0; here if By_imf = 0 the clock angle is undefined, so 0 is as acceptable as +/-90 deg</span>
+            <span class="n">clockangle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">By_imf</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.</span>
+        
+        <span class="n">G1</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="o">*</span> <span class="n">hBperp_sw</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">clockangle</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span>
+        <span class="n">G2</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="o">*</span> <span class="n">Bs_sw</span>
+        
+        <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t89&#39;</span><span class="p">:</span>
+            <span class="n">paramTxx</span> <span class="o">=</span> <span class="n">Kp</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paramTxx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">P_sw</span><span class="p">,</span><span class="n">Dst</span><span class="p">,</span><span class="n">By_imf</span><span class="p">,</span><span class="n">Bz_imf</span><span class="p">,</span><span class="n">G1</span><span class="p">,</span><span class="n">G2</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">])</span> 
+    
+        <span class="c1"># --- Mapping using geopack (dipole + T89) ---</span>
+    
+        <span class="n">t_zerotilt</span> <span class="o">=</span> <span class="mi">1583962800</span> <span class="c1"># 11 March 2020, 21:40 UT, is this step necessary?</span>
+                                <span class="c1"># Maybe redundant because dipole tilt angle specified in call to t01()</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">recalc</span><span class="p">(</span><span class="n">t_zerotilt</span><span class="p">,</span><span class="n">vxgse</span><span class="o">=</span><span class="n">Vx_sw</span><span class="p">)</span> <span class="c1"># field initialisation at time with ~zero dipole tilt</span>
+       
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ps: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ps</span><span class="p">))</span>
+
+        <span class="c1"># convert initial position from GSE to GSM coordinate system</span>
+        <span class="c1"># x_in = [...];   y_in = [...];   z_in = [...]</span>
+        <span class="c1"># in zero-tilt case, GSE = GSM, see https://www.spenvis.oma.be/help/background/coortran/coortran.html</span>
+        <span class="n">x_in</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span> <span class="n">y_in</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span> <span class="n">z_in</span> <span class="o">=</span> <span class="n">z</span>
+    
+        <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t89&#39;</span><span class="p">:</span>
+            <span class="n">tfunc</span> <span class="o">=</span> <span class="n">geopack</span><span class="o">.</span><span class="n">t89</span><span class="o">.</span><span class="n">t89</span>
+        <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t96&#39;</span><span class="p">:</span>
+            <span class="n">tfunc</span> <span class="o">=</span> <span class="n">geopack</span><span class="o">.</span><span class="n">t96</span><span class="o">.</span><span class="n">t96</span>
+        <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t01&#39;</span><span class="p">:</span>
+            <span class="n">tfunc</span> <span class="o">=</span> <span class="n">geopack</span><span class="o">.</span><span class="n">t01</span><span class="o">.</span><span class="n">t01</span>
+        <span class="k">if</span> <span class="n">Txx</span> <span class="o">==</span> <span class="s1">&#39;t04&#39;</span><span class="p">:</span>
+            <span class="n">tfunc</span> <span class="o">=</span> <span class="n">geopack</span><span class="o">.</span><span class="n">t04</span><span class="o">.</span><span class="n">t04</span>
+    
+        <span class="n">b0xgsm</span><span class="p">,</span><span class="n">b0ygsm</span><span class="p">,</span><span class="n">b0zgsm</span> <span class="o">=</span> <span class="n">gp</span><span class="o">.</span><span class="n">dip</span><span class="p">(</span><span class="n">x_in</span><span class="p">,</span><span class="n">y_in</span><span class="p">,</span><span class="n">z_in</span><span class="p">)</span>    		<span class="c1"># calc dipole B in GSM.</span>
+        <span class="n">dbxgsm</span><span class="p">,</span><span class="n">dbygsm</span><span class="p">,</span><span class="n">dbzgsm</span> <span class="o">=</span> <span class="n">tfunc</span><span class="p">(</span><span class="n">paramTxx</span><span class="p">,</span> <span class="n">ps</span><span class="p">,</span> <span class="n">x_in</span><span class="p">,</span><span class="n">y_in</span><span class="p">,</span><span class="n">z_in</span><span class="p">)</span>       <span class="c1"># 0 tilt angle</span>
+        <span class="n">bxgsm</span><span class="p">,</span><span class="n">bygsm</span><span class="p">,</span><span class="n">bzgsm</span> <span class="o">=</span> <span class="p">[</span><span class="n">b0xgsm</span><span class="o">+</span><span class="n">dbxgsm</span><span class="p">,</span><span class="n">b0ygsm</span><span class="o">+</span><span class="n">dbygsm</span><span class="p">,</span><span class="n">b0zgsm</span><span class="o">+</span><span class="n">dbzgsm</span><span class="p">]</span>
+    
+        <span class="c1"># convert final position from GSM to GSE coordinate system</span>
+        <span class="c1">#bxgse = [...];   bygse = [...];   bzgse = [...]</span>
+        <span class="c1"># in zero-tilt case, GSE = GSM, see https://www.spenvis.oma.be/help/background/coortran/coortran.html</span>
+        <span class="n">bxgse</span> <span class="o">=</span> <span class="n">bxgsm</span><span class="p">;</span>   <span class="n">bygse</span> <span class="o">=</span> <span class="n">bygsm</span><span class="p">;</span>   <span class="n">bzgse</span> <span class="o">=</span> <span class="n">bzgsm</span>         <span class="c1"># GSE = GSM for zero tilt</span>
+    
+        <span class="k">return</span> <span class="n">bxgse</span><span class="p">,</span> <span class="n">bygse</span><span class="p">,</span> <span class="n">bzgse</span>   <span class="c1"># nT</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

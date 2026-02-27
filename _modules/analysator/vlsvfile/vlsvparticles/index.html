@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.vlsvfile.vlsvparticles &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.vlsvfile.vlsvparticles</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.vlsvfile.vlsvparticles</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.reduction</span><span class="w"> </span><span class="kn">import</span> <span class="n">datareducers</span><span class="p">,</span><span class="n">data_operators</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.vlsvwriter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VlsvWriter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..calculations.variable</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_data</span>
+
+<div class="viewcode-block" id="VlsvParticles">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvParticles">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VlsvParticles</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Class for reading VLSV files of particle pusher output</span>
+<span class="sd">   &#39;&#39;&#39;</span> 
+   <span class="n">file_name</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)</span>
+
+<span class="sd">          :param file_name:     Name of the vlsv file</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="c1"># Make sure the path is set in file name: </span>
+      <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">file_name</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="s2">&quot;&lt;VLSV&gt;&lt;/VLSV&gt;&quot;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fileindex_for_cellid</span><span class="o">=</span><span class="p">{}</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fileindex_for_cellid_blocks</span><span class="o">=</span><span class="p">{}</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__read_xml_footer</span><span class="p">()</span>
+      <span class="c1"># Check if the file is using new or old vlsv format</span>
+      <span class="c1"># Read parameters (Note: Reading the spatial cell locations and</span>
+      <span class="c1"># storing them will anyway take the most time and memory):</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">__read_xml_footer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Reads in the XML footer of the VLSV file and store all the content</span>
+<span class="sd">      &#39;&#39;&#39;</span> 
+      <span class="n">max_xml_size</span> <span class="o">=</span> <span class="mi">1000000</span>
+      <span class="c1">#(endianness,) = struct.unpack(&quot;c&quot;, fptr.read(1))</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span>
+      <span class="c1"># Eight first bytes indicate whether the system is big_endianness or something else</span>
+      <span class="n">endianness_offset</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">endianness_offset</span><span class="p">)</span>
+      <span class="c1"># Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.</span>
+      <span class="n">uint64_byte_amount</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="p">(</span><span class="n">offset</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;Q&quot;</span><span class="p">,</span> <span class="n">fptr</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">uint64_byte_amount</span><span class="p">))</span>
+      <span class="c1"># Move to the xml offset</span>
+      <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+      <span class="c1"># Read the xml data</span>
+      <span class="n">xml_data</span> <span class="o">=</span> <span class="n">fptr</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">max_xml_size</span><span class="p">)</span>
+      <span class="c1"># Read the xml as string</span>
+      <span class="p">(</span><span class="n">xml_string</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">s&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">xml_data</span><span class="p">),</span> <span class="n">xml_data</span><span class="p">)</span>
+      <span class="c1"># Input the xml data into xml_root</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">xml_string</span><span class="p">)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+         <span class="n">fptr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="VlsvParticles.list">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvParticles.list">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Print out a description of the content of the file. Useful</span>
+<span class="sd">         for interactive usage</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;tag = MESH&quot;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;MESH&quot;</span> <span class="ow">and</span> <span class="s2">&quot;name&quot;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="VlsvParticles.read_particles_all">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvParticles.read_particles_all">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">read_particles_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Read particle pusher data from the open vlsv file.</span>
+<span class="sd">          This routine returns all particles, including inactive ones.</span>
+<span class="sd">      </span>
+<span class="sd">      &#39;&#39;&#39;</span>
+
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span>
+
+      <span class="n">proton_position</span><span class="o">=</span><span class="kc">None</span>
+      <span class="n">proton_velocity</span><span class="o">=</span><span class="kc">None</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">:</span>
+          <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;proton_position&#39;</span><span class="p">:</span>
+              <span class="n">vector_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;vectorsize&quot;</span><span class="p">])</span>
+              <span class="n">array_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;arraysize&quot;</span><span class="p">])</span>
+              <span class="n">element_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datasize&quot;</span><span class="p">])</span>
+              <span class="n">datatype</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
+
+              <span class="n">offset</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+              <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;uint&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;uint&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+
+              <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">array_size</span><span class="p">,</span> <span class="n">vector_size</span><span class="p">)</span>         
+              <span class="n">proton_position</span> <span class="o">=</span> <span class="n">data</span>
+
+          <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;proton_velocity&#39;</span><span class="p">:</span>
+              <span class="n">vector_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;vectorsize&quot;</span><span class="p">])</span>
+              <span class="n">array_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;arraysize&quot;</span><span class="p">])</span>
+              <span class="n">element_size</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datasize&quot;</span><span class="p">])</span>
+              <span class="n">datatype</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
+
+              <span class="n">offset</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+              <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;uint&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+              <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s2">&quot;uint&quot;</span> <span class="ow">and</span> <span class="n">element_size</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+                  <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">fptr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">vector_size</span><span class="o">*</span><span class="n">array_size</span><span class="p">)</span>
+
+              <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">array_size</span><span class="p">,</span> <span class="n">vector_size</span><span class="p">)</span>         
+              <span class="n">proton_velocity</span> <span class="o">=</span> <span class="n">data</span>
+
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+         <span class="n">fptr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+      <span class="k">return</span> <span class="n">proton_position</span><span class="p">,</span> <span class="n">proton_velocity</span></div>
+
+
+<div class="viewcode-block" id="VlsvParticles.read_particles">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvParticles.read_particles">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">read_particles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Read particle pusher data from the open vlsv file. </span>
+<span class="sd">          This routine returns only active particles.</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+
+      <span class="n">proton_position</span><span class="p">,</span> <span class="n">proton_velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_particles_all</span><span class="p">()</span>
+      <span class="n">isvalid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">proton_position</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+      <span class="n">proton_position</span> <span class="o">=</span> <span class="n">proton_position</span><span class="p">[</span><span class="n">isvalid</span><span class="p">,:]</span>
+      <span class="n">proton_velocity</span> <span class="o">=</span> <span class="n">proton_velocity</span><span class="p">[</span><span class="n">isvalid</span><span class="p">,:]</span>
+
+      <span class="k">return</span> <span class="n">proton_position</span><span class="p">,</span> <span class="n">proton_velocity</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1019 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.plot.plot_vdf_profiles &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+          <li class="breadcrumb-item"><a href="../">analysator.plot</a></li>
+      <li class="breadcrumb-item active">analysator.plot.plot_vdf_profiles</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.plot.plot_vdf_profiles</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_axes_locatable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoundaryNorm</span><span class="p">,</span><span class="n">LogNorm</span><span class="p">,</span><span class="n">SymLogNorm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaxNLocator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="kn">import</span> <span class="n">LogLocator</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mtick</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">colormaps</span> <span class="k">as</span> <span class="n">cmaps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.cbook</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_sample_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.axes_grid1.inset_locator</span><span class="w"> </span><span class="kn">import</span> <span class="n">inset_axes</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..calculations.rotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">rotateVectorToVector</span><span class="p">,</span><span class="n">rotateVectorToVector_X</span>
+
+<span class="c1"># Verify that given cell has a saved vspace</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">verifyCellWithVspace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">cid</span><span class="p">):</span>
+    <span class="n">cell_candidates</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">,</span><span class="n">tag</span><span class="o">=</span><span class="s1">&#39;CELLSWITHBLOCKS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="c1"># tolist returns a scalar (non-iterable) if array is 0-dim, this variable needs to be an iterable</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cell_candidates</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">cell_candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">cell_candidates</span><span class="p">]</span>
+    <span class="n">found</span><span class="o">=</span><span class="kc">False</span>
+    <span class="k">if</span> <span class="n">cid</span> <span class="ow">in</span> <span class="n">cell_candidates</span><span class="p">:</span>
+        <span class="n">found</span><span class="o">=</span><span class="kc">True</span>
+    <span class="k">return</span> <span class="n">found</span>
+
+<span class="c1"># create three 1-dimensional profiles</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">doProfiles</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">VX</span><span class="p">,</span><span class="n">VY</span><span class="p">,</span><span class="n">Voutofslice</span><span class="p">,</span><span class="n">slicethick</span><span class="p">):</span>
+    <span class="c1"># Select cells which are within slice area</span>
+    <span class="n">indexes1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">Voutofslice</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Voutofslice</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VY</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VY</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">indexes2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">Voutofslice</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">Voutofslice</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VX</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VX</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">indexes3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">VX</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VX</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VY</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">VY</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">slicethick</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="n">bins1</span><span class="o">=</span><span class="n">bins2</span><span class="o">=</span><span class="n">bins3</span><span class="o">=</span><span class="n">axis1</span><span class="o">=</span><span class="n">axis2</span><span class="o">=</span><span class="n">axis3</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">indexes1</span><span class="p">):</span>
+        <span class="n">inax1</span> <span class="o">=</span> <span class="n">VX</span><span class="p">[</span><span class="n">indexes1</span><span class="p">]</span>
+        <span class="n">range1a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">inax1</span><span class="p">)</span>
+        <span class="n">range1b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">inax1</span><span class="p">)</span><span class="o">+</span><span class="n">slicethick</span>
+        <span class="n">nbins1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">range1b</span><span class="o">-</span><span class="n">range1a</span><span class="p">)</span><span class="o">/</span><span class="n">slicethick</span><span class="p">)</span>
+        <span class="n">bins1</span><span class="p">,</span> <span class="n">axis1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax1</span><span class="p">,</span> <span class="n">nbins1</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range1a</span><span class="p">,</span><span class="n">range1b</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="n">indexes1</span><span class="p">])</span>
+        <span class="n">nums1</span><span class="p">,</span> <span class="n">axis1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax1</span><span class="p">,</span> <span class="n">nbins1</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range1a</span><span class="p">,</span><span class="n">range1b</span><span class="p">])</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nums1</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">bins1</span><span class="p">[</span><span class="n">nonzero</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">bins1</span><span class="p">[</span><span class="n">nonzero</span><span class="p">],</span><span class="n">nums1</span><span class="p">[</span><span class="n">nonzero</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">indexes2</span><span class="p">):</span>
+        <span class="n">inax2</span> <span class="o">=</span> <span class="n">VY</span><span class="p">[</span><span class="n">indexes2</span><span class="p">]</span>
+        <span class="n">range2a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">inax2</span><span class="p">)</span>
+        <span class="n">range2b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">inax2</span><span class="p">)</span><span class="o">+</span><span class="n">slicethick</span>
+        <span class="n">nbins2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">range2b</span><span class="o">-</span><span class="n">range2a</span><span class="p">)</span><span class="o">/</span><span class="n">slicethick</span><span class="p">)</span>
+        <span class="n">bins2</span><span class="p">,</span> <span class="n">axis2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax2</span><span class="p">,</span> <span class="n">nbins2</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range2a</span><span class="p">,</span><span class="n">range2b</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="n">indexes2</span><span class="p">])</span>
+        <span class="n">nums2</span><span class="p">,</span> <span class="n">axis2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax2</span><span class="p">,</span> <span class="n">nbins2</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range2a</span><span class="p">,</span><span class="n">range2b</span><span class="p">])</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nums2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">bins2</span><span class="p">[</span><span class="n">nonzero</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">bins2</span><span class="p">[</span><span class="n">nonzero</span><span class="p">],</span><span class="n">nums2</span><span class="p">[</span><span class="n">nonzero</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">indexes3</span><span class="p">):</span>
+        <span class="n">inax3</span> <span class="o">=</span> <span class="n">Voutofslice</span><span class="p">[</span><span class="n">indexes3</span><span class="p">]</span>
+        <span class="n">range3a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">inax3</span><span class="p">)</span>
+        <span class="n">range3b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">inax3</span><span class="p">)</span><span class="o">+</span><span class="n">slicethick</span>
+        <span class="n">nbins3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">range3b</span><span class="o">-</span><span class="n">range3a</span><span class="p">)</span><span class="o">/</span><span class="n">slicethick</span><span class="p">)</span>
+        <span class="n">bins3</span><span class="p">,</span> <span class="n">axis3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax3</span><span class="p">,</span> <span class="n">nbins3</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range3a</span><span class="p">,</span><span class="n">range3b</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="n">indexes3</span><span class="p">])</span>
+        <span class="n">nums3</span><span class="p">,</span> <span class="n">axis3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">inax3</span><span class="p">,</span> <span class="n">nbins3</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">range3a</span><span class="p">,</span><span class="n">range3b</span><span class="p">])</span>
+        <span class="n">nonzero</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nums3</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">bins3</span><span class="p">[</span><span class="n">nonzero</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">bins3</span><span class="p">[</span><span class="n">nonzero</span><span class="p">],</span><span class="n">nums3</span><span class="p">[</span><span class="n">nonzero</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">,</span><span class="n">axis1</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">axis2</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">axis3</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="c1"># analyze velocity space in a spatial cell (velocity space reducer)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vSpaceReducer</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">slicetype</span><span class="p">,</span> <span class="n">normvect</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">,</span> 
+                  <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">setThreshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">normvectX</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># check if velocity space exists in this cell</span>
+    <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;fSaved&#39;</span><span class="p">):</span> <span class="c1">#restart files will not have this value</span>
+        <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;fSaved&#39;</span><span class="p">,</span><span class="n">cid</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;vg_f_saved&#39;</span><span class="p">):</span> <span class="c1">#restart files will not have this value        </span>
+        <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_f_saved&#39;</span><span class="p">,</span><span class="n">cid</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Assume velocity cells are cubes</span>
+    <span class="p">[</span><span class="n">vxsize</span><span class="p">,</span> <span class="n">vysize</span><span class="p">,</span> <span class="n">vzsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_size</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">vxsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vxsize</span><span class="p">)</span>
+    <span class="n">vysize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vysize</span><span class="p">)</span>
+    <span class="n">vzsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vzsize</span><span class="p">)</span>
+    <span class="c1"># Account for WID3 cells per block</span>
+    <span class="n">widval</span><span class="o">=</span><span class="mi">4</span> <span class="c1">#default WID=4</span>
+    <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_parameter</span><span class="p">(</span><span class="s2">&quot;velocity_block_width&quot;</span><span class="p">):</span>
+        <span class="n">widval</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;velocity_block_width&quot;</span><span class="p">)</span>
+    <span class="n">vxsize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vxsize</span>
+    <span class="n">vysize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vysize</span>
+    <span class="n">vzsize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vzsize</span>
+    <span class="p">[</span><span class="n">vxmin</span><span class="p">,</span> <span class="n">vymin</span><span class="p">,</span> <span class="n">vzmin</span><span class="p">,</span> <span class="n">vxmax</span><span class="p">,</span> <span class="n">vymax</span><span class="p">,</span> <span class="n">vzmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_extent</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">inputcellsize</span><span class="o">=</span><span class="p">(</span><span class="n">vxmax</span><span class="o">-</span><span class="n">vxmin</span><span class="p">)</span><span class="o">/</span><span class="n">vxsize</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Input velocity grid cell size &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">inputcellsize</span><span class="p">))</span>
+
+    <span class="n">velcells</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_velocity_cells</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">velcellslist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">velcells</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+    
+    <span class="c1"># check that velocity space has cells</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">velcellslist</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">velcellslist</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">velcellslist</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">V</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot; v-space cells&quot;</span><span class="p">)</span>
+
+    <span class="c1"># center on highest f-value</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">center</span><span class="p">)</span><span class="o">==</span><span class="nb">str</span> <span class="ow">and</span> <span class="n">center</span> <span class="o">==</span> <span class="s2">&quot;peak&quot;</span><span class="p">:</span>
+        <span class="n">peakindex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">Vpeak</span> <span class="o">=</span> <span class="n">V</span><span class="p">[</span><span class="n">peakindex</span><span class="p">,:]</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="n">V</span> <span class="o">-</span> <span class="n">Vpeak</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">peakindex</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Transforming to frame of peak f-value, travelling at speed &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">Vpeak</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">center</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="c1"># assumes it&#39;s a vector</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Transforming to frame travelling at speed &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">center</span><span class="p">))</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">V</span> <span class="o">-</span> <span class="n">center</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Error in shape of center vector! Give in form (vx,vy,vz).&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">setThreshold</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Drop all velocity cells which are below the sparsity threshold. Otherwise the plot will show buffer</span>
+        <span class="c1"># cells as well.</span>
+        <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;MinValue&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span> <span class="c1"># Sparsity threshold used to be saved as MinValue</span>
+            <span class="n">setThreshold</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;MinValue&#39;</span><span class="p">,</span><span class="n">cid</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found a vlsv file MinValue of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">setThreshold</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/EffectiveSparsityThreshold&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">setThreshold</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/EffectiveSparsityThreshold&quot;</span><span class="p">,</span><span class="n">cid</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found a vlsv file value &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/EffectiveSparsityThreshold&quot;</span><span class="o">+</span><span class="s2">&quot; of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">setThreshold</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_effectivesparsitythreshold&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">setThreshold</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_effectivesparsitythreshold&quot;</span><span class="p">,</span><span class="n">cid</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found a vlsv file value &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_effectivesparsitythreshold&quot;</span><span class="o">+</span><span class="s2">&quot; of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">setThreshold</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to find a MinValue or EffectiveSparsityThreshold value from the .vlsv file.</span><span class="se">\n</span><span class="s2"> Using a default value of 1.e-16. Override with setThreshold=value.&quot;</span><span class="p">)</span>
+            <span class="n">setThreshold</span> <span class="o">=</span> <span class="mf">1.e-16</span>
+    <span class="n">ii_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">f</span> <span class="o">&gt;=</span> <span class="n">setThreshold</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dropping velocity cells under setThreshold value &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">setThreshold</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ii_f</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">ii_f</span><span class="p">]</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">V</span><span class="p">[</span><span class="n">ii_f</span><span class="p">,:][</span><span class="mi">0</span><span class="p">,:,:]</span>
+
+    <span class="c1"># Geometric magic to widen the slice to assure that each cell has some velocity grid points inside it.</span>
+    <span class="n">samplebox</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">]</span> <span class="p">])</span>
+    <span class="n">sbrot</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">samplebox</span><span class="p">,</span><span class="n">normvect</span><span class="p">)</span>
+    <span class="n">rotminx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">rotmaxx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">rotminy</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">rotmaxy</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">rotminz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">rotmaxz</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">sbrot</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">gridratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">([</span> <span class="n">rotmaxx</span><span class="o">-</span><span class="n">rotminx</span><span class="p">,</span> <span class="n">rotmaxy</span><span class="o">-</span><span class="n">rotminy</span><span class="p">,</span> <span class="n">rotmaxz</span><span class="o">-</span><span class="n">rotminz</span> <span class="p">])</span>
+    <span class="k">if</span> <span class="n">gridratio</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>  <span class="c1"># adds a 5% margin to slice thickness</span>
+        <span class="n">gridratio</span> <span class="o">=</span> <span class="mf">1.05</span><span class="o">*</span><span class="n">gridratio</span>
+    <span class="n">slicethick</span><span class="o">=</span><span class="n">inputcellsize</span><span class="o">*</span><span class="n">gridratio</span>
+
+    <span class="k">if</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;xy&quot;</span><span class="p">:</span>
+        <span class="n">VX</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">VY</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;yz&quot;</span><span class="p">:</span>
+        <span class="n">VX</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">VY</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;xz&quot;</span><span class="p">:</span>
+        <span class="n">VX</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">VY</span> <span class="o">=</span> <span class="n">V</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Voutofslice</span> <span class="o">=</span> <span class="o">-</span><span class="n">V</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;vecperp&quot;</span><span class="p">:</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normvect</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">normvect</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvect</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvect</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Vrot</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="n">N</span><span class="p">)</span> <span class="c1"># aligns the Z axis of V with normvect</span>
+        <span class="n">VX</span> <span class="o">=</span> <span class="n">Vrot</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">VY</span> <span class="o">=</span> <span class="n">Vrot</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">Vrot</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bperp&quot;</span> <span class="ow">or</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bpara&quot;</span> <span class="ow">or</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bpara1&quot;</span><span class="p">:</span>
+        <span class="c1"># Find velocity components in rotated frame where B is aligned with Z and BcrossV is aligned with X</span>
+        <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normvect</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">normvect</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvect</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvect</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">NX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normvectX</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">normvectX</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvectX</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">normvectX</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">Vrot</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="n">N</span><span class="p">)</span> <span class="c1"># transforms V to frame where z is aligned with N=B</span>
+        <span class="n">NXrot</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">NX</span><span class="p">,</span><span class="n">N</span><span class="p">)</span> <span class="c1"># transforms NX=BcrossV to frame where z is aligned with N=B (hence NXrot in XY plane)</span>
+        <span class="n">Vrot2</span> <span class="o">=</span> <span class="n">rotateVectorToVector_X</span><span class="p">(</span><span class="n">Vrot</span><span class="p">,</span><span class="n">NXrot</span><span class="p">)</span> <span class="c1"># transforms Vrot to frame where x is aligned with NXrot (hence preserves z)</span>
+        <span class="c1"># Choose the correct components for this plot</span>
+        <span class="k">if</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bperp&quot;</span><span class="p">:</span>
+            <span class="n">VX</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># the X axis of the slice is BcrossV=perp1</span>
+            <span class="n">VY</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># the Y axis of the slice is Bcross(BcrossV)=perp2</span>
+            <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># the Z axis of the slice is B</span>
+        <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bpara&quot;</span><span class="p">:</span>
+            <span class="n">VX</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># the X axis of the slice is B</span>
+            <span class="n">VY</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># the Y axis of the slice is Bcross(BcrossV)=perp2</span>
+            <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># the Z axis of the slice is -BcrossV=perp1</span>
+        <span class="k">elif</span> <span class="n">slicetype</span><span class="o">==</span><span class="s2">&quot;Bpara1&quot;</span><span class="p">:</span>
+            <span class="n">VX</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># the X axis of the slice is B</span>
+            <span class="n">VY</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># the Y axis of the slice is BcrossV=perp1</span>
+            <span class="n">Voutofslice</span> <span class="o">=</span> <span class="n">Vrot2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># the Z axis of the slice is Bcross(BcrossV)=perp2</span>
+
+        <span class="c1"># Calculations for verification of rotation:</span>
+        <span class="n">testvectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">N</span><span class="p">,</span><span class="n">NX</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="n">NX</span><span class="p">)])</span> <span class="c1"># verifies B, BcrossV, and Bcross(BcrossV)</span>
+        <span class="n">testrot</span> <span class="o">=</span> <span class="n">rotateVectorToVector</span><span class="p">(</span><span class="n">testvectors</span><span class="p">,</span><span class="n">N</span><span class="p">)</span> <span class="c1"># transforms testvectors to frame where z is aligned with N=B</span>
+        <span class="n">testrot2</span> <span class="o">=</span> <span class="n">rotateVectorToVector_X</span><span class="p">(</span><span class="n">testrot</span><span class="p">,</span><span class="n">NXrot</span><span class="p">)</span> <span class="c1"># transforms testrot to frame where x is aligned with NXrot (hence preserves z)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">NXrot</span><span class="p">))</span><span class="o">&gt;</span><span class="mf">1.e-3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error in rotation: NXrot not a unit vector&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">NXrot</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">1.e-3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error in rotation: NXrot not in x-y-plane&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">count</span><span class="p">,</span><span class="n">testvect</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testrot2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">testvect</span><span class="p">))</span><span class="o">&gt;</span><span class="mf">1.e-3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error in rotation: testvector &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="n">count</span><span class="p">,</span><span class="n">testvect</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; not a unit vector&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">testvect</span><span class="p">))</span><span class="o">&gt;</span><span class="mf">1.e-3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error in rotation: testvector &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="n">count</span><span class="p">,</span><span class="n">testvect</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot; largest component is not unity&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span><span class="s2">&quot;Error finding rotation of v-space!&quot;</span><span class="p">)</span>
+
+
+    <span class="c1"># create three 1-dimensional profiles across VDF</span>
+    <span class="p">(</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">,</span><span class="n">axis1</span><span class="p">,</span><span class="n">axis2</span><span class="p">,</span><span class="n">axis3</span><span class="p">)</span> <span class="o">=</span> <span class="n">doProfiles</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">VX</span><span class="p">,</span><span class="n">VY</span><span class="p">,</span><span class="n">Voutofslice</span><span class="p">,</span><span class="n">slicethick</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="kc">True</span><span class="p">,</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">,</span><span class="n">axis1</span><span class="p">,</span><span class="n">axis2</span><span class="p">,</span><span class="n">axis3</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="plot_vdf_profiles">
+<a class="viewcode-back" href="../../../../plot/#analysator.plot.plot_vdf_profiles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_vdf_profiles</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">vlsvobj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">filedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">cellids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">,</span>
+             <span class="n">coordinates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">coordre</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+             <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">nooverwrite</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">draw</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">axisunit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">tickinterval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">lin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">thick</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+             <span class="n">wmark</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wmarkb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+             <span class="n">fmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">vmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">xy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">xz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yz</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">normal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">bpara</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bpara1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bperp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">cbulk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cpeak</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">setThreshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">axes</span><span class="o">=</span><span class="kc">None</span>
+             <span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Plots vdf values along axis-aligned lines (see axis definitions).</span>
+
+<span class="sd">    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.</span>
+<span class="sd">    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead</span>
+<span class="sd">    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name</span>
+<span class="sd">    :kwarg step:        output step index, used for constructing output (and possibly input) filename</span>
+<span class="sd">    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)</span>
+<span class="sd">                        If directory does not exist, it will be created. If the string does not end in a</span>
+<span class="sd">                        forward slash, the final parti will be used as a perfix for the files.</span>
+<span class="sd">    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    </span>
+<span class="sd">     </span>
+<span class="sd">    :kwarg cellids:     LIST of cell IDs to plot VDF for</span>
+<span class="sd">    :kwarg coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)</span>
+<span class="sd">    :kwarg coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)</span>
+<span class="sd">    :kwarg pop:         Population to plot, default proton</span>
+
+<span class="sd">    :kwarg run:         run identifier, used for constructing output filename</span>
+<span class="sd">    :kwarg title:       string to use as plot title instead of time.</span>
+<span class="sd">                        Special case: Set to &quot;msec&quot; to plot time with millisecond accuracy or &quot;musec&quot;</span>
+<span class="sd">                        for microsecond accuracy. &quot;sec&quot; is integer second accuracy.</span>
+<span class="sd">    :kwarg fmin,fmax:   min and max values for colour scale and colour bar. If no values are given,</span>
+<span class="sd">                        min and max values for whole plot are used.</span>
+<span class="sd">    :kwarg vmin,vmax:   min and max values for x-axis</span>
+
+<span class="sd">    :kwarg axisunit:    Plot v-axes using 10^{axisunit} m/s (default: km/s)</span>
+<span class="sd">    :kwarg tickinterval: Interval at which to have ticks on axes</span>
+<span class="sd">    :kwarg lin:         Plot using linear y-axis (default log)</span>
+<span class="sd">   </span>
+<span class="sd">    :kwarg xy:          Perform slice in x-y-direction</span>
+<span class="sd">    :kwarg xz:          Perform slice in x-z-direction</span>
+<span class="sd">    :kwarg yz:          Perform slice in y-z-direction</span>
+<span class="sd">    :kwarg normal:      Perform slice in plane perpendicular to given vector</span>
+<span class="sd">    :kwarg bpara:       Perform slice in B_para / B_perp2 plane</span>
+<span class="sd">    :kwarg bpara1:       Perform slice in B_para / B_perp1 plane</span>
+<span class="sd">    :kwarg bperp:       Perform slice in B_perp1 / B_perp2 plane</span>
+<span class="sd">                        If no plane is given, default is simulation plane (for 2D simulations)</span>
+
+<span class="sd">    :kwarg cbulk:       Center plot on position of total bulk velocity (or if not available,</span>
+<span class="sd">                        bulk velocity for this population)</span>
+<span class="sd">    :kwarg cpeak:       Center plot on velocity with highest phase-space density</span>
+<span class="sd">    :kwarg center:      Center plot on provided 3-element velocity vector position (in m/s)</span>
+<span class="sd">                        If set instead to &quot;bulk&quot; will center on bulk velocity</span>
+<span class="sd">                        If set instead to &quot;peak&quot; will center on velocity with highest phase-space density</span>
+<span class="sd">    :kwarg setThreshold: Use given setThreshold value instead of EffectiveSparsityThreshold or MinValue value read from file</span>
+<span class="sd">                        Useful if EffectiveSparsityThreshold wasn&#39;t saved, or user wants to draw buffer cells</span>
+<span class="sd">                        with values below the sparsity threshold</span>
+
+<span class="sd">    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text</span>
+<span class="sd">                        string, tries to use that as the location, e.g. &quot;NW&quot;,&quot;NE&quot;,&quot;SW&quot;,&quot;SW&quot;</span>
+<span class="sd">    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.</span>
+
+<span class="sd">    :kwarg draw:        Draw image on-screen instead of saving to file (requires x-windowing)</span>
+<span class="sd">    :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.</span>
+
+<span class="sd">    :kwarg scale:       Scale text size (default=1.0)</span>
+<span class="sd">    :kwarg thick:       line and axis thickness, default=1.0</span>
+<span class="sd">    </span>
+
+<span class="sd">    :returns:           Outputs an image to a file or to the screen.</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        # Example usage:</span>
+
+<span class="sd">        pt.plot.plot_vdf(filename=&quot;/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv&quot;,</span>
+<span class="sd">                         coordre=[[11.7,-1.6,0.]], cbulk=1, bpara=1,box=[-2e6,2e6,-2e6,2e6],draw=1)</span>
+
+<span class="sd">        pt.plot.plot_vdf(filename=&quot;/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv&quot;,</span>
+<span class="sd">                         cellids=1670561, xy=1, box=[-2e6,2e6,-2e6,2e6], slicethick=5)</span>
+
+<span class="sd">        pt.plot.plot_vdf(filename=&quot;/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv&quot;,</span>
+<span class="sd">                         cellids=[1670561,], xz=1, box=[-2e6,2e6,-2e6,2e6], slicethick=0)</span>
+
+
+<span class="sd">    Note tilted slices: By default, the program samples the V-space with a slice where each cell is cube the</span>
+<span class="sd">    dimensions of which are found by performing a rotation on a sample square and finding the maximum xyz-extent. This ensures</span>
+<span class="sd">    adequate coverage and decreases sampling effects. This behaviour can be overridden with the slicethick and cellsize keywords.</span>
+
+<span class="sd">    Setting a value of ``slicethick=0`` will result in the whole VDF being flattened into a single plane. This may result in</span>
+<span class="sd">    some slight sampling artefacts, but is a good measure of complex populations.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># Verify the location of this watermark image</span>
+    <span class="n">watermarkimage</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;logo_color.png&#39;</span><span class="p">)</span>
+    <span class="n">watermarkimageblack</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;logo_black.png&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Input file or object</span>
+    <span class="k">if</span> <span class="n">filename</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">vlsvReader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">vlsvobj</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">vlsvReader</span><span class="o">=</span><span class="n">vlsvobj</span>
+    <span class="k">elif</span> <span class="p">((</span><span class="n">filedir</span><span class="o">!=</span><span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">step</span><span class="o">!=</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">filedir</span><span class="o">+</span><span class="s1">&#39;bulk*&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.vlsv&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#filename = filedir+&#39;bulk.&#39;+str(step).rjust(7,&#39;0&#39;)+&#39;.vlsv&#39;</span>
+        <span class="n">vlsvReader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;needs a .vlsv file name, python object, or directory and step&quot;</span><span class="p">)</span>
+
+    <span class="n">scale</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Most text</span>
+    <span class="n">fontsize2</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Time title</span>
+    <span class="n">fontsize3</span><span class="o">=</span><span class="mi">5</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Colour bar ticks</span>
+    <span class="n">fontsize4</span><span class="o">=</span><span class="mi">12</span><span class="o">*</span><span class="n">scale</span> <span class="c1"># Big label</span>
+
+    <span class="c1"># Plot title with time</span>
+    <span class="n">timeval</span><span class="o">=</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Plot title with time</span>
+    <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;msec&quot;</span> <span class="ow">or</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;musec&quot;</span><span class="p">:</span>        
+        <span class="k">if</span> <span class="n">timeval</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>    
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.1f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;sec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.0f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;msec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.3f}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">title</span><span class="o">==</span><span class="s2">&quot;musec&quot;</span><span class="p">:</span> <span class="n">timeformat</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.6f}</span><span class="s1">&#39;</span>
+            <span class="n">plot_title</span> <span class="o">=</span> <span class="s2">&quot;t=&quot;</span><span class="o">+</span><span class="n">timeformat</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">timeval</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39; s&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">plot_title</span> <span class="o">=</span> <span class="n">title</span>
+
+    <span class="k">if</span> <span class="n">draw</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">axes</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># step, used for file name</span>
+        <span class="k">if</span> <span class="n">step</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">timeval</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;_t&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">timeval</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stepstr</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="c1"># If run name isn&#39;t given, just put &quot;plot&quot; in the output file name</span>
+        <span class="k">if</span> <span class="n">run</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">run</span><span class="o">=</span><span class="s1">&#39;plot&#39;</span>
+            <span class="c1"># If working within CSC filesystem, make a guess:</span>
+            <span class="k">if</span> <span class="n">filename</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">16</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;/proj/vlasov/2D/&quot;</span><span class="p">:</span>
+                        <span class="n">run</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">19</span><span class="p">]</span>
+        
+
+    <span class="c1"># If population isn&#39;t defined i.e. defaults to protons, check if </span>
+    <span class="c1"># instead should use old version &quot;avgs&quot;</span>
+    <span class="k">if</span> <span class="n">pop</span><span class="o">==</span><span class="s2">&quot;proton&quot;</span><span class="p">:</span>
+       <span class="k">if</span> <span class="ow">not</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="n">pop</span><span class="p">):</span>
+           <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="s2">&quot;avgs&quot;</span><span class="p">):</span>
+               <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;avgs&quot;</span>
+               <span class="c1">#logging.info(&quot;Auto-switched to population avgs&quot;)</span>
+           <span class="k">else</span><span class="p">:</span>
+               <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unable to detect population &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot; in .vlsv file!&quot;</span><span class="p">)</span>
+               <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="n">pop</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unable to detect population &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot; in .vlsv file!&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>       
+
+    <span class="c1">#read in mesh size and cells in ordinary space</span>
+    <span class="p">[</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+    <span class="n">xsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">xsize</span><span class="p">)</span>
+    <span class="n">ysize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ysize</span><span class="p">)</span>
+    <span class="n">zsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">zsize</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">vxsize</span><span class="p">,</span> <span class="n">vysize</span><span class="p">,</span> <span class="n">vzsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_size</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">vxsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vxsize</span><span class="p">)</span>
+    <span class="n">vysize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vysize</span><span class="p">)</span>
+    <span class="n">vzsize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vzsize</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">vxmin</span><span class="p">,</span> <span class="n">vymin</span><span class="p">,</span> <span class="n">vzmin</span><span class="p">,</span> <span class="n">vxmax</span><span class="p">,</span> <span class="n">vymax</span><span class="p">,</span> <span class="n">vzmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_extent</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">inputcellsize</span><span class="o">=</span><span class="p">(</span><span class="n">vxmax</span><span class="o">-</span><span class="n">vxmin</span><span class="p">)</span><span class="o">/</span><span class="n">vxsize</span>
+
+    <span class="c1"># Account for WID3 cells per block</span>
+    <span class="n">widval</span><span class="o">=</span><span class="mi">4</span> <span class="c1">#default WID=4</span>
+    <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_parameter</span><span class="p">(</span><span class="s2">&quot;velocity_block_width&quot;</span><span class="p">):</span>
+        <span class="n">widval</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;velocity_block_width&quot;</span><span class="p">)</span>
+    <span class="n">vxsize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vxsize</span>
+    <span class="n">vysize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vysize</span>
+    <span class="n">vzsize</span> <span class="o">=</span> <span class="n">widval</span><span class="o">*</span><span class="n">vzsize</span>
+
+    <span class="n">Re</span> <span class="o">=</span> <span class="mf">6.371e+6</span> <span class="c1"># Earth radius in m</span>
+    <span class="c1"># unit of velocity</span>
+    <span class="n">velUnit</span> <span class="o">=</span> <span class="mf">1e3</span>
+    <span class="n">velUnitStr</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[km s$^{-1}$]&#39;</span>
+    <span class="k">if</span> <span class="n">axisunit</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="n">velUnit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">axisunit</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">axisunit</span><span class="p">,</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">velUnitStr</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[m s$^{-1}$]&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">velUnitStr</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;[$10^{&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">axisunit</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;}$ m s$^{-1}$]&#39;</span>
+
+    <span class="c1"># Select ploitting back-end based on on-screen plotting or direct to file without requiring x-windowing</span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># If axes are provided, leave backend as-is.</span>
+        <span class="k">if</span> <span class="n">draw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">pt</span><span class="o">.</span><span class="n">backend_interactive</span><span class="p">:</span> <span class="c1">#&#39;TkAgg&#39;: </span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">backend_interactive</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">:</span> <span class="c1">#&#39;Agg&#39;:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="p">)</span>  
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">cellids</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">coordinates</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">coordre</span><span class="o">==</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot; must provide either cell id&#39;s or coordinates&quot;</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="n">coordre</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Transform to metres</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="n">Re</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">coordre</span><span class="p">))</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">coordinates</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Check if coordinates given were actually just a single 3-element list</span>
+        <span class="c1"># instead of a list of 3-element lists:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">coordinates</span><span class="p">]</span>
+
+        <span class="c1"># Calculate cell IDs from given coordinates        </span>
+        <span class="n">xReq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">yReq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">zReq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">xReq</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">yReq</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">zReq</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="c1">#logging.info(&#39;Number of points: &#39; + str(xReq.shape[0]))</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: bad coordinate variables given&#39;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+        <span class="n">cidsTemp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">xReq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">cidRequest</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xReq</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span><span class="n">yReq</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span><span class="n">zReq</span><span class="p">[</span><span class="n">ii</span><span class="p">]])))</span>
+            <span class="n">cidNearestVspace</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">cidRequest</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">cidNearestVspace</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid_with_vdf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xReq</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span><span class="n">yReq</span><span class="p">[</span><span class="n">ii</span><span class="p">],</span><span class="n">zReq</span><span class="p">[</span><span class="n">ii</span><span class="p">]]),</span> <span class="n">pop</span> <span class="o">=</span> <span class="n">pop</span><span class="p">)</span>   <span class="c1"># deprecated getNearestCellWithVspace(). needs testing</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: cell not found&#39;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">cidNearestVspace</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: cell with vspace not found&#39;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+            <span class="n">xCid</span><span class="p">,</span><span class="n">yCid</span><span class="p">,</span><span class="n">zCid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cidRequest</span><span class="p">)</span>
+            <span class="n">xVCid</span><span class="p">,</span><span class="n">yVCid</span><span class="p">,</span><span class="n">zVCid</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cidNearestVspace</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Point: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ii</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">xReq</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Requested coordinates : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">xReq</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">yReq</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">zReq</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">/</span><span class="n">Re</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Nearest spatial cell  : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">xCid</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span>    <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">yCid</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span>    <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">zCid</span><span class="o">/</span><span class="n">Re</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Nearest vspace        : &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">xVCid</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span>   <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">yVCid</span><span class="o">/</span><span class="n">Re</span><span class="p">)</span>   <span class="o">+</span> <span class="s1">&#39;, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">zVCid</span><span class="o">/</span><span class="n">Re</span><span class="p">))</span>
+            <span class="n">cidsTemp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cidNearestVspace</span><span class="p">)</span>
+        <span class="n">cellids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">cidsTemp</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Unique cells with vspace found: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cidsTemp</span><span class="p">)))</span>
+    <span class="c1">#else:</span>
+    <span class="c1">#    logging.info(&#39;Using given cell ids and assuming vspace is stored in them&#39;)</span>
+
+    <span class="c1"># Ensure that we now have a list of cellids instead of just a single cellid</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cellids</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Converting given cellid to a single-element list of cellids.&quot;</span><span class="p">)</span>
+        <span class="n">cellids</span> <span class="o">=</span> <span class="p">[</span><span class="n">cellids</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">coordinates</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">coordre</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># User-provided cellids</span>
+        <span class="k">for</span> <span class="n">cellid</span> <span class="ow">in</span> <span class="n">cellids</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">verifyCellWithVspace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error, cellid &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; does not contain a VDF!&quot;</span><span class="p">)</span>
+                
+
+    <span class="k">if</span> <span class="n">draw</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">axes</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Program was requested to draw to screen or existing axes instead of saving to a file. </span>
+        <span class="c1"># Just handle the first cellid.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cellids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">cellids</span> <span class="o">=</span> <span class="p">[</span><span class="n">cellids</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;User requested on-screen display, only plotting first requested cellid!&quot;</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">cellid</span> <span class="ow">in</span> <span class="n">cellids</span><span class="p">:</span>
+        <span class="c1"># Initialise some values</span>
+        <span class="n">fminuse</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">fmaxuse</span><span class="o">=</span><span class="kc">None</span>
+
+        <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;cellid &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, x = &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, y = &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>  <span class="o">+</span> <span class="s1">&#39;, z = &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">z</span><span class="p">))</span>
+
+        <span class="c1"># Extracts Vbulk (used in case (i) slice in B-frame and/or (ii) cbulk is neither None nor a string</span>
+        <span class="n">Vbulk</span><span class="o">=</span><span class="kc">None</span>
+        <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;moments&#39;</span><span class="p">):</span>
+            <span class="c1"># This should be a restart file</span>
+            <span class="n">Vbulk</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;restart_V&#39;</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;vg_moments&#39;</span><span class="p">):</span>
+            <span class="c1"># This should be a restart file</span>
+            <span class="n">Vbulk</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;restart_V&#39;</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_v&#39;</span><span class="p">):</span>
+            <span class="c1"># multipop bulk file</span>
+            <span class="n">Vbulk</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_v&#39;</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/V&#39;</span><span class="p">):</span>
+            <span class="c1"># multipop bulk file</span>
+            <span class="n">Vbulk</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/V&#39;</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">):</span>
+            <span class="c1"># regular bulk file, currently analysator supports pre- and post-multipop files with &quot;V&quot;</span>
+            <span class="n">Vbulk</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+        <span class="c1"># if Vbulk is None:</span>
+        <span class="c1">#     logging.info(&quot;Error in finding plasma bulk velocity!&quot;)</span>
+        <span class="c1">#     sys.exit()</span>
+
+        <span class="c1"># If necessary, find magnetic field</span>
+        <span class="k">if</span> <span class="n">bpara</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">bperp</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">bpara1</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># First check if volumetric fields are present</span>
+            <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;B_vol&quot;</span><span class="p">):</span>
+                <span class="n">Bvect</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;B_vol&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">):</span>
+                <span class="n">Bvect</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+            <span class="c1"># Otherwise perform linear reconstruction to find</span>
+            <span class="c1"># approximation of cell-center value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Find dimension of simulation</span>
+                <span class="k">if</span> <span class="n">ysize</span><span class="o">==</span><span class="mi">1</span> <span class="ow">or</span> <span class="n">zsize</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># 2D</span>
+                    <span class="n">cellidlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">cellid</span><span class="p">,</span><span class="n">cellid</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">cellid</span><span class="o">+</span><span class="n">xsize</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cellidlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">cellid</span><span class="p">,</span><span class="n">cellid</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">cellid</span><span class="o">+</span><span class="n">xsize</span><span class="p">,</span><span class="n">cellid</span><span class="o">+</span><span class="n">xsize</span><span class="o">*</span><span class="n">ysize</span><span class="p">]</span>
+                <span class="c1"># Read raw data for the required cells    </span>
+                <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;vg_b&quot;</span><span class="p">):</span>
+                    <span class="n">Braw</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_b&quot;</span><span class="p">,</span> <span class="n">cellidlist</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;fg_b&quot;</span><span class="p">):</span>
+                    <span class="n">Braw</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;fg_b&quot;</span><span class="p">,</span> <span class="n">cellidlist</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">):</span>
+                    <span class="n">Braw</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">cellidlist</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;background_B&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;perturbed_B&quot;</span><span class="p">)):</span>
+                    <span class="c1"># used e.g. for restart files</span>
+                    <span class="n">BGB</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;background_B&quot;</span><span class="p">,</span> <span class="n">cellidlist</span><span class="p">)</span>
+                    <span class="n">PERBB</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;perturbed_B&quot;</span><span class="p">,</span> <span class="n">cellidlist</span><span class="p">)</span>
+                    <span class="n">Braw</span> <span class="o">=</span> <span class="n">BGB</span><span class="o">+</span><span class="n">PERBB</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Error finding B vector direction!&quot;</span><span class="p">)</span>
+                <span class="c1"># Non-reconstruction version, using just cell-face-values</span>
+                <span class="c1"># Bvect = Braw[0]</span>
+                <span class="c1"># Now average in each face direction (not proper reconstruction)</span>
+                <span class="k">if</span> <span class="n">ysize</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1">#polar</span>
+                    <span class="n">Bvect</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">])])</span>
+                <span class="k">elif</span> <span class="n">zsize</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># ecliptic</span>
+                    <span class="n">Bvect</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]])</span>
+                <span class="k">else</span><span class="p">:</span> <span class="c1"># 3D, verify this?</span>
+                    <span class="n">Bvect</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">Braw</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">Braw</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="mi">2</span><span class="p">])])</span>
+
+        <span class="c1"># Check slice to perform (and possibly normal vector)</span>
+        <span class="n">normvect</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">normvectX</span><span class="o">=</span><span class="kc">None</span>
+        <span class="k">if</span> <span class="n">xy</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">xz</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">yz</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">normal</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">bpara</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">bpara1</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">bperp</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Use default slice for this simulation</span>
+            <span class="c1"># Check if ecliptic or polar run</span>
+            <span class="k">if</span> <span class="n">ysize</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># polar</span>
+                <span class="n">xz</span><span class="o">=</span><span class="mi">1</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;xz&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+                <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+            <span class="k">elif</span> <span class="n">zsize</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># ecliptic</span>
+                <span class="n">xy</span><span class="o">=</span><span class="mi">1</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+                <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Problem finding default slice direction&quot;</span><span class="p">)</span>
+                <span class="n">yz</span><span class="o">=</span><span class="mi">1</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;yz&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+                <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+        <span class="k">elif</span> <span class="n">normal</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">normal</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;vecperp&quot;</span>
+                <span class="n">normvect</span><span class="o">=</span><span class="n">normal</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_1$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_2$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_3$&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Error parsing slice normal vector!&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">xy</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;xy&quot;</span>
+            <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+            <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+            <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+            <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+        <span class="k">elif</span> <span class="n">xz</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;xz&quot;</span>
+            <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+            <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+            <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+            <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+        <span class="k">elif</span> <span class="n">yz</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;yz&quot;</span>
+            <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_y$&quot;</span>
+            <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_z$&quot;</span>
+            <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_x$&quot;</span>
+            <span class="n">normvect</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># used just for cell size normalisation</span>
+        <span class="k">elif</span> <span class="n">bpara</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">bpara1</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">bperp</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Bvect</span><span class="o">.</span><span class="n">shape</span><span class="o">==</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">Bvect</span> <span class="o">=</span> <span class="n">Bvect</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">normvect</span> <span class="o">=</span> <span class="n">Bvect</span>
+
+            <span class="c1"># Calculates BcrossV</span>
+            <span class="n">BcrossV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">Bvect</span><span class="p">,</span><span class="n">Vbulk</span><span class="p">)</span>
+            <span class="n">normvectX</span> <span class="o">=</span> <span class="n">BcrossV</span>
+
+            <span class="k">if</span> <span class="n">bperp</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># slice in b_perp1/b_perp2</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;Bperp&quot;</span>
+                <span class="c1">#pltxstr=r&quot;$v_{\perp 1}$&quot;</span>
+                <span class="c1">#pltystr=r&quot;$v_{\perp 2}$&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times V}$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times (B \times V)}$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_</span><span class="si">{B}</span><span class="s2">$&quot;</span>
+            <span class="k">elif</span> <span class="n">bpara1</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># slice in b_parallel/b_perp1 plane</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;Bpara1&quot;</span>
+                <span class="c1">#pltxstr=r&quot;$v_{\parallel}$&quot;</span>
+                <span class="c1">#pltystr=r&quot;$v_{\perp 1}$&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_</span><span class="si">{B}</span><span class="s2">$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times V}$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times (B \times V)}$&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># slice in b_parallel/b_perp2 plane</span>
+                <span class="n">slicetype</span><span class="o">=</span><span class="s2">&quot;Bpara&quot;</span>
+                <span class="c1">#pltxstr=r&quot;$v_{\parallel}$&quot;</span>
+                <span class="c1">#pltystr=r&quot;$v_{\perp 2}$&quot;</span>
+                <span class="n">pltxstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_</span><span class="si">{B}</span><span class="s2">$&quot;</span>
+                <span class="n">pltystr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times (B \times V)}$&quot;</span>
+                <span class="n">pltzstr</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$v_{B \times V}$&quot;</span>
+
+
+        <span class="c1"># Extend velocity space and each cell to account for slice directions oblique to axes</span>
+        <span class="n">normvect</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normvect</span><span class="p">)</span>
+        <span class="n">normvect</span> <span class="o">=</span> <span class="n">normvect</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">normvect</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">normvectX</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">normvectX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normvectX</span><span class="p">)</span>
+            <span class="n">normvectX</span> <span class="o">=</span> <span class="n">normvectX</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">normvectX</span><span class="p">)</span>
+
+
+        <span class="k">if</span> <span class="n">cpeak</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">center</span><span class="o">=</span><span class="s1">&#39;peak&#39;</span>
+        <span class="k">if</span> <span class="n">cbulk</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">center</span> <span class="o">==</span> <span class="s1">&#39;bulk&#39;</span><span class="p">:</span>
+            <span class="n">center</span><span class="o">=</span><span class="kc">None</span> <span class="c1"># Finds the bulk velocity and places it in the center vector</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Transforming to plasma frame&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">cbulk</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">cbulk</span><span class="p">):</span>
+                    <span class="n">center</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">cbulk</span><span class="p">,</span><span class="n">cellid</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found bulk frame from variable &quot;</span><span class="o">+</span><span class="n">cbulk</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">center</span> <span class="o">=</span> <span class="n">Vbulk</span>
+
+        <span class="c1"># Read velocity data into profiles</span>
+                
+        <span class="p">(</span><span class="n">checkOk</span><span class="p">,</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">,</span><span class="n">axis1</span><span class="p">,</span><span class="n">axis2</span><span class="p">,</span><span class="n">axis3</span><span class="p">)</span><span class="o">=</span> <span class="n">vSpaceReducer</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="p">,</span> <span class="n">slicetype</span><span class="p">,</span> <span class="n">normvect</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">,</span> 
+                                                       <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span><span class="n">setThreshold</span><span class="o">=</span><span class="n">setThreshold</span><span class="p">,</span><span class="n">normvectX</span><span class="o">=</span><span class="n">normvectX</span><span class="p">)</span>
+
+        <span class="c1"># Check that data is ok and not empty</span>
+        <span class="k">if</span> <span class="n">checkOk</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ERROR: error from velocity space reducer. No velocity cells?&#39;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># If no other plotting fmin fmax values are given, take min and max of array</span>
+        <span class="k">if</span> <span class="n">fmin</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">fminuse</span><span class="o">=</span><span class="n">fmin</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#fminuse=np.nanmin(np.concatenate((bins1,np.concatenate((bins2,bins3)))))</span>
+            <span class="n">fminuse</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">)))</span><span class="o">*</span><span class="mf">0.8</span>
+        <span class="k">if</span> <span class="n">fmax</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">fmaxuse</span><span class="o">=</span><span class="n">fmax</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#fmaxuse=np.nanmax(np.concatenate((bins1,np.concatenate((bins2,bins3)))))</span>
+            <span class="n">fmaxuse</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">bins1</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span><span class="n">bins3</span><span class="p">)))</span><span class="o">*</span><span class="mf">1.5</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Active f range is &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">fminuse</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">fmaxuse</span><span class="p">))</span>
+
+        <span class="c1"># If no other plotting fmin fmax values are given, take min and max of array</span>
+        <span class="k">if</span> <span class="n">vmin</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">vminuse</span><span class="o">=</span><span class="n">vmin</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vminuse</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">axis1</span><span class="p">,</span><span class="n">axis2</span><span class="p">,</span><span class="n">axis3</span><span class="p">)))</span><span class="o">/</span><span class="n">velUnit</span>
+            <span class="k">if</span> <span class="n">vminuse</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">vminuse</span> <span class="o">=</span> <span class="n">vminuse</span><span class="o">*</span><span class="mf">1.2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vminuse</span> <span class="o">=</span> <span class="n">vminuse</span><span class="o">*</span><span class="mf">0.8</span>
+        <span class="k">if</span> <span class="n">vmax</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+            <span class="n">vmaxuse</span><span class="o">=</span><span class="n">vmax</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vmaxuse</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">axis1</span><span class="p">,</span><span class="n">axis2</span><span class="p">,</span><span class="n">axis3</span><span class="p">)))</span><span class="o">/</span><span class="n">velUnit</span>
+            <span class="k">if</span> <span class="n">vmaxuse</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">vmaxuse</span> <span class="o">=</span> <span class="n">vmaxuse</span><span class="o">*</span><span class="mf">0.8</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vmaxuse</span> <span class="o">=</span> <span class="n">vmaxuse</span><span class="o">*</span><span class="mf">1.2</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Active v range is &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">vminuse</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">vmaxuse</span><span class="p">))</span>
+
+        <span class="n">axis1</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">axis1</span><span class="p">)</span><span class="o">/</span><span class="n">velUnit</span>
+        <span class="n">axis2</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">axis2</span><span class="p">)</span><span class="o">/</span><span class="n">velUnit</span>
+        <span class="n">axis3</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">axis3</span><span class="p">)</span><span class="o">/</span><span class="n">velUnit</span>
+
+        <span class="c1"># Define figure size        </span>
+        <span class="c1">#ratio = (yvalsrange[1]-yvalsrange[0])/(xvalsrange[1]-xvalsrange[0])</span>
+        <span class="c1"># default for square figure is figsize=[4.0,3.15]</span>
+        <span class="n">figsize</span> <span class="o">=</span> <span class="p">[</span><span class="mf">4.0</span><span class="p">,</span><span class="mf">3.15</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">axes</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Create 300 dpi image of suitable size</span>
+            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span><span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+            <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span> <span class="c1"># get current axes</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax1</span><span class="o">=</span><span class="n">axes</span>
+
+        <span class="k">if</span> <span class="n">lin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis1</span><span class="p">,</span><span class="n">bins1</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s1">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">pltxstr</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis2</span><span class="p">,</span><span class="n">bins2</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s1">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">pltystr</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis3</span><span class="p">,</span><span class="n">bins3</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s1">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">pltzstr</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="n">fminuse</span><span class="p">,</span><span class="n">fmaxuse</span><span class="p">])</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="n">vminuse</span><span class="p">,</span><span class="n">vmaxuse</span><span class="p">])</span>
+
+        
+        <span class="c1"># ax1.set_xlim([val/velUnit for val in xvalsrange])</span>
+        <span class="c1"># ax1.set_ylim([val/velUnit for val in yvalsrange])</span>
+
+        <span class="c1"># Grid</span>
+        <span class="c1">#plt.grid(color=&#39;grey&#39;,linestyle=&#39;-&#39;)</span>
+        <span class="c1">#plt.minorticks_on()</span>
+        <span class="c1">#ax1.grid(color=&#39;grey&#39;,linestyle=&#39;-&#39;,lw=thick)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">axiss</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">,</span><span class="s1">&#39;bottom&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">,</span><span class="s1">&#39;right&#39;</span><span class="p">]:</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">axiss</span><span class="p">]</span><span class="o">.</span><span class="n">set_linewidth</span><span class="p">(</span><span class="n">thick</span><span class="p">)</span>
+
+        <span class="n">ax1</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">4</span><span class="o">*</span><span class="n">thick</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">4</span><span class="o">*</span><span class="n">thick</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="o">*</span><span class="mf">0.8</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">thick</span><span class="p">)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="n">thick</span><span class="o">*</span><span class="mf">0.8</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">thick</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_title</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+                <span class="n">plot_title</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\textbf{&quot;</span><span class="o">+</span><span class="n">plot_title</span><span class="o">+</span><span class="s2">&quot;}&quot;</span>            
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">plot_title</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize2</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s1">&#39;bold&#39;</span><span class="p">)</span>
+
+        <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+        <span class="c1">#ax1.legend(handles, labels, fontsize=fontsize2, handlelength=0.6)</span>
+        <span class="n">ax1</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize2</span><span class="p">)</span>
+
+        <span class="c1"># Find maximum possible lengths of axis tick labels</span>
+        <span class="c1"># Only counts digits</span>
+        <span class="c1"># ticklens = [ len(re.sub(r&#39;\D&#39;,&quot;&quot;,pt.plot.axisfmt(bc,None))) for bc in boxcoords]</span>
+        <span class="c1"># tickmaxlens = [np.amax(ticklens[0:1]),np.amax(ticklens[2:3])]</span>
+
+        <span class="c1"># # Adjust axis tick labels</span>
+        <span class="c1"># for axisi, axis in enumerate([ax1.xaxis, ax1.yaxis]):</span>
+        <span class="c1">#     if tickinterval!=None:</span>
+        <span class="c1">#         axis.set_major_locator(mtick.MultipleLocator(tickinterval))</span>
+        <span class="c1">#     # Custom tick formatter</span>
+        <span class="c1">#     axis.set_major_formatter(mtick.FuncFormatter(pt.plot.axisfmt))</span>
+        <span class="c1">#     ticklabs = axis.get_ticklabels()</span>
+        <span class="c1">#     # Set boldface.</span>
+        <span class="c1">#     for t in ticklabs: # note that the tick labels haven&#39;t yet been populated with text</span>
+        <span class="c1">#         t.set_fontweight(&quot;black&quot;)</span>
+        <span class="c1">#         # If label has &gt;3 numbers, tilt it</span>
+        <span class="c1">#         if tickmaxlens[axisi]&gt;3: </span>
+        <span class="c1">#             t.set_rotation(30)</span>
+        <span class="c1">#             t.set_verticalalignment(&#39;top&#39;)</span>
+        <span class="c1">#             t.set_horizontalalignment(&#39;right&#39;)</span>
+
+        <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1">#plt.xlabel(pltxstr,fontsize=fontsize,weight=&#39;black&#39;)</span>
+            <span class="c1">#plt.xticks(fontsize=fontsize,fontweight=&#39;black&#39;)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">velUnitStr</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span><span class="n">weight</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">():</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">set_fontsize</span><span class="p">(</span><span class="n">fontsize</span><span class="p">)</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">set_fontweight</span><span class="p">(</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">offsetText</span><span class="o">.</span><span class="n">set_fontsize</span><span class="p">(</span><span class="n">fontsize</span><span class="p">)</span>
+        <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1">#plt.ylabel(pltystr,fontsize=fontsize,weight=&#39;black&#39;)</span>
+            <span class="c1">#plt.yticks(fontsize=fontsize,fontweight=&#39;black&#39;)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+                <span class="n">ylabelstr</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;$f(v)\,[\mathrm</span><span class="si">{m}</span><span class="s2">^{-6} \,\mathrm</span><span class="si">{s}</span><span class="s2">^</span><span class="si">{3}</span><span class="s2">]$&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ylabelstr</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;$f(v)\,[m^{-6} s^</span><span class="si">{3}</span><span class="s2">]$&quot;</span>
+
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabelstr</span><span class="p">,</span><span class="n">fontsize</span><span class="o">=</span><span class="n">fontsize</span><span class="p">,</span><span class="n">weight</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_yticklabels</span><span class="p">():</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">set_fontsize</span><span class="p">(</span><span class="n">fontsize</span><span class="p">)</span>
+                <span class="n">item</span><span class="o">.</span><span class="n">set_fontweight</span><span class="p">(</span><span class="s1">&#39;black&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">offsetText</span><span class="o">.</span><span class="n">set_fontsize</span><span class="p">(</span><span class="n">fontsize</span><span class="p">)</span>
+
+        <span class="c1"># Adjust layout. Uses tight_layout() but in fact this ensures </span>
+        <span class="c1"># that long titles and tick labels are still within the plot area.</span>
+        <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">savefig_pad</span><span class="o">=</span><span class="mf">0.01</span>
+            <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">pad</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+            <span class="n">savefig_pad</span><span class="o">=</span><span class="mf">0.01</span>
+            <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span>
+
+        <span class="c1"># Add Vlasiator watermark</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">wmark</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">wmarkb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">wmark</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+                <span class="n">wm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">get_sample_data</span><span class="p">(</span><span class="n">watermarkimage</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wmark</span><span class="o">=</span><span class="n">wmarkb</span> <span class="c1"># for checking for placement</span>
+                <span class="n">wm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">get_sample_data</span><span class="p">(</span><span class="n">watermarkimageblack</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">wmark</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="n">anchor</span> <span class="o">=</span> <span class="n">wmark</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;NW&quot;</span>
+            <span class="c1"># Allowed region and anchor used in tandem for desired effect</span>
+            <span class="k">if</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;NW&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;W&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;SW&quot;</span><span class="p">:</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;NE&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;E&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;SE&quot;</span><span class="p">:</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.69</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;N&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;C&quot;</span> <span class="ow">or</span> <span class="n">anchor</span><span class="o">==</span><span class="s2">&quot;S&quot;</span><span class="p">:</span>
+                <span class="n">rect</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.35</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]</span>
+            <span class="n">newax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">rect</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="n">anchor</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">newax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">wm</span><span class="p">)</span>
+            <span class="n">newax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Save output or draw on-screen</span>
+        <span class="k">if</span> <span class="n">draw</span><span class="o">==</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">axes</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+
+            <span class="n">outputfile_default</span><span class="o">=</span><span class="n">run</span><span class="o">+</span><span class="s2">&quot;_vdf_&quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;_cellid_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span><span class="o">+</span><span class="n">stepstr</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">slicetype</span><span class="o">+</span><span class="s2">&quot;.png&quot;</span>
+            <span class="n">savefigname</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">output_path</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span><span class="n">outputfile_default</span><span class="p">,</span><span class="n">outputdir</span><span class="p">,</span><span class="n">nooverwrite</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">savefigname</span><span class="p">,</span><span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="n">bbox_inches</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="n">savefig_pad</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Error with attempting to save figure due to matplotlib LaTeX integration:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">savefigname</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">axes</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Draw on-screen</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

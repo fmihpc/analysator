@@ -1,0 +1,532 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.fieldtracer &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.fieldtracer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.fieldtracer</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">interpolate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="dynamic_field_tracer">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.dynamic_field_tracer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dynamic_field_tracer</span><span class="p">(</span> <span class="n">vlsvReader_list</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Field tracer in a dynamic time frame</span>
+
+<span class="sd">      :param vlsvReader_list:              List of vlsv readers</span>
+<span class="sd">      :param x0:                           The starting point for the streamlines</span>
+<span class="sd">      </span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">dt</span> <span class="o">=</span> <span class="n">vlsvReader_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">vlsvReader_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;t&#39;</span><span class="p">)</span>
+   <span class="c1"># Loop through vlsvreaders:</span>
+   <span class="n">v</span> <span class="o">=</span> <span class="n">vlsvReader_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="n">x0</span><span class="p">)</span>
+   <span class="n">iterations</span> <span class="o">=</span> <span class="mi">0</span>
+   <span class="k">for</span> <span class="n">vlsvReader</span> <span class="ow">in</span> <span class="n">vlsvReader_list</span><span class="p">:</span>
+      <span class="n">stream_plus</span> <span class="o">=</span> <span class="n">static_field_tracer</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;+&#39;</span> <span class="p">)</span>
+      <span class="n">stream_minus</span> <span class="o">=</span> <span class="n">static_field_tracer</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;-&#39;</span> <span class="p">)</span>
+      <span class="n">stream</span> <span class="o">=</span> <span class="n">stream_minus</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">stream_plus</span> <span class="c1"># Minus reversed</span>
+      <span class="n">pt</span><span class="o">.</span><span class="n">miscellaneous</span><span class="o">.</span><span class="n">write_vtk_file</span><span class="p">(</span><span class="s2">&quot;test&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">iterations</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.vtk&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+      <span class="n">x0</span> <span class="o">=</span> <span class="n">x0</span> <span class="o">+</span> <span class="n">v</span><span class="o">*</span><span class="n">dt</span>
+      <span class="n">iterations</span> <span class="o">=</span> <span class="n">iterations</span> <span class="o">+</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="static_field_tracer">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.static_field_tracer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">static_field_tracer</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">bvar</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">centering</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">boundary_inner</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Field tracer in a static frame</span>
+
+<span class="sd">       :param vlsvReader:         An open vlsv file</span>
+<span class="sd">       :param x:                  Starting point for the field trace</span>
+<span class="sd">       :param max_iterations:     The maximum amount of iteractions before the algorithm stops</span>
+<span class="sd">       :param dx:                 One iteration step length</span>
+<span class="sd">       :param direction:          &#39;+&#39; or &#39;-&#39; or &#39;+-&#39; Follow field in the plus direction or minus direction</span>
+<span class="sd">       :param bvar:               String, variable name to trace [default &#39;B&#39;]</span>
+<span class="sd">       :param centering:          String, variable centering: &#39;face&#39;, &#39;volume&#39;, &#39;node&#39; [defaults to &#39;face&#39;]</span>
+<span class="sd">       :param boundary_inner:     Float, stop propagation if closer to origin than this value [default -1]</span>
+<span class="sd">       :returns:                  List of coordinates</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="k">if</span><span class="p">(</span><span class="n">bvar</span> <span class="o">!=</span> <span class="s1">&#39;B&#39;</span><span class="p">):</span>
+     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;User defined tracing variable detected. fg, volumetric variable results may not work as intended, use face-values instead.&quot;</span><span class="p">)</span>
+
+   <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;+-&#39;</span><span class="p">:</span>
+     <span class="n">backward</span> <span class="o">=</span> <span class="n">static_field_tracer</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">bvar</span><span class="o">=</span><span class="n">bvar</span><span class="p">)</span>
+     <span class="n">backward</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+     <span class="n">forward</span> <span class="o">=</span> <span class="n">static_field_tracer</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">bvar</span><span class="o">=</span><span class="n">bvar</span><span class="p">)</span>
+     <span class="k">return</span> <span class="n">backward</span> <span class="o">+</span> <span class="n">forward</span>
+
+   <span class="n">f</span> <span class="o">=</span> <span class="n">vlsvReader</span>
+   <span class="c1"># Read cellids in order to sort variables</span>
+   <span class="n">cellids</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+   <span class="n">xsize</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;xcells_ini&quot;</span><span class="p">)</span>
+   <span class="n">ysize</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;ycells_ini&quot;</span><span class="p">)</span>
+   <span class="n">zsize</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;zcells_ini&quot;</span><span class="p">)</span>
+   <span class="n">xmin</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmin&#39;</span><span class="p">)</span>
+   <span class="n">xmax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmax&#39;</span><span class="p">)</span>
+   <span class="n">ymin</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;ymin&#39;</span><span class="p">)</span>
+   <span class="n">ymax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;ymax&#39;</span><span class="p">)</span>
+   <span class="n">zmin</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;zmin&#39;</span><span class="p">)</span>
+   <span class="n">zmax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;zmax&#39;</span><span class="p">)</span>
+
+   <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">])</span>
+   <span class="n">maxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">])</span>
+   <span class="n">mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">])</span>
+   <span class="n">dcell</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxs</span> <span class="o">-</span> <span class="n">mins</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">sizes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">))</span>
+
+   <span class="c1"># Pick only two coordinate directions to operate in</span>
+   <span class="k">if</span> <span class="n">xsize</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+      <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+   <span class="k">if</span> <span class="n">ysize</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+      <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+   <span class="k">if</span> <span class="n">zsize</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+      <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+   <span class="k">if</span> <span class="s1">&#39;vol&#39;</span> <span class="ow">in</span> <span class="n">bvar</span> <span class="ow">and</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
+      <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Found &#39;vol&#39; in variable name, assuming volumetric variable and adjusting centering&quot;</span><span class="p">)</span>
+      <span class="n">centering</span> <span class="o">=</span> <span class="s1">&#39;volume&#39;</span>
+
+   <span class="c1"># Read face_B:</span>
+   <span class="k">if</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;face&#39;</span> <span class="ow">or</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;default&#39;</span><span class="p">:</span>
+      <span class="n">face_B</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">bvar</span><span class="p">)</span>
+      <span class="n">face_Bx</span> <span class="o">=</span> <span class="n">face_B</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">face_By</span> <span class="o">=</span> <span class="n">face_B</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">face_Bz</span> <span class="o">=</span> <span class="n">face_B</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+
+      <span class="n">face_Bx</span> <span class="o">=</span> <span class="n">face_Bx</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+      <span class="n">face_By</span> <span class="o">=</span> <span class="n">face_By</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+      <span class="n">face_Bz</span> <span class="o">=</span> <span class="n">face_Bz</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+
+      <span class="n">face_B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">face_Bx</span><span class="p">,</span> <span class="n">face_By</span><span class="p">,</span> <span class="n">face_Bz</span><span class="p">])</span>
+
+      <span class="c1"># Create x, y, and z coordinates:</span>
+      <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+      <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+      <span class="c1"># Debug:</span>
+      <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+      <span class="c1"># Create grid interpolation</span>
+      <span class="n">interpolator_face_B_0</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">face_B</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">kx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">interpolator_face_B_1</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">face_B</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">kx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">interpolators</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpolator_face_B_0</span><span class="p">,</span> <span class="n">interpolator_face_B_1</span><span class="p">]</span><span class="c1">#, interpolator_face_B_2]</span>
+   <span class="k">elif</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;volume&#39;</span><span class="p">:</span>
+      <span class="n">vol_B</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">bvar</span><span class="p">)</span>
+      <span class="n">vol_Bx</span> <span class="o">=</span> <span class="n">vol_B</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">vol_By</span> <span class="o">=</span> <span class="n">vol_B</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">vol_Bz</span> <span class="o">=</span> <span class="n">vol_B</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+
+      <span class="n">vol_Bx</span> <span class="o">=</span> <span class="n">vol_Bx</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+      <span class="n">vol_By</span> <span class="o">=</span> <span class="n">vol_By</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+      <span class="n">vol_Bz</span> <span class="o">=</span> <span class="n">vol_Bz</span><span class="p">[</span><span class="n">cellids</span><span class="o">.</span><span class="n">argsort</span><span class="p">()]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">indices</span><span class="p">])</span>
+
+      <span class="n">vol_B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">vol_Bx</span><span class="p">,</span> <span class="n">vol_By</span><span class="p">,</span> <span class="n">vol_Bz</span><span class="p">])</span>
+
+      <span class="c1"># Create x, y, and z coordinates:</span>
+      <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+      <span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">])</span>
+      <span class="c1"># Debug:</span>
+      <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+      <span class="c1"># Create grid interpolation</span>
+      <span class="n">interpolator_vol_B_0</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">vol_B</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">kx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">interpolator_vol_B_1</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RectBivariateSpline</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">vol_B</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">kx</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">interpolators</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpolator_vol_B_0</span><span class="p">,</span> <span class="n">interpolator_vol_B_1</span><span class="p">]</span><span class="c1">#, interpolator_face_B_2]</span>
+   <span class="k">elif</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;node&#39;</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Nodal variables not implemented&quot;</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized centering: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">centering</span><span class="p">))</span>
+
+   <span class="c1">#######################################################</span>
+   <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+      <span class="n">multiplier</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">multiplier</span> <span class="o">=</span> <span class="mi">1</span>
+
+   <span class="n">points</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x0</span><span class="p">)]</span>
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iterations</span><span class="p">):</span>
+      <span class="n">previous_point</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+      <span class="n">B_unit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+      <span class="n">B_unit</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">interpolators</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">previous_point</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">previous_point</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+      <span class="n">B_unit</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">interpolators</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">previous_point</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">previous_point</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+      <span class="n">B_unit</span> <span class="o">=</span> <span class="n">B_unit</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B_unit</span><span class="p">))</span>
+      <span class="n">next_point</span> <span class="o">=</span> <span class="n">previous_point</span> <span class="o">+</span> <span class="n">multiplier</span><span class="o">*</span><span class="n">B_unit</span> <span class="o">*</span> <span class="n">dx</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">next_point</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">boundary_inner</span><span class="p">):</span>
+         <span class="k">break</span>
+      <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_point</span><span class="p">)</span>
+   <span class="c1">#######################################################</span>
+
+   <span class="k">return</span> <span class="n">points</span></div>
+
+
+<span class="c1"># fg tracing for static_field_tracer_3d</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fg_trace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">fg</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">stop_condition</span><span class="p">,</span> <span class="n">centering</span> <span class="o">=</span> <span class="kc">None</span> <span class="p">):</span>
+
+
+   <span class="c1"># Read field grid variable (denoted &#39;fg_*&#39; in .vlsv files, no &#39;_vol&#39; suffix)</span>
+   <span class="c1"># (standardizes input by redefining fg as a numpy array)</span>
+   <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">fg</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">fg</span> <span class="o">==</span> <span class="s1">&#39;fg_b&#39;</span><span class="p">:</span>
+          <span class="n">centering</span> <span class="o">=</span> <span class="s1">&#39;face&#39;</span>
+      <span class="k">elif</span> <span class="n">fg</span> <span class="o">==</span> <span class="s1">&#39;fg_e&#39;</span><span class="p">:</span>
+          <span class="n">centering</span> <span class="o">=</span> <span class="s1">&#39;edge&#39;</span>
+      <span class="n">fg</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">fg</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="c1">#   fg is already an ndarray</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fg</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Keyword parameter fg does not seem to be a numpy ndarray.&quot;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">fg</span><span class="o">.</span><span class="n">ndim</span><span class="o">!=</span><span class="mi">4</span> <span class="ow">or</span> <span class="n">fg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">!=</span><span class="mi">3</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Checking array supplied in fg keyword: fg[-1]=</span><span class="si">{}</span><span class="s2"> (expected: 3), fg.ndim=</span><span class="si">{}</span><span class="s2"> (expected: 4)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fg</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">fg</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+
+   <span class="c1"># Create x, y, and z coordinates:</span>
+   <span class="n">xsize</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">ysize</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">zsize</span> <span class="o">=</span> <span class="n">fg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+   <span class="n">xmin</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmin&#39;</span><span class="p">)</span>
+   <span class="n">xmax</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmax&#39;</span><span class="p">)</span>
+   <span class="n">ymin</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;ymin&#39;</span><span class="p">)</span>
+   <span class="n">ymax</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;ymax&#39;</span><span class="p">)</span>
+   <span class="n">zmin</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;zmin&#39;</span><span class="p">)</span>
+   <span class="n">zmax</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;zmax&#39;</span><span class="p">)</span>
+   <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">])</span>
+   <span class="n">maxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">])</span>
+   <span class="n">mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">])</span>
+   <span class="n">dcell</span> <span class="o">=</span> <span class="p">(</span><span class="n">maxs</span> <span class="o">-</span> <span class="n">mins</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">sizes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">))</span>
+   <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mins</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">maxs</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+  
+   <span class="c1"># Create grid interpolation object for vector field (V). Feed the object the component data and locations of measurements.</span>
+   <span class="k">if</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;face&#39;</span><span class="p">:</span>
+      <span class="n">interpolator_V_0</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+      <span class="n">interpolator_V_1</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span><span class="p">),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+      <span class="n">interpolator_V_2</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+   <span class="k">elif</span> <span class="n">centering</span> <span class="o">==</span> <span class="s1">&#39;edge&#39;</span><span class="p">:</span>
+      <span class="n">interpolator_V_0</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+      <span class="n">interpolator_V_1</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+      <span class="n">interpolator_V_2</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">RegularGridInterpolator</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">dcell</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span><span class="p">),</span> <span class="n">fg</span><span class="p">[:,:,:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">bounds_error</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Unknown centering kwarg (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">centering</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;).&quot;</span><span class="p">)</span>
+
+   <span class="n">interpolators</span> <span class="o">=</span> <span class="p">[</span><span class="n">interpolator_V_0</span><span class="p">,</span> <span class="n">interpolator_V_1</span><span class="p">,</span> <span class="n">interpolator_V_2</span><span class="p">]</span>
+
+   <span class="c1"># Trace vector field lines</span>
+   <span class="n">points</span> <span class="o">=</span> <span class="n">seed_coords</span>
+   <span class="n">points_traced</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">seed_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+   <span class="n">points_traced</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">seed_coords</span>
+   <span class="n">mask_update</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">seed_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">)</span>
+
+   <span class="c1"># points_traced = [np.array(seed_coords)]              # iteratively append traced trajectories to this list</span>
+   <span class="c1"># points = points_traced[0]</span>
+   <span class="c1"># N = len(list(seed_coords))</span>
+   <span class="n">V_unit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">seed_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">])</span>
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">):</span>
+      <span class="n">V_unit</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolators</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">points</span><span class="p">)</span>
+      <span class="n">V_unit</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolators</span><span class="p">[</span><span class="mi">1</span><span class="p">](</span><span class="n">points</span><span class="p">)</span>
+      <span class="n">V_unit</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">interpolators</span><span class="p">[</span><span class="mi">2</span><span class="p">](</span><span class="n">points</span><span class="p">)</span>
+      <span class="n">V_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">V_unit</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+      <span class="n">V_unit</span> <span class="o">=</span> <span class="n">V_unit</span> <span class="o">/</span> <span class="n">V_mag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+      <span class="n">new_points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">+</span> <span class="n">multiplier</span><span class="o">*</span><span class="n">V_unit</span> <span class="o">*</span> <span class="n">dx</span>
+      <span class="n">points_traced</span><span class="p">[</span><span class="n">mask_update</span><span class="p">,</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">new_points</span><span class="p">[</span><span class="n">mask_update</span><span class="p">,:]</span>
+
+      <span class="n">mask_update</span><span class="p">[</span><span class="n">stop_condition</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">new_points</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">False</span>
+      <span class="n">points</span> <span class="o">=</span> <span class="n">new_points</span>
+      <span class="c1"># points_traced[~mask_update, i, :] = points_traced[~mask_update, i-1, :]</span>
+      
+   <span class="k">return</span> <span class="n">points_traced</span>
+
+
+<span class="c1"># vg tracing for static_field_tracer_3d</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vg_trace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">vg</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">stop_condition</span><span class="p">):</span>
+   <span class="c1"># Search for the unique coordinates in the given seeds only</span>
+   <span class="n">unique_seed_coords</span><span class="p">,</span><span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>    <span class="c1"># indice here is to reverse the coords order to initial</span>
+   <span class="n">n_unique_seeds</span> <span class="o">=</span> <span class="n">unique_seed_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">points_traced_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_unique_seeds</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+      
+   <span class="k">def</span><span class="w"> </span><span class="nf">find_unit_vector</span><span class="p">(</span><span class="n">vg</span><span class="p">,</span> <span class="n">coord</span><span class="p">):</span>
+      <span class="n">val_at_point</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="n">vg</span><span class="p">,</span><span class="n">coord</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">val_at_point</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">val_at_point</span> <span class="o">=</span> <span class="n">val_at_point</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+      <span class="n">val_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">val_at_point</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">val_at_point</span><span class="o">/</span><span class="n">val_mag</span>
+      
+   <span class="n">unique_seed_coords</span><span class="p">,</span><span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>    <span class="c1"># indice here is to reverse the coords order to initial</span>
+   <span class="n">n_unique_seeds</span> <span class="o">=</span> <span class="n">unique_seed_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">points_traced_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_unique_seeds</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+   <span class="n">Re</span> <span class="o">=</span> <span class="mi">6371000</span>
+   <span class="n">mask_update</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">n_unique_seeds</span><span class="p">,),</span><span class="n">dtype</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">)</span> <span class="c1"># A mask to determine if the points are still needed to trace further</span>
+   <span class="n">points_traced_unique</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">unique_seed_coords</span>
+
+
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">):</span>
+
+      <span class="n">var_unit</span> <span class="o">=</span> <span class="n">find_unit_vector</span><span class="p">(</span><span class="n">vg</span><span class="p">,</span> <span class="n">points_traced_unique</span><span class="p">[:,</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+      <span class="n">next_points</span> <span class="o">=</span> <span class="n">points_traced_unique</span><span class="p">[:,</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">multiplier</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">var_unit</span>
+
+      <span class="n">points_traced_unique</span><span class="p">[</span><span class="n">mask_update</span><span class="p">,</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">next_points</span><span class="p">[</span><span class="n">mask_update</span><span class="p">,:]</span>
+      <span class="c1"># distances = np.linalg.norm(points_traced_unique[:,i,:],axis = 1)</span>
+      <span class="n">mask_update</span><span class="p">[</span><span class="n">stop_condition</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">points_traced_unique</span><span class="p">[:,</span><span class="n">i</span><span class="p">,:])]</span> <span class="o">=</span> <span class="kc">False</span>
+
+      <span class="c1"># points_traced_unique[~mask_update, i, :] = points_traced_unique[~mask_update, i-1, :]</span>
+
+   <span class="n">points_traced</span> <span class="o">=</span> <span class="n">points_traced_unique</span><span class="p">[</span><span class="n">indices</span><span class="p">,:,:]</span>
+   <span class="k">return</span> <span class="n">points_traced</span>
+
+<span class="c1"># Default stop tracing condition for the vg tracing, (No stop until max_iteration)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_stopping_condition</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+   <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+   <span class="n">x</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+   <span class="n">y</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+   <span class="n">z</span> <span class="o">=</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+   <span class="k">return</span> <span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">xmin</span><span class="p">)</span><span class="o">|</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">xmax</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">ymin</span><span class="p">)</span><span class="o">|</span><span class="p">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">ymax</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">z</span> <span class="o">&lt;</span> <span class="n">zmin</span><span class="p">)</span><span class="o">|</span><span class="p">(</span><span class="n">z</span> <span class="o">&gt;</span> <span class="n">zmax</span><span class="p">)</span>
+   <span class="c1"># return np.full((points.shape[0]), False)</span>
+
+<div class="viewcode-block" id="static_field_tracer_3d">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.static_field_tracer_3d">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">static_field_tracer_3d</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">grid_var</span> <span class="o">=</span> <span class="s1">&#39;vg_b_vol&#39;</span><span class="p">,</span> <span class="n">stop_condition</span> <span class="o">=</span> <span class="n">default_stopping_condition</span><span class="p">,</span> <span class="n">centering</span> <span class="o">=</span> <span class="kc">None</span> <span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; static_field_tracer_3d() integrates along the (static) field-grid vector field to calculate a final position. </span>
+<span class="sd">      Code uses forward Euler method to conduct the tracing.</span>
+<span class="sd">      Based on Analysator&#39;s static_field_tracer()</span>
+<span class="sd">      :Inputs:</span>
+<span class="sd">       </span>
+<span class="sd">       param vlsvReader:      A vlsvReader object (~an open .vlsv file)</span>
+
+<span class="sd">       param coord_list:      a list of 3-element array-like initial coordinates [ [x1,y1,z1], [x2,y2,z2], ... ] ::</span>
+<span class="sd">                              if considering just a single starting point, the code accepts a 3-element array-like object [x1,y1,z1]</span>
+
+<span class="sd">       param max_iterations:  The maximum number of iterations (int) before the algorithm stops. Total traced length is dx*max_iterations</span>
+
+<span class="sd">       param dx:              One iteration step length [meters] (ex. dx=1e4 for typical applications)</span>
+
+<span class="sd">       keyword direction:     &#39;+&#39; or &#39;-&#39; or &#39;+-&#39; Follow field in the plus direction, minus direction, or both</span>
+<span class="sd">       </span>
+<span class="sd">       keyword grid_var:      Variable to be traced (A string)</span>
+<span class="sd">                              options include:</span>
+<span class="sd">                                  grid_var = some string</span>
+<span class="sd">                                      grid_var = &#39;vg_b_vol&#39;: AMR-grid B-field</span>
+<span class="sd">                                      grid_var =&#39;fg_b&#39;: fieldsolver grid B-field, grid_var=&#39;fg_e&#39;: fieldsolver grid E-field</span>
+<span class="sd">                                      static_field_tracer_3d() will load the appropriate variable via the vlsvReader object</span>
+<span class="sd">                                      NOTE: volumetric variables, with &#39;_vol&#39; suffix, may not work as intended. Use face-centered values: &#39;fg_b&#39;, &#39;fg_e&#39; etc.</span>
+<span class="sd">                                  grid_var = some fieldsolver-grid (&quot;fg&quot;) array.          dimensions [dimx,dimy,dimz,3]</span>
+<span class="sd">                                      ex. fg = vlsvobj.read_variable(&#39;fg_b&#39;)</span>
+<span class="sd">                                      field grid data is already loaded externally using read_variable() method (see vlsvreader.py).</span>
+<span class="sd">                                      If fg keyword is set this way, the input vlsvReader is only referred to for metadata (esp. grid dimensions)</span>
+
+<span class="sd">                                          keyword stop_condition: Boolean array (seed_coords.shape[0],)</span>
+
+<span class="sd">                              Determine when the iteration stop, for the vg trace only</span>
+<span class="sd">                              If not specified, it will always be True for each seed points.</span>
+<span class="sd">                              eg. def my_stop(points):</span>
+<span class="sd">                              </span>
+<span class="sd">                                    distances = np.linalg.norm(points[:,:],axis = 1)</span>
+<span class="sd">                                    return (distances &lt;= lower_bound) | (distances &gt;= upper_bound)</span>
+
+<span class="sd">      :returns:               points_traced --- a 3d numpy array [len(seed_coords),max_iterations (or 2*max_iterations-1 for &#39;+-&#39;),3]</span>
+<span class="sd">                              Non-traced sections (e.g. iterations after reaching outer boundaries) filled with np.nan</span>
+
+<span class="sd">      keyword centering:     Set to a string (&#39;face&#39; or &#39;edge&#39;) indicating whether the fg variable is face- or edge-centered</span>
+<span class="sd">                              If keyword fg == &#39;fg_b&#39;, then centering = &#39;face&#39; (overriding input)</span>
+<span class="sd">                              If keyword fg == &#39;fg_e&#39;, then centering = &#39;edge&#39; (overriding input)</span>
+
+<span class="sd">      EXAMPLE:            vlsvobj = analysator.vlsvfile.VlsvReader(vlsvfile) </span>
+<span class="sd">                          fg_b = vlsvobj.read_variable(&#39;fg_b&#39;)</span>
+<span class="sd">                          traces = static_field_tracer_3d( vlsvobj, [[5e7,0,0], [0,0,5e7]], 10, 1e5, direction=&#39;+&#39;, fg = fg_b )</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="c1"># Standardize input: (N,3) np.array</span>
+   <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">seed_coords</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Please give a numpy array.&quot;</span><span class="p">)</span>
+
+   <span class="c1"># Cache and read variables:</span>
+   <span class="n">vg</span> <span class="o">=</span> <span class="kc">None</span>
+   <span class="n">fg</span> <span class="o">=</span> <span class="kc">None</span>
+
+   <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid_var</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+      <span class="n">parts</span> <span class="o">=</span> <span class="n">grid_var</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fg&quot;</span><span class="p">):</span>
+            <span class="n">fg</span> <span class="o">=</span> <span class="n">grid_var</span>
+            <span class="k">break</span>
+         <span class="k">elif</span> <span class="n">part</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vg&quot;</span><span class="p">):</span>   
+            <span class="n">vg</span> <span class="o">=</span> <span class="n">grid_var</span>   
+            <span class="c1"># neighbors_vg = vlsvReader.read_variable_to_cache(&quot;vg_regular_interp_neighbors&quot;)</span>
+            <span class="n">vg_cache</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable_to_cache</span><span class="p">(</span><span class="n">vg</span><span class="p">)</span>
+            <span class="k">break</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please give a valid string (eg. &#39;vg_b_vol&#39;)&quot;</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="c1">#   fg is already an ndarray</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid_var</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Keyword parameter grid_var does not seem to be a string nor a numpy ndarray.&quot;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">fg</span><span class="o">.</span><span class="n">ndim</span><span class="o">!=</span><span class="mi">4</span> <span class="ow">or</span> <span class="n">fg</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">!=</span><span class="mi">3</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Checking array supplied in grid_var keyword: fg[-1]=</span><span class="si">{}</span><span class="s2"> (expected: 3), fg.ndim=</span><span class="si">{}</span><span class="s2"> (expected: 4)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fg</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">fg</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unrecognized grid_var keyword data (expect string or numpy.ndarray)&quot;</span><span class="p">)</span>
+         
+   <span class="c1"># Recursion (trace in both directions and concatenate the results)</span>
+   <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;+-&#39;</span><span class="p">:</span>
+      <span class="n">backward</span> <span class="o">=</span> <span class="n">static_field_tracer_3d</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">grid_var</span> <span class="o">=</span> <span class="n">grid_var</span><span class="p">,</span> <span class="n">stop_condition</span> <span class="o">=</span> <span class="n">default_stopping_condition</span><span class="p">,</span> <span class="n">centering</span> <span class="o">=</span> <span class="n">centering</span><span class="p">)</span>
+      <span class="c1"># backward.reverse()</span>
+      <span class="n">forward</span> <span class="o">=</span> <span class="n">static_field_tracer_3d</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="n">grid_var</span> <span class="o">=</span> <span class="n">grid_var</span><span class="p">,</span> <span class="n">stop_condition</span> <span class="o">=</span> <span class="n">default_stopping_condition</span><span class="p">,</span> <span class="n">centering</span> <span class="o">=</span> <span class="n">centering</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">backward</span><span class="p">[:,::</span><span class="o">-</span><span class="mi">1</span><span class="p">,:],</span><span class="n">forward</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]),</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+
+   <span class="n">multiplier</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span> <span class="k">else</span> <span class="mi">1</span>   
+   
+   <span class="k">if</span> <span class="n">fg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">points_traced</span> <span class="o">=</span> <span class="n">fg_trace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">fg</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">stop_condition</span><span class="p">,</span> <span class="n">centering</span> <span class="p">)</span>
+   
+   <span class="k">elif</span> <span class="n">vg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+      <span class="n">points_traced</span> <span class="o">=</span> <span class="n">vg_trace</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">vg</span><span class="p">,</span> <span class="n">seed_coords</span><span class="p">,</span> <span class="n">max_iterations</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">multiplier</span><span class="p">,</span> <span class="n">stop_condition</span><span class="p">)</span>
+
+
+   <span class="k">return</span> <span class="n">points_traced</span>       <span class="c1"># list for fg; 3d numpy array(N,maxiterations,3) for vg</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,370 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.null_lines &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.null_lines</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.null_lines</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2024 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="sd">&#39;&#39;&#39; A file for finding null lines and miscellaneous data</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="c1"># Box: correct distance to corners hg_sdf, see https://mercury.love/hg_sdf/</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fBox</span><span class="p">(</span><span class="n">query_points</span><span class="p">,</span> <span class="n">box_corner</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">])):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Function that finds the signed distance function from query points to</span>
+<span class="sd">   a Cartesian axis-aligned box. The box centroids are assumed to be at the origin,</span>
+<span class="sd">   and the default side length is 1. Default broadcasts the box_corner array</span>
+<span class="sd">   to match the number of query points.</span>
+
+<span class="sd">   :param query_points:  n-by-3 ndarray (or single 3-vector) of coordinates (x,y,z)</span>
+<span class="sd">   :param box_corner:    Specify the top corner(s) of the box(es) - symmetric around origin</span>
+<span class="sd">   :returns: a numpy array of signed distance functions.</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">query_points</span><span class="p">)</span>
+   <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">box_corner</span><span class="p">)</span>
+   <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+   <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">b</span>
+   <span class="n">vec30</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fmax</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">vec30</span><span class="p">),</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fmin</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">vec30</span><span class="p">),</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LMN_null_lines_FOTE">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.LMN_null_lines_FOTE">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">LMN_null_lines_FOTE</span><span class="p">(</span><span class="n">LMNs</span><span class="p">,</span> <span class="n">jacobs</span><span class="p">,</span> <span class="n">Bs</span><span class="p">,</span> <span class="n">dxs</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Function that uses a linear approximation of B from B and its Jacobian</span>
+<span class="sd">   in the LMN coordinates to get an approximate distance to the neutral line.</span>
+<span class="sd">   </span>
+<span class="sd">   :param LMNs: LMN basis vectors stack</span>
+<span class="sd">   :param jacobs: Jacobian of B in 9-element vector stack</span>
+<span class="sd">   :param Bs: ``vg_b_vol``</span>
+<span class="sd">   :param dxs: ...</span>
+<span class="sd">   :param coords: ...</span>
+<span class="sd">   :returns: a measure for closeness to the cell center for a neutral line and other data. The return value is the minimum of the signed distance function between the neutral line</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">stack</span> <span class="o">=</span> <span class="kc">True</span>
+   <span class="n">LMNs</span> <span class="o">=</span> <span class="n">LMNs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+   <span class="n">jacobs</span> <span class="o">=</span> <span class="n">jacobs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+   <span class="n">dxs</span> <span class="o">=</span> <span class="n">dxs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+   <span class="n">Bs</span> <span class="o">=</span> <span class="n">Bs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+   <span class="k">if</span><span class="p">(</span><span class="n">Bs</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,)):</span>  <span class="c1"># I want these to be stacks</span>
+      <span class="n">stack</span> <span class="o">=</span> <span class="kc">False</span>
+      <span class="n">LMNs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">LMNs</span><span class="p">])</span>
+      <span class="n">jacobs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jacobs</span><span class="p">])</span>
+      <span class="n">dxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dxs</span><span class="p">)</span>
+      <span class="n">Bs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">Bs</span><span class="p">])</span>
+
+   <span class="n">jacobs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">jacobs</span><span class="p">,(</span><span class="n">jacobs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+   <span class="n">Ls</span> <span class="o">=</span> <span class="n">LMNs</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">Ms</span> <span class="o">=</span> <span class="n">LMNs</span><span class="p">[:,:,</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">Ns</span> <span class="o">=</span> <span class="n">LMNs</span><span class="p">[:,:,</span><span class="mi">2</span><span class="p">]</span>
+   <span class="n">n_cells</span> <span class="o">=</span> <span class="n">Bs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="c1">#rot = [basis_L[1:3,i] basis_M[1:3,i] basis_N[1:3,i]]</span>
+   <span class="c1">#so basically just LMN</span>
+   <span class="c1"># rotate the jacobians</span>
+   <span class="n">jacobs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">LMNs</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="o">@</span> <span class="n">jacobs</span> <span class="o">@</span> <span class="n">LMNs</span>
+
+   <span class="n">BL</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ls</span><span class="o">*</span><span class="n">Bs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">BM</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ms</span><span class="o">*</span><span class="n">Bs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">BN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ns</span><span class="o">*</span><span class="n">Bs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">unit</span> <span class="o">=</span> <span class="mi">1</span>
+   <span class="n">gradBL</span> <span class="o">=</span> <span class="n">jacobs</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,:]</span><span class="o">*</span><span class="n">unit</span>
+   <span class="c1">#gradBM = jacobs[1,:]</span>
+   <span class="n">gradBN</span> <span class="o">=</span> <span class="n">jacobs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,:]</span><span class="o">*</span><span class="n">unit</span>
+
+   <span class="n">gradBLn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">gradBL</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">gradBNn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">gradBN</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">gradBLn</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">gradBNn</span><span class="p">)</span> <span class="c1"># require sane gradients</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">gradBLn</span> <span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">gradBNn</span> <span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>          <span class="c1"># require nonzero gradients</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">Ls</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>     <span class="c1"># these should be covered by above..</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">Ms</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">Ns</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+
+   <span class="n">gradBL</span> <span class="o">=</span> <span class="n">gradBL</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">gradBLn</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+   <span class="n">gradBN</span> <span class="o">=</span> <span class="n">gradBN</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">gradBNn</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+   <span class="n">dots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">gradBL</span><span class="o">*</span><span class="n">gradBN</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">dots</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
+   <span class="c1"># Distance to zero plane for BL an BN</span>
+   <span class="n">sL</span> <span class="o">=</span> <span class="o">-</span><span class="n">BL</span><span class="o">/</span><span class="p">(</span><span class="n">gradBLn</span><span class="p">)</span>
+   <span class="n">sN</span> <span class="o">=</span> <span class="o">-</span><span class="n">BN</span><span class="o">/</span><span class="p">(</span><span class="n">gradBNn</span><span class="p">)</span>
+
+   <span class="n">n_line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">gradBL</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+   <span class="n">n_line</span><span class="p">[</span><span class="n">mask</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">gradBL</span><span class="p">,</span><span class="n">gradBN</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="n">mask</span><span class="p">,:]</span>
+   <span class="n">n_line</span> <span class="o">=</span> <span class="n">n_line</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">n_line</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+   <span class="c1">#Find a line intercept point and its norm</span>
+   <span class="n">n_line_intercept</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">gradBL</span><span class="p">)</span><span class="c1">#(L_zero_intercept + N_zero_intercept) # well this is just wrong when not perp</span>
+   <span class="n">n_line_intercept</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+
+   <span class="n">c1</span> <span class="o">=</span> <span class="n">sL</span> <span class="o">-</span> <span class="n">sN</span><span class="o">*</span><span class="p">(</span><span class="n">dots</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dots</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+   <span class="n">c2</span> <span class="o">=</span> <span class="n">sN</span> <span class="o">-</span> <span class="n">sL</span><span class="o">*</span><span class="p">(</span><span class="n">dots</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dots</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+   <span class="n">n_line_intercept</span><span class="p">[</span><span class="n">mask</span><span class="p">,:]</span> <span class="o">=</span> <span class="p">(((</span><span class="n">gradBL</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">c1</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">+</span> <span class="n">gradBN</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">c2</span><span class="p">,(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span><span class="o">/</span><span class="n">dxs</span><span class="p">))[</span><span class="n">mask</span><span class="p">,:]</span>
+
+   <span class="c1">#rotate the n_line_intercept to xyz instead of LMN</span>
+   <span class="n">nn</span> <span class="o">=</span> <span class="n">n_line_intercept</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+
+   <span class="n">n_line_intercept</span><span class="p">[</span><span class="n">mask</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">LMNs</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="n">mask</span><span class="p">,:]</span> <span class="c1"># inverse of rotation for row vectors</span>
+   <span class="n">n_line</span><span class="p">[</span><span class="n">mask</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">n_line</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span> <span class="n">LMNs</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()[</span><span class="n">mask</span><span class="p">,:]</span>
+
+   <span class="c1"># Make certain that we have a point along the line that is closest to the cell center</span>
+   <span class="n">par_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">n_line_intercept</span><span class="o">*</span><span class="n">n_line</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+   <span class="n">n_line_intercept</span> <span class="o">=</span> <span class="n">n_line_intercept</span> <span class="o">-</span> <span class="n">n_line</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">n_line_intercept</span><span class="o">*</span><span class="n">n_line</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="c1"># is it not nearest to 0 already?</span>
+   <span class="c1">#s_line = np.linalg.norm(n_line_intercept,axis=-1)</span>
+   <span class="n">s_line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">gradBLn</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+   <span class="n">s_line</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">fBox</span><span class="p">(</span><span class="n">n_line_intercept</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">]))[</span><span class="n">mask</span><span class="p">]</span> <span class="c1"># Proper SDF, but this is just the initial point</span>
+
+   <span class="c1">#Let&#39;s go back a dx or two so we need only to look at forward intercepts</span>
+   <span class="n">init_interval</span> <span class="o">=</span> <span class="mi">4</span>
+   <span class="n">n_line_intercept</span> <span class="o">=</span> <span class="n">n_line_intercept</span> <span class="o">-</span> <span class="n">n_line</span><span class="o">*</span><span class="n">init_interval</span><span class="o">/</span><span class="mi">2</span>
+
+   <span class="n">lineintercept</span> <span class="o">=</span> <span class="n">n_line_intercept</span>
+   <span class="n">linevec</span> <span class="o">=</span> <span class="n">n_line</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">n_line</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+   
+   <span class="c1"># Golden section search.</span>
+   <span class="n">golden_ratio_factor</span> <span class="o">=</span> <span class="mf">0.38197</span>
+
+   <span class="c1"># a,b,c,x are displacement vectors along the line normal, with</span>
+   <span class="c1"># </span>
+   <span class="c1"># |----------------------| &lt; bracket interval</span>
+   <span class="c1"># a       b     x        c    </span>
+   <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">s_line</span><span class="p">)</span>
+   <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">s_line</span><span class="p">)</span><span class="o">*</span><span class="n">init_interval</span><span class="o">*</span><span class="n">golden_ratio_factor</span>
+   <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">s_line</span><span class="p">)</span><span class="o">*</span><span class="n">init_interval</span>
+   <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">s_line</span><span class="p">)</span><span class="o">*</span><span class="n">b</span><span class="o">+</span><span class="p">(</span><span class="n">c</span><span class="o">-</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">golden_ratio_factor</span>
+
+   <span class="c1"># Are we bracketing the interval a-b or b-c?</span>
+   <span class="n">bracket_dir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">s_line</span><span class="p">)</span>
+
+   <span class="c1"># fb, fx are the SDF values to be minimized, evaluated at points</span>
+   <span class="c1"># given by displacements b and x:</span>
+   <span class="n">fb</span> <span class="o">=</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">b</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">)</span>
+   <span class="n">fx</span> <span class="o">=</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">x</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">)</span>
+   <span class="c1"># (these could be initialized to zero here)</span>
+   
+   <span class="c1"># Stepping mask - if true, this triplet is still to converge.</span>
+   <span class="n">in_stepping</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+   <span class="c1"># Check that the bracket is well-defined</span>
+   <span class="n">in_stepping</span> <span class="o">=</span> <span class="p">(</span>
+                  <span class="n">in_stepping</span> <span class="o">&amp;</span> 
+                  <span class="p">(</span><span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">a</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">b</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">))</span> <span class="o">&amp;</span> 
+                  <span class="p">(</span><span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">c</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span> <span class="o">+</span> <span class="n">b</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">))</span>
+                  <span class="p">)</span>
+
+   <span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.01</span> <span class="c1"># interval to reach in dx</span>
+   <span class="n">niter</span> <span class="o">=</span> <span class="mi">0</span>
+   <span class="n">maxiters</span> <span class="o">=</span> <span class="mi">20</span>
+
+   
+   <span class="k">while</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">in_stepping</span><span class="p">[</span><span class="n">mask</span><span class="p">])):</span> 
+
+      <span class="c1"># Evaluate the function at b and x</span>
+      <span class="n">fb</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,:]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,:])</span>
+      <span class="n">fx</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">fBox</span><span class="p">(</span><span class="n">lineintercept</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,:]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">linevec</span><span class="p">[</span><span class="n">in_stepping</span><span class="p">,:])</span>
+
+      <span class="c1"># Depending on the result of fb &lt; fx, update bracketing triplet </span>
+
+      <span class="c1"># Bracket_dir 1: interval (b,c) larger than (a,b) (initial case)</span>
+      <span class="c1"># fb &lt; fx: bracket updates from</span>
+      <span class="c1"># a--b-x--c</span>
+      <span class="c1"># to</span>
+      <span class="c1"># a--b-c---</span>
+      <span class="c1">#   ^ - new x goes there (bracket_dir will flip)</span>
+      <span class="c1"># a[(bracket_dir == 1) &amp; (fb &lt; fx) &amp; in_stepping] = a[(bracket_dir == 1) &amp; (fb &lt; fx) &amp; in_stepping]</span>
+      <span class="c1"># b[(bracket_dir == 1) &amp; (fb &lt; fx) &amp; in_stepping] = b[(bracket_dir == 1) &amp; (fb &lt; fx) &amp; in_stepping]</span>
+      <span class="n">c</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+
+      <span class="c1"># fb &gt;= fx: bracket updates from</span>
+      <span class="c1"># a--b-x--c</span>
+      <span class="c1"># to</span>
+      <span class="c1">#    a-b--c</span>
+      <span class="c1">#       ^ - new x goes there</span>
+      <span class="n">a</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+      <span class="n">b</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+      <span class="c1"># c[(bracket_dir == 1) &amp; (fb &gt;= fx) &amp; in_stepping] = c[(bracket_dir == 1) &amp; (fb &gt;= fx) &amp; in_stepping]</span>
+
+      <span class="c1"># Bracket_dir -1: interval (a,b) larger than (b,c)</span>
+      <span class="c1"># fb &lt; fx: bracket updates from</span>
+      <span class="c1"># a--x-b--c</span>
+      <span class="c1"># to</span>
+      <span class="c1"># ---a-b--c</span>
+      <span class="c1">#       ^ - new x goes there (bracket_dir will flip)</span>
+      <span class="n">a</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&lt;</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+      <span class="c1"># b[(bracket_dir == -1) &amp; (fb &lt; fx) &amp; in_stepping] = b[(bracket_dir == -1) &amp; (fb &lt; fx) &amp; in_stepping]</span>
+      <span class="c1"># c[(bracket_dir == -1) &amp; (fb &lt; fx) &amp; in_stepping] = c[(bracket_dir == -1) &amp; (fb &lt; fx) &amp; in_stepping]</span>
+
+      <span class="c1"># fb &gt;= fx: bracket updates from</span>
+      <span class="c1"># a--x-b--c</span>
+      <span class="c1"># to</span>
+      <span class="c1"># a--b-c--</span>
+      <span class="c1">#   ^ - new x goes there</span>
+      <span class="c1"># a[(bracket_dir == -1) &amp; (fb &gt;= fx) &amp; in_stepping] = a[(bracket_dir == -1) &amp; (fb &gt;= fx) &amp; in_stepping]</span>
+      <span class="n">b</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+      <span class="n">c</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">fb</span> <span class="o">&gt;=</span> <span class="n">fx</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">in_stepping</span><span class="p">]</span>
+
+      <span class="n">bracket_dir</span><span class="p">[(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">c</span> <span class="o">-</span> <span class="n">b</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="n">bracket_dir</span><span class="p">[(</span><span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">c</span> <span class="o">-</span> <span class="n">b</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+      <span class="n">x</span><span class="p">[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span> <span class="o">-</span> <span class="p">((</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">)</span><span class="o">*</span><span class="n">golden_ratio_factor</span><span class="p">)[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+      <span class="n">x</span><span class="p">[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span>  <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span>  <span class="mi">1</span><span class="p">)]</span> <span class="o">+</span> <span class="p">((</span><span class="n">c</span><span class="o">-</span><span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">golden_ratio_factor</span><span class="p">)[</span><span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bracket_dir</span> <span class="o">==</span>  <span class="mi">1</span><span class="p">)]</span>
+
+      <span class="n">in_stepping</span> <span class="o">=</span> <span class="n">in_stepping</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">c</span> <span class="o">-</span> <span class="n">a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">)</span>
+      <span class="n">niter</span> <span class="o">=</span> <span class="n">niter</span><span class="o">+</span><span class="mi">1</span>
+      <span class="c1"># print(niter,&quot;iterations, remaining: &quot;, np.sum(in_stepping), </span>
+      <span class="c1">#       &quot;right &quot;, np.sum(bracket_dir[in_stepping] ==1), &quot;left &quot;, np.sum(bracket_dir[in_stepping]==-1))</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">niter</span> <span class="o">&gt;=</span> <span class="n">maxiters</span><span class="p">):</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Golden section search in LMN_null_lines_FOTE in &quot;</span><span class="o">+</span> <span class="vm">__file__</span> <span class="o">+</span><span class="s2">&quot; reached max iterations - some cell failed to converge?&quot;</span><span class="p">)</span>
+         <span class="k">break</span>
+
+   <span class="c1"># Construct a line segment of local dx length where the neutral line is approximated to be</span>
+   <span class="n">s_line</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fmin</span><span class="p">(</span><span class="n">fb</span><span class="p">,</span><span class="n">fx</span><span class="p">)[</span><span class="n">mask</span><span class="p">]</span>
+   <span class="n">a</span> <span class="o">=</span> <span class="n">coords</span><span class="o">+</span><span class="p">(</span><span class="n">n_line_intercept</span><span class="p">)</span><span class="o">*</span><span class="n">dxs</span>
+   <span class="n">b</span> <span class="o">=</span> <span class="n">n_line</span>
+   <span class="n">par_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">n_line_intercept</span><span class="o">*</span><span class="n">dxs</span><span class="p">)</span><span class="o">*</span><span class="n">n_line</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+   <span class="n">stck</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">s_line</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span><span class="n">coords</span><span class="p">,</span><span class="o">-</span><span class="p">(</span><span class="n">n_line_intercept</span><span class="p">)</span><span class="o">*</span><span class="n">dxs</span><span class="p">,</span>
+                  <span class="n">par_dist</span><span class="p">))</span>
+   <span class="k">if</span> <span class="n">stack</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">s_line</span><span class="p">,</span> <span class="n">stck</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">s_line</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stck</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

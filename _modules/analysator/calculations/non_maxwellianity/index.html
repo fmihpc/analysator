@@ -1,0 +1,293 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.non_maxwellianity &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.non_maxwellianity</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.non_maxwellianity</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">k</span><span class="p">,</span> <span class="n">m_e</span><span class="p">,</span> <span class="n">m_p</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+
+<div class="viewcode-block" id="epsilon_M">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.epsilon_M">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">epsilon_M</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">cell</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">,</span><span class="n">m</span><span class="o">=</span><span class="n">m_p</span><span class="p">,</span> <span class="n">bulk</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">model</span><span class="o">=</span><span class="s2">&quot;bimaxwellian&quot;</span><span class="p">,</span>
+                <span class="n">normorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">dummy</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Calculates the &#39;non-maxwellianity&#39; parameter for a distribution function f_i and its corresponding Maxwellian g_M.</span>
+<span class="sd">    </span>
+<span class="sd">    :param f:           VlsvReader containing VDF data</span>
+<span class="sd">    :param cell:        CellID for the queried cell</span>
+
+<span class="sd">    :kwarg pop:         Population to calculate the parameter for</span>
+<span class="sd">    :kwarg m:           Species mass (default: m_p)</span>
+<span class="sd">    :kwarg bulk:        Bulk file name to use for moments (if available and needed)</span>
+<span class="sd">    :kwarg B:           Optional, user-given magnetic field vector for a bimaxwellian model distribution</span>
+<span class="sd">    :kwarg model:       VDF model to be used. Available models &quot;maxwellian&quot;, &quot;bimaxwellian&quot; (default)</span>
+<span class="sd">    :kwarg normorder:   Norm used for model-data distance measure (default: 1)</span>
+<span class="sd">    :kwarg norm:        Constant norm (default 2, see below)</span>
+<span class="sd">    :kwarg threshold:   Disregard vspace cells under this threshold [0]</span>
+<span class="sd">    :kwarg dummy:       If not None, generate dummy data for e.g. integration.</span>
+
+<span class="sd">    :returns:           scalar, non-Maxwellianity parameter for given model and norm; -1 for missing VDF/other bad data</span>
+
+<span class="sd">    The definition is given by Graham et al. (2021):</span>
+<span class="sd">    (1/2n) * integral(\\|f_i - g_M\\|) d^3v    </span>
+<span class="sd">    </span>
+<span class="sd">    valued between 0 (bi-Maxwellian) and 1 (complete deviation from a bi-Maxwellian).</span>
+<span class="sd">    </span>
+<span class="sd">    NOTE that this is different to the definition by Greco et al. (2012):</span>
+<span class="sd">    (1/n) * sqrt(integral((f_i - g_M)^2) d^3v)    </span>
+<span class="sd">    </span>
+<span class="sd">    examples comparing these two definitions can be found in Settino et al. (2021).</span>
+
+
+
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">dummy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Generating dummy value for non-Maxwellianity!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+    <span class="c1"># try getting the distribution from the given cell</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_velocity_mesh_size</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span>
+    <span class="n">distribution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_velocity_cells</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">pop</span><span class="p">)</span>
+        <span class="n">D_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">D_vals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">D</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">distribution</span><span class="p">[</span><span class="n">D_keys</span><span class="p">]</span> <span class="o">=</span> <span class="n">D_vals</span>
+        <span class="n">distribution</span><span class="p">[</span><span class="n">distribution</span><span class="o">&lt;</span><span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Could not get VDF from bulk file!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+     <span class="c1"># calculate non-maxwellianity</span>
+
+    <span class="c1"># names of velocity moments in the bulk file</span>
+    <span class="n">n_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_rho&#39;</span>         
+    <span class="n">v_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_v&#39;</span>
+    <span class="n">v_para_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_v_parallel&#39;</span>
+    <span class="n">v_perp_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_v_perpendicular&#39;</span>
+    <span class="n">T_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_temperature&#39;</span>
+    <span class="n">T_perp_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_t_perpendicular&#39;</span>
+    <span class="n">T_para_name</span> <span class="o">=</span> <span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_t_parallel&#39;</span>
+
+    <span class="n">dV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_velocity_mesh_dv</span><span class="p">(</span><span class="n">pop</span><span class="p">))</span>
+    <span class="c1"># generate a velocity space </span>
+    <span class="n">vids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">vids</span><span class="p">,</span> <span class="n">pop</span><span class="p">)</span>
+    <span class="n">vs</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">vids</span><span class="p">[</span><span class="n">D_keys</span><span class="p">],</span><span class="n">pop</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">B</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No B vector given, trying a restart reducer from &quot;</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No restart B found, trying for vg_b_vol from &quot;</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No vg_b_vol available either&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bulk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">B</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Trying to load vg_b_vol from given bulk file &quot;</span><span class="o">+</span><span class="n">bulk</span><span class="p">)</span>
+                <span class="n">bulkfile_for_moments_reader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">bulk</span><span class="p">)</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Could not load vg_b_vol from bulk file &quot;</span><span class="o">+</span><span class="n">bulk</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">B</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;maxwellian&quot;</span><span class="p">:</span>
+                <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># Use a dummy B for the simple maxwellian, here we can proceed</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No B found and &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; requires B, cannot proceed at cellid &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;. Either use &#39;maxwellian&#39; or find B from somewhere.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">bulk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># get velocity moments from bulk file</span>
+            <span class="n">bulkfile_for_moments_reader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">bulk</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">n_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">v0</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">v_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">v0_para</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">v_para_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">v0_perp</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">v_perp_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+
+            <span class="n">T</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">T_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">T_para</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">T_para_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">T_perp</span> <span class="o">=</span> <span class="n">bulkfile_for_moments_reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">T_perp_name</span><span class="p">,</span><span class="n">cellids</span><span class="o">=</span><span class="n">cell</span><span class="p">)</span>
+            <span class="c1"># Generate a parallel-perpedicular coordinate basis and corresponding velocity array</span>
+            <span class="n">bhat</span> <span class="o">=</span> <span class="n">B</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+            <span class="n">vperp2hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">bhat</span><span class="p">,</span><span class="n">v0</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">bhat</span><span class="p">,</span><span class="n">v0</span><span class="p">))</span>
+            <span class="n">vperp1hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vperp2hat</span><span class="p">,</span> <span class="n">bhat</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vperp2hat</span><span class="p">,</span><span class="n">bhat</span><span class="p">))</span>
+
+            <span class="n">calc_moments</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Could not get moments from bulk file &quot;</span> <span class="o">+</span> <span class="n">bulk</span> <span class="o">+</span> <span class="s2">&quot;. Calculating them from the VDF..&quot;</span><span class="p">)</span>
+            <span class="n">calc_moments</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">calc_moments</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># calculate moments from VDF if bulk is None, or moments could not be fetched from the bulk file</span>
+    <span class="k">if</span> <span class="n">calc_moments</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D_vals</span><span class="p">))</span><span class="o">*</span><span class="n">dV</span>
+        <span class="n">v0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">vs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">weights</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D_vals</span><span class="p">)</span><span class="o">*</span><span class="n">dV</span><span class="p">)</span>
+        <span class="c1"># Generate a parallel-perpedicular coordinate basis and corresponding velocity array</span>
+        <span class="n">bhat</span> <span class="o">=</span> <span class="n">B</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+        <span class="n">vperp2hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">bhat</span><span class="p">,</span><span class="n">v0</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">bhat</span><span class="p">,</span><span class="n">v0</span><span class="p">))</span>
+        <span class="n">vperp1hat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vperp2hat</span><span class="p">,</span> <span class="n">bhat</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vperp2hat</span><span class="p">,</span><span class="n">bhat</span><span class="p">))</span>
+        
+        <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bhat</span><span class="p">,</span> <span class="n">vperp1hat</span><span class="p">,</span> <span class="n">vperp2hat</span><span class="p">])</span>
+        <span class="n">vsb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">vs</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">vsb_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">v0</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">v0_para</span> <span class="o">=</span> <span class="n">vsb_mean</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">v0_perp</span> <span class="o">=</span> <span class="n">vsb_mean</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">P_diag</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">vsb</span> <span class="o">-</span> <span class="n">vsb_mean</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">vsb</span> <span class="o">-</span> <span class="n">vsb_mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">D_vals</span><span class="p">)[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">dV</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P_diag</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">*</span> <span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span>
+        <span class="n">T_para</span> <span class="o">=</span> <span class="n">P_diag</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span>
+        <span class="n">T_perp</span> <span class="o">=</span> <span class="p">(</span><span class="n">P_diag</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">P_diag</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">n</span> <span class="o">*</span> <span class="n">k</span><span class="p">)</span>
+        
+    <span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bhat</span><span class="p">,</span> <span class="n">vperp1hat</span><span class="p">,</span> <span class="n">vperp2hat</span><span class="p">])</span>
+    <span class="n">vb_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">v0</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">R</span><span class="p">,</span><span class="n">v</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    
+    <span class="n">vT_para</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">*</span> <span class="n">T_para</span> <span class="o">/</span> <span class="n">m</span><span class="p">)</span>
+     
+    <span class="c1"># generate a maxwellian distribution</span>
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;maxwellian&quot;</span><span class="p">:</span>
+        <span class="n">v_sq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">v</span> <span class="o">-</span> <span class="n">v0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">v0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">model_f</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">m</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">k</span> <span class="o">*</span> <span class="n">T</span><span class="p">))</span> <span class="o">**</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">m</span> <span class="o">*</span> <span class="n">v_sq</span> <span class="o">/</span> <span class="p">(</span><span class="n">k</span> <span class="o">*</span> <span class="n">T</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;bimaxwellian&quot;</span><span class="p">:</span> <span class="c1"># Graham et al 2021</span>
+        <span class="n">model_f</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">T_para</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">vT_para</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">T_perp</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="o">-</span><span class="p">(</span><span class="n">vb</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">v0_para</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">vT_para</span><span class="o">**</span><span class="mi">2</span>
+        <span class="o">-</span><span class="p">((</span><span class="n">vb</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">v0_perp</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">vb</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">vT_para</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_perp</span><span class="o">/</span><span class="n">T_para</span><span class="p">))</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown VDF model &#39;&quot;</span><span class="o">+</span><span class="n">model</span><span class="o">+</span><span class="s2">&quot;&#39;, aborting&quot;</span><span class="p">)</span>
+
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">distribution</span> <span class="o">-</span> <span class="n">model_f</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="n">normorder</span><span class="p">)</span>
+    <span class="n">epsilon</span> <span class="o">*=</span> <span class="n">dV</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">epsilon</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

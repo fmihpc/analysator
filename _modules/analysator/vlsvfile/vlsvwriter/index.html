@@ -1,0 +1,601 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.vlsvfile.vlsvwriter &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.vlsvfile.vlsvwriter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.vlsvfile.vlsvwriter</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2024 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ET</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.reduction</span><span class="w"> </span><span class="kn">import</span> <span class="n">datareducers</span><span class="p">,</span><span class="n">data_operators</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<div class="viewcode-block" id="VlsvWriter">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VlsvWriter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Class for reading VLSV files</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">file_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">copy_meshes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clone</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)</span>
+
+<span class="sd">       :param vlsvReader:    Some open vlsv file for creating an XML footer as well as the grid</span>
+<span class="sd">       :param file_name:     Name of the vlsv file where to input data</span>
+<span class="sd">       :param copy_meshes:   list of mesh names to copy, default all</span>
+<span class="sd">       :param clone:         Clones the input file to a new file named &#39;file_name&#39;</span>
+<span class="sd">          </span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="c1">#Just duplicates the vlsv Reader file.</span>
+      <span class="k">if</span> <span class="n">clone</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">clone_file</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">file_name</span><span class="p">)</span>
+         <span class="k">return</span><span class="p">;</span>
+      
+      <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+      <span class="k">try</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+      <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No such path: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+         <span class="k">raise</span> <span class="n">e</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="s2">&quot;&lt;VLSV&gt;&lt;/VLSV&gt;&quot;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fileindex_for_cellid</span><span class="o">=</span><span class="p">{}</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">__offset</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="c1"># Write endianness</span>
+      <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="p">)</span>
+      <span class="c1"># Write xml_offset, for now put this to zero:</span>
+      <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="p">)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">__initialize</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">copy_meshes</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="VlsvWriter.clone_file">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.clone_file">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">clone_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">dst</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; </span>
+<span class="sd">      Simply copies overs the file in vlsvReader to a fresh new file</span>
+<span class="sd">      :param vlsvReader:    Some open vlsv file </span>
+<span class="sd">      :param dst:     Name of output file</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+      <span class="n">src</span><span class="o">=</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">file_name</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicating Reader File from </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dst</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span><span class="n">dst</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dst</span><span class="p">)</span>
+      <span class="k">try</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;ab&quot;</span><span class="p">)</span>
+      <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ERROR: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+         <span class="k">raise</span> <span class="n">e</span>
+      <span class="c1">#Get XML offset and copy over the xml tree from the vlsvreader </span>
+      <span class="n">fptr_read</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+      <span class="c1"># Eight first bytes indicate whether the system is big_endianness or something else</span>
+      <span class="n">endianness_offset</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="n">fptr_read</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">endianness_offset</span><span class="p">)</span>
+      <span class="c1"># Read 8 bytes as unsigned long long (uint64_t in this case) after endianness, this tells the offset of the XML file.</span>
+      <span class="n">uint64_byte_amount</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="p">(</span><span class="n">offset</span><span class="p">,)</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;Q&quot;</span><span class="p">,</span> <span class="n">fptr_read</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">uint64_byte_amount</span><span class="p">))</span>
+      <span class="c1"># Move to the xml offset</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">_VlsvReader__xml_root</span>
+      <span class="n">fptr_read</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+  
+   <span class="k">def</span><span class="w"> </span><span class="nf">__initialize</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">copy_meshes</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes the xml footer as well as the cell ids from the vlsvReader to the file and everything else needed for the grid</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="c1"># Get the xml sheet:</span>
+      <span class="n">xml_root</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">_VlsvReader__xml_root</span>
+
+      <span class="c1"># Get list of tags to write:</span>
+      <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;PARAMETER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;PARAMETERS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_NODE_CRDS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_NODE_CRDS_X&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_NODE_CRDS_Y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_NODE_CRDS_Z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_OFFSETS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_DOMAIN_SIZES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_GHOST_DOMAINS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_GHOST_LOCALIDS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;CellID&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;MESH_BBOX&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;COORDS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+      <span class="c1"># Copy the xml root</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">xml_root</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span> <span class="n">name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">if</span> <span class="s1">&#39;mesh&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span> <span class="n">mesh</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;mesh&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">mesh</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+
+            <span class="k">if</span> <span class="n">copy_meshes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+               <span class="k">if</span> <span class="n">mesh</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mesh</span> <span class="ow">in</span> <span class="n">copy_meshes</span><span class="p">:</span>
+                  <span class="k">continue</span>
+               <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="s2">&quot;MESH&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">copy_meshes</span><span class="p">:</span>
+                  <span class="k">continue</span>
+
+            <span class="n">extra_attribs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+               <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;name&#39;</span> <span class="ow">and</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;mesh&#39;</span><span class="p">:</span>
+                  <span class="n">extra_attribs</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1">#logging.info(&quot;writing&quot;,name, tag, mesh, extra_attribs)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span> <span class="p">)</span>
+            <span class="c1"># Write the data:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">extra_attribs</span> <span class="p">)</span>
+
+
+<div class="viewcode-block" id="VlsvWriter.copy_variables">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.copy_variables">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">copy_variables</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">varlist</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Copies variables from vlsv reader to the file.</span>
+<span class="sd">           varlist = None: list of variables to copy; if no</span>
+<span class="sd">           varlist is provided, copy all variables (default)</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+
+      <span class="c1"># Delegate to the variable list handler</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">varlist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">copy_variables_list</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">varlist</span><span class="p">)</span>
+         <span class="k">return</span>
+
+      <span class="c1"># Get the xml sheet:</span>
+      <span class="n">xml_root</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">_VlsvReader__xml_root</span>
+
+      <span class="c1"># Get list of tags to write:</span>
+      <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+      <span class="c1"># Copy the xml root and write variables</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">xml_root</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">if</span> <span class="s1">&#39;mesh&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+                <span class="n">mesh</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;mesh&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mesh</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+            <span class="c1"># Copy extra attributes:</span>
+            <span class="n">extra_attribs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+               <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;name&#39;</span> <span class="ow">and</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;mesh&#39;</span><span class="p">:</span>
+                  <span class="n">extra_attribs</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span> <span class="p">)</span>
+            <span class="c1"># Write the data:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">extra_attribs</span> <span class="p">)</span>
+      <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="VlsvWriter.copy_variables_list">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.copy_variables_list">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">copy_variables_list</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="nb">vars</span> <span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Copies variables in the list vars from vlsv reader to the file</span>
+
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="c1"># Get the xml sheet:</span>
+      <span class="n">xml_root</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">_VlsvReader__xml_root</span>
+
+      <span class="c1"># Get list of tags to write:</span>
+      <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="n">tags</span><span class="p">[</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+      <span class="n">found_vars</span> <span class="o">=</span> <span class="p">[]</span>
+
+      <span class="c1"># Copy the xml root and write variables</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">xml_root</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;name&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+               <span class="n">name</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+               <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">:</span>
+                  <span class="k">continue</span>
+               <span class="k">else</span><span class="p">:</span>
+                  <span class="n">found_vars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="s1">&#39;mesh&#39;</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">:</span>
+                <span class="n">mesh</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s1">&#39;mesh&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+               <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">]:</span>
+                  <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;MESH required&#39;</span><span class="p">)</span>
+                  <span class="k">return</span>
+               <span class="n">mesh</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">tag</span>
+            <span class="c1"># Copy extra attributes:</span>
+            <span class="n">extra_attribs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+               <span class="k">if</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;name&#39;</span> <span class="ow">and</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;mesh&#39;</span><span class="p">:</span>
+                  <span class="n">extra_attribs</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span> <span class="p">)</span>
+            <span class="c1"># Write the data:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">extra_attribs</span> <span class="p">)</span>
+
+      <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="n">varname</span> <span class="k">for</span> <span class="n">varname</span> <span class="ow">in</span> <span class="nb">vars</span> <span class="k">if</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">found_vars</span><span class="p">]:</span>
+         <span class="k">try</span><span class="p">:</span>
+            <span class="n">varinfo</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable_info</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Could not obtain &#39;</span> <span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s1">&#39; from file or datareduction, skipping.&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Original error was:&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">continue</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">write_variable_info</span><span class="p">(</span><span class="n">varinfo</span><span class="p">,</span> <span class="s1">&#39;SpatialGrid&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+      <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="VlsvWriter.write_velocity_space">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.write_velocity_space">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">write_velocity_space</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="p">,</span> <span class="n">blocks_and_values</span> <span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes given velocity space into vlsv file</span>
+
+<span class="sd">          :param vlsvReader:        Some open vlsv reader file with velocity space in the given cell id</span>
+<span class="sd">          :param cellid:            Given cellid</span>
+<span class="sd">          :param blocks_and_values: Blocks and values in list format e.g. [[block1,block2,..], [block1_values, block2_values,..]] where block1_values are velocity block values (list length 64)</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+
+      <span class="c1"># Get cells_with_blocks, blocks_per_cell etc</span>
+      <span class="n">cells_with_blocks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cellid</span><span class="p">])</span>
+      <span class="n">number_of_blocks</span>  <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">blocks_and_values</span><span class="p">)</span>
+      <span class="n">blocks_per_cell</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">number_of_blocks</span><span class="p">])</span>
+
+      <span class="c1"># Write them out</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">cells_with_blocks</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;CELLSWITHBLOCKS&quot;</span> <span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">blocks_per_cell</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;BLOCKSPERCELL&quot;</span> <span class="p">)</span>
+
+      <span class="c1"># Write blockids and values</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">blocks_and_values</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;BLOCKIDS&quot;</span> <span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span> <span class="n">data</span><span class="o">=</span><span class="n">blocks_and_values</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;avgs&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="s2">&quot;BLOCKVARIABLE&quot;</span> <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="VlsvWriter.write">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.write">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes an array into the vlsv file</span>
+
+<span class="sd">      :param name: Name of the data array</span>
+<span class="sd">      :param tag:  Tag of the data array.</span>
+<span class="sd">      :param mesh: Mesh for the data array</span>
+<span class="sd">      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren&#39;t name, tag, or mesh</span>
+
+<span class="sd">      :returns: True if the data was written successfully</span>
+
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="k">if</span><span class="p">(</span><span class="n">tag</span><span class="o">==</span><span class="s2">&quot;VARIABLE&quot;</span><span class="p">):</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Please use write_variable_info instead for writing variables. Behaviour may be enforced in future.&quot;</span><span class="p">)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">extra_attribs</span><span class="p">)</span></div>
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">__write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes an array into the vlsv file</span>
+
+<span class="sd">      :param name: Name of the data array</span>
+<span class="sd">      :param tag:  Tag of the data array.</span>
+<span class="sd">      :param mesh: Mesh for the data array</span>
+<span class="sd">      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren&#39;t name, tag, or mesh</span>
+
+<span class="sd">      :returns: True if the data was written successfully</span>
+
+<span class="sd">      &#39;&#39;&#39;</span>
+
+      <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Trying to write `None` data for &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;. Skipping, but not raising an error in case there is yet some data remaining that the user doesn&#39;t want to fly to bit heaven.&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+      <span class="c1"># Make sure the data is in numpy array format:</span>
+      <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+      <span class="n">fptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span>
+
+      <span class="n">datatype</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+      <span class="c1"># Add the data into the xml data:</span>
+      <span class="n">child</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+      <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+      <span class="k">if</span> <span class="n">mesh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mesh</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;mesh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mesh</span>
+      <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;arraysize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+      <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;vectorsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+         <span class="c1">#datatype = str(type(data[0][0]))</span>
+         <span class="n">datatype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+      <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;np.shape returned len(np.shape(data)) &gt; 2. Writing &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; failed, skipping.&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;vectorsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+         <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tag</span><span class="o">==</span><span class="s2">&quot;MESH_GHOST_DOMAINS&quot;</span> <span class="ow">or</span> <span class="n">tag</span><span class="o">==</span><span class="s2">&quot;MESH_GHOST_LOCALIDS&quot;</span><span class="p">:</span>
+               <span class="n">datatype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+               <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Trying to extract datatype from an empty array (&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;). I will fail as usual, since this is not the special case that is guarded against!&quot;</span><span class="p">)</span>
+               <span class="c1">#datatype = str(type(data[0]))</span>
+               <span class="n">datatype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#datatype = str(type(data[0]))</span>
+            <span class="n">datatype</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+
+      <span class="c1"># Parse the data types:</span>
+      <span class="k">if</span> <span class="s1">&#39;uint&#39;</span> <span class="ow">in</span> <span class="n">datatype</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;uint&quot;</span>
+      <span class="k">elif</span> <span class="s1">&#39;int&#39;</span> <span class="ow">in</span> <span class="n">datatype</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;int&quot;</span>
+      <span class="k">elif</span> <span class="s1">&#39;float&#39;</span> <span class="ow">in</span> <span class="n">datatype</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;float&quot;</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;BAD DATATYPE: &quot;</span> <span class="o">+</span> <span class="n">datatype</span><span class="o">+</span><span class="s2">&quot;. Writing &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; failed, skipping.&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+
+      <span class="k">if</span> <span class="s1">&#39;64&#39;</span> <span class="ow">in</span> <span class="n">datatype</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datasize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="k">elif</span> <span class="s1">&#39;32&#39;</span> <span class="ow">in</span> <span class="n">datatype</span><span class="p">:</span>
+         <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;datasize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;BAD DATASIZE for datatype = &quot;</span> <span class="o">+</span> <span class="n">datatype</span> <span class="o">+</span> <span class="s2">&quot;. Writing &quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s2">&quot; failed, skipping.&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+      
+      <span class="k">if</span> <span class="p">(</span><span class="n">extra_attribs</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">extra_attribs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">extra_attribs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+      <span class="n">current_offset</span> <span class="o">=</span> <span class="n">fptr</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+      <span class="c1"># Info the xml about the file offset for the data:</span>
+      <span class="n">child</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_offset</span><span class="p">)</span>
+
+      <span class="k">try</span><span class="p">:</span>
+         <span class="n">data</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">fptr</span><span class="p">)</span>
+      <span class="k">except</span><span class="p">:</span>
+         <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">fptr</span><span class="p">)</span> <span class="c1"># numpy maskedarray tofile not implemented yet</span>
+
+      <span class="c1"># write the xml footer:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write_xml_footer</span><span class="p">()</span> <span class="c1"># this _should_ also return a success value....</span>
+      <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="VlsvWriter.write_variable_info">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.write_variable_info">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">write_variable_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">varinfo</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">unitConversion</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader</span>
+<span class="sd">      </span>
+<span class="sd">      :param varinfo: VariableInfo object containing</span>
+<span class="sd">         -data: The variable data (array)</span>
+<span class="sd">         -name: Name of the data array</span>
+<span class="sd">         -latex: LaTeX string representation of the variable name</span>
+<span class="sd">         -units: plaintext string representation of the unit</span>
+<span class="sd">         -latexunits: LaTeX string representation of the unit</span>
+<span class="sd">      :param mesh: Mesh for the data array</span>
+<span class="sd">      :param unitConversion: string representation of the unit conversion to get to SI</span>
+<span class="sd">      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren&#39;t name, tag, or mesh,</span>
+<span class="sd">        or contained in varinfo. Can be used to overwrite varinfo values besids name.</span>
+
+<span class="sd">      :returns: True if the data was written successfully</span>
+
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="n">atts</span> <span class="o">=</span> <span class="n">extra_attribs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+      <span class="n">atts</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;variableLaTeX&#39;</span><span class="p">:</span><span class="n">varinfo</span><span class="o">.</span><span class="n">latex</span><span class="p">,</span> <span class="s1">&#39;unit&#39;</span><span class="p">:</span><span class="n">varinfo</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="s1">&#39;unitLaTeX&#39;</span><span class="p">:</span><span class="n">varinfo</span><span class="o">.</span><span class="n">latexunits</span><span class="p">,</span> <span class="s1">&#39;unitConversion&#39;</span><span class="p">:</span><span class="n">unitConversion</span><span class="p">})</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span><span class="n">varinfo</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">varinfo</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">atts</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VlsvWriter.write_variable">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvWriter.write_variable">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">write_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">latex</span><span class="p">,</span> <span class="n">latexunits</span><span class="p">,</span> <span class="n">unitConversion</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39; Writes an array into the vlsv file as a variable; requires input of metadata required by VlsvReader</span>
+<span class="sd">      :param data: The variable data (array)</span>
+<span class="sd">      :param name: Name of the data array</span>
+<span class="sd">      :param mesh: Mesh for the data array</span>
+<span class="sd">      :param latex: LaTeX string representation of the variable name</span>
+<span class="sd">      :param units: plaintext string representation of the unit</span>
+<span class="sd">      :param latexunits: LaTeX string representation of the unit</span>
+<span class="sd">      :param unitConversion: string representation of the unit conversion to get to SI</span>
+<span class="sd">      :param extra_attribs: Dictionary with whatever xml attributes that should be defined in the array that aren&#39;t name, tag, or mesh.</span>
+
+<span class="sd">      :returns: True if the data was written successfully</span>
+
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="n">atts</span> <span class="o">=</span> <span class="n">extra_attribs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+      <span class="n">atts</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;variableLaTeX&#39;</span><span class="p">:</span><span class="n">latex</span><span class="p">,</span> <span class="s1">&#39;unit&#39;</span><span class="p">:</span><span class="n">units</span><span class="p">,</span> <span class="s1">&#39;unitLaTeX&#39;</span><span class="p">:</span><span class="n">latexunits</span><span class="p">,</span> <span class="s1">&#39;unitConversion&#39;</span><span class="p">:</span><span class="n">unitConversion</span><span class="p">})</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span> <span class="n">mesh</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="n">atts</span><span class="p">)</span></div>
+
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">write_fgarray_to_SpatialGrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">extra_attribs</span><span class="o">=</span><span class="p">{}):</span>
+      <span class="c1"># get a reader for the target file</span>
+      <span class="c1">#logging.info(data.shape[0:3], reader.get_fsgrid_mesh_size(), (data.shape[0:3] == reader.get_fsgrid_mesh_size()))</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_fsgrid_mesh_size</span><span class="p">())</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape does not match target fsgrid mesh&quot;</span><span class="p">)</span>
+         <span class="k">return</span>
+      <span class="n">vgdata</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">fsgrid_array_to_vg</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write</span><span class="p">(</span><span class="n">vgdata</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;VARIABLE&quot;</span><span class="p">,</span> <span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span><span class="n">extra_attribs</span><span class="p">)</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">__write_xml_footer</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+      <span class="c1"># Write the xml footer:</span>
+      <span class="n">max_xml_size</span> <span class="o">=</span> <span class="mi">1000000</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">fptr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span>
+      <span class="n">current_offset</span> <span class="o">=</span> <span class="n">fptr</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+      <span class="c1">#self.__xml_root.write( fptr )</span>
+      <span class="c1"># Convert everything to string:</span>
+      <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+      <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">ElementTree</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">)</span>
+      <span class="n">xml_footer_indent</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">__xml_root</span><span class="p">)</span>
+      <span class="n">tree</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fptr</span><span class="p">)</span>
+      <span class="c1"># Write the offset (first 8 bytes = endianness):</span>
+      <span class="n">offset_endianness</span> <span class="o">=</span> <span class="mi">8</span>
+      <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span> <span class="n">offset_endianness</span> <span class="p">)</span>
+      <span class="c1"># Write the offset:</span>
+      <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">current_offset</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span><span class="o">.</span><span class="n">tofile</span><span class="p">(</span><span class="n">fptr</span><span class="p">)</span>
+      <span class="c1"># Go back to the previous offset:</span>
+      <span class="n">fptr</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">current_offset</span><span class="p">)</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__write_xml_footer</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__fptr</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">xml_footer_indent</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+   <span class="n">i</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">level</span><span class="o">*</span><span class="s2">&quot;   &quot;</span>
+   <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="s2">&quot;   &quot;</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">i</span>
+      <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">:</span>
+            <span class="n">xml_footer_indent</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">i</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">level</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">elem</span><span class="o">.</span><span class="n">tail</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
+            <span class="n">elem</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="n">i</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

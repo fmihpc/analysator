@@ -1,0 +1,1107 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.vlsvfile.vlsvvtkinterface &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.vlsvfile.vlsvvtkinterface</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.vlsvfile.vlsvvtkinterface</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2024 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cProfile</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="k">try</span><span class="p">:</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtk</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtk.numpy_interface</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtk.numpy_interface.dataset_adapter</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtk.vtkCommonColor</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">vtkmodules.vtkCommonColor</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">vtk.util.vtkAlgorithm</span><span class="w"> </span><span class="kn">import</span> <span class="n">VTKPythonAlgorithmBase</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;VTK import (VTK &gt;= 9.2.0 required) did not succeed due to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+   <span class="k">raise</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="c1"># from numba import jit</span>
+<span class="sd">&#39;&#39;&#39;Extend vtkHyperTreeGrid.</span>
+<span class="sd">This class is not used right now: makes probably more sense to have</span>
+<span class="sd">most of the features in the reader class below, esp. since the</span>
+<span class="sd">vtkHyperTreeGridSource is the fast way of constructing the HTG object.</span>
+
+<span class="sd">The extension consists of automatic mapping of a vlsv</span>
+<span class="sd">SpatialGrid to the HTG structure. Functions are provided</span>
+<span class="sd">for mapping more SpatialGrid data to the HTG structure as</span>
+<span class="sd">needed. How well does this function as a VTK source already?</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">vtkVlsvHyperTreeGrid</span><span class="p">(</span><span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGrid</span><span class="p">):</span>
+
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Set the vlsvReader object for the backend,</span>
+<span class="sd">   otherwise use parent class init, and populate the</span>
+<span class="sd">   hypertreegrid object with CellID data and the file-</span>
+<span class="sd">   index information for easier mapping of vlsv data to</span>
+<span class="sd">   HTG.</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vlsvFile</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span> <span class="o">=</span> <span class="n">vlsvFile</span> <span class="c1">#VlsvReader(vlsvFile)</span>
+      <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span>
+      <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGrid</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="c1">#, args, kwargs)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">metafile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span><span class="o">.</span><span class="n">file_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;_meta&quot;</span>
+
+      <span class="n">basegridsize</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+      <span class="n">ext</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_fsgrid_mesh_extent</span><span class="p">()</span>
+      <span class="n">nodeCoordinatesX</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_X&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+      <span class="n">nodeCoordinatesY</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_Y&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+      <span class="n">nodeCoordinatesZ</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_Z&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">SetDimensions</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">nodeCoordinatesX</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">nodeCoordinatesY</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">nodeCoordinatesZ</span><span class="p">)])</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">SetBranchFactor</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+      <span class="n">xValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">xValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="c1"># print (basegridsizeNodes, nodeCoordinatesX)</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesX</span><span class="p">):</span>
+         <span class="n">xValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">SetXCoordinates</span><span class="p">(</span><span class="n">xValues</span><span class="p">)</span>
+
+      <span class="n">yValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">yValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesY</span><span class="p">):</span>
+         <span class="n">yValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">SetYCoordinates</span><span class="p">(</span><span class="n">yValues</span><span class="p">)</span>
+
+      <span class="n">zValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">zValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesZ</span><span class="p">):</span>
+         <span class="n">zValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">SetZCoordinates</span><span class="p">(</span><span class="n">zValues</span><span class="p">)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+      <span class="c1"># Here we need to actually init the hypertreegrid,</span>
+      <span class="c1"># and at least construct the mapping to leaf nodes</span>
+
+
+      <span class="n">cid_offsets</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+         <span class="n">cid_offsets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cid_offsets</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xcells</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ycells</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zcells</span><span class="p">])</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span> <span class="c1"># Check next AMR level</span>
+
+      <span class="n">xc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xcells</span>
+      <span class="n">yc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ycells</span>
+      <span class="n">zc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zcells</span>
+      <span class="n">cid_offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">isum</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()):</span>
+         <span class="n">isum</span> <span class="o">=</span> <span class="n">isum</span> <span class="o">+</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">xc</span> <span class="o">*</span> <span class="n">yc</span> <span class="o">*</span> <span class="n">zc</span>
+         <span class="n">cid_offsets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">isum</span>
+
+      <span class="c1"># print(cid_offsets)</span>
+      <span class="n">max_ref_level</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()</span>
+      <span class="n">xcells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">ycells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">zcells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+         <span class="n">xcells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">xc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+         <span class="n">ycells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">yc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+         <span class="n">zcells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">zc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+      <span class="n">mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xmin</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ymin</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zmin</span><span class="p">])</span>
+
+      <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__read_fileindex_for_cellid</span><span class="p">()</span>
+
+      <span class="c1"># cidArray = vtk.vtkDoubleArray()</span>
+      <span class="c1"># cidArray.SetName(&#39;CellID&#39;)</span>
+      <span class="c1"># cidArray.SetNumberOfValues(0)</span>
+      <span class="c1"># self.GetCellData().AddArray(cidArray)</span>
+
+
+      <span class="n">f</span><span class="o">.</span><span class="n">read_variable_to_cache</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+
+      <span class="n">cursor</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGridNonOrientedCursor</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span> <span class="o">=</span> <span class="p">{}</span>
+
+      <span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">,</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">,</span><span class="n">zmin</span><span class="p">,</span><span class="n">zmax</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xmin</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xmax</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ymin</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ymax</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zmin</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zmax</span><span class="p">,</span>
+      
+      <span class="n">fileindex_for_cellid</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__fileindex_for_cellid</span>
+      <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+      
+      <span class="c1"># @jit(nopython=True)</span>
+      <span class="k">def</span><span class="w"> </span><span class="nf">get_cell_indices</span><span class="p">(</span><span class="n">cellids</span><span class="p">,</span> <span class="n">reflevels</span><span class="p">):</span>
+<span class="w">         </span><span class="sd">&#39;&#39;&#39; Single-cellid specialization with external constants.</span>
+<span class="sd">         Returns a given cell&#39;s indices as a numpy array</span>
+
+<span class="sd">         :param cellid:            The cell&#39;s ID, numpy array</span>
+<span class="sd">         :param reflevel:          The cell&#39;s refinement level in the AMR</span>
+<span class="sd">         :returns: a numpy array with the coordinates</span>
+
+<span class="sd">         .. seealso:: :func:`get_cellid`</span>
+
+<span class="sd">         .. note:: The cell ids go from 1 .. max not from 0</span>
+<span class="sd">         &#39;&#39;&#39;</span>
+
+         <span class="c1"># # Calculating the index of the first cell at this reflevel</span>
+         <span class="c1"># index_at_reflevel = np.zeros(max_refinement_level+1, dtype=np.int64)</span>
+         <span class="c1"># isum = 0</span>
+         <span class="c1"># for i in range(0,max_refinement_level):</span>
+         <span class="c1">#    isum = isum + 2**(3*i) * xcells * ycells * zcells</span>
+         <span class="c1">#    index_at_reflevel[i+1] = isum</span>
+
+         <span class="c1"># Get cell indices</span>
+         <span class="c1"># print(cellids, reflevels, cid_offsets)</span>
+         
+         <span class="n">cellids</span> <span class="o">=</span> <span class="n">cellids</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cid_offsets</span><span class="p">[</span><span class="n">reflevels</span><span class="p">]</span>
+         <span class="n">cellindices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+         <span class="n">cellindices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">reflevels</span><span class="p">])</span>
+         <span class="n">cellindices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">reflevels</span><span class="p">]))</span><span class="o">%</span><span class="p">(</span><span class="n">ycells</span><span class="p">[</span><span class="n">reflevels</span><span class="p">])</span>
+         <span class="n">cellindices</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">reflevels</span><span class="p">]</span><span class="o">*</span><span class="n">ycells</span><span class="p">[</span><span class="n">reflevels</span><span class="p">])</span>
+
+         <span class="c1"># print(cellindices, f.get_cell_indices(cellids,reflevels))</span>
+
+         <span class="k">return</span> <span class="n">cellindices</span>
+
+      <span class="n">cell_lengths_levels</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+          <span class="n">cell_lengths_levels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">xmax</span> <span class="o">-</span> <span class="n">xmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">]),</span>
+                                               <span class="p">(</span><span class="n">ymax</span> <span class="o">-</span> <span class="n">ymin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="p">]),</span>
+                                               <span class="p">(</span><span class="n">zmax</span> <span class="o">-</span> <span class="n">zmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">zcells</span><span class="p">[</span><span class="n">level</span><span class="p">])],</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
+          
+         
+      <span class="c1"># @jit(nopython=True)</span>
+      <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+         <span class="c1"># cellind = get_cell_indices(cid, level) # get_cellind here for compilation</span>
+         <span class="n">cellids</span> <span class="o">=</span> <span class="n">cid</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cid_offsets</span><span class="p">[</span><span class="n">level</span><span class="p">]</span>
+         <span class="n">cellind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">]))</span><span class="o">%</span><span class="p">(</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">*</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+         <span class="c1"># cellcoordinates = mins + (cellind + 0.25)*cell_lengths_levels[level]</span>
+         <span class="c1"># cellind = np.int64(np.divide((cellcoordinates - mins),cell_lengths_levels[level+1]))</span>
+         <span class="n">cellind</span> <span class="o">=</span> <span class="n">cellind</span><span class="o">*</span><span class="mi">2</span>
+         <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">8</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+         <span class="c1"># c = np.array((0,1,2,3,4,5,6,7))</span>
+         <span class="n">out</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">cid_offsets</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+         <span class="c1"># out2 = [int(cid_offsets[level+1] + (cellind + delta[c])[0] + xcells[level+1]*(cellind + delta[c])[1] + (cellind + delta[c])[2]*xcells[level+1]*ycells[level+1] + 1) for c in range(8)]</span>
+         <span class="c1"># print(out, out2)</span>
+         <span class="k">return</span> <span class="n">out</span>           
+
+
+      <span class="k">def</span><span class="w"> </span><span class="nf">refine_cell</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+
+         <span class="c1"># cellind = get_cell_indices(cid, level)</span>
+         <span class="c1"># cellcoordinates = mins + (cellind + 0.25)*cell_lengths_levels[level]</span>
+
+         <span class="c1"># cellind = np.array(np.divide((cellcoordinates - mins),cell_lengths_levels[level+1]), dtype = np.int32)</span>
+
+         <span class="n">childs</span> <span class="o">=</span> <span class="n">children</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span><span class="n">level</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">c</span><span class="p">,</span><span class="n">cellid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">childs</span><span class="p">):</span>
+               <span class="c1"># print(c)</span>
+               <span class="n">cursor</span><span class="o">.</span><span class="n">ToChild</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>  <span class="c1"># cell 0/0</span>
+               <span class="c1"># print(cellind, delta[c])</span>
+               <span class="c1"># ci = cellind + delta[c]</span>
+               <span class="c1"># print(ci)</span>
+               <span class="c1"># cellid = int(cid_offsets[level+1] + ci[0] + xcells[level+1]*ci[1] + ci[2]*xcells[level+1]*ycells[level+1] + 1)</span>
+               <span class="c1"># print(f.get_cell_indices(cid, reflevels = level))</span>
+               <span class="k">if</span> <span class="p">(</span><span class="n">cellid</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                  <span class="c1"># Assigns an index for the value of the cell pointed to by the current cursor state </span>
+                  <span class="n">idx</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">GetGlobalNodeIndex</span><span class="p">()</span>
+                  <span class="c1"># print(idx, cellid)</span>
+                  <span class="c1"># self.GetCellData().SetActiveScalars(&#39;CellID&#39;)</span>
+                  <span class="c1"># cidArray.InsertTuple1(idx, cellid)</span>
+                  <span class="c1"># self.GetCellData().SetActiveScalars(&#39;fileIndex&#39;)</span>
+                  <span class="c1"># self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])</span>
+                  <span class="c1"># numvalues += 1</span>
+                  <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">cellid</span><span class="p">]</span>
+                  <span class="c1"># ave += np.array([var_x(cellid, &#39;proton/vg_v&#39;),*var(cellid, &#39;vg_b_vol&#39;)])</span>
+               <span class="k">else</span><span class="p">:</span>
+                  <span class="c1"># print(cellid)</span>
+                  <span class="n">idx</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">GetGlobalNodeIndex</span><span class="p">()</span>
+                  <span class="n">cursor</span><span class="o">.</span><span class="n">SubdivideLeaf</span><span class="p">()</span>  <span class="c1"># cell 0</span>
+                  <span class="c1"># print(cellid, &quot;not found, refining again&quot;)</span>
+                  <span class="n">refine_cell</span><span class="p">(</span><span class="n">cellid</span><span class="p">,</span> <span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                  <span class="c1"># ave += refval</span>
+                  <span class="c1"># htg.GetCellData().SetActiveScalars(&#39;vg_v&#39;)</span>
+                  <span class="c1">#scalarArray.InsertTuple1(idx, refval[0])</span>
+                  <span class="c1"># htg.GetCellData().SetActiveVectors(&#39;vg_b_vol&#39;)</span>
+                  <span class="c1">#vectorArray.InsertTuple3(idx, *refval[1:])</span>
+
+               <span class="n">cursor</span><span class="o">.</span><span class="n">ToParent</span><span class="p">()</span>  <span class="c1"># cell 0</span>
+               <span class="c1"># idx = cursor.GetGlobalNodeIndex()</span>
+
+
+         <span class="k">return</span> <span class="c1">#ave/8</span>
+
+      <span class="k">def</span><span class="w"> </span><span class="nf">handle_cell</span><span class="p">(</span><span class="n">cellid</span><span class="p">):</span>
+         <span class="c1"># Leaf cell, just add</span>
+         <span class="k">if</span> <span class="p">(</span><span class="n">cellid</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+               <span class="c1"># Assigns an index for the value of the cell pointed to by the current cursor state </span>
+               <span class="n">idx</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">GetGlobalNodeIndex</span><span class="p">()</span>
+               <span class="c1"># self.GetCellData().SetActiveScalars(&#39;CellID&#39;)</span>
+               <span class="c1"># print(idx, cid)</span>
+               <span class="c1"># cidArray.InsertTuple1(idx, cellid)</span>
+               <span class="c1"># self.GetCellData().SetActiveScalars(&#39;fileIndex&#39;)</span>
+               <span class="c1"># self.fileIndexArray.InsertTuple1(idx, fileindex_for_cellid[cellid])</span>
+               <span class="c1"># numvalues += 1</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">cellid</span><span class="p">]</span>
+         <span class="c1"># Cell not in list -&gt; must be refined (assume cid is in basegrid)</span>
+         <span class="k">else</span><span class="p">:</span>
+               <span class="n">idx</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">GetGlobalNodeIndex</span><span class="p">()</span>
+
+               <span class="c1"># print(cid , &quot;not found, refining&quot;)</span>
+               <span class="n">cursor</span><span class="o">.</span><span class="n">SubdivideLeaf</span><span class="p">()</span>  <span class="c1"># cell 0</span>
+               <span class="n">refine_cell</span><span class="p">(</span><span class="n">cellid</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+               <span class="c1"># self.GetCellData().SetActiveScalars(&#39;vg_v&#39;)</span>
+               <span class="c1">#scalarArray.InsertTuple1(idx, ave[0])</span>
+               <span class="c1"># self.GetCellData().SetActiveVectors(&#39;vg_b_vol&#39;)</span>
+               <span class="c1">#vectorArray.InsertTuple3(idx, *ave[1:])</span>
+
+               <span class="c1"># pass</span>
+               <span class="c1"># idx = cursor.GetGlobalNodeIndex()</span>
+               <span class="c1"># scalarArray.InsertTuple1(idx, vardummy(cid))</span>
+
+
+      <span class="k">def</span><span class="w"> </span><span class="nf">loop</span><span class="p">():</span>
+         <span class="n">offsetIndex</span> <span class="o">=</span> <span class="mi">0</span>
+
+         <span class="k">for</span> <span class="n">basegridIdx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">))):</span>
+            <span class="n">cid</span> <span class="o">=</span> <span class="n">basegridIdx</span> <span class="o">+</span><span class="mi">1</span>
+            <span class="c1"># Set cursor on cell #0 and set the start index</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">InitializeNonOrientedCursor</span><span class="p">(</span><span class="n">cursor</span><span class="p">,</span> <span class="n">basegridIdx</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">SetGlobalIndexStart</span><span class="p">(</span><span class="n">offsetIndex</span><span class="p">)</span>  <span class="c1"># cell 0</span>
+            <span class="c1"># print(&quot;handling &quot;,cid)</span>
+            <span class="n">handle_cell</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
+
+            <span class="n">offsetIndex</span> <span class="o">+=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">GetTree</span><span class="p">()</span><span class="o">.</span><span class="n">GetNumberOfVertices</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">cid</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">):</span>
+               <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tried to go over&quot;</span><span class="p">)</span>
+               <span class="k">break</span>
+
+      <span class="kn">import</span><span class="w"> </span><span class="nn">pstats</span>
+      <span class="kn">from</span><span class="w"> </span><span class="nn">pstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">SortKey</span>
+      
+      <span class="c1"># with cProfile.Profile() as pr:</span>
+      <span class="n">reinit</span> <span class="o">=</span> <span class="kc">False</span>
+
+      <span class="k">try</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">reinit</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;reinit = True&quot;</span><span class="p">)</span>
+         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metafile</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mfile</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
+            <span class="c1"># print(data)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;idxToFileIndexMap&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;descr&#39;</span><span class="p">]</span>
+      <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Re-initializing HTG, no metadata accessible because of &quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+         <span class="n">reinit</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+      <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+         <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Walking HTG&quot;</span><span class="p">)</span>
+         <span class="n">loop</span><span class="p">()</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;loop done&quot;</span><span class="p">)</span>
+         <span class="n">writer</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkXMLHyperTreeGridWriter</span><span class="p">()</span>
+         <span class="n">writer</span><span class="o">.</span><span class="n">SetFileName</span><span class="p">(</span><span class="s2">&quot;output_FID_1.htg&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">SetNumberOfTuples</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">))</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">InsertTuple1</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">)</span>
+         <span class="n">writer</span><span class="o">.</span><span class="n">SetInputData</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+         <span class="n">writer</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span>
+         
+
+      <span class="c1"># if not reinit:</span>
+      <span class="c1">#    for idx,fileIndex in self.idxToFileIndex.items():</span>
+      <span class="c1">#       self.fileIndexArray.InsertTuple1(idx, fileIndex)</span>
+      <span class="c1"># else:</span>
+
+            
+         <span class="c1"># ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()</span>
+         <span class="c1"># ps.print_stats()</span>
+         <span class="c1"># self &gt;&gt; writer</span>
+         <span class="c1"># writer.Write()</span>
+         
+      
+
+         <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+         
+         <span class="c1"># ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()</span>
+         <span class="c1"># ps.print_stats()</span>
+         <span class="c1"># print(&quot;Actual time elapsed:&quot;, time.time()-t0, &quot;of which&quot;, time.time()-t1, &quot;spent adding an array&quot;)</span>
+      
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pre-calling the jit function to pre-compile&quot;</span><span class="p">)</span>
+      <span class="n">children</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+      
+      <span class="k">if</span> <span class="n">reinit</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">idxToCellID</span> <span class="o">=</span> <span class="p">{}</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span> <span class="o">=</span> <span class="p">{}</span>
+         <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+         <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+         <span class="n">descr</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building descriptor&quot;</span><span class="p">)</span>
+         <span class="n">subdivided</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+         <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+         <span class="c1"># with cProfile.Profile() as pr:</span>
+         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">))</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+               <span class="c1"># self.__descriptor += &quot;.&quot;</span>
+               <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">idxToCellID</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="k">else</span><span class="p">:</span>
+               <span class="c1"># self.__descriptor += &quot;R&quot;</span>
+               <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)</span>
+               <span class="n">subdivided</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+         <span class="c1"># self.__descriptor += &quot;|&quot;</span>
+         <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">subdivided</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+               <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                  <span class="k">if</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                     <span class="c1"># self.__descriptor += &quot;.&quot;</span>
+                     <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">idxToCellID</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+                  <span class="k">else</span><span class="p">:</span>
+                     <span class="c1"># self.__descriptor += &quot;R&quot;</span>
+                     <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)</span>
+                     <span class="n">subdivided</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+                  <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="n">max_ref_level</span><span class="p">:</span>
+               <span class="c1"># self.__descriptor += &quot;|&quot;</span>
+               <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+            <span class="c1"># ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE)</span>
+            <span class="c1"># ps.print_stats()</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Actual time spent:&quot;</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span>
+         <span class="c1"># self.SetDimensions([len(nodeCoordinatesX),len(nodeCoordinatesY),len(nodeCoordinatesZ)])</span>
+         <span class="c1"># self.SetBranchFactor(2)</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building with vtkHyperTreeGridSource and descriptor, len &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">))</span>
+
+      <span class="k">if</span> <span class="n">reinit</span><span class="p">:</span>
+         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metafile</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mfile</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;descr&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">,</span> <span class="s2">&quot;idxToFileIndexMap&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="p">},</span> <span class="n">mfile</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+         <span class="k">with</span> <span class="n">cProfile</span><span class="o">.</span><span class="n">Profile</span><span class="p">()</span> <span class="k">as</span> <span class="n">pr</span><span class="p">:</span>
+            <span class="c1"># src = vtk.vtkHyperTreeGridSource(max_depth = max_ref_level+1,</span>
+            <span class="c1">#                                  dimensions=(int(basegridsize[0]+1),int(basegridsize[1]+1),int(basegridsize[2]+1)),</span>
+            <span class="c1">#                                  grid_scale = (f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz),</span>
+            <span class="c1">#                                  branch_factor = 2,)</span>
+            <span class="n">src</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGridSource</span><span class="p">()</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">SetMaxDepth</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">SetDimensions</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">SetGridScale</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dx</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dy</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dz</span><span class="p">)</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">SetBranchFactor</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">ConvertDescriptorStringToBitArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">)</span>
+            <span class="n">src</span><span class="o">.</span><span class="n">SetDescriptorBits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">)</span>
+            <span class="c1"># src.SetDescriptor(self.__descriptor)</span>
+
+            <span class="n">src</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+
+            <span class="n">htg</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">GetHyperTreeGridOutput</span><span class="p">()</span>
+            <span class="n">htg</span><span class="o">.</span><span class="n">SetXCoordinates</span><span class="p">(</span><span class="n">xValues</span><span class="p">)</span>
+            <span class="n">htg</span><span class="o">.</span><span class="n">SetYCoordinates</span><span class="p">(</span><span class="n">yValues</span><span class="p">)</span>
+            <span class="n">htg</span><span class="o">.</span><span class="n">SetZCoordinates</span><span class="p">(</span><span class="n">zValues</span><span class="p">)</span>
+   
+
+            <span class="c1"># ps = pstats.Stats(pr).sort_stats(SortKey.CUMULATIVE).reverse_order()</span>
+            <span class="c1"># ps.print_stats()</span>
+
+            <span class="c1"># ahtg = src.GetOutput()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkXMLHyperTreeGridWriter</span><span class="p">()</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">SetFileName</span><span class="p">(</span><span class="s2">&quot;output_FID_2.htg&quot;</span><span class="p">)</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">SetInputData</span><span class="p">(</span><span class="n">htg</span><span class="p">)</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foois&quot;</span><span class="p">)</span>
+            <span class="c1"># src &gt;&gt; writer</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Stats after write&quot;</span><span class="p">)</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="n">pr</span><span class="p">)</span><span class="o">.</span><span class="n">sort_stats</span><span class="p">(</span><span class="n">SortKey</span><span class="o">.</span><span class="n">CUMULATIVE</span><span class="p">)</span><span class="o">.</span><span class="n">reverse_order</span><span class="p">()</span>
+            <span class="n">ps</span><span class="o">.</span><span class="n">print_stats</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;foo2&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">CopyStructure</span><span class="p">(</span><span class="n">htg</span><span class="p">)</span>
+            
+            
+            
+            <span class="c1"># #    # Hyper tree grid to unstructured grid filter.</span>
+            <span class="c1"># htg2ug = vtk.vtkHyperTreeGridToUnstructuredGrid()</span>
+            <span class="c1"># # # # data = src.RequestData()</span>
+            
+
+            <span class="c1"># # # shrink = vtk.vtkShrinkFilter(shrink_factor=0.5)</span>
+
+            <span class="c1"># mapper = vtk.vtkDataSetMapper()</span>
+
+            <span class="c1"># # # # src &gt;&gt; htg2ug &gt;&gt; shrink &gt;&gt; mapper</span>
+            <span class="c1"># src &gt;&gt; htg2ug &gt;&gt; mapper</span>
+            <span class="c1"># # htg2ug.SetInputData(src.GetHyperTreeGridOutput())</span>
+            <span class="c1"># # htg2ug.SetInputData(self)</span>
+            <span class="c1"># # mapper.SetInputData(htg2ug.GetOutput())</span>
+
+            <span class="c1"># actor = vtk.vtkActor()#(mapper=mapper)</span>
+            <span class="c1"># actor.SetMapper(mapper)</span>
+            
+            <span class="c1"># #actor.property.diffuse_color = vtk.colors.GetColor3d(&#39;Burlywood&#39;)</span>
+            <span class="c1"># import vtkmodules.vtkCommonColor as vtkCommonColor</span>
+            <span class="c1"># colors = vtkCommonColor.vtkNamedColors()</span>
+            
+            <span class="c1"># actor.property.diffuse_color = colors.GetColor3d(&#39;Burlywood&#39;)</span>
+
+            <span class="c1"># renderer = vtk.vtkRenderer()#background=vtk.colors.GetColor3d(&#39;SlateGray&#39;))</span>
+            <span class="c1"># renderer.background = colors.GetColor3d(&#39;SlateGray&#39;)</span>
+            <span class="c1"># render_window = vtk.vtkRenderWindow()#(size=(640, 480), window_name=&#39;HyperTreeGridSource&#39;)</span>
+            <span class="c1"># render_window.SetSize(640,480)</span>
+            <span class="c1"># render_window.AddRenderer(renderer)</span>
+            <span class="c1"># interactor = vtk.vtkRenderWindowInteractor()</span>
+            <span class="c1"># interactor.render_window = render_window</span>
+
+            <span class="c1"># renderer.AddActor(actor)</span>
+            <span class="c1"># renderer.ResetCamera()</span>
+            <span class="c1"># renderer.GetActiveCamera().Azimuth(150)</span>
+            <span class="c1"># renderer.GetActiveCamera().Elevation(30)</span>
+            <span class="c1"># renderer.ResetCameraClippingRange()</span>
+
+            <span class="c1"># render_window.Render()</span>
+            <span class="c1"># interactor.Start()</span>
+            <span class="c1"># time.sleep(20)</span>
+            <span class="c1"># render_window.Close()</span>
+
+
+      <span class="c1"># self.</span>
+      <span class="c1"># if not reinit:</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="s1">&#39;fileIndex&#39;</span><span class="p">)</span>
+      
+      <span class="bp">self</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">AddArray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="p">)</span>
+
+      <span class="c1"># self.fileIndexArray.SetNumberOfValues(1)</span>
+      <span class="c1"># self.fileIndexArray.SetNumberOfTuples(len(self.idxToFileIndex))</span>
+
+      <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">InsertTuple1</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">)</span>
+      <span class="c1"># self.addArrayFromVlsv(&quot;CellID&quot;)</span>
+
+      <span class="c1"># print(ahtg)</span>
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">findVariablesFromVlsv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">getReducers</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+      <span class="nb">vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span><span class="o">.</span><span class="n">get_variables</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">getReducers</span><span class="p">:</span>
+         <span class="n">reducers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span><span class="o">.</span><span class="n">get_reducers</span><span class="p">()</span>
+         <span class="n">vars_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span>
+         <span class="n">vars_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">reducers</span><span class="p">)</span>
+         <span class="nb">vars</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vars_set</span><span class="p">)</span>
+
+      <span class="c1"># for var in vars:</span>
+      <span class="c1">#    array = vtk.vtkDoubleArray()</span>
+      <span class="c1">#    array.SetName(var)</span>
+      <span class="c1">#    self.GetCellData().AddArray(array)</span>
+
+      <span class="k">return</span> <span class="nb">vars</span>
+
+<span class="w">   </span>
+
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;This function adds one SpatialGrid variable from the reader object and maps</span>
+<span class="sd">   that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="k">def</span><span class="w"> </span><span class="nf">addArrayFromVlsv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">varname</span><span class="p">):</span>
+
+      <span class="c1"># Do not re-add an already existing array</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">HasArray</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;skipped existing array&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">True</span>
+
+      <span class="n">array</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="c1"># cidArray2.DeepCopy(fileIndexArray)</span>
+      <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vlsvreader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+      
+      <span class="n">test_var</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">test_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;varname &quot;</span> <span class="o">+</span> <span class="n">varname</span> <span class="o">+</span> <span class="s2">&quot;returned None; skipping&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+      <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">test_var</span><span class="p">):</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="k">elif</span> <span class="n">test_var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_var</span><span class="p">)</span>         
+      <span class="k">elif</span> <span class="n">test_var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">test_var</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Weird output from &quot;</span> <span class="o">+</span> <span class="n">varname</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+         <span class="c1"># varlen = 0</span>
+         <span class="c1"># print(&quot;test var is &quot;, test_var, &#39;for&#39;, varname)</span>
+
+      
+      <span class="c1"># varlen = data[:,np.newaxis].shape[1]</span>
+      <span class="c1"># print(varlen)</span>
+      <span class="n">array</span><span class="o">.</span><span class="n">SetNumberOfComponents</span><span class="p">(</span><span class="n">varlen</span><span class="p">)</span>
+      <span class="n">array</span><span class="o">.</span><span class="n">SetNumberOfTuples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">GetNumberOfTuples</span><span class="p">())</span>
+      <span class="n">array</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+      <span class="c1"># print(cidArray2)</span>
+      <span class="c1"># newdata = np.array([ciddata[self.idxToFileIndex[idx]] for idx in self.idxToFileIndex.keys()])</span>
+      <span class="k">if</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple1</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple2</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple3</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple4</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple9</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">],(</span><span class="mi">9</span><span class="p">)))</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No vtk SetTuple wrapper function for varlen = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">varlen</span><span class="p">))</span>
+      
+      
+      <span class="bp">self</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">AddArray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+      <span class="k">return</span> <span class="kc">True</span>
+      
+      <span class="c1"># vtk.numpy_interface.numpy_to_vtk(newdata)</span>
+      <span class="c1"># cidArray2.SetData(newdata, len(self.idxToFileIndex), 1)</span>
+
+      
+      <span class="c1"># ... we do not have intermediate node data stored.</span>
+      <span class="c1"># it could be calculated while constructing, but that</span>
+      <span class="c1"># defeats the purpose (limit file read/memory use to</span>
+      <span class="c1"># a threshold). Also, if we can just map directly to</span>
+      <span class="c1"># the file/a buffer, we do not need to do fancy recursive</span>
+      <span class="c1"># traversal downsampling.</span>
+   
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">createModifiedCallback</span><span class="p">(</span><span class="n">anobject</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
+    <span class="n">weakref_obj</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">anobject</span><span class="p">)</span>
+    <span class="n">anobject</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_markmodified</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwars</span><span class="p">):</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="n">weakref_obj</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">o</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">o</span><span class="o">.</span><span class="n">Modified</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">_markmodified</span>
+
+<span class="c1"># Should implement these, more or less:</span>
+<span class="c1"># https://vtk.org/doc/nightly/html/classvtkXMLHyperTreeGridReader.html</span>
+
+<span class="sd">&#39;&#39;&#39;Experimental Python wrapper to expose VLSV files as VTK. SpatialGrid supported for now.</span>
+
+<span class="sd">This will create an internal VlsvReader object and cache the HTG descriptor and</span>
+<span class="sd">a corresponding file layout mapping to disk for repeated accesses:</span>
+<span class="sd">building the descriptor takes ~30s (with Python; maybe the whole loop could be @jit-ted)</span>
+
+<span class="sd">This class functions like a VTK source. Calling `addArrayFromVlsv` is necessary</span>
+<span class="sd">to load and map data from the VLSV to HTG.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<div class="viewcode-block" id="VlsvVtkReader">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvVtkReader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VlsvVtkReader</span><span class="p">(</span><span class="n">VTKPythonAlgorithmBase</span><span class="p">):</span>
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="n">VTKPythonAlgorithmBase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nInputPorts</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">nOutputPorts</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">outputType</span><span class="o">=</span><span class="s1">&#39;vtkHyperTreeGrid&#39;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span> <span class="o">=</span> <span class="kc">None</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span> <span class="o">=</span> <span class="kc">None</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span> <span class="o">=</span> <span class="kc">None</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__cellarrays</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDataArraySelection</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">AddObserver</span><span class="p">(</span><span class="s2">&quot;ModifiedEvent&quot;</span><span class="p">,</span> <span class="n">createModifiedCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">SetFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">filename</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">Modified</span><span class="p">()</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span> <span class="o">=</span> <span class="n">filename</span>
+         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span><span class="p">)</span>
+            <span class="n">fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__metafile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span><span class="p">),</span><span class="s2">&quot;vlsvmeta&quot;</span><span class="p">,</span><span class="n">fn</span><span class="p">[:</span><span class="o">-</span><span class="mi">5</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;_meta&quot;</span><span class="p">)</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">GetFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__FileName</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">buildDescriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span>
+      <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__read_fileindex_for_cellid</span><span class="p">()</span>
+      <span class="n">fileindex_for_cellid</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__fileindex_for_cellid</span>
+      <span class="n">xc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__xcells</span>
+      <span class="n">yc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__ycells</span>
+      <span class="n">zc</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__zcells</span>
+      <span class="n">max_ref_level</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()</span>
+
+      <span class="n">cid_offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">isum</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">max_ref_level</span><span class="p">):</span>
+         <span class="n">isum</span> <span class="o">=</span> <span class="n">isum</span> <span class="o">+</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">)</span> <span class="o">*</span> <span class="n">xc</span> <span class="o">*</span> <span class="n">yc</span> <span class="o">*</span> <span class="n">zc</span>
+         <span class="n">cid_offsets</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">isum</span>
+
+
+      <span class="n">xcells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">ycells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="n">zcells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+         <span class="n">xcells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">xc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+         <span class="n">ycells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">yc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+         <span class="n">zcells</span><span class="p">[</span><span class="n">r</span><span class="p">]</span> <span class="o">=</span> <span class="n">zc</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+      <span class="n">delta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+               <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+
+
+      <span class="n">idxToFileIndex</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+      <span class="n">descr</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Building descriptor&quot;</span><span class="p">)</span>
+      <span class="n">subdivided</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+      <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()))</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+         <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">c</span><span class="p">]</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)</span>
+            <span class="n">subdivided</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+         <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+      <span class="c1"># @jit(nopython=True)</span>
+      <span class="k">def</span><span class="w"> </span><span class="nf">children</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+         <span class="c1"># cellind = get_cell_indices(cid, level) # get_cellind here for compilation</span>
+         <span class="n">cellids</span> <span class="o">=</span> <span class="n">cid</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cid_offsets</span><span class="p">[</span><span class="n">level</span><span class="p">]</span>
+         <span class="n">cellind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">%</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">]))</span><span class="o">%</span><span class="p">(</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+         <span class="n">cellind</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cellids</span><span class="p">)</span><span class="o">//</span><span class="p">(</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">*</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="p">])</span>
+
+         <span class="n">cellind</span> <span class="o">=</span> <span class="n">cellind</span><span class="o">*</span><span class="mi">2</span>
+         <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">8</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+         <span class="n">out</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">cid_offsets</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">cellind</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">delta</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="n">xcells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">ycells</span><span class="p">[</span><span class="n">level</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+         <span class="k">return</span> <span class="n">out</span>           
+
+      
+      <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">max_ref_level</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">subdivided</span><span class="p">[</span><span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">children</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">l</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+               <span class="k">if</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">fileindex_for_cellid</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                  <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+                  <span class="n">idxToFileIndex</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">fileindex_for_cellid</span><span class="p">[</span><span class="n">child</span><span class="p">]</span>
+               <span class="k">else</span><span class="p">:</span>
+                  <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">)</span>
+                  <span class="n">subdivided</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+               <span class="n">idx</span> <span class="o">+=</span> <span class="mi">1</span>
+         <span class="k">if</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="n">max_ref_level</span><span class="p">:</span>
+            <span class="n">descr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="n">descr</span><span class="o">.</span><span class="n">getvalue</span><span class="p">(),</span> <span class="n">idxToFileIndex</span>
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">getDescriptor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reinit</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+      <span class="k">try</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">reinit</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;reinit = True&quot;</span><span class="p">)</span>
+         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metafile</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mfile</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">mfile</span><span class="p">)</span>
+            <span class="c1"># print(data)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;idxToFileIndexMap&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;descr&#39;</span><span class="p">]</span>
+      <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Re-initializing HTG, no metadata accessible because of &quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buildDescriptor</span><span class="p">()</span>
+         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metafile</span><span class="p">)):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metafile</span><span class="p">))</span>
+         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__metafile</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mfile</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;descr&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">,</span> <span class="s2">&quot;idxToFileIndexMap&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="p">},</span> <span class="n">mfile</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__descriptor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">getHTG</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span>
+
+      <span class="n">descr</span><span class="p">,</span> <span class="n">idxToFileIndex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getDescriptor</span><span class="p">()</span>
+      <span class="n">basegridsize</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+
+      <span class="n">src</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGridSource</span><span class="p">()</span>
+      <span class="n">src</span><span class="o">.</span><span class="n">SetMaxDepth</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_max_refinement_level</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">src</span><span class="o">.</span><span class="n">SetDimensions</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="n">src</span><span class="o">.</span><span class="n">SetGridScale</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dx</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dy</span><span class="p">,</span><span class="n">f</span><span class="o">.</span><span class="n">_VlsvReader__dz</span><span class="p">)</span>
+      <span class="n">src</span><span class="o">.</span><span class="n">SetBranchFactor</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+      
+      <span class="c1">#descr = src.ConvertDescriptorStringToBitArray(descr)</span>
+      <span class="c1">#src.SetDescriptorBits(descr)</span>
+      <span class="n">src</span><span class="o">.</span><span class="n">SetDescriptor</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span>
+
+      <span class="n">src</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+      <span class="n">htg</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">GetHyperTreeGridOutput</span><span class="p">()</span>
+
+      <span class="n">xValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">xValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="n">nodeCoordinatesX</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_X&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+      <span class="n">nodeCoordinatesY</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_Y&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+      <span class="n">nodeCoordinatesZ</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s2">&quot;MESH_NODE_CRDS_Z&quot;</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="s1">&#39;SpatialGrid&#39;</span><span class="p">)</span>
+
+
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesX</span><span class="p">):</span>
+         <span class="n">xValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="n">htg</span><span class="o">.</span><span class="n">SetXCoordinates</span><span class="p">(</span><span class="n">xValues</span><span class="p">)</span>
+
+      <span class="n">yValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">yValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesY</span><span class="p">):</span>
+         <span class="n">yValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="n">htg</span><span class="o">.</span><span class="n">SetYCoordinates</span><span class="p">(</span><span class="n">yValues</span><span class="p">)</span>
+
+      <span class="n">zValues</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">zValues</span><span class="o">.</span><span class="n">SetNumberOfValues</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">basegridsize</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+      <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodeCoordinatesZ</span><span class="p">):</span>
+         <span class="n">zValues</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+      <span class="n">htg</span><span class="o">.</span><span class="n">SetZCoordinates</span><span class="p">(</span><span class="n">zValues</span><span class="p">)</span>
+
+      <span class="n">htg</span><span class="o">.</span><span class="n">fileIndexArray</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="n">htg</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="s1">&#39;fileIndex&#39;</span><span class="p">)</span>
+
+      <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+         <span class="n">htg</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">InsertTuple1</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">)</span>
+      <span class="n">htg</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">AddArray</span><span class="p">(</span><span class="n">htg</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="p">)</span>
+
+
+      <span class="k">return</span> <span class="n">htg</span>
+
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">   def FillOutputPortInformation(self, port, info):</span>
+<span class="sd">      pass</span>
+
+<span class="sd">   def RequestDataObject(self, request, inInfo, outInfo):</span>
+<span class="sd">      #This is where you can create output data objects if the output DATA_TYPE_NAME() is not a concrete type.</span>
+<span class="sd">      pass</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="k">def</span><span class="w"> </span><span class="nf">findVariablesFromVlsv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">getReducers</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+
+      <span class="nb">vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">get_variables</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">getReducers</span><span class="p">:</span>
+         <span class="n">reducers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">get_reducers</span><span class="p">()</span>
+         <span class="n">vars_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span>
+         <span class="n">vars_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">reducers</span><span class="p">)</span>
+         <span class="nb">vars</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">vars_set</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="nb">vars</span>
+
+<div class="viewcode-block" id="VlsvVtkReader.RequestInformation">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvVtkReader.RequestInformation">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">RequestInformation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">inInfo</span><span class="p">,</span> <span class="n">outInfo</span><span class="p">):</span>
+
+      <span class="n">info</span> <span class="o">=</span> <span class="n">outInfo</span><span class="o">.</span><span class="n">GetInformationObject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+      <span class="c1"># print(&quot;VlsvVtkReader RequestInformation:&quot;)</span>
+      <span class="c1"># print(info)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating htg via RequestInformation&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getHTG</span><span class="p">()</span>
+         <span class="nb">vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">findVariablesFromVlsv</span><span class="p">(</span><span class="n">getReducers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;vg&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="ow">or</span> <span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;cellid&quot;</span><span class="p">):</span>
+               <span class="c1"># print(name)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">AddArray</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">DisableArray</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">__cellarrays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+         <span class="c1"># self.__htg.addArrayFromVlsv(&quot;vg_beta_star&quot;)</span>
+         <span class="c1"># self.__htg.GetCellData().SetActiveScalars(&quot;vg_beta_star&quot;)</span>
+
+      <span class="n">dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span><span class="o">.</span><span class="n">GetExtent</span><span class="p">()</span>
+      <span class="n">info</span><span class="o">.</span><span class="n">Set</span><span class="p">(</span><span class="n">vtk</span><span class="o">.</span><span class="n">vtkStreamingDemandDrivenPipeline</span><span class="o">.</span><span class="n">WHOLE_EXTENT</span><span class="p">(),</span> <span class="o">*</span><span class="n">dims</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="mi">1</span></div>
+
+<span class="w">   </span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">   def RequestUpdateExtent(self, request, inInfo, outInfo):</span>
+<span class="sd">      pass</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;This function adds one SpatialGrid variable from the reader object and maps</span>
+<span class="sd">   that to the hypertreegrid object. Variable vector sizes of 1,2,3,4,9 supported.</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="k">def</span><span class="w"> </span><span class="nf">addArrayFromVlsv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">varname</span><span class="p">):</span>
+
+      <span class="n">htg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span>
+      <span class="c1"># Do not re-add an already existing array</span>
+      <span class="k">if</span> <span class="n">htg</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">HasArray</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;skipped existing array&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">True</span>
+      
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;varname &quot;</span><span class="p">,</span> <span class="n">varname</span><span class="p">)</span>
+
+      <span class="n">array</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDoubleArray</span><span class="p">()</span>
+      <span class="c1"># cidArray2.DeepCopy(fileIndexArray)</span>
+      <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+      
+      <span class="n">test_var</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">test_var</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;varname &quot;</span> <span class="o">+</span> <span class="n">varname</span> <span class="o">+</span> <span class="s2">&quot;returned None; skipping&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+      <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">test_var</span><span class="p">):</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="k">elif</span> <span class="n">test_var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_var</span><span class="p">)</span>         
+      <span class="k">elif</span> <span class="n">test_var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">varlen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">test_var</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Weird output from &quot;</span> <span class="o">+</span> <span class="n">varname</span><span class="p">)</span>
+         <span class="k">return</span> <span class="kc">False</span>
+
+      <span class="n">array</span><span class="o">.</span><span class="n">SetNumberOfComponents</span><span class="p">(</span><span class="n">varlen</span><span class="p">)</span>
+      <span class="n">array</span><span class="o">.</span><span class="n">SetNumberOfTuples</span><span class="p">(</span><span class="n">htg</span><span class="o">.</span><span class="n">fileIndexArray</span><span class="o">.</span><span class="n">GetNumberOfTuples</span><span class="p">())</span>
+      <span class="n">array</span><span class="o">.</span><span class="n">SetName</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple1</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple2</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple3</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple4</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">varlen</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span><span class="n">fileIndex</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idxToFileIndex</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">SetTuple9</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">fileIndex</span><span class="p">],(</span><span class="mi">9</span><span class="p">)))</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No vtk SetTuple wrapper function for varlen = &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">varlen</span><span class="p">))</span>
+      
+      
+      <span class="n">htg</span><span class="o">.</span><span class="n">GetCellData</span><span class="p">()</span><span class="o">.</span><span class="n">AddArray</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+      <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="VlsvVtkReader.RequestData">
+<a class="viewcode-back" href="../../../../vlsvfile/#analysator.vlsvfile.VlsvVtkReader.RequestData">[docs]</a>
+   <span class="k">def</span><span class="w"> </span><span class="nf">RequestData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">inInfo</span><span class="p">,</span> <span class="n">outInfo</span><span class="p">):</span>
+
+      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;VlsvVtkReader RequestData:&quot;</span><span class="p">)</span>
+      <span class="nb">print</span><span class="p">(</span><span class="n">outInfo</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating htg via RequestData&quot;</span><span class="p">)</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__htg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getHTG</span><span class="p">()</span>
+      
+      <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cellarrays</span><span class="p">:</span>
+         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">ArrayIsEnabled</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">addArrayFromVlsv</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">RemoveArrayByName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+      <span class="n">output</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGrid</span><span class="o">.</span><span class="n">GetData</span><span class="p">(</span><span class="n">outInfo</span><span class="p">)</span>
+
+
+
+      <span class="n">output</span><span class="o">.</span><span class="n">ShallowCopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__htg</span><span class="p">)</span>
+
+      <span class="k">return</span> <span class="mi">1</span></div>
+
+   
+   <span class="k">def</span><span class="w"> </span><span class="nf">ReadAllScalarsOn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span><span class="o">.</span><span class="n">EnableAllArrays</span><span class="p">()</span>
+      <span class="c1"># for name in self.__cellarrays:</span>
+         
+      <span class="c1">#    self.__htg.addArrayFromVlsv(name)</span>
+
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">GetDataArraySelection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayselection</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">__main__</span><span class="p">():</span>
+   <span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+   <span class="c1"># This initializes a hypertreegrid from the given reader.</span>
+   <span class="n">reader</span> <span class="o">=</span> <span class="n">VlsvVtkReader</span><span class="p">()</span>
+   <span class="n">reader</span><span class="o">.</span><span class="n">SetFileName</span><span class="p">(</span><span class="s2">&quot;/home/mjalho/Downloads/bulk.0002189.vlsv&quot;</span><span class="p">)</span>
+   <span class="c1"># reader.SetFileName(&quot;/home/mjalho/bulk1.0001418.vlsv&quot;)</span>
+   <span class="c1"># reader.ReadAllScalarsOn()</span>
+   <span class="n">reader</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+   <span class="n">cf</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkHyperTreeGridContour</span><span class="p">()</span>
+   <span class="n">cf</span><span class="o">.</span><span class="n">SetInputConnection</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">GetOutputPort</span><span class="p">())</span>
+   <span class="n">cf</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+   <span class="n">m</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPolyDataMapper</span><span class="p">()</span>
+   
+   <span class="n">m</span><span class="o">.</span><span class="n">SetInputConnection</span><span class="p">(</span><span class="n">cf</span><span class="o">.</span><span class="n">GetOutputPort</span><span class="p">())</span>
+
+   <span class="n">a</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkActor</span><span class="p">()</span>
+   <span class="n">a</span><span class="o">.</span><span class="n">SetMapper</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+   <span class="n">ren</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkRenderer</span><span class="p">()</span>
+   <span class="n">ren</span><span class="o">.</span><span class="n">AddActor</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+   <span class="n">renWin</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkRenderWindow</span><span class="p">()</span>
+   <span class="n">renWin</span><span class="o">.</span><span class="n">AddRenderer</span><span class="p">(</span><span class="n">ren</span><span class="p">)</span>
+   <span class="n">renWin</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+
+   <span class="c1"># renWin.Render()</span>
+   
+   <span class="c1"># time.sleep(10)</span>
+   
+   <span class="n">htg</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">GetOutputDataObject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+   <span class="c1"># print(htg)</span>
+   <span class="c1"># htg.__vtkVlsvHyperTreeGrid_VlsvAddArray(&#39;vg_b_vol&#39;)</span>
+   <span class="c1"># htg = reader.GetOutputData()</span>
+   <span class="c1"># print(htg)</span>
+   <span class="c1"># These functions grab one SpatialGrid variable and map that to </span>
+   <span class="c1"># the hypertreegrid. Variable vector sizes of 1,2,3,4,9 supported.</span>
+   <span class="c1"># htg.addArrayFromVlsv(&quot;vg_b_vol&quot;)</span>
+   <span class="c1"># htg.addArrayFromVlsv(&quot;vg_beta_star&quot;)</span>
+
+   <span class="n">writer</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkXMLHyperTreeGridWriter</span><span class="p">()</span>
+   <span class="n">writer</span><span class="o">.</span><span class="n">SetFileName</span><span class="p">(</span><span class="s2">&quot;output_FID.htg&quot;</span><span class="p">)</span>
+   
+   <span class="n">writer</span><span class="o">.</span><span class="n">SetInputData</span><span class="p">(</span><span class="n">htg</span><span class="p">)</span>
+   <span class="n">writer</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+   <span class="n">__main__</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

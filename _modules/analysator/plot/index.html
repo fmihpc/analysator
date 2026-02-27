@@ -1,0 +1,634 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.plot &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../about/" />
+    <link rel="index" title="Index" href="../../../genindex/" />
+    <link rel="search" title="Search" href="../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../" class="icon icon-home">
+            analysator
+              <img src="../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.plot</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.plot</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1">#</span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1">#</span>
+
+<span class="sd">&#39;&#39;&#39; The plot module has all the functions related to plotting variables.</span>
+
+<span class="sd">   .. code-block:: python</span>
+
+<span class="sd">      # Example:</span>
+<span class="sd">      import analysator as pt</span>
+<span class="sd">      pt.pt.</span>
+<span class="sd">      #press [tab] -&gt; get the functions</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="c1">#for usage with &quot;from (package) import *&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;plot_colormap&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_vdf&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_vdfdiff&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_vdf_profiles&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_colormap3dslice&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;plot_threeslice&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_ionosphere&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_isosurface&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_neutral_sheet&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;plot_variables&#39;</span><span class="p">,</span><span class="s1">&#39;colormaps&#39;</span><span class="p">,</span> <span class="s1">&#39;plot_helpers&#39;</span><span class="p">]</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_variables</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_variables</span><span class="p">,</span> <span class="n">plot_multiple_variables</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">colormaps</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_helpers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_colormap</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_colormap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_vdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_vdf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_vdfdiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_vdfdiff</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_vdf_profiles</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_vdf_profiles</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_colormap3dslice</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_colormap3dslice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_threeslice</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_threeslice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.plot_ionosphere</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_ionosphere</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Number</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.plot_isosurface</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_isosurface</span><span class="p">,</span> <span class="n">plot_neutral_sheet</span>
+    <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">platform</span><span class="o">.</span><span class="n">python_version</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.7&quot;</span><span class="p">):</span>
+       <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;Python&gt;=3.7 required for RBFInterpolator.&quot;</span><span class="p">)</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;plot_isosurface not imported. To access it, use Python version &gt;=3.7 and install scikit-image.&quot;</span><span class="p">)</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.3.0&quot;</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">viridis</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;viridis_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">viridis_r</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;plasma&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">plasma</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;plasma_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">plasma_r</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">inferno</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;inferno_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">inferno_r</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;magma&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">magma</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;magma_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">magma_r</span><span class="p">)</span>
+
+<span class="c1"># Register custom colourmaps</span>
+<span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.5.0&quot;</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;parula&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">parula</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;parula_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">parula_r</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hot_desaturated&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">hot_desaturated_colormap</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hot_desaturated_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">hot_desaturated_colormap_r</span><span class="p">)</span> <span class="c1"># Listed colormap requires making reversed version at earlier step</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pale_desaturated&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">pale_desaturated_colormap</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pale_desaturated_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">pale_desaturated_colormap_r</span><span class="p">)</span> <span class="c1"># Listed colormap requires making reversed version at earlier step</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">register_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;warhol&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">warhol_colormap</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;parula&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">parula</span><span class="p">)</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;parula_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">parula_r</span><span class="p">)</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hot_desaturated&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">hot_desaturated_colormap</span><span class="p">)</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hot_desaturated_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">hot_desaturated_colormap_r</span><span class="p">)</span> <span class="c1"># Listed colormap requires making reversed version at earlier step</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pale_desaturated&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">pale_desaturated_colormap</span><span class="p">)</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pale_desaturated_r&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">pale_desaturated_colormap_r</span><span class="p">)</span> <span class="c1"># Listed colormap requires making reversed version at earlier step</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;warhol&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colormaps</span><span class="o">.</span><span class="n">warhol_colormap</span><span class="p">)</span>
+
+
+<span class="n">decimalprecision_ax</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">decimalprecision_cblin</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">cb_linear</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="k">if</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s2">&quot;0.99.1.1&quot;</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">__version__</span><span class="o">==</span><span class="s2">&quot;1.4.1&quot;</span><span class="p">:</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Warning, according to loaded numpy and matplotlib versions, user appears to be&#39;</span><span class="p">)</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;either using csc.taito.fi without loading the mayavi2 module, or by invoking&#39;</span><span class="p">)</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;the system python interpeter by calling &quot;./scriptname.py&quot; instead of &quot;python ./scriptname.py&quot;&#39;</span><span class="p">)</span>
+
+<span class="c1"># Run TeX typesetting through the full TeX engine instead of python&#39;s own mathtext. Allows</span>
+<span class="c1"># for changing fonts, bold math symbols etc, but may cause trouble on some systems.</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+   <span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+   <span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;text.latex.preamble&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\boldmath&#39;</span>
+   <span class="c1"># matplotlib.rcParams[&#39;mathtext.fontset&#39;] = &#39;stix&#39;</span>
+   <span class="c1"># matplotlib.rcParams[&#39;font.family&#39;] = &#39;STIXGeneral&#39;</span>
+   <span class="c1"># Matplotlib suppressed logging messages came out after enabling logging.INFO: font.family must be one of (serif, sans-serif, cursive, monospace) when text.usetex is True. serif will be used by default.</span>
+   <span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;font.family&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;serif&#39;</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using LaTeX formatting&quot;</span><span class="p">)</span>
+   <span class="c1"># matplotlib.rcParams[&#39;text.dvipnghack&#39;] = &#39;True&#39; # This hack might fix it on some systems</span>
+
+<span class="c1"># Set backends</span>
+<span class="k">if</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()[:</span><span class="mi">9</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;module://&#39;</span><span class="p">:</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using backend &quot;</span><span class="o">+</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">())</span>
+   <span class="n">backend_interactive</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span>
+   <span class="n">backend_noninteractive</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span>
+<span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTBACKEND&#39;</span><span class="p">):</span>
+   <span class="n">backend_interactive</span> <span class="o">=</span> <span class="s1">&#39;TkAgg&#39;</span>
+   <span class="n">backend_noninteractive</span> <span class="o">=</span> <span class="s1">&#39;Agg&#39;</span>
+<span class="k">else</span><span class="p">:</span>
+   <span class="n">backend_interactive</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTBACKEND&#39;</span><span class="p">)</span>
+   <span class="n">backend_noninteractive</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTBACKEND&#39;</span><span class="p">)</span>
+
+
+
+
+
+
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNONINTERACTIVE&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+   <span class="c1"># Non-interactive plotting mode</span>
+   <span class="k">try</span><span class="p">:</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">backend_noninteractive</span><span class="p">)</span>
+   <span class="k">except</span><span class="p">:</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Note: Unable to switch to &quot;</span><span class="o">+</span><span class="n">backend_noninteractive</span><span class="o">+</span><span class="s2">&quot; backend&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+   <span class="c1"># Interactive plotting mode</span>
+   <span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
+   <span class="k">try</span><span class="p">:</span>
+      <span class="n">plt</span><span class="o">.</span><span class="n">switch_backend</span><span class="p">(</span><span class="n">backend_interactive</span><span class="p">)</span>
+   <span class="k">except</span><span class="p">:</span>
+      <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Note: Unable to switch to &quot;</span><span class="o">+</span><span class="n">backend_interactive</span><span class="o">+</span><span class="s2">&quot; backend&quot;</span><span class="p">)</span>
+
+<span class="n">pt</span><span class="o">.</span><span class="n">backend_interactive</span><span class="o">=</span><span class="n">backend_interactive</span>
+<span class="n">pt</span><span class="o">.</span><span class="n">backend_noninteractive</span><span class="o">=</span><span class="n">backend_noninteractive</span>
+
+
+<span class="c1"># Output matplotlib version</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using matplotlib version &quot;</span><span class="o">+</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_cmap</span><span class="p">(</span><span class="n">colormap</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">Version</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;3.6&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">colormap</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="n">colormap</span><span class="p">)</span>
+
+
+<span class="c1"># Default output directory for plots</span>
+<span class="n">defaultoutputdir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="s1">&#39;$HOME/Plots/&#39;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTOUTPUTDIR&#39;</span><span class="p">):</span>
+    <span class="n">defaultoutputdir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTOUTPUTDIR&#39;</span><span class="p">)</span>
+
+<span class="c1"># axisfmt replaces minus sign with en-dash to fix bug with latex descender value return</span>
+<span class="c1"># nb: axis ticks are never plotted with scientific format</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">axisfmt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;{:.&#39;</span><span class="o">+</span><span class="n">decimalprecision_ax</span><span class="o">+</span><span class="sa">r</span><span class="s1">&#39;f}&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span> <span class="n">a</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\mbox{\textbf{--}}&#39;</span><span class="o">+</span><span class="n">a</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;$&#39;</span><span class="o">+</span><span class="n">a</span><span class="o">+</span><span class="s1">&#39;$&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c1"># cbfmtsci replaces minus sign with en-dash to fix bug with latex descender value return</span>
+<span class="c1"># Scientific format for colour bar ticks</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cbfmtsci</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">cb_linear</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># for linear, use more precision</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;{:.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">decimalprecision_cblin</span><span class="p">))</span><span class="o">+</span><span class="s1">&#39;e}&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="n">precisionvalue</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">decimalprecision_cblin</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">precisionvalue</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">precisionvalue</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">precisionvalue</span><span class="o">=</span><span class="mi">1</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="s1">&#39;{:.&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">precisionvalue</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;f}&#39;</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)))</span><span class="o">+</span><span class="sa">r</span><span class="s1">&#39;{\times}&#39;</span><span class="o">+</span><span class="s1">&#39;10^{{</span><span class="si">{}</span><span class="s1">}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.1e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.1f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)))</span><span class="o">+</span><span class="sa">r</span><span class="s1">&#39;{\times}&#39;</span><span class="o">+</span><span class="s1">&#39;10^{{</span><span class="si">{}</span><span class="s1">}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">signchar</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;&#39;</span>
+    <span class="c1"># Multiple braces for b take care of negative values in exponent</span>
+    <span class="c1"># brackets around \times remove extra whitespace</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+        <span class="c1"># replaces minus sign with en-dash to fix big with latex descender value return</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span> <span class="n">signchar</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\mbox{\textbf{--}}&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span> <span class="n">signchar</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;-&#39;</span>
+    <span class="c1"># Final special treatment for zero value</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;0.0{\times}10^{{</span><span class="si">{0}</span><span class="s1">}}&#39;</span>
+    <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;$&#39;</span><span class="o">+</span><span class="n">signchar</span><span class="o">+</span><span class="n">number</span><span class="o">+</span><span class="s1">&#39;$&#39;</span>
+
+<span class="c1"># cbfmt replaces minus sign with en-dash to fix bug with latex descender value return, used for colorbar</span>
+<span class="c1"># nb: regular floating i.e. non-scientific format for colorbar ticks</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cbfmt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+    <span class="c1"># Special treatment for zero value</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;$0.0$&#39;</span>
+    <span class="c1"># Set required decimal precision</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.1e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;e&#39;</span><span class="p">)</span>
+    <span class="c1"># e.g. 9.0e-1 means we need precision 1</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">cb_linear</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># for linear, use more precision</span>
+        <span class="n">precision</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">decimalprecision_cblin</span><span class="p">))</span>
+        <span class="c1">#if int(b)&lt;1: precision = str(1+abs(int(b)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">precision</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">1</span><span class="p">:</span> <span class="n">precision</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)))</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;{:.&#39;</span><span class="o">+</span><span class="n">precision</span><span class="o">+</span><span class="s1">&#39;f}&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">:</span> <span class="n">a</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\mbox{\textbf{--}}&#39;</span><span class="o">+</span><span class="n">a</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;$&#39;</span><span class="o">+</span><span class="n">a</span><span class="o">+</span><span class="s1">&#39;$&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="c1"># Helper routines for latex output handling</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">bfstring</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;\mathbf{&#39;</span><span class="o">+</span><span class="n">string</span><span class="o">+</span><span class="s1">&#39;}&#39;</span>
+    <span class="c1"># LaTeX output off</span>
+    <span class="k">return</span> <span class="n">string</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">rmstring</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;\mathrm{&#39;</span><span class="o">+</span><span class="n">string</span><span class="o">+</span><span class="s1">&#39;}&#39;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mathmode</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># First remove any internal possible dollar signs, then wrap whole string into math block</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+            <span class="c1"># Get rid of latex spaces</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\,&#39;</span><span class="p">,</span><span class="s1">&#39;~&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\qquad&#39;</span><span class="p">,</span><span class="s1">&#39;~~~~~~&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">r</span><span class="s2">&quot;$&quot;</span><span class="o">+</span><span class="n">result</span><span class="o">+</span><span class="s2">&quot;$&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">textbfstring</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PTNOLATEX&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">r</span><span class="s1">&#39;\textbf{&#39;</span><span class="o">+</span><span class="n">string</span><span class="o">+</span><span class="s1">&#39;}&#39;</span>
+    <span class="c1"># LaTex output off</span>
+    <span class="k">return</span> <span class="n">string</span>
+
+<span class="c1">#Draws sharp contour lines along cell edges (xmeshpass,ymeshpass), for some dpi+linewidth combinations antialiasing True causes issues</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cell_edgecontours</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span><span class="n">XmeshPass</span><span class="p">,</span><span class="n">YmeshPass</span><span class="p">,</span><span class="n">heightmap</span><span class="p">,</span><span class="n">threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;solid&#39;</span><span class="p">,</span><span class="n">colors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span><span class="n">antialiased</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">XmeshPass</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">li</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">li</span> <span class="ow">in</span> <span class="n">YmeshPass</span><span class="p">])</span>
+
+    <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">heightmap</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">heightmap</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># From https://stackoverflow.com/questions/63458863/way-to-contour-outer-edge-of-selected-grid-region-in-python</span>
+    <span class="c1"># Check that at least one spot exceeds threshold or the below will crash.</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">heightmap</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+        
+        <span class="n">l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">vlines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]))</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                    <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span><span class="p">)))</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">hlines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">y</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+                                    <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">l</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">T</span><span class="p">)))</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">vlines</span><span class="p">,</span> <span class="n">hlines</span><span class="p">))</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_collection</span><span class="p">(</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">collections</span><span class="o">.</span><span class="n">LineCollection</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="n">colors</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="n">linestyle</span><span class="p">,</span><span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">antialiased</span><span class="o">=</span><span class="n">antialiased</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+       <span class="k">return</span> <span class="mi">1</span>
+    
+    <span class="k">return</span> <span class="mi">0</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">output_path</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span><span class="n">outputfile_default</span><span class="p">,</span><span class="n">outputdir</span><span class="p">,</span><span class="n">nooverwrite</span><span class="p">):</span>
+        <span class="n">check</span><span class="o">=</span><span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">outputfile</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">outputfile_default</span><span class="p">:</span>
+                <span class="n">outputfile</span><span class="o">=</span><span class="s2">&quot;plot.png&quot;</span>
+
+            <span class="n">outputfile</span><span class="o">=</span><span class="n">outputfile_default</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">outputdir</span><span class="p">:</span>
+                <span class="c1"># Check later if outputfile contains path information and combine with defaultoutputdir</span>
+                <span class="n">check</span><span class="o">=</span><span class="kc">True</span>
+
+        <span class="c1"># Separate possible path information from outputfile</span>
+        <span class="n">outputprefixind</span> <span class="o">=</span> <span class="n">outputfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">outputprefixind</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>            
+            <span class="n">outputdir</span> <span class="o">=</span> <span class="n">outputfile</span><span class="p">[:</span><span class="n">outputprefixind</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">outputfile</span> <span class="o">=</span> <span class="n">outputfile</span><span class="p">[</span><span class="n">outputprefixind</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">outputdir</span><span class="p">:</span> <span class="c1"># default initial path</span>
+            <span class="n">outputdir</span><span class="o">=</span><span class="n">defaultoutputdir</span>
+            <span class="n">check</span><span class="o">=</span><span class="kc">False</span>
+    
+        <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
+            <span class="c1">#remove leading &#39;/&#39; on outputdir as this would cause issues with os.path.join</span>
+            <span class="n">outputprefixind</span> <span class="o">=</span> <span class="n">outputdir</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">outputprefixind</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>            
+                <span class="n">outputdir</span> <span class="o">=</span> <span class="n">outputdir</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">outputdir</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">defaultoutputdir</span><span class="p">,</span><span class="n">outputdir</span><span class="p">)</span>
+            <span class="n">outputfile</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputdir</span><span class="p">,</span><span class="n">outputfile</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">outputfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputdir</span><span class="p">,</span><span class="n">outputfile</span><span class="p">)</span>
+
+        <span class="c1"># Ensure output directory exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outputdir</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outputdir</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileExistsError</span><span class="p">:</span> 
+                <span class="c1">#Parallel jobs might try to create dir simultaneously.</span>
+                <span class="k">pass</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Could not create output directory &quot;</span><span class="o">+</span><span class="n">outputdir</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">outputdir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;No write access for directory &quot;</span><span class="o">+</span><span class="n">outputdir</span><span class="o">+</span><span class="s2">&quot; Exiting.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if target file already exists and overwriting is disabled</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">nooverwrite</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outputfile</span><span class="p">)):</span>            
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">outputfile</span><span class="p">)</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Also check that file is not empty</span>
+                <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Found existing file &quot;</span><span class="o">+</span><span class="n">outputfile</span><span class="o">+</span><span class="s2">&quot; and nooverwrite=True.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found existing file &quot;</span><span class="o">+</span><span class="n">outputfile</span><span class="o">+</span><span class="s2">&quot; of size zero. Re-rendering.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">outputfile</span>
+
+<div class="viewcode-block" id="get_scaled_units">
+<a class="viewcode-back" href="../../../plot/#analysator.plot.get_scaled_units">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_scaled_units</span><span class="p">(</span><span class="n">variable_info</span><span class="p">,</span><span class="n">vscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;EarthSpace&#39;</span><span class="p">,</span> <span class="n">manualDict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Return scaling metadata</span>
+
+<span class="sd">        :param variable_info: VariableInfo object used for getting the units</span>
+<span class="sd">        :param env:          A string to choose the scaling dictionary [default: EarthSpace]</span>
+<span class="sd">        :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary</span>
+<span class="sd">        :param vscale:       float, factor to scale the variable with</span>
+<span class="sd">        </span>
+<span class="sd">        :returns: (norming factor, scaledUnits, scaledLatexUnits)</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1">#</span>
+    <span class="k">if</span> <span class="n">env</span><span class="o">==</span><span class="s1">&#39;EarthSpace&#39;</span><span class="p">:</span>
+        <span class="n">variable_info</span><span class="o">.</span><span class="n">scaleDict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;s&#39;</span>      <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="mf">1e6</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;us&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mu\mathrm</span><span class="si">{s}</span><span class="s1">$&#39;</span><span class="p">},</span>
+                            <span class="mf">1e3</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;ms&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{ms}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;T&#39;</span>      <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e9</span><span class="p">,</span>
+                            <span class="mf">1e9</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;nT&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{nT}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;K&#39;</span>      <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-6</span><span class="p">,</span>
+                            <span class="mf">1e-6</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;MK&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{MK}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;Pa&#39;</span>     <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e9</span><span class="p">,</span>
+                            <span class="mf">1e9</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;nPa&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{nPa}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;1/m&#39;</span>  <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e3</span><span class="p">,</span>
+                            <span class="mf">1e3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;1/km&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{km}</span><span class="s1">^{-1}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;1/m^3&#39;</span>  <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-6</span><span class="p">,</span>
+                            <span class="mf">1e-6</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;1/cm^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{cm}</span><span class="s1">^{-3}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;1/m3&#39;</span>   <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-6</span><span class="p">,</span>
+                            <span class="mf">1e-6</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;1/cm^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{cm}</span><span class="s1">^{-3}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;m/s&#39;</span>    <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-3</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;km/s&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{km}</span><span class="s1">\,\mathrm</span><span class="si">{s}</span><span class="s1">^{-1}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;V/m&#39;</span>    <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e3</span><span class="p">,</span>
+                            <span class="mf">1e3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;mV/m&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{mV}</span><span class="s1">\,\mathrm</span><span class="si">{m}</span><span class="s1">^{-1}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;eV/cm3&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-3</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;keV/cm^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{keV}</span><span class="s1">\,\mathrm</span><span class="si">{cm}</span><span class="s1">^{-3}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;eV/cm^3&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-3</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;keV/cm^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{keV}</span><span class="s1">\,\mathrm</span><span class="si">{cm}</span><span class="s1">^{-3}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;T/m&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">1e-12</span><span class="p">,</span>
+                            <span class="mf">1e-9</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;nT/m&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{nT}</span><span class="s1">\,\mathrm</span><span class="si">{m}</span><span class="s1">^{-1}$&#39;</span><span class="p">},</span>
+                            <span class="mf">1e-12</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;nT/km&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{nT}</span><span class="s1">\,\mathrm</span><span class="si">{km}</span><span class="s1">^{-1}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;kg/m3&#39;</span>  <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mf">5.97863741e26</span><span class="p">,</span>
+                            <span class="mf">5.97863741e26</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;amu/m^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{amu}</span><span class="s1">\,\mathrm</span><span class="si">{m}</span><span class="s1">^{-3}$&#39;</span><span class="p">},</span>
+                            <span class="mf">5.97863741e20</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;amu/cm^3&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{amu}</span><span class="s1">\,\mathrm</span><span class="si">{cm}</span><span class="s1">^{-3}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;A/m^2&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;mA/m^2&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{mA}</span><span class="s1">\,\mathrm</span><span class="si">{m}</span><span class="s1">^{-2}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;W/m^2&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;mW/m^2&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{mW}</span><span class="s1">\,\mathrm</span><span class="si">{m}</span><span class="s1">^{-2}$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;m^2&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="mf">1e-4</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;km^2&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{km}</span><span class="s1">^</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;V&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="mf">1e-3</span><span class="p">:{</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">:</span><span class="s1">&#39;mV&#39;</span><span class="p">,</span> <span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">:</span><span class="sa">r</span><span class="s1">&#39;$\mathrm</span><span class="si">{mV}</span><span class="s1">$&#39;</span><span class="p">}</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;Degrees&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="p">},</span>
+                <span class="s1">&#39;mho&#39;</span> <span class="p">:</span>   <span class="p">{</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="p">},</span>
+        <span class="p">}</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variable_info</span><span class="o">.</span><span class="n">scaleDict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">manualDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">variable_info</span><span class="o">.</span><span class="n">scaleDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">manualDict</span><span class="p">)</span>
+    <span class="n">unitScale</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">scaledUnits</span> <span class="o">=</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span>
+    <span class="n">scaledLatexUnits</span> <span class="o">=</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+
+    <span class="k">if</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">dictKey</span> <span class="o">=</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">udict</span> <span class="o">=</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">scaleDict</span><span class="p">[</span><span class="n">dictKey</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">vscale</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+        <span class="k">if</span> <span class="n">vscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">unitScale</span> <span class="o">=</span> <span class="n">udict</span><span class="p">[</span><span class="s1">&#39;defaultScale&#39;</span><span class="p">]</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">vscale</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">unitScale</span> <span class="o">=</span> <span class="n">vscale</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">unitScale</span><span class="p">,</span> <span class="n">tryScale</span><span class="p">)</span> <span class="k">for</span> <span class="n">tryScale</span> <span class="ow">in</span> <span class="n">udict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tryScale</span><span class="p">,</span> <span class="n">Number</span><span class="p">)]):</span>
+            <span class="c1">#</span>
+            <span class="k">return</span> <span class="n">vscale</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="o">+</span><span class="s2">&quot; x</span><span class="si">{vscale:e}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vscale</span><span class="o">=</span><span class="n">vscale</span><span class="p">),</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span><span class="o">+</span><span class="sa">r</span><span class="s2">&quot;{\times}&quot;</span><span class="o">+</span><span class="n">cbfmtsci</span><span class="p">(</span><span class="n">vscale</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+        <span class="c1">#above guarantees the list comprehension does not give an empty list</span>
+            <span class="n">unitScale</span> <span class="o">=</span> <span class="p">[</span><span class="n">scale</span> <span class="k">for</span> <span class="n">scale</span> <span class="ow">in</span> <span class="n">udict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span><span class="n">unitScale</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">scaledUnits</span> <span class="o">=</span> <span class="n">udict</span><span class="p">[</span><span class="n">unitScale</span><span class="p">][</span><span class="s1">&#39;scaledUnits&#39;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="c1"># logging.info(&#39;Missing scaledUnits in specialist dict for&#39; + variable_info.units + &#39; for unitScale=&#39;+str(unitScale))</span>
+            <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">scaledLatexUnits</span> <span class="o">=</span> <span class="n">udict</span><span class="p">[</span><span class="n">unitScale</span><span class="p">][</span><span class="s1">&#39;scaledLatexUnit&#39;</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c1"># logging.info(&#39;Missing scaledLatexUnits in specialist dict for &#39; + variable_info.units+ &#39; for unitScale=&#39;+str(unitScale))</span>
+            <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">vscale</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">vscale</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">vscale</span><span class="p">,</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span><span class="o">+</span><span class="s2">&quot;x</span><span class="si">{vscale:e}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vscale</span><span class="o">=</span><span class="n">vscale</span><span class="p">),</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span><span class="o">+</span><span class="sa">r</span><span class="s2">&quot;{\times}&quot;</span><span class="o">+</span><span class="n">cbfmtsci</span><span class="p">(</span><span class="n">vscale</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">unitScale</span><span class="p">,</span> <span class="n">scaledUnits</span><span class="p">,</span> <span class="n">scaledLatexUnits</span></div>
+
+
+<span class="c1"># A utility to get variableinfo with corresponding units for simple plotting. Add &quot;canonical&quot; scalings as</span>
+<span class="c1"># necessary, for default/other environments.</span>
+<div class="viewcode-block" id="get_scaled_var">
+<a class="viewcode-back" href="../../../plot/#analysator.plot.get_scaled_var">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_scaled_var</span><span class="p">(</span><span class="n">variable_info</span><span class="p">,</span><span class="n">vscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;EarthSpace&#39;</span><span class="p">,</span> <span class="n">manualDict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Automatically scales the variableinfo data and adjusts the units correspondingly with the</span>
+<span class="sd">        default dictionaries.</span>
+
+<span class="sd">        :param variable_info: VariableInfo object used for getting the units</span>
+<span class="sd">        :param data:         in case you wish to provide new data array (why, though?)</span>
+<span class="sd">        :param env:          A string to choose the scaling dictionary [default: EarthSpace]</span>
+<span class="sd">        :param manualDict:   a dictionary of {units : {scalingparams}}; used to update the included dictionary</span>
+
+<span class="sd">        :returns: variable_info, with scaled units with pre-formatted units included in the varinfo.</span>
+
+
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">variable_info</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">variable_info</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="n">unitScale</span><span class="p">,</span> <span class="n">scaledUnits</span><span class="p">,</span> <span class="n">scaledLatexUnits</span> <span class="o">=</span> <span class="n">get_scaled_units</span><span class="p">(</span><span class="n">vscale</span><span class="o">=</span><span class="n">vscale</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span> <span class="n">manualDict</span><span class="o">=</span><span class="n">manualDict</span><span class="p">,</span><span class="n">variable_info</span><span class="o">=</span><span class="n">variable_info</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unitScale</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c1"># no change, optimize out the calculation</span>
+        <span class="k">return</span> <span class="n">variable_info</span>
+
+    <span class="n">variable_info</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">*</span><span class="n">unitScale</span>
+    <span class="n">variable_info</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="n">scaledUnits</span>
+    <span class="n">variable_info</span><span class="o">.</span><span class="n">latexunits</span> <span class="o">=</span> <span class="n">scaledLatexUnits</span>
+    <span class="k">return</span> <span class="n">variable_info</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

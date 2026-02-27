@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>gics &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">gics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for gics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd"> Given a batch of .vlsv files, containing ground magnetic field vector data at different times,</span>
+<span class="sd"> calculate the north &amp; east components of induced ground electric field [V/m], and save in corresponding .vlsv files</span>
+
+<span class="sd"> This script has been tested with the Vlasiator runs EGL, FHA, FIA</span>
+<span class="sd"> note that the usefulness for EGL is limited because there is no ionosphere (domain #3) for that run </span>
+
+<span class="sd"> Note that the Geomagnetically Induced Currents (GICs) can be computed immediately from the geoelectric field:</span>
+<span class="sd"> The surface current density is J = sigma*E, where E, sigma are respectively the ground electric field and conductivity.</span>
+
+<span class="sd"> This script is written for the UH environment. Adapt file paths as needed.</span>
+
+<span class="sd"> ###</span>
+<span class="sd"> </span>
+<span class="sd"> EXAMPLE CALL:</span>
+<span class="sd">    python gics.py</span>
+
+<span class="sd"> Example sidecar .vlsv files,  containing ground magnetic field data (over the ionosphere mesh), can be found at:</span>
+<span class="sd">    /wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/geoelectric_field/</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+    
+
+<div class="viewcode-block" id="cartesian_to_spherical">
+<a class="viewcode-back" href="../../gics/#gics.cartesian_to_spherical">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cartesian_to_spherical</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    r &gt; 0</span>
+<span class="sd">    0 &lt; theta &lt; pi</span>
+<span class="sd">    -pi &lt; phi &lt; pi</span>
+<span class="sd">    all are assumed to be numpy arrays of equal dimensions</span>
+
+<span class="sd">    returns:  r, theta, phi  [tuple]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span> <span class="n">z</span> <span class="o">/</span> <span class="n">r</span> <span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span></div>
+
+
+<div class="viewcode-block" id="spherical_to_cartesian">
+<a class="viewcode-back" href="../../gics/#gics.spherical_to_cartesian">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spherical_to_cartesian</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    r &gt; 0</span>
+<span class="sd">    0 &lt; theta &lt; pi</span>
+<span class="sd">    -pi &lt; phi &lt; pi</span>
+<span class="sd">    all are assumed to be numpy arrays of equal dimensions</span>
+
+<span class="sd">    returns:  x, y, z   [tuple]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span></div>
+
+
+<div class="viewcode-block" id="cartesian_to_spherical_vector">
+<a class="viewcode-back" href="../../gics/#gics.cartesian_to_spherical_vector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">vy</span><span class="p">,</span> <span class="n">vz</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Convert cartesian vector(s) with coordinates (vx, vy, vz)</span>
+<span class="sd">    at the position(s) theta, phi (note: position r does not affect the vector transformation)</span>
+<span class="sd">    to spherical coordinates (v_r, v_theta, v_phi)</span>
+
+<span class="sd">    dimensions of vx, vy, vz, x, y, z arrays must either match or be a single number</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span> <span class="o">=</span> <span class="n">cartesian_to_spherical</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+    <span class="n">v_r</span> <span class="o">=</span>     <span class="n">vx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">vz</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">v_theta</span> <span class="o">=</span> <span class="n">vx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">-</span> <span class="n">vz</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">v_phi</span> <span class="o">=</span>  <span class="o">-</span><span class="n">vx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">+</span> <span class="n">vy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">v_r</span><span class="p">,</span> <span class="n">v_theta</span><span class="p">,</span> <span class="n">v_phi</span></div>
+
+
+<div class="viewcode-block" id="mkdir_path">
+<a class="viewcode-back" href="../../gics/#gics.mkdir_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mkdir_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Make a directory from the stem of an input file name (path)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">filedir_list</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">filedir</span> <span class="o">=</span> <span class="n">path</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">filedir_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filedir</span><span class="p">)):</span>
+         <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;mkdir -p </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filedir</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="E_horizontal">
+<a class="viewcode-back" href="../../gics/#gics.E_horizontal">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">E_horizontal</span><span class="p">(</span><span class="n">dB_dt</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;liu&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate the horizontal electric field by integrating components of dB/dt</span>
+<span class="sd">            References: Cagniard et al 1952 (eq. 12), Pulkinnen et al 2006 (eq. 19)</span>
+<span class="sd">        Inputs:</span>
+<span class="sd">            dB_dt: cartesian dB/dt    [T/s] array dimension [3, len(time)]</span>
+<span class="sd">            pos: cartesian position [m] 1D 3-element array, vector position</span>
+<span class="sd">            time: 1D array of times [s], monotonically increasing</span>
+
+<span class="sd">        Keywords:</span>
+<span class="sd">            sigma = ground conductivity (siemens/meter)</span>
+<span class="sd">            method:</span>
+<span class="sd">            </span>
+<span class="sd">                &#39;liu&#39;: use integration method described in Liu et al., (2009) doi:10.1029/2008SW000439, 2009</span>
+<span class="sd">                       this method is exact for piecewise linear B (i.e., piecewise constant dB/dt)</span>
+
+<span class="sd">                &#39;RH-riemann&#39;: use right-handed Riemann sum.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">mu_0</span> <span class="o">=</span> <span class="mf">1.25663706e-6</span>    <span class="c1"># permeability of free space</span>
+    <span class="n">E_north</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">E_east</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="n">dB_dt_r</span><span class="p">,</span> <span class="n">dB_dt_theta</span><span class="p">,</span> <span class="n">dB_dt_phi</span> <span class="o">=</span> <span class="n">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">dB_dt</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span> <span class="n">dB_dt</span><span class="p">[</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">dB_dt</span><span class="p">[</span><span class="mi">2</span><span class="p">,:],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">dB_dt_north</span> <span class="o">=</span> <span class="o">-</span><span class="n">dB_dt_theta</span><span class="p">;</span> <span class="n">dB_dt_east</span> <span class="o">=</span> <span class="n">dB_dt_phi</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>   <span class="c1"># monotonically increasing from t[0]</span>
+        <span class="n">tp</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">tp</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;liu&#39;</span><span class="p">:</span>  <span class="c1"># implement Liu et al (2009), eq. 5</span>
+            <span class="n">t_1</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">tp</span>
+            <span class="n">t_2</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span>   <span class="c1"># elementwise, t_2 &gt; t_1</span>
+            <span class="n">dB_north</span> <span class="o">=</span> <span class="n">dB_dt_north</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">dB_east</span> <span class="o">=</span> <span class="n">dB_dt_east</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">E_north</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mf">2.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]))</span> <span class="o">*</span> <span class="n">dB_east</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t_2</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t_1</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="n">E_east</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="mf">2.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]))</span> <span class="o">*</span> <span class="n">dB_north</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t_2</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t_1</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;RH-riemann&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">E_north</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">dB_dt_east</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">tp</span> <span class="o">+</span> <span class="n">t0</span><span class="p">))</span>
+                <span class="n">E_east</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">mu_0</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dt</span> <span class="o">*</span> <span class="n">dB_dt_north</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">t</span><span class="o">-</span><span class="n">tp</span> <span class="o">+</span> <span class="n">t0</span><span class="p">))</span>  <span class="c1"># note the sign</span>
+    <span class="k">return</span> <span class="n">E_north</span><span class="p">,</span> <span class="n">E_east</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>    
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Before running cell blocks below, requires running biot_savart.py </span>
+<span class="sd">    to generate total ground magnetic field sidecar .vlsv files</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">R_EARTH</span> <span class="o">=</span> <span class="mf">6371000.</span>
+
+    <span class="c1"># user-defined locations of sidecar .vlsv files</span>
+    <span class="n">run</span> <span class="o">=</span> <span class="s2">&quot;FHA&quot;</span>  <span class="c1"># EGL, FHA, FIA</span>
+    <span class="k">if</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;FIA&quot;</span><span class="p">:</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk_sidecars/ig_B/&quot;</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;FHA&quot;</span><span class="p">:</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/&quot;</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;EGL&quot;</span><span class="p">:</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/sidecars/ig_B/&quot;</span>
+    
+    <span class="k">if</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;FHA&quot;</span><span class="p">:</span>
+        <span class="n">nmin</span> <span class="o">=</span> <span class="mi">501</span>    <span class="c1"># 501-1000 using _v2 sidecars</span>
+        <span class="n">nmax</span> <span class="o">=</span> <span class="mi">1612</span> 
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;FIA&quot;</span><span class="p">:</span>
+        <span class="n">nmin</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">nmax</span> <span class="o">=</span> <span class="mi">817</span>         <span class="c1"># max 865 (files 818-819 missing)</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s2">&quot;EGL&quot;</span><span class="p">:</span>
+        <span class="n">nmin</span> <span class="o">=</span> <span class="mi">621</span>
+        <span class="n">nmax</span> <span class="o">=</span> <span class="mi">1760</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">nmin</span><span class="p">,</span> <span class="n">nmax</span><span class="p">,</span> <span class="n">nmax</span> <span class="o">-</span> <span class="n">nmin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># load example file to initialize arrays with</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1_sidecars/ig_B/ionosphere_B_sidecar_FHA.0000784.vlsv&quot;</span><span class="p">)</span>     <span class="c1"># FHA: file indices 501 - 1254</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_r&#39;</span><span class="p">)</span>   <span class="c1"># ionospheric grid.  array dimensions (43132, 3)</span>
+    <span class="n">ig_dB_dt_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">([</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">nmax</span> <span class="o">-</span> <span class="n">nmin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">ig_B_ionosphere_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    <span class="n">ig_dB_dt_ionosphere_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    <span class="n">ig_B_inner_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    <span class="n">ig_dB_dt_inner_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    <span class="n">ig_B_outer_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    <span class="n">ig_dB_dt_outer_arr</span> <span class="o">=</span> <span class="n">ig_dB_dt_arr</span> <span class="o">*</span> <span class="mf">0.</span>
+    
+    <span class="n">E_north_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">([</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nmax</span> <span class="o">-</span> <span class="n">nmin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">E_east_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">([</span><span class="n">pos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nmax</span> <span class="o">-</span> <span class="n">nmin</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+    
+    <span class="c1"># populate B arrays (read sidecar files)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmin</span><span class="p">,</span> <span class="n">nmax</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s2">&quot;ionosphere_B_sidecar_</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.vlsv&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">)))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ig_B_ionosphere</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_B_ionosphere&#39;</span><span class="p">)</span>
+            <span class="n">ig_B_ionosphere_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_ionosphere</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;couldn&#39;t read ionospheric data&quot;</span><span class="p">)</span> <span class="c1"># for runs without an ionosphere, leave as zeros</span>
+        <span class="n">ig_B_inner</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_b_inner&#39;</span><span class="p">)</span>
+        <span class="n">ig_B_inner_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_inner</span>
+        <span class="n">ig_B_outer</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_b_outer&#39;</span><span class="p">)</span>
+        <span class="n">ig_B_outer_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_outer</span>
+
+    <span class="c1"># interpolate across any zeros in B arrays (klug) </span>
+    <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ig_B_ionosphere_arr</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Time interpolation: </span><span class="si">{}</span><span class="s2"> points removed&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">ind</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+            <span class="n">interp_arr</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,:,</span> <span class="n">ind</span><span class="p">]</span>  <span class="c1"># only keep the non-zero times to conduct the interpolation</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span> <span class="c1"># positions</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span> <span class="c1"># vector components</span>
+                    <span class="n">arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">time</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">interp_arr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:],</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;An error with interpolation. zeroing out array...&quot;</span><span class="p">)</span>
+    
+    <span class="n">ig_B_arr</span> <span class="o">=</span>  <span class="n">ig_B_ionosphere_arr</span> <span class="o">+</span> <span class="n">ig_B_inner_arr</span> <span class="o">+</span> <span class="n">ig_B_outer_arr</span>
+    
+    <span class="c1"># calculate dB/dt and populate corresponding arrays</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nmin</span><span class="p">,</span> <span class="n">nmax</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1">#next compute derivatives</span>
+        <span class="k">if</span> <span class="n">i</span><span class="o">&gt;</span><span class="n">nmin</span><span class="p">:</span>
+            <span class="n">ig_dB_dt_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">-</span> <span class="n">ig_B_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ig_dB_dt_ionosphere_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_ionosphere_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">-</span> <span class="n">ig_B_ionosphere_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ig_dB_dt_inner_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_inner_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">-</span> <span class="n">ig_B_inner_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ig_dB_dt_outer_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig_B_outer_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="p">]</span> <span class="o">-</span> <span class="n">ig_B_outer_arr</span><span class="p">[:,:,</span><span class="n">i</span><span class="o">-</span><span class="n">nmin</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Integrate dB/dt to find induced geoelectric field, by Cagniard&#39;s formula. See E_horizontal()</span>
+    <span class="k">for</span> <span class="n">i_pos</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ig_dB_dt_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">E_north</span><span class="p">,</span> <span class="n">E_east</span> <span class="o">=</span> <span class="n">E_horizontal</span><span class="p">(</span><span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">i_pos</span><span class="p">,:,:],</span> <span class="n">pos</span><span class="p">[</span><span class="n">i_pos</span><span class="p">,:],</span> <span class="n">time</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;liu&#39;</span><span class="p">)</span>
+        <span class="n">E_north_arr</span><span class="p">[</span><span class="n">i_pos</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">E_north</span>
+        <span class="n">E_east_arr</span><span class="p">[</span><span class="n">i_pos</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">E_east</span>
+    
+    <span class="c1"># write geoelectric field to .vlsv</span>
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="s1">&#39;./GIC_</span><span class="si">{}</span><span class="s1">/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run</span><span class="p">)</span>   <span class="c1"># user defined path</span>
+    <span class="n">f_iono</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span> <span class="s1">&#39;/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/misc_sidecars/ionogrid_FHA.vlsv&#39;</span> <span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
+        <span class="c1"># write to file</span>
+        <span class="n">filename_vlsv</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">+</span> <span class="s1">&#39;ionosphere_gic_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.vlsv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+        <span class="n">mkdir_path</span><span class="p">(</span><span class="n">filename_vlsv</span><span class="p">)</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvWriter</span><span class="p">(</span><span class="n">f_iono</span><span class="p">,</span> <span class="n">filename_vlsv</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span><span class="s1">&#39;ig_r&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">E_north_arr</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="s1">&#39;ig_e_north&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">E_east_arr</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="s1">&#39;ig_e_east&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Plot timeseries of the geoelectric field at different latitudes</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+    
+    <span class="n">lat_deg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">91</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">lat_deg</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">lat</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">lat</span> <span class="o">*</span> <span class="mi">0</span>
+    
+    <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span> <span class="o">=</span> <span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">R_EARTH</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x0</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="c1"># Find nearest neighbor of the ionosphere grid, index by &#39;ind_min&#39;, to the specified lat and phi</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x0</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pos</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y0</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pos</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">z0</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">pos</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ind_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+        <span class="c1"># PLOT:</span>
+        <span class="c1"># geoelectic field</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;GIC Lat. = </span><span class="si">{}</span><span class="s1"> deg., noon, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">run</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [sec]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Geoelectric field [$\mu$V/m]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">E_north_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,:],</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;northward E [$\mu$V/m]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="mf">1e6</span> <span class="o">*</span> <span class="n">E_east_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,:],</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;eastward E [$\mu$V/m]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">400</span><span class="p">,</span> <span class="mi">400</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">filename</span> <span class="o">=</span>  <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">plots/geolectric_E_timeseries_lat_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span><span class="n">run</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="n">run</span><span class="p">)</span>
+        <span class="n">mkdir_path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># dB/dt</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;dB/dt Lat. = </span><span class="si">{}</span><span class="s1"> deg., noon, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">run</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [sec]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Ground magnetic field [nT/s]]&#39;</span><span class="p">)</span>
+        <span class="n">dB_dt_r</span><span class="p">,</span> <span class="n">dB_dt_theta</span><span class="p">,</span> <span class="n">dB_dt_phi</span> <span class="o">=</span> <span class="n">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">,:],</span> <span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">,:],</span> 
+                                                                        <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">dB_dt_north</span> <span class="o">=</span> <span class="o">-</span><span class="n">dB_dt_theta</span><span class="p">;</span> <span class="n">dB_dt_east</span> <span class="o">=</span> <span class="n">dB_dt_phi</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="mf">1e9</span> <span class="o">*</span> <span class="n">dB_dt_north</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;northward dB/dt [nT/s]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="mf">1e9</span> <span class="o">*</span> <span class="n">dB_dt_east</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;eastward dB/dt [nT/s]&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">filename</span> <span class="o">=</span>  <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">plots/dB_dt_timeseries_lat_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span><span class="n">run</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="n">run</span><span class="p">)</span>
+        <span class="n">mkdir_path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># |dB/dt| (components)</span>
+        <span class="k">try</span><span class="p">:</span> <span class="c1"># won&#39;t work for EGL?</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;dB/dt Lat. = </span><span class="si">{}</span><span class="s1"> deg., noon, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">run</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;time [sec]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Ground magnetic field [nT/s]]&#39;</span><span class="p">)</span>
+            <span class="n">dB_dt_r_ionosphere</span><span class="p">,</span> <span class="n">dB_dt_theta_ionosphere</span><span class="p">,</span> <span class="n">dB_dt_phi_ionosphere</span> <span class="o">=</span> <span class="n">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">ig_dB_dt_ionosphere_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">,:],</span> <span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">ig_dB_dt_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">,:],</span> 
+                                                                                                             <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">dB_dt_north_ionosphere</span> <span class="o">=</span> <span class="o">-</span><span class="n">dB_dt_theta_ionosphere</span><span class="p">;</span> <span class="n">dB_dt_east_ionosphere</span> <span class="o">=</span> <span class="n">dB_dt_phi_ionosphere</span>
+            <span class="n">dB_dt_r_inner</span><span class="p">,</span> <span class="n">dB_dt_theta_inner</span><span class="p">,</span> <span class="n">dB_dt_phi_inner</span> <span class="o">=</span> <span class="n">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">ig_dB_dt_inner_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">,:],</span> <span class="n">ig_dB_dt_inner_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">ig_dB_dt_inner_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">,:],</span> 
+                                                                                              <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">dB_dt_north_inner</span> <span class="o">=</span> <span class="o">-</span><span class="n">dB_dt_theta_inner</span><span class="p">;</span> <span class="n">dB_dt_east_inner</span> <span class="o">=</span> <span class="n">dB_dt_phi_inner</span>
+            <span class="n">dB_dt_r_outer</span><span class="p">,</span> <span class="n">dB_dt_theta_outer</span><span class="p">,</span> <span class="n">dB_dt_phi_outer</span> <span class="o">=</span> <span class="n">cartesian_to_spherical_vector</span><span class="p">(</span><span class="n">ig_dB_dt_outer_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">,:],</span> <span class="n">ig_dB_dt_outer_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">ig_dB_dt_outer_arr</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">,:],</span> 
+                                                                                              <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="n">ind_min</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">dB_dt_north_outer</span> <span class="o">=</span> <span class="o">-</span><span class="n">dB_dt_theta_outer</span><span class="p">;</span> <span class="n">dB_dt_east_outer</span> <span class="o">=</span> <span class="n">dB_dt_phi_outer</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1e9</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dB_dt_north</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dB_dt_east</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">),</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;total |dB/dt| [nT/s]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1e9</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dB_dt_north_ionosphere</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dB_dt_east_ionosphere</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">),</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;ionospheric |dB/dt| [nT/s]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1e9</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dB_dt_north_inner</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dB_dt_east_inner</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">),</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;inner |dB/dt| [nT/s]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">1e9</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dB_dt_north_outer</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dB_dt_east_outer</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">),</span> <span class="n">label</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;outer |dB/dt| [nT/s]&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="n">filename</span> <span class="o">=</span>  <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">plots/component_dB_dt_timeseries_lat_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span><span class="n">run</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">lat_deg</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="n">run</span><span class="p">)</span>
+            <span class="n">mkdir_path</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;can&#39;t plot components!&quot;</span><span class="p">)</span>
+    
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

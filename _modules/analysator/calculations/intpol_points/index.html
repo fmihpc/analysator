@@ -1,0 +1,228 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.intpol_points &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.intpol_points</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.intpol_points</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="vlsv_intpol_points">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.vlsv_intpol_points">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vlsv_intpol_points</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">points</span><span class="p">,</span><span class="n">varlist</span><span class="p">,</span><span class="n">operator</span><span class="o">=</span><span class="s2">&quot;pass&quot;</span><span class="p">,</span><span class="n">interpolation_order</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39;Returns interpolated values of variables at given points</span>
+<span class="sd">       :param vlsvReader:            Some open VlsvReader</span>
+<span class="sd">       :type vlsvReader:             :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">       :param points:                Coordinate points</span>
+<span class="sd">       :param varlist:               Variable list, if empty all variables are got</span>
+<span class="sd">       :param operator:              The operator for the variable, for example &quot;x&quot; for x-component or &quot;magnitude&quot; for magnitude</span>
+<span class="sd">       :param interpolation_order:   Order of interpolation (0 or 1), defaults to 1</span>
+<span class="sd">       :returns: A tuple with output: (coordinates,variable_values,header_string)</span>
+
+<span class="sd">       .. code-block:: python</span>
+<span class="sd">       </span>
+<span class="sd">          # Example:</span>
+<span class="sd">          import analysator as pt</span>
+<span class="sd">          import numpy as np</span>
+<span class="sd">          f=pt.vlsvfile.VlsvReader(file_name=&quot;state00040000.vlsv&quot;)</span>
+<span class="sd">          mesh_limits = f.get_spatial_mesh_extent()</span>
+<span class="sd">          x = np.linspace(mesh_limits[0],mesh_limits[3],100) # points along x-axis</span>
+<span class="sd">          y = np.zeros(len(x))</span>
+<span class="sd">          z = np.zeros(len(x))</span>
+<span class="sd">          points=(np.array([x,y,z])).transpose()</span>
+<span class="sd">          varlist = [&quot;cellB&quot;,&quot;n_H+sw_ave&quot;]</span>
+<span class="sd">          [crd,cellids,params,hstr]=pt.calculations.vlsv_intpol_points(f,points,varlist)</span>
+<span class="sd">          x=crd[:,0]</span>
+<span class="sd">          y=crd[:,1]</span>
+<span class="sd">          z=crd[:,2]</span>
+<span class="sd">          Bx=params[:,0]</span>
+<span class="sd">          By=params[:,1]</span>
+<span class="sd">          Bz=params[:,2]</span>
+<span class="sd">          n=params[:,3]</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="n">N_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+   <span class="n">N_vars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">N_vars</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="n">varlist</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_all_variables</span><span class="p">()</span>
+      <span class="n">N_vars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">N_vars</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;len(varlist) = 0&quot;</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">N_points</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+      <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;len(points) = 0&quot;</span><span class="p">)</span>
+   <span class="n">header</span> <span class="o">=</span> <span class="s2">&quot;x y z cellid &quot;</span> <span class="c1"># header string</span>
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_vars</span><span class="p">):</span> <span class="c1"># loop variable list</span>
+      <span class="n">var</span> <span class="o">=</span> <span class="n">varlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;variable &quot;</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s2">&quot; does not exist in file &quot;</span> <span class="o">+</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
+      <span class="n">dim</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">operator</span><span class="p">)))</span> <span class="c1"># variable dimensions</span>
+      <span class="k">if</span> <span class="n">dim</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bad variable dimension (dim=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span><span class="p">)</span>
+      <span class="n">values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_points</span><span class="p">,</span><span class="n">dim</span><span class="p">))</span>
+      <span class="n">crds</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_points</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># coordinates</span>
+      <span class="n">cellids</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N_points</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># cell ids</span>
+      <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_points</span><span class="p">):</span>
+         <span class="n">cellids</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+         <span class="k">if</span> <span class="n">cellids</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># coordinates of a point out of domain</span>
+            <span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+         <span class="k">elif</span> <span class="n">interpolation_order</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">operator</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">interpolation_order</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">cellids</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">operator</span><span class="p">)</span>
+         <span class="n">crds</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="n">points</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+      <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+         <span class="n">res</span><span class="o">=</span><span class="n">values</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">res</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">res</span><span class="p">,</span><span class="n">values</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+         <span class="n">header</span> <span class="o">=</span> <span class="n">header</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">):</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">header</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;) &quot;</span>
+   <span class="k">return</span> <span class="p">(</span><span class="n">crds</span><span class="p">,</span><span class="n">cellids</span><span class="p">,</span><span class="n">res</span><span class="p">,</span><span class="n">header</span><span class="p">)</span></div>
+
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
