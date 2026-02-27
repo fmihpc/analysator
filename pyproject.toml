@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "analysator"
-version = "0.9.7"
+version = "0.9.8"
 authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
 ]
-maintainters = [
+maintainers = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
 ]
 description = "Tools for reading and analysing Vlasiator .vlsv output files."
@@ -28,12 +28,12 @@ dependencies = [
     "scikit-image",
     "vtk>=9.2",
     "yt",
-    "rtree"
 ]
 [project.optional-dependencies]
 none = [
 ]
 all = [
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",

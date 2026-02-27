@@ -25,9 +25,17 @@ file_checks = {
 "colormaps.py":None,
 "calculations":None,
 "vlsv":None,
-"testpackage_":None,
+"testpackage_commons.py":None,
+"testpackage_compare.py":None,
+"testpackage_workflow.sh":None,
+"testpackage_get_job_error.py":"plot_vdf",#Doubt this needs all, just some
+"testpackage_get_diff.py":None,
+"testpackage_helpers.py":None,
+"testpackage_custom_expr.py":None,
 "MayaVi":None,
+"run_compare.sh":None,
 "compare_images.yml":None,
+"compare_images_full.yml":None,
 "miscellaneous":None,
 }
 
@@ -35,12 +43,14 @@ f=open("diff_log.txt","w")
 #Override if there are many changes -> run all tests
 run_all=False
 testpackage_check=True
-if len(git_diff)>10:
+if len(git_diff)>30:
     f.write(f"Multiple ({len(git_diff)}) changes, will run all tests\n")
     run_all=True
 
 output=[]
 for diff_line in git_diff:
+    if run_all:
+        break
     for key,val in file_checks.items():
         if key.lower() in diff_line.lower():
             if 'testpackage_' in key.lower() and testpackage_check:
@@ -48,9 +58,9 @@ for diff_line in git_diff:
                 f.write(f'::warning::Testpackage has changed in the current branch as compared to {branch}, make sure the test is still comparable with current verification_set!\n')
             if not val:
                 run_all=True
-            elif type(val) is list: 
-                output.extend(val)
-            else:
+            elif type(val) is list:
+                output+=list(set(val)-set(output))
+            elif val not in output:
                 output.append(val)
 
 f.close()
