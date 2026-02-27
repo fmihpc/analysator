@@ -81,20 +81,9 @@ def dict_keys_exist(dictionary, query_keys, prune_unique=False):
    if prune_unique:
       unique_keys, indices = np.unique(query_keys, axis=0, return_inverse=True)
 
-      # these are all about the same...
-      # if (unique_keys.ndim == 1):
+      
       mask = np.array([k in dictionary.keys() for k in unique_keys],dtype=bool)
-      # else: # and this isn't worth it?
-      #    mask = np.array([tuple(k) in dictionary.keys() for k in unique_keys],dtype=bool)
 
-      # mask = np.empty(query_keys.shape, dtype=bool)
-      # for i,k in enumerate(query_keys):
-      #    mask[i] = [k in dictionary.keys() for k in query_keys],dtype=bool)
-
-      # mask = np.array(list(map(lambda c: c in dictionary.keys(),query_keys)), dtype=bool)
-
-      # dlambda = np.frompyfunc(lambda c: c in dictionary.keys(),1,1)
-      # mask = np.array(dlambda(query_keys),dtype=bool)
       mask = mask[indices]
    else:
       mask = np.array([k in dictionary.keys() for k in query_keys],dtype=bool)
@@ -478,7 +467,6 @@ class VlsvReader(object):
       #Check if it is not iterable. If it is a scale then make it a list
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
-      # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
       for index,cellid in enumerate(cellids):
          self.__fileindex_for_cellid[cellid] = index
 
@@ -521,14 +509,11 @@ class VlsvReader(object):
          # Read in block values
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKVARIABLE"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
             # Navigate to the correct position
             offset_avgs = int(offset * vector_size * element_size + ast.literal_eval(child.text))
-#            for i in range(0, cells_with_blocks_index[0]):
-#               offset_avgs += blocks_per_cell[i]*vector_size*element_size
 
             fptr.seek(offset_avgs)
             if datatype == "float" and element_size == 4:
@@ -541,7 +526,6 @@ class VlsvReader(object):
          # (note the special treatment in case the population is named 'avgs'
          if (pop == 'avgs' or ("name" in child.attrib) and (child.attrib["name"] == pop)) and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
-            #array_size = ast.literal_eval(child.attrib["arraysize"])
             element_size = ast.literal_eval(child.attrib["datasize"])
             datatype = child.attrib["datatype"]
 
@@ -595,7 +579,6 @@ class VlsvReader(object):
       # Navigate to the correct position:
       from copy import copy
       offset = 0
-      #self.__fileindex_for_cellid_blocks[pop] = {}
       self.__fileindex_for_cellid_blocks[pop] = dict.fromkeys(cells_with_blocks) # should be faster but negligible difference
       for i in range(0, len(cells_with_blocks)):
          self.__fileindex_for_cellid_blocks[pop][cells_with_blocks[i]] = [copy(offset), copy(blocks_per_cell[i])]
@@ -652,7 +635,6 @@ class VlsvReader(object):
                else:
                   in_vars = self.check_variable(popvar)
 
-               # print(popvar," is in vars: ",in_vars)
                if in_vars:
                   self.__available_reducers.add(popvar)
                   break
@@ -1639,12 +1621,10 @@ class VlsvReader(object):
       if value_length > 1:
          read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
-         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)
       else:
          read_vals = self.read_variable(name, cellids=cellids_neighbors_unique, operator=operator)[:,np.newaxis]
          ngbrvalues[cellid_neighbors!=0,:] = read_vals[indices,:]
-         # ngbrvalues[cellid_neighbors!=0,:] = self.read_variable(name, cellids=cellid_neighbors[cellid_neighbors!=0], operator=operator)[:,np.newaxis]
-      # ngbrvalues = np.reshape(ngbrvalues, (ncoords,2,2,2,value_length))
+
       nvals = len(lower_cell_ids_unique)
       ngbrvalues = np.reshape(ngbrvalues, (nvals,2,2,2,*value_shape))
 
@@ -2015,7 +1995,6 @@ class VlsvReader(object):
             return False
          return self.read_fsgrid_variable(name=name, operator=operator)
 
-      #if(self.check_variable(name) and (name.lower()[0:3]=="ig_")):
       if name.lower()[0:3]=="ig_":
          if not cellids == -1:
             logging.warning("CellID requests not supported for ionosphere variables! Aborting.")
@@ -2380,7 +2359,6 @@ class VlsvReader(object):
 
       :returns: a list of unique cell ids
       '''
-      # cids = [int(self.get_cellid(coord)) for coord in coords]
       cids = self.get_cellid(coords)
 
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
@@ -2763,8 +2741,6 @@ class VlsvReader(object):
       vertices_todo = set().union(*cell_vertex_sets.values())
       neighbor_tuples_dict = self.build_dual_from_vertices(list(vertices_todo))
       for c,verts in cell_vertex_sets.items():
-         # neighbor_tuples = self.build_dual_from_vertices(verts)
-         # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
          cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
       
       self.__cell_neighbours.update(cell_neighbor_sets)
