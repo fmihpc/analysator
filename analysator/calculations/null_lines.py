@@ -55,7 +55,7 @@ def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
    :param Bs: ``vg_b_vol``
    :param dxs: ...
    :param coords: ...
-
+   
    :returns: a measure for closeness to the cell center for a neutral line and other data.
    The return value is the minimum of the signed distance function between the neutral
    line
