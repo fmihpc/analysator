@@ -77,6 +77,15 @@ jobs:
           uv pip list
 
 
+      # Check documentation coverage
+      - uses: ammaraskar/sphinx-problem-matcher@master
+      - name: Check Sphinx docs coverage
+        # SPHINXOPTS used via environment variables
+        run: |
+          . CI_env/bin/activate
+          cd Documentation/sphinx/
+          make coverage
+
       # Build
       - uses: ammaraskar/sphinx-problem-matcher@master
       - name: Build Sphinx docs (dirhtml)
@@ -93,15 +102,6 @@ jobs:
           #   https://github.com/sphinx-doc/sphinx/pull/8524
           #   https://github.com/readthedocs/sphinx_rtd_theme/pull/1025
           sed -i 's/url_root="#"/url_root=""/' _build/dirhtml/index.html || true
-
-      # Check documentation coverage
-      - uses: ammaraskar/sphinx-problem-matcher@master
-      - name: Check Sphinx docs coverage
-        # SPHINXOPTS used via environment variables
-        run: |
-          . CI_env/bin/activate
-          cd Documentation/sphinx/
-          make coverage
 
 
       # singlehtml
