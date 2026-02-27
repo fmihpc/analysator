@@ -31,7 +31,7 @@ jobs:
           timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
-            uv venv -p 3.10 CI_env
+            uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
