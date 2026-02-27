@@ -22,7 +22,8 @@ author = 'Sameli'
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'sphinx.ext.coverage'
 ]
 
 templates_path = ['_templates']
