@@ -28,7 +28,6 @@ import sys
 from scipy import optimize
 from ..calculations.cutthrough import cut_through
 from ..calculations.variable import VariableInfo
-from ..plot import plot_variables
 
 
 
@@ -120,6 +119,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
 
    :returns: matplotlib figure
    '''
+   from ..plot import plot_variables
    # Get spatial grid sizes:
    xcells = (int)(vlsvReader.read_parameter("xcells_ini"))
    ycells = (int)(vlsvReader.read_parameter("ycells_ini"))
