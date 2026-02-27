@@ -527,23 +527,23 @@ def plot_vdf(filename=None,
 
     .. code-block:: python
 
-    # Example usage:
+        # Example usage:
 
-    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
-                     coordre=[[11.7,-1.6,0.]], cbulk=1, bpara=1,box=[-2e6,2e6,-2e6,2e6],draw=1)
+        pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                         coordre=[[11.7,-1.6,0.]], cbulk=1, bpara=1,box=[-2e6,2e6,-2e6,2e6],draw=1)
 
-    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
-                     cellids=1670561, xy=1, box=[-2e6,2e6,-2e6,2e6], slicethick=5)
+        pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                         cellids=1670561, xy=1, box=[-2e6,2e6,-2e6,2e6], slicethick=5)
 
-    pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
-                     cellids=[1670561,], xz=1, box=[-2e6,2e6,-2e6,2e6], slicethick=0)
+        pt.plot.plot_vdf(filename="/proj/vlasov/2D/ABC/distributions/distributions.0000100.vlsv",
+                         cellids=[1670561,], xz=1, box=[-2e6,2e6,-2e6,2e6], slicethick=0)
 
 
     Note tilted slices: By default, the program samples the V-space with a slice where each cell is cube the
     dimensions of which are found by performing a rotation on a sample square and finding the maximum xyz-extent. This ensures
     adequate coverage and decreases sampling effects. This behaviour can be overridden with the slicethick and cellsize keywords.
 
-    Setting a value of slicethick=0 will result in the whole VDF being flattened into a single plane. This may result in
+    Setting a value of ``slicethick=0`` will result in the whole VDF being flattened into a single plane. This may result in
     some slight sampling artefacts, but is a good measure of complex populations.
 
     '''

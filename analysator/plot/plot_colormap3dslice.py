@@ -144,17 +144,16 @@ def plot_colormap3dslice(filename=None,
                             receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
                             If the function accepts a fifth variable, if set to true, it is expected to 
                             return a list of required variables for constructing the pass_maps dictionary.
+                            **See note under** ``expression`` **about the dictionaries of arrays.**
         :kwarg expression:  Optional function which calculates a custom expression to plot. The function
                             receives the same dictionary of numpy arrays as external, as an argument pass_maps,
                             the contents of which are maps of variables. Each is either of size [ysize,xsize]
                             or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                             If the function accepts a second variable, if set to true, it is expected to 
                             return a list of required variables for pass_maps.
-
-        Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
-        for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
-        on, see the plot_helpers.py file.
-
+                            **Important note:** the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
+                            for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+                            on, see the plot_helpers.py file.
         :kwarg limitedsize: Calculates the requested variable for only the plotted region. Slower for regular variables,
                             faster for computationally heavy variables.
         :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
@@ -224,27 +223,6 @@ def plot_colormap3dslice(filename=None,
 
 
         :returns:           Outputs an image to a file or to the screen.
-
-        .. code-block:: python
-
-            # Example usage:
-            plot_colormap(filename=fileLocation, var="MA", run="BCQ",
-                        colormap='nipy_spectral',step=j, outputdir=outputLocation,
-                        lin=1, wmark=1, vmin=2.7, vmax=10, 
-                        external=cavitoncontours, pass_vars=['rho','B','beta'])
-            # Where cavitoncontours is an external function which receives the arguments
-            #  ax, XmeshXY,YmeshXY, pass_maps
-            # where pass_maps is a dictionary of maps for the requested variables.
-
-            # example (simple) use of expressions:
-            def exprMA_cust(exprmaps, requestvariables=False):
-                if requestvariables==True:
-                return ['va']
-                custombulkspeed=750000. # m/s
-                va = exprmaps['va'][:,:]
-                MA = custombulkspeed/va
-                return MA
-            plot_colormap(filename=fileLocation, vmin=1 vmax=40, expression=exprMA_cust,lin=1)
 
     '''
 

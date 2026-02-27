@@ -142,16 +142,16 @@ def plot_colormap3dslice(filename=None,
                         receives the following arguments: ax, XmeshXY,YmeshXY, pass_maps
                         If the function accepts a fifth variable, if set to true, it is expected to 
                         return a list of required variables for constructing the pass_maps dictionary.
+                        **See note under** ``expression`` **about the dictionaries of arrays.**
     :kwarg expression:  Optional function which calculates a custom expression to plot. The function
                         receives the same dictionary of numpy arrays as external, as an argument pass_maps,
                         the contents of which are maps of variables. Each is either of size [ysize,xsize]
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                         If the function accepts a second variable, if set to true, it is expected to 
                         return a list of required variables for pass_maps.
-
-    Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
-    for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
-    on, see the plot_helpers.py file.
+                        **Important note:** the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
+                        for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+                        on, see the plot_helpers.py file.
 
     :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known

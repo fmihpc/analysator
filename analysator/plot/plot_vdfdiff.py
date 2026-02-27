@@ -172,13 +172,13 @@ def plot_vdfdiff(filename1=None, filename2=None,
 
     .. code-block:: python
 
-    # Example usage:
+        # Example usage:
 
-    pt.plot.plot_vdfdiff("bulk.0000040.vlsv","bulk.0000048.vlsv",cellids=1,xy=1,slicethick=1,colormap="seismic",
-                     fmin=-1e-9,fmax=1e-9,cbulk=1)
+        pt.plot.plot_vdfdiff("bulk.0000040.vlsv","bulk.0000048.vlsv",cellids=1,xy=1,slicethick=1,colormap="seismic",
+                         fmin=-1e-9,fmax=1e-9,cbulk=1)
 
 
-    See documentation of plot_vdf() for more usage information.
+    See documentation of :func:`plot_vdf()` for more usage information.
 
     '''
 

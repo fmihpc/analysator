@@ -91,9 +91,6 @@ def plot_ionosphere(filename=None,
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
- 
-    .. code-block:: python
-
     '''
 
     #IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
