@@ -31,11 +31,11 @@ def make_streamlines(vlsvfile, streamline_seeds=None,seeds_n=200, seeds_x0=20*63
     """Traces streamlines of velocity field using the yt package.
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
-        :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
-        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
-        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
-        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
-        :kword streamline_length: streamline length
+        :kwarg streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
+        :kwarg streamline_length: streamline length
 
         :returns: streamlines as numpy array
     """
@@ -92,8 +92,8 @@ def make_magnetopause(streamlines, end_x=-15*6371000, x_point_n=50):
     """Finds the mangetopause location based on streamlines.
 
         :param streams: streamlines (coordinates in m)
-        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
-        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        :kwarg end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kwarg x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
         
         :returns:   the magnetopause position as coordinate points in numpy array
     """
@@ -145,13 +145,13 @@ def find_magnetopause_sw_streamline_2d(vlsvfile, streamline_seeds=None, seeds_n=
     """Finds the magnetopause position by tracing streamlines of the velocity field for 2d runs.
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
-        :kword streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
-        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
-        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
-        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
-        :kword streamline_length: streamline length for tracing
-        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
-        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        :kwarg streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)
+        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates
+        :kwarg streamline_length: streamline length for tracing
+        :kwarg end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kwarg x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
 
         :returns:   the magnetopause position as coordinate points in numpy array
     """

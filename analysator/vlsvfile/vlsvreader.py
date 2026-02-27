@@ -163,9 +163,9 @@ class VlsvReader(object):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
-          :kword fsGridDecomposition: Either None or a len-3 list of ints [None].
+          :kwarg fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
-          :kword file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
+          :kwarg file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
       '''
       # Make sure the path is set in file name: 
       file_name = os.path.abspath(file_name)

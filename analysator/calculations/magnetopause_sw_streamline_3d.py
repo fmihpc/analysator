@@ -232,12 +232,12 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
 
         :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader
 
-        :kword streamline_seeds: optional streamline starting points in numpy array
-        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
-        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
-        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point coordinates (both y- and z-directions use the same range)
-        :kword dl: streamline iteration step length in m
-        :kword iterations: int, number of iteration steps
+        :kwarg streamline_seeds: optional streamline starting points in numpy array
+        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point coordinates (both y- and z-directions use the same range)
+        :kwarg dl: streamline iteration step length in m
+        :kwarg iterations: int, number of iteration steps
 
         :returns: streamlines as numpy array
     """
@@ -274,9 +274,9 @@ def make_magnetopause(streams, end_x=-15*6371000, x_point_n=50, sector_n=36, ign
 
         :param streams: streamlines (coordinates in m)
 
-        :kword end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
-        :kword x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
-        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
+        :kwarg end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)
+        :kwarg x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail
+        :kwarg sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane
 
         :returns:   the magnetopause position as coordinate points in numpy array, form [...[c11, c21, c31, ... cn1],[c12, c22, c32, ... cn2],...
                     where cij = [xij, yij, zij], i marks sector, j marks yz-plane (x-coordinate) index 
@@ -443,16 +443,16 @@ def find_magnetopause_sw_streamline_3d(vlsvfile, streamline_seeds=None, seeds_n=
 
 
         :param vlsvfile: path to .vlsv bulk file to use for VlsvReader
-        :kword streamline_seeds: optional streamline starting points in numpy array
-        :kword seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
-        :kword seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
-        :kword seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point coordinates (both y- and z-directions use the same range)
-        :kword dl: streamline iteration step length in m
-        :kword iterations: int, number of iteration steps
-        :kword end_x: tail end x-coordinate (how far along the x-axis the magnetopause is calculated)
-        :kword x_point_n: integer, how many parts the magnetopause will be divided in between the subsolar point and tail end
-        :kword sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane/radial sector
-        :kword ignore: how many inner streamlines will be ignored when calculating the magnetopause
+        :kwarg streamline_seeds: optional streamline starting points in numpy array
+        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced 
+        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points 
+        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point coordinates (both y- and z-directions use the same range)
+        :kwarg dl: streamline iteration step length in m
+        :kwarg iterations: int, number of iteration steps
+        :kwarg end_x: tail end x-coordinate (how far along the x-axis the magnetopause is calculated)
+        :kwarg x_point_n: integer, how many parts the magnetopause will be divided in between the subsolar point and tail end
+        :kwarg sector_n: integer, how many sectors the magnetopause will be divided in on each yz-plane/radial sector
+        :kwarg ignore: how many inner streamlines will be ignored when calculating the magnetopause
 
         :returns:   vertices, surface where vertices are numpy arrays in shape [[x0,y0,z0], [x1,y1,z1],...] and surface is a vtk vtkDataSetSurfaceFilter object
     """
