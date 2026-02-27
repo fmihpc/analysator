@@ -28,7 +28,6 @@ import os
 import pickle
 from operator import itemgetter
 import numbers
-
 import analysator as pt
 try:
    import vtk
@@ -643,7 +642,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def GetFileName(self):
       return self.__FileName
 
-   def buildDescriptor(self):
+   def buildDescriptorPython(self):
       f = self.__reader
       f._VlsvReader__read_fileindex_for_cellid()
       fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
@@ -715,6 +714,20 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             descr.write("|")
 
       return descr.getvalue(), idxToFileIndex
+
+   def buildDescriptor(self):
+        import cpphelpers
+        f = self.__reader
+        f._VlsvReader__read_fileindex_for_cellid()
+        fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
+        xc= f._VlsvReader__xcells
+        yc= f._VlsvReader__ycells
+        zc= f._VlsvReader__zcells
+        max_ref_level = f.get_max_refinement_level()     
+        
+        ret=cpphelpers.buildDescriptor(fileindex_for_cellid,xc,yc,zc,max_ref_level)
+        #returns descriptor as first value and second is the idxToFileIndex
+        return ret[0],ret[1]
 
 
    def getDescriptor(self, reinit=False):
