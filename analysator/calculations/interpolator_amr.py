@@ -229,12 +229,12 @@ class AMRInterpolator(object):
    Radial Basis Functions, `rbf`
       - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.
       - Not continuous with regular-grid trilinear interpolants, needs to be used in the entire interpolation domain.
-      - kword options: "neighbors" for number of neighbors (64)
+      - kwarg options: "neighbors" for number of neighbors (64)
       - basis function uses SciPy default. A free parameter.
 
    delaunay (not recommended)
       - Choice of triangulation is not unique with regular grids, including refinement interfaces.
-      - kword options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
+      - kwarg options as in qhull; "qhull_options" : "QJ" (breaks degeneracies)
 
    '''
 

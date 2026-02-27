@@ -3351,8 +3351,8 @@ class VlsvReader(object):
       Read the velocity space of a given cell and return a dense VDF as a numpy array (along with datacube edges)
       
       :param cellid:       Cell ID of the cell whose velocity distribution the function will read
-      :kword pop:          Population to read ["proton"]
-      :kword regularize:   replace negative values (fringing effects) with zeros [True]
+      :kwarg pop:          Population to read ["proton"]
+      :kwarg regularize:   replace negative values (fringing effects) with zeros [True]
 
       :returns: dense_array [np.ndarray], edges
       '''
@@ -3414,7 +3414,7 @@ class VlsvReader(object):
       ''' Read velocity cells from a spatial cell
       
       :param cellid: Cell ID of the cell whose velocity cells the function will read
-      :kword pop:    Population to read ["proton"]
+      :kwarg pop:    Population to read ["proton"]
       :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
 
       #Example:
@@ -3623,7 +3623,7 @@ class VlsvReader(object):
       ''' Get indices for a subarray of an fsgrid variable, in the cuboid from lower to upper.
       This is meant for mapping a set of fsgrid cells to a given SpatialGrid cell.
       Shifts the corners (lower, upper) by dx_fsgrid*eps inward, if direct low-inclusive behaviour
-      is required, set kword eps = 0.
+      is required, set kwarg eps = 0.
 
 
       :returns two 3-tuples of integers.
