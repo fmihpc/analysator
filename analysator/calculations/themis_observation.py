@@ -237,15 +237,15 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
 
    .. code-block:: python
 
-   # Example usage:
-   vlsvReader = VlsvReader("fullf.0001.vlsv")
-   angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid)
-   # plot:
-   grid_r, grid_theta = np.meshgrid(energies,angles)
-   fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
-   ax.set_title("Detector view at cell " + str(cellid))
-   cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
-   pl.show()
+      # Example usage:
+      vlsvReader = VlsvReader("fullf.0001.vlsv")
+      angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid)
+      # plot:
+      grid_r, grid_theta = np.meshgrid(energies,angles)
+      fig,ax=pl.subplots(subplot_kw=dict(projection="polar"),figsize=(12,10))
+      ax.set_title("Detector view at cell " + str(cellid))
+      cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
+      pl.show()
    '''
    # Get velocity space resolution
    dvx,dvy,dvz = get_dv(vlsvReader,pop=pop)

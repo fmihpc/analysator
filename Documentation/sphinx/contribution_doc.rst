@@ -38,3 +38,10 @@ after which you can generate e.g. the html documentation::
 
 and open it in your favourite browser.
 
+
+Sphinx coverage stats
+---------------------
+
+.. include:: coverage.rst
+   :literal:
+

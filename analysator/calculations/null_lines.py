@@ -49,15 +49,13 @@ def fBox(query_points, box_corner=np.array([0.5,0.5,0.5])):
 def LMN_null_lines_FOTE(LMNs, jacobs, Bs, dxs, coords):
    ''' Function that uses a linear approximation of B from B and its Jacobian
    in the LMN coordinates to get an approximate distance to the neutral line.
-   inputs:
-   * LMN basis vectors stack
-   * Jacobian of B in 9-element vector stack
-   * vg_b_vol
-
-   return a measure for closeness to the cell center for a neutral line and other data.
-   The return value is the minimum of the signed distance function between the neutral
-   line 
-
+   
+   :param LMNs: LMN basis vectors stack
+   :param jacobs: Jacobian of B in 9-element vector stack
+   :param Bs: ``vg_b_vol``
+   :param dxs: ...
+   :param coords: ...
+   :returns: a measure for closeness to the cell center for a neutral line and other data. The return value is the minimum of the signed distance function between the neutral line
    '''
    stack = True
    LMNs = LMNs.copy()
