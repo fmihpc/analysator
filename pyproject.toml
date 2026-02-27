@@ -28,12 +28,12 @@ dependencies = [
     "scikit-image",
     "vtk>=9.2",
     "yt",
-    "rtree"
 ]
 [project.optional-dependencies]
 none = [
 ]
 all = [
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",
