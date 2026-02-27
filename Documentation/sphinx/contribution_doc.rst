@@ -4,7 +4,7 @@ Contributing to documentation
 Guiding principles
 ------------------
 
-We recommend documentation contributors to familiarise themselves with the [Diátaxis](https://diataxis.fr/) framework when deciding which type of documentation to write. The key approach is to distinguish between the four fundamentally different categories of tutorials, how-to guides, explanation material, and reference material. But most importantly, the idea is to work on documentation piece by piece whenever the occasion presents itself. If you find a mistake in the documentation, if you write new code and its documentation, if you contribute a tutorial – all of this is welcome in any stage of readiness! **A contribution to improve the documentation, however small, is better than no contribution at all.**
+We recommend documentation contributors to familiarise themselves with the [Diátaxis](https://diataxis.fr/) framework when deciding which type of documentation to write. The key approach is to distinguish between four fundamentally different categories of documentation: tutorials, how-to guides, explanation material, and reference material. But most importantly, the idea is to work on documentation piece by piece whenever the occasion presents itself. If you find a mistake in the documentation, if you write new code and its documentation, if you contribute a tutorial – all of this is welcome in any stage of readiness! **A contribution to improve the documentation, however small, is better than no contribution at all.**
 
 
 Automatic building and deployment
