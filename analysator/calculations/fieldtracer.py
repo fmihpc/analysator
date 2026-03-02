@@ -223,7 +223,7 @@ def fg_trace(vlsvReader, fg, seed_coords, max_iterations, dx, multiplier, stop_c
       interpolator_V_1 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y, z-0.5*dcell[2]), fg[:,:,:,1], bounds_error = False, fill_value = np.nan)
       interpolator_V_2 = interpolate.RegularGridInterpolator((x-0.5*dcell[0], y-0.5*dcell[1], z), fg[:,:,:,2], bounds_error = False, fill_value = np.nan)
    else:
-      raise NotImplementedError("Unknown centering kword ("+str(centering)+").")
+      raise NotImplementedError("Unknown centering kwarg ("+str(centering)+").")
 
    interpolators = [interpolator_V_0, interpolator_V_1, interpolator_V_2]
 
