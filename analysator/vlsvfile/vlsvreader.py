@@ -3525,9 +3525,9 @@ class VlsvReader(object):
       fptr.close()
 
       #Check for None in case nothing was read into the variables
-      if not data_avgs:
+      if data_avgs is None:
         raise ValueError(f"data_avgs was None, vdf not present in cell {cellid}")
-      elif not data_block_ids:
+      elif data_block_ids is None:
         raise ValueError(f"data_blocks_ids was None, vdf not present in cell {cellid} ")
 
       # Check to make sure the sizes match (just some extra debugging)
