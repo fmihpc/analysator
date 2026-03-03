@@ -1,12 +1,12 @@
 import matplotlib
-import pytools as pt
+import logging
+import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import os, sys
 import time
 import re
-import math
 import matplotlib.ticker as mtick
 import matplotlib.path as mpath
 import matplotlib.patches as patches
@@ -17,89 +17,8 @@ from matplotlib.ticker import MaxNLocator, MultipleLocator
 from matplotlib.ticker import LogLocator
 from matplotlib.colors import BoundaryNorm,LogNorm,SymLogNorm
 from matplotlib.cbook import get_sample_data
-from distutils.version import LooseVersion, StrictVersion
+from packaging.version import Version
 
-def scaling1d(data, resolution, limits=None):   
-    ''' Transfroms data to indices between [0, resolution-1]
-    
-    :kwarg data:       1D data to be plotted using bivariate colormaps
-    :kwarg resolution: Number of unique colors per direction
-    :kwarg limits:     Tuple that overrides the colorspace limits from data limits
-    
-    Returns a list of integer indices.
-    '''
-    if len(data)==0:
-        return np.array([])
-    
-    if limits is not None:
-        vmin, vmax = limits
-        data[np.where(data>vmax)] = vmax
-        data[np.where(data<vmin)] = vmin
-        comparison = data[:, np.newaxis] >= np.linspace(vmin, vmax, resolution, endpoint=False)
-        indices = comparison.shape[1] - 1 - np.argmax(comparison[:, ::-1], axis=1)   
-        
-        return indices   
-    
-    comparison = data[:, np.newaxis] >= np.linspace(np.amin(data), np.amax(data), resolution, endpoint=False)
-    indices = comparison.shape[1] - 1 - np.argmax(comparison[:, ::-1], axis=1)
-                                
-    return indices
-    
-
-def bivariate(resolution_x, resolution_y, a = 0.5, order = [1,0,2], green_multiplier = 1, white_center=True):   
-    '''Creates the RGB space for the 2D colormap
-    
-    :kwarg resolution:       Number of unique colors per direction
-    :kwarg a:                Controls the slope of the two off-diagonal surfaces, between 0 and 1
-    :kwarg order:            Changes which color occupies which corner of the 2D map
-    :kwarg green_multiplier: Determines the amount of green in the colormap
-    :kwarg white_center:     True to force the colormap to go through white
-    
-    Returns a (resolution, resolution) array of RGB values.
-    '''
-    
-#    l = resolution
-    rgb = np.zeros((resolution_x,resolution_y,3))
-    lspace_x = np.linspace(0,1.0,resolution_x)
-    lspace_y = np.linspace(0,1.0,resolution_y)
-
-    rgb[:,:,order[0]] += 0.5*lspace_x[:,np.newaxis]+0.5*lspace_y[np.newaxis,:]
-
-    rgb[:,:,order[1]] += a*lspace_x[:,np.newaxis]+(1-a)*lspace_y[np.newaxis,::-1]
-    
-    rgb[:,:,order[2]] += (1-a)*lspace_x[::-1,np.newaxis]+a*lspace_y[np.newaxis,:]
-
-    rgb[:,:,1] *= green_multiplier
-
-    if white_center:
-        lim = 1/np.sqrt(2)
-        lspace_second_x = np.linspace(-lim,lim,resolution_x)**2
-        lspace_second_y = np.linspace(-lim,lim,resolution_y)**2
-        r = np.sqrt(lspace_second_x[:,np.newaxis] + lspace_second_y[np.newaxis,:])
-        rgb[:,:,:] += 0.5*(1-r)[:,:,np.newaxis]
-        
-    rgb[rgb<0] = 0
-    rgb[rgb>1] = 1
-    return rgb
-
-def plot_2dcolormap(ax, xlimits, zlimits, resolution_x, resolution_y, a = 0.5, order = [1,0,2], green_multiplier = 1, white_center=True, fontsize=12, thick=1):
-
-    rgbs = bivariate(resolution_x, resolution_y, a, order, green_multiplier, white_center)
-    rgbmesh, rgbmesh2 = np.meshgrid(np.arange(resolution_x), np.arange(resolution_y))
-
-    rgb_X, rgb_Y = np.meshgrid(np.linspace(xlimits[0], xlimits[1], resolution_x, endpoint=False)+ (xlimits[1]-xlimits[0])/(2*resolution_x) , np.linspace(zlimits[0], zlimits[1], resolution_y, endpoint=False) + (zlimits[1]-zlimits[0])/(2*resolution_y))
-    
-    rgb_context = rgbs[rgbmesh, rgbmesh2]
-    ax.pcolormesh(rgb_X, rgb_Y, rgb_context)
-    ax.set_xlabel(r"$X$ [$R_{\rm E}$]", fontsize=fontsize)
-    ax.xaxis.set_label_position("top")
-    ax.set_ylabel(r"$Z$ [$R_{\rm E}$]", fontsize=fontsize, labelpad=-40)
-    ax.set_xlim(xlimits[0], xlimits[1])
-    ax.set_ylim(zlimits[0], zlimits[1])
-    ax.set_aspect('equal')
-    ax.tick_params(labelsize=fontsize, width=thick, length=3*thick, bottom=False, top=True, labelbottom=False, labeltop=True)
-    for axis in ['top','bottom','left','right']:
-        ax.spines[axis].set_linewidth(thick)
 
 def plot_ionosphere(filename=None,
                   vlsvobj=None,
@@ -108,18 +27,11 @@ def plot_ionosphere(filename=None,
                   nooverwrite=False,
                   var=None, op=None, operator=None,
                   colormap=None, vmin=None, vmax=None,
-                  contourvar=None,
-                  f2=None,
-                  contourlevels=np.arange(0,10),
-                  contourvmin=None,
-                  contourvmax=None,
-                  contourcmap=None,
-                  contourlinewidths=1,
                   symmetric=False, absolute=None,
                   usesci=True, log=None,
                   lin=None, symlog=None, nocb=False, internalcb=False,
                   minlatitude=60,
-                  cbtitle=None, title=None, cbaxes=None,
+                  cbtitle=None, title=None, cbaxes=None,cb_horizontal=False,
                   thick=1.0,scale=1.0,vscale=1.0,
                   wmark=False,wmarkb=False,
                   viewdir=1.0,draw=None,
@@ -139,7 +51,7 @@ def plot_ionosphere(filename=None,
     :kwarg outputfile:  Singular output file name
     :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    
     :kwarg var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
-                        E, B, v, V or others. Accepts any variable known by analysator/pytools.
+                        E, B, v, V or others. Accepts any variable known by analysator.
                         Per-population variables are simply given as "proton/rho" etc
     :kwarg operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
@@ -172,18 +84,16 @@ def plot_ionosphere(filename=None,
                         variables.
     :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.
     :kwarg cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kwarg cb_horizontal: Set to draw the colorbar horizontally instead of vertically (default: False) requires cbaxes to be set.
     :kwarg thick:       line and axis thickness, default=1.0
     :kwarg draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
     :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
     :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
- 
-    .. code-block:: python
-
     '''
 
-    IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
+    #IONOSPHERE_RADIUS=6471e3 # R_E + 100 km
     # Verify the location of this watermark image
     watermarkimage=os.path.join(os.path.dirname(__file__), 'logo_color.png')
     watermarkimageblack=os.path.join(os.path.dirname(__file__), 'logo_black.png')
@@ -212,8 +122,7 @@ def plot_ionosphere(filename=None,
     elif vlsvobj!=None:
         f=vlsvobj
     else:
-        print("Error, needs a .vlsv file name, python object, or directory and step")
-        return
+        raise TypeError("needs a .vlsv file name, python object, or directory and step")
 
     if operator is None:
         if op is not None:
@@ -222,14 +131,20 @@ def plot_ionosphere(filename=None,
     if not colormap:
         # Default values
         colormap="bwr"
-    cmapuse=matplotlib.cm.get_cmap(name=colormap)
+
+    cmapuse = pt.plot.get_cmap(colormap)
 
     fontsize=8*scale # Most text
     fontsize2=10*scale # Time title
     fontsize3=8*scale # Colour bar ticks and title
 
     # Plot title with time
-    timeval=f.read_parameter("time")
+    try:
+        timeval=f.read_parameter("time")
+    except:
+        # The ionosphere solver miniApp writes outputfiles without a valid
+        # time value.
+        timeval=None
 
     # Plot title with time
     if title is None or title=="msec" or title=="musec":        
@@ -245,9 +160,9 @@ def plot_ionosphere(filename=None,
         plot_title = ''+title
 
     if viewdir > 0:
-        plot_title = "North" + plot_title
+        plot_title = "Northern\\; hemisphere, " + plot_title
     else:
-        plot_title = "South" + plot_title
+        plot_title = "Southern\\; hemisphere, " + plot_title
 
     # step, used for file name
     if step is not None:
@@ -274,7 +189,7 @@ def plot_ionosphere(filename=None,
         if type(operator) is int:
             operator = str(operator)
         if not operator in 'xyz' and operator != 'magnitude' and not operator.isdigit():
-            print("Unknown operator "+str(operator))
+            logging.info("Unknown operator "+str(operator))
             operator=None
             operatorstr=''
         if operator in 'xyz':
@@ -296,42 +211,6 @@ def plot_ionosphere(filename=None,
         var='ig_fac'
     varstr=var.replace("/","_")
 
-    if not outputfile: # Generate filename
-        if not outputdir: # default initial path
-            outputdir=pt.plot.defaultoutputdir
-        # Sub-directories can still be defined in the "run" variable
-        if viewdir > 0:
-            outputpole = "_north"
-        else:
-            outputpole = "_south"
-        outputfile = outputdir+run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
-    else: 
-        if outputdir:
-            outputfile = outputdir+outputfile
-
-    # Re-check to find actual target sub-directory
-    outputprefixind = outputfile.rfind('/')
-    if outputprefixind >= 0:            
-        outputdir = outputfile[:outputprefixind+1]
-
-    # Ensure output directory exists
-    if axes is None and not os.path.exists(outputdir):
-        try:
-            os.makedirs(outputdir)
-        except:
-            pass
-
-    if axes is None and not os.access(outputdir, os.W_OK):
-        print(("No write access for directory "+outputdir+"! Exiting."))
-        return
-
-    # Check if target file already exists and overwriting is disabled
-    if axes is None and (nooverwrite and os.path.exists(outputfile)):            
-        if os.stat(outputfile).st_size > 0: # Also check that file is not empty
-            print(("Found existing file "+outputfile+". Skipping."))
-            return
-        else:
-            print(("Found existing file "+outputfile+" of size zero. Re-rendering."))
 
     # The plot will be saved in a new figure 
     if axes is None and str(matplotlib.get_backend()) != pt.backend_noninteractive: #'Agg':
@@ -348,15 +227,21 @@ def plot_ionosphere(filename=None,
 
     # Read ionosphere mesh node coordinates
     coords = f.get_ionosphere_node_coords()
+    
+    # Read the ionosphere radius from the VLSV file
+    try:
+        ionosphere_radius = f.read_parameter("ionosphere_radius")
+    except:
+        # Recalculate the radius of the ionospheric grid
+        ionosphere_radius = np.max(np.linalg.norm(coords, axis=-1))
+
+
     # Read ionosphere mesh connectivity
     elements = f.get_ionosphere_element_corners()
-    # Read selected variable values
+    # Read selected variable valus
     if operator is None:
        operator="pass"
     datamap_info= f.read_variable_info(var, operator=operator)
-    contourmap_info = f.read_variable_info(contourvar)
-    if f2 is not None:
-        contourmap_info2 = f2.read_variable_info(contourvar)
     # Correction for broken ionosphere units
     datamap_info.latex = re.sub("\\\\text","\\\\mathrm", datamap_info.latex)
     datamap_info.latexunits = re.sub("\\\\mho","\\\\Omega^{-1}", datamap_info.latexunits)
@@ -365,20 +250,18 @@ def plot_ionosphere(filename=None,
     vscale, _, datamap_unit_latex = pt.plot.get_scaled_units(vscale=vscale,variable_info=datamap_info)
     values = datamap_info.data*vscale
     if np.ndim(values) == 0:
-        print("Error, reading variable '" + str(var) + "' from vlsv file!",values.shape)
-        return -1
-    contourvalues = contourmap_info.data
-    #contourvalues2 = contourmap_info2.data
+        raise ValueError("reading variable '" + str(var) + "' from vlsv file! values.shape being" + str(values.shape))
+
 
     # Add unit to colorbar title
     if datamap_unit_latex:
-       cb_title_use = cb_title_use + "\,["+datamap_unit_latex+"]"
+       cb_title_use = cb_title_use + r"\,["+datamap_unit_latex+"]"
 
     if viewdir > 0:
-        r=np.degrees(np.arccos(coords[:,2]/IONOSPHERE_RADIUS))
+        r=np.degrees(np.arccos(coords[:,2]/ionosphere_radius))
     else:
-        r=np.degrees(np.arccos(-coords[:,2]/IONOSPHERE_RADIUS))
-    theta=np.arctan2(coords[:,1],coords[:,0])-math.pi/2
+        r=np.degrees(np.arccos(-coords[:,2]/ionosphere_radius))
+    theta=np.arctan2(coords[:,1],coords[:,0])
 
     # Project nodes and elements into view plane
     mask = []
@@ -413,24 +296,13 @@ def plot_ionosphere(filename=None,
     else:
         vmaxuse = np.ma.amax(values)
 
-    # If automatic range finding is required, find min and max of array
-    if contourvmin is not None:
-        contourvminuse=contourvmin
-    else: 
-        contourvminuse = np.ma.amin(contourvalues)
-    if contourvmax is not None:
-        contourvmaxuse=contourvmax
-    else:
-        contourvmaxuse = np.ma.amax(contourvalues)
+    # Ionospheric special handling: if we have negative values, let's turn on linear mode.
+    if lin is None and symlog is None and (vminuse<=0):
+        lin=True
 
     # If both values are zero, we have an empty array
-    if vmaxuse==vminuse==0:
-        print("Error, requested array is zero everywhere. Exiting.")
-        return 0
-    # If both values are zero, we have an empty array
-    if contourvmaxuse==contourvminuse==0:
-        print("Error, requested array is zero everywhere. Exiting.")
-        return 0
+    if vmaxuse==vminuse==0:        
+        raise ValueError("requested array is zero everywhere. Exiting.")
 
     # If vminuse and vmaxuse are extracted from data, different signs, and close to each other, adjust to be symmetric
     # e.g. to plot transverse field components. Always done for symlog.
@@ -462,10 +334,10 @@ def plot_ionosphere(filename=None,
     if lin is None:
         # Special SymLogNorm case
         if symlog is not None:
-            if LooseVersion(matplotlib.__version__) < LooseVersion("3.3.0"):
+            if Version(matplotlib.__version__) < Version("3.3.0"):
                 norm = SymLogNorm(linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
-                print("WARNING: colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
-                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into pytools/analysator
+                logging.warning("colormap SymLogNorm uses base-e but ticks are calculated with base-10.")
+                #TODO: copy over matplotlib 3.3.0 implementation of SymLogNorm into analysator
             else:
                 norm = SymLogNorm(base=10, linthresh=linthresh, linscale = 1.0, vmin=vminuse, vmax=vmaxuse, clip=True)
             maxlog=int(np.ceil(np.log10(vmaxuse)))
@@ -478,7 +350,7 @@ def plot_ionosphere(filename=None,
         else:
             # Logarithmic plot
             norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
-            ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+            ticks = LogLocator(base=10,subs=(1.0,) if cb_horizontal else list(range(10))) # where to show labels
     else:
         # Linear
         linticks = 7
@@ -498,20 +370,19 @@ def plot_ionosphere(filename=None,
 
     if axes is None:
         fig = plt.figure(figsize=figsize,dpi=150)
-        ax_cartesian = fig.add_axes([0.1,0.1,0.9,0.9], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
+        ax_cartesian = fig.add_axes([0,0,0.8,0.8], xlim=(-(90-minlatitude),(90-minlatitude)), ylim=(-(90-minlatitude),(90-minlatitude)), aspect='equal')
         #ax_polar = fig.add_axes([0.1,0.1,0.9,0.9], polar=True, frameon=False, ylim=(0, 90-minlatitude))
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
     else:
+        axes.axis('off')
         axes.set_xticklabels([])
         axes.set_yticklabels([])
-        axes.axis('off')
-        ax_cartesian = inset_axes(parent_axes=axes, width="95%", height="95%", borderpad=1, loc='center left')
+        ax_cartesian = inset_axes(parent_axes=axes, width="80%", height="80%", borderpad=1, loc='center' if cb_horizontal else 'center left')
         ax_cartesian.set_xlim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_ylim(-(90-minlatitude),(90-minlatitude))
         ax_cartesian.set_aspect('equal')
-        ax_cartesian.set_frame_on(False)
         ax_polar = inset_axes(parent_axes=ax_cartesian, width="100%", height="100%", axes_class = projections.get_projection_class('polar'), borderpad=0)
         ax_polar.set_frame_on(False)
         ax_polar.set_aspect('equal')
@@ -533,188 +404,33 @@ def plot_ionosphere(filename=None,
     pathCodes = np.ones(len(inside_vertices), dtype=mpath.Path.code_type) * mpath.Path.LINETO
     pathCodes[0] = mpath.Path.MOVETO
     path = mpath.Path(np.concatenate((inside_vertices[::-1],outside_vertices)), np.concatenate((pathCodes,pathCodes)))
-    clippingcircle= patches.PathPatch(path, facecolor="#ffffff00", edgecolor='grey', linewidth=thick)
-
-    Re = 6371000
-
-    ### read field line mapping and process it
-    fw_feet = np.ma.masked_array(f.read_variable("vg_connection_coordinates_fw"))
-    bw_feet = np.ma.masked_array(f.read_variable("vg_connection_coordinates_bw"))
-    vg_fluxrope = f.read_variable("vg_fluxrope")
-#    vg_curvature = np.ma.masked_array(f.read_variable("vg_curvature", operator="magnitude"))
-    cellids = np.ma.masked_array(f.read_variable("CellID"))
-    fw_feet[:,0] = np.ma.masked_where(np.linalg.norm(fw_feet, axis=-1) > 6.5e6, fw_feet[:,0])
-    bw_feet[:,0] = np.ma.masked_where(np.linalg.norm(bw_feet, axis=-1) > 6.5e6, bw_feet[:,0])
-    fw_feet[:,0] = np.ma.masked_where(vg_fluxrope <= 0.01, fw_feet[:,0])
-    bw_feet[:,0] = np.ma.masked_where(vg_fluxrope <= 0.01, bw_feet[:,0])
-    fw_feet[:,0] = np.ma.masked_where(vg_fluxrope > 7, fw_feet[:,0])
-    bw_feet[:,0] = np.ma.masked_where(vg_fluxrope > 7, bw_feet[:,0])
-#    fw_feet[:,0] = np.ma.masked_where(vg_curvature < 1.0 / (20.0*Re), fw_feet[:,0])
-#    bw_feet[:,0] = np.ma.masked_where(vg_curvature < 1.0 / (20.0*Re), bw_feet[:,0])
-
-    if viewdir > 0: # North
-        fw_feet[:,2] = np.ma.masked_where(fw_feet[:,2] < 0, fw_feet[:,2])
-        bw_feet[:,2] = np.ma.masked_where(bw_feet[:,2] < 0, bw_feet[:,2])
-    else: # South
-        fw_feet[:,2] = np.ma.masked_where(fw_feet[:,2] > 0, fw_feet[:,2])
-        bw_feet[:,2] = np.ma.masked_where(bw_feet[:,2] > 0, bw_feet[:,2])
-
-    fw_feet_in=np.ma.mask_rows(fw_feet)
-    bw_feet_in=np.ma.mask_rows(bw_feet)
-    fw_feet_out=np.ma.mask_rows(fw_feet)
-    bw_feet_out=np.ma.mask_rows(bw_feet)
-
-    fw_hits_x = np.ma.masked_where(fw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,0])
-    bw_hits_x = np.ma.masked_where(bw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,0])
-    fw_hits_y = np.ma.masked_where(fw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,1])
-    bw_hits_y = np.ma.masked_where(bw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,1])
-    fw_hits_z = np.ma.masked_where(fw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,2])
-    bw_hits_z = np.ma.masked_where(bw_feet.mask[:,0], f.get_cell_coordinates(cellids)[:,2])
-
-    fw_feet_in[:,0] = np.ma.masked_where(np.abs(fw_hits_y) > 4.5*Re, fw_feet_in[:,0])
-    bw_feet_in[:,0] = np.ma.masked_where(np.abs(bw_hits_y) > 4.5*Re, bw_feet_in[:,0])
-    fw_feet_out[:,0] = np.ma.masked_where(np.abs(fw_hits_y) <= 4.5*Re, fw_feet_out[:,0])
-    bw_feet_out[:,0] = np.ma.masked_where(np.abs(bw_hits_y) <= 4.5*Re, bw_feet_out[:,0])
-
-    fw_feet_in=np.ma.mask_rows(fw_feet_in)
-    bw_feet_in=np.ma.mask_rows(bw_feet_in)
-    fw_feet_out=np.ma.mask_rows(fw_feet_out)
-    bw_feet_out=np.ma.mask_rows(bw_feet_out)
-
-    fw_hits_in_x = np.ma.masked_where(fw_feet_in.mask[:,0], fw_hits_x)
-    bw_hits_in_x = np.ma.masked_where(bw_feet_in.mask[:,0], bw_hits_x)
-    fw_hits_out_x = np.ma.masked_where(fw_feet_out.mask[:,0], fw_hits_x)
-    bw_hits_out_x = np.ma.masked_where(bw_feet_out.mask[:,0], bw_hits_x)
-
-    fw_hits_in_z = np.ma.masked_where(fw_feet_in.mask[:,0], fw_hits_z)
-    bw_hits_in_z = np.ma.masked_where(bw_feet_in.mask[:,0], bw_hits_z)
-    fw_hits_out_z = np.ma.masked_where(fw_feet_out.mask[:,0], fw_hits_z)
-    bw_hits_out_z = np.ma.masked_where(bw_feet_out.mask[:,0], bw_hits_z)
-
-    fw_feet_in=fw_feet_in.compressed().reshape([-1,3])
-    bw_feet_in=bw_feet_in.compressed().reshape([-1,3])
-    fw_feet_out=fw_feet_out.compressed().reshape([-1,3])
-    bw_feet_out=bw_feet_out.compressed().reshape([-1,3])
-
-    fw_hits_in_x = fw_hits_in_x.compressed()
-    bw_hits_in_x = bw_hits_in_x.compressed()
-    fw_hits_out_x = fw_hits_out_x.compressed()
-    bw_hits_out_x = bw_hits_out_x.compressed()
-
-    fw_hits_in_z = fw_hits_in_z.compressed()
-    bw_hits_in_z = bw_hits_in_z.compressed()
-    fw_hits_out_z = fw_hits_out_z.compressed()
-    bw_hits_out_z = bw_hits_out_z.compressed()
-
-    if viewdir > 0:
-        try:
-            fw_feet_in_r=np.degrees(np.arccos(fw_feet_in[:,2]/IONOSPHERE_RADIUS))
-            fw_feet_out_r=np.degrees(np.arccos(fw_feet_out[:,2]/IONOSPHERE_RADIUS))
-        except:
-            print("no fw feet North")
-        try:
-            bw_feet_in_r=np.degrees(np.arccos(bw_feet_in[:,2]/IONOSPHERE_RADIUS))
-            bw_feet_out_r=np.degrees(np.arccos(bw_feet_out[:,2]/IONOSPHERE_RADIUS))
-        except:
-            print("no bw feet North")
-    else:
-        try:
-            fw_feet_in_r=np.degrees(np.arccos(-fw_feet_in[:,2]/IONOSPHERE_RADIUS))
-            fw_feet_out_r=np.degrees(np.arccos(-fw_feet_out[:,2]/IONOSPHERE_RADIUS))
-        except:
-            print("no fw feet South")
-        try:
-            bw_feet_in_r=np.degrees(np.arccos(-bw_feet_in[:,2]/IONOSPHERE_RADIUS))
-            bw_feet_out_r=np.degrees(np.arccos(-bw_feet_out[:,2]/IONOSPHERE_RADIUS))
-        except:
-            print("no bw feet South")
-    try:
-        fw_feet_in_theta=np.arctan2(fw_feet_in[:,1],fw_feet_in[:,0]) + math.pi
-        fw_feet_out_theta=np.arctan2(fw_feet_out[:,1],fw_feet_out[:,0]) + math.pi
-    except:
-        print("no fw feet")
-    try:
-        bw_feet_in_theta=np.arctan2(bw_feet_in[:,1],bw_feet_in[:,0]) + math.pi
-        bw_feet_out_theta=np.arctan2(bw_feet_out[:,1],bw_feet_out[:,0]) + math.pi
-    except:
-        print("no bw feet")
+    clippingcircle= patches.PathPatch(path, facecolor="#ffffff", edgecolor='grey', linewidth=1)
 
     ### THE ACTUAL PLOT HAPPENS HERE ###
-    # new tweaks
-    resolution_x = 8    
-    resolution_y = 7
-    a = 0.8
-    order = [1,0,2]
-    green_multiplier = 1
-    white_center = False
-    rgb = bivariate(resolution_x, resolution_y, a, order, green_multiplier, white_center)
-            
-    zlimits = (-10,10) # Z colormap limits
-    xlimits = (-30,10)   # X colormap limits
-
-    if cbaxes is not None:
-        plot_2dcolormap(cbaxes, xlimits, zlimits, resolution_x, resolution_y, a=a, white_center=white_center, green_multiplier=green_multiplier, order=order, fontsize=fontsize3, thick=thick)
+    #contours = ax_cartesian.tricontourf(tri, values, cmap=cmapuse, norm=norm, levels=64, vmin=vminuse, vmax=vmaxuse)
+    if(len(values) == len(tri.triangles)):
+        shading = 'flat'
+    elif(len(values) == len(tri.x)):
+        shading = 'gouraud'
+    else:
+        raise ValueError("Number of values ("+str(len(values))+") matches neither number of elements ("+str(len(tri.triangles))+") or number of points ("+str(len(tri.x))+")")
     
-    try: 
-        scaled_fw_hits_in_z = scaling1d(fw_hits_in_z/Re, resolution_y, limits=zlimits)
-        scaled_fw_hits_in_x = scaling1d(fw_hits_in_x/Re, resolution_x, limits=xlimits)
-        scaled_fw_hits_out_z = scaling1d(fw_hits_out_z/Re, resolution_y, limits=zlimits)
-        scaled_fw_hits_out_x = scaling1d(fw_hits_out_x/Re, resolution_x, limits=xlimits)
-
-
-        if len(fw_feet_in_theta) > 0 and len(fw_feet_in_r) > 0: # If data exists
-            scat = ax_polar.scatter(fw_feet_in_theta, fw_feet_in_r, c=rgb[scaled_fw_hits_in_x, scaled_fw_hits_in_z], s=2000, marker=1, linewidths=6)
-        else:
-            scat = ax_polar.scatter(fw_feet_in_theta, fw_feet_in_r) # If not, return an empty version of the same object
-
-        if len(fw_feet_out_theta > 0) and len(fw_feet_out_r) > 0: # If data exists
-            scat = ax_polar.scatter(fw_feet_out_theta, fw_feet_out_r, c=rgb[scaled_fw_hits_out_x, scaled_fw_hits_out_z], s=2000, marker=2, linewidths=6)
-        else:
-            scat = ax_polar.scatter(fw_feet_out_theta, fw_feet_out_r) # If not, return an empty version of the same object
-    except Exception as e:
-        print(e)
-        
-    try: # The same as above
-        scaled_bw_hits_in_z = scaling1d(bw_hits_in_z/Re, resolution_y, limits=zlimits)
-        scaled_bw_hits_in_x = scaling1d(bw_hits_in_x/Re, resolution_x, limits=xlimits)
-        scaled_bw_hits_out_z = scaling1d(bw_hits_out_z/Re, resolution_y, limits=zlimits)
-        scaled_bw_hits_out_x = scaling1d(bw_hits_out_x/Re, resolution_x, limits=xlimits)
-
-        if len(bw_feet_in_theta) > 0 and len(bw_feet_in_r) > 0:
-            scat = ax_polar.scatter(bw_feet_in_theta, bw_feet_in_r, c=rgb[scaled_bw_hits_in_x, scaled_bw_hits_in_z], s=2000, marker=1, linewidths=6)
-        else: scat = ax_polar.scatter(bw_feet_in_theta, bw_feet_in_r)
-
-        if len(bw_feet_out_theta > 0) and len(bw_feet_out_r) > 0:
-            scat = ax_polar.scatter(bw_feet_out_theta, bw_feet_out_r, c=rgb[scaled_bw_hits_out_x, scaled_bw_hits_out_z], s=2000, marker=2, linewidths=6)
-        else: scat = ax_polar.scatter(bw_feet_out_theta, bw_feet_out_r)
-    except Exception as e:
-        print(e)
-
-
-    #colormap = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm)# YPK , shading='gouraud')
-    colormap = scat
-#    contours = ax_cartesian.tricontour(tri, contourvalues, cmap=contourcmap, levels=contourlevels, vmin=contourvminuse, vmax=contourvmaxuse, linewidths=contourlinewidths)
-    contours = ax_cartesian.tricontour(tri, contourvalues, colors=["black"], levels=contourlevels, vmin=contourvminuse, vmax=contourvmaxuse, linewidths=contourlinewidths)
-    #contours2 = ax_cartesian.tricontour(tri, contourvalues2, cmap="brg", levels=contourlevels, vmin=contourvminuse, vmax=contourvmaxuse, linewidths=contourlinewidths-2)
-
-
+    contours = ax_cartesian.tripcolor(tri, values, cmap=cmapuse, norm=norm, shading=shading)
     ax_cartesian.add_patch(clippingcircle)
 
     # Draw polar grid over it
-    ax_polar.grid(True, color="black", linestyle='dashdot', linewidth=thick)
+    ax_polar.grid(True)
     gridlatitudes = np.arange(0., 90.-minlatitude,10.)
     ax_polar.set_rmax(90.-minlatitude);
-#    ax_polar.set_rgrids(gridlatitudes, map(lambda x: "", gridlatitudes),angle=225)
-    ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=30)
-    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24","2","4","6","8","10","12","14","16","18","20","22","24"])
-    ax_polar.set_theta_zero_location('W', offset=0)
+    ax_polar.set_rgrids(gridlatitudes, map(lambda x: str(90.-x)+"°", gridlatitudes),angle=225)
+    ax_polar.set_thetagrids(np.linspace(0., 360, 13), ["24h","2h","4h","6h","8h","10h","12h","14h","16h","18h","20h","22h","24h"])
+    ax_polar.set_theta_zero_location('S', offset=0)
     ax_polar.tick_params(labelsize=fontsize2, pad=0.1)
 
     # Title and plot limits
-    if len(plot_title)!=0:# and axes is None:
-#        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
-        plot_title = plot_title
-        ax_polar.set_title(plot_title,fontsize=fontsize2,fontweight='bold',fontstyle='normal',x=-0.02,y=1, ha="left", va="top")
+    if len(plot_title)!=0 and axes is None:
+        plot_title = pt.plot.mathmode(pt.plot.bfstring(plot_title))
+        ax_polar.set_title(plot_title,fontsize=fontsize2,fontweight='bold')
 
     # Colourbar title
     if len(cb_title_use)!=0:
@@ -727,12 +443,12 @@ def plot_ionosphere(filename=None,
         pt.plot.cb_linear = True
 
     # Creating colorbar axes
-    '''
     if not nocb:
         if cbaxes: 
             # Colorbar axes are provided
             cax = cbaxes
-            cbdir="right"; horalign="left"
+            cbdir="right"
+            horalign="center" if cb_horizontal else "left"
         elif internalcb:
             # Colorbar within plot area
             cbloc=1; cbdir="left"; horalign="right"
@@ -751,7 +467,11 @@ def plot_ionosphere(filename=None,
         else:
             # Split existing axes to make room for colorbar
             if axes is None:
-                cax = fig.add_axes([0.9,0.2,0.03,0.6])
+                if cb_horizontal:
+                    cax = fig.add_axes([0.1,-0.1,0.6,0.03])
+                else:
+                    cax = fig.add_axes([0.8,0.1,0.03,0.6])
+                    #The full width is 0.8, so to center the bar with width 0.6 is (0.8-0.6)/2=0.1
             else:
                 cax = axes.inset_axes([0.9,0.2,0.03,0.6])
             cbdir="right"; horalign="left"
@@ -764,20 +484,23 @@ def plot_ionosphere(filename=None,
 
         # First draw colorbar
         if usesci:
-            cb = plt.colorbar(colormap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmtsci), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         else:
-            #cb = plt.colorbar(colormap, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
-            cb = plt.colorbar(colormap, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False)
+            #cb = plt.colorbar(contours, ticks=ticks, format=mtick.FormatStrFormatter('%4.2f'), cax=cax, drawedges=False)
+            cb = plt.colorbar(contours, ticks=ticks, format=mtick.FuncFormatter(pt.plot.cbfmt), cax=cax, drawedges=False,orientation="horizontal" if cb_horizontal else "vertical")
         cb.outline.set_linewidth(thick)
         cb.ax.yaxis.set_ticks_position(cbdir)
 
         if not cbaxes:
-            cb.ax.tick_params(labelsize=fontsize3)#,width=1.5,length=3)
+            cb.ax.tick_params(labelsize=fontsize3,width=thick,length=3*thick,rotation=30 if cb_horizontal else 0)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize3,fontweight='bold', horizontalalignment=horalign)
             cb_title.set_position((0.,1.+0.025*scale)) # avoids having colourbar title too low when fontsize is increased
         else:
-            cb.ax.tick_params(labelsize=fontsize)
+            cb.ax.tick_params(labelsize=fontsize,width=thick,length=3*thick)
             cb_title = cax.set_title(cb_title_use,fontsize=fontsize,fontweight='bold', horizontalalignment=horalign)
+        # Ensure minor tick marks are off
+        if lin is not None:
+            cb.minorticks_off()
 
         # Perform intermediate draw if necessary to gain access to ticks
         if (axes is None) and (symlog is not None and np.isclose(vminuse/vmaxuse, -1.0, rtol=0.2)) or (not lin and symlog is None):
@@ -831,13 +554,12 @@ def plot_ionosphere(filename=None,
                 valids = ['1']
             # for label in cb.ax.yaxis.get_ticklabels()[::labelincrement]:
             for labi,label in enumerate(cb.ax.yaxis.get_ticklabels()):
-                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace('\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
+                labeltext = label.get_text().replace('$','').replace('{','').replace('}','').replace(r'\mbox{\textbf{--}}','').replace('-','').replace('.','').lstrip('0')
                 if not labeltext:
                     continue
                 firstdigit = labeltext[0]
                 if not firstdigit in valids: 
                     label.set_visible(False)
-    '''
 
     # Add Vlasiator watermark
     if (wmark or wmarkb) and (axes is None):
@@ -863,20 +585,30 @@ def plot_ionosphere(filename=None,
 
     # Adjust layout. Uses tight_layout() but in fact this ensures 
     # that long titles and tick labels are still within the plot area.
-    if axes is None:
-        plt.tight_layout(pad=0.01)
+    # if axes is None: # This causes a matplotlib warning, and the following "bbox_inches='tight'" should anyway do the same thing
+    #     plt.tight_layout(pad=0.01)
     savefig_pad=0.01
     bbox_inches='tight'
 
     # Save output or draw on-screen
     if not draw and axes is None:
+
+        if viewdir > 0:
+            outputpole = "_north"
+        else:
+            outputpole = "_south"
+        outputfile_default = run+"_ionosphere_"+varstr+operatorfilestr+outputpole+stepstr+".png"
+        savefigname=pt.plot.output_path(outputfile,outputfile_default,outputdir,nooverwrite)
         try:
-            plt.savefig(outputfile,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
-        except:
-            print("Error attempting to save figure: ", sys.exc_info())
-        print('...Done!') 
+            plt.savefig(savefigname,dpi=300, bbox_inches=bbox_inches, pad_inches=savefig_pad)
+        except Exception as e:
+            print("Encountered the following exception from Matplotlib while trying to save a figure:")
+            print(e)
+            raise IOError("Error attempting to save figure: " + str(sys.exc_info())+"\n\n There is a known issue with Matplotlib 3.7.2 here - if using that, try updating/reverting!")
+        logging.info(savefigname+"\n")
+        plt.close()
     elif draw is not None and axes is None:
         # Draw on-screen
         plt.draw()
         plt.show()
-        print('Draw complete!')
+        logging.info('Draw complete!')

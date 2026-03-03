@@ -73,14 +73,14 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         Note that using alpha for Delaunay might make SDF different from expected inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5) or if simulation grid size is larger than alpha
 
     :param datafilen: a .vlsv bulk file name (and path)
-    :kword method: str, default "beta_star_with_connectivity", other options "beta_star", "streamlines", "shue", "dict"
-    :kword own_tresholds: if using method "dict", a dictionary with conditions for the magnetopause/magnetosphere must be given where key is data name in datafile and value is treshold used (see treshold_mask())
-    :kword return_surface: True/False, return vtkDataSetSurfaceFilter object
-    :kword return_SDF: True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface
-    :kword SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
-    :kword Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded
-    :kword beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
-    :kword method_args: dict of keyword arguments to be passed down to external functions (for streamlines and shue)
+    :kwarg method: str, default "beta_star_with_connectivity", other options "beta_star", "streamlines", "shue", "dict"
+    :kwarg own_tresholds: if using method "dict", a dictionary with conditions for the magnetopause/magnetosphere must be given where key is data name in datafile and value is treshold used (see treshold_mask())
+    :kwarg return_surface: True/False, return vtkDataSetSurfaceFilter object
+    :kwarg return_SDF: True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface
+    :kwarg SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
+    :kwarg Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded
+    :kwarg beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
+    :kwarg method_args: dict of keyword arguments to be passed down to external functions (for streamlines and shue)
     :returns: vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True
     """
 

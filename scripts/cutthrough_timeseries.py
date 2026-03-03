@@ -1,10 +1,10 @@
 import sys, os
 import numpy as np
 from scipy.ndimage import uniform_filter1d
-import pytools as pt
+import analysator as pt
 import matplotlib.pyplot as plt
 import argparse
-from pyCalculations.cutthrough import cut_through
+from analysator.calculations.cutthrough import cut_through
 
 r_e = 6.371e6
 
