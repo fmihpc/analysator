@@ -30,21 +30,12 @@ gics
  
 ------------
 
-magnetopause2d
---------------
-:doc:`magnetopause2d`
+plot_streamline_magnetopause_2d
+-------------------------------
+:doc:`plot_streamline_magnetopause_2d`
 
-.. automodule:: magnetopause2d
-    :no-index:
-
-------------
-
-magnetopause3d
---------------
-:doc:`magnetopause3d`
-
-.. automodule:: magnetopause3d
-    :no-index:
+.. automodule:: plot_streamline_magnetopause_2d
+	:no-index:
 
 ------------
 
@@ -84,6 +75,24 @@ tsyganenko
 
 ------------
 
+magnetopause
+------------
+:doc:`magnetopause`
+
+.. automodule:: magnetopause
+    :no-index:
+
+------------
+
+regions
+-------
+:doc:`magnetosphere_regions`
+
+.. automodule:: regions
+    :no-index:
+
+------------
+
 .. toctree::
    :maxdepth: 2
    :caption: Scripts:
@@ -91,10 +100,11 @@ tsyganenko
    biot_savart
    cutthrough_timeseries
    gics
-   magnetopause2d
-   magnetopause3d
+   plot_streamline_magnetopause_2d
    obliqueshock
    obliqueshock_nif
    shue
    tsyganenko
+   magnetopause
+   magnetosphere_regions
 

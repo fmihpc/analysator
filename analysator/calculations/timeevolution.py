@@ -192,6 +192,7 @@ def point_time_evolution( vlsvReader_list, variables, coordinates, units="", met
       # For optimization purposes we are now freeing vlsvReader's memory
       # Note: Upon reading data vlsvReader created an internal hash map that takes a lot of memory
       vlsvReader.optimize_clear_fileindex_for_cellid()
+      vlsvReader.optimize_clear_fileindex_for_cellid_blocks()
       # Close the vlsv reader's file:
       vlsvReader.optimize_close_file()
    from output import output_1d
