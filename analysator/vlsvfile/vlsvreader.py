@@ -2129,7 +2129,6 @@ class VlsvReader(object):
          self.__max_spatial_amr_level = AMR_count - 1
       return self.__max_spatial_amr_level
 
-
    def wrap_array(dimensions):
       '''Wrapper for consolidating inputs as numpy arrays.
          
