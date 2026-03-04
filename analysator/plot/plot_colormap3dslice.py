@@ -1162,7 +1162,10 @@ def plot_colormap3dslice(filename=None,
                 amrlinewidthslist[1:len(amr)]=[amrlinewidths for _ in range(len(amr)-1)]
 
         for i,val in enumerate(amr):
-            pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
+            try:
+                pt.plot.cell_edgecontours(ax1,XmeshPass,YmeshPass,AMRmap,val-0.1,linewidth=amrlinewidthslist[i], colors=amrcolourslist[i], linestyle=amrlinestyleslist[i])
+            except:
+                logging.info(f"AMR level {val} not found in the selected region!")
           
 
     if Earth:
