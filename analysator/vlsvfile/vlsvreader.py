@@ -3888,7 +3888,8 @@ class VlsvReader(object):
          fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
-
+      data_avgs=None
+      data_block_ids=None
       # Read in avgs and velocity cell ids:
       for child in self.__xml_root:
          # Read in avgs
@@ -3944,9 +3945,15 @@ class VlsvReader(object):
 
       fptr.close()
 
+      #Check for None in case nothing was read into the variables
+      if data_avgs is None:
+        raise ValueError(f"data_avgs was None, vdf not present in cell {cellid}")
+      elif data_block_ids is None:
+        raise ValueError(f"data_blocks_ids was None, vdf not present in cell {cellid} ")
+
       # Check to make sure the sizes match (just some extra debugging)
       if len(data_avgs) != len(data_block_ids):
-         raise ValueError("BAD DATA SIZES")
+        raise ValueError("BAD DATA SIZES")
       # Make a dictionary (hash map) out of velocity cell ids and avgs:
       velocity_cells = {}
       array_size = len(data_avgs)
