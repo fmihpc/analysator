@@ -594,90 +594,87 @@ def plot_threeslice(filename=None,
 
     ''' Plots a 3d plot constructed of three 2d cut throughs.
 
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword run:         run identifier, used for constructing output filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.
+    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead
+    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name
+    :kwarg step:        output step index, used for constructing output (and possibly input) filename
+    :kwarg run:         run identifier, used for constructing output filename
+    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final part will be used as a prefix for the files.
-    :kword outputfile:  Singular output file name
-    :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kwarg outputfile:  Singular output file name
+    :kwarg draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
 
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
+    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    
 
-    :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
+    :kwarg var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                         E, B, v, V or others. Accepts any variable known by analysator.
                         Per-population variables are simply given as "proton/rho" etc
-    :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
+    :kwarg operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
-    :kword op:          duplicate of operator
+    :kwarg op:          duplicate of operator
 
-    :kword boxm:        zoom box extents [x0,x1,y0,y1,z0,z1] in metres (default and truncate to: whole simulation box)
-    :kword boxre:       zoom box extents [x0,x1,y0,y1,z0,z1] in Earth radii (default and truncate to: whole simulation box)
+    :kwarg boxm:        zoom box extents [x0,x1,y0,y1,z0,z1] in metres (default and truncate to: whole simulation box)
+    :kwarg boxre:       zoom box extents [x0,x1,y0,y1,z0,z1] in Earth radii (default and truncate to: whole simulation box)
 
-    :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
+    :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
-    :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
+    :kwarg vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
-    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
-    :kword absolute:    Plot the absolute of the evaluated variable
-    :kword lin:         Flag for using linear colour scaling instead of log
-    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+    :kwarg symmetric:   Set the absolute value of vmin and vmax to the greater of the two
+    :kwarg absolute:    Plot the absolute of the evaluated variable
+    :kwarg lin:         Flag for using linear colour scaling instead of log
+    :kwarg symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
-    :kword nocb:        Set to suppress drawing of colourbar
-    :kword title:       string to use as plot title instead of time.
+    :kwarg nocb:        Set to suppress drawing of colourbar
+    :kwarg title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
-    :kword cbtitle:     string to use as colorbar title instead of map name
-    :kword halfaxes:    Flag to prevent plotting the hidden half of the axes, otherwise shown as dashed lines
+    :kwarg cbtitle:     string to use as colorbar title instead of map name
+    :kwarg halfaxes:    Flag to prevent plotting the hidden half of the axes, otherwise shown as dashed lines
                         (default: False)
-    :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
-    :kword axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
-    :kword axiscolor:   Color for drawing axes (default black)
-    :kword shadings:    Dimming values for the surfaces normal to the X, Y, Z directions, respectively,
+    :kwarg usesci:      Use scientific notation for colorbar ticks? (default: True)
+    :kwarg axisunit:    Plot axes using 10^{axisunit} m (default: Earth radius R_E)
+    :kwarg axiscolor:   Color for drawing axes (default black)
+    :kwarg shadings:    Dimming values for the surfaces normal to the X, Y, Z directions, respectively,
                         to better distinguish the slices, e.g. "(0.6,0.8,1.0). Default using the angles between
                         the surface normal directions and the viewing angle.
-    :kword tickinterval:Axis tick interval, expressed in 10^{axisunit} (default: 10 Earth radii)
-    :kword fixedticks:  Set ticks at fixed locations instead of relative to the triple cut point (default: False)
+    :kwarg tickinterval:Axis tick interval, expressed in 10^{axisunit} (default: 10 Earth radii)
+    :kwarg fixedticks:  Set ticks at fixed locations instead of relative to the triple cut point (default: False)
 
-    :kword pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
+    :kwarg pass_full:   Set to anything but None in order to pass the full arrays instead of a zoomed-in section
 
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
-    :kword nomask:      Do not mask plotting based on proton density
-    :kword Earth:       Draw Earth at origin (default True)
+    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kwarg nomask:      Do not mask plotting based on proton density
+    :kwarg Earth:       Draw Earth at origin (default True)
 
-    :kword scale:       Scale text size (default=1.0)
-    :kword thick:       line and axis thickness, default=1.0
+    :kwarg scale:       Scale text size (default=1.0)
+    :kwarg thick:       line and axis thickness, default=1.0
 
-    :kword expression:  Optional function which calculates a custom expression to plot. The function
+    :kwarg expression:  Optional function which calculates a custom expression to plot. The function
                         receives the same dictionary of numpy arrays as external, as an argument pass_maps,
                         the contents of which are maps of variables. Each is either of size [ysize,xsize]
                         or for multi-dimensional variables (vectors, tensors) it's [ysize,xsize,dim].
                         If the function accepts a second variable, if set to true, it is expected to 
                         return a list of required variables for pass_maps.
+                        **Important note:** the dictionaries of arrays passed to `expression` are of shape [ysize,xzize], so
+                        for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
+                        on, see the plot_helpers.py file.
 
-    Important note: the dictionaries of arrays passed to external and expression are of shape [ysize,xzize], so
-    for some analysis transposing them is necessary. For pre-existing functions to use and to base new functions
-    on, see the plot_helpers.py file.
-
-    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+    :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables. Set to None to search for a default scaling.
-    :kword viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
+    :kwarg viewangle:   Azimuth and elevation angles giving the point of view on the 3D axes, in degrees.
                         (default=(-60.,30.); corresponds to dayside, morningside, northern hemisphere)
 
-    :kword cutpointm:    Coordinates of the point through which all three 2D cuts must pass [m]
-    :kword cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
-    :kword slices:      Normal directions of the slices to plot, default='xyz'
-
-    .. code-block:: python
+    :kwarg cutpointm:    Coordinates of the point through which all three 2D cuts must pass [m]
+    :kwarg cutpointre:  Coordinates of the point through which all three 2D cuts must pass [rE]
+    :kwarg slices:      Normal directions of the slices to plot, default='xyz'
 
     '''
 

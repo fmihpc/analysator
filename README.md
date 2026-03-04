@@ -135,4 +135,4 @@ For more information visit the wiki: https://github.com/fmihpc/analysator/wiki
 
 Analysator reference: https://fmihpc.github.io/analysator/
 
-For citations, use the DOI https://doi.org/10.5281/zenodo.4462514 or the ready-made button the the right in GitHub!
+For citations, use the DOI https://doi.org/10.5281/zenodo.4462514 or the ready-made button on the right in GitHub!

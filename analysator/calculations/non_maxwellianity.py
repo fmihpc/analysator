@@ -16,15 +16,15 @@ def epsilon_M(f,cell,pop="proton",m=m_p, bulk=None, B=None,
     :param f:           VlsvReader containing VDF data
     :param cell:        CellID for the queried cell
 
-    :kword pop:         Population to calculate the parameter for
-    :kword m:           Species mass (default: m_p)
-    :kword bulk:        Bulk file name to use for moments (if available and needed)
-    :kword B:           Optional, user-given magnetic field vector for a bimaxwellian model distribution
-    :kword model:       VDF model to be used. Available models "maxwellian", "bimaxwellian" (default)
-    :kword normorder:   Norm used for model-data distance measure (default: 1)
-    :kword norm:        Constant norm (default 2, see below)
-    :kword threshold:   Disregard vspace cells under this threshold [0]
-    :kword dummy:       If not None, generate dummy data for e.g. integration.
+    :kwarg pop:         Population to calculate the parameter for
+    :kwarg m:           Species mass (default: m_p)
+    :kwarg bulk:        Bulk file name to use for moments (if available and needed)
+    :kwarg B:           Optional, user-given magnetic field vector for a bimaxwellian model distribution
+    :kwarg model:       VDF model to be used. Available models "maxwellian", "bimaxwellian" (default)
+    :kwarg normorder:   Norm used for model-data distance measure (default: 1)
+    :kwarg norm:        Constant norm (default 2, see below)
+    :kwarg threshold:   Disregard vspace cells under this threshold [0]
+    :kwarg dummy:       If not None, generate dummy data for e.g. integration.
 
     :returns:           scalar, non-Maxwellianity parameter for given model and norm; -1 for missing VDF/other bad data
 

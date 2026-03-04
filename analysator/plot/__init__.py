@@ -290,9 +290,10 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
         hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
                                     np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
         lines = np.vstack((vlines, hlines))
-
-        ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
-
+        if np.shape(lines)[1]!=0:
+            ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
+    else:
+       return 1
     
     return 0
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
@@ -333,8 +334,8 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
             except FileExistsError: 
                 #Parallel jobs might try to create dir simultaneously.
                 pass
-            except:
-                raise IOError("Could not create output directory "+outputdir+" Exiting.")
+            except Exception as e:
+                raise IOError("Could not create output directory "+outputdir+": "+str(e))
         if not os.access(outputdir, os.W_OK):
             raise IOError("No write access for directory "+outputdir+" Exiting.")
 
