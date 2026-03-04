@@ -28,22 +28,20 @@ dependencies = [
     "packaging",
     "scikit-image",
     "vlsvrs @ git+https://github.com/fmihpc/analysator-backends.git@master#recursive=1 ; python_version > '3.9'",
+    "vtk>=9.2",
+    "yt",
 ]
 [project.optional-dependencies]
 none = [
 ]
-vtk = [
-    "vtk>=9.2",
-]
 all = [
-    "analysator[vtk]",
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",
 ]
 testpackage = [
     "opencv-python",
-    "analysator[vtk]",
 ]
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"

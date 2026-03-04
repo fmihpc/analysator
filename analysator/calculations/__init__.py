@@ -23,16 +23,17 @@
 
 ''' This is a module that includes most, if not all, calculations within the analysator. Please type "." and press tab to see which functions this module includes.
 
-Example:
-import analysator as pt
+Example::
 
-pt.calculations.
-#press tab
+        import analysator as pt
 
-#Output: list of functions
+        pt.calculations.
+        #press tab
 
-pt.calculations.fourier?
-#Press Enter
+        #Output: list of functions
+
+        pt.calculations.fourier?
+        #Press Enter
 
 '''
 #for usage with "from (package) import *"

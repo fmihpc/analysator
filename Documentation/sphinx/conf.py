@@ -22,7 +22,7 @@ author = 'Sameli'
 
 extensions = [
     'sphinx.ext.autodoc'
-    ]
+]
 
 templates_path = ['_templates']
 # Create a dummy _templates folder if it does not exist
