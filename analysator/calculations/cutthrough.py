@@ -107,7 +107,7 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       if min((point2 - iterator)* unit_vector) < 0:
          break
    # Return the coordinates, cellids and distances for processing
-   from output import output_1d
+   from analysator.calculations.output import output_1d
    return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
 
 
