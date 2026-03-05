@@ -76,6 +76,8 @@ def jplots(
         points=npoints,
         interpolation_order=interpolation_order,
     )
+    fobj.optimize_clear_fileindex_for_cellid()
+
     distances, coords, values = lineout0
     distances = np.array(distances) / r_e
 
@@ -96,6 +98,7 @@ def jplots(
             points=npoints,
             interpolation_order=interpolation_order,
         )
+        vlsvobj.optimize_clear_fileindex_for_cellid()
         data_arr[idx, :] = linecut[2]
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
