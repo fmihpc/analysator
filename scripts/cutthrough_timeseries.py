@@ -13,7 +13,7 @@ r_e = 6.371e6
 
     This script takes 12 parameters, example usage:
     
-    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -point <point1_x> <point1_y> <point1_z> <point2_x> <point2_y> <point2_z> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap>
+    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -point <point1_x> <point1_y> <point1_z> <point2_x> <point2_y> <point2_z> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap> -re <re>
 
     
     Parameter descriptions:
@@ -29,6 +29,7 @@ r_e = 6.371e6
         filt: Filter out temporally slowly changing signal? (<=0: no filtering, >0: filter with specified window size), default=-1
         op: Variable operator, default="pass"
         cmap: Colormap, default="viridis"
+        re: Input points given in Earth radii? default=False
 """
 
 
@@ -45,6 +46,7 @@ def jplots(
     filt=-1,
     op="pass",
     cmap="viridis",
+    re=False,
 ):
 
     fnr_arr = np.arange(fnr1, fnr2 + 0.1, 1, dtype=int)
@@ -56,6 +58,9 @@ def jplots(
     fobj = pt.vlsvfile.VlsvReader(
         bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
+    if re:
+        point1 = point1 * r_e
+        point2 = point2 * r_e
     cut = cut_through(fobj, point1, point2)
     cellids = cut[0].data[:-1]
     distances = cut[1].data[:-1]
@@ -156,6 +161,9 @@ def main():
     parser.add_argument(
         "-cmap", help="Colormap to use for plot", type=str, default="viridis"
     )
+    parser.add_argument(
+        "-re", help="Are input points in Earth radii?", type=bool, default=False
+    )
     args = parser.parse_args()
 
     jplots(
@@ -171,6 +179,7 @@ def main():
         filt=args.filt,
         op=args.op,
         cmap=args.cmap,
+        re=args.re,
     )
 
 
