@@ -108,7 +108,7 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
          break
    # Return the coordinates, cellids and distances for processing
    from analysator.calculations.output import output_1d
-   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   return output_1d( [np.asarray(cellids), np.asarray(distances), np.asarray(coordinates)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
 
 
 def cut_through( vlsvReader, point1, point2 ):
@@ -260,7 +260,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
       
    # Return the coordinates, cellids and distances for processing
    from analysator.calculations.output import output_1d
-   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   return output_1d( [np.asarray(cellids), np.asarray(distances), np.asarray(coordinates)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
      
 
 # Take a curve (list of 3-coords), return cells and distances along curve as with cut_through.
@@ -355,5 +355,5 @@ def cut_through_curve(vlsvReader, curve):
      rCellIds = cellIds
      rEdges = edges
      rCoords = coords
-   from output import output_1d
-   return output_1d( [np.array(rCellIds, copy=False), np.array(rEdges, copy=False), np.array(rCoords, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   from analysator.calculations.output import output_1d
+   return output_1d( [np.asarray(rCellIds), np.asarray(rEdges), np.asarray(rCoords)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
