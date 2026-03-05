@@ -259,7 +259,7 @@ def cut_through_step( vlsvReader, point1, point2 ):
          break
       
    # Return the coordinates, cellids and distances for processing
-   from output import output_1d
+   from analysator.calculations.output import output_1d
    return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
      
 
