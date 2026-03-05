@@ -61,6 +61,10 @@ def jplots(
     distances = cut[1].data[:-1]
     distances = np.array(distances) / r_e
 
+    uvector_p1_p2 = np.array(
+        [point2[0] - point1[0], point2[1] - point1[1], point2[2] - point1[2]]
+    ) / (distances[-1] * r_e)
+
     data_arr = np.zeros((fnr_arr.size, distances.size), dtype=float)
 
     for idx in range(fnr_arr.size):
@@ -69,7 +73,11 @@ def jplots(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
         )
         t_arr[idx] = vlsvobj.read_parameter("time")
-        data_arr[idx, :] = vlsvobj.read_variable(var, operator=op, cellids=cellids)
+        for idx2 in range(distances.size):
+            coords = np.array(point1) + uvector_p1_p2 * distances[idx2] * r_e
+            data_arr[idx, idx2] = vlsvobj.read_interpolated_variable(
+                var, coords, operator=op
+            )
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
 
