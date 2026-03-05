@@ -59,8 +59,8 @@ def jplots(
         bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
     if re:
-        point1 = point1 * r_e
-        point2 = point2 * r_e
+        point1 = [point1[0] * r_e, point1[1] * r_e, point1[2] * r_e]
+        point2 = [point2[0] * r_e, point2[1] * r_e, point2[2] * r_e]
     cut = cut_through(fobj, point1, point2)
     cellids = cut[0].data[:-1]
     distances = cut[1].data[:-1]
