@@ -31,7 +31,6 @@ import sys
 import re
 import numbers
 import pickle # for caching linked readers, switch to VLSV/XML at some point - h5py?
-# import h5py
 
 from . import vlsvvariables,vlsvcache
 from .reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
@@ -185,14 +184,10 @@ class VlsvReader(object):
       self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
       self.__loaded_fileindex_ranks = set()
 
-      self.__metadata_cache = vlsvcache.MetadataFileCache(self)
+      self.__metadata_cache = vlsvcache.FileCache(self)
 
-      self.__metadata_read = False  
-      self.__metadata_dict = {} # Used for reading in and storing derived/other metadata such as linked file paths
       self.__linked_files = set()
-      self.__linked_readers = set()
-      
-      
+      self.__linked_readers = set()      
       
       self.__mesh_domain_sizes = {}
       self.__max_spatial_amr_level = -1
@@ -324,83 +319,15 @@ class VlsvReader(object):
          self.__grid_epsilon = 1e-3*np.array([self.__dx, self.__dy, self.__dz])/2**8 
       return self.__grid_epsilon
 
-
-   def get_metadata_filename(self):
-      pth, base = os.path.split(self.file_name)
-      
-      s = os.path.join(pth,"vlsvmeta",base[:-5]+"_metadata.pkl")
-      return s
-
-   # def get_h5_metadata(self, key, default):
-   #    ''' Read metadata from hdf5 metadata file, and if not available,
-   #    return the given default value.
-
-   #    :param data: str, a key to stored metadata.
-   #    :param default: value to return if key does not exist
-
-   #    '''
-
-   #    if type(key) == type(("a tuple",)):
-   #       print("tuple reader not implemented")
-   #    elif type(key) == type("a string"):
-   #       print("Reading str-keyed data")
-   #    else:
-   #       raise TypeError("key must be str or tuple")      
-
-   #    if not self.__metadata_read:
-   #       try:
-   #          fn = self.get_metadata_filename()
-   #          with open(fn,'rb') as f:
-   #             self.__metadata_dict = pickle.load(f)
-   #       except:
-   #          logging.debug("No metadata file found.")
-   #       self.__metadata_read = True
-      
-   #    return self.__metadata_dict.get(key,default)   
-
-
-   def get_reader_metadata(self, key, default):
-      ''' Read metadata from metadata file, and if not available,
-      return the given default value.
-
-      :param data: str, a key to stored metadata.
-      :param default: value to return if key does not exist
-
-      '''
-      
-
-      if not self.__metadata_read:
-         try:
-            fn = self.get_metadata_filename()
-            with open(fn,'rb') as f:
-               self.__metadata_dict = pickle.load(f)
-         except:
-            logging.debug("No metadata file found.")
-         self.__metadata_read = True
-      
-      return self.__metadata_dict.get(key,default)
-   
-   def add_metadata(self, key, value):
-      self.__metadata_dict[key] = value
-      self.save_metadata()
-
-   def save_metadata(self):
-      fn = self.get_metadata_filename()
-      try:
-         with open(fn,'wb') as f:
-            pickle.dump(self.__metadata_dict,f)
-      except Exception as e:
-         logging.warning("Could not save metadata file, error: "+str(e))
-
    def get_linked_readers_filename(self):
-      '''Need to go to a consolidated metadata handler'''
+      '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
       pth, base = os.path.split(self.file_name)
       
-      s = os.path.join(self.__metadata_cache.get_cache_folder(),base[:-5]+"_linked_readers.txt")
+      s = os.path.join(self.__metadata_cache.get_cache_folder(),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
-      self.__linked_files = self.get_reader_metadata("linked_reader_files", set())
+      # self.__linked_files = self.__metadata_cache.get_metadata("linked_reader_files", set())
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
@@ -411,8 +338,7 @@ class VlsvReader(object):
 
       else:
          self.add_linked_readers()
-
-         self.add_metadata("linked_reader_files",self.__linked_files)
+         # self.__metadata_cache.add_metadata("linked_reader_files",self.__linked_files)
 
       return self.__linked_readers
 
@@ -2137,7 +2063,7 @@ class VlsvReader(object):
 
    def get_fsgrid_decomposition(self):
       # Try if in metadata
-      self.__fsGridDecomposition = self.get_reader_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+      self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
       if(self.__fsGridDecomposition is not None):
          print("read ",self.__fsGridDecomposition)
 
@@ -2154,7 +2080,7 @@ class VlsvReader(object):
          logging.info("Calculating fsGrid decomposition from the file")
          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-         self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+         self.__metadata_cache.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
          return self.__fsGridDecomposition
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
