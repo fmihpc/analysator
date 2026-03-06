@@ -94,7 +94,8 @@ class FileCache:
 
    def __init__(self, reader) -> None:
       self.__reader = reader
-
+      self.__metadata_dict = {}
+      
       self.__rtree_index_files = []
       self.__rtree_index = None
       self.__rtree_idxfile = os.path.join(self.get_cache_folder(),"rtree.idx")
@@ -194,16 +195,74 @@ class FileCache:
 
       return self.__rtree_index
 
+   def add_metadata(self, key, value):
+      self.__metadata_dict[key] = value
+      self.save_metadata()
 
-class MetadataFileCache(FileCache):
-   ''' File caching class for storing "lightweight" metadata.
-   '''
-   pass
-   # superclass constructor called instead if no __init__ here
-   # def __init__(self, reader) -> None:
-   #    super(MetadataFileCache, self).__init__(reader)
+   def get_metadata_filename(self):
+      pth, base = os.path.split(self.file_name)
+      path = self.get_cache_folder()
+      
+      s = os.path.join(pth,"metadata.pkl")
+      return s
 
+   def save_metadata(self):
+      fn = self.get_metadata_filename()
+      if not os.path.exists(self.get_cache_folder()):
+         os.makedirs(self.get_cache_folder())
+      try:
+         with open(fn,'wb') as f:
+            pickle.dump(self.__metadata_dict,f)
+      except Exception as e:
+         logging.warning("Could not save metadata file, error: "+str(e))
 
+   def get_metadata(self, key, default):
+      ''' Read metadata from metadata file/memory, and if not available,
+      return the given default value.
+
+      :param data: str, a key to stored metadata.
+      :param default: value to return if key does not exist
+      '''
+      
+      if not self.__metadata_read:
+         try:
+            fn = self.get_metadata_filename()
+            with open(fn,'rb') as f:
+               self.__metadata_dict = pickle.load(f)
+         except:
+            logging.debug("No metadata file found.")
+         self.__metadata_read = True
+      
+      return self.__metadata_dict.get(key,default)
+
+# Stashed hdf5 snippet
+# import h5py
+   # def get_h5_metadata(self, key, default):
+   #    ''' Read metadata from hdf5 metadata file, and if not available,
+   #    return the given default value.
+
+   #    :param data: str, a key to stored metadata.
+   #    :param default: value to return if key does not exist
+
+   #    '''
+
+   #    if type(key) == type(("a tuple",)):
+   #       print("tuple reader not implemented")
+   #    elif type(key) == type("a string"):
+   #       print("Reading str-keyed data")
+   #    else:
+   #       raise TypeError("key must be str or tuple")      
+
+   #    if not self.__metadata_read:
+   #       try:
+   #          fn = self.get_metadata_filename()
+   #          with open(fn,'rb') as f:
+   #             self.__metadata_dict = pickle.load(f)
+   #       except:
+   #          logging.debug("No metadata file found.")
+   #       self.__metadata_read = True
+      
+   #    return self.__metadata_dict.get(key,default)   
 
 class VariableFileCache(FileCache):
    ''' File caching class for storing intermediate data, such as 
