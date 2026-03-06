@@ -198,7 +198,21 @@ class FileCache:
 class MetadataFileCache(FileCache):
    ''' File caching class for storing "lightweight" metadata.
    '''
-   pass
+   def __init__(self):
+      self.__metadata_dict = {}
+      
+   def add_metadata(self, key, value):
+      self.__metadata_dict[key] = value
+      self.save_metadata()
+
+   def save_metadata(self):
+      fn = self.get_metadata_filename()
+      try:
+         with open(fn,'wb') as f:
+            pickle.dump(self.__metadata_dict,f)
+      except Exception as e:
+         logging.warning("Could not save metadata file, error: "+str(e))
+
    # superclass constructor called instead if no __init__ here
    # def __init__(self, reader) -> None:
    #    super(MetadataFileCache, self).__init__(reader)

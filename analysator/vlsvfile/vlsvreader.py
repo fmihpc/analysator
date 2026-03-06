@@ -2145,6 +2145,7 @@ class VlsvReader(object):
          self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
          if self.__fsGridDecomposition is not None:
             logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
+            return self.__fsGridDecomposition
          else:
             logging.info("Did not find FsGrid decomposition from vlsv file.")
        
@@ -2153,6 +2154,8 @@ class VlsvReader(object):
          logging.info("Calculating fsGrid decomposition from the file")
          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
+         self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+         return self.__fsGridDecomposition
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
          pass
@@ -2160,8 +2163,6 @@ class VlsvReader(object):
       numWritingRanks = self.get_numWritingRanks("SpatialGrid")
       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
-      
-      self.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
 
       return self.__fsGridDecomposition
                
