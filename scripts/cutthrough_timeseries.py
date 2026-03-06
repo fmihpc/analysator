@@ -5,6 +5,7 @@ import analysator as pt
 import matplotlib.pyplot as plt
 import argparse
 from analysator.calculations.cutthrough import cut_through
+from analysator.calculations.lineout import lineout
 
 r_e = 6.371e6
 
@@ -13,7 +14,7 @@ r_e = 6.371e6
 
     This script takes 12 parameters, example usage:
     
-    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -point <point1_x> <point1_y> <point1_z> <point2_x> <point2_y> <point2_z> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap>
+    python cutthrough_timeseries.py -var <var> -fnr <fnr1> <fnr2> -bulkpath <bulkpath> -bulkprefix <bulkprefix> -point <point1_x> <point1_y> <point1_z> <point2_x> <point2_y> <point2_z> -outputname <outputname> -outputdir <outputdir> -filt <filt> -op <op> -cmap <cmap> -re <re> -npoints <npoints> -interpolation_order <interpolation_order
 
     
     Parameter descriptions:
@@ -29,6 +30,9 @@ r_e = 6.371e6
         filt: Filter out temporally slowly changing signal? (<=0: no filtering, >0: filter with specified window size), default=-1
         op: Variable operator, default="pass"
         cmap: Colormap, default="viridis"
+        re: Input points given in Earth radii? default=False
+        npoints: Number of points in line, default=100
+        interpolation_order: Order of interpolation (0 or 1), default=1
 """
 
 
@@ -45,6 +49,9 @@ def jplots(
     filt=-1,
     op="pass",
     cmap="viridis",
+    re=False,
+    npoints=100,
+    interpolation_order=1,
 ):
 
     fnr_arr = np.arange(fnr1, fnr2 + 0.1, 1, dtype=int)
@@ -56,9 +63,23 @@ def jplots(
     fobj = pt.vlsvfile.VlsvReader(
         bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
     )
-    cut = cut_through(fobj, point1, point2)
-    cellids = cut[0].data[:-1]
-    distances = cut[1].data[:-1]
+    if re:
+        point1 = [point1[0] * r_e, point1[1] * r_e, point1[2] * r_e]
+        point2 = [point2[0] * r_e, point2[1] * r_e, point2[2] * r_e]
+
+    lineout0 = lineout(
+        fobj,
+        point1,
+        point2,
+        variable=var,
+        operator=op,
+        points=npoints,
+        interpolation_order=interpolation_order,
+    )
+    distances, _, _ = lineout0
+
+    fobj.optimize_clear_fileindex_for_cellid()
+
     distances = np.array(distances) / r_e
 
     data_arr = np.zeros((fnr_arr.size, distances.size), dtype=float)
@@ -69,7 +90,18 @@ def jplots(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
         )
         t_arr[idx] = vlsvobj.read_parameter("time")
-        data_arr[idx, :] = vlsvobj.read_variable(var, operator=op, cellids=cellids)
+
+        linecut = lineout(
+            vlsvobj,
+            point1,
+            point2,
+            variable=var,
+            operator=op,
+            points=npoints,
+            interpolation_order=interpolation_order,
+        )
+        data_arr[idx, :] = linecut[2]
+        vlsvobj.optimize_clear_fileindex_for_cellid()
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
 
@@ -148,6 +180,18 @@ def main():
     parser.add_argument(
         "-cmap", help="Colormap to use for plot", type=str, default="viridis"
     )
+    parser.add_argument(
+        "-re", help="Are input points in Earth radii?", type=bool, default=False
+    )
+    parser.add_argument(
+        "-npoints", help="Number of points in line", type=int, default=100
+    )
+    parser.add_argument(
+        "-interpolation_order",
+        help="Order of interpolation (0 or 1)",
+        type=int,
+        default=1,
+    )
     args = parser.parse_args()
 
     jplots(
@@ -163,6 +207,9 @@ def main():
         filt=args.filt,
         op=args.op,
         cmap=args.cmap,
+        re=args.re,
+        npoints=args.npoints,
+        interpolation_order=args.interpolation_order,
     )
 
 

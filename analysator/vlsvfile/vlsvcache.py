@@ -104,7 +104,7 @@ class FileCache:
          logging.info("Rtree found, but tread carefully - the file caching is somewhat unstable")
          __has_rtree = True
       except:
-         logging.info("No Rtree found")
+         logging.debug("No Rtree found")
          __has_rtree = False
       if __has_rtree:
          pass
