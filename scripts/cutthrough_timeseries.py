@@ -76,9 +76,10 @@ def jplots(
         points=npoints,
         interpolation_order=interpolation_order,
     )
+    distances, _, _ = lineout0
+
     fobj.optimize_clear_fileindex_for_cellid()
 
-    distances, coords, values = lineout0
     distances = np.array(distances) / r_e
 
     data_arr = np.zeros((fnr_arr.size, distances.size), dtype=float)
@@ -89,6 +90,7 @@ def jplots(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
         )
         t_arr[idx] = vlsvobj.read_parameter("time")
+
         linecut = lineout(
             vlsvobj,
             point1,
@@ -98,8 +100,8 @@ def jplots(
             points=npoints,
             interpolation_order=interpolation_order,
         )
-        vlsvobj.optimize_clear_fileindex_for_cellid()
         data_arr[idx, :] = linecut[2]
+        vlsvobj.optimize_clear_fileindex_for_cellid()
     if filt > 0:
         data_arr = data_arr - uniform_filter1d(data_arr, size=filt, axis=0)
 
