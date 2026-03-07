@@ -1,0 +1,490 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.themis_observation &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.themis_observation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.themis_observation</h1><div class="highlight"><pre>
+<span></span><span class="c1"># </span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2018 University of Helsinki</span>
+<span class="c1"># </span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1"># </span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1"># </span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1"># </span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1"># </span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.rotation</span><span class="w"> </span><span class="kn">import</span> <span class="n">rotateVectorToVector</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">griddata</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.signal</span><span class="w"> </span><span class="kn">import</span> <span class="n">sepfir2d</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="c1"># Detector data obtained from the Themis ESA instrument paper</span>
+<span class="c1"># http://dx.doi.org/10.1007/s11214-008-9440-2</span>
+<span class="n">detector_opening_angle</span> <span class="o">=</span> <span class="mi">6</span>  <span class="c1"># in degrees</span>
+<span class="n">detector_angle_bins</span> <span class="o">=</span> <span class="mi">32</span>    <span class="c1"># angular bins for 360 degress</span>
+<span class="n">detector_energy_bins</span> <span class="o">=</span> <span class="mi">32</span>   <span class="c1"># Number of energy bins</span>
+<span class="n">detector_min_speed</span> <span class="o">=</span> <span class="mi">17509</span>  <span class="c1"># in m/s</span>
+<span class="n">detector_max_speed</span> <span class="o">=</span> <span class="mf">2188e3</span> <span class="c1"># in m/s</span>
+<span class="n">detector_geometric_factor</span> <span class="o">=</span> <span class="mf">0.00000061</span> <span class="c1"># m^2 sr E</span>
+<span class="c1">#detector_timestep = 0.003   # in s, readout time</span>
+<span class="n">detector_timestep</span> <span class="o">=</span> <span class="mf">0.062</span>   <span class="c1"># in s, binning time</span>
+
+<span class="n">proton_mass</span> <span class="o">=</span> <span class="mf">1.67e-27</span>      <span class="c1"># in kg</span>
+
+<span class="c1"># Themis colormap, as extracted from the themis tools&#39; IDL file</span>
+<span class="n">themis_colors</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mf">.5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">.5</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)]</span>
+<span class="n">themis_colormap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="s2">&quot;themis&quot;</span><span class="p">,</span><span class="n">themis_colors</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_dv</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">):</span>
+   <span class="c1"># Get velocity grid sizes:</span>
+   <span class="n">vel_mesh_size</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_size</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">vel_block_size</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_block_size</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">vxcells</span> <span class="o">=</span> <span class="n">vel_mesh_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">vel_block_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">vycells</span> <span class="o">=</span> <span class="n">vel_mesh_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">vel_block_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">vzcells</span> <span class="o">=</span> <span class="n">vel_mesh_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">vel_block_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+   
+   <span class="n">vel_mesh_limits</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_extent</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">vxmin</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">vymin</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="n">vzmin</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+   <span class="n">vxmax</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+   <span class="n">vymax</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+   <span class="n">vzmax</span> <span class="o">=</span> <span class="n">vel_mesh_limits</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+   <span class="n">dvx</span> <span class="o">=</span> <span class="p">(</span><span class="n">vxmax</span> <span class="o">-</span> <span class="n">vxmin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">vxcells</span><span class="p">)</span>
+   <span class="n">dvy</span> <span class="o">=</span> <span class="p">(</span><span class="n">vymax</span> <span class="o">-</span> <span class="n">vymin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">vycells</span><span class="p">)</span>
+   <span class="n">dvz</span> <span class="o">=</span> <span class="p">(</span><span class="n">vzmax</span> <span class="o">-</span> <span class="n">vzmin</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">)(</span><span class="n">vzcells</span><span class="p">)</span>
+   <span class="k">return</span> <span class="p">[</span><span class="n">dvx</span><span class="p">,</span><span class="n">dvy</span><span class="p">,</span><span class="n">dvz</span><span class="p">]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulation_to_spacecraft_frame</span><span class="p">(</span><span class="n">spinvector</span><span class="p">,</span> <span class="n">detector_axis</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Builds a matrix to transform coordinates from simulation frame into spaceraft frame</span>
+<span class="sd">    :param spinvector  Spacecraft spin axis, in simulation coordinates</span>
+<span class="sd">    :param detector_axis Detector plane normal axis</span>
+<span class="sd">    :param phi         Rotate spacecraft around spin axis after setting up coordinate system</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># TODO: Normalize vectors?</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">detector_axis</span><span class="p">,</span><span class="n">spinvector</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">spinvector</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">yr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">y</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">z</span>
+    <span class="n">zr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">y</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span><span class="o">*</span><span class="n">z</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">spinvector</span><span class="p">,</span> <span class="n">yr</span><span class="p">,</span> <span class="n">zr</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">m</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">spacecraft_to_simulation_frame</span><span class="p">(</span><span class="n">spinvector</span><span class="p">,</span> <span class="n">detector_axis</span><span class="p">,</span> <span class="n">phi</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Builds a matrix to transform coordinates from spaceraft frame back to simulation frame</span>
+<span class="sd">    :param spinvector  Spacecraft spin axis, in simulation coordinates</span>
+<span class="sd">    :param detector_axis Detector plane normal axis</span>
+<span class="sd">    :param phi         Rotate spacecraft around spin axis after setting up coordinate system</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">simulation_to_spacecraft_frame</span><span class="p">(</span><span class="n">spinvector</span><span class="p">,</span><span class="n">detector_axis</span><span class="p">,</span><span class="n">phi</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulation_to_observation_frame</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span><span class="n">y_axis</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Builds a 3x3 matrix to transform velocities into an observation plane</span>
+<span class="sd">    :param x_axis:  x-axis of the observation plane (in simulation coordinates)</span>
+<span class="sd">    :param y_axis:  y-axis of the observation plane (gets orthonormalized)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">xn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x_axis</span><span class="p">)</span>
+    <span class="n">x_axis</span> <span class="o">/=</span> <span class="n">xn</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">x_axis</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">y_axis</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">-=</span> <span class="n">p</span><span class="o">*</span><span class="n">x_axis</span>
+    <span class="n">yn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">y_axis</span><span class="p">)</span>
+    <span class="n">y_axis</span> <span class="o">/=</span> <span class="n">yn</span>
+    <span class="n">z_axis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span><span class="n">y_axis</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_axis</span><span class="p">,</span><span class="n">y_axis</span><span class="p">,</span><span class="n">z_axis</span><span class="p">])</span>
+
+<div class="viewcode-block" id="themis_plot_detector">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.themis_plot_detector">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">themis_plot_detector</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellID</span><span class="p">,</span> <span class="n">detector_axis</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Plots a view of the detector countrates using matplotlib</span>
+<span class="sd">    :param vlsvReader:        Some VlsvReader class with a file open</span>
+<span class="sd">    :type vlsvReader:         :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">    :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">    :param detector_axis:     detector axis direction (note: this is not spacecraft spin axis!)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">spacecraft_to_simulation_frame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span><span class="n">detector_axis</span><span class="p">),</span><span class="n">detector_axis</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Getting phasespace data...&quot;</span><span class="p">)</span>
+    <span class="n">angles</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">themis_observation_from_file</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="o">=</span><span class="n">vlsvReader</span><span class="p">,</span>
+                <span class="n">cellid</span><span class="o">=</span><span class="n">cellID</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">binOffset</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="o">-</span><span class="mf">0.5</span><span class="p">],</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vmin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="mf">1e-3</span>
+    <span class="k">if</span> <span class="n">vmax</span> <span class="o">&lt;=</span> <span class="n">vmin</span><span class="p">:</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmin</span> <span class="o">*</span> <span class="mf">10.</span>
+
+    <span class="n">values</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">values</span><span class="p">);</span>
+
+    <span class="n">grid_r</span><span class="p">,</span> <span class="n">grid_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">energies</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="s2">&quot;polar&quot;</span><span class="p">),</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Detector view at cell &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cellID</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Plotting...&quot;</span><span class="p">)</span>
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">grid_theta</span><span class="p">,</span><span class="n">grid_r</span><span class="p">,</span><span class="n">values</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">themis_colormap</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="themis_plot_phasespace_contour">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.themis_plot_phasespace_contour">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">themis_plot_phasespace_contour</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellID</span><span class="p">,</span> <span class="n">plane_x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">plane_y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">1.</span><span class="p">]),</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Vx&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Vy&quot;</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Plots a contour view of phasespace, as seen by a themis detector, at the given cellID</span>
+<span class="sd">    :param vlsvReader:        Some VlsvReader class with a file open</span>
+<span class="sd">    :type vlsvReader:         :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">    :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">    :param plane_x and plane_y: x and y direction of the resulting plot plane</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">simulation_to_observation_frame</span><span class="p">(</span><span class="n">plane_x</span><span class="p">,</span><span class="n">plane_y</span><span class="p">)</span>
+
+    <span class="n">angles</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">themis_observation_from_file</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="o">=</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="o">=</span><span class="n">cellID</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">vmin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="mf">1e-15</span>
+    <span class="k">if</span> <span class="n">vmax</span> <span class="o">&lt;=</span> <span class="n">vmin</span><span class="p">:</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmin</span> <span class="o">*</span> <span class="mf">10.</span>
+
+    <span class="c1"># Regrid into cartesian space, 256x256:</span>
+    <span class="n">grid_r</span><span class="p">,</span> <span class="n">grid_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">energies</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+
+    <span class="n">grid_x</span> <span class="o">=</span> <span class="o">-</span><span class="n">grid_r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">grid_theta</span><span class="p">)</span>  <span class="c1"># turn radial grid points into (x, y)</span>
+    <span class="n">grid_y</span> <span class="o">=</span> <span class="o">-</span><span class="n">grid_r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">grid_theta</span><span class="p">)</span>  <span class="c1"># (the - comes from detector-look-direction vs particle-movement-direction)</span>
+
+    <span class="n">hires_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2200</span><span class="p">,</span><span class="mi">2200</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+    <span class="n">hires_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2200</span><span class="p">,</span><span class="mi">2200</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+    <span class="n">xi</span><span class="p">,</span><span class="n">yi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">hires_x</span><span class="p">,</span><span class="n">hires_y</span><span class="p">)</span>
+    <span class="n">vi</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span> <span class="p">(</span><span class="n">grid_x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span><span class="n">grid_y</span><span class="o">.</span><span class="n">flatten</span><span class="p">()),</span> <span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+        <span class="c1"># Convolve the grid data with a gaussian kernel</span>
+        <span class="n">blurkernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">.17</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">vi</span> <span class="o">=</span> <span class="n">sepfir2d</span><span class="p">(</span><span class="n">vi</span><span class="p">,</span> <span class="n">blurkernel</span><span class="p">,</span> <span class="n">blurkernel</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.2983098411528502</span>
+
+    <span class="n">fig</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Phasespace at cell &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cellID</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="o">+</span><span class="s2">&quot; (km/s)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="o">+</span><span class="s2">&quot; (km/s)&quot;</span><span class="p">)</span>
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">,</span><span class="n">vi</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vmin</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vmax</span><span class="p">),</span><span class="mi">20</span><span class="p">),</span> <span class="n">norm</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="themis_plot_phasespace_helistyle">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.themis_plot_phasespace_helistyle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">themis_plot_phasespace_helistyle</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellID</span><span class="p">,</span> <span class="n">plane_x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">plane_y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">1.</span><span class="p">]),</span> <span class="n">smooth</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Vx&quot;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Vy&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39; Plots a view of phasespace, as seen by a themis detector, at the given cellID, in the style that heli likes.</span>
+<span class="sd">    :param vlsvReader:        Some VlsvReader class with a file open</span>
+<span class="sd">    :type vlsvReader:         :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">    :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">    :param smooth:            Smooth re-gridded phasespace before plotting</span>
+<span class="sd">    :param plane_x and plane_y: x and y direction of the resulting plot plane</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">simulation_to_observation_frame</span><span class="p">(</span><span class="n">plane_x</span><span class="p">,</span><span class="n">plane_y</span><span class="p">)</span>
+
+    <span class="n">angles</span><span class="p">,</span> <span class="n">energies</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">themis_observation_from_file</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="o">=</span><span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="o">=</span><span class="n">cellID</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">countrates</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">vmin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">vmin</span> <span class="o">=</span> <span class="mf">1e-15</span>
+    <span class="k">if</span> <span class="n">vmax</span> <span class="o">&lt;</span> <span class="n">vmin</span><span class="p">:</span>
+        <span class="n">vmax</span> <span class="o">=</span> <span class="n">vmin</span><span class="o">*</span><span class="mi">10</span>
+
+    <span class="c1"># Regrid into cartesian space, 256x256:</span>
+    <span class="n">grid_r</span><span class="p">,</span> <span class="n">grid_theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">energies</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+
+    <span class="n">grid_x</span> <span class="o">=</span> <span class="o">-</span><span class="n">grid_r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">grid_theta</span><span class="p">)</span>  <span class="c1"># turn radial grid points into (x, y)</span>
+    <span class="n">grid_y</span> <span class="o">=</span> <span class="o">-</span><span class="n">grid_r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">grid_theta</span><span class="p">)</span>
+
+    <span class="n">hires_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2200</span><span class="p">,</span><span class="mi">2200</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+    <span class="n">hires_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">2200</span><span class="p">,</span><span class="mi">2200</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+    <span class="n">xi</span><span class="p">,</span><span class="n">yi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">hires_x</span><span class="p">,</span><span class="n">hires_y</span><span class="p">)</span>
+    <span class="n">vi</span> <span class="o">=</span> <span class="n">griddata</span><span class="p">(</span> <span class="p">(</span><span class="n">grid_x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span><span class="n">grid_y</span><span class="o">.</span><span class="n">flatten</span><span class="p">()),</span> <span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">smooth</span><span class="p">:</span>
+        <span class="c1"># Convolve the grid data with a gaussian kernel</span>
+        <span class="n">blurkernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">.17</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">],</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">vi</span> <span class="o">=</span> <span class="n">sepfir2d</span><span class="p">(</span><span class="n">vi</span><span class="p">,</span> <span class="n">blurkernel</span><span class="p">,</span> <span class="n">blurkernel</span><span class="p">)</span> <span class="o">/</span> <span class="mf">4.2983098411528502</span>
+
+    <span class="n">fig</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Phasespace at cell &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cellID</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="o">+</span><span class="s2">&quot; (km/s)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="o">+</span><span class="s2">&quot; (km/s)&quot;</span><span class="p">)</span>
+    <span class="n">cmapuse</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;Blues&quot;</span><span class="p">)</span>
+
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">,</span><span class="n">vi</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">),</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmapuse</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s1">&#39;flat&#39;</span><span class="p">)</span>
+    <span class="n">cax2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">,</span><span class="n">vi</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vmin</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">vmax</span><span class="p">),</span><span class="mi">20</span><span class="p">),</span> <span class="n">norm</span><span class="o">=</span><span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LogNorm</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">),</span> <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmapuse</span><span class="p">)</span>
+    <span class="c1">#cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap(&quot;binary&quot;))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cax</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="themis_observation_from_file">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.themis_observation_from_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">themis_observation_from_file</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span> <span class="n">cellid</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]]),</span> <span class="n">countrates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">interpolate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">binOffset</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">],</span><span class="n">pop</span><span class="o">=</span><span class="s1">&#39;proton&#39;</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates artificial THEMIS EMS observation from the given cell</span>
+<span class="sd">   :param vlsvReader:        Some VlsvReader class with a file open</span>
+<span class="sd">   :type vlsvReader:         :class:`vlsvfile.VlsvReader`</span>
+<span class="sd">   :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">   :param matrix:            Matrix to transform velocities from simulation space into detector space (use simulation_to_spacecraft_frame helper function)</span>
+<span class="sd">   :param countrates: Transform phase space densities into count rates?</span>
+<span class="sd">   :param interpolate: interpolate into detector bins?</span>
+<span class="sd">   :param binOffset: offset bin allocation in (angle, energy) by this amount (used to align polar plots)</span>
+<span class="sd">   :returns: detector bins angles, energies and counts [bin_thetas,energies,min,max,counts]</span>
+
+<span class="sd">   .. code-block:: python</span>
+
+<span class="sd">      # Example usage:</span>
+<span class="sd">      vlsvReader = VlsvReader(&quot;fullf.0001.vlsv&quot;)</span>
+<span class="sd">      angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid)</span>
+<span class="sd">      # plot:</span>
+<span class="sd">      grid_r, grid_theta = np.meshgrid(energies,angles)</span>
+<span class="sd">      fig,ax=pl.subplots(subplot_kw=dict(projection=&quot;polar&quot;),figsize=(12,10))</span>
+<span class="sd">      ax.set_title(&quot;Detector view at cell &quot; + str(cellid))</span>
+<span class="sd">      cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))</span>
+<span class="sd">      pl.show()</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+   <span class="c1"># Get velocity space resolution</span>
+   <span class="n">dvx</span><span class="p">,</span><span class="n">dvy</span><span class="p">,</span><span class="n">dvz</span> <span class="o">=</span> <span class="n">get_dv</span><span class="p">(</span><span class="n">vlsvReader</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+
+   <span class="c1"># Read the velocity cells:</span>
+   <span class="n">velocity_cell_data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_velocity_cells</span><span class="p">(</span><span class="n">cellid</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">velocity_cell_data</span> <span class="o">==</span> <span class="p">[]:</span>
+      <span class="c1"># No velocity space data here, return empty result</span>
+      <span class="k">return</span> <span class="p">[[],[],</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,[]]</span>
+   <span class="c1"># Calculate the detector histogram</span>
+   <span class="c1"># Get cells:</span>
+   <span class="n">vcellids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+   <span class="c1"># Get a list of velocity coordinates:</span>
+   <span class="n">velocity_coordinates</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">vcellids</span><span class="p">,</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">angles</span><span class="p">,</span><span class="n">energies</span><span class="p">,</span><span class="n">detector_values</span> <span class="o">=</span> <span class="n">themis_observation</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="p">,</span> <span class="n">velocity_coordinates</span><span class="p">,</span><span class="n">matrix</span><span class="p">,</span><span class="n">dvx</span><span class="p">,</span><span class="n">countrates</span><span class="o">=</span><span class="n">countrates</span><span class="p">,</span> <span class="n">interpolate</span><span class="o">=</span><span class="n">interpolate</span><span class="p">,</span><span class="n">binOffset</span><span class="o">=</span><span class="n">binOffset</span><span class="p">)</span>
+
+   <span class="c1"># Calc min and max</span>
+   <span class="n">val_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">detector_values</span><span class="p">)</span>
+   <span class="n">val_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">detector_values</span><span class="p">)</span>
+   <span class="k">return</span> <span class="p">[</span><span class="n">angles</span><span class="p">,</span><span class="n">energies</span><span class="p">,</span><span class="n">val_min</span><span class="p">,</span><span class="n">val_max</span><span class="p">,</span><span class="n">detector_values</span><span class="p">]</span></div>
+
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">themis_observation</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="p">,</span> <span class="n">velocity_coordinates</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">dv</span><span class="o">=</span><span class="mf">30e3</span><span class="p">,</span> <span class="n">countrates</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">interpolate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">binOffset</span><span class="o">=</span><span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">]):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates artificial THEMIS EMS observation from the given velocity space data</span>
+
+<span class="sd">   :param velocity_cell_data: velocity cell information as obtained from vlsvReader</span>
+<span class="sd">   :param velocity_coordinates: coordinates associated with the cells</span>
+<span class="sd">   :param matrix: Matrix to transform velocities from simulation space into detector space (use simulation_to_spacecraft_frame helper function)</span>
+<span class="sd">   :param dv: velocity space resolution (in km/s)</span>
+<span class="sd">   :param countrates: Transform phase space densities into count rates?</span>
+<span class="sd">   :param interpolate: interpolate into detector bins?</span>
+<span class="sd">   :param binOffset: offset bin allocation in (angle, energy) by this amount (used to align polar plots)</span>
+<span class="sd">   :returns: detector bins angles, energies and counts [bin_thetas,energies,counts]</span>
+
+<span class="sd">   .. code-block:: python</span>
+
+<span class="sd">   # Example usage:</span>
+<span class="sd">   vlsvReader = VlsvReader(&quot;fullf.0001.vlsv&quot;)</span>
+<span class="sd">   angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=self.vlsvReader, cellid=cellid)</span>
+<span class="sd">   # plot:</span>
+<span class="sd">   grid_r, grid_theta = np.meshgrid(energies,angles)</span>
+<span class="sd">   fig,ax=pl.subplots(subplot_kw=dict(projection=&quot;polar&quot;),figsize=(12,10))</span>
+<span class="sd">   ax.set_title(&quot;Detector view at cell &quot; + str(cellid))</span>
+<span class="sd">   cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))</span>
+<span class="sd">   pl.show()</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="c1"># Get avgs data:</span>
+   <span class="n">avgs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+   <span class="c1"># Shift to plasma frame</span>
+   <span class="c1">#if plasmaframe == True:</span>
+   <span class="c1">#   velocity_coordinates = velocity_coordinates - bulk_velocity</span>
+   <span class="c1"># Get velocity absolute values:</span>
+   <span class="n">v_abs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">velocity_coordinates</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+   <span class="c1"># Transform into detector&#39;s frame</span>
+   <span class="n">v_rotated</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">velocity_coordinates</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+   <span class="n">v_rotated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">)</span>
+   <span class="c1">#v_rotated = velocity_coordinates</span>
+
+   <span class="c1"># Calculate phi and theta angles</span>
+   <span class="n">phi_angles</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">360</span>  <span class="c1"># 0 .. 360</span>
+   <span class="n">theta_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">v_rotated</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">v_abs</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">360</span>                   <span class="c1"># 0 .. 180</span>
+
+   <span class="c1"># now map them all into detector bins</span>
+   <span class="n">detector_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">detector_angle_bins</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">detector_energy_bins</span><span class="p">])</span>
+   <span class="n">equator_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mf">90.</span><span class="o">-</span><span class="n">theta_angles</span><span class="p">)</span>
+   <span class="n">angle_bins</span> <span class="o">=</span> <span class="n">phi_angles</span> <span class="o">/</span> <span class="mi">360</span> <span class="o">*</span> <span class="n">detector_angle_bins</span> <span class="o">+</span> <span class="n">binOffset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+   <span class="n">energy_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">v_abs</span> <span class="o">/</span> <span class="n">detector_min_speed</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">detector_max_speed</span><span class="o">/</span><span class="n">detector_min_speed</span><span class="p">)</span> <span class="o">*</span> <span class="n">detector_energy_bins</span> <span class="o">+</span> <span class="n">binOffset</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">v_abs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+       <span class="k">if</span> <span class="n">equator_angles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">detector_opening_angle</span><span class="p">:</span>
+           <span class="k">continue</span>
+       <span class="c1">#logging.info(&quot;Using cell with velocities &quot; + str(v_rotated[i,:]) + &quot;, phi = &quot; + str(phi_angles[i]) + &quot;, theta = &quot; + str(theta_angles[i]))</span>
+
+       <span class="k">if</span> <span class="n">energy_bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">detector_energy_bins</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+           <span class="k">continue</span>
+
+       <span class="n">target_val</span> <span class="o">=</span> <span class="n">avgs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+       <span class="k">if</span> <span class="n">countrates</span><span class="p">:</span>
+           <span class="c1"># Calculate actual countrate from phasespace density</span>
+           <span class="c1"># (=rho*g/E*v*dt)</span>
+           <span class="c1">#deltaOmega = dv*dv/v_abs[i]                                                      # solid angle covered by the phase space cell (approx)</span>
+           <span class="n">deltaOmega</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">detector_angle_bins</span> <span class="o">*</span> <span class="n">detector_opening_angle</span> <span class="o">/</span> <span class="mf">360.</span> <span class="c1"># Opening angle of the detector bin (in sterad)</span>
+           <span class="c1">#deltaE = proton_mass * v_abs[i] * dv                                             # Energy delta of the phase space cell</span>
+           <span class="n">deltaE</span> <span class="o">=</span> <span class="mf">0.32</span> <span class="o">*</span> <span class="n">proton_mass</span> <span class="o">*</span> <span class="n">v_abs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">v_abs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1.6e-19</span>                      <span class="c1"># Energy delta in eV of the detector bin (approx)</span>
+           <span class="n">effectiveArea</span> <span class="o">=</span> <span class="n">detector_geometric_factor</span> <span class="o">/</span> <span class="n">deltaOmega</span> <span class="o">/</span> <span class="n">deltaE</span>
+           <span class="n">velcell_volume</span> <span class="o">=</span> <span class="n">dv</span><span class="o">*</span><span class="n">dv</span><span class="o">*</span><span class="n">dv</span>
+
+           <span class="n">target_val</span> <span class="o">=</span> <span class="n">avgs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">velcell_volume</span> <span class="o">*</span> <span class="n">effectiveArea</span> <span class="o">*</span> <span class="n">v_abs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">detector_timestep</span>
+
+       <span class="k">if</span> <span class="n">interpolate</span><span class="p">:</span>
+           <span class="c1"># Linearly interpolate</span>
+           <span class="n">angle_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">angle_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+           <span class="n">energy_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">energy_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+           <span class="n">angle_frac</span> <span class="o">=</span> <span class="n">angle_bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">angle_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+           <span class="n">energy_frac</span> <span class="o">=</span> <span class="n">energy_bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">energy_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+           <span class="n">detector_values</span><span class="p">[</span><span class="n">angle_int</span><span class="p">,</span><span class="n">energy_int</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">angle_frac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">energy_frac</span><span class="p">)</span> <span class="o">*</span> <span class="n">target_val</span>
+           <span class="n">detector_values</span><span class="p">[(</span><span class="n">angle_int</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">detector_angle_bins</span><span class="p">,</span><span class="n">energy_int</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">angle_frac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">energy_frac</span><span class="p">)</span>  <span class="o">*</span> <span class="n">target_val</span>
+           <span class="n">detector_values</span><span class="p">[</span><span class="n">angle_int</span><span class="p">,</span><span class="n">energy_int</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">angle_frac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">energy_frac</span><span class="p">)</span>  <span class="o">*</span> <span class="n">target_val</span>
+           <span class="n">detector_values</span><span class="p">[(</span><span class="n">angle_int</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="n">detector_angle_bins</span><span class="p">,</span><span class="n">energy_int</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">angle_frac</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">energy_frac</span><span class="p">)</span>   <span class="o">*</span> <span class="n">target_val</span>
+       <span class="k">else</span><span class="p">:</span>
+           <span class="c1"># Weigh into nearest cell</span>
+           <span class="n">detector_values</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">angle_bins</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">energy_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span> <span class="o">+=</span> <span class="n">target_val</span>
+
+   <span class="n">return_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="n">detector_angle_bins</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">return_energies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">detector_min_speed</span><span class="o">/</span><span class="mf">1e3</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">detector_max_speed</span><span class="o">/</span><span class="mf">1e3</span><span class="p">),</span><span class="n">detector_energy_bins</span><span class="p">)</span>
+   <span class="k">return</span> <span class="p">[</span><span class="n">return_angles</span><span class="p">,</span><span class="n">return_energies</span><span class="p">,</span><span class="n">detector_values</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

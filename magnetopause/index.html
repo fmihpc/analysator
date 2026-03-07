@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magnetopause: how to find &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Magnetosphere regions and bow shock: How to find" href="../magnetosphere_regions/" />
+    <link rel="prev" title="tsyganenko" href="../tsyganenko/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../scripts/">scripts</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#biot-savart">biot_savart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#cutthrough-timeseries">cutthrough_timeseries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#gics">gics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#plot-streamline-magnetopause-2d">plot_streamline_magnetopause_2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#obliqueshock">obliqueshock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#obliqueshock-nif">obliqueshock_nif</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#shue">shue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#tsyganenko">tsyganenko</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#magnetopause">magnetopause</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../scripts/#regions">regions</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../biot_savart/">biot_savart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cutthrough_timeseries/">cutthrough_timeseries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gics/">gics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plot_streamline_magnetopause_2d/">plot_streamline_magnetopause_2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../obliqueshock/">obliqueshock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../obliqueshock_nif/">obliqueshock_nif</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../shue/">shue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsyganenko/">tsyganenko</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Magnetopause: how to find</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#plasma-beta-beta">Plasma beta, beta*</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#field-line-connectivity">Field line connectivity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#solar-wind-flow">Solar wind flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#shue-et-al-1997">Shue et al. (1997)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#in-analysator"><strong>In analysator:</strong></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../magnetosphere_regions/">Magnetosphere regions and bow shock: How to find</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../scripts/">scripts</a></li>
+      <li class="breadcrumb-item active">Magnetopause: how to find</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/magnetopause.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="magnetopause-how-to-find">
+<h1>Magnetopause: how to find<a class="headerlink" href="#magnetopause-how-to-find" title="Link to this heading"></a></h1>
+<p>Note: The analysator methods here are prototypes and should be adapted and modified as needed.</p>
+<p>Magnetopause</p>
+<section id="plasma-beta-beta">
+<h2>Plasma beta, beta*<a class="headerlink" href="#plasma-beta-beta" title="Link to this heading"></a></h2>
+<p>Modified plasma beta</p>
+<div class="math notranslate nohighlight">
+\[\beta * = \dfrac{P_{th}P_{dyn}}{B^2/2\mu_0}\]</div>
+<p><a class="reference internal" href="#xu-et-al-2016" id="id1"><span>[Xu_et_al_2016]</span></a>, <a class="reference internal" href="#brenner-et-al-2021" id="id2"><span>[Brenner_et_al_2021]</span></a></p>
+<p>The beta* gets values below 1 inside the magnetosphere near magnetopause and can be used to create a magnetopause surface.</p>
+<p>Caveats: magnetotail current sheet has beta* <span class="math notranslate nohighlight">\(&gt;\)</span> 1</p>
+<p><strong>in analysator:</strong></p>
+<p>see <a class="reference internal" href="#magnetopause.magnetopause" title="magnetopause.magnetopause"><code class="xref py py-func docutils literal notranslate"><span class="pre">magnetopause.magnetopause()</span></code></a> “method” keyword options “beta_star”, “beta_star_with_connectivity”</p>
+<p>datareducer: beta_star, vg_beta_star</p>
+<div role="list" class="citation-list">
+<div class="citation" id="xu-et-al-2016" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">Xu_et_al_2016</a><span class="fn-bracket">]</span></span>
+<p>Xu, S., M. W. Liemohn, C. Dong, D. L. Mitchell, S. W. Bougher, and Y. Ma (2016), Pressure and ion composition boundaries at Mars, J. Geophys. Res. Space Physics, 121,  6417–6429, doi:10.1002/2016JA022644.</p>
+</div>
+<div class="citation" id="brenner-et-al-2021" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">Brenner_et_al_2021</a><span class="fn-bracket">]</span></span>
+<p>Brenner A, Pulkkinen TI, Al Shidi Q and Toth G (2021) Stormtime Energetics: Energy Transport Across the Magnetopause in a Global MHD Simulation. Front. Astron. Space Sci. 8:756732. doi: 10.3389/fspas.2021.756732</p>
+</div>
+</div>
+</section>
+<section id="field-line-connectivity">
+<h2>Field line connectivity<a class="headerlink" href="#field-line-connectivity" title="Link to this heading"></a></h2>
+<p>Bulkfiles from newer Vlasiator runs include connection (whether magnetic field lines are closed-closed, closed-open, open/closed or open-open) and coordinates for field line start and end points that can be used in finding the mangetopause location.</p>
+</section>
+<section id="solar-wind-flow">
+<h2>Solar wind flow<a class="headerlink" href="#solar-wind-flow" title="Link to this heading"></a></h2>
+<p>Method used in e.g. <a class="reference internal" href="#palmroth-et-al-2003" id="id3"><span>[Palmroth_et_al_2003]</span></a></p>
+<p>Streamlines of velocity field that are traced from outside the bow shock curve around the magnetopause.</p>
+<p>Caveats: sometimes some streamlines can curve into the magnetotail or dayside magnetoshpere</p>
+<p><strong>In analysator:</strong></p>
+<p>see
+<code class="xref py py-func docutils literal notranslate"><span class="pre">calculations.find_magnetopause_sw_streamline_2d()</span></code>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">calculations.find_magnetopause_sw_streamline_3d()</span></code></p>
+<p>Streamlines are traced from outside the bow shock towards Earth. A subsolar point for the magnetopause is chosen to be where streamlines get closest to Earth in x-axis [y/z~0].</p>
+<p>From subsolar point towards Earth, space is divided radially by spherical coordiante (theta from x-axis) angles theta and phi, and magnetopause is located by looking at streamline point distances from origo and marked to be at middle of the sector</p>
+<p>From the Earth towards negative x the space is divided into yz-planes and streamlines are interpolated to certain x-points.
+Each yz-plane is then divided into 2d sectors and magnetopause is marked to be in the middle of the sector with the radius of the n:th closest streamline to the x-axis.</p>
+<p>For subsolar point, radial dayside, and -x planes the closest streamline point can be changed to be n:th closest by setting keyword <em>ignore</em>, in which case <em>ignore</em> closest streamline points are not taken into account.</p>
+<p>2d:
+Note: no radial dayside, uses yt-package instead of analysator’s fieldtracer</p>
+<p>3d:
+After the magnetopause points are chosen, they are made into a surface by setting connnection lines between vertices (magnetopause points) to make surface triangles.
+This surface is then made into a vtkPolyData and returned as vtkDataSetSurfaceFilter that can be written into e.g. .vtp file.</p>
+<div role="list" class="citation-list">
+<div class="citation" id="palmroth-et-al-2003" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">Palmroth_et_al_2003</a><span class="fn-bracket">]</span></span>
+<p>Palmroth, M., T. I. Pulkkinen, P. Janhunen, and C.-C. Wu (2003), Stormtime energy transfer in global MHD simulation, J. Geophys. Res., 108, 1048, doi:10.1029/2002JA009446, A1.</p>
+</div>
+</div>
+</section>
+<section id="shue-et-al-1997">
+<h2>Shue et al. (1997)<a class="headerlink" href="#shue-et-al-1997" title="Link to this heading"></a></h2>
+<p>The Shue et al. (1997) <a class="reference internal" href="#id5" id="id4"><span>[Shue_et_al_1997]</span></a> magnetopause model:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}r_0 &amp;= (11.4 + 0.013 B_z)(D_p)^{-\frac{1}{6.6}}, for B_z \geq 0 \\
+    &amp;= (11.4 + 0.14 B_z)(D_p)^{-\frac{1}{6.6}}, for B_z \leq 0\end{split}\]</div>
+<div class="math notranslate nohighlight">
+\[\alpha = (0.58-0.010B_z)(1+0.010 D_p)\]</div>
+<p>where <span class="math notranslate nohighlight">\(D_p\)</span> is the dynamic pressure of the solar wind and <span class="math notranslate nohighlight">\(B_z\)</span> the magnetic field z-component magnitude.
+<span class="math notranslate nohighlight">\(r_0\)</span> is the magnetopause standoff distance and <span class="math notranslate nohighlight">\(\alpha\)</span> is the level of tail flaring.</p>
+<p>The magnetopause radius as a function of angle <span class="math notranslate nohighlight">\(\theta\)</span> is</p>
+<div class="math notranslate nohighlight">
+\[r =  r_0 (\frac{2}{1+\cos \theta})^\alpha\]</div>
+<p><strong>In analysator:</strong></p>
+<p>see <a class="reference internal" href="../shue/"><span class="doc">shue</span></a></p>
+<div role="list" class="citation-list">
+<div class="citation" id="id5" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">Shue_et_al_1997</a><span class="fn-bracket">]</span></span>
+<p>Shue, J.-H., Chao, J. K., Fu, H. C., Russell, C. T., Song, P., Khurana, K. K., and Singer, H. J. (1997). A new functional form to study the solar wind control of the magnetopause size and shape. Journal of Geophysical Research: Space Physics, 102(A5):9497–9511. eprint: <a class="reference external" href="https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/97JA00196">https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/97JA00196</a>.</p>
+</div>
+</div>
+</section>
+<section id="in-analysator">
+<h2><strong>In analysator:</strong><a class="headerlink" href="#in-analysator" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="#module-magnetopause" title="magnetopause"><code class="xref py py-mod docutils literal notranslate"><span class="pre">magnetopause</span></code></a> in scripts for 3d runs
+Constructs the magnetopause surface with vtk’s vtkDelaunay3d triangulation with optional alpha to make the surface non-convex.
+Uses regions.py functions.</p>
+<p>Important: SDF of non-convex surface might not always work as expected inside the magnetosphere if e.g. the lobes are hollow.</p>
+<p>options (magnetopause() method keyword) and some notes:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>solar wind flow (“streamlines”)</dt><dd><ul>
+<li><p>uses <em>magnetopause_sw_streamline_3d.py</em> from pyCalculations</p></li>
+<li><p>if streamlines make a turn so that the velocity points sunwards (to pos. x), the streamline is ignored from that point onwards</p></li>
+<li><dl class="simple">
+<dt>streamlines that enter an area where beta* is below 0.4 are also stopped</dt><dd><ul>
+<li><dl class="simple">
+<dt>this can affect the far magnetotail as streamlines may turn inwards into lobes at some point and may result in magnetopause not forming</dt><dd><p>due to not enough streamline points where magnetopause is supposed to be</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>very dependent on how solar wind streamlines behave</p></li>
+<li><p>streamline seeds and other options can greatly affect the resulting magnetopause</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>beta* (“beta_star”)</dt><dd><ul>
+<li><p>beta* treshold might need tweaking as sometimes there are small low beta* areas in the magnetosheath that get taken in distorting the magnetopause shape at nose</p></li>
+<li><p>convex hull (Delaunay_alpha=None) usually makes a nice rough magnetopause but goes over any inward dips (like polar cusps)</p></li>
+<li><p>alpha shape (Delaunay_alpha= e.g. 1*R_E) does a better job at cusps and delicate shapes like vortices but might fail at SDF inside the magnetosphere</p></li>
+<li><p>Delaynay3d has an easier time if the treshold is something like [0.4, 0.5] and not [0.0, 0.5], but this can affect the alpha shape if alpha is used</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>beta* with magnetic field line connectivity (“beta_star_with_connectivity”)</dt><dd><ul>
+<li><p>includes closed-closed magnetic field line areas if available, otherwise like “beta_star”</p></li>
+<li><p>can help with nose shape as beta* can be set lower to exclude magnetosheath low beta* areas while still getting the full dayside from field lines</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Shue et al. 1997 (“shue”)</dt><dd><ul>
+<li><p>uses <em>shue.py</em> from scripts</p></li>
+<li><p>a rough theoretical magnetopause using Shue et al. 1997 method based on B_z, solar wind density, and solar wind velocity</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>user-defined parameter tresholds (“dict”)</dt><dd><ul>
+<li><p>creates a magnetopause (or other area) using the Delaunay3d triangulation of some area where user-defined tresholds given as dictionary</p></li>
+<li><p>dictionary key is data name in datafile and value is treshold used, if dictionary has multiple conditions, they all need to be fulfilled</p></li>
+<li><p>dictionary example: {“vg_rho”: [None, 1e5]} makes a magnetopause using cells where density is less than 1e5</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p id="module-magnetopause">Functions for finding the magnetopause from .vlsv data</p>
+<p>Example use with own arguments passed to streamline function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;bulkfile.vlsv&quot;</span>
+<span class="n">vtpoutfilen</span> <span class="o">=</span> <span class="s2">&quot;magnetopause.vtp&quot;</span>
+<span class="n">vlsvoutfilen</span> <span class="o">=</span> <span class="s2">&quot;magnetopause.vlsv&quot;</span>
+
+<span class="n">SW_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;seeds_n&quot;</span><span class="p">:</span><span class="mi">300</span><span class="p">,</span> <span class="s2">&quot;seeds_x0&quot;</span><span class="p">:</span><span class="mf">150e6</span><span class="p">,</span> <span class="s2">&quot;seeds_range&quot;</span><span class="p">:[</span><span class="o">-</span><span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">],</span> 
+        <span class="s2">&quot;dl&quot;</span><span class="p">:</span><span class="mf">5e5</span><span class="p">,</span> <span class="s2">&quot;iterations&quot;</span><span class="p">:</span><span class="nb">int</span><span class="p">(</span><span class="mi">1500</span><span class="p">),</span> <span class="s2">&quot;end_x&quot;</span><span class="p">:</span><span class="o">-</span><span class="mi">50</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="s2">&quot;x_point_n&quot;</span><span class="p">:</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;sector_n&quot;</span><span class="p">:</span><span class="mi">36</span><span class="o">*</span><span class="mi">2</span><span class="p">}</span> 
+
+<span class="n">surface</span><span class="p">,</span> <span class="n">SDF</span> <span class="o">=</span> <span class="n">magnetopause</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span>
+                        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;streamlines&quot;</span><span class="p">,</span>
+                        <span class="n">return_SDF</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">return_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">method_args</span><span class="o">=</span><span class="n">SW_args</span><span class="p">)</span> 
+
+<span class="n">write_vtk_surface_to_file</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">vtpoutfilen</span><span class="p">)</span>
+<span class="n">write_SDF_to_file</span><span class="p">(</span><span class="n">SDF</span><span class="p">,</span> <span class="n">datafile</span><span class="p">,</span> <span class="n">vlsvoutfilen</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Example use for 0.0-0.4 beta* magnetopause with tetrahedrons with sides longer than 1Re excluded (aplha = 1Re):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;bulkfile.vlsv&quot;</span>
+<span class="n">vtpoutfilen</span> <span class="o">=</span> <span class="s2">&quot;magnetopause.vtp&quot;</span>
+
+<span class="n">surface</span><span class="p">,</span> <span class="n">__</span> <span class="o">=</span> <span class="n">magnetopause</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span>
+                        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;beta_star_with_connectivity&quot;</span><span class="p">,</span> 
+                        <span class="n">beta_star_range</span><span class="o">=</span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+                        <span class="n">Delaunay_alpha</span><span class="o">=</span><span class="mi">1</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span>
+                        <span class="n">return_SDF</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">return_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> 
+
+<span class="n">write_vtk_surface_to_file</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">vtpoutfilen</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="magnetopause.magnetopause">
+<span class="sig-prename descclassname"><span class="pre">magnetopause.</span></span><span class="sig-name descname"><span class="pre">magnetopause</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datafilen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'beta_star_with_connectivity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own_tresholds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_surface</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_SDF</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SDF_points</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Delaunay_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta_star_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.4,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/magnetopause/#magnetopause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#magnetopause.magnetopause" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Finds the magnetopause using the specified method. Surface is constructed using vtk’s Delaunay3d triangulation which results in a convex hull if no Delaunay_alpha is given.</dt><dd><p>Returns vtk.vtkDataSetSurfaceFilter object and/or signed distances (negative -&gt; inside magnetopause) (=SDF) to all cells
+Note that using alpha for Delaunay might make SDF different from expected inside the magnetosphere, especially if surface is constructed with points not everywhere in the magnetosphere (e.g. beta* 0.4-0.5) or if simulation grid size is larger than alpha</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datafilen</strong> – a .vlsv bulk file name (and path)</p></li>
+<li><p><strong>method</strong> – str, default “beta_star_with_connectivity”, other options “beta_star”, “streamlines”, “shue”, “dict”</p></li>
+<li><p><strong>own_tresholds</strong> – if using method “dict”, a dictionary with conditions for the magnetopause/magnetosphere must be given where key is data name in datafile and value is treshold used (see treshold_mask())</p></li>
+<li><p><strong>return_surface</strong> – True/False, return vtkDataSetSurfaceFilter object</p></li>
+<li><p><strong>return_SDF</strong> – True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface</p></li>
+<li><p><strong>SDF_points</strong> – optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable(“CellID”) output</p></li>
+<li><p><strong>Delaunay_alpha</strong> – alpha (float) to give to vtkDelaunay3d, None -&gt; convex hull, alpha=__: surface egdes longer than __ will be excluded</p></li>
+<li><p><strong>beta_star_range</strong> – [min, max] treshold rage to use with methods “beta_star” and “beta_star_with_connectivity”</p></li>
+<li><p><strong>method_args</strong> – dict of keyword arguments to be passed down to external functions (for streamlines and shue)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../tsyganenko/" class="btn btn-neutral float-left" title="tsyganenko" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../magnetosphere_regions/" class="btn btn-neutral float-right" title="Magnetosphere regions and bow shock: How to find" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
