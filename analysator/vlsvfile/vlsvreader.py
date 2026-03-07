@@ -2063,7 +2063,6 @@ class VlsvReader(object):
 
    def get_fsgrid_decomposition(self):
       # Try if in metadata
-      self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
       if(self.__fsGridDecomposition is not None):
          print("read ",self.__fsGridDecomposition)
 
@@ -2074,7 +2073,16 @@ class VlsvReader(object):
             return self.__fsGridDecomposition
          else:
             logging.info("Did not find FsGrid decomposition from vlsv file.")
-       
+      
+      if self.__fsGridDecomposition is None:
+         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+         if self.__fsGridDecomposition is not None:
+            logging.info("Found FsGrid decomposition from metadata file: " + str(self.__fsGridDecomposition))
+            return self.__fsGridDecomposition
+         else:
+            logging.info("Did not find FsGrid decomposition from metadata file.")
+
+
       # If decomposition is None even after reading, we need to calculate it:
       if self.__fsGridDecomposition is None:
          logging.info("Calculating fsGrid decomposition from the file")
@@ -2223,6 +2231,14 @@ class VlsvReader(object):
 
        return rawData
 
+   def print_metadata_cache(self):
+      ''' Prints the contents of the metadata cache file.
+      '''
+
+      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename()+":")
+      self.__metadata_cache.get_metadata("dummy",None) # Dummy call to read in the metadata file
+      for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
+         print(k, v)
 
    def read_variable_from_cache(self, name, cellids, operator):
       ''' Read variable from cache instead of the vlsv file.

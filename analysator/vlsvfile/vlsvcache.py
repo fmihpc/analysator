@@ -30,6 +30,7 @@ import sys
 import warnings
 import numbers
 import numpy as np
+import pickle
 from operator import itemgetter
 import re
 try:
@@ -95,6 +96,7 @@ class FileCache:
    def __init__(self, reader) -> None:
       self.__reader = reader
       self.__metadata_dict = {}
+      self.__metadata_read = False
       
       self.__rtree_index_files = []
       self.__rtree_index = None
@@ -200,10 +202,10 @@ class FileCache:
       self.save_metadata()
 
    def get_metadata_filename(self):
-      pth, base = os.path.split(self.file_name)
+      pth, base = os.path.split(self.__reader.file_name)
       path = self.get_cache_folder()
       
-      s = os.path.join(pth,"metadata.pkl")
+      s = os.path.join(path,"metadata.pkl")
       return s
 
    def save_metadata(self):
@@ -223,16 +225,17 @@ class FileCache:
       :param data: str, a key to stored metadata.
       :param default: value to return if key does not exist
       '''
-      
+
       if not self.__metadata_read:
          try:
             fn = self.get_metadata_filename()
             with open(fn,'rb') as f:
                self.__metadata_dict = pickle.load(f)
-         except:
-            logging.debug("No metadata file found.")
+         except Exception as e:
+            logging.debug("No metadata file found at "+self.get_metadata_filename()+":\n"+str(e))
+            
          self.__metadata_read = True
-      
+     
       return self.__metadata_dict.get(key,default)
 
 # Stashed hdf5 snippet
