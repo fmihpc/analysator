@@ -36,7 +36,7 @@
 #for usage with "from (package) import *"
 __all__ = ['plot_colormap', 'plot_vdf', 'plot_vdfdiff', 'plot_vdf_profiles', 'plot_colormap3dslice',
            'plot_threeslice', 'plot_ionosphere', 'plot_isosurface', 'plot_neutral_sheet',
-           'plot_variables','colormaps', 'plot_helpers']
+           'plot_variables','colormaps', 'plot_helpers','jplots']
 
 from .plot_variables import plot_variables, plot_multiple_variables
 
@@ -49,6 +49,7 @@ from . import colormaps
 
 from . import plot_helpers
 from .plot_colormap import plot_colormap
+from .plot_cutthrough_timeseries import jplots
 from .plot_vdf import plot_vdf
 from .plot_vdfdiff import plot_vdfdiff
 from .plot_vdf_profiles import plot_vdf_profiles
