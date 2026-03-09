@@ -471,9 +471,13 @@ for j in range(start,end):
 
 
     # Many different plots
-    print(j, runid, jrun, call,fileLocation+bulkname)
-    f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
+    if "vlsvobj" in call:
+        f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
+    else:
+        bulkname=""
+        call=call.replace("DATALOCATION",fileLocation)
 
+    print(j, runid, jrun, call,fileLocation+bulkname)
     try:
         exec(call)
     except Exception as e:
