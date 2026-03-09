@@ -29,7 +29,7 @@ def jplots(
     re=False,
     npoints=100,
     interpolation_order=1,
-    draw=True,
+    draw=False,
     nooverwrite=False
 ):
     '''
@@ -51,6 +51,7 @@ def jplots(
     :kwarg npoints: Number of points in line, default=100
     :kwarg interpolation_order: Order of interpolation (0 or 1), default=1
     :kward nooverwrite: Whether to overwrite if output file already exists, default=False
+    :kwarg draw: Whether draw on screen or output to file, default=False
 
     :returns:           Outputs an image to a file or to the screen.
 
