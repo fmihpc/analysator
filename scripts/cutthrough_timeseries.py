@@ -52,6 +52,7 @@ def jplots(
     re=False,
     npoints=100,
     interpolation_order=1,
+    draw=True,
 ):
 
     fnr_arr = np.arange(fnr1, fnr2 + 0.1, 1, dtype=int)
@@ -126,17 +127,20 @@ def jplots(
 
     cb = fig.colorbar(im, ax=ax)
 
-    if not os.path.exists(outputdir):
-        try:
-            os.makedirs(outputdir)
-        except OSError:
-            pass
+    if not draw:
+        if not os.path.exists(outputdir):
+            try:
+                os.makedirs(outputdir)
+            except OSError:
+                pass
 
-    if outputdir[-1] != "/":
-        outputdir += "/"
+        if outputdir[-1] != "/":
+            outputdir += "/"
 
-    fig.savefig(outputdir + outputname, dpi=300)
-    plt.close(fig)
+        fig.savefig(outputdir + outputname, dpi=300)
+        plt.close(fig)
+    else:
+        return (fig,ax,XmeshXY,YmeshXY,data_arr)
 
 
 def main():
@@ -210,6 +214,7 @@ def main():
         re=args.re,
         npoints=args.npoints,
         interpolation_order=args.interpolation_order,
+        draw=False
     )
 
 
