@@ -74,6 +74,7 @@ runs.append( { 'name': 'FIF',
                  'funcs': [{'plot_cutthrough_timeseries':"jplots"}],
                  'pops': ['avgs'],
                  'time': 0,
+                'skipped_args': None,
                  'singletime': True,
                  'filename': None, #restart file
                  'nosubpops': True, # backstreaming / non-backstreaming
