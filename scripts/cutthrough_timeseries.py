@@ -58,11 +58,8 @@ def jplots(
     fnr_arr = np.arange(fnr1, fnr2 + 0.1, 1, dtype=int)
     t_arr = np.zeros_like(fnr_arr).astype(float)
 
-    if bulkpath[-1] != "/":
-        bulkpath += "/"
-
     fobj = pt.vlsvfile.VlsvReader(
-        bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr1).zfill(7))
+        os.path.join(bulkpath , bulkprefix , ".{}.vlsv".format(str(fnr1).zfill(7)))
     )
     if re:
         point1 = [point1[0] * r_e, point1[1] * r_e, point1[2] * r_e]
@@ -88,7 +85,7 @@ def jplots(
     for idx in range(fnr_arr.size):
         fnr = fnr_arr[idx]
         vlsvobj = pt.vlsvfile.VlsvReader(
-            bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
+            os.path.join(bulkpath , bulkprefix , ".{}.vlsv".format(str(fnr).zfill(7)))
         )
         t_arr[idx] = vlsvobj.read_parameter("time")
 
