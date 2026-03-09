@@ -65,12 +65,26 @@ runs.append( { 'name': 'BED',
                  'filename': None ,
                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10]
                 })
+#For now this has just the jplots run, since that uses multiple files a method of forming the call arugments should be made
+#since what is defined in the definition file only works for FIF (or runs with 501-531 times)
+runs.append( { 'name': 'FIF',
+                 'verifydir': '/FIF/', 
+                 'fileLocation': "/wrk-vakka/group/spacephysics/vlasiator/3D/FIF/bulk1",
+                 'fluxLocation': None,
+                 'funcs': [{'plot_cutthrough_timeseries':"jplots"}],
+                 'pops': ['avgs'],
+                 'time': 0,
+                 'singletime': True,
+                 'filename': None, #restart file
+                 'nosubpops': True, # backstreaming / non-backstreaming
+                 'vlasiator5': True,
+                 'cavitonparams': [6.6e6,2.64e6,4.e-9,10] } )
 
 runs.append( { 'name': 'FID',
                  'verifydir': '/FID/', 
                  'fileLocation': datalocation+'/3D/FID/bulk1/',
                  'fluxLocation': None,
-              'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface',{'plot_cutthrough_timeseries':"jplots"}],
+              'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
                  'pops': ['avgs'],
                  'time': 1000,
                 'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},
