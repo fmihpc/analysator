@@ -47,7 +47,7 @@ def output_1d( arrays, names, units="" ):
    if( (len(arrays) != len(names)) or (len(arrays) != len(units)) ):
       raise ValueError("Bad array and name length in output_1d (pyCalculations/output.py)")
    new_format = []
-   from variable import VariableInfo
+   from analysator.calculations.variable import VariableInfo
    for i in range(len(arrays)):
       variable = VariableInfo(arrays[i])
       variable.name = names[i]

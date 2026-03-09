@@ -3942,6 +3942,16 @@ class VlsvReader(object):
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
+   def get_spatial_mesh_min_cell_length(self):
+      ''' Calculate the side length of the smallest spatial mesh cell
+      :returns: minimum existing SpatialMesh cell sise [dx_min,dy_min,dz_min]
+      '''
+      dxs = np.array([self.__dx,self.__dy,self.__dz])
+      amr = self.get_max_refinement_level()
+
+      return dxs/2**amr
+      
+
    def get_fsgrid_mesh_size(self):
       ''' Read fsgrid mesh size
       
