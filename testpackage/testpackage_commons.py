@@ -70,7 +70,7 @@ runs.append( { 'name': 'FID',
                  'verifydir': '/FID/', 
                  'fileLocation': datalocation+'/3D/FID/bulk1/',
                  'fluxLocation': None,
-                 'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface'],
+              'funcs': ['plot_colormap3dslice','plot_ionosphere','plot_isosurface',{'plot_cutthrough_timeseries':"jplots"}],
                  'pops': ['avgs'],
                  'time': 1000,
                 'skipped_args':{'plot_ionosphere':{"var":["ig_z","ig_p","ig_source","ig_residual"]},
@@ -215,7 +215,13 @@ for i,run in enumerate(runs):
         functions = run['funcs']
 
     else:
-        functions = sorted(list(set(run['funcs']) & set(funcs_to_use)))
+        functions=[]
+        for func in run['funcs']:
+            func_key=list(func.keys())[0] if type(func) is dict else func
+            if func_key in funcs_to_use:
+                functions.append(func)
+            
+        # functions = sorted(list(set(run['funcs']) & set(funcs_to_use)))
         if not functions:
             continue
 
@@ -223,7 +229,11 @@ for i,run in enumerate(runs):
     for j,func in enumerate(functions):
         #If one wants to test new calls to be added to the testpackage, they could be added in here after the testpackage_definitions/ lists have been parsed
         callindex = 0
-        
+        func_dict=None
+        if type(func) is dict:
+            func_dict=func
+            func=list(func_dict.keys())[0]
+
         #try to import the list of calls corresponding to the function to be tested.
         try:
             exec(f'import testpackage_definitions.testpackage_{func} as testpackage_{func}')
@@ -240,7 +250,6 @@ for i,run in enumerate(runs):
 
         skipped_args=run['skipped_args']
 
-
         if filename is not None:
             calls_in=v5restartcalls if vlasiator5 else restartcalls
             list_index=0
@@ -250,6 +259,8 @@ for i,run in enumerate(runs):
                 else:
                     call = call.replace("var='V'","var='restart_V'")
                 if skipped_args:
+                    if func_dict:
+                        func=func_dict[func] 
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None: 
                     callrunids.append(i)
@@ -287,6 +298,8 @@ for i,run in enumerate(runs):
                 elif (("_backstream" in call) or ("_nonbackstream" in call)) and nosubpops:
                     continue
                 if skipped_args:
+                    if func_dict:
+                        func=func_dict[func] 
                     call=call_replace(call,func,skipped_args,required_args)
                 if call is not None:
                     list_inidices.append((1,list_index))
@@ -318,6 +331,8 @@ for i,run in enumerate(runs):
                             continue
                         call = call.replace('REPLACEPOP',pop)
                         if skipped_args:
+                            if func_dict:
+                                func=func_dict[func] 
                             call=call_replace(call,func,skipped_args,required_args)
                         if call is not None:
                             list_inidices.append((2,list_index))
@@ -361,13 +376,24 @@ for j in range(start,end):
     
     list_index=list_inidices[j]
     funcid=funcids[j] 
-    
 
+    #This could also be skipped since it's also done earlier but that would mean making new variable, checking it works blabla, im too lazy rn
     if not funcs_to_use:
         func = runs[runid]['funcs'][funcid]
+        if type(func) is dict:
+            func_dict=func
+            func=list(func_dict.keys())[0]
 
     else:        
-        func = sorted(list(set(runs[runid]['funcs']) & set(funcs_to_use)))[funcid]
+        functions=[]
+        for func in runs[runid]['funcs']:
+            if type(func) is dict:
+                func=list(func.keys())[0]
+            if func in funcs_to_use:
+                functions.append(func)
+        if functions:
+            func=functions[funcid]
+        # func = sorted(list(set(runs[runid]['funcs']) & set(funcs_to_use)))[funcid]
         if not func:
             continue
 
@@ -380,7 +406,7 @@ for j in range(start,end):
     filename = runs[runid]['filename']
     vlasiator5 = runs[runid]['vlasiator5']
     singletime = runs[runid]['singletime']
-    
+     
     #set custom expression variables for plot_colormap
     if 'plot_colormap' in func:
         exec(f"testpackage_{func}.cexp.level_bow_shock = runs[runid]['cavitonparams'][0]")
