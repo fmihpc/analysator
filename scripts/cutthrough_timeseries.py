@@ -131,10 +131,7 @@ def jplots(
             except OSError:
                 pass
 
-        if outputdir[-1] != "/":
-            outputdir += "/"
-
-        fig.savefig(outputdir + outputname, dpi=300)
+        fig.savefig(os.path.join(outputdir,outputname), dpi=300)
         plt.close(fig)
     else:
         return (fig,ax,XmeshXY,YmeshXY,data_arr)
