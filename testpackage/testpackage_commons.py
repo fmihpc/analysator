@@ -6,6 +6,7 @@ from testpackage_helpers import call_replace
 
 def source_file_name(filename,fileLocation,time):
     if filename is None:
+        #This may not produce correct result but works currently
         if '2D' not in fileLocation:
             bulkname = "bulk1."+str(time).rjust(7,'0')+".vlsv"
 
@@ -486,12 +487,12 @@ for j in range(start,end):
 
 
     # Many different plots
-    if "vlsvobj" in call:
-        f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
-    else:
+    
+    if "jplots" in call:
         bulkname=""
         call=call.replace("DATALOCATION",fileLocation)
-
+    else:
+        f = pt.vlsvfile.VlsvReader(fileLocation+bulkname)
     print(j, runid, jrun, call,fileLocation+bulkname)
     try:
         exec(call)
