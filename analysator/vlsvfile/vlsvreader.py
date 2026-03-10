@@ -2421,7 +2421,6 @@ class VlsvReader(object):
 
 
          :param dimensions:   int or list of int in same order as the arguments, 0 in the list will skip an argument, self is automatically skipped.
-         :param squeeze:      Whether to squeeze the output if input dimension mismatched, default True
       '''
       #Check if integer
 
