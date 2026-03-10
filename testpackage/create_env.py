@@ -47,7 +47,7 @@ def create_venv_script(path,venv_path):
         with open(path+"pyvenv.sh","w") as f:
             f.write("module purge\n")
             if 'TURSO' in os.uname().nodename.upper():
-                f.write("export PATH=/wrk-vakka/group/spacephysics/proj/appl/tex-basic/texlive/2023/bin/x86_64-linux:$PATH\n")
+                f.write("export PATH=/turso/group/spacephysics/applications/tex-basic/texlive/2023/bin/x86_64-linux:$PATH\n")
 
             #Get used python version and gcc version
             #note that this may break if the version string format changes
