@@ -22,7 +22,7 @@ def jplots(
     point1,
     point2,
     outputname,
-    outputdir,
+    outputdir=None,
     filt=-1,
     op="pass",
     cmap="viridis",
