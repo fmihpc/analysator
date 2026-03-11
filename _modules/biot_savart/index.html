@@ -1,0 +1,765 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>biot_savart &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">biot_savart</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for biot_savart</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Follow Welling et al. (2020) calculate the magnetic field at Earth&#39;s surface.</span>
+
+<span class="sd"> Integrate Biot-Savart over:</span>
+
+<span class="sd">    1. All currents within the Vlasov domain</span>
+<span class="sd">    2. Birkeland currents (FACs) in the “gap region” between the MHD inner boundary and the ionosphere, mapped (assuming J \\propto B) along the field lines connecting ionosphere radius R_IONO to coupling radius r_C</span>
+<span class="sd">    3. Horizontal Ionospheric currents (altitude 100 km)</span>
+
+<span class="sd"> The integration is a discrete summation over the 3 domains.</span>
+
+<span class="sd"> Integrating the domain #2 will likely require this mesh to be &#39;refined&#39; in order to resolve the FAC structures</span>
+<span class="sd"> see the functions refine_mesh() and graded_mesh()</span>
+
+<span class="sd"> This script has been tested with the Vlasiator runs EGL, FHA, FIA</span>
+<span class="sd"> note that the usefulness for EGL is limited because there is no ionosphere (domain #3) for that run </span>
+
+<span class="sd"> To run this script, require access to the data reducer/variable &#39;vg_J&#39; in the .vlsv  file</span>
+<span class="sd"> This may be supplied by a .vlsv file&#39;s vlsvReader object, see keyword f_J_sidecar</span>
+
+<span class="sd"> This script is written for the UH environment. Adapt file paths as needed.</span>
+
+<span class="sd"> ###</span>
+<span class="sd"> </span>
+<span class="sd"> EXAMPLE CALL (1 thread):</span>
+<span class="sd"> python biot_savart.py -nproc 1 -task 1 -run FHA</span>
+
+<span class="sd"> Example sidecar .vlsv files,  containing ground magnetic field data, can be found at:</span>
+<span class="sd">    /wrk-vakka/group/spacephysics/vlasiator/3D/{run name}/sidecars/ig_B/</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="k">global</span> <span class="n">R_EARTH</span>
+<span class="n">R_EARTH</span> <span class="o">=</span> <span class="mf">6.371e6</span>
+<span class="k">global</span> <span class="n">R_IONO</span>
+<span class="n">R_IONO</span> <span class="o">=</span> <span class="n">R_EARTH</span> <span class="o">+</span> <span class="mf">1e5</span>       <span class="c1"># nominal ionosphere altitude 100km (also assumed in Vlasiator)</span>
+<span class="k">global</span> <span class="n">mu_0</span>
+<span class="n">mu_0</span> <span class="o">=</span> <span class="mf">4e-7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+<span class="c1"># Input parameters</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+
+<span class="k">global</span> <span class="n">ARGS</span> 
+
+
+
+<div class="viewcode-block" id="mkdir_path">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.mkdir_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mkdir_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Make a directory from the stem of an input file name (path)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">filedir_list</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">filedir</span> <span class="o">=</span> <span class="n">path</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">filedir_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filedir</span><span class="p">)):</span>
+         <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;mkdir -p </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filedir</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="cartesian_to_spherical">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.cartesian_to_spherical">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cartesian_to_spherical</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    r &gt; 0</span>
+<span class="sd">    0 &lt; theta &lt; pi</span>
+<span class="sd">    -pi &lt; phi &lt; pi</span>
+<span class="sd">    all are assumed to be numpy arrays of equal dimensions</span>
+
+<span class="sd">    returns:  r, theta, phi  [tuple]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span> <span class="n">z</span> <span class="o">/</span> <span class="n">r</span> <span class="p">)</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span></div>
+
+
+<div class="viewcode-block" id="spherical_to_cartesian">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.spherical_to_cartesian">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">spherical_to_cartesian</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    r &gt; 0</span>
+<span class="sd">    0 &lt; theta &lt; pi</span>
+<span class="sd">    -pi &lt; phi &lt; pi</span>
+<span class="sd">    all are assumed to be numpy arrays of equal dimensions</span>
+
+<span class="sd">    returns:  x, y, z   [tuple]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span></div>
+
+
+<div class="viewcode-block" id="vec_len_2d">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.vec_len_2d">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vec_len_2d</span><span class="p">(</span><span class="n">arr_2d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Vector length</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">arr_2d</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="vec_unit">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.vec_unit">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vec_unit</span><span class="p">(</span><span class="n">arr_2d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     assume arr_2d is a numpy array with shape [N, 3]. Return unit vectors with same shape</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">arr_2d</span> <span class="o">/</span> <span class="n">vec_len_2d</span><span class="p">(</span><span class="n">arr_2d</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="b_dip_magnitude">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.b_dip_magnitude">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">b_dip_magnitude</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">mag_mom</span> <span class="o">=</span> <span class="mf">8e22</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">    theta: colatitude [radians]</span>
+<span class="sd">    r: radial distance [m]</span>
+<span class="sd">    keyword mag_mom: magnetic dipole moment, default=8e22 [A / m^2], as in EGI, EGL, FIA, FHA runs</span>
+
+<span class="sd">    Outputs: Earth&#39;s magnetic field magnitude [Tesla]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">B_magnitude</span> <span class="o">=</span> <span class="n">mag_mom</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">r</span><span class="o">**</span><span class="mi">3</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">B_magnitude</span></div>
+
+
+
+<div class="viewcode-block" id="b_dip_direction">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.b_dip_direction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">b_dip_direction</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">])):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Inputs: cartesian coordinates x,y,z [m]</span>
+<span class="sd">        keyword mag_mom_vector: Earth&#39;s vector magnetic dipole moment</span>
+<span class="sd">        </span>
+<span class="sd">    Outputs: dipole magnetic field unit vector</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">b_dip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">mag_mom_vector</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vec_unit</span><span class="p">(</span><span class="n">B</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="b_dip">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.b_dip">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">b_dip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">])):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Inputs: cartesian coordinates x,y,z [m]</span>
+<span class="sd">        keyword mag_mom_vector: Earth&#39;s vector magnetic dipole moment</span>
+
+<span class="sd">    Outputs: dipole magnetic field</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">pos_N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>    <span class="c1"># shape (N, 3)</span>
+    <span class="n">m_N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">mag_mom_vector</span><span class="p">)]</span><span class="o">*</span><span class="n">N</span><span class="p">)</span>  <span class="c1"># shape (N, 3)</span>
+    <span class="n">r_N</span> <span class="o">=</span> <span class="n">vec_len_2d</span><span class="p">(</span><span class="n">pos_N</span><span class="p">)</span>   <span class="c1"># radius, shape (N, 3)</span>
+    <span class="c1"># dipole field:  B(r) = (mu_0 / 4 pi) * (3r (m dot r) / r^5 - m / r^3)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span> <span class="p">(</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">pos_N</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m_N</span> <span class="o">*</span> <span class="n">pos_N</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)]</span><span class="o">*</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">/</span> <span class="n">r_N</span><span class="o">**</span><span class="mi">5</span><span class="p">)</span> <span class="o">-</span> <span class="n">m_N</span> <span class="o">/</span> <span class="n">r_N</span><span class="o">**</span><span class="mi">3</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">B</span></div>
+
+
+
+<div class="viewcode-block" id="refine_mesh">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.refine_mesh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">refine_mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dV</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     refine the mesh in &#39;inner&#39; FAC region  R_IONO &lt; r &lt; r_C,</span>
+<span class="sd">     used to calculate FAC contribution to Biot-Savart integral</span>
+
+<span class="sd">     x, y, z: initial coordinates (1D numpy float arrays), assumed to be at the center of cubic cell</span>
+<span class="sd">     dV: cell volume 1D array or scalar value</span>
+<span class="sd">     dx_0: side length of initial mesh (1D numpy array or single scalar value)</span>
+<span class="sd">     n (int): the factor by which to refine the mesh</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">xout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span><span class="o">**</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">yout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span><span class="o">**</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">zout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span><span class="o">**</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">dV_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">size</span><span class="p">,</span> <span class="n">n</span><span class="o">**</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">dx_0</span> <span class="o">=</span> <span class="n">dV</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">dx_0</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="n">iarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i_x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i_y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i_z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+                <span class="n">xout</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="p">(</span><span class="n">dx_0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span> <span class="p">(</span><span class="n">i_x</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+                <span class="n">yout</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="p">(</span><span class="n">dx_0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span> <span class="p">(</span><span class="n">i_y</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+                <span class="n">zout</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span> <span class="o">-</span> <span class="p">(</span><span class="n">dx_0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span> <span class="p">(</span><span class="n">i_z</span><span class="o">+</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">dx</span><span class="p">)</span>
+                <span class="n">dV_out</span><span class="p">[:,</span> <span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">dV</span> <span class="o">/</span> <span class="n">n</span><span class="o">**</span><span class="mi">3</span>
+                <span class="n">ind</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">xout</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">yout</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">zout</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">dV_out</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="graded_mesh">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.graded_mesh">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">graded_mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dV</span><span class="p">,</span> <span class="n">ns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">Rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">R_EARTH</span><span class="p">,</span> <span class="n">R_EARTH</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">R_EARTH</span><span class="o">*</span><span class="mi">4</span><span class="p">])):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     Iteratively refine the mesh in &#39;inner&#39; FAC region  R_IONO &lt; r &lt; r_C,</span>
+<span class="sd">     used to calculate FAC contribution to Biot-Savart integral</span>
+
+<span class="sd">    Calls refine mesh with different refinement factors n, at specified refinement boundaries</span>
+<span class="sd">    ns: numpy array of refinement factors (ints)</span>
+<span class="sd">    Rs: numpy array of refinement boundary radii [R_E]</span>
+<span class="sd">    edge case: arrays are aligned so that for r&gt;Rs[-1], use ns[-1] refinement</span>
+
+<span class="sd">    Want the refinement level to roughly scale as r^{-3/2}. To resolve the mapped features at all radii</span>
+<span class="sd">    This works because magnetic dipole field goes as 1/r^3, roughly, and area A goes as r^2. </span>
+<span class="sd">    (Need to set areas of the cell faces so B*A~constant, to resolve features mapped along field lines)</span>
+
+<span class="sd">    Example: graded_mesh(x, y, z, dV, ns = np.array([8, 4, 2]), Rs = np.array([R_EARTH, R_EARTH*2, R_EARTH*4]))</span>
+<span class="sd">        --&gt; refines 1D mesh size by factor of 8 for 1 RE&lt;r&lt;=2 RE, by factor of 4 for 2 RE&lt;r&lt;=4 RE, by factor of 2 for r&gt;4 RE</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">x_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">y_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">z_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">dV_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ns</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;i: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ns</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ind</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">Rs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">r</span> <span class="o">&lt;=</span> <span class="n">Rs</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="n">ns</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ind</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="n">Rs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;ind size: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="n">x_ref</span><span class="p">,</span> <span class="n">y_ref</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">dV_ref</span> <span class="o">=</span> <span class="n">refine_mesh</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">y</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">dV</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">ns</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">x_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">x_out</span><span class="p">,</span> <span class="n">x_ref</span><span class="p">))</span>
+        <span class="n">y_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">y_out</span><span class="p">,</span> <span class="n">y_ref</span><span class="p">))</span>
+        <span class="n">z_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">z_out</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">))</span>
+        <span class="n">dV_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">dV_out</span><span class="p">,</span> <span class="n">dV_ref</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;graded mesh has&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">x_out</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; elements&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x_out</span><span class="p">,</span> <span class="n">y_out</span><span class="p">,</span> <span class="n">z_out</span><span class="p">,</span> <span class="n">dV_out</span></div>
+
+
+
+<div class="viewcode-block" id="nearest_node_index">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.nearest_node_index">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nearest_node_index</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">node_coords_iono</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">       helper function for finding nearest ionospheric node</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">node_coords_iono</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node_coords_iono</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_node_coords</span><span class="p">()</span>
+        <span class="c1"># find the nearest cell and evaluate the current there (brute force)</span>
+        <span class="c1"># this approach is probably faster: https://github.com/fmihpc/vlasiator/blob/master/sysboundary/ionosphere.cpp#L381</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">node_coords_iono</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">node_coords_iono</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">node_coords_iono</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ind_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ind_min</span></div>
+
+
+
+<div class="viewcode-block" id="fac_map">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.fac_map">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fac_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">vg_x</span><span class="p">,</span> <span class="n">vg_y</span><span class="p">,</span> <span class="n">vg_z</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="mf">6.371e6</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">])):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     Map the FACs along magnetic field lines (J \\propto B).</span>
+
+<span class="sd">     Inputs:</span>
+<span class="sd">        f: VlsvReader object</span>
+<span class="sd">        f_J_sidecar: vlsvReader object that contains pre-computed current &#39;vg_J&#39;</span>
+
+<span class="sd">            ``if f_J_sidecar = None:``</span>
+<span class="sd">                here is assumed the data reducer &#39;ig_fac&#39; exists (such as for runs FHA and FIA)</span>
+<span class="sd">                In this case, the currents in the FAC region (domain #2) will be mapped UP from the ionosphere &#39;ig\\_&#39; grid</span>
+<span class="sd">            otherwise (f_J_sidecar = a \\*.vlsv string, for a file containing the current density J in the vlasov &#39;vg\\_&#39; grid)</span>
+<span class="sd">                for run EGL, see files at /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/\\*.vlsv</span>
+<span class="sd">                In this case, the currents in the FAC region (domain #2) will be mapped DOWN from the vg\\_ grid</span>
+
+<span class="sd">        vg_x,vg_y,vg_z position [m], 1D numpy arrays. </span>
+<span class="sd">            note: these coordinates do not have to correspond with Vlasiator&#39;s vg\\_ grid,</span>
+<span class="sd">            This is relevant when fac_map() is called by biot_savart(), with keyword mesh=&#39;refined&#39; or mesh=&#39;graded&#39;</span>
+
+<span class="sd">        dx is grid resolution [m], 1D numpy array, This is for the input cells which can be defined arbitrarily---not necessarily same as vg cells.</span>
+
+<span class="sd">     ***  coordinates, not just coordinates on the vg_ grid ***</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the vector current density [A/m^2] at specified positions vg_x, vg_y, vg_z position</span>
+<span class="sd">        output J=0 for cells that fall outside the FAC region (i.e if cell is not in region R_EARTH+dx/2 &lt; r&lt; r_C)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cellids</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;CellID&#39;</span><span class="p">)</span>
+    <span class="n">vg_b_vol</span> <span class="o">=</span> <span class="n">b_dip</span><span class="p">(</span><span class="n">vg_x</span><span class="p">,</span> <span class="n">vg_y</span><span class="p">,</span> <span class="n">vg_z</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">mag_mom_vector</span><span class="p">)</span>
+
+    <span class="n">vg_r</span><span class="p">,</span> <span class="n">vg_theta</span><span class="p">,</span> <span class="n">vg_phi</span> <span class="o">=</span> <span class="n">cartesian_to_spherical</span><span class="p">(</span><span class="n">vg_x</span><span class="p">,</span> <span class="n">vg_y</span><span class="p">,</span> <span class="n">vg_z</span><span class="p">)</span>
+    <span class="n">inner</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">vg_r</span> <span class="o">&lt;</span> <span class="n">r_C</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vg_r</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">R_EARTH</span> <span class="o">+</span> <span class="n">dx</span><span class="o">/</span><span class="mi">2</span><span class="p">)))</span>  <span class="c1"># only integrate over cells whose centers are at least 1/2 a cell length beyond radius of 1 R_E</span>
+
+    <span class="n">vg_J_eval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">vg_x</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+    <span class="n">vg_lat</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">vg_theta</span>         <span class="c1"># -pi/2 &lt; lat &lt; pi/2</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="n">vg_r</span> <span class="o">/</span>  <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">vg_lat</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>           <span class="c1"># L-shell (dipole) [m]</span>
+
+    <span class="c1"># evaluate FACs in &#39;inner&#39; FAC region:  R_IONO &lt; r &lt; r_C</span>
+    <span class="k">if</span> <span class="n">f_J_sidecar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># map: initial point -&gt; downmap to ionosphere via dipole formula (ionospheric runs, e.g. FHA)</span>
+        <span class="n">node_coords_iono</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_node_coords</span><span class="p">()</span>  <span class="c1"># [n_nodes, 3]</span>
+        <span class="n">ig_fac</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_fac&#39;</span><span class="p">)</span>      <span class="c1"># [n_nodes], facs evaluated on ionosphere grid (assumed r=R_IONO)</span>
+        <span class="n">vg_b_vol_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vg_b_vol</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">vg_b_vol</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">vg_b_vol</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span>
+
+        <span class="n">lat0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">R_IONO</span> <span class="o">/</span> <span class="n">L</span><span class="p">)</span> <span class="p">)</span> <span class="c1"># latitude at r=R_IONO</span>
+        <span class="n">theta0</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">lat0</span>
+        <span class="n">b0</span> <span class="o">=</span> <span class="n">b_dip_magnitude</span><span class="p">(</span><span class="n">theta0</span><span class="p">,</span> <span class="n">R_IONO</span><span class="p">,</span> <span class="n">mag_mom</span> <span class="o">=</span> <span class="mf">8e22</span><span class="p">)</span>
+        <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">z0</span> <span class="o">=</span> <span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">R_IONO</span><span class="p">,</span> <span class="n">theta0</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_phi</span><span class="p">[</span><span class="n">inner</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x0</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">ind_min</span> <span class="o">=</span> <span class="n">nearest_node_index</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x0</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">y0</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">z0</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">node_coords_iono</span> <span class="o">=</span> <span class="n">node_coords_iono</span><span class="p">)</span>
+            <span class="n">vg_J_eval</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">(</span><span class="n">vg_b_vol</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">i</span><span class="p">],:]</span> <span class="o">/</span> <span class="n">b0</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span> <span class="o">*</span> <span class="n">ig_fac</span><span class="p">[</span><span class="n">ind_min</span><span class="p">]</span>  <span class="c1"># J \propto B. Mapping UP from the FACs evaluated at the ground </span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># (use sidecar containing current density &quot;vg_J&quot; in non-ionospheric runs, e.g. EGL)</span>
+        <span class="c1"># map: initial point -&gt; some point in the simulation domain near the inner boundary (~5 R_E) according to dipole formula</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;NOTE: Downmapping FACs along constant L-shell via dipole formula!&#39;</span><span class="p">)</span>
+        <span class="n">r_up</span> <span class="o">=</span> <span class="n">r_C</span>
+        <span class="n">lat_up</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r_up</span> <span class="o">/</span> <span class="n">L</span><span class="p">)</span> <span class="p">)</span> <span class="c1"># latitude at r=r_up</span>
+        <span class="n">theta_up</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">lat_up</span>
+        <span class="n">x_up</span><span class="p">,</span> <span class="n">y_up</span><span class="p">,</span> <span class="n">z_up</span> <span class="o">=</span> <span class="n">spherical_to_cartesian</span><span class="p">(</span><span class="n">r_up</span><span class="p">,</span> <span class="n">theta_up</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_phi</span><span class="p">[</span><span class="n">inner</span><span class="p">])</span>
+        <span class="n">ind_fin</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">lat_up</span><span class="p">[</span><span class="n">inner</span><span class="p">]))</span>
+        <span class="n">coords_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_up</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">],</span><span class="n">y_up</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">],</span><span class="n">z_up</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">ind_fin</span><span class="o">.</span><span class="n">size</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="n">vg_b_vol_fin</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">,</span> <span class="n">coords_temp</span><span class="p">)</span>
+
+        <span class="n">B_up</span> <span class="o">=</span> <span class="n">vec_len_2d</span><span class="p">(</span><span class="n">vg_b_vol_fin</span><span class="p">)</span>
+        <span class="n">B_down</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">b_dip_magnitude</span><span class="p">(</span><span class="n">vg_theta</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]],</span> <span class="n">vg_r</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]],</span> <span class="n">mag_mom</span> <span class="o">=</span> <span class="mf">8e22</span><span class="p">)]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">scale_factor</span> <span class="o">=</span> <span class="n">B_down</span> <span class="o">/</span> <span class="n">B_up</span>    <span class="c1"># J \propto B</span>
+
+        <span class="n">vg_J</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="o">.</span><span class="n">read_interpolated_variable</span><span class="p">(</span><span class="s2">&quot;vg_J&quot;</span><span class="p">,</span> <span class="n">coords_temp</span><span class="p">)</span>
+
+        <span class="n">J_signed_up</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">vg_J</span> <span class="o">*</span> <span class="n">vg_b_vol_fin</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="o">/</span> <span class="n">B_up</span>    <span class="c1"># magnitude and sign of J   (projection J dot B / |B|)</span>
+        <span class="n">b_dir</span> <span class="o">=</span> <span class="n">b_dip_direction</span><span class="p">(</span><span class="n">vg_x</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">]])</span>
+        <span class="n">vg_J_eval</span><span class="p">[</span><span class="n">inner</span><span class="p">[</span><span class="n">ind_fin</span><span class="p">],</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">b_dir</span> <span class="o">*</span> <span class="n">J_signed_up</span> <span class="o">*</span> <span class="n">scale_factor</span>   <span class="c1"># Mapping DOWN from the FACs evaluated in the simulation domain near inner boundary</span>
+
+    <span class="c1"># only allow currents that can map to the inner boundary (this also avoids numerical artifacts at equator)</span>
+    <span class="n">ind_to_zero</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">L</span> <span class="o">&lt;</span> <span class="n">r_C</span><span class="p">)</span> 
+    <span class="n">vg_J_eval</span><span class="p">[</span><span class="n">ind_to_zero</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="k">return</span> <span class="n">vg_J_eval</span></div>
+
+
+
+<div class="viewcode-block" id="biot_savart">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.biot_savart">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="mf">6.371e6</span><span class="p">,</span> <span class="n">mesh</span> <span class="o">=</span> <span class="s1">&#39;graded&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    param coord_list:   a list of 3-element arrays of coordinates [ [x1,y1,z1], [x2,y2,z2], ... ], SI units</span>
+<span class="sd">                        if considering just a single starting point, the code accepts a 3-element array-like object [x1,y1,z1]</span>
+
+<span class="sd">    f: vlsvReader object</span>
+<span class="sd">    f_J_sidecar: vlsvReader object that contains pre-computed current &#39;vg_J&#39;</span>
+
+<span class="sd">        e.g., for EGL, files at: /wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/\\*.vlsv</span>
+
+<span class="sd">    runtime (FHA): overhead of about 200 sec (setup), plus 0.2 sec for each element of coord_list</span>
+
+<span class="sd">    returns a tuple (B_inner, B_outer) </span>
+<span class="sd">    B_inner: the B-field [T] generated by FACs at 1 R_E &lt; r&lt; r_C</span>
+<span class="sd">    B_outer: the B-field [T] generated by currents in simulation domain at r &gt; r_C</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># standardize input (a list of 3-element arrays/lists)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">coord_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="n">coord_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">coord_list</span><span class="p">]</span>
+
+    <span class="n">ncoords</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)</span>
+
+    <span class="c1"># load vg_ coordinates and compute cell volumes (dV)</span>
+    <span class="n">vg_b_vol</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_b_vol&#39;</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;vg_coordinates&quot;</span><span class="p">)</span>
+    <span class="n">vg_x</span><span class="p">,</span> <span class="n">vg_y</span><span class="p">,</span> <span class="n">vg_z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">)[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">)[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coords</span><span class="p">)[:,</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">cellids</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;CellID&#39;</span><span class="p">)</span>
+    <span class="n">ncells</span> <span class="o">=</span> <span class="n">cellids</span><span class="o">.</span><span class="n">size</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">((</span><span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmax&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xmin&#39;</span><span class="p">))</span> <span class="o">/</span> <span class="n">f</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s1">&#39;xcells_ini&#39;</span><span class="p">))</span> <span class="c1"># refinement lvl 0 (coarsest)</span>
+    <span class="n">dV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ncells</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cellid</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cellids</span><span class="p">):</span>
+        <span class="n">dV</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dx</span><span class="o">**</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">f</span><span class="o">.</span><span class="n">get_amr_level</span><span class="p">(</span><span class="n">cellid</span><span class="p">))</span>
+
+    <span class="c1"># load or calculate currents (from B-field Jacobian)</span>
+    <span class="k">if</span> <span class="n">f_J_sidecar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vg_J</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_J&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vg_J</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_J&#39;</span><span class="p">)</span>
+
+    <span class="c1"># compute B at &#39;coord_list&#39; points according to Biot-Savart law</span>
+    <span class="n">vg_r</span><span class="p">,</span> <span class="n">vg_theta</span><span class="p">,</span> <span class="n">vg_phi</span> <span class="o">=</span> <span class="n">cartesian_to_spherical</span><span class="p">(</span><span class="n">vg_x</span><span class="p">,</span> <span class="n">vg_y</span><span class="p">,</span> <span class="n">vg_z</span><span class="p">)</span>
+    <span class="n">ind_r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">vg_r</span><span class="p">)</span>
+    <span class="n">dx_1re</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_amr_level</span><span class="p">(</span><span class="n">cellids</span><span class="p">[</span><span class="n">ind_r</span><span class="p">]))</span>   <span class="c1"># grid resolution dx at radius 1 RE (well inside inner boundary)</span>
+    <span class="n">outer</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">vg_r</span> <span class="o">&gt;=</span> <span class="n">r_C</span><span class="p">)</span>
+
+    <span class="n">vg_J_eval</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">vg_J</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1"># the currents that will actually be integrated</span>
+    <span class="n">vg_J_eval</span><span class="p">[</span><span class="n">outer</span><span class="p">]</span> <span class="o">=</span> <span class="n">vg_J</span><span class="p">[</span><span class="n">outer</span><span class="p">]</span> 
+
+    <span class="c1"># evaluate contribution of &#39;inner&#39; FAC region:  R_IONO &lt; r &lt; r_C</span>
+    <span class="k">if</span> <span class="n">mesh</span> <span class="o">==</span> <span class="s1">&#39;graded&#39;</span><span class="p">:</span>
+        <span class="c1"># assume B~r^-3 (dipole). Use resolution required to resolve FAC structures mapped to at 5 RE. That is, cell size~r^(3/2).</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">16</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">Rs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">R_EARTH</span><span class="p">,</span> <span class="n">R_EARTH</span><span class="o">*</span><span class="mf">1.3</span><span class="p">,</span>  <span class="n">R_EARTH</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">R_EARTH</span><span class="o">*</span><span class="mf">3.2</span><span class="p">])</span>  <span class="c1"># adjust these refinement boundaries to taste</span>
+        <span class="n">inner</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">vg_r</span> <span class="o">&lt;</span> <span class="n">r_C</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vg_r</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">R_EARTH</span> <span class="o">-</span> <span class="n">dx_1re</span><span class="o">/</span><span class="mi">2</span><span class="p">)))</span>
+        <span class="n">x_inner_ref</span><span class="p">,</span> <span class="n">y_inner_ref</span><span class="p">,</span> <span class="n">z_inner_ref</span><span class="p">,</span> <span class="n">dV_inner_ref</span> <span class="o">=</span> <span class="n">graded_mesh</span><span class="p">(</span><span class="n">vg_x</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">dV</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">ns</span> <span class="o">=</span> <span class="n">ns</span><span class="p">,</span> <span class="n">Rs</span> <span class="o">=</span> <span class="n">Rs</span><span class="p">)</span>
+        <span class="n">vg_J_eval_inner_ref</span> <span class="o">=</span> <span class="n">fac_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x_inner_ref</span><span class="p">,</span> <span class="n">y_inner_ref</span><span class="p">,</span> <span class="n">z_inner_ref</span><span class="p">,</span> <span class="n">dV_inner_ref</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">),</span>
+                                      <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="n">r_C</span><span class="p">,</span>  <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">mesh</span> <span class="o">==</span> <span class="s1">&#39;refined&#39;</span><span class="p">:</span>
+        <span class="n">n_fine</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">inner</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">vg_r</span> <span class="o">&lt;</span> <span class="n">r_C</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vg_r</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">R_EARTH</span> <span class="o">-</span> <span class="n">dx_1re</span><span class="o">/</span><span class="mi">2</span><span class="p">)))</span>
+        <span class="n">x_inner_ref</span><span class="p">,</span> <span class="n">y_inner_ref</span><span class="p">,</span> <span class="n">z_inner_ref</span><span class="p">,</span> <span class="n">dV_inner_ref</span> <span class="o">=</span> <span class="n">refine_mesh</span><span class="p">(</span><span class="n">vg_x</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">dV</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">n_fine</span><span class="p">)</span>  <span class="c1"># 2000km / n_fine mesh</span>
+        <span class="n">vg_J_eval_inner_ref</span> <span class="o">=</span> <span class="n">fac_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x_inner_ref</span><span class="p">,</span> <span class="n">y_inner_ref</span><span class="p">,</span> <span class="n">z_inner_ref</span><span class="p">,</span> <span class="n">dV_inner_ref</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">),</span>
+                                      <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="n">r_C</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># no refinement</span>
+        <span class="n">inner</span><span class="p">,</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">vg_r</span> <span class="o">&lt;</span> <span class="n">r_C</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vg_r</span> <span class="o">&gt;</span> <span class="n">R_EARTH</span><span class="p">))</span>
+        <span class="n">vg_J_eval</span><span class="p">[</span><span class="n">inner</span><span class="p">]</span> <span class="o">=</span> <span class="n">fac_map</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">vg_x</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">dV</span><span class="p">[</span><span class="n">inner</span><span class="p">]</span><span class="o">**</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="mi">3</span><span class="p">),</span>
+                                   <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="n">r_C</span><span class="p">,</span> <span class="n">mag_mom_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">8e22</span><span class="p">]))</span>
+
+    <span class="n">B_outer</span> <span class="o">=</span> <span class="n">integrate_biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">vg_x</span><span class="p">[</span><span class="n">outer</span><span class="p">],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">outer</span><span class="p">],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">outer</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">vg_J_eval</span><span class="p">[</span><span class="n">outer</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="n">dV</span><span class="p">[</span><span class="n">outer</span><span class="p">])</span>  <span class="c1"># alternative, no @jit decorator</span>
+
+    <span class="k">if</span> <span class="n">mesh</span> <span class="o">==</span> <span class="s1">&#39;graded&#39;</span> <span class="ow">or</span> <span class="n">mesh</span> <span class="o">==</span> <span class="s1">&#39;refined&#39;</span><span class="p">:</span>
+        <span class="n">B_inner</span> <span class="o">=</span> <span class="n">integrate_biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">x_inner_ref</span><span class="p">,</span> <span class="n">y_inner_ref</span><span class="p">,</span> <span class="n">z_inner_ref</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">vg_J_eval_inner_ref</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="n">dV_inner_ref</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># no refinement</span>
+        <span class="n">B_inner</span> <span class="o">=</span> <span class="n">integrate_biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">vg_x</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_y</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">vg_z</span><span class="p">[</span><span class="n">inner</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">vg_J_eval</span><span class="p">[</span><span class="n">inner</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="n">dV</span><span class="p">[</span><span class="n">inner</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">B_inner</span><span class="p">,</span> <span class="n">B_outer</span></div>
+
+
+
+<div class="viewcode-block" id="integrate_biot_savart">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.integrate_biot_savart">[docs]</a>
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">integrate_biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     integration of the Biot-savart law</span>
+<span class="sd">     magnetic field is evaluated at coordinates specified in coord_list (for example, the ionospheric coordinates)</span>
+
+<span class="sd">     Inputs:</span>
+<span class="sd">        x,y,z (1D array, size n): Cartesian coordinates</span>
+<span class="sd">        delta (1D array, size n): the volume or area of the element being integrated</span>
+<span class="sd">        J (2D array, size [3, n]): current density</span>
+
+<span class="sd">      all units SI</span>
+<span class="sd">     Outputs:</span>
+<span class="sd">      magnetic field evaluated at coord_list</span>
+
+<span class="sd">     Note: the units of J and delta depend on the type of integral (volume or surface), but the equation form is unchanged</span>
+
+<span class="sd">     Biot-Savart (volume): B = (mu_0 / 4 * pi) \\int { J x r&#39; / \\|r&#39;\\|^3 } dV  ([J] = A/m^2, delta == dV)</span>
+<span class="sd">                (surface): B = (mu_0 / 4 * pi) \\int { J x r&#39; / \\|r&#39;\\|^3 } dA  ([J] = A/m, delta = dS)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">r_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="n">J_cross_r_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coord_list</span><span class="p">):</span>
+        <span class="n">r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span>
+        <span class="n">r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span>
+        <span class="n">r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">coord</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">z</span>
+
+        <span class="n">r_p_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">-</span> <span class="n">J</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>   <span class="c1"># can&#39;t use np.cross with jit</span>
+        <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">-</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span>
+        <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">-</span> <span class="n">J</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span>
+
+        <span class="n">repeated_terms</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu_0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="n">delta</span> <span class="o">/</span> <span class="p">(</span><span class="n">r_p_mag</span><span class="o">*</span><span class="n">r_p_mag</span><span class="o">*</span><span class="n">r_p_mag</span><span class="p">)</span>    <span class="c1"># supposedly, x*x*x faster than x**3</span>
+        <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span> <span class="n">repeated_terms</span> <span class="o">*</span> <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span> <span class="p">)</span>  
+        <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span> <span class="n">repeated_terms</span> <span class="o">*</span> <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span> <span class="p">)</span>
+        <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span> <span class="n">repeated_terms</span> <span class="o">*</span> <span class="n">J_cross_r_p</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">B</span></div>
+
+
+
+<div class="viewcode-block" id="B_ionosphere">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.B_ionosphere">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">B_ionosphere</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">coord_list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ig_r</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;integrate&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     Ionospheric (domain #3) current contribution to magnetic field</span>
+
+<span class="sd">     B_ionosphere() evaluates the magnetic field produced by ionospheric currents</span>
+
+<span class="sd">     Inputs:</span>
+<span class="sd">        f: VlsvReader object</span>
+
+<span class="sd">        keyword coord_list: locations where B-field is calculated</span>
+
+<span class="sd">        keyword ig_r: the ionospheric mesh</span>
+
+<span class="sd">        keyword method:</span>
+
+<span class="sd">            =&#39;integrate&#39; (default): integrate over the whole ionosphere using Biot-Savart law </span>
+
+<span class="sd">            =&#39;local&#39;: ionosphere produces magnetic field locally, as by an infinite plane of current overhead</span>
+
+<span class="sd">     Outputs:</span>
+<span class="sd">        Magnetic field evaluated at coord_list</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">ig_r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ig_r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_element_coords</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">coord_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">coord_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ig_r</span> <span class="o">*</span> <span class="n">R_EARTH</span> <span class="o">/</span> <span class="n">R_IONO</span><span class="p">)</span>  <span class="c1"># Default: Rescale ionospheric mesh (radius ~R_IONO) to a smaller grid at radius R_EARTH</span>
+    <span class="n">dummy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coord_list</span><span class="p">)</span><span class="o">*</span><span class="mf">0.</span> 
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">ig_inplanecurrent</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;ig_inplanecurrent&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span><span class="p">:</span>
+            <span class="c1"># assume local horizontal appear as an infinite plane, to a ground observer looking up</span>
+            <span class="c1"># B = (mu_0 / 2) * r_hat x J_s , where J_s vector is current per unit length</span>
+            <span class="n">ig_r_hat</span> <span class="o">=</span> <span class="n">vec_unit</span><span class="p">(</span><span class="n">ig_r</span><span class="p">)</span>   <span class="c1"># approximate (technically |ig_r| not exactly R_IONO)</span>
+            <span class="k">if</span> <span class="n">coord_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;infinite plane approximation not yet implemented for input coord_list!&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">dummy</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">B_iono</span> <span class="o">=</span> <span class="p">(</span><span class="n">mu_0</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">ig_r_hat</span><span class="p">,</span> <span class="n">ig_inplanecurrent</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;integrate&#39;</span><span class="p">:</span>
+            <span class="c1"># integrate Biot-Savart law over ionospheric mesh. More accurate but slower.</span>
+            <span class="n">dS</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_mesh_area</span><span class="p">()</span>
+            <span class="n">B_iono</span> <span class="o">=</span> <span class="n">integrate_biot_savart</span><span class="p">(</span><span class="n">coord_list</span><span class="p">,</span> <span class="n">ig_r</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">ig_r</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">ig_r</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">ig_inplanecurrent</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="n">dS</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">B_iono</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dummy</span>  <span class="c1"># no ionospheric inplanecurrent data</span></div>
+
+
+<div class="viewcode-block" id="B_magnetosphere">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.B_magnetosphere">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">B_magnetosphere</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="mf">6.371e6</span><span class="p">,</span> <span class="n">ig_r</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Inner and outer magnetospheric contributions to Biot-Savart integral (domains #1, #2)</span>
+<span class="sd">        wrapper for biot_savart()</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">ig_r</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ig_r</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_ionosphere_element_coords</span><span class="p">()</span>
+    <span class="n">B_inner</span><span class="p">,</span> <span class="n">B_outer</span> <span class="o">=</span> <span class="n">biot_savart</span><span class="p">(</span> <span class="nb">list</span><span class="p">(</span><span class="n">ig_r</span> <span class="o">*</span> <span class="n">R_EARTH</span> <span class="o">/</span> <span class="n">R_IONO</span><span class="p">),</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="n">r_C</span><span class="p">,</span> <span class="n">mesh</span> <span class="o">=</span> <span class="s1">&#39;graded&#39;</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">B_inner</span><span class="p">,</span> <span class="n">B_outer</span></div>
+
+
+<div class="viewcode-block" id="save_B_vlsv">
+<a class="viewcode-back" href="../../biot_savart/#biot_savart.save_B_vlsv">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_B_vlsv</span><span class="p">(</span><span class="n">input_tuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        calculate magnetic field at the Earth&#39;s surface and save in a .vslv file</span>
+
+<span class="sd">        Inputs: input tuple</span>
+<span class="sd">            input_tuple[0]: run (string)  # &#39;EGL&#39;, &#39;FHA&#39;, or &#39;FIA&#39;</span>
+<span class="sd">            input_tuple[1]: fileIndex (int)</span>
+
+<span class="sd">        Outputs:</span>
+<span class="sd">            ig_r: Cartesian ionospheric grid locations (radius R_EARTH + 100km)</span>
+<span class="sd">                note that B_iono, B_inner, B_outer are in fact evaluated at radius R_EARTH</span>
+<span class="sd">                ig_r is a copy of the Vlasiator ionosphere mesh, to enable combination with other data reducers</span>
+
+<span class="sd">            B_iono: Ionospheric (Domain #3) contribution to ground magnetic field (radius R_EARTH)</span>
+<span class="sd">            B_inner: Ionospheric (Domain #2) contribution to ground magnetic field (radius R_EARTH)</span>
+<span class="sd">            B_outer: Ionospheric (Domain #1) contribution to ground magnetic field (radius R_EARTH)</span>
+
+<span class="sd">        Note: the input and output .vlsv file paths may need to be modified in this script for different users</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># get_vlsvfile_fullpath(), and helper functions get_filename(), get_bulklocation()</span>
+    <span class="c1"># compute the file names based on the name of the run (&#39;EGL&#39;, &#39;FHA&#39;, &#39;FIA&#39;) and the time step fileIndex [s]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_vlsvfile_fullpath</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            Returns full path of a .vlsv file, based on the run name and time step (fileIndex)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">get_bulklocation</span><span class="p">(</span><span class="n">run</span><span class="p">)</span> <span class="o">+</span> <span class="n">get_filename</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_filename</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;EGL&#39;</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;bulk1.</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">.vlsv&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">fileIndex</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;FHA&#39;</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;bulk1.</span><span class="si">{}</span><span class="s2">.vlsv&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fileIndex</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;FIA&#39;</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;bulk1.</span><span class="si">{}</span><span class="s2">.vlsv&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fileIndex</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">filename</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_bulklocation</span><span class="p">(</span><span class="n">run</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;EGL&#39;</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/bulk/&quot;</span>
+        <span class="k">elif</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;FHA&#39;</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/bulk1/&quot;</span>
+        <span class="k">elif</span> <span class="n">run</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;FIA&#39;</span><span class="p">:</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/FIA/bulk/&quot;</span>
+        <span class="k">return</span> <span class="n">location</span>
+    <span class="c1"># instantiate VlsvWriter object</span>
+    <span class="n">run</span><span class="p">,</span> <span class="n">fileIndex</span> <span class="o">=</span> <span class="n">input_tuple</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">get_vlsvfile_fullpath</span><span class="p">(</span> <span class="n">run</span><span class="p">,</span> <span class="n">fileIndex</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span> <span class="n">filename</span> <span class="p">)</span>      <span class="c1"># f contains the vg_ mesh over which Biot-Savart is integrated</span>
+    <span class="k">if</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGL&#39;</span><span class="p">:</span>
+        <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="s1">&#39;/wrk-vakka/group/spacephysics/vlasiator/3D/EGL/visualizations_2/ballooning/jlsidecar_bulk1.egl.</span><span class="si">{}</span><span class="s1">.vlsv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">fileIndex</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">)))</span>
+        <span class="n">f_iono</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span> <span class="s1">&#39;/wrk-vakka/group/spacephysics/vlasiator/3D/FHA/misc_sidecars/ionogrid_FHA.vlsv&#39;</span> <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;FHA&#39;</span><span class="p">:</span>
+        <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">f_iono</span> <span class="o">=</span> <span class="n">f</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;FIA&#39;</span><span class="p">:</span>
+        <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">f_iono</span> <span class="o">=</span> <span class="n">f</span>
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="s1">&#39;./&#39;</span>   <span class="c1"># USER-DEFINED PATH</span>
+    <span class="c1"># calculate magnetic fields</span>
+    <span class="n">ig_r</span> <span class="o">=</span> <span class="n">f_iono</span><span class="o">.</span><span class="n">get_ionosphere_element_coords</span><span class="p">()</span>        <span class="c1"># f_iono contains the ionospheric mesh (the locations where B is evaluated)</span>
+    <span class="n">B_iono</span> <span class="o">=</span> <span class="n">B_ionosphere</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ig_r</span> <span class="o">=</span> <span class="n">ig_r</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;integrate&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>    <span class="c1"># FHA, FIA</span>
+        <span class="n">r_C</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_config</span><span class="p">()[</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">][</span><span class="s1">&#39;downmapRadius&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">R_EARTH</span>
+    <span class="k">except</span><span class="p">:</span> <span class="c1"># EGL</span>
+        <span class="n">r_C</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="mf">6.371e6</span>
+    <span class="n">B_inner</span><span class="p">,</span> <span class="n">B_outer</span> <span class="o">=</span> <span class="n">B_magnetosphere</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">f_J_sidecar</span> <span class="o">=</span> <span class="n">f_J_sidecar</span><span class="p">,</span> <span class="n">r_C</span> <span class="o">=</span> <span class="n">r_C</span><span class="p">,</span> <span class="n">ig_r</span> <span class="o">=</span> <span class="n">ig_r</span><span class="p">)</span>
+    <span class="c1"># write to file</span>
+    <span class="n">filename_vlsv</span> <span class="o">=</span> <span class="n">save_dir</span> <span class="o">+</span> <span class="s1">&#39;ionosphere_B_sidecar_</span><span class="si">{}</span><span class="s1">.</span><span class="si">{}</span><span class="s1">.vlsv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">fileIndex</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+    <span class="n">mkdir_path</span><span class="p">(</span><span class="n">filename_vlsv</span><span class="p">)</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvWriter</span><span class="p">(</span><span class="n">f_iono</span><span class="p">,</span> <span class="n">filename_vlsv</span><span class="p">,</span> <span class="n">copy_meshes</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;ionosphere&quot;</span><span class="p">))</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ig_r</span><span class="p">,</span><span class="s1">&#39;ig_r&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">B_iono</span><span class="p">,</span><span class="s1">&#39;ig_b_ionosphere&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">B_inner</span><span class="p">,</span><span class="s1">&#39;ig_b_inner&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">B_outer</span><span class="p">,</span><span class="s1">&#39;ig_b_outer&#39;</span><span class="p">,</span><span class="s1">&#39;VARIABLE&#39;</span><span class="p">,</span><span class="s1">&#39;ionosphere&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ig_r</span><span class="p">,</span> <span class="n">B_iono</span><span class="p">,</span> <span class="n">B_inner</span><span class="p">,</span> <span class="n">B_outer</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-run&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;FHA&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;run name&quot;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-task&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;task no.&quot;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-nproc&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;number of processors to use &quot;</span> <span class="p">)</span>
+    <span class="n">ARGS</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    
+    <span class="n">run</span> <span class="o">=</span> <span class="n">ARGS</span><span class="o">.</span><span class="n">run</span>
+    <span class="k">if</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGL&#39;</span><span class="p">:</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="mi">621</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="mi">1760</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;FHA&#39;</span><span class="p">:</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="mi">501</span>  <span class="c1"># 501, 800</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="mi">1612</span>
+    <span class="k">elif</span> <span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;FIA&#39;</span><span class="p">:</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="mi">865</span>
+
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;      </span>
+<span class="sd">    # (TEST) Single file: integrate Biot-Savart and save output into a .vlsv sidecar file</span>
+<span class="sd">    ig_r, B_iono, B_inner, B_outer = save_B_vlsv((&#39;FHA&#39;, 1000))</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># integrate Biot-Savart and save output into .vlsv files (modify biot_savart.sh to use multiple nodes)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pool</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ARGS</span><span class="o">.</span><span class="n">nproc</span><span class="p">))</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">first</span> <span class="o">+</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ARGS</span><span class="o">.</span><span class="n">task</span><span class="p">)</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">ARGS</span><span class="o">.</span><span class="n">nproc</span><span class="p">))</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">ARGS</span><span class="o">.</span><span class="n">nproc</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;start:, &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;, stop: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">stop</span><span class="p">))</span>
+    <span class="n">input_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">run</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)]</span>
+    <span class="n">f_out</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">save_B_vlsv</span><span class="p">,</span> <span class="n">input_list</span><span class="p">)</span>
+    <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,407 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.interpolator_amr &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.interpolator_amr</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.interpolator_amr</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Delaunay</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearNDInterpolator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">itemgetter</span>
+<span class="c1"># from time import time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">importerror</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+   <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.interpolate</span><span class="w"> </span><span class="kn">import</span> <span class="n">RBFInterpolator</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+   <span class="n">importerror</span> <span class="o">=</span> <span class="n">e</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Could not import scipy.interpolate.RBFInterpolator. Requires scipy&gt;=1.7 and Python&gt;=3.7.&quot;</span><span class="p">)</span>
+   <span class="k">class</span><span class="w"> </span><span class="nc">RBFInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+      <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+         <span class="k">raise</span> <span class="n">importerror</span> <span class="c1">#Exception(&quot;Module load error&quot;)</span>
+   
+
+
+<span class="c1"># With values fi at hexahedral vertices and trilinear basis coordinates ksi,</span>
+<span class="c1"># return the trilinear interpolant for fi</span>
+<span class="c1"># Vectorized. Assumes that the first dimension ksii, fii are the index for an individual query - </span>
+<span class="c1"># singleton dimension required for a single query!</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">ksii</span><span class="p">,</span> <span class="n">fii</span><span class="p">):</span>
+   <span class="n">ksi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">ksii</span><span class="p">)</span>
+   <span class="k">if</span><span class="p">(</span><span class="n">fii</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">fii</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+   <span class="k">elif</span><span class="p">(</span><span class="n">fii</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">fii</span>
+      <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">5</span><span class="p">]</span> <span class="o">+</span> \
+            <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">6</span><span class="p">]</span> <span class="o">+</span> \
+               <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">7</span><span class="p">]</span>
+      <span class="k">return</span> <span class="n">res</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">fii</span>
+
+   <span class="c1"># this broadcasts to ksi@ksi shape for scalar fis for whatever reason, so above</span>
+   <span class="n">res</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">3</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">4</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">5</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">6</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">7</span><span class="p">,:]</span>
+   <span class="k">if</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+      <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">res</span>
+
+
+<span class="c1"># With values fi at hexahedral vertices and trilinear basis coordinates ksi,</span>
+<span class="c1"># return the interpolated gradient/jacobian of fi wrt. the trilinear basis at ksi</span>
+<span class="c1"># Vectorized. Assumes that the first dimension ksii, fii are the index for an individual query - </span>
+<span class="c1"># singleton dimension required for a single query!</span>
+<span class="c1"># does not handle scalars?</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="n">ksii</span><span class="p">,</span> <span class="n">fii</span><span class="p">):</span>
+   <span class="n">ksi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">ksii</span><span class="p">)</span>
+   <span class="c1"># logging.info(fii.shape)</span>
+   <span class="k">if</span><span class="p">(</span><span class="n">fii</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">fii</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+   <span class="k">elif</span><span class="p">(</span><span class="n">fii</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_3d</span><span class="p">(</span><span class="n">fii</span><span class="p">)</span><span class="c1">#fii[:,:,np.newaxis]</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">fi</span> <span class="o">=</span> <span class="n">fii</span>
+   <span class="c1"># logging.info(fi)</span>
+   <span class="c1"># logging.info(fi.shape)</span>
+   <span class="n">d0</span> <span class="o">=</span>  <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">+</span> \
+          <span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="o">-</span><span class="mi">1</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">+</span> \
+          <span class="mi">1</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">3</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">4</span><span class="p">,:]</span> <span class="o">+</span> \
+          <span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">5</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="o">-</span><span class="mi">1</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">6</span><span class="p">,:]</span> <span class="o">+</span> \
+          <span class="mi">1</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">7</span><span class="p">,:]</span>
+   <span class="n">d1</span> <span class="o">=</span>  <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>  <span class="mi">1</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>  <span class="mi">1</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">3</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">4</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">5</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>  <span class="mi">1</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">6</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>  <span class="mi">1</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">7</span><span class="p">,:]</span>
+   <span class="n">d2</span> <span class="o">=</span>  <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">3</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>  <span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">4</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>  <span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">5</span><span class="p">,:]</span> <span class="o">+</span> \
+         <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">])</span> <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>  <span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">6</span><span class="p">,:]</span> <span class="o">+</span> \
+            <span class="n">ksi</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>    <span class="n">ksi</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="kc">None</span><span class="p">]</span>  <span class="o">*</span>  <span class="mi">1</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[:,</span><span class="mi">7</span><span class="p">,:]</span>
+   <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">d0</span><span class="p">,</span><span class="n">d1</span><span class="p">,</span><span class="n">d2</span><span class="p">),</span><span class="n">axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">res</span>
+
+<span class="c1"># For hexahedral vertices verts and point p, find the trilinear basis coordinates ksi</span>
+<span class="c1"># that interpolate the coordinates of verts to the tolerance tol.</span>
+<span class="c1"># This is an iterative procedure. Return nans in case of no convergence.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_ksi</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">v_coords</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span> <span class="mf">.1</span><span class="p">,</span> <span class="n">maxiters</span> <span class="o">=</span> <span class="mi">200</span><span class="p">):</span>
+   <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+   <span class="n">v_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_3d</span><span class="p">(</span><span class="n">v_coords</span><span class="p">)</span>
+   <span class="n">ksi0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+   <span class="n">J</span> <span class="o">=</span> <span class="n">df</span><span class="p">(</span><span class="n">ksi0</span><span class="p">,</span> <span class="n">v_coords</span><span class="p">)</span>
+   <span class="c1"># logging.info(&quot;J&quot;, J)</span>
+   <span class="n">ksi_n</span> <span class="o">=</span> <span class="n">ksi0</span>
+   <span class="n">ksi_n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">ksi0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+   <span class="n">f_n</span> <span class="o">=</span>  <span class="n">f</span><span class="p">(</span><span class="n">ksi_n</span><span class="p">,</span><span class="n">v_coords</span><span class="p">)</span>
+   <span class="c1"># logging.info(f_n.shape, p.shape)</span>
+   <span class="c1"># logging.info(f_n)</span>
+   <span class="n">f_n</span> <span class="o">=</span> <span class="n">f_n</span> <span class="o">-</span> <span class="n">p</span>
+
+   <span class="n">resolved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+   <span class="n">diverged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">p</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span><span class="kc">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+   
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxiters</span><span class="p">):</span>
+      
+      <span class="n">J</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">df</span><span class="p">(</span><span class="n">ksi_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:],</span> <span class="n">v_coords</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,:])</span>
+      <span class="n">f_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ksi_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:],</span><span class="n">v_coords</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,:])</span><span class="o">-</span><span class="n">p</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span>
+      <span class="n">step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">J</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,:],</span> <span class="o">-</span><span class="n">f_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">f_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+      <span class="n">ksi_n1</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">step</span> <span class="o">+</span> <span class="n">ksi_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span> <span class="c1"># r_(n+1) </span>
+      <span class="n">ksi_n</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">ksi_n1</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span>
+      
+      <span class="n">resolved</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">ksi_n1</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:],</span><span class="n">v_coords</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:,:])</span> <span class="o">-</span> <span class="n">p</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">)</span>
+      <span class="n">resolved</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">ksi_n1</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e2</span> <span class="c1"># Don&#39;t bother if the solution is diverging either, set to nans later</span>
+         <span class="c1"># convergence = True</span>
+      <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">resolved</span><span class="p">):</span>
+         <span class="k">break</span>
+         <span class="c1"># diverged = np.linalg.norm(ksi_n1,axis=1) &gt; 1e2</span>
+         <span class="c1"># ksi_n1[diverged,:] = np.nan</span>
+         <span class="c1"># # logging.info(&quot;All converged in &quot;, i, &quot;iterations&quot;)</span>
+         <span class="c1"># return ksi_n1</span>
+      
+
+   <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">resolved</span><span class="p">):</span>
+      <span class="c1"># logging.info(&quot;Converged after &quot;, i, &quot;iterations&quot;)</span>
+      <span class="n">diverged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">ksi_n1</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e2</span>
+      <span class="n">ksi_n1</span><span class="p">[</span><span class="n">diverged</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+      <span class="k">return</span> <span class="n">ksi_n1</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="c1"># warnings.warn(&quot;Generalized trilinear interpolation did not converge for &quot; + str(np.sum(~convergence)) + &quot; points. Nans inbound.&quot;)</span>
+      <span class="n">diverged</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">ksi_n1</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e2</span>
+      <span class="n">ksi_n1</span><span class="p">[</span><span class="n">diverged</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+      <span class="n">ksi_n1</span><span class="p">[</span><span class="o">~</span><span class="n">resolved</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+      <span class="k">return</span> <span class="n">ksi_n1</span>
+      
+<span class="k">class</span><span class="w"> </span><span class="nc">HexahedralTrilinearInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Class for doing general hexahedral interpolation, including degenerate hexahedra (...eventually).</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pts</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">pts</span> <span class="o">=</span> <span class="n">pts</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span>
+      <span class="c1"># Call dual construction from here?</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;reader&#39;</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">var</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;var&#39;</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">operator</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;op&#39;</span><span class="p">]</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pt</span><span class="p">,</span> <span class="n">cellids</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+      <span class="n">pts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+      <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+         <span class="c1"># t0 = time()</span>
+         <span class="n">vals</span> <span class="o">=</span> <span class="p">[]</span>
+         <span class="n">duals</span> <span class="o">=</span> <span class="p">[]</span>
+         <span class="n">ksis</span> <span class="o">=</span> <span class="p">[]</span>
+         <span class="c1"># for i,p in enumerate(pt):</span>
+         <span class="c1">#    d, ksi = self.reader.get_dual(p)</span>
+         <span class="c1">#    duals.append(d)</span>
+         <span class="c1">#    ksis.append(ksi)</span>
+         <span class="n">duals</span><span class="p">,</span> <span class="n">ksis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">get_dual</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">cellids</span><span class="p">)</span>
+         <span class="n">duals_corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">itemgetter</span><span class="p">(</span><span class="o">*</span><span class="n">duals</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">_VlsvReader__dual_cells</span><span class="p">))</span>
+         <span class="n">fi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="n">duals_corners</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">operator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="p">)</span>
+         <span class="k">if</span><span class="p">(</span><span class="n">fi</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">val_len</span> <span class="o">=</span> <span class="n">fi</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">val_len</span> <span class="o">=</span> <span class="mi">1</span>
+         <span class="n">ksis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ksis</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span> <span class="c1"># n x 1 x 3 ...... fix</span>
+         <span class="c1"># logging.info(ksis.shape, fi.shape)</span>
+         <span class="k">if</span><span class="p">(</span><span class="n">val_len</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">fi</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">fi</span> <span class="o">=</span> <span class="n">fi</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="n">val_len</span><span class="p">))</span>
+         <span class="c1"># logging.info(&#39;fi reshaped&#39;, fi.shape)</span>
+         <span class="n">vals</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ksis</span><span class="p">,</span> <span class="n">fi</span><span class="p">)</span>
+         <span class="c1"># logging.info(&quot;irregular interpolator __call__ done in&quot;, time()-t0,&quot;s&quot;)</span>
+         <span class="k">return</span> <span class="n">vals</span>
+      
+         <span class="c1"># the following loop is not reached, kept for reference</span>
+         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pts</span><span class="p">):</span>
+            <span class="c1"># dual, ksi = self.reader.get_dual(np.atleast_2d(p))</span>
+            <span class="c1"># dual = dual[0]</span>
+            <span class="c1"># ksi = ksi[0]</span>
+            <span class="c1"># logging.info(&quot;regular:&quot;,i,dual, ksi)</span>
+            <span class="n">dual</span> <span class="o">=</span> <span class="n">duals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">ksi</span> <span class="o">=</span> <span class="n">ksis</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># logging.info(&quot;from batch:&quot;, dual, ksi)</span>
+            <span class="k">if</span> <span class="n">dual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+               <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+               <span class="c1"># dual_corners = self.reader._VlsvReader__dual_cells[dual]</span>
+               <span class="n">dual_corners</span> <span class="o">=</span> <span class="n">duals_corners</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+               <span class="n">fp</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ksi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dual_corners</span><span class="p">),</span> <span class="n">operator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:])</span>
+               <span class="n">vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">dual</span><span class="p">,</span> <span class="n">ksi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">get_dual</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+         <span class="n">dual_corners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dual_cells</span><span class="p">[</span><span class="n">dual</span><span class="p">]</span>
+         <span class="n">fp</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">ksi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dual_corners</span><span class="p">),</span> <span class="n">operator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:])</span>
+         <span class="k">return</span> <span class="n">fp</span>
+
+
+<span class="n">supported_amr_interpolators</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span><span class="s1">&#39;rbf&#39;</span><span class="p">,</span><span class="s1">&#39;delaunay&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="AMRInterpolator">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.AMRInterpolator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AMRInterpolator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Wrapper class for interpolators, esp. at refinement interfaces.</span>
+<span class="sd">   Supported methods:</span>
+
+<span class="sd">   linear</span>
+<span class="sd">      - (nearly) C0 continuous, regular-grid trilinear interpolant extended to collapsed hexahedral cells.</span>
+<span class="sd">      - Non-parametric</span>
+<span class="sd">      - Exact handling of multiply-degenerate hexahedra is missing, with the enabling hack causing errors in trilinear coordinate on the order of 1m</span>
+
+
+<span class="sd">   Radial Basis Functions, `rbf`</span>
+<span class="sd">      - Accurate, slow-ish, but hard to make properly continuous and number of neighbors on which to base the interpolant is not trivial to find.</span>
+<span class="sd">      - Not continuous with regular-grid trilinear interpolants, needs to be used in the entire interpolation domain.</span>
+<span class="sd">      - kwarg options: &quot;neighbors&quot; for number of neighbors (64)</span>
+<span class="sd">      - basis function uses SciPy default. A free parameter.</span>
+
+<span class="sd">   delaunay (not recommended)</span>
+<span class="sd">      - Choice of triangulation is not unique with regular grids, including refinement interfaces.</span>
+<span class="sd">      - kwarg options as in qhull; &quot;qhull_options&quot; : &quot;QJ&quot; (breaks degeneracies)</span>
+
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">cellids</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span> <span class="o">=</span> <span class="n">reader</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cellids</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">duals</span> <span class="o">=</span> <span class="p">{}</span>
+      <span class="c1"># Cannot initialize an empty Delaunay</span>
+      <span class="c1">#self.__Delaunay = Delaunay(reader.get_cell_coordinates(self.__cellids), incremental = True, qhull_options=&quot;QJ Qc Q12&quot;)</span>
+
+   <span class="k">def</span><span class="w"> </span><span class="nf">add_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells</span><span class="p">):</span>
+      <span class="n">new_cells</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cells</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">,</span> <span class="n">new_cells</span><span class="p">)</span>
+      
+   <span class="k">def</span><span class="w"> </span><span class="nf">get_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">)</span>
+   
+   <span class="k">def</span><span class="w"> </span><span class="nf">get_interpolator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> 
+                        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> 
+                        <span class="n">methodargs</span><span class="o">=</span><span class="p">{</span>
+                           <span class="s2">&quot;RBF&quot;</span><span class="p">:{</span><span class="s2">&quot;neighbors&quot;</span><span class="p">:</span><span class="mi">64</span><span class="p">},</span> <span class="c1"># Harrison-Stetson number of neighbors</span>
+                           <span class="s2">&quot;Delaunay&quot;</span><span class="p">:{</span><span class="s2">&quot;qhull_options&quot;</span><span class="p">:</span><span class="s2">&quot;QJ&quot;</span><span class="p">}</span>
+                           <span class="p">}):</span>
+      <span class="c1"># Check for old aliases</span>
+      <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;trilinear&quot;</span><span class="p">:</span>
+         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&#39;trilinear&#39; interpolator method renamed to &#39;linear&#39; for consistency&quot;</span><span class="p">)</span>
+         <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span>
+
+      <span class="n">methodargs</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reader&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="p">,</span> <span class="s2">&quot;var&quot;</span> <span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;op&quot;</span><span class="p">:</span><span class="n">operator</span><span class="p">}</span>
+
+      <span class="n">pts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">)</span>
+      <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__reader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="n">operator</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;delaunay&quot;</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">__Delaunay</span> <span class="o">=</span> <span class="n">Delaunay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__cellids</span><span class="p">),</span><span class="o">**</span><span class="n">methodargs</span><span class="p">[</span><span class="n">method</span><span class="p">])</span>
+         <span class="k">return</span> <span class="n">LinearNDInterpolator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__Delaunay</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;rbf&quot;</span><span class="p">:</span>
+         <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RBFInterpolator</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">methodargs</span><span class="p">[</span><span class="n">method</span><span class="p">])</span>
+         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;RBFInterpolator could not be imported. SciPy &gt;= 1.7 is required for this class. Falling back to Hexahedral trilinear interpolator. Error given was &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">HexahedralTrilinearInterpolator</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">methodargs</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">])</span>
+      <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+         <span class="k">return</span> <span class="n">HexahedralTrilinearInterpolator</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">vals</span><span class="p">,</span> <span class="o">**</span><span class="n">methodargs</span><span class="p">[</span><span class="n">method</span><span class="p">])</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
