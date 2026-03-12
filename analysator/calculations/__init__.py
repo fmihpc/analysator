@@ -37,7 +37,7 @@ Example::
 
 '''
 #for usage with "from (package) import *"
-__all__=["ids3d","intpol_file","intpol_points","cutthrough","fourier","spectra","variable","timeevolution","pitchangle","gyrophaseangle","themis_observation","cut3d","lineout","fit","fieldtracer","non_maxwellianity","null_lines","interpolator_amr"]
+__all__=["ids3d","intpol_file","intpol_points","cutthrough","fourier","spectra","variable","timeevolution","pitchangle","gyrophaseangle","virtual_observations","cut3d","lineout","fit","fieldtracer","non_maxwellianity","null_lines","interpolator_amr"]
 
 
 # List of functions and classes that should be imported into the interface
@@ -53,10 +53,7 @@ from .timeevolution import cell_time_evolution,point_time_evolution,VlsvTInterpo
 from .pitchangle import pitch_angles
 #from .backstream import extract_velocity_cells_sphere, extract_velocity_cells_non_sphere
 from .gyrophaseangle import gyrophase_angles_from_file
-from .themis_observation import themis_observation_from_file
-from .themis_observation import themis_plot_detector
-from .themis_observation import themis_plot_phasespace_contour
-from .themis_observation import themis_plot_phasespace_helistyle
+
 #from .themis_observation import simulation_to_spacecraft_frame
 from .cut3d import cut3d
 from .lineout import lineout
@@ -66,3 +63,4 @@ from .fieldtracer import dynamic_field_tracer
 from .non_maxwellianity import epsilon_M
 from .null_lines import LMN_null_lines_FOTE
 from .interpolator_amr import AMRInterpolator, supported_amr_interpolators
+from .virtual_observations import spacecraft_to_simulation_frame,simulation_to_spacecraft_frame,simulation_to_observation_frame
