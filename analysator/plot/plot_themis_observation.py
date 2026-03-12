@@ -28,6 +28,7 @@ import matplotlib
 from scipy.interpolate import griddata
 from scipy.signal import sepfir2d
 import logging
+from analysator.calculations import virtual_observations as vsc
 
 # Detector data obtained from the Themis ESA instrument paper
 # http://dx.doi.org/10.1007/s11214-008-9440-2
@@ -46,44 +47,6 @@ proton_mass = 1.67e-27      # in kg
 themis_colors=[(0,0,0),(.5,0,.5),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0)]
 themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
 
-
-def simulation_to_spacecraft_frame(spinvector, detector_axis, phi=0):
-    ''' Builds a matrix to transform coordinates from simulation frame into spaceraft frame
-    :param spinvector  Spacecraft spin axis, in simulation coordinates
-    :param detector_axis Detector plane normal axis
-    :param phi         Rotate spacecraft around spin axis after setting up coordinate system
-    '''
-    # TODO: Normalize vectors?
-    y = np.cross(detector_axis,spinvector)
-    z = np.cross(spinvector, y)
-    yr = np.cos(phi)*y - np.sin(phi)*z
-    zr = np.sin(phi)*y + np.cos(phi)*z
-    m = np.array([spinvector, yr, zr])
-
-    return m
-
-def spacecraft_to_simulation_frame(spinvector, detector_axis, phi=0):
-    ''' Builds a matrix to transform coordinates from spaceraft frame back to simulation frame
-    :param spinvector  Spacecraft spin axis, in simulation coordinates
-    :param detector_axis Detector plane normal axis
-    :param phi         Rotate spacecraft around spin axis after setting up coordinate system
-    '''
-    return simulation_to_spacecraft_frame(spinvector,detector_axis,phi).T
-
-def simulation_to_observation_frame(x_axis,y_axis):
-    ''' Builds a 3x3 matrix to transform velocities into an observation plane
-    :param x_axis:  x-axis of the observation plane (in simulation coordinates)
-    :param y_axis:  y-axis of the observation plane (gets orthonormalized)
-    '''
-    xn = np.linalg.norm(x_axis)
-    x_axis /= xn
-    p = x_axis.dot(y_axis)
-    y_axis -= p*x_axis
-    yn = np.linalg.norm(y_axis)
-    y_axis /= yn
-    z_axis = np.cross(x_axis,y_axis)
-    return np.array([x_axis,y_axis,z_axis])
-
 def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), pop="proton"):
     ''' Plots a view of the detector countrates using matplotlib
     :param vlsvReader:        Some VlsvReader class with a file open
@@ -92,7 +55,7 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), po
     :param detector_axis:     detector axis direction (note: this is not spacecraft spin axis!)
     '''
 
-    matrix = spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
+    matrix = vsc.spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
 
     logging.info("Getting phasespace data...")
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader,
@@ -121,7 +84,7 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
-    matrix = simulation_to_observation_frame(plane_x,plane_y)
+    matrix = vsc.simulation_to_observation_frame(plane_x,plane_y)
 
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix,pop=pop)
 
@@ -165,7 +128,7 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
-    matrix = simulation_to_observation_frame(plane_x,plane_y)
+    matrix = vsc.simulation_to_observation_frame(plane_x,plane_y)
 
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix, countrates=False)
     if vmin == 0:
