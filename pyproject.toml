@@ -26,22 +26,20 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "vtk>=9.2",
+    "yt",
 ]
 [project.optional-dependencies]
 none = [
 ]
-vtk = [
-    "vtk>=9.2",
-]
 all = [
-    "analysator[vtk]",
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",
 ]
 testpackage = [
     "opencv-python",
-    "analysator[vtk]",
 ]
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"

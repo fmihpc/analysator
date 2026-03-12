@@ -22,9 +22,9 @@ from distutils.version import LooseVersion, StrictVersion
 def scaling1d(data, resolution, limits=None):   
     ''' Transfroms data to indices between [0, resolution-1]
     
-    :kword data:       1D data to be plotted using bivariate colormaps
-    :kword resolution: Number of unique colors per direction
-    :kword limits:     Tuple that overrides the colorspace limits from data limits
+    :kwarg data:       1D data to be plotted using bivariate colormaps
+    :kwarg resolution: Number of unique colors per direction
+    :kwarg limits:     Tuple that overrides the colorspace limits from data limits
     
     Returns a list of integer indices.
     '''
@@ -49,11 +49,11 @@ def scaling1d(data, resolution, limits=None):
 def bivariate(resolution_x, resolution_y, a = 0.5, order = [1,0,2], green_multiplier = 1, white_center=True):   
     '''Creates the RGB space for the 2D colormap
     
-    :kword resolution:       Number of unique colors per direction
-    :kword a:                Controls the slope of the two off-diagonal surfaces, between 0 and 1
-    :kword order:            Changes which color occupies which corner of the 2D map
-    :kword green_multiplier: Determines the amount of green in the colormap
-    :kword white_center:     True to force the colormap to go through white
+    :kwarg resolution:       Number of unique colors per direction
+    :kwarg a:                Controls the slope of the two off-diagonal surfaces, between 0 and 1
+    :kwarg order:            Changes which color occupies which corner of the 2D map
+    :kwarg green_multiplier: Determines the amount of green in the colormap
+    :kwarg white_center:     True to force the colormap to go through white
     
     Returns a (resolution, resolution) array of RGB values.
     '''
@@ -128,55 +128,55 @@ def plot_ionosphere(filename=None,
 
     ''' Plots a 2d projection of an ionosphere variable
 
-    :kword filename:    path to .vlsv file to use for input. Assumes a bulk file.
-    :kword vlsvobj:     Optionally provide a python vlsvfile object instead
-    :kword filedir:     Optionally provide directory where files are located and use step for bulk file name
-    :kword step:        output step index, used for constructing output (and possibly input) filename
-    :kword run:         run identifier, used for constructing output filename
-    :kword outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
+    :kwarg filename:    path to .vlsv file to use for input. Assumes a bulk file.
+    :kwarg vlsvobj:     Optionally provide a python vlsvfile object instead
+    :kwarg filedir:     Optionally provide directory where files are located and use step for bulk file name
+    :kwarg step:        output step index, used for constructing output (and possibly input) filename
+    :kwarg run:         run identifier, used for constructing output filename
+    :kwarg outputdir:   path to directory where output files are created (default: $HOME/Plots/ or override with PTOUTPUTDIR)
                         If directory does not exist, it will be created. If the string does not end in a
                         forward slash, the final part will be used as a prefix for the files.
-    :kword outputfile:  Singular output file name
-    :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                    
-    :kword var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
+    :kwarg outputfile:  Singular output file name
+    :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                    
+    :kwarg var:         variable to plot, e.g. rho, RhoBackstream, beta, Temperature, MA, Mms, va, vms,
                         E, B, v, V or others. Accepts any variable known by analysator/pytools.
                         Per-population variables are simply given as "proton/rho" etc
-    :kword operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
+    :kwarg operator:    Operator to apply to variable: None, x, y, or z. Vector variables return either
                         the queried component, or otherwise the magnitude. 
-    :kword op:          duplicate of operator
-    :kword colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
+    :kwarg op:          duplicate of operator
+    :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
-    :kword vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
+    :kwarg vmin,vmax:   min and max values for colour scale and colour bar. If no values are given,
                         min and max values for whole plot (non-zero rho regions only) are used.
-    :kword symmetric:   Set the absolute value of vmin and vmax to the greater of the two
-    :kword absolute:    Plot the absolute of the evaluated variable
-    :kwird usesci:      Use scientific notation for colorbar ticks? (default: True)
-    :kword lin:         Flag for using linear colour scaling instead of log
-    :kword symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
+    :kwarg symmetric:   Set the absolute value of vmin and vmax to the greater of the two
+    :kwarg absolute:    Plot the absolute of the evaluated variable
+    :kwarg usesci:      Use scientific notation for colorbar ticks? (default: True)
+    :kwarg lin:         Flag for using linear colour scaling instead of log
+    :kwarg symlog:      Use logarithmic scaling, but linear when abs(value) is below the value given to symlog.
                         Allows symmetric quasi-logarithmic plots of e.g. transverse field components.
                         A given of 0 translates to a threshold of max(abs(vmin),abs(vmax)) * 1.e-2, but this can
                         result in the innermost tick marks overlapping. In this case, using a larger value for 
                         symlog is suggested.
-    :kword nocb:        Set to suppress drawing of colourbar
-    :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+    :kwarg nocb:        Set to suppress drawing of colourbar
+    :kwarg internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword minlatitude: Minimum plot latitude (default=60 degrees)
-    :kword title:       string to use as plot title instead of time.
+    :kwarg minlatitude: Minimum plot latitude (default=60 degrees)
+    :kwarg title:       string to use as plot title instead of time.
                         Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                         for microsecond accuracy. "sec" is integer second accuracy.
-    :kword cbtitle:     string to use as colorbar title instead of map name
-    :kword viewdir:     view direction onto the sphere. Positive value: North pole. Negative values: South pole.
-    :kword scale:       Scale text size (default=1.0)
-    :kword vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
+    :kwarg cbtitle:     string to use as colorbar title instead of map name
+    :kwarg viewdir:     view direction onto the sphere. Positive value: North pole. Negative values: South pole.
+    :kwarg scale:       Scale text size (default=1.0)
+    :kwarg vscale:      Scale all values with this before plotting. Useful for going from e.g. m^-3 to cm^-3
                         or from tesla to nanotesla. Guesses correct units for colourbar for some known
                         variables.
-    :kword axes:        Provide the routine a set of axes to draw within instead of generating a new image.
-    :kword cbaxes:      Provide the routine a set of axes for the colourbar.
-    :kword thick:       line and axis thickness, default=1.0
-    :kword draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
-    :kword wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
+    :kwarg axes:        Provide the routine a set of axes to draw within instead of generating a new image.
+    :kwarg cbaxes:      Provide the routine a set of axes for the colourbar.
+    :kwarg thick:       line and axis thickness, default=1.0
+    :kwarg draw:        Set to anything but None or False in order to draw image on-screen instead of saving to file (requires x-windowing)
+    :kwarg wmark:       If set to non-zero, will plot a Vlasiator watermark in the top left corner. If set to a text
                         string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-    :kword wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
+    :kwarg wmarkb:      As for wmark, but uses an all-black Vlasiator logo.
 
  
     .. code-block:: python
