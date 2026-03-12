@@ -48,26 +48,6 @@ proton_mass = 1.67e-27      # in kg
 themis_colors=[(0,0,0),(.5,0,.5),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0)]
 themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
 
-def get_dv(vlsvReader,pop="proton"):
-   # Get velocity grid sizes:
-   vel_mesh_size = vlsvReader.get_velocity_mesh_size(pop=pop)
-   vel_block_size = vlsvReader.get_velocity_block_size(pop=pop)
-   vxcells = vel_mesh_size[0]*vel_block_size[0]
-   vycells = vel_mesh_size[1]*vel_block_size[1]
-   vzcells = vel_mesh_size[2]*vel_block_size[2]
-   
-   vel_mesh_limits = vlsvReader.get_velocity_mesh_extent(pop=pop)
-   vxmin = vel_mesh_limits[0]
-   vymin = vel_mesh_limits[1]
-   vzmin = vel_mesh_limits[2]
-   vxmax = vel_mesh_limits[3]
-   vymax = vel_mesh_limits[4]
-   vzmax = vel_mesh_limits[5]
-
-   dvx = (vxmax - vxmin) / (float)(vxcells)
-   dvy = (vymax - vymin) / (float)(vycells)
-   dvz = (vzmax - vzmin) / (float)(vzcells)
-   return [dvx,dvy,dvz]
 
 def simulation_to_spacecraft_frame(spinvector, detector_axis, phi=0):
     ''' Builds a matrix to transform coordinates from simulation frame into spaceraft frame
@@ -248,7 +228,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
       pl.show()
    '''
    # Get velocity space resolution
-   dvx,dvy,dvz = get_dv(vlsvReader,pop=pop)
+   dvx,dvy,dvz = vlsvReader.get_velocity_mesh_dv(pop=pop)
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid,pop=pop)
