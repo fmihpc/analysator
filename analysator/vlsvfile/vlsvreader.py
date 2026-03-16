@@ -3092,8 +3092,6 @@ class VlsvReader(object):
          for x in [-1,1]:
             for y in [-1,1]:
                for z  in [-1,1]:
-                  if x == 0 and y == 0 and z == 0:
-                     continue
                   vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cids[mask])/2))
                   ii += 1
 
