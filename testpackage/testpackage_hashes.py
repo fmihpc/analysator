@@ -10,8 +10,6 @@ datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vla
 files=["3D/FID/bulk1/bulk1.0000995.vlsv",
        "3D/FHA/bulk1/bulk1.0000990.vlsv",
 ]
-datalocation="/home/siclasse/"
-files=["bulk.0000110.vlsv"]
 
 class Tester:
     def __init__(self,filename=None):
@@ -227,9 +225,10 @@ for file in files:
     variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
     ciTester.hash("read_variable",variables,loop=True)
 
-# ciTester.dumpIntoFile()
+ciTester.dumpIntoFile()
+os.system("cat hashdump.txt")
 print(ciTester.hashes_dict_python)
-# print(ciTester.loadFromFile()==ciTester.hashes_dict_python)
+print(ciTester.loadFromFile()==ciTester.hashes_dict_python)
 quit()
 #Should not be used yet
 retval=0
