@@ -21,16 +21,17 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
     "packaging",
     "scikit-image",
-    "vlsvrs @ git+https://github.com/fmihpc/analysator-backends.git@master#recursive=1 ; python_version > '3.9'",
     "vtk>=9.2",
     "yt",
 ]
+
 [project.optional-dependencies]
 none = [
 ]
@@ -43,6 +44,10 @@ bvtk = [
 testpackage = [
     "opencv-python",
 ]
+vlsvrs_build = [
+       "vlsvrs @ git+https://version.helsinki.fi/vlasiator/analysator-backends.git@master#recursive=1 ; python_version > '3.9'",
+]
+
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"
