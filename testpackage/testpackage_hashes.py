@@ -65,6 +65,9 @@ class Tester:
                     #above is bit stupid but should filter it little bit since the hash lines should have a list in them
                     listHashInfo=[item.strip('\t') for item in line.split(" ") if item!=""]
                     outdict[filename][function][listHashInfo[0]]=[listHashInfo[1],listHashInfo[2]]
+                else:
+                    #We should never end up here, but if we do, the dict was not read correctly likely badly formatted
+                    raise IOError("File is likely not formatted correctly")
             file.close()
         return outdict
 
