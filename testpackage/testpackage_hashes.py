@@ -26,9 +26,8 @@ class Tester:
         pickle.dump(self.hashes_dict,file)
 
     def load(self,backend=None):
-        if not backend or backend.lower()=="rust":
-            raise NotImplementedError()
-            # self.vlsvobj_rust=vlsvrs.VlsvFile(self.filename)
+        #if not backend or backend.lower()=="rust":
+        #     self.vlsvobj_rust=vlsvrs.VlsvFile(self.filename)
         if not backend or backend.lower()=="python":
             self.vlsvobj_python=pt.vlsvfile.VlsvReader(self.filename)
 
