@@ -10,7 +10,8 @@ datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vla
 files=["3D/FID/bulk1/bulk1.0000995.vlsv",
        "3D/FHA/bulk1/bulk1.0000990.vlsv",
 ]
-
+datalocation="/home/siclasse/"
+files=["bulk.0000110.vlsv"]
 
 class Tester:
     def __init__(self,filename=None):
@@ -25,7 +26,49 @@ class Tester:
     def dumpPickle(self,file):
         pickle.dump(self.hashes_dict,file)
 
-    def load(self,backend=None):
+    def dumpIntoFile(self):
+        with open("hashdump.txt","w") as file:
+            for (filename,funcdict) in self.hashes_dict_python.items():
+                file.write("File: "+filename+'\n')
+                for (funccall,hashdict) in funcdict.items():
+                    file.write("\tFunction: "+funccall+'\n')
+                    for (arg,hash_and_op) in hashdict.items():
+                        hash=hash_and_op[0]
+                        op=hash_and_op[1]
+                        file.write("\t\t"+f"{arg:<20} {hash} {op}"+'\n')
+            file.close()
+        assert(self.loadFromFile()==self.hashes_dict_python)
+
+    def loadFromFile(self):
+        outdict={}
+        with open("hashdump.txt","r") as file:
+            func_line=False
+            for line in file:
+                line=line.rstrip('\n')
+                if line[:5]=="File:":
+                    filename=line.split(" ")[1]
+                    if filename not in outdict:
+                        outdict[filename]={}
+                    func_line=True
+                    continue
+                if func_line:
+                    function=line.split(" ")[1]
+                    #There should not be multiples of function with same filename!
+                    try:
+                        outdict[filename][function]={}
+                    except KeyError:
+                        raise IOError("Invalid format of the input file")
+
+                    func_line=False
+                    
+                elif "[" in line: 
+                    #above is bit stupid but should filter it little bit since the hash lines should have a list in them
+                    listHashInfo=[item.strip('\t') for item in line.split(" ") if item!=""]
+                    outdict[filename][function][listHashInfo[0]]=[listHashInfo[1],listHashInfo[2]]
+            file.close()
+        return outdict
+
+    def loadobj(self,backend=None):
         #if not backend or backend.lower()=="rust":
         #     self.vlsvobj_rust=vlsvrs.VlsvFile(self.filename)
         if not backend or backend.lower()=="python":
@@ -153,8 +196,8 @@ for file in files:
     filename=os.path.join(datalocation,file)
 
     ciTester.changeFile(filename)
-    ciTester.load()
-
+    ciTester.loadobj()
+    
     #Test compare
     # cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([0,0,0]))
     # ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
@@ -180,9 +223,10 @@ for file in files:
     ciTester.setHashTarget("python")
     variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
     ciTester.hash("read_variable",variables,loop=True)
-    
-print(ciTester.hashes_dict_python)
 
+# ciTester.dumpIntoFile()
+print(ciTester.hashes_dict_python)
+# print(ciTester.loadFromFile()==ciTester.hashes_dict_python)
 quit()
 #Should not be used yet
 retval=0
