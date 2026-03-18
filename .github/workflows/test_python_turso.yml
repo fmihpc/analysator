@@ -44,4 +44,7 @@ jobs:
             python -c 'import analysator as pt;pt.vlsvfile.__dict__'
             python -c 'import analysator as pt;pt.miscellaneous.__dict__'
 
-            
+        - name: Testing backend and vlsvreader 
+          run: |
+            . CI_env/bin/activate
+            python ./testpackage/testpackage_hashes.py
