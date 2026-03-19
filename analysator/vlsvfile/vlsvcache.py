@@ -39,6 +39,18 @@ try:
    __has_rtree = True
 except:
    __has_rtree = False
+   #Define dummy class
+   class rtree:
+      class index:
+         class Property:
+            dimension = None
+            overwrite = None
+            def __init__(self):
+               pass
+         def insert(self):
+            pass
+         def __init__(self, *args, **kwargs):
+            pass
 import time
 
 class VariableCache:
@@ -101,30 +113,7 @@ class FileCache:
       self.__rtree_index_files = []
       self.__rtree_index = None
       self.__rtree_idxfile = os.path.join(self.get_cache_folder(),"rtree.idx")
-      self.__rtree_datfile = os.path.join(self.get_cache_folder(),"rtree.dat")
-      try:
-         import rtree 
-         logging.info("Rtree found, but tread carefully - the file caching is somewhat unstable")
-         __has_rtree = True
-      except:
-         logging.debug("No Rtree found")
-         __has_rtree = False
-      if __has_rtree:
-         pass
-      else:
-         #Define dummy class
-         class rtree:
-            class index:
-               class Property:
-                  dimension = None
-                  overwrite = None
-                  def __init__(self):
-                     pass
-               def insert(self):
-                  pass
-               def __init__(self, *args, **kwargs):
-                  pass
-               
+      self.__rtree_datfile = os.path.join(self.get_cache_folder(),"rtree.dat")               
                
       self.__rtree_properties = rtree.index.Property()
       self.__rtree_properties.dimension = 3

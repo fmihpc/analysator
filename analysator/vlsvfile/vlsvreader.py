@@ -4340,6 +4340,7 @@ class VlsvReader(object):
       self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
 
    def get_cellid_spatial_index(self, force=False):
+      return None
       if not force:
          if self.__cellid_spatial_index is None:   
             self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
