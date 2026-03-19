@@ -40,16 +40,14 @@ class Tester:
     def loadFromFile(self):
         outdict={}
         with open("hashdump.txt","r") as file:
-            func_line=False
             for line in file:
                 line=line.rstrip('\n')
                 if line[:5]=="File:":
                     filename=line.split(" ")[1]
                     if filename not in outdict:
                         outdict[filename]={}
-                    func_line=True
                     continue
-                if func_line:
+                if "Function:" in line and "[" not in line: # bit stupid but works for now
                     function=line.split(" ")[1]
                     #There should not be multiples of function with same filename!
                     try:
@@ -57,9 +55,7 @@ class Tester:
                     except KeyError:
                         raise IOError("Invalid format of the input file")
 
-                    func_line=False
-                    
-                elif "[" in line: 
+                elif "[" in line or "NOTARG" in line: 
                     #above is bit stupid but should filter it little bit since the hash lines should have a list in them
                     listHashInfo=[item.strip('\t') for item in line.split(" ") if item!=""]
                     outdict[filename][function][listHashInfo[0]]=[listHashInfo[1],listHashInfo[2]]
@@ -83,7 +79,7 @@ class Tester:
         else:
             print("None set, give valid backend")
 
-    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=True,sort=False):
+    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=True,sort=False,argkey_name=None):
             
         def update(vlsvobj,op,opargs,args,hashdict,loop=False):
             #If we want to repeat same function func with different arguments
@@ -92,7 +88,11 @@ class Tester:
                     print(arg,args)
                     update(vlsvobj,op,opargs,arg,hashdict)
                 return 0
-            argkey=str(args)
+            if argkey_name:
+                argkey=str(argkey_name+"_NOTARG")
+            else:
+                argkey=str(args)
+            
             opsname="_"+str(op)+"_"+str(opargs)
             #Get the method of the vlsvobj that matches the given func str
             t=getattr(vlsvobj,func)
@@ -136,13 +136,16 @@ class Tester:
                 retval.reshape((-1,))
             if sort:
                 retval.sort()
+          
             if self.filename not in hashdict.keys():
                 hashdict[self.filename]={}
-                if func not in hashdict:
-                    hashdict[self.filename][func]={}
+            if func not in hashdict[self.filename]:
+                hashdict[self.filename][func]={}
+
             hashdict[self.filename][func][argkey]=[hashlib.sha256(retval.tobytes()).hexdigest(),opsname]
 
         if not both:
+            #of course fails if one or the other is not defined
             if self.vlsvobj==self.vlsvobj_python:
                 hashdict=self.hashes_dict_python
             elif self.vlsvobj==self.vlsvobj_rust:
@@ -177,7 +180,24 @@ class Tester:
             return True
         else:
             raise NotImplementedError 
-        
+    def interpolationtest(self,varname):
+        N = 1000#int(np.sqrt(800))
+        delta = 60e6
+        xmin = 45.0e6
+        xcoords = np.linspace(xmin,xmin+delta,N)
+        dx = xcoords[1]-xcoords[0]
+        ymin = -37.51e6 - 1e7*0
+        ycoords = np.linspace(ymin,delta+ymin,N)
+        dy = ycoords[1]-ycoords[0]
+        N = ycoords*xcoords
+        X,Y,Z = np.meshgrid(xcoords, ycoords,np.array([-0.25e6]))
+        ncoords = np.prod(X.shape)
+
+        coords = np.hstack((np.reshape(X,(ncoords))[:,np.newaxis],
+                            np.reshape(Y,(ncoords))[:,np.newaxis],
+                            np.reshape(Z,(ncoords))[:,np.newaxis]))
+
+        self.hash("read_interpolated_variable",[varname,coords],argkey_name="vg_v(interpolated)")
 
 #read ref from file
 #(Cellid as variable) reading single cellid ,reading cellid list, (input and output cellid should be same assertion).
@@ -209,6 +229,7 @@ for file in files:
     pylist=ciTester.vlsvobj_python.get_variables()
     variables=[[var] for var in variables_to_test if (var in pylist)] 
     nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist)] 
+
     if False: #Currently vlsvrs is not being used, this will be updated later when that is dependency to analysator 
         #Make hash rust
         ciTester.setHashTarget("rust")
@@ -222,12 +243,13 @@ for file in files:
 
     #Make hash python
     ciTester.setHashTarget("python")
+    ciTester.interpolationtest("vg_v")
     variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
     ciTester.hash("read_variable",variables,loop=True)
 
+print(ciTester.hashes_dict_python)
 ciTester.dumpIntoFile()
 os.system("cat hashdump.txt")
-print(ciTester.hashes_dict_python)
 print(ciTester.loadFromFile()==ciTester.hashes_dict_python)
 quit()
 #Should not be used yet
