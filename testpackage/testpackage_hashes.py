@@ -196,8 +196,14 @@ class Tester:
                             np.reshape(Y,(ncoords))[:,np.newaxis],
                             np.reshape(Z,(ncoords))[:,np.newaxis]))
 
-        self.hash("read_interpolated_variable",[varname,coords],argkey_name="vg_v(interpolated)")
-
+        self.hash("read_interpolated_variable",[varname,coords],argkey_name="vg_v")
+    def interpolationtest3(self):
+        RE=6371e3
+        coords=[[5*RE,RE,0.5*RE],np.array([[10*RE,RE,0.5*RE],[5*RE,RE,0.1*RE]]),np.array([[5*RE,RE,0.5*RE],[8*RE,RE,0.1*RE]])]
+        for i,coord in enumerate(coords):
+            self.hash("read_interpolated_variable",["proton/vg_rho", coord],argkey_name=f"proton/vg_rho_{i}")
+            self.hash("read_interpolated_variable",["proton/vg_v", coord],argkey_name=f"proton/vg_v_{i}")
+            self.hash("read_interpolated_variable",["proton/vg_ptensor",coord],argkey_name=f"proton/vg_ptensor_{i}") 
 #read ref from file
 #(Cellid as variable) reading single cellid ,reading cellid list, (input and output cellid should be same assertion).
 #vector (tensor variables from datareduction), read_variable, cellid 0 is nonexistant, error check.
@@ -244,6 +250,7 @@ for file in files:
     ciTester.setHashTarget("python")
     if "vg_v" in pylist:
         ciTester.interpolationtest2d("vg_v")
+        ciTester.interpolationtest3();
     variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
     ciTester.hash("read_variable",variables,loop=True)
 
