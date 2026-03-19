@@ -1225,10 +1225,16 @@ class VlsvReader(object):
       raise ValueError("Variable or attribute not found")
 
    def read_with_offset(self, datatype,variable_offset, read_size, read_offsets, element_size, vector_size):
+
+      # If someone had opened the filepointer already, let them handle it.
+      # They must know what they are doing, right? ;)
+      fptr_was_closed = True
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
       else:
          fptr = self.__fptr
+         fptr_was_closed = False
+
       if len(read_offsets) !=1:
          arraydata = []
       for r_offset in read_offsets:
@@ -1250,6 +1256,10 @@ class VlsvReader(object):
             arraydata.append(data)
       if len(read_offsets) !=1:
          data = np.array(arraydata)
+
+      # Close file pointer again if it was closed to begin with
+      if fptr_was_closed:
+         self.__fptr.close()
 
       return data
 
