@@ -185,11 +185,8 @@ class Tester:
         delta = 60e6
         xmin = 45.0e6
         xcoords = np.linspace(xmin,xmin+delta,N)
-        dx = xcoords[1]-xcoords[0]
         ymin = -37.51e6 - 1e7*0
         ycoords = np.linspace(ymin,delta+ymin,N)
-        dy = ycoords[1]-ycoords[0]
-        N = ycoords*xcoords
         X,Y,Z = np.meshgrid(xcoords, ycoords,np.array([-0.25e6]))
         ncoords = np.prod(X.shape)
 
