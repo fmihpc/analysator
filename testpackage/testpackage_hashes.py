@@ -7,8 +7,10 @@ import pickle
 import importlib
 
 datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vlasiator/"
-files=["3D/FID/bulk1/bulk1.0000995.vlsv",
+files=[
+        "3D/FID/bulk1/bulk1.0000995.vlsv",
        "3D/FHA/bulk1/bulk1.0000990.vlsv",
+       "2D/BGA/zero_ehall_layers_23/bulk.0000380.vlsv"
 ]
 
 class Tester:
@@ -180,7 +182,7 @@ class Tester:
             return True
         else:
             raise NotImplementedError 
-    def interpolationtest(self,varname):
+    def interpolationtest2d(self,varname):
         N = 1000#int(np.sqrt(800))
         delta = 60e6
         xmin = 45.0e6
@@ -240,7 +242,8 @@ for file in files:
 
     #Make hash python
     ciTester.setHashTarget("python")
-    ciTester.interpolationtest("vg_v")
+    if "vg_v" in pylist:
+        ciTester.interpolationtest2d("vg_v")
     variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
     ciTester.hash("read_variable",variables,loop=True)
 
