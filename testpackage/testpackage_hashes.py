@@ -5,13 +5,21 @@ import os
 import hashlib
 import pickle
 import importlib
-
+import argparse
 datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vlasiator/"
 files=[
         "3D/FID/bulk1/bulk1.0000995.vlsv",
        "3D/FHA/bulk1/bulk1.0000990.vlsv",
        "2D/BGA/zero_ehall_layers_23/bulk.0000380.vlsv"
 ]
+
+parser=argparse.ArgumentParser(
+        prog='ciTester',
+        description='Used for generating and comparing hashes from analysator output for CI testing.'
+        )
+parser.add_argument('--generate','-g',help="Generate hashdump into given path",const=str,nargs='?')
+args=parser.parse_args()
+generate_path=args.generate
 
 class Tester:
     def __init__(self,filename=None):
@@ -27,7 +35,10 @@ class Tester:
         pickle.dump(self.hashes_dict,file)
 
     def dumpIntoFile(self):
-        with open("hashdump.txt","w") as file:
+        path_to_file=os.path.join(generate_path,'hashdump.txt')
+        if os.path.isfile(path_to_file):
+            print(f"::warning:: hashdump.txt found in {generate_path}, overwriting!")
+        with open(path_to_file,"w") as file:
             for (filename,funcdict) in self.hashes_dict_python.items():
                 file.write("File: "+filename+'\n')
                 for (funccall,hashdict) in funcdict.items():
@@ -35,13 +46,14 @@ class Tester:
                     for (arg,hash_and_op) in hashdict.items():
                         hash=hash_and_op[0]
                         op=hash_and_op[1]
-                        file.write("\t\t"+f"{arg:<20} {hash} {op}"+'\n')
+                        file.write("\t\t"+f"{arg:<30} {hash} {op}"+'\n')
             file.close()
         assert(self.loadFromFile()==self.hashes_dict_python)
 
     def loadFromFile(self):
         outdict={}
-        with open("hashdump.txt","r") as file:
+        path_to_file=os.path.join(generate_path,'hashdump.txt')
+        with open(path_to_file,"r") as file:
             for line in file:
                 line=line.rstrip('\n')
                 if line[:5]=="File:":
@@ -214,67 +226,69 @@ class Tester:
 
 # read_vdf_spares 
 # 
-ciTester = Tester()
-# files=["s"]
-for file in files:
+#
+if __name__=="__main__":
+    ciTester = Tester()
+    for file in files:
 
-    #Load data 
-    filename=os.path.join(datalocation,file)
+        #Load data 
+        filename=os.path.join(datalocation,file)
 
-    ciTester.changeFile(filename)
-    ciTester.loadobj()
-    
-    #Test compare
-    # cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([0,0,0]))
-    # ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
-    
-    variables_to_test=["CellID","vg_rhom","vg_v","vg_rhoq","proton/vg_rho","proton/vg_v"] #fg_variable read issue with read_variable
-    variables_to_test_nonraw=["fg_b","fg_v"]
-    
-    pylist=ciTester.vlsvobj_python.get_variables()
-    variables=[[var] for var in variables_to_test if (var in pylist)] 
-    nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist)] 
-
-    if False: #Currently vlsvrs is not being used, this will be updated later when that is dependency to analysator 
-        #Make hash rust
-        ciTester.setHashTarget("rust")
-        #ciTester.hash("read_variable",{"variable":"CellID","op":0},op=["reshape","astype","numpy.sort"],opargs=[[tuple([-1])],[int],[]],sort=False,flatten=False)
+        ciTester.changeFile(filename)
+        ciTester.loadobj()
+        
+        #Test compare
+        # cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([0,0,0]))
+        # ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
+        
+        variables_to_test=["CellID","vg_rhom","vg_v","vg_rhoq","proton/vg_rho","proton/vg_v"] #fg_variable read issue with read_variable
+        variables_to_test_nonraw=["fg_b","fg_v"]
+        
         pylist=ciTester.vlsvobj_python.get_variables()
-        rustlist=ciTester.vlsvobj_rust.list_variables()
-        variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
-        nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
-        ciTester.hash("read_variable_raw",variables,loop=True)
-        ciTester.hash("read_variable",nonraw_vars,loop=True)
+        variables=[[var] for var in variables_to_test if (var in pylist)] 
+        nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist)] 
 
-    #Make hash python
-    ciTester.setHashTarget("python")
-    if "vg_v" in pylist:
-        ciTester.interpolationtest2d("vg_v")
-        ciTester.interpolationtest3();
-    variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
-    ciTester.hash("read_variable",variables,loop=True)
+        if False: #Currently vlsvrs is not being used, this will be updated later when that is dependency to analysator 
+            #Make hash rust
+            ciTester.setHashTarget("rust")
+            #ciTester.hash("read_variable",{"variable":"CellID","op":0},op=["reshape","astype","numpy.sort"],opargs=[[tuple([-1])],[int],[]],sort=False,flatten=False)
+            pylist=ciTester.vlsvobj_python.get_variables()
+            rustlist=ciTester.vlsvobj_rust.list_variables()
+            variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
+            nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
+            ciTester.hash("read_variable_raw",variables,loop=True)
+            ciTester.hash("read_variable",nonraw_vars,loop=True)
 
-print(ciTester.hashes_dict_python)
-ciTester.dumpIntoFile()
-os.system("cat hashdump.txt")
-print(ciTester.loadFromFile()==ciTester.hashes_dict_python)
-quit()
+        #Make hash python
+        ciTester.setHashTarget("python")
+        if "vg_v" in pylist:
+            ciTester.interpolationtest2d("vg_v")
+            ciTester.interpolationtest3();
+        variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
+        ciTester.hash("read_variable",variables,loop=True)
+
+    if generate_path:
+        print(ciTester.hashes_dict_python)
+        ciTester.dumpIntoFile()
+        os.system(f"cat {os.path.join(generate_path,'hashdump.txt')}")
+        assert(ciTester.loadFromFile()==ciTester.hashes_dict_python)
+    quit()
 #Should not be used yet
-retval=0
-key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"}
-for file in ciTester.hashes_dict_rust.keys():
-    print(f"------{file}------")
-    for key in ciTester.hashes_dict_rust[file].keys():
-        py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
-        rust_dict=ciTester.hashes_dict_rust[file][key]
-        for argcall in rust_dict.keys():
-            if rust_dict[argcall][0]!=py_dict[argcall][0]:
-                print(rust_dict[argcall][0],py_dict[argcall][0])
-                print(f"Hashes do not match for call {argcall}!")
-                retval=1
-            else:
-                print("Match")
+    retval=0
+    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"}
+    for file in ciTester.hashes_dict_rust.keys():
+        print(f"------{file}------")
+        for key in ciTester.hashes_dict_rust[file].keys():
+            py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
+            rust_dict=ciTester.hashes_dict_rust[file][key]
+            for argcall in rust_dict.keys():
+                if rust_dict[argcall][0]!=py_dict[argcall][0]:
+                    print(rust_dict[argcall][0],py_dict[argcall][0])
+                    print(f"Hashes do not match for call {argcall}!")
+                    retval=1
+                else:
+                    print("Match")
 
-if retval==1:
-    raise SystemError("Some hashes did not match")
- 
+    if retval==1:
+        raise SystemError("Some hashes did not match")
+    
