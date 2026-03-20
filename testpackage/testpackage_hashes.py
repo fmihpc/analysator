@@ -9,8 +9,8 @@ import argparse
 datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vlasiator/"
 files=[
         "3D/FID/bulk1/bulk1.0000995.vlsv",
-       "3D/FHA/bulk1/bulk1.0000990.vlsv",
-       "2D/BGA/zero_ehall_layers_23/bulk.0000380.vlsv"
+        "3D/FHA/bulk1/bulk1.0000990.vlsv",
+        "2D/BGA/zero_ehall_layers_23/bulk.0000380.vlsv"
 ]
 
 parser=argparse.ArgumentParser(
@@ -97,7 +97,7 @@ class Tester:
         else:
             print("None set, give valid backend")
 
-    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=True,sort=False,argkey_name=None):
+    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=True,sort=False,argkey_name=None,novlsv=False):
             
         def update(vlsvobj,op,opargs,args,hashdict,loop=False):
             #If we want to repeat same function func with different arguments
@@ -112,7 +112,10 @@ class Tester:
             
             opsname="_"+str(op)+"_"+str(opargs)
             #Get the method of the vlsvobj that matches the given func str
-            t=getattr(vlsvobj,func)
+            if not novlsv:
+                t=getattr(vlsvobj,func)
+            else: 
+                t=func
             #Handle arguments and call the function with the given args to get return value
             if type(args) is dict:
                 retval=t(**args)
@@ -152,13 +155,12 @@ class Tester:
                 retval.reshape((-1,))
             if sort:
                 retval.sort()
-          
+            funname=func.__name__ if callable(func) else func 
             if self.filename not in hashdict.keys():
                 hashdict[self.filename]={}
             if func not in hashdict[self.filename]:
-                hashdict[self.filename][func]={}
-
-            hashdict[self.filename][func][argkey]=[hashlib.sha256(retval.tobytes()).hexdigest(),opsname]
+                hashdict[self.filename][funname]={}
+            hashdict[self.filename][funname][argkey]=[hashlib.sha256(retval.tobytes()).hexdigest(),opsname]
 
         if not both:
             #of course fails if one or the other is not defined
@@ -266,6 +268,20 @@ if __name__=="__main__":
         if "proton/vg_v" in pylist:
             ciTester.interpolationtest2d("proton/vg_v")
             ciTester.interpolationtest3();
+        if "3D" in ciTester.filename:
+            RE = 6371.0E+3
+            box = [-45,+20,-30,+30,-1,+1]
+            xmin, xmax, ymin, ymax, zmin, zmax = np.array(box) * RE
+            ciTester.hash(pt.calculations.cut3d,{
+                "vlsvReader":ciTester.vlsvobj,
+                "xmin":xmin,
+                "xmax":xmax,
+                "ymin":ymin,
+                "ymax":ymax,
+                "zmin":zmin,
+                "zmax":zmax,
+                "variable":"vg_connection"},novlsv=True,argkey_name="vg_connection")
+
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
         ciTester.hash("read_variable",variables,loop=True)
 
