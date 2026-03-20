@@ -270,9 +270,13 @@ if __name__=="__main__":
         ciTester.hash("read_variable",variables,loop=True)
 
     if generate_path:
-        ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
-        os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
-        #ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
+        if ciTester.hashes_dict_python is not None:
+            ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
+            os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
+        if ciTester.hashes_dict_rust is not None:
+            ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
+            os.system(f"cat {os.path.join(generate_path,'hashdump_rust.txt')}")
+            
     if compare_path:
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
@@ -286,7 +290,7 @@ if __name__=="__main__":
                 continue
 
             if refDict!=1:
-               if refDict!=hashdict: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
+               if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
                    raise SystemError("Hashes differ")
                elif refDict==hashdict:
                    print("Hash dictionaries match")
