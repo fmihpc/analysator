@@ -210,7 +210,7 @@ class Tester:
                             np.reshape(Y,(ncoords))[:,np.newaxis],
                             np.reshape(Z,(ncoords))[:,np.newaxis]))
 
-        self.hash("read_interpolated_variable",[varname,coords],argkey_name="vg_v")
+        self.hash("read_interpolated_variable",[varname,coords],argkey_name=varname)
     def interpolationtest3(self):
         RE=6371e3
         coords=[[5*RE,RE,0.5*RE],np.array([[10*RE,RE,0.5*RE],[5*RE,RE,0.1*RE]]),np.array([[5*RE,RE,0.5*RE],[8*RE,RE,0.1*RE]])]
@@ -263,8 +263,8 @@ if __name__=="__main__":
 
         #Make hash python
         ciTester.setHashTarget("python")
-        if "vg_v" in pylist:
-            ciTester.interpolationtest2d("vg_v")
+        if "proton/vg_v" in pylist:
+            ciTester.interpolationtest2d("proton/vg_v")
             ciTester.interpolationtest3();
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
         ciTester.hash("read_variable",variables,loop=True)
