@@ -202,7 +202,7 @@ class VlsvReader(object):
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
-      self.__variable_cache = vlsvcache.VariableCache(self) # {(varname, operator):data}
+      self.__variable_cache = vlsvcache.VariableCache() # {(varname, operator):data}
       self.__params_cache = {} # {name:data}
 
       self.__pops_init = False
@@ -323,7 +323,7 @@ class VlsvReader(object):
       '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
       pth, base = os.path.split(self.file_name)
       
-      s = os.path.join(self.__metadata_cache.get_cache_folder(),"linked_readers.txt")
+      s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
@@ -549,7 +549,7 @@ class VlsvReader(object):
       # print("fileindex!")
       cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
-      #Check if it is not iterable. If it is a scale then make it a list
+      #Check if it is not iterable. If it is a scalar then make it a list (single-cell runs?)
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
       # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
@@ -2690,8 +2690,11 @@ class VlsvReader(object):
       if coords.shape[0] == 0:
          return
 
+      # We already know everything, do nothing and return
+      if self.__full_fileindex_for_cellid:
+         return
+
       if self.get_cellid_spatial_index() == None:
-         
          self.__read_fileindex_for_cellid()
          return
 
@@ -4347,17 +4350,17 @@ class VlsvReader(object):
             self.__neighbors_cache_loaded = True
 
    def set_cellid_spatial_index(self, force=False):
-      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
    def get_cellid_spatial_index(self, force=False):
       return None
       if not force:
          if self.__cellid_spatial_index is None:   
-            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
+            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(self, force)
          else:
             pass
       else:
-         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
       return self.__cellid_spatial_index
 
@@ -4370,4 +4373,4 @@ class VlsvReader(object):
       ''' Create cached optimization files for this reader object (e.g. spatial index)
       
       '''
-      self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__metadata_cache.set_cellid_spatial_index(self, force)
