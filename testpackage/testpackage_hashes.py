@@ -23,8 +23,8 @@ generate_path=args.generate
 compare_path=args.compare
 
 class Tester:
-    def __init__(self,filename=None):
-        self.filename=filename
+    def __init__(self):
+        self.filename=None
         self.vlsvobj=None
         self.hashes_dict_rust={}
         self.hashes_dict_python={}
@@ -151,8 +151,6 @@ class Tester:
 
             #save hash of the retval as array
             retval=np.array(retval)
-            if flatten:
-                retval.reshape((-1,))
             if sort:
                 retval.sort()
             funname=func.__name__ if callable(func) else func 
@@ -160,7 +158,10 @@ class Tester:
                 hashdict[self.filename]={}
             if func not in hashdict[self.filename]:
                 hashdict[self.filename][funname]={}
-            hashdict[self.filename][funname][argkey]=[hashlib.sha256(retval.tobytes()).hexdigest(),opsname]
+            bytedata=retval.tobytes()
+            if not flatten:
+                bytedata+=np.array(retval.shape).tobytes()
+            hashdict[self.filename][funname][argkey]=[hashlib.sha256(bytedata).hexdigest(),opsname]
 
         if not both:
             #of course fails if one or the other is not defined
@@ -212,14 +213,14 @@ class Tester:
                             np.reshape(Y,(ncoords))[:,np.newaxis],
                             np.reshape(Z,(ncoords))[:,np.newaxis]))
 
-        self.hash("read_interpolated_variable",[varname,coords],argkey_name=varname)
+        self.hash("read_interpolated_variable",[varname,coords],argkey_name=varname,flatten=False)
     def interpolationtest3(self):
         RE=6371e3
         coords=[[5*RE,RE,0.5*RE],np.array([[10*RE,RE,0.5*RE],[5*RE,RE,0.1*RE]]),np.array([[5*RE,RE,0.5*RE],[8*RE,RE,0.1*RE]])]
         for i,coord in enumerate(coords):
-            self.hash("read_interpolated_variable",["proton/vg_rho", coord],argkey_name=f"proton/vg_rho_{i}")
-            self.hash("read_interpolated_variable",["proton/vg_v", coord],argkey_name=f"proton/vg_v_{i}")
-            self.hash("read_interpolated_variable",["proton/vg_ptensor",coord],argkey_name=f"proton/vg_ptensor_{i}") 
+            self.hash("read_interpolated_variable",["proton/vg_rho", coord],argkey_name=f"proton/vg_rho_{i}",flatten=False)
+            self.hash("read_interpolated_variable",["proton/vg_v", coord],argkey_name=f"proton/vg_v_{i}",flatten=False)
+            self.hash("read_interpolated_variable",["proton/vg_ptensor",coord],argkey_name=f"proton/vg_ptensor_{i}",flatten=False) 
 #read ref from file
 #(Cellid as variable) reading single cellid ,reading cellid list, (input and output cellid should be same assertion).
 #vector (tensor variables from datareduction), read_variable, cellid 0 is nonexistant, error check.
@@ -280,7 +281,7 @@ if __name__=="__main__":
                 "ymax":ymax,
                 "zmin":zmin,
                 "zmax":zmax,
-                "variable":"vg_connection"},novlsv=True,argkey_name="vg_connection")
+                "variable":"vg_connection"},novlsv=True,argkey_name="vg_connection",flatten=False)
 
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
         ciTester.hash("read_variable",variables,loop=True)
