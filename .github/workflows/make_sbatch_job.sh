@@ -6,7 +6,7 @@ fi
 
 #if sbatch fails as it gets the error code from python it tries to print the log 
 #   first with srun (in case the file has not yet updated on the front end)
-#   second if srun fails (in case communication failure) it tries to cat it on thde frontend (may be empty if file has not been updated pyproject)
+#   second if srun fails (in case communication failure) it tries to cat it on the frontend (may be empty if file has not been updated pyproject)
 
 sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || true
 
