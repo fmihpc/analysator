@@ -202,7 +202,7 @@ class VlsvReader(object):
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
-      self.__variable_cache = vlsvcache.VariableCache(self) # {(varname, operator):data}
+      self.__variable_cache = vlsvcache.VariableCache() # {(varname, operator):data}
       self.__params_cache = {} # {name:data}
 
       self.__pops_init = False
@@ -323,11 +323,10 @@ class VlsvReader(object):
       '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
       pth, base = os.path.split(self.file_name)
       
-      s = os.path.join(self.__metadata_cache.get_cache_folder(),"linked_readers.txt")
+      s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
-      # self.__linked_files = self.__metadata_cache.get_metadata("linked_reader_files", set())
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
@@ -549,7 +548,7 @@ class VlsvReader(object):
       # print("fileindex!")
       cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
-      #Check if it is not iterable. If it is a scale then make it a list
+      #Check if it is not iterable. If it is a scalar then make it a list (single-cell runs?)
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
       # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
@@ -1430,7 +1429,12 @@ class VlsvReader(object):
                data=data.reshape(result_size, vector_size)
 
             if not isinstance(cellids, numbers.Number):
-               data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               if np.issubdtype(data.dtype, np.floating):
+                  data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               elif np.issubdtype(data.dtype, np.integer):
+                  data_out = np.full_like(data, np.iinfo(data.dtype).min, shape=(len(cellids),*data.shape[1:]))
+               else:
+                  raise ValueError("unexpected dtype encountered in read ("+str(data.dtype)+")")
                data_out[cellids!=0,...] = data
                data = data_out
             
@@ -2074,7 +2078,7 @@ class VlsvReader(object):
    def get_fsgrid_decomposition(self):
       # Try if in metadata
       if(self.__fsGridDecomposition is not None):
-         print("read ",self.__fsGridDecomposition)
+         logging.info("read " + str(self.__fsGridDecomposition))
 
       if self.__fsGridDecomposition is None:
          self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
@@ -2085,7 +2089,7 @@ class VlsvReader(object):
             logging.info("Did not find FsGrid decomposition from vlsv file.")
       
       if self.__fsGridDecomposition is None:
-         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(self,("MESH_DECOMPOSITION","fsgrid"),None)
          if self.__fsGridDecomposition is not None:
             logging.info("Found FsGrid decomposition from metadata file: " + str(self.__fsGridDecomposition))
             return self.__fsGridDecomposition
@@ -2098,7 +2102,7 @@ class VlsvReader(object):
          logging.info("Calculating fsGrid decomposition from the file")
          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-         self.__metadata_cache.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+         self.__metadata_cache.add_metadata(self,("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
          return self.__fsGridDecomposition
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
@@ -2245,8 +2249,8 @@ class VlsvReader(object):
       ''' Prints the contents of the metadata cache file.
       '''
 
-      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename()+":")
-      self.__metadata_cache.get_metadata("dummy",None) # Dummy call to read in the metadata file
+      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename(self)+":")
+      self.__metadata_cache.get_metadata(self,"dummy",None) # Dummy call to read in the metadata file
       for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
          print(k, v)
 
@@ -2690,8 +2694,11 @@ class VlsvReader(object):
       if coords.shape[0] == 0:
          return
 
+      # We already know everything, do nothing and return
+      if self.__full_fileindex_for_cellid:
+         return
+
       if self.get_cellid_spatial_index() == None:
-         
          self.__read_fileindex_for_cellid()
          return
 
@@ -4347,17 +4354,17 @@ class VlsvReader(object):
             self.__neighbors_cache_loaded = True
 
    def set_cellid_spatial_index(self, force=False):
-      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
    def get_cellid_spatial_index(self, force=False):
       return None
       if not force:
          if self.__cellid_spatial_index is None:   
-            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
+            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(self, force)
          else:
             pass
       else:
-         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
       return self.__cellid_spatial_index
 
@@ -4370,4 +4377,4 @@ class VlsvReader(object):
       ''' Create cached optimization files for this reader object (e.g. spatial index)
       
       '''
-      self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__metadata_cache.set_cellid_spatial_index(self, force)
