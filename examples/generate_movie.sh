@@ -56,13 +56,13 @@ fi;
 #module load mayavi2
 module purge
 module load Python/3.7.2-GCCcore-8.2.0
-export PATH=/proj/jesuni/projappl/tex-basic/texlive/2020/bin/x86_64-linux:$PATH
+export PATH=/turso/group/spacephysics/applications/tex-basic/texlive/2023/bin/x86_64-linux:$PATH
 module load matplotlib
 
 export PTNONINTERACTIVE=1
 #export PTNOLATEX=1
 export PTNOLATEX=
-export PTOUTPUTDIR=/wrk/users/markusb/Plots/
+export PTOUTPUTDIR=~/Plots/
 
 python generate_panel.py $start $end
 echo Job $SLURM_ARRAY_TASK_ID complete.

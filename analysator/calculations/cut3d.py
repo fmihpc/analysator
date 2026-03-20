@@ -34,12 +34,12 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
 
        :param vlsvReader:         Some VlsvReader with a file open
        :type vlsvReader:          :class:`vlsvfile.VlsvReader`
-       :param xmin:               The minimum x coordinate of the 2d cut
-       :param xmax:               The maximum x coordinate of the 2d cut
-       :param ymin:               The minimum y coordinate of the 2d cut
-       :param ymax:               The maximum y coordinate of the 2d cut
-       :param zmin:               The minimum z coordinate of the 2d cut
-       :param zmax:               The maximum z coordinate of the 2d cut
+       :param xmin:               The minimum x coordinate of the 3d cut
+       :param xmax:               The maximum x coordinate of the 3d cut
+       :param ymin:               The minimum y coordinate of the 3d cut
+       :param ymax:               The maximum y coordinate of the 3d cut
+       :param zmin:               The minimum z coordinate of the 3d cut
+       :param zmax:               The maximum z coordinate of the 3d cut
        :param variable:           Some variable to read from the vlsv file
        :param operator:           The variable operator
        :param trim_array:         If true, shapes the array into an array with minimum amount of dimensions, e.g. if the cut is zmax-zmin=0 then this will return a 2d array
@@ -112,28 +112,28 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
                                (int)((max_coordinates[1] - min_coordinates[1]) / cell_lengths[1] + 1),
                                (int)((max_coordinates[2] - min_coordinates[2]) / cell_lengths[2] + 1)
                                ])
-   array = [[np.zeros(array_dimensions[0]) for i in range(array_dimensions[1])] for j in range(array_dimensions[2])]
 
-   # Optimize file read:
-   vlsvReader.optimize_open_file()
-   # Loop through the array
-   for k in range(array_dimensions[2]):
-      for j in range(array_dimensions[1]):
-         for i in range(array_dimensions[0]):
-            coordinates = np.array([
-                                   min_coordinates[0] + i*cell_lengths[0],
-                                   min_coordinates[1] + j*cell_lengths[1],
-                                   min_coordinates[2] + k*cell_lengths[2]
-                                   ])
-            #logging.info str(k) + " " + str(j) + " " + str(i) + " " + str(np.shape(array))
-            array[k][j][i] = vlsvReader.read_variable(variable, cellids=vlsvReader.get_cellid(coordinates), operator=operator)
+   # Create the uniform coordinate array:
+   max_coords_adjusted = min_coordinates + array_dimensions*cell_lengths
+   Xs,Ys,Zs = np.meshgrid(np.linspace(min_coordinates[0],max_coords_adjusted[0], array_dimensions[0], endpoint=False),
+                          np.linspace(min_coordinates[1],max_coords_adjusted[1], array_dimensions[1], endpoint=False),
+                          np.linspace(min_coordinates[2],max_coords_adjusted[2], array_dimensions[2], endpoint=False),
+                              indexing="ij")
 
-   # Close optimization
-   vlsvReader.optimize_close_file()
+   coords_lin = np.reshape(np.stack((Xs,Ys,Zs),axis=-1), (-1,3))
+
+   cellids_array = vlsvReader.get_cellid(coords_lin)
+   data_arr = vlsvReader.read_variable(variable, cellids=cellids_array, operator=operator)
+   test_var = vlsvReader.read_variable(variable, cellids=[1], operator=operator)
+   var_dims = test_var.shape
+
+   data_arr = np.reshape(data_arr, (*array_dimensions,*var_dims))
+   # Transpose to fit the previous implementation
+   data_arr = data_arr.transpose((2,1,0, *[i+3 for i in range(len(var_dims))]))
 
    # Check for trimming:
    if trim_array == True:
-      shape = np.shape(array)
+      shape = np.shape(data_arr)
       new_shape = []
       # Loop through shape:
       for i in range(len(shape)):
@@ -141,6 +141,6 @@ def cut3d( vlsvReader, xmin, xmax, ymin, ymax, zmin, zmax, variable, operator="p
          if shape[i] > 1:
             new_shape.append( shape[i] )
       # Reshape:
-      array = np.reshape(array, new_shape)
-   return array
+      data_arr = np.reshape(data_arr, new_shape)
+   return data_arr
 

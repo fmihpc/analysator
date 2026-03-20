@@ -21,7 +21,9 @@ author = 'Sameli'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.coverage'
 ]
 
 templates_path = ['_templates']
