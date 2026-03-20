@@ -15,8 +15,7 @@ files=[
 
 parser=argparse.ArgumentParser(
         prog='ciTester',
-        description='Used for generating and comparing hashes from analysator output for CI testing.'
-        )
+        description='Used for generating and comparing hashes from analysator output for CI testing.')
 parser.add_argument('--generate','-g',help="Generate hashdump into given path",const=str,nargs='?')
 parser.add_argument('--compare','-c',help="Compare against given hashdump",const=str,nargs='?')
 args=parser.parse_args()
@@ -277,22 +276,22 @@ if __name__=="__main__":
     if compare_path:
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
-             refDict=ciTester.loadFromFile(hashdump)
-             if ciTester.hashes_dict_python is not None and i==0:
-                 hashdict=ciTester.hashes_dict_python
-             elif ciTester.hashes_dict_rust is not None and i==1:
-                 hashdict=ciTester.hashes_dict_rust 
-             else:
-                 print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
-                 continue
-
-             if refDict!=1:
-                if refDict!=hashdict: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
-                    raise SystemError("Hashes differ")
-                elif refDict==hashdict:
-                    print("Hash dictionaries match")
+            refDict=ciTester.loadFromFile(hashdump)
+            if ciTester.hashes_dict_python is not None and i==0:
+                hashdict=ciTester.hashes_dict_python
+            elif ciTester.hashes_dict_rust is not None and i==1:
+                hashdict=ciTester.hashes_dict_rust 
             else:
-                retval=1
+                print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
+                continue
+
+            if refDict!=1:
+               if refDict!=hashdict: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
+                   raise SystemError("Hashes differ")
+               elif refDict==hashdict:
+                   print("Hash dictionaries match")
+            else:
+               retval=1
 
     quit()
 #Should not be used yet

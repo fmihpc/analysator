@@ -39,7 +39,7 @@ jobs:
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
             
-            DATAPATH="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets_hashes/$(git rev-parse HEAD)"
+            DATAPATH="/turso/group/spacephysics/analysator/CI/verification_sets_hashes/$(git rev-parse HEAD)"
             mkdir $DATAPATH
             touch $DATAPATH/.lockfile
             srun --constraint="carrington" --mem=5G -c 1 bash -c "ml Python/3.10; . CI_env/bin/activate; python testpackage/testpackage_hashes.py -g $DATAPATH"  

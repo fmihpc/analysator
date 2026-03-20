@@ -39,7 +39,7 @@ jobs:
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
             
-            DATAPATH="/wrk-kappa/group/spacephysics/analysator/CI/verification_sets/$(git rev-parse HEAD)"
+            DATAPATH="/turso/group/spacephysics/analysator/CI/verification_sets/$(git rev-parse HEAD)"
             mkdir $DATAPATH
             touch $DATAPATH/.lockfile
             sbatch -W -o testpackage_gen_verf.txt --job-name gen_verf_plots ./testpackage/run_testpackage_generate_verf_set.sh $DATAPATH > jobid.txt
