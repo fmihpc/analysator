@@ -55,6 +55,9 @@ class Tester:
     def loadFromFile(self,dumpname,compare_path=compare_path):
         outdict={}
         path_to_file=os.path.join(compare_path,dumpname)
+        if not os.path.isfile(path_to_file):
+            print(f"::warning::Tried to load file {path_to_file} but no file found, skipping this dictionary")
+            return 1
         with open(path_to_file,"r") as file:
             for line in file:
                 line=line.rstrip('\n')
@@ -272,15 +275,30 @@ if __name__=="__main__":
         os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
         #ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
     if compare_path:
-         refDict=ciTester.loadFromFile("hashdump_python.txt")
-         if refDict!=ciTester.hashes_dict_python: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
-            raise SystemError("Hashes differ")
-         elif refDict==ciTester.hashes_dict_python:
-            print("Hash dictionaries match")
+        dumps=["hashdump_python.txt","hashdump_rust.txt"]
+        for i,hashdump in enumerate(dumps):
+             refDict=ciTester.loadFromFile(hashdump)
+             if ciTester.hashes_dict_python is not None and i=0:
+                 hashdict=ciTester.hashes_dict_python
+             elif ciTester.hashes_dict_rust is not None and i=1:
+                 hashdict=ciTester.hashes_dict_rust 
+             else:
+                 print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
+                 continue
+
+             if refDict!=1:
+                if refDict!=hashdict: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
+                    raise SystemError("Hashes differ")
+                elif refDict==hashdict:
+                    print("Hash dictionaries match")
+            else:
+                retval=1
+
     quit()
 #Should not be used yet
-    retval=0
-    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"}
+    if retval!=1:
+        retval=0
+    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
     for file in ciTester.hashes_dict_rust.keys():
         print(f"------{file}------")
         for key in ciTester.hashes_dict_rust[file].keys():
@@ -292,7 +310,7 @@ if __name__=="__main__":
                     print(f"Hashes do not match for call {argcall}!")
                     retval=1
                 else:
-                    print("Match")
+                    continue
 
     if retval==1:
         raise SystemError("Some hashes did not match")
