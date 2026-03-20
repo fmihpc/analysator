@@ -276,7 +276,7 @@ if __name__=="__main__":
         if ciTester.hashes_dict_rust is not None:
             ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
             os.system(f"cat {os.path.join(generate_path,'hashdump_rust.txt')}")
-            
+
     if compare_path:
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
@@ -291,7 +291,8 @@ if __name__=="__main__":
 
             if refDict!=1:
                if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
-                   raise SystemError("Hashes differ")
+                   diff=set([(hashi[0],hashi[1][0]) for hashi in refDict.items()])^set([(hashi[0],hashi[1][0]) for hashi in hashdict.items()])
+                   raise SystemError(f"Hashes differ:\n {diff}")
                elif refDict==hashdict:
                    print("Hash dictionaries match")
             else:
