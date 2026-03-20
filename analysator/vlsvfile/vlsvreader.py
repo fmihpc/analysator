@@ -155,6 +155,8 @@ class VlsvReader(object):
 
    file_name=""
    def __del__(self):
+      self.optimize_clear_fileindex_for_cellid()
+      self.optimize_clear_fileindex_for_cellid_blocks()
       if (hasattr(self, "__fptr")) and self.__fptr is not None:
          self.__fptr.close()
 
