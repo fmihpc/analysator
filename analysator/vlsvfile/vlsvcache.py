@@ -185,9 +185,9 @@ class FileCache:
 
       return self.__rtree_index
 
-   def add_metadata(self, key, value):
+   def add_metadata(self, reader, key, value):
       self.__metadata_dict[key] = value
-      self.save_metadata()
+      self.save_metadata(reader)
 
    def get_metadata_filename(self, reader):
       pth, base = os.path.split(reader.file_name)
@@ -206,7 +206,7 @@ class FileCache:
       except Exception as e:
          logging.warning("Could not save metadata file, error: "+str(e))
 
-   def get_metadata(self, key, default):
+   def get_metadata(self, reader, key, default):
       ''' Read metadata from metadata file/memory, and if not available,
       return the given default value.
 
@@ -216,11 +216,11 @@ class FileCache:
 
       if not self.__metadata_read:
          try:
-            fn = self.get_metadata_filename()
+            fn = self.get_metadata_filename(reader)
             with open(fn,'rb') as f:
                self.__metadata_dict = pickle.load(f)
          except Exception as e:
-            logging.debug("No metadata file found at "+self.get_metadata_filename()+":\n"+str(e))
+            logging.debug("No metadata file found at "+self.get_metadata_filename(reader)+":\n"+str(e))
             
          self.__metadata_read = True
      
