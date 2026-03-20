@@ -39,14 +39,26 @@ try:
    __has_rtree = True
 except:
    __has_rtree = False
+   #Define dummy class
+   class rtree:
+      class index:
+         class Property:
+            dimension = None
+            overwrite = None
+            def __init__(self):
+               pass
+         def insert(self):
+            pass
+         def __init__(self, *args, **kwargs):
+            pass
 import time
 
 class VariableCache:
     ''' Class for handling in-memory variable/reducer caching.
+    TODO: Add some maximum memory use guards.
     '''
-    def __init__(self, reader):
+    def __init__(self):
         self.__varcache = {} # {(varname, operator):data}
-        self.__reader = reader
 
     def keys(self):
         return self.__varcache.keys()
@@ -58,7 +70,7 @@ class VariableCache:
        self.__varcache[key] = value
        
 
-    def read_variable_from_cache(self, name, cellids, operator):
+    def read_variable_from_cache(self, reader, name, cellids, operator):
       ''' Read variable from cache instead of the vlsv file.
          :param name: Name of the variable
          :param cellids: a value of -1 reads all data
@@ -78,10 +90,10 @@ class VariableCache:
          if cellids == -1:
             return var_data
          else:
-            return var_data[self.__reader.get_cellid_locations()[cellids]]
+            return var_data[reader.get_cellid_locations()[cellids]]
       else:
          if(len(cellids) > 0):
-            indices = np.array(itemgetter(*cellids)(self.__reader.get_cellid_locations()),dtype=np.int64)
+            indices = np.array(itemgetter(*cellids)(reader.get_cellid_locations()),dtype=np.int64)
          else:
             indices = np.array([],dtype=np.int64)
          if value_len == 1:
@@ -94,45 +106,21 @@ class FileCache:
    '''
 
    def __init__(self, reader) -> None:
-      self.__reader = reader
       self.__metadata_dict = {}
       self.__metadata_read = False
       
       self.__rtree_index_files = []
       self.__rtree_index = None
-      self.__rtree_idxfile = os.path.join(self.get_cache_folder(),"rtree.idx")
-      self.__rtree_datfile = os.path.join(self.get_cache_folder(),"rtree.dat")
-      try:
-         import rtree 
-         logging.info("Rtree found, but tread carefully - the file caching is somewhat unstable")
-         __has_rtree = True
-      except:
-         logging.debug("No Rtree found")
-         __has_rtree = False
-      if __has_rtree:
-         pass
-      else:
-         #Define dummy class
-         class rtree:
-            class index:
-               class Property:
-                  dimension = None
-                  overwrite = None
-                  def __init__(self):
-                     pass
-               def insert(self):
-                  pass
-               def __init__(self, *args, **kwargs):
-                  pass
-               
+      self.__rtree_idxfile = os.path.join(self.get_cache_folder(reader),"rtree.idx")
+      self.__rtree_datfile = os.path.join(self.get_cache_folder(reader),"rtree.dat")               
                
       self.__rtree_properties = rtree.index.Property()
       self.__rtree_properties.dimension = 3
       self.__rtree_properties.overwrite=True
 
 
-   def get_cache_folder(self):
-      fn = self.__reader.file_name
+   def get_cache_folder(self, reader):
+      fn = reader.file_name
 
       head,tail = os.path.split(fn)
       path = head
@@ -158,14 +146,14 @@ class FileCache:
 
       return path
 
-   def clear_cache_folder(self):
-      path = self.get_cache_folder()
+   def clear_cache_folder(self, reader):
+      path = self.get_cache_folder(reader)
       import shutil
       shutil.rmtree(path)
 
-   def set_cellid_spatial_index(self, force = False):
-      if not os.path.exists(self.get_cache_folder()):
-         os.makedirs(self.get_cache_folder())
+   def set_cellid_spatial_index(self, reader, force = False):
+      if not os.path.exists(self.get_cache_folder(reader)):
+         os.makedirs(self.get_cache_folder(reader))
 
       if force:
          if os.path.exists(self.__rtree_idxfile):
@@ -175,7 +163,7 @@ class FileCache:
       if(not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile)):
          t0 = time.time()
          
-         bboxes = self.__reader.get_mesh_domain_extents("SpatialGrid")
+         bboxes = reader.get_mesh_domain_extents("SpatialGrid")
          bboxes = bboxes.reshape((-1,6), order='C')
 
          self.__rtree_index = rtree.index.Index(self.__rtree_idxfile[:-4],properties=self.__rtree_properties, interleaved=False)
@@ -186,10 +174,10 @@ class FileCache:
       else:
          pass
 
-   def get_cellid_spatial_index(self, force = False):
+   def get_cellid_spatial_index(self, reader, force = False):
       if self.__rtree_index == None:
          if(force):
-            self.set_cellid_spatial_index(force)
+            self.set_cellid_spatial_index(reader, force)
          elif not os.path.isfile(self.__rtree_idxfile) or not os.path.isfile(self.__rtree_datfile):
             self.__rtree_index = None
          else:
@@ -201,17 +189,17 @@ class FileCache:
       self.__metadata_dict[key] = value
       self.save_metadata()
 
-   def get_metadata_filename(self):
-      pth, base = os.path.split(self.__reader.file_name)
-      path = self.get_cache_folder()
+   def get_metadata_filename(self, reader):
+      pth, base = os.path.split(reader.file_name)
+      path = self.get_cache_folder(reader)
       
       s = os.path.join(path,"metadata.pkl")
       return s
 
-   def save_metadata(self):
-      fn = self.get_metadata_filename()
-      if not os.path.exists(self.get_cache_folder()):
-         os.makedirs(self.get_cache_folder())
+   def save_metadata(self, reader):
+      fn = self.get_metadata_filename(reader)
+      if not os.path.exists(self.get_cache_folder(reader)):
+         os.makedirs(self.get_cache_folder(reader))
       try:
          with open(fn,'wb') as f:
             pickle.dump(self.__metadata_dict,f)
