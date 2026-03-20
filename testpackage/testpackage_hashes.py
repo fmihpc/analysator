@@ -18,8 +18,10 @@ parser=argparse.ArgumentParser(
         description='Used for generating and comparing hashes from analysator output for CI testing.'
         )
 parser.add_argument('--generate','-g',help="Generate hashdump into given path",const=str,nargs='?')
+parser.add_argument('--compare','-c',help="Compare against given hashdump",const=str,nargs='?')
 args=parser.parse_args()
 generate_path=args.generate
+compare_path=args.compare
 
 class Tester:
     def __init__(self,filename=None):
@@ -34,12 +36,12 @@ class Tester:
     def dumpPickle(self,file):
         pickle.dump(self.hashes_dict,file)
 
-    def dumpIntoFile(self):
-        path_to_file=os.path.join(generate_path,'hashdump.txt')
+    def dumpIntoFile(self,indict,dumpname):
+        path_to_file=os.path.join(generate_path,dumpname)
         if os.path.isfile(path_to_file):
-            print(f"::warning:: hashdump.txt found in {generate_path}, overwriting!")
+            print(f"::warning:: {dumpname} found in {generate_path}, overwriting!")
         with open(path_to_file,"w") as file:
-            for (filename,funcdict) in self.hashes_dict_python.items():
+            for (filename,funcdict) in indict.items():
                 file.write("File: "+filename+'\n')
                 for (funccall,hashdict) in funcdict.items():
                     file.write("\tFunction: "+funccall+'\n')
@@ -48,11 +50,11 @@ class Tester:
                         op=hash_and_op[1]
                         file.write("\t\t"+f"{arg:<30} {hash} {op}"+'\n')
             file.close()
-        assert(self.loadFromFile()==self.hashes_dict_python)
+        assert(self.loadFromFile(dumpname,generate_path)==indict)
 
-    def loadFromFile(self):
+    def loadFromFile(self,dumpname,compare_path=compare_path):
         outdict={}
-        path_to_file=os.path.join(generate_path,'hashdump.txt')
+        path_to_file=os.path.join(compare_path,dumpname)
         with open(path_to_file,"r") as file:
             for line in file:
                 line=line.rstrip('\n')
@@ -99,7 +101,6 @@ class Tester:
             #If we want to repeat same function func with different arguments
             if loop:
                 for arg in args:
-                    print(arg,args)
                     update(vlsvobj,op,opargs,arg,hashdict)
                 return 0
             if argkey_name:
@@ -145,7 +146,6 @@ class Tester:
 
             #save hash of the retval as array
             retval=np.array(retval)
-            print(retval.shape)
             if flatten:
                 retval.reshape((-1,))
             if sort:
@@ -268,10 +268,15 @@ if __name__=="__main__":
         ciTester.hash("read_variable",variables,loop=True)
 
     if generate_path:
-        print(ciTester.hashes_dict_python)
-        ciTester.dumpIntoFile()
-        os.system(f"cat {os.path.join(generate_path,'hashdump.txt')}")
-        assert(ciTester.loadFromFile()==ciTester.hashes_dict_python)
+        ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
+        os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
+        #ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
+    if compare_path:
+         refDict=ciTester.loadFromFile("hashdump_python.txt")
+         if refDict!=ciTester.hashes_dict_python: #DICT ARE ORDERED WE NEED TO TAKE THAT INTO ACCOUNT MAYBE
+            raise SystemError("Hashes differ")
+         elif refDict==ciTester.hashes_dict_python:
+            print("Hash dictionaries match")
     quit()
 #Should not be used yet
     retval=0
