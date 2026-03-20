@@ -2074,7 +2074,7 @@ class VlsvReader(object):
    def get_fsgrid_decomposition(self):
       # Try if in metadata
       if(self.__fsGridDecomposition is not None):
-         print("read ",self.__fsGridDecomposition)
+         logging.info("read " + str(self.__fsGridDecomposition))
 
       if self.__fsGridDecomposition is None:
          self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
