@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies , analysator and generate verification set to /wrk-kappa/group/spacephysics/analysator/CI/verification_sets/ under new folder based on commit id
+# This workflow will install Python dependencies , analysator and generate verification set to /turso/group/spacephysics/analysator/CI/verification_sets/ under new folder based on commit id
 name: generate_reference_data
 
 on:

@@ -28,7 +28,7 @@ import sys
 import logging
 
 def lineout( vlsvReader, point1, point2, variable, operator="pass",interpolation_order=1, points=100 ):
-   ''' Returns a line cut-through from a given VLSV file for distance, coordinates and variable values. The main difference between this and cut_through is that this function interpolates a given variable.
+   ''' Returns a line cut-through from a given VLSV file for distance, coordinates and variable values. The main difference between this and cut_through is that this function interpolates a given variable to equally-spaced sample points.
 
        :param vlsvReader:            Some open VlsvReader
        :type vlsvReader:             :class:`vlsvfile.VlsvReader`
@@ -56,13 +56,23 @@ def lineout( vlsvReader, point1, point2, variable, operator="pass",interpolation
    # Transform point1 and point2 into numpy array:
    point1 = np.array(point1)
    point2 = np.array(point2)
-   # Get parameters from the file to determine a good length between points (step length):
+
+   if (interpolation_order == 0):
+      logging.warn("Lineout called with interpolation order of 0. Consider using cut_through instead, as lineout cannot guarantee complete sampling of cells along the line.")
 
    # Make sure point1 and point2 are inside bounds
    if vlsvReader.get_cellid(point1) == 0:
       raise ValueError("point1 in lineout out of bounds!")
    if vlsvReader.get_cellid(point2) == 0:
       raise ValueError("point1 in lineout out of bounds!")
+
+   # Get parameters from the file to determine a sufficient number of points, warn if not enough:
+   cell_min_lengths = vlsvReader.get_spatial_mesh_min_cell_length()
+   line_length_in_cells = np.int64(np.abs((point2-point1)/cell_min_lengths))
+
+   if (points < np.max(line_length_in_cells)):
+      logging.warn("Lineout called with {:d} points over a span of (X:{:d},Y:{:d},Z:{:d}) cells at the highest resolution.\nSuggest using at least {:d} points to sample this span.".format(points, *line_length_in_cells, np.max(line_length_in_cells))
+      )
 
    value_len=len(np.atleast_1d(vlsvReader.read_interpolated_variable( variable, point1, operator)))
    
