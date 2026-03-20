@@ -1,0 +1,664 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magnetosphere regions and bow shock: How to find &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=187304be"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../about/" />
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Contributing code" href="../contribution_code/" />
+    <link rel="prev" title="Magnetopause: how to find" href="../magnetopause/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../" class="icon icon-home">
+            analysator
+              <img src="../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../scripts/">scripts</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#biot-savart">biot_savart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#cutthrough-timeseries">cutthrough_timeseries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#gics">gics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#plot-streamline-magnetopause-2d">plot_streamline_magnetopause_2d</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#obliqueshock">obliqueshock</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#obliqueshock-nif">obliqueshock_nif</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#shue">shue</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#tsyganenko">tsyganenko</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scripts/#magnetopause">magnetopause</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../scripts/#regions">regions</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../biot_savart/">biot_savart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cutthrough_timeseries/">cutthrough_timeseries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gics/">gics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plot_streamline_magnetopause_2d/">plot_streamline_magnetopause_2d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../obliqueshock/">obliqueshock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../obliqueshock_nif/">obliqueshock_nif</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../shue/">shue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tsyganenko/">tsyganenko</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../magnetopause/">Magnetopause: how to find</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Magnetosphere regions and bow shock: How to find</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#bow-shock">Bow shock</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#magnetosheath">Magnetosheath</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#polar-cusps">Polar cusps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tail-lobes">Tail lobes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#low-latitude-boundary-layer-llbl">Low-latitude boundary layer (LLBL)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#high-latitude-boundary-layer-hlbl">High-latitude boundary layer (HLBL)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plasma-sheet-boundary-layer-psbl">Plasma sheet boundary layer (PSBL)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#central-plasma-sheet">Central plasma sheet</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../scripts/">scripts</a></li>
+      <li class="breadcrumb-item active">Magnetosphere regions and bow shock: How to find</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/magnetosphere_regions.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="magnetosphere-regions-and-bow-shock-how-to-find">
+<h1>Magnetosphere regions and bow shock: How to find<a class="headerlink" href="#magnetosphere-regions-and-bow-shock-how-to-find" title="Link to this heading"></a></h1>
+<p>Note: The analysator methods here are prototypes and should be adapted and modified as needed.</p>
+<section id="bow-shock">
+<h2>Bow shock<a class="headerlink" href="#bow-shock" title="Link to this heading"></a></h2>
+<p>Plasma properties for estimating bow shock position:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>plasma compression:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(n_p &gt; 2n_{p, sw}\)</span> <a class="reference internal" href="#battarbee-et-al-2020" id="id1"><span>[Battarbee_et_al_2020]</span></a> (Vlasiator)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>solar wind core heating:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(T_{core} &gt; 4T_{sw}\)</span> <a class="reference internal" href="#battarbee-et-al-2020" id="id2"><span>[Battarbee_et_al_2020]</span></a> (Vlasiator)</p></li>
+<li><p><span class="math notranslate nohighlight">\(T_{core} = 3T_{sw}\)</span> <a class="reference internal" href="#suni-et-al-2021" id="id3"><span>[Suni_et_al_2021]</span></a> (Vlasiator)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>magnetosonic Mach number:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(M_{ms} &lt; 1\)</span> <a class="reference internal" href="#battarbee-et-al-2020" id="id4"><span>[Battarbee_et_al_2020]</span></a> (Vlasiator)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>In analysator:</strong></p>
+<p><a class="reference internal" href="#module-regions" title="regions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regions</span></code></a> has an option to find the bow shock. Default method uses 1.5*solar wind density as limit.
+Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;vlsvbulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;bowshock.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bowshock&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="magnetosheath">
+<h2>Magnetosheath<a class="headerlink" href="#magnetosheath" title="Link to this heading"></a></h2>
+<p>properties:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>density:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(8 cm^{-3}\)</span> <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id5"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>temperature:</dt><dd><ul>
+<li><p>ion: <span class="math notranslate nohighlight">\(150 eV\)</span> <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id6"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+<li><p>electron: <span class="math notranslate nohighlight">\(25 eV\)</span> <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id7"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>magnetic field:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(15 nT\)</span> <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id8"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>plasma <span class="math notranslate nohighlight">\(\beta\)</span>:</dt><dd><ul>
+<li><p>2.5  <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id9"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>In analysator:</strong></p>
+<p><a class="reference internal" href="#module-regions" title="regions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regions</span></code></a> has an option to find the magnetosheath using bow shock and magnetopause:
+Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;vlsvbulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;magnetosheath.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;magnetosheath&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="polar-cusps">
+<h2>Polar cusps<a class="headerlink" href="#polar-cusps" title="Link to this heading"></a></h2>
+<p><em>Properties:</em></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>plasma density: high density in comparison to solar wind</dt><dd><ul>
+<li><p>Ion density <span class="math notranslate nohighlight">\(\geq\)</span> solar wind ion density <a class="reference internal" href="#pitout-et-al-2006" id="id10"><span>[Pitout_et_al_2006]</span></a> (Cluster spacecraft data)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ion energy:</dt><dd><ul>
+<li><p>mean ion energy <span class="math notranslate nohighlight">\(~2-3 keV\)</span> <a class="reference internal" href="#pitout-et-al-2006" id="id11"><span>[Pitout_et_al_2006]</span></a> /<a class="reference internal" href="#stenuit-et-al-2001" id="id12"><span>[Stenuit_et_al_2001]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>energy flux:</dt><dd><ul>
+<li><p>energy flux</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>In analysator:</strong></p>
+<p><a class="reference internal" href="#module-regions" title="regions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regions</span></code></a> has an option to find cusps using convex hull of the magnetosphere.
+Note that the default parameters may catch some dayside cells near the magnetopause and some non-cusp areas inside dayside in addition to cusps.
+Areas near magnetopause can be excluded for example by only including cells where the SDF is less than e.g. -1 Re.</p>
+<p>Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;vlsvbulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;cusps.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cusps&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="tail-lobes">
+<h2>Tail lobes<a class="headerlink" href="#tail-lobes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><dl class="simple">
+<dt>plasma density: low</dt><dd><ul>
+<li><p>below <span class="math notranslate nohighlight">\(0.03 cm^{-3}\)</span> <a class="reference internal" href="#grison-et-al-2025" id="id13"><span>[Grison_et_al_2025]</span></a> (Cluster spacecraft data)</p></li>
+<li><p><span class="math notranslate nohighlight">\(0.01 cm^{-3}\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id14"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+<li><p>less than <span class="math notranslate nohighlight">\(0.1 cm^{-3}\)</span> <a class="reference internal" href="#wolf-introduction-to-space-physics-ch-10" id="id15"><span>[Wolf_Introduction_to_space_physics_Ch_10]</span></a> p.291</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>plasma <span class="math notranslate nohighlight">\(\beta\)</span>: low</dt><dd><ul>
+<li><p>typically around <span class="math notranslate nohighlight">\(0.05\)</span> <a class="reference internal" href="#grison-et-al-2025" id="id16"><span>[Grison_et_al_2025]</span></a> (Cluster spacecraft data)</p></li>
+<li><p><span class="math notranslate nohighlight">\(3e-3\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id17"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>temperature:</dt><dd><ul>
+<li><p>ion temperature <span class="math notranslate nohighlight">\(300 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id18"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+<li><p>electron temperature <span class="math notranslate nohighlight">\(50 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id19"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>magnetic field:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(20 nT\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id20"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>open magnetic field lines <a class="reference internal" href="#wolf-introduction-to-space-physics-ch-10" id="id21"><span>[Wolf_Introduction_to_space_physics_Ch_10]</span></a> p.291</p></li>
+<li><p>strong and stable magnetic field towards the Earth (northern lobe) and away from the Earth (southern lobe) <a class="reference internal" href="#coxon-et-al-2016" id="id22"><span>[Coxon_et_al_2016]</span></a></p></li>
+</ul>
+<p>Separated from the plasma sheet by the plasma sheet boundary layer (PSBL)</p>
+<p><strong>In analysator:</strong></p>
+<p><a class="reference internal" href="#module-regions" title="regions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regions</span></code></a> has an option to find tail lobes.
+Note that the default parameters to find lobes may include some areas from the dayside.</p>
+<p>Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;vlsvbulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;lobes.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lobes&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="low-latitude-boundary-layer-llbl">
+<h2>Low-latitude boundary layer (LLBL)<a class="headerlink" href="#low-latitude-boundary-layer-llbl" title="Link to this heading"></a></h2>
+<p>Properties:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>density:</dt><dd><ul>
+<li><p>ion number densities between those of magnetosphere and magnetosheath <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id23"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a> p.267</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>temperature</dt><dd><ul>
+<li><p>ion temperatures between those of magnetosphere and magnetosheath <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id24"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a> p.267</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>unknown field line configuration, probably a mix of open and closed field lines <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id25"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a> p.262</p></li>
+</ul>
+</section>
+<section id="high-latitude-boundary-layer-hlbl">
+<h2>High-latitude boundary layer (HLBL)<a class="headerlink" href="#high-latitude-boundary-layer-hlbl" title="Link to this heading"></a></h2>
+<p>Includes the plasma mantle on the tail side and the entry layer on the dayside</p>
+<p>Properties:</p>
+<ul class="simple">
+<li><p>open magnetic field lines <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id26"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a> p.261</p></li>
+</ul>
+</section>
+<section id="plasma-sheet-boundary-layer-psbl">
+<h2>Plasma sheet boundary layer (PSBL)<a class="headerlink" href="#plasma-sheet-boundary-layer-psbl" title="Link to this heading"></a></h2>
+<p>The plasma sheet boundary layer is a very thin boundary layer separating the tail lobes from the tail plasma sheet <a class="reference internal" href="#koskinen-johdatus" id="id27"><span>[Koskinen_Johdatus]</span></a></p>
+<p><em>Properties:</em></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>density:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(0.1 cm^{-3}\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id28"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>temperature:</dt><dd><ul>
+<li><p>ion temperature <span class="math notranslate nohighlight">\(1000 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id29"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+<li><p>electron temperature <span class="math notranslate nohighlight">\(150 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id30"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>magnetic field:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(20 nT\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id31"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>plasma <span class="math notranslate nohighlight">\(\beta\)</span> :</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(0.1\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id32"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>probably closed magnetic field lines <a class="reference internal" href="#wolf-introduction-to-space-physics-ch-10" id="id33"><span>[Wolf_Introduction_to_space_physics_Ch_10]</span></a> p.291</p></li>
+</ul>
+</section>
+<section id="central-plasma-sheet">
+<h2>Central plasma sheet<a class="headerlink" href="#central-plasma-sheet" title="Link to this heading"></a></h2>
+<p><em>Properties:</em></p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>density:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(0.3 cm^{-3}\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id34"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+<li><p><span class="math notranslate nohighlight">\(0.1-1 cm^{-3}\)</span> <a class="reference internal" href="#wolf-introduction-to-space-physics-ch-10" id="id35"><span>[Wolf_Introduction_to_space_physics_Ch_10]</span></a> p.291</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>temperature: hot</dt><dd><ul>
+<li><p>ion temperature <span class="math notranslate nohighlight">\(4200 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id36"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+<li><p>electron temperature <span class="math notranslate nohighlight">\(600 eV\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id37"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>magnetic field:</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(10 nT\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id38"><span>[Koskinen_Space_Storms]</span></a> p.38, <a class="reference internal" href="#hudges-introduction-to-space-physics-ch-9" id="id39"><span>[Hudges_Introduction_to_space_physics_Ch_9]</span></a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>plasma <span class="math notranslate nohighlight">\(\beta\)</span>: high</dt><dd><ul>
+<li><p><span class="math notranslate nohighlight">\(6\)</span> <a class="reference internal" href="#koskinen-space-storms" id="id40"><span>[Koskinen_Space_Storms]</span></a> p.38</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Mostly closed magnetic field lines <a class="reference internal" href="#wolf-introduction-to-space-physics-ch-10" id="id41"><span>[Wolf_Introduction_to_space_physics_Ch_10]</span></a></p></li>
+</ul>
+<p>Inner plasma sheet: unusually low plasma beta may exist (e.g., cold tenuous plasma near the neutral sheet after long periods of northward IMF) <a class="reference internal" href="#boakes-et-al-2014" id="id42"><span>[Boakes_et_al_2014]</span></a>, (Cluster spacecraft data)</p>
+<p><strong>In analysator:</strong></p>
+<p><a class="reference internal" href="#module-regions" title="regions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">regions</span></code></a> has an option to find the central plasma sheet.
+Note that the default parameters may catch some dayside cells in addition to plasma sheet.
+Usage example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;vlsvbulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;CPS.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;central_plasma_sheet&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p id="module-regions">Script and functions for creating sidecar files with SDF/region/boundary tags of plasma regions.</p>
+<p>Usage example where bow shock conditions are given to replace default conditions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;bulkfile.vlsv&quot;</span>
+<span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;regions.vlsv&quot;</span>
+<span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">],</span>
+            <span class="n">region_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;bowshock&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2e6</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}}</span>
+</pre></div>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.RegionFlags">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">RegionFlags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">datafile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outfilen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['all']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_boundaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_flag_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'01'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">magnetopause_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_conditions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#RegionFlags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.RegionFlags" title="Link to this definition"></a></dt>
+<dd><p>Creates a sidecar .vlsv file with flagged cells for regions and boundaries in near-Earth plasma environment. 
+Region flags (named flag_region, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet
+Boundary signed distance flags (named “SDF_boundary”, flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock</p>
+<dl class="simple">
+<dt>possible regions: “all”, “boundaries” (magnetopause, bow shock), “large_areas” (boundaries + upstream, magnetosheath, magnetosphere), “magnetosphere”, “bowshock”,</dt><dd><p>“cusps”, “lobes”, “central_plasma_sheet”</p>
+</dd>
+</dl>
+<p>Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually
+Beta* convex hull is most likely the best magnetopause method for regions, for just magnetopause with different options use magnetopause.py</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datafile</strong> – .vlsv bulk file name (and path)</p></li>
+<li><p><strong>outfilen</strong> – sidecar .vlsv file name (and path)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Kword ignore_boundaries<span class="colon">:</span></dt>
+<dd class="field-even"><p>True: do not take cells in the inner/outer boundaries of the simulation into account when looking for regions (applicable for cusps and CPS for now)</p>
+</dd>
+<dt class="field-odd">Kword region_flag_type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>“01” or “fraction”, whether flags are binary (all conditions must be satisfied) or fractions of how many given conditions are met</p>
+</dd>
+<dt class="field-even">Kword magnetopause_method<span class="colon">:</span></dt>
+<dd class="field-even"><p>default “beta_star”, other options: see magnetopause.py, use alpha=None</p>
+</dd>
+<dt class="field-odd">Kword region_conditions<span class="colon">:</span></dt>
+<dd class="field-odd"><p>optional dict where keys are str region names and values are condition dictionaries, for setting own conditions for bow shock, cusps, lobes or central plasma sheet</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.bowshock_SDF">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">bowshock_SDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">own_condition_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#bowshock_SDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.bowshock_SDF" title="Link to this definition"></a></dt>
+<dd><p>Finds the bow shock by making a convex hull of either default variables/values based on upstream values or a user-defined variable/value dictionary. Returns signed distances from the convex hull to given query_points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> – a VlsvReader</p></li>
+<li><p><strong>variable_dict</strong> – dictionary containing names and variable arrays needed</p></li>
+<li><p><strong>query_points</strong> – xyz-coordinates of all points where the SDF will be calculated ([x1, y1, z1], [x2, y2, z2], …)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Kword own_condition_dict<span class="colon">:</span></dt>
+<dd class="field-even"><p>optional, dictionary with string variable names as keys and tresholds as values to pass to treshold_mask()-function</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.box_mask">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">box_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordpoints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[150000000.0,</span> <span class="pre">50000000.0,</span> <span class="pre">50000000.0,</span> <span class="pre">50000000.0,</span> <span class="pre">50000000.0,</span> <span class="pre">50000000.0]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#box_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.box_mask" title="Link to this definition"></a></dt>
+<dd><p>Crops simulation box for calculations, output flags outside of cropped box will be 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>f</strong> – a VlsvReader</p>
+</dd>
+<dt class="field-even">Kword coordpoints<span class="colon">:</span></dt>
+<dd class="field-even"><p>coordinate points of cells to be masked</p>
+</dd>
+<dt class="field-odd">Kword cells<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cellIDs to be masked</p>
+</dd>
+<dt class="field-even">Kword marginal<span class="colon">:</span></dt>
+<dd class="field-even"><p>6-length list of wanted marginal lengths from mesh edges in meters [negx, negy, negz, posx, posy, posz]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Boolean mask in input order of coordinates/cells, -1 if no coorpoints or cells were given and mask could not be done</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.make_region_flags">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">make_region_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'01'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#make_region_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.make_region_flags" title="Link to this definition"></a></dt>
+<dd><p>Makes region flags</p>
+<p>example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">make_region_flags</span><span class="p">(</span><span class="n">variable_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;proton/vg_rho&quot;</span><span class="p">,</span> <span class="n">cellids</span><span class="o">=-</span><span class="mi">1</span><span class="p">)},</span> <span class="n">condition_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">1e7</span><span class="p">]})</span>
+</pre></div>
+</div>
+<p>results in flag array in shape of read_variable output where cells where “proton/vg_rho” is less or equal to 1e7 are 1 and others are 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable_dict</strong> – dictionary containing names and data arrays of variables, names must match those in condition_dict</p></li>
+<li><p><strong>condition_dict</strong> – dictionary containing names and conditions for variable data in variable_dict</p></li>
+</ul>
+</dd>
+<dt class="field-even">Kword flag_type<span class="colon">:</span></dt>
+<dd class="field-even"><p>default “01”, optionally “fraction”. “01” gives flags 1: all variables fill all conditions, 0: everything else; “fraction” flags are rounded fractions of varibles that fulfill conditions (e.g. flag 0.5 means one of two conditions was filled)</p>
+</dd>
+<dt class="field-odd">Kword mask<span class="colon">:</span></dt>
+<dd class="field-odd"><p>deafault None, optionally boolean array to use for variable dict arrays to search for a region from subset of cells (cells False in mask will be automatically flagged as 0)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.treshold_mask">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">treshold_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#treshold_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.treshold_mask" title="Link to this definition"></a></dt>
+<dd><p>Chooses and flags cells where variable values match those given. If value is given as float, relative tolerance can be given</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_array</strong> – array to mask, e.g. output of f.read_variable(name=”proton/vg_rho”, cellids=-1)</p></li>
+<li><p><strong>variable</strong> – str, variable name</p></li>
+<li><p><strong>value</strong> – value/values to use for masking; a float or int for exact match, a (value, relative tolerance) tuple, or [min value, max value] list pair where either can be None for less than or eq./more than or eq. value</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>0/1 mask in same order as data_array, 1: variable value in array inside treshold values, 0: outside</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.vtkDelaunay3d_SDF">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">vtkDelaunay3d_SDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#vtkDelaunay3d_SDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.vtkDelaunay3d_SDF" title="Link to this definition"></a></dt>
+<dd><p>Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.
+Note: if using alpha, SDF might not work, especially if the point cloud used for Delaunay does not fully cover e.g. lobes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_points</strong> – points ([x, y, z] coordinates in m) for which a signed distance to surface will be calculated</p></li>
+<li><p><strong>coordinates</strong> – coordinates (array of [x, y, z]:s in m) that are used to make a surface.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Kword alpha<span class="colon">:</span></dt>
+<dd class="field-even"><p>alpha to be given to vtkDelaunay3D (e.g. R_E), removes surface edges that have length more than alpha so that the resulting surface is not convex. None -&gt; convex hull</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>vtkDataSetSurfaceFilter() object, array of signed distances (negative sign: inside the surface, positive sign: outside the surface)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="regions.write_flags">
+<span class="sig-prename descclassname"><span class="pre">regions.</span></span><span class="sig-name descname"><span class="pre">write_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">writer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/regions/#write_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#regions.write_flags" title="Link to this definition"></a></dt>
+<dd><p>Writes flags into .vlsv-file with writer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>writer</strong> – a vlsvwriter</p></li>
+<li><p><strong>flags</strong> – an array of flags in order of cellids</p></li>
+<li><p><strong>flag_name</strong> – string, name of the flag variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Kword mask<span class="colon">:</span></dt>
+<dd class="field-even"><p>if flags are made from cropped cells, give mask used for cropping</p>
+</dd>
+</dl>
+</dd></dl>
+
+<hr class="docutils" />
+<p>References</p>
+<div role="list" class="citation-list">
+<div class="citation" id="battarbee-et-al-2020" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Battarbee_et_al_2020<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id2">2</a>,<a role="doc-backlink" href="#id4">3</a>)</span>
+<p>Battarbee, M., Ganse, U., Pfau-Kempf, Y., Turc, L., Brito, T., Grandin, M., Koskela, T., and Palmroth, M.: Non-locality of Earth’s quasi-parallel bow shock: injection of thermal protons in a hybrid-Vlasov simulation, Ann. Geophys., 38, 625-643, <a class="reference external" href="https://doi.org/10.5194/angeo-38-625-2020">https://doi.org/10.5194/angeo-38-625-2020</a>, 2020</p>
+</div>
+<div class="citation" id="suni-et-al-2021" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">Suni_et_al_2021</a><span class="fn-bracket">]</span></span>
+<p>Suni, J., Palmroth, M., Turc, L., Battarbee, M., Johlander, A., Tarvus, V., et al. (2021). Connection between foreshock structures and the generation of magnetosheath jets: Vlasiator results. Geophysical Research Letters, 48, e2021GL095655. <a class="reference external" href="https://doi">https://doi</a>. org/10.1029/2021GL095655</p>
+</div>
+<div class="citation" id="grison-et-al-2025" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Grison_et_al_2025<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id13">1</a>,<a role="doc-backlink" href="#id16">2</a>)</span>
+<p>Grison, B., Darrouzet, F., Maggiolo, R. et al. Localization of the Cluster satellites in the geospace environment. Sci Data 12, 327 (2025). <a class="reference external" href="https://doi.org/10.1038/s41597-025-04639-z">https://doi.org/10.1038/s41597-025-04639-z</a></p>
+</div>
+<div class="citation" id="koskinen-johdatus" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id27">Koskinen_Johdatus</a><span class="fn-bracket">]</span></span>
+<p>Koskinen, H. E. J. (2011). Johdatus plasmafysiikkaan ja sen avaruussovellutuksiin. Limes ry.</p>
+</div>
+<div class="citation" id="koskinen-space-storms" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Koskinen_Space_Storms<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id14">1</a>,<a role="doc-backlink" href="#id17">2</a>,<a role="doc-backlink" href="#id18">3</a>,<a role="doc-backlink" href="#id19">4</a>,<a role="doc-backlink" href="#id20">5</a>,<a role="doc-backlink" href="#id28">6</a>,<a role="doc-backlink" href="#id29">7</a>,<a role="doc-backlink" href="#id30">8</a>,<a role="doc-backlink" href="#id31">9</a>,<a role="doc-backlink" href="#id32">10</a>,<a role="doc-backlink" href="#id34">11</a>,<a role="doc-backlink" href="#id36">12</a>,<a role="doc-backlink" href="#id37">13</a>,<a role="doc-backlink" href="#id38">14</a>,<a role="doc-backlink" href="#id40">15</a>)</span>
+<p>Koskinen, H. E. J. (2011). Physics of Space Storms: From the Solar Surface to the Earth. Springer-Verlag. <a class="reference external" href="https://doi.org/10.1007/978-3-642-00319-6">https://doi.org/10.1007/978-3-642-00319-6</a></p>
+</div>
+<div class="citation" id="pitout-et-al-2006" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Pitout_et_al_2006<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id10">1</a>,<a role="doc-backlink" href="#id11">2</a>)</span>
+<p>Pitout, F., Escoubet, C. P., Klecker, B., and Rème, H.: Cluster survey of the mid-altitude cusp: 1. size, location, and dynamics, Ann. Geophys., 24, 3011–3026, <a class="reference external" href="https://doi.org/10.5194/angeo-24-3011-2006">https://doi.org/10.5194/angeo-24-3011-2006</a>, 2006.</p>
+</div>
+<div class="citation" id="coxon-et-al-2016" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id22">Coxon_et_al_2016</a><span class="fn-bracket">]</span></span>
+<p>Coxon,J.C.,C.M.Jackman, M. P. Freeman, C. Forsyth, and I. J. Rae (2016), Identifying the magnetotail lobes with Cluster magnetometer data, J. Geophys. Res. Space Physics, 121, 1436–1446, doi:10.1002/2015JA022020.</p>
+</div>
+<div class="citation" id="hudges-introduction-to-space-physics-ch-9" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Hudges_Introduction_to_space_physics_Ch_9<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id5">1</a>,<a role="doc-backlink" href="#id6">2</a>,<a role="doc-backlink" href="#id7">3</a>,<a role="doc-backlink" href="#id8">4</a>,<a role="doc-backlink" href="#id9">5</a>,<a role="doc-backlink" href="#id23">6</a>,<a role="doc-backlink" href="#id24">7</a>,<a role="doc-backlink" href="#id25">8</a>,<a role="doc-backlink" href="#id26">9</a>,<a role="doc-backlink" href="#id39">10</a>)</span>
+<p>Hudges, W. J. (1995) The magnetopause, magnetotail and magnetic reconnection. In Kivelson, M. G., &amp; Russell, C. T. (Eds.), Introduction to space physics (pp.227-287). Cambridge University Press.</p>
+</div>
+<div class="citation" id="wolf-introduction-to-space-physics-ch-10" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>Wolf_Introduction_to_space_physics_Ch_10<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id15">1</a>,<a role="doc-backlink" href="#id21">2</a>,<a role="doc-backlink" href="#id33">3</a>,<a role="doc-backlink" href="#id35">4</a>,<a role="doc-backlink" href="#id41">5</a>)</span>
+<p>Wolf, R. A. (1995) Magnetospheric configuration. In Kivelson, M. G., &amp; Russell, C. T. (Eds.), Introduction to space physics (pp.288-329). Cambridge University Press.</p>
+</div>
+<div class="citation" id="boakes-et-al-2014" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id42">Boakes_et_al_2014</a><span class="fn-bracket">]</span></span>
+<p>Boakes, P. D., Nakamura, R., Volwerk, M., and Milan, S. E. (2014). ECLAT Cluster Spacecraft Magnetotail Plasma Region Identifications (2001–2009). Dataset Papers in Science, 2014(1):684305. eprint: <a class="reference external" href="https://onlinelibrary.wiley.com/doi/pdf/10.1155/2014/684305">https://onlinelibrary.wiley.com/doi/pdf/10.1155/2014/684305</a></p>
+</div>
+<div class="citation" id="stenuit-et-al-2001" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id12">Stenuit_et_al_2001</a><span class="fn-bracket">]</span></span>
+<p>Stenuit, H., Sauvaud, J.-A., Delcourt, D. C., Mukai, T., Kokubun, S., Fujimoto, M., Buzulukova, N. Y., Kovrazhkin, R. A., Lin, R. P., and Lepping, R. P. (2001). A study of ion injections at the dawn and dusk polar edges of the auroral oval. Journal of Geophysical Research: Space Physics, 106(A12):29619–29631. eprint: <a class="reference external" href="https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2001JA900060">https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2001JA900060</a>.</p>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../magnetopause/" class="btn btn-neutral float-left" title="Magnetopause: how to find" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../contribution_code/" class="btn btn-neutral float-right" title="Contributing code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

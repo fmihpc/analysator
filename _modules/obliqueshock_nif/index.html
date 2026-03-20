@@ -1,0 +1,244 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>obliqueshock_nif &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">obliqueshock_nif</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for obliqueshock_nif</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Script calculates shock crossing values from Rankine-Hugoniot relations</span>
+<span class="sd">in the normal incidence frame (NIF).</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.optimize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">mu0</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">1.e-7</span>
+<span class="n">mp</span> <span class="o">=</span> <span class="mf">1.67e-27</span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">299792458</span>
+<span class="n">k</span> <span class="o">=</span> <span class="mf">1.3806506e-23</span>
+<span class="n">Gamma</span> <span class="o">=</span> <span class="mf">5.0</span><span class="o">/</span><span class="mf">3.0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">polynome</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">beta1</span><span class="p">,</span> <span class="n">MA1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">beta1</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">+</span> <span class="mi">10</span><span class="o">*</span><span class="n">beta1</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">11</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">5</span><span class="o">*</span><span class="n">beta1</span><span class="p">)</span><span class="o">*</span><span class="n">X</span> <span class="o">-</span> <span class="mi">8</span><span class="o">*</span><span class="p">(</span><span class="n">MA1</span><span class="o">**</span><span class="mi">6</span><span class="p">)</span>
+
+<div class="viewcode-block" id="rankine">
+<a class="viewcode-back" href="../../obliqueshock_nif/#obliqueshock_nif.rankine">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rankine</span><span class="p">(</span><span class="n">Tu</span><span class="p">,</span> <span class="n">rhou</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Call obliqueshock_nif.rankine(Tu, rhou, V, B, n, Vsh) to compute the shock crossing values</span>
+
+<span class="sd">        Inputs:</span>
+<span class="sd">            Tu: upstream proton temperature [K] rhou: upstream proton number density [1/m3] V: 3-element upstream proton inflow velocity vector [m/s]</span>
+<span class="sd">            B: 3-element upstream magnetic field vector [T]\n</span>
+<span class="sd">            Note: Give the plasma velocity relative to the shock speed, which is set to zero in the script.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The shock compression ratio</span>
+<span class="sd">            X: Plasma compression ratio XB: Magnetic field compression ratio</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            obliqueshock_nif.rankine(5e5, 1.0e6, [-750e3,0,0], [3.5355e-9,0,-3.5355e-9])\n</span>
+<span class="sd">            -&gt; Computes the shock crossing for Tu = 500 kK, rhou = 1/cc, V = [-750,0,0]km/s (inflow plasma speed is 750 km/s in -X),</span>
+<span class="sd">            B = [3.5355e,0,-3.5355e]nT (upstream magnetic field is 5 nT at 45 degree angle),</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># V, B, n are vectors</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+
+    <span class="c1"># normal and tangential vectors</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="o">-</span><span class="n">V</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">V</span><span class="p">)</span>
+    <span class="n">nPlane</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">B</span><span class="p">));</span> <span class="c1"># normal to the plane containing B and V</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">nPlane</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">nPlane</span><span class="p">));</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Normal vector n: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Tangential vector t: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="c1"># upstream parameters</span>
+    <span class="n">Vu</span> <span class="o">=</span> <span class="n">V</span>
+    <span class="n">Bu</span> <span class="o">=</span> <span class="n">B</span>
+    <span class="n">pu</span> <span class="o">=</span> <span class="n">rhou</span> <span class="o">*</span> <span class="n">k</span> <span class="o">*</span> <span class="n">Tu</span>
+
+    <span class="n">Vnu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Vu</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">Vtu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Vu</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">Bnu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bu</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">Btu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bu</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="c1"># compute relevant variables: Upstream beta, vA, MA and shock angle (theta)</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bu</span><span class="p">,</span><span class="n">n</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Bu</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Theta [degree]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span>
+
+    <span class="n">betau</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">mu0</span><span class="o">*</span><span class="n">pu</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bu</span><span class="p">,</span><span class="n">Bu</span><span class="p">)</span>
+    <span class="n">vAu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Bu</span><span class="p">,</span><span class="n">Bu</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mu0</span><span class="o">*</span><span class="n">mp</span><span class="o">*</span><span class="n">rhou</span><span class="p">))</span>
+    <span class="n">MAu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Vu</span><span class="p">)</span> <span class="o">/</span> <span class="n">vAu</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;vAu [km/s]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">vAu</span><span class="o">/</span><span class="mf">1e3</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Shock MA: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Vu</span><span class="p">)</span><span class="o">/</span><span class="n">vAu</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Upstream plasma beta: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">betau</span><span class="p">))</span>
+    <span class="c1"># compression ratio</span>
+    <span class="n">sol</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">root</span><span class="p">(</span><span class="n">polynome</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">betau</span><span class="p">,</span> <span class="n">MAu</span><span class="p">))</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="c1"># get downstrean parameters</span>
+    <span class="n">Z1</span> <span class="o">=</span> <span class="p">(</span><span class="n">MAu</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">MAu</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">X</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">Z2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">MAu</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="n">X</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">Z3</span> <span class="o">=</span> <span class="p">(</span><span class="n">betau</span><span class="o">/</span><span class="n">MAu</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">X</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">X</span><span class="o">*</span><span class="n">Z1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="p">)</span><span class="o">/</span><span class="n">MAu</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">X</span><span class="p">)</span>
+
+    <span class="n">rhod</span> <span class="o">=</span> <span class="n">rhou</span> <span class="o">*</span> <span class="n">X</span>
+
+    <span class="n">Vnd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Vnu</span><span class="o">/</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">Vnt</span> <span class="o">=</span> <span class="n">Z2</span><span class="o">*</span><span class="n">Vnu</span>
+    <span class="n">Vd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Vnd</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">Vnt</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">Bnd</span> <span class="o">=</span> <span class="n">Bnu</span>
+    <span class="n">Btd</span> <span class="o">=</span> <span class="n">X</span><span class="o">*</span><span class="n">Z1</span><span class="o">*</span><span class="n">Btu</span>
+    <span class="n">Bd</span> <span class="o">=</span> <span class="p">(</span><span class="n">Bnu</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">Btd</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+
+    <span class="n">vTHd_sq</span> <span class="o">=</span> <span class="n">Z3</span><span class="o">*</span><span class="n">Vu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">;</span>
+    <span class="n">Td</span> <span class="o">=</span> <span class="p">(</span><span class="n">mp</span><span class="o">*</span><span class="n">vTHd_sq</span><span class="o">/</span><span class="n">k</span><span class="p">);</span>
+
+    <span class="n">XB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Bd</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Bu</span><span class="p">)</span>
+
+    <span class="c1"># print compression ratios and upstream/downstream state</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Gas compression ratio: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Magnetic compression ratio: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">XB</span><span class="p">))</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This determines the NIF upstream state&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Density [1/cm3]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rhou</span><span class="o">/</span><span class="mf">1e6</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Temperature [K]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Tu</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; V [km/s]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Vu</span><span class="o">/</span><span class="mf">1e3</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; B [nT]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Bu</span><span class="o">*</span><span class="mf">1e9</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; |V| [km/s]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Vu</span><span class="p">)</span><span class="o">/</span><span class="mf">1e3</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; |B| [nT]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Bu</span><span class="p">)</span><span class="o">*</span><span class="mf">1e9</span><span class="p">))</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;This determines the NIF downstream state&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Density [1/cm3]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rhod</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mf">1e6</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Temperature [K]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Td</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; V [km/s]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Vd</span><span class="o">/</span><span class="mf">1e3</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; B [nT]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Bd</span><span class="o">*</span><span class="mf">1e9</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; |V| [km/s]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Vd</span><span class="p">)</span><span class="o">/</span><span class="mf">1e3</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; |B| [nT]: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">Bd</span><span class="p">)</span><span class="o">*</span><span class="mf">1e9</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">XB</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

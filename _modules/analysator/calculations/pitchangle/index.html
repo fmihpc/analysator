@@ -1,0 +1,380 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.pitchangle &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.pitchangle</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.pitchangle</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># This file is part of Analysator.</span>
+<span class="c1"># Copyright 2013-2016 Finnish Meteorological Institute</span>
+<span class="c1"># Copyright 2017-2019 University of Helsinki</span>
+<span class="c1">#</span>
+<span class="c1"># For details of usage, see the COPYING file and read the &quot;Rules of the Road&quot;</span>
+<span class="c1"># at http://www.physics.helsinki.fi/vlasiator/</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify</span>
+<span class="c1"># it under the terms of the GNU General Public License as published by</span>
+<span class="c1"># the Free Software Foundation; either version 2 of the License, or</span>
+<span class="c1"># (at your option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful,</span>
+<span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c1"># GNU General Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.</span>
+<span class="c1">#</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.output</span><span class="w"> </span><span class="kn">import</span> <span class="n">output_1d</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<div class="viewcode-block" id="pitch_angles">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.pitch_angles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pitch_angles</span><span class="p">(</span> <span class="n">vlsvReader</span><span class="p">,</span>
+                     <span class="n">cellid</span><span class="p">,</span>
+                     <span class="n">nbins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                     <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">filedir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">outputdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outputfile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">cosine</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">plasmaframe</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">vcut</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">vcutmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                     <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;proton&quot;</span><span class="p">):</span>
+
+<span class="w">   </span><span class="sd">&#39;&#39;&#39; Calculates the pitch angle distribution for a given cell</span>
+
+<span class="sd">      :param vlsvReader:        Some VlsvReader class with a file open. Can be overriden by keywords.</span>
+<span class="sd">      :param cellid:            The cell id whose pitch angle the user wants</span>
+<span class="sd">                              NOTE: The cell id must have a velocity distribution!</span>
+<span class="sd">      :kwarg filename:          path to .vlsv file to use for input.</span>
+<span class="sd">      :kwarg filedir:           Optionally provide directory where files are located and use step for bulk file name</span>
+<span class="sd">      :kwarg step:              output step index, used for constructing output (and possibly input) filename</span>
+
+<span class="sd">      :kwarg nbins:             How many bins to use for the distribution</span>
+<span class="sd">      :kwarg cosine:            True if returning the pitch angles as a cosine(alpha) plot [-1,1].</span>
+<span class="sd">                              If false, returns as pitch angle in degrees [0,180].</span>
+
+<span class="sd">      :kwarg plasmaframe:       True if the user wants to get the pitch angle distribution</span>
+<span class="sd">                              in the plasma frame (for this population).</span>
+<span class="sd">                              If set to a string, will try to use the string as a variable for</span>
+<span class="sd">                              the frame to transform into.</span>
+<span class="sd">                              If set to a 3-element vector, will use that frame instead.</span>
+
+<span class="sd">      :kwarg vcut:              Set to True to ignore velocity cells below 2x the thermal speed.</span>
+<span class="sd">                              If set to a number, will use that velocity in m/s instead.</span>
+<span class="sd">      :kwarg vcutmax:           Set to True to ignore velocity cells above 2x the thermal speed.</span>
+<span class="sd">                              If set to a number, will use that velocity in m/s instead.</span>
+
+<span class="sd">      :kwarg outputdir:         Optional (recommended) method to save results to a file in the given directory.</span>
+<span class="sd">                              If directory does not exist, it will be created. Filenames within directory are</span>
+<span class="sd">                              generated automatically.</span>
+<span class="sd">      :kwarg outputfile:        Provide exact output file name (including complete path)</span>
+
+<span class="sd">      :kwarg pop:               Active population, defaults to proton (avgs)</span>
+
+<span class="sd">      :returns: pitch angles and avgs [pitch_angles, avgs]</span>
+
+<span class="sd">      .. code-block:: python</span>
+
+<span class="sd">         # Example usage:</span>
+<span class="sd">         vlsvReader = VlsvReader(&quot;restart.0000798.vlsv&quot;)</span>
+<span class="sd">         result = pitch_angles( vlsvReader=vlsvReader, 1924, cosine=True,</span>
+<span class="sd">                              plasmaframe=True, outputdir=&quot;/wrk/username/pitchangledirectory/&quot; )</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+   <span class="c1"># Input file or object</span>
+   <span class="k">if</span> <span class="n">filename</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+      <span class="n">vlsvReader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+   <span class="k">elif</span> <span class="p">((</span><span class="n">filedir</span><span class="o">!=</span><span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">step</span><span class="o">!=</span><span class="kc">None</span><span class="p">)):</span>
+      <span class="n">filename</span> <span class="o">=</span> <span class="n">filedir</span><span class="o">+</span><span class="s1">&#39;bulk.&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.vlsv&#39;</span>
+      <span class="n">vlsvReader</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+   <span class="c1"># Transform to a different frame?</span>
+   <span class="n">frame</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">]</span>
+   <span class="k">if</span> <span class="n">plasmaframe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plasmaframe</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+         <span class="n">frame</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">plasmaframe</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="n">plasmaframe</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;moments&quot;</span><span class="p">):</span> <span class="c1"># restart</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;restart_V&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;V&quot;</span><span class="p">):</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;vg_V&quot;</span><span class="p">):</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_V&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_V&quot;</span><span class="p">):</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s1">&#39;/vg_V&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Error extracting plasma frame velocity! Please supply a vector instead.&quot;</span><span class="p">)</span>
+      <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">plasmaframe</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span> <span class="c1"># Assume it&#39;s a vector</span>
+         <span class="n">frame</span> <span class="o">=</span> <span class="n">plasmaframe</span>
+
+   <span class="c1"># Find the magnetic field direction</span>
+   <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">):</span>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+   <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;vg_b_vol&quot;</span><span class="p">):</span>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s1">&#39;vg_b_vol&#39;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+   <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;fg_b&quot;</span><span class="p">):</span>
+      <span class="n">coordinates</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_interpolated_fsgrid_variable</span><span class="p">(</span><span class="s1">&#39;fg_b&#39;</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">)</span>
+   <span class="n">Bmag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+   <span class="n">B_unit</span> <span class="o">=</span> <span class="n">B</span> <span class="o">/</span> <span class="n">Bmag</span>
+
+   <span class="c1"># verify population</span>
+   <span class="k">if</span> <span class="n">pop</span><span class="o">==</span><span class="s2">&quot;proton&quot;</span><span class="p">:</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="n">pop</span><span class="p">):</span>
+         <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="s2">&quot;avgs&quot;</span><span class="p">):</span>
+            <span class="n">pop</span><span class="o">=</span><span class="s2">&quot;avgs&quot;</span>
+            <span class="c1">#logging.info(&quot;Auto-switched to population avgs&quot;)</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unable to detect population &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot; in .vlsv file!&quot;</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_population</span><span class="p">(</span><span class="n">pop</span><span class="p">):</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unable to detect population &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot; in .vlsv file!&quot;</span><span class="p">)</span>
+
+   <span class="c1"># Read temperature for thermal speed</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">vcut</span> <span class="ow">is</span> <span class="kc">True</span> <span class="ow">or</span> <span class="n">vcutmax</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;moments&quot;</span><span class="p">):</span> <span class="c1"># restart, use overall rho/rhom and pressure</span>
+         <span class="n">rhom</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;restart_rhom&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="n">PDiagonal</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;pressure&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="n">Pressure</span> <span class="o">=</span> <span class="p">(</span><span class="n">PDiagonal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">PDiagonal</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">PDiagonal</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">)</span>
+         <span class="n">vth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Pressure</span><span class="o">*</span><span class="mf">8.</span><span class="o">/</span><span class="p">(</span><span class="n">rhom</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_rho&quot;</span><span class="p">):</span> <span class="c1"># v5</span>
+            <span class="n">vth</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/vg_thermalvelocity&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/rho&quot;</span><span class="p">):</span> <span class="c1"># multipop</span>
+            <span class="n">vth</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;/thermalvelocity&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">vth</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;thermalvelocity&quot;</span><span class="p">,</span> <span class="n">cellid</span><span class="p">)</span>
+
+   <span class="k">if</span> <span class="n">vcut</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">vcutoff</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">vth</span>
+   <span class="k">elif</span> <span class="n">vcut</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># assume it&#39;s a number to use as the speed in m/s</span>
+      <span class="n">vcutoff</span><span class="o">=</span><span class="n">vcut</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">vcutoff</span><span class="o">=</span><span class="mi">0</span>
+
+   <span class="k">if</span> <span class="n">vcutmax</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">vcutoffmax</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">vth</span>
+   <span class="k">elif</span> <span class="n">vcutmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># assume it&#39;s a number to use as the speed in m/s</span>
+      <span class="n">vcutoffmax</span><span class="o">=</span><span class="n">vcutmax</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">vcutoffmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+   <span class="c1"># Read the velocity cells:</span>
+   <span class="n">velocity_cell_data</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_velocity_cells</span><span class="p">(</span><span class="n">cellid</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">vcellids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+   <span class="n">avgs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">velocity_cell_data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+   <span class="c1"># Transform to a frame</span>
+   <span class="n">v</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_cell_coordinates</span><span class="p">(</span><span class="n">vcellids</span><span class="p">,</span> <span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span> <span class="o">-</span> <span class="n">frame</span>
+
+   <span class="c1"># Get the angles:</span>
+   <span class="n">v_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+   <span class="n">v_unit</span> <span class="o">=</span> <span class="n">v</span><span class="o">/</span><span class="n">v_norms</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+   <span class="k">if</span> <span class="n">cosine</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+      <span class="n">pitch_angles</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_unit</span><span class="o">*</span><span class="n">B_unit</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+      <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;cos alpha&quot;</span>
+      <span class="n">pitchrange</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+   <span class="k">else</span><span class="p">:</span>
+      <span class="n">pitch_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">((</span><span class="n">v_unit</span><span class="o">*</span><span class="n">B_unit</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mf">180.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+      <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;degree&quot;</span>
+      <span class="n">pitchrange</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">180</span><span class="p">)</span>
+
+   <span class="c1"># Calculate velocity cell sizes</span>
+   <span class="p">[</span><span class="n">vxsize</span><span class="p">,</span> <span class="n">vysize</span><span class="p">,</span> <span class="n">vzsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_size</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="p">[</span><span class="n">vxmin</span><span class="p">,</span> <span class="n">vymin</span><span class="p">,</span> <span class="n">vzmin</span><span class="p">,</span> <span class="n">vxmax</span><span class="p">,</span> <span class="n">vymax</span><span class="p">,</span> <span class="n">vzmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">vlsvReader</span><span class="o">.</span><span class="n">get_velocity_mesh_extent</span><span class="p">(</span><span class="n">pop</span><span class="o">=</span><span class="n">pop</span><span class="p">)</span>
+   <span class="n">dvx</span><span class="o">=</span><span class="p">(</span><span class="n">vxmax</span><span class="o">-</span><span class="n">vxmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">vxsize</span><span class="p">)</span>
+   <span class="n">dvy</span><span class="o">=</span><span class="p">(</span><span class="n">vymax</span><span class="o">-</span><span class="n">vymin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">vysize</span><span class="p">)</span>
+   <span class="n">dvz</span><span class="o">=</span><span class="p">(</span><span class="n">vzmax</span><span class="o">-</span><span class="n">vzmin</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">vzsize</span><span class="p">)</span>
+   <span class="n">dv3</span><span class="o">=</span><span class="n">dvx</span><span class="o">*</span><span class="n">dvy</span><span class="o">*</span><span class="n">dvz</span>
+
+   <span class="c1"># Clip negative avgs to zero</span>
+   <span class="c1"># (Some elements may be negative due to ghost cell propagation effects)</span>
+   <span class="n">avgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">avgs</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="n">dv3</span>
+
+   <span class="c1"># Mask off cells below threshold</span>
+   <span class="n">cond1</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_norms</span> <span class="o">&gt;</span> <span class="n">vcutoff</span><span class="p">)</span>
+   <span class="n">cond2</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_norms</span> <span class="o">&lt;</span> <span class="n">vcutoffmax</span><span class="p">)</span>
+   <span class="n">condition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">cond1</span><span class="p">,</span><span class="n">cond2</span><span class="p">)</span>
+   <span class="c1"># logging.info(cond1.shape,cond2.shape,condition.shape)</span>
+   <span class="c1"># Get the velocity cells above cutoff speed</span>
+   <span class="c1">#vcellids_nonsphere = np.extract(condition, vcellids)</span>
+   <span class="c1"># Get the avgs</span>
+   <span class="n">avgs_nonsphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">avgs</span><span class="p">)</span>
+   <span class="c1"># Get the pitch-angles (or cosines)</span>
+   <span class="n">pitch_nonsphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">pitch_angles</span><span class="p">)</span>
+
+   <span class="c1"># Generate a histogram</span>
+   <span class="n">weights</span><span class="p">,</span> <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">pitch_nonsphere</span><span class="p">,</span> <span class="n">nbins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">pitchrange</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">avgs_nonsphere</span> <span class="p">)</span>
+
+   <span class="c1"># Wrap the data into a custon format</span>
+   <span class="n">result</span> <span class="o">=</span> <span class="n">output_1d</span><span class="p">([</span><span class="n">angles</span><span class="p">,</span> <span class="n">weights</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Pitch_angle&quot;</span><span class="p">,</span> <span class="s2">&quot;sum_avgs&quot;</span><span class="p">],</span> <span class="p">[</span><span class="n">units</span><span class="p">,</span> <span class="s2">&quot;1/m3&quot;</span><span class="p">])</span>
+
+   <span class="n">rho_summed</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">avgs</span><span class="p">)</span>
+   <span class="n">rho_nonsphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">avgs_nonsphere</span><span class="p">)</span>
+   <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;rho: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rho_summed</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;, rho_nonsphere: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rho_nonsphere</span><span class="p">))</span>
+
+   <span class="k">if</span> <span class="n">outputfile</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">or</span> <span class="n">outputdir</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span> <span class="c1"># Save output to file</span>
+      <span class="c1"># Generate filename</span>
+      <span class="n">timestr</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:4.1f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">vlsvReader</span><span class="o">.</span><span class="n">read_parameter</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">))</span>
+      <span class="k">if</span> <span class="n">outputfile</span><span class="o">==</span><span class="kc">None</span><span class="p">:</span>
+         <span class="n">outputfile</span> <span class="o">=</span> <span class="n">outputdir</span><span class="o">+</span><span class="s2">&quot;/pitchangle_weights_cellid_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cellid</span><span class="p">)</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="s1">&#39;0&#39;</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;_time_&quot;</span><span class="o">+</span><span class="n">timestr</span><span class="o">+</span><span class="s2">&quot;.txt&quot;</span>
+      <span class="k">if</span> <span class="n">outputfile</span><span class="o">!=</span><span class="kc">None</span> <span class="ow">and</span> <span class="n">outputdir</span><span class="o">!=</span><span class="kc">None</span><span class="p">:</span>
+         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Please use either outputfile or outputdir, not both. Ignoring outputdir.&quot;</span><span class="p">)</span>
+
+      <span class="c1"># Check to find actual target sub-directory</span>
+      <span class="n">outputprefixind</span> <span class="o">=</span> <span class="n">outputfile</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">outputprefixind</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+         <span class="n">outputdir</span> <span class="o">=</span> <span class="n">outputfile</span><span class="p">[:</span><span class="n">outputprefixind</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+      <span class="c1"># Ensure output directory exists and is writeable</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outputdir</span><span class="p">):</span>
+         <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outputdir</span><span class="p">)</span>
+         <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">outputdir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+         <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span><span class="s2">&quot;No write access for directory &quot;</span><span class="o">+</span><span class="n">outputdir</span><span class="o">+</span><span class="s2">&quot;! Exiting.&quot;</span><span class="p">)</span>
+
+
+      <span class="n">outfilewrite</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# cellid time rho rho_nonsphere Bx By Bz pop</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cellid</span><span class="p">))</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">timestr</span><span class="p">)</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; </span><span class="si">{:E}</span><span class="s1"> </span><span class="si">{:E}</span><span class="s1"> </span><span class="si">{:E}</span><span class="s1"> </span><span class="si">{:E}</span><span class="s1"> </span><span class="si">{:E}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rho_summed</span><span class="p">,</span><span class="n">rho_nonsphere</span><span class="p">,</span><span class="n">B</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">B</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">B</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">pop</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# nbins, bin_edges</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
+         <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:E}</span><span class="s1"> &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">angle</span><span class="p">))</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# bin_values</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+      <span class="k">for</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">weights</span><span class="p">:</span>
+         <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:E}</span><span class="s1"> &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">weight</span><span class="p">))</span>
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+      <span class="n">outfilewrite</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+   <span class="c1"># Return the histogram</span>
+   <span class="k">return</span> <span class="n">result</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

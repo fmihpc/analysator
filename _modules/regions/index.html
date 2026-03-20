@@ -1,0 +1,649 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>regions &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">regions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for regions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Script and functions for creating sidecar files with SDF/region/boundary tags of plasma regions.</span>
+
+<span class="sd">    Usage example where bow shock conditions are given to replace default conditions:</span>
+
+<span class="sd">    .. code-block:: python</span>
+<span class="sd">    </span>
+<span class="sd">        datafile = &quot;bulkfile.vlsv&quot;</span>
+<span class="sd">        outfilen = &quot;regions.vlsv&quot;</span>
+<span class="sd">        RegionFlags(datafile, outfilen, regions=[&quot;all&quot;],</span>
+<span class="sd">                    region_conditions = {&quot;bowshock&quot;: {&quot;density&quot;: [2e6, None]}}</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">vtk</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scripts</span><span class="w"> </span><span class="kn">import</span> <span class="n">magnetopause</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="n">R_E</span> <span class="o">=</span> <span class="mi">6371000</span>
+
+<div class="viewcode-block" id="vtkDelaunay3d_SDF">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.vtkDelaunay3d_SDF">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vtkDelaunay3d_SDF</span><span class="p">(</span><span class="n">query_points</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gives a signed distance to a convex hull or alpha shape surface created from given coordinates.</span>
+<span class="sd">        Note: if using alpha, SDF might not work, especially if the point cloud used for Delaunay does not fully cover e.g. lobes</span>
+
+<span class="sd">        :param all_points: points ([x, y, z] coordinates in m) for which a signed distance to surface will be calculated</span>
+<span class="sd">        :param coordinates: coordinates (array of [x, y, z]:s in m) that are used to make a surface.</span>
+<span class="sd">        :kword alpha: alpha to be given to vtkDelaunay3D (e.g. R_E), removes surface edges that have length more than alpha so that the resulting surface is not convex. None -&gt; convex hull</span>
+<span class="sd">        :returns: vtkDataSetSurfaceFilter() object, array of signed distances (negative sign: inside the surface, positive sign: outside the surface)</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPoints</span><span class="p">()</span><span class="c1">#.NewInstance()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)):</span>
+        <span class="n">points</span><span class="o">.</span><span class="n">InsertNextPoint</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">polydata</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkPolyData</span><span class="p">()</span>
+        <span class="n">polydata</span><span class="o">.</span><span class="n">SetPoints</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">polydata</span><span class="o">.</span><span class="n">Modified</span><span class="p">()</span>
+
+    <span class="c1"># Delaunay convex hull</span>
+    <span class="n">delaunay_3d</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDelaunay3D</span><span class="p">()</span>
+    <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetInputData</span><span class="p">(</span><span class="n">polydata</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetAlpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetAlphaTets</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetAlphaLines</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetAlphaTris</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">SetAlphaVerts</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">delaunay_3d</span><span class="o">.</span><span class="n">GetOutput</span><span class="p">()</span>
+
+    <span class="n">surface</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkDataSetSurfaceFilter</span><span class="p">()</span>
+    <span class="n">surface</span><span class="o">.</span><span class="n">SetInputData</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">surface</span><span class="o">.</span><span class="n">Update</span><span class="p">()</span>
+
+    <span class="n">implicitPolyDataDistance</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkImplicitPolyDataDistance</span><span class="p">()</span>
+    <span class="n">implicitPolyDataDistance</span><span class="o">.</span><span class="n">SetInput</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">GetOutput</span><span class="p">())</span>
+
+    <span class="n">convexhull_sdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_points</span><span class="p">))</span>
+
+    <span class="c1"># SDFs</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">query_points</span><span class="p">):</span>
+        <span class="n">convexhull_sdf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">implicitPolyDataDistance</span><span class="o">.</span><span class="n">EvaluateFunction</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">surface</span><span class="p">,</span> <span class="n">convexhull_sdf</span></div>
+
+
+
+
+
+<div class="viewcode-block" id="treshold_mask">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.treshold_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">treshold_mask</span><span class="p">(</span><span class="n">data_array</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Chooses and flags cells where variable values match those given. If value is given as float, relative tolerance can be given</span>
+
+<span class="sd">	:param data_array: array to mask, e.g. output of f.read_variable(name=&quot;proton/vg_rho&quot;, cellids=-1)</span>
+<span class="sd">	:param variable: str, variable name</span>
+<span class="sd">	:param value: value/values to use for masking; a float or int for exact match, a (value, relative tolerance) tuple, or [min value, max value] list pair where either can be None for less than or eq./more than or eq. value</span>
+<span class="sd">	:returns: 0/1 mask in same order as data_array, 1: variable value in array inside treshold values, 0: outside</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">data_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data_array</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>  <span class="c1"># either variable isn&#39;t usable or treshold has not been given</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="c1">#mask = np.zeros((len(data_array)))</span>
+	
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span> <span class="c1"># single value, exact</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">data_array</span><span class="p">,</span> <span class="n">value</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span> <span class="c1"># single value with tolerance</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">data_array</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rtol</span><span class="o">=</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">data_array</span> <span class="o">&lt;=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># anywhere where value is less than or equal to</span>
+        <span class="k">elif</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">data_array</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># anywhere where value is more than or equal to</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">data_array</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data_array</span> <span class="o">&lt;=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># min/max</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">mask</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Treshold mask didn&#39;t match any values in array&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+
+<div class="viewcode-block" id="box_mask">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.box_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">box_mask</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">coordpoints</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marginal</span><span class="o">=</span><span class="p">[</span><span class="mf">150e6</span><span class="p">,</span> <span class="mf">50e6</span><span class="p">,</span> <span class="mf">50e6</span><span class="p">,</span> <span class="mf">50e6</span><span class="p">,</span> <span class="mf">50e6</span><span class="p">,</span> <span class="mf">50e6</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Crops simulation box for calculations, output flags outside of cropped box will be 0</span>
+
+<span class="sd">        :param f: a VlsvReader</span>
+<span class="sd">        :kword coordpoints: coordinate points of cells to be masked</span>
+<span class="sd">        :kword cells: cellIDs to be masked</span>
+<span class="sd">        :kword marginal: 6-length list of wanted marginal lengths from mesh edges in meters [negx, negy, negz, posx, posy, posz]</span>
+<span class="sd">        :returns: Boolean mask in input order of coordinates/cells, -1 if no coorpoints or cells were given and mask could not be done</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_inside</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">coord</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coords</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">xmin</span><span class="o">+</span><span class="n">marginal</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">xmax</span><span class="o">-</span><span class="n">marginal</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> 
+                      <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">ymin</span><span class="o">+</span><span class="n">marginal</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">ymax</span><span class="o">-</span><span class="n">marginal</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> 
+                      <span class="n">coord</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">zmin</span><span class="o">+</span><span class="n">marginal</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">coord</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">zmax</span><span class="o">-</span><span class="n">marginal</span><span class="p">[</span><span class="mi">5</span><span class="p">])):</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span><span class="kc">True</span>
+        <span class="k">return</span> <span class="n">res</span>
+    
+    <span class="k">if</span> <span class="n">coordpoints</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">is_inside</span><span class="p">(</span><span class="n">coordpoints</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">cells</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">is_inside</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="write_flags">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.write_flags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">flag_name</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Writes flags into .vlsv-file with writer</span>
+
+<span class="sd">        :param writer: a vlsvwriter</span>
+<span class="sd">        :param flags: an array of flags in order of cellids</span>
+<span class="sd">        :param flag_name: string, name of the flag variable</span>
+<span class="sd">        :kword mask: if flags are made from cropped cells, give mask used for cropping</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># flags exist only in cropped cells</span>
+        <span class="n">new_flags</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> 
+        <span class="n">new_flags</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write_variable_info</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">calculations</span><span class="o">.</span><span class="n">VariableInfo</span><span class="p">(</span><span class="n">new_flags</span><span class="p">,</span> <span class="n">flag_name</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">latexunits</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">),</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1">#writer.write(flags,flag_name,&#39;VARIABLE&#39;,&#39;SpatialGrid&#39;)</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write_variable_info</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">calculations</span><span class="o">.</span><span class="n">VariableInfo</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">flag_name</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">latexunits</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">),</span><span class="s2">&quot;SpatialGrid&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">flag_name</span><span class="o">+</span><span class="s2">&quot; written to file&quot;</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="make_region_flags">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.make_region_flags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_region_flags</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">,</span> <span class="n">condition_dict</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Makes region flags</span>
+
+<span class="sd">        example:</span>
+<span class="sd">        </span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">        </span>
+<span class="sd">            make_region_flags(variable_dict = {&quot;density&quot;: f.read_variable(name=&quot;proton/vg_rho&quot;, cellids=-1)}, condition_dict = {&quot;density&quot;: [None, 1e7]})</span>
+
+<span class="sd">        results in flag array in shape of read_variable output where cells where &quot;proton/vg_rho&quot; is less or equal to 1e7 are 1 and others are 0</span>
+<span class="sd">        </span>
+<span class="sd">    </span>
+<span class="sd">        :param variable_dict: dictionary containing names and data arrays of variables, names must match those in condition_dict</span>
+<span class="sd">        :param condition_dict: dictionary containing names and conditions for variable data in variable_dict</span>
+<span class="sd">        :kword flag_type: default &quot;01&quot;, optionally &quot;fraction&quot;. &quot;01&quot; gives flags 1: all variables fill all conditions, 0: everything else; &quot;fraction&quot; flags are rounded fractions of varibles that fulfill conditions (e.g. flag 0.5 means one of two conditions was filled)</span>
+<span class="sd">        :kword mask: deafault None, optionally boolean array to use for variable dict arrays to search for a region from subset of cells (cells False in mask will be automatically flagged as 0)</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">variable_flags</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># search all cells</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">condition_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="k">try</span><span class="p">:</span> <span class="c1"># if key in variables</span>
+                <span class="n">region</span> <span class="o">=</span> <span class="n">treshold_mask</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">condition_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">region</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">variable_flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;ignored&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># search only masked area</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">condition_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span> <span class="c1"># if key in variables</span>
+                <span class="n">region</span> <span class="o">=</span> <span class="n">treshold_mask</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">mask</span><span class="p">],</span> <span class="n">condition_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">region</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">variable_flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;ignored&quot;</span><span class="p">)</span>
+
+
+    <span class="n">variable_flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span> <span class="c1"># no cells that fullfill conditions, hope that density is a key</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">])))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">])))</span>
+        
+
+    <span class="k">if</span> <span class="n">flag_type</span> <span class="o">==</span> <span class="s2">&quot;01&quot;</span><span class="p">:</span> <span class="c1"># 1 only if all viable variables are 1, 0 otherwise</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flags</span>
+    
+    <span class="k">elif</span> <span class="n">flag_type</span> <span class="o">==</span> <span class="s2">&quot;fraction&quot;</span><span class="p">:</span> <span class="c1"># rounded fraction of viable variables that are 1</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">variable_flags</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flags</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">decimals</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+    
+
+
+<div class="viewcode-block" id="bowshock_SDF">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.bowshock_SDF">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bowshock_SDF</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">variable_dict</span><span class="p">,</span> <span class="n">query_points</span><span class="p">,</span> <span class="n">own_condition_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the bow shock by making a convex hull of either default variables/values based on upstream values or a user-defined variable/value dictionary. Returns signed distances from the convex hull to given query_points.</span>
+<span class="sd">    </span>
+<span class="sd">        :param f: a VlsvReader</span>
+<span class="sd">        :param variable_dict: dictionary containing names and variable arrays needed</span>
+<span class="sd">        :param query_points: xyz-coordinates of all points where the SDF will be calculated ([x1, y1, z1], [x2, y2, z2], ...)</span>
+<span class="sd">        :kword own_condition_dict: optional, dictionary with string variable names as keys and tresholds as values to pass to treshold_mask()-function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cellids</span> <span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">own_condition_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># bow shock from upstream rho</span>
+        <span class="c1"># upstream point</span>
+        <span class="n">upstream_point</span> <span class="o">=</span> <span class="p">[</span><span class="mf">150e6</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+        <span class="n">upstream_cellid</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">upstream_point</span><span class="p">)</span>
+        <span class="n">upstream_rho</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;proton/vg_rho&quot;</span><span class="p">,</span> <span class="n">cellids</span><span class="o">=</span><span class="n">upstream_cellid</span><span class="p">)</span>
+
+        <span class="n">bowshock_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.5</span><span class="o">*</span><span class="n">upstream_rho</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)}</span>
+        <span class="n">bowshock_rho_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">,</span> <span class="n">bowshock_conditions</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">)</span>
+        <span class="n">__</span><span class="p">,</span> <span class="n">bowshock_rho_SDF</span> <span class="o">=</span> <span class="n">vtkDelaunay3d_SDF</span><span class="p">(</span><span class="n">query_points</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellids</span><span class="p">[</span><span class="n">bowshock_rho_flags</span><span class="o">!=</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">bowshock_rho_SDF</span>
+    
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># bowshock from user-defined variable and values </span>
+        <span class="n">bowshock_dict_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">,</span> <span class="n">own_condition_dict</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">)</span>
+        <span class="n">__</span><span class="p">,</span> <span class="n">dict_sdf</span> <span class="o">=</span> <span class="n">vtkDelaunay3d_SDF</span><span class="p">(</span><span class="n">query_points</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellids</span><span class="p">[</span><span class="n">bowshock_dict_flags</span><span class="o">!=</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">dict_sdf</span></div>
+
+    
+
+
+<div class="viewcode-block" id="RegionFlags">
+<a class="viewcode-back" href="../../magnetosphere_regions/#regions.RegionFlags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">],</span> <span class="n">ignore_boundaries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">region_flag_type</span><span class="o">=</span><span class="s2">&quot;01&quot;</span><span class="p">,</span> <span class="n">magnetopause_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">region_conditions</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a sidecar .vlsv file with flagged cells for regions and boundaries in near-Earth plasma environment. </span>
+<span class="sd">        Region flags (named flag_region, flags are fractions of filled conditions or 1/0): magnetosheath, magnetosphere, cusps, lobe_N, lobe_S, central_plasma_sheet</span>
+<span class="sd">        Boundary signed distance flags (named &quot;SDF_boundary&quot;, flags are signed distances to boundary in m with inside being negative distance): magnetopause, bowshock</span>
+
+<span class="sd">        possible regions: &quot;all&quot;, &quot;boundaries&quot; (magnetopause, bow shock), &quot;large_areas&quot; (boundaries + upstream, magnetosheath, magnetosphere), &quot;magnetosphere&quot;, &quot;bowshock&quot;,</span>
+<span class="sd">            &quot;cusps&quot;, &quot;lobes&quot;, &quot;central_plasma_sheet&quot;</span>
+
+<span class="sd">        Note that different runs may need different tresholds for region parameters and region accuracy should be verified visually</span>
+<span class="sd">        Beta* convex hull is most likely the best magnetopause method for regions, for just magnetopause with different options use magnetopause.py</span>
+
+<span class="sd">        :param datafile: .vlsv bulk file name (and path)</span>
+<span class="sd">        :param outfilen: sidecar .vlsv file name (and path)</span>
+<span class="sd">        :kword ignore_boundaries: True: do not take cells in the inner/outer boundaries of the simulation into account when looking for regions (applicable for cusps and CPS for now)</span>
+<span class="sd">        :kword region_flag_type: &quot;01&quot; or &quot;fraction&quot;, whether flags are binary (all conditions must be satisfied) or fractions of how many given conditions are met</span>
+<span class="sd">        :kword magnetopause_method: default &quot;beta_star&quot;, other options: see magnetopause.py, use alpha=None</span>
+<span class="sd">        :kword region_conditions: optional dict where keys are str region names and values are condition dictionaries, for setting own conditions for bow shock, cusps, lobes or central plasma sheet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s2">&quot;all&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;magnetopause&quot;</span><span class="p">,</span> <span class="s2">&quot;bowshock&quot;</span><span class="p">,</span> <span class="s2">&quot;upstream&quot;</span><span class="p">,</span> <span class="s2">&quot;magnetosheath&quot;</span><span class="p">,</span> <span class="s2">&quot;magnetosphere&quot;</span><span class="p">,</span> <span class="s2">&quot;cusps&quot;</span><span class="p">,</span> <span class="s2">&quot;lobes&quot;</span><span class="p">,</span> <span class="s2">&quot;central_plasma_sheet&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;large_areas&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;magnetopause&quot;</span><span class="p">,</span> <span class="s2">&quot;bowshock&quot;</span><span class="p">,</span> <span class="s2">&quot;upstream&quot;</span><span class="p">,</span> <span class="s2">&quot;magnetosheath&quot;</span><span class="p">,</span> <span class="s2">&quot;magnetosphere&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;boundaries&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;magnetopause&quot;</span><span class="p">,</span> <span class="s2">&quot;bowshock&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;cusps&quot;</span> <span class="ow">in</span> <span class="n">regions</span> <span class="ow">or</span> <span class="s2">&quot;central_plasma_sheet&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>  <span class="c1"># for cusps and central plasma sheet we need the magnetoshpere</span>
+            <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;magnetosphere&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;magnetosphere&quot;</span> <span class="ow">in</span> <span class="n">regions</span> <span class="ow">or</span> <span class="s2">&quot;magnetosheath&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;magnetopause&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;bowshock&quot;</span> <span class="ow">in</span> <span class="n">regions</span> <span class="ow">or</span> <span class="s2">&quot;magnetosheath&quot;</span> <span class="ow">in</span> <span class="n">regions</span> <span class="ow">or</span> <span class="s2">&quot;upstream&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+            <span class="n">regions</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;bowshock&quot;</span><span class="p">])</span>
+
+
+
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">datafile</span><span class="p">)</span>
+    <span class="n">cellids</span> <span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+    <span class="n">all_points</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cell_coordinates</span><span class="p">(</span><span class="n">cellids</span><span class="p">)</span>
+    <span class="n">cellIDdict</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cellid_locations</span><span class="p">()</span>
+
+    <span class="c1">## writer ##</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvWriter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">)</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">copy_variables_list</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;CellID&quot;</span><span class="p">])</span>
+    <span class="c1">#writer.copy_variables(f, varlist=[&quot;proton/vg_rho&quot; , &quot;vg_beta_star&quot;, &quot;vg_temperature&quot;, &quot;vg_b_vol&quot;, &quot;vg_J&quot;, &quot;vg_beta&quot;, &quot;vg_connection&quot;, &quot;vg_boundarytype&quot;])</span>
+
+
+    <span class="c1"># variable data dictionary</span>
+    <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">check_variable</span><span class="p">(</span><span class="s2">&quot;proton/vg_rho&quot;</span><span class="p">):</span> <span class="c1"># vg-grid</span>
+
+        <span class="c1"># dict {varible call name : variable vlsvreader name or varible call name : (variable vlsvreader name, operator)} </span>
+        <span class="n">varnames</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="s2">&quot;proton/vg_rho&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="s2">&quot;vg_temperature&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="s2">&quot;vg_beta&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;beta_star&quot;</span><span class="p">:</span> <span class="s2">&quot;vg_beta_star&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;B_magnitude&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;vg_B_vol&quot;</span><span class="p">,</span> <span class="s2">&quot;magnitude&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;B_x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;vg_B_vol&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;B_y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;vg_B_vol&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;B_z&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;vg_B_vol&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;connection&quot;</span><span class="p">:</span> <span class="s2">&quot;vg_connection&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;J_magnitude&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;vg_J&quot;</span><span class="p">,</span> <span class="s2">&quot;magnitude&quot;</span><span class="p">)}</span>
+        
+        <span class="n">boundaryname</span> <span class="o">=</span> <span class="s2">&quot;vg_boundarytype&quot;</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">errormsg</span><span class="p">(</span><span class="n">varstr</span><span class="p">):</span> <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> could not be read, will be ignored&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">varstr</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">varname</span><span class="p">,</span> <span class="n">filevarname</span> <span class="ow">in</span> <span class="n">varnames</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filevarname</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="c1"># no operator</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">filevarname</span><span class="p">,</span> <span class="n">cellids</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cellids</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+                <span class="n">errormsg</span><span class="p">(</span><span class="n">filevarname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span> 
+                <span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">filevarname</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cellids</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="n">filevarname</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">variables</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">cellids</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+                <span class="n">errormsg</span><span class="p">(</span><span class="n">filevarname</span><span class="p">)</span>
+
+
+
+    <span class="c1">#connectivity_region = treshold_mask(variables[&quot;connection&quot;], 0)</span>
+    <span class="c1">#betastar_region = treshold_mask(variables[&quot;beta_star&quot;], [0.0, 0.5])</span>
+    <span class="c1">#magnetosphere_proper =  np.where((connectivity_region==1) | (betastar_region==1), 1, 0)</span>
+    <span class="c1">#write_flags(writer, magnetosphere_proper, &#39;flag_magnetosphere&#39;)</span>
+    <span class="c1">#return 0</span>
+
+
+    <span class="c1"># upstream point # this could probably be done better than just a random point in sw</span>
+    <span class="n">upstream_point</span> <span class="o">=</span> <span class="p">[</span><span class="n">xmax</span><span class="o">-</span><span class="mi">10</span><span class="o">*</span><span class="n">R_E</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">]</span>
+    <span class="n">upstream_cellid</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_cellid</span><span class="p">(</span><span class="n">upstream_point</span><span class="p">)</span>
+    <span class="n">upstream_index</span> <span class="o">=</span> <span class="n">cellIDdict</span><span class="p">[</span><span class="n">upstream_cellid</span><span class="p">]</span>
+
+    <span class="c1">## MAGNETOPAUSE ##</span>
+    <span class="k">if</span> <span class="s2">&quot;magnetopause&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">magnetopause_kwargs</span><span class="p">:</span>
+            <span class="n">__</span><span class="p">,</span> <span class="n">magnetopause_SDF</span> <span class="o">=</span> <span class="n">magnetopause</span><span class="o">.</span><span class="n">magnetopause</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="o">**</span><span class="n">magnetopause_kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">__</span><span class="p">,</span> <span class="n">magnetopause_SDF</span> <span class="o">=</span> <span class="n">magnetopause</span><span class="o">.</span><span class="n">magnetopause</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;beta_star_with_connectivity&quot;</span><span class="p">,</span> <span class="n">Delaunay_alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># default magnetopause: beta*+ B connectivity convex hull </span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">magnetopause_SDF</span><span class="p">,</span> <span class="s1">&#39;SDF_magnetopause&#39;</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magnetopause_SDF</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">5e6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;flag_magnetopause&quot;</span><span class="p">)</span>
+
+        <span class="c1"># save some magnetopause values for later</span>
+        <span class="n">magnetopause_density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magnetopause_SDF</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">5e6</span><span class="p">])</span>
+        <span class="c1">#print(f&quot;{magnetopause_density=}&quot;)</span>
+        <span class="n">magnetopause_temperature</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">magnetopause_SDF</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">5e6</span><span class="p">])</span>
+        <span class="c1">#print(f&quot;{magnetopause_temperature=}&quot;)</span>
+    
+    <span class="c1">## MAGNETOSPHERE ##</span>
+    <span class="c1"># magnetosphere from magnetopause SDF</span>
+    <span class="k">if</span> <span class="s2">&quot;magnetosphere&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="n">magnetosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">magnetopause_SDF</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">magnetosphere</span><span class="p">,</span> <span class="s1">&#39;flag_magnetosphere&#39;</span><span class="p">)</span>
+
+
+    <span class="c1">## BOW SHOCK ## #TODO: similar kwargs system as magnetopause?</span>
+    <span class="c1"># bow shock from rho </span>
+    <span class="k">if</span> <span class="s2">&quot;bowshock&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;bowshock&quot;</span> <span class="ow">in</span> <span class="n">region_conditions</span><span class="p">:</span>
+            <span class="n">bowshock</span> <span class="o">=</span> <span class="n">bowshock_SDF</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">all_points</span><span class="p">,</span> <span class="n">own_condition_dict</span><span class="o">=</span><span class="n">region_conditions</span><span class="p">[</span><span class="s2">&quot;bowshock&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bowshock</span> <span class="o">=</span> <span class="n">bowshock_SDF</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">all_points</span><span class="p">)</span> <span class="c1"># default upstream rho method, might fail with foreshock</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">bowshock</span><span class="p">,</span> <span class="s1">&#39;SDF_bowshock&#39;</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">bowshock</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">5e6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;flag_bowshock&quot;</span><span class="p">)</span>
+
+        <span class="c1"># magnetosphere+magnetosheath -area</span>
+        <span class="n">inside_bowshock</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bowshock</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1">## MAGNETOSHEATH ##</span>
+    <span class="k">if</span> <span class="s2">&quot;magnetosheath&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="c1"># magnetosheath from bow shock-magnetosphere difference</span>
+        <span class="n">magnetosheath_flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">inside_bowshock</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="o">-</span><span class="n">magnetosphere</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">magnetosheath_flags</span><span class="p">,</span> <span class="s1">&#39;flag_magnetosheath&#39;</span><span class="p">)</span>
+
+        <span class="c1"># save magnetosheath density and temperature for further use</span>
+        <span class="c1">#magnetosheath_density = np.mean(variables[&quot;density&quot;][magnetosheath_flags == 1])</span>
+        <span class="c1">#print(f&quot;{magnetosheath_density=}&quot;)</span>
+        <span class="c1">#magnetosheath_temperature = np.mean(variables[&quot;temperature&quot;][magnetosheath_flags == 1])</span>
+        <span class="c1">#print(f&quot;{magnetosheath_temperature=}&quot;)</span>
+
+    <span class="c1">## UPSTREAM ##</span>
+    <span class="k">if</span> <span class="s2">&quot;upstream&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="c1"># upstream from !bowshock</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">inside_bowshock</span><span class="p">,</span> <span class="s1">&#39;flag_upstream&#39;</span><span class="p">)</span>
+        <span class="c1">#write_flags(writer, inside_bowshock, &#39;flag_inside_bowshock&#39;)</span>
+
+
+
+    <span class="c1">## INNER MAGNETOSPHERE REGIONS ##</span>
+
+    <span class="k">if</span> <span class="s2">&quot;magnetosphere&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ignore_boundaries</span><span class="p">:</span>
+            <span class="n">noBoundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">boundaryname</span><span class="p">,</span> <span class="n">cellids</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># boundarytype 1: not a boundary</span>
+            <span class="c1">#mask_inBowshock= np.where(((inside_bowshock == 1) &amp; (noBoundaries == 1)), 1, 0).astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere</span>
+            <span class="n">mask_inMagnetosphere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(((</span><span class="n">magnetosphere</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">noBoundaries</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span> <span class="c1"># </span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1">#mask_inBowshock = inside_bowshock.astype(bool)  # only search inner regions from inside the magnetosheath and magnetosphere</span>
+            <span class="n">mask_inMagnetosphere</span> <span class="o">=</span> <span class="n">magnetosphere</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span> <span class="c1"># </span>
+
+    <span class="c1">#print(&quot;upstream B:&quot;, variables[&quot;B_magnitude&quot;][upstream_index])</span>
+
+    <span class="c1"># cusps</span>
+    <span class="k">if</span> <span class="s2">&quot;cusps&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;cusps&quot;</span> <span class="ow">in</span> <span class="n">region_conditions</span><span class="p">:</span>
+            <span class="n">cusp_conditions</span> <span class="o">=</span> <span class="n">region_conditions</span><span class="p">[</span><span class="s2">&quot;cusps&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cusp_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+                            <span class="c1">#&quot;beta_star&quot;: [0.1, None],</span>
+                            <span class="s2">&quot;connection&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span> <span class="c1"># either closed, or open-closed/closed-open</span>
+                            <span class="s2">&quot;B_magnitude&quot;</span><span class="p">:[</span><span class="mi">2</span><span class="o">*</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;B_magnitude&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">],</span> <span class="kc">None</span><span class="p">],</span>
+                            <span class="s2">&quot;J_magnitude&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;J_magnitude&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+                            <span class="p">}</span>
+
+        <span class="n">cusp_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">cusp_conditions</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="n">region_flag_type</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_inMagnetosphere</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">cusp_flags</span><span class="p">,</span> <span class="s1">&#39;flag_cusps&#39;</span><span class="p">,</span> <span class="n">mask_inMagnetosphere</span><span class="p">)</span>
+
+ 
+    <span class="c1"># magnetotail lobes </span>
+    <span class="k">if</span> <span class="s2">&quot;lobes&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;lobes&quot;</span> <span class="ow">in</span> <span class="n">region_conditions</span><span class="p">:</span>
+            <span class="n">lobes_conditions</span> <span class="o">=</span> <span class="n">region_conditions</span><span class="p">[</span><span class="s2">&quot;lobes&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lobes_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="c1"># Koskinen: 0.003</span>
+                                <span class="s2">&quot;connection&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span>
+                                <span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">]],</span> <span class="c1"># Koskinen: 1e-8</span>
+                                <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">3.5e6</span><span class="p">],</span> <span class="c1"># Koskinen: 3.5e6 K</span>
+                                <span class="p">}</span>
+
+            <span class="c1"># lobes slightly other way</span>
+            <span class="n">lobe_N_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> 
+                                <span class="s2">&quot;connection&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span>
+                                <span class="s2">&quot;B_x&quot;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+                                <span class="s2">&quot;B_magnitude&quot;</span><span class="p">:[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">10</span><span class="o">*</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;B_magnitude&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">]]</span>
+                                <span class="p">}</span>
+            <span class="n">lobe_N_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">lobe_N_conditions</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="n">region_flag_type</span><span class="p">)</span>
+            
+
+            <span class="n">lobe_S_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> 
+                                <span class="s2">&quot;connection&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">],</span>
+                                <span class="s2">&quot;B_x&quot;</span><span class="p">:[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                                <span class="s2">&quot;B_magnitude&quot;</span><span class="p">:[</span><span class="kc">None</span><span class="p">,</span> <span class="mi">10</span><span class="o">*</span><span class="n">variables</span><span class="p">[</span><span class="s2">&quot;B_magnitude&quot;</span><span class="p">][</span><span class="n">upstream_index</span><span class="p">]]</span>
+                                <span class="p">}</span>
+            <span class="n">lobe_S_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">lobe_S_conditions</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="n">region_flag_type</span><span class="p">)</span>
+
+            <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">lobe_N_flags</span><span class="p">,</span> <span class="s1">&#39;flag_lobe_N&#39;</span><span class="p">)</span>
+            <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">lobe_S_flags</span><span class="p">,</span> <span class="s1">&#39;flag_lobe_S&#39;</span><span class="p">)</span>
+
+        <span class="n">lobes_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">lobes_conditions</span><span class="p">,</span> <span class="n">flag_type</span><span class="o">=</span><span class="n">region_flag_type</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">lobes_flags</span><span class="p">,</span> <span class="s1">&#39;flag_lobes&#39;</span><span class="p">)</span>
+
+
+        <span class="c1"># lobe density from median densities?</span>
+        <span class="c1">#lobes_mask = np.where((lobes_flags &gt; 0.9), 1, 0).astype(bool)</span>
+        <span class="c1">#lobe_density = np.mean(variables[&quot;density&quot;][lobes_mask])#[lobes_allcells&gt;0.9])</span>
+        <span class="c1">#print(f&quot;{lobe_density=}&quot;)</span>
+
+    <span class="c1"># Central plasma sheet</span>
+    <span class="k">if</span> <span class="s2">&quot;central_plasma_sheet&quot;</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;central_plasma_sheet&quot;</span> <span class="ow">in</span> <span class="n">region_conditions</span><span class="p">:</span>
+            <span class="n">central_plasma_sheet_conditions</span> <span class="o">=</span> <span class="n">region_conditions</span><span class="p">[</span><span class="s2">&quot;central_plasma_sheet&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">central_plasma_sheet_conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">],</span> <span class="c1"># Wolf intro ?should not be but seems to work</span>
+                                            <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="c1"># Koskinen: 6</span>
+                                            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">2e6</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="c1">#  5e7 from Koskinen</span>
+                                            <span class="s2">&quot;J_magnitude&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1e-9</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+                                             <span class="p">}</span>
+        
+        <span class="n">central_plasma_sheet_flags</span> <span class="o">=</span> <span class="n">make_region_flags</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">central_plasma_sheet_conditions</span><span class="p">,</span><span class="n">flag_type</span><span class="o">=</span><span class="n">region_flag_type</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_inMagnetosphere</span><span class="p">)</span>
+        <span class="n">write_flags</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">central_plasma_sheet_flags</span><span class="p">,</span> <span class="s1">&#39;flag_central_plasma_sheet&#39;</span><span class="p">,</span> <span class="n">mask_inMagnetosphere</span><span class="p">)</span></div>
+
+
+
+    <span class="c1">## Other boundary layers, PSBL sometimes works</span>
+    
+    <span class="c1"># Plasma sheet boundary layer (PSBL)</span>
+    <span class="c1"># if &quot;PSBL&quot; in regions or &quot;all&quot; in regions:</span>
+    <span class="c1">#PSBL_conditions = {#&quot;density&quot;: (1e7, 1.0), # Koskinen: 1e5</span>
+    <span class="c1">#                    &quot;density&quot;: [None, 1e7],</span>
+                        <span class="c1">#&quot;temperature&quot;: [0.5e6, 1e6],#(1e7, 2.0), # from Koskinen</span>
+                       <span class="c1">#&quot;temperature&quot;: [2e6, None],</span>
+    <span class="c1">#                   &quot;beta&quot;: [0.1, 1.0],</span>
+                       <span class="c1">#&quot;B_magnitude&quot;:[10*variables[&quot;B_magnitude&quot;][upstream_index], None]</span>
+    <span class="c1">#                   &quot;J_magnitude&quot;: [2*variables[&quot;J_magnitude&quot;][upstream_index], None],</span>
+    <span class="c1">#                   }</span>
+    
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+
+    <span class="n">datafile</span> <span class="o">=</span> <span class="s2">&quot;/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv&quot;</span>
+    <span class="n">outfilen</span> <span class="o">=</span> <span class="s2">&quot;EGE_regions_t2000.vlsv&quot;</span>
+
+    <span class="n">RegionFlags</span><span class="p">(</span><span class="n">datafile</span><span class="p">,</span> <span class="n">outfilen</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">])</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
