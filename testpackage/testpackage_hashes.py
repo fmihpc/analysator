@@ -286,10 +286,10 @@ if __name__=="__main__":
         ciTester.hash("read_variable",variables,loop=True)
 
     if generate_path:
-        if ciTester.hashes_dict_python is not None:
+        if ciTester.hashes_dict_python:
             ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
             os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
-        if ciTester.hashes_dict_rust is not None:
+        if ciTester.hashes_dict_rust:
             ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
             os.system(f"cat {os.path.join(generate_path,'hashdump_rust.txt')}")
 
@@ -297,9 +297,9 @@ if __name__=="__main__":
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
             refDict=ciTester.loadFromFile(hashdump)
-            if ciTester.hashes_dict_python is not None and i==0:
+            if ciTester.hashes_dict_python and i==0:
                 hashdict=ciTester.hashes_dict_python
-            elif ciTester.hashes_dict_rust is not None and i==1:
+            elif ciTester.hashes_dict_rust and i==1:
                 hashdict=ciTester.hashes_dict_rust 
             else:
                 print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
