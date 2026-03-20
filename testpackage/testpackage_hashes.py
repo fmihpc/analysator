@@ -278,9 +278,9 @@ if __name__=="__main__":
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
              refDict=ciTester.loadFromFile(hashdump)
-             if ciTester.hashes_dict_python is not None and i=0:
+             if ciTester.hashes_dict_python is not None and i==0:
                  hashdict=ciTester.hashes_dict_python
-             elif ciTester.hashes_dict_rust is not None and i=1:
+             elif ciTester.hashes_dict_rust is not None and i==1:
                  hashdict=ciTester.hashes_dict_rust 
              else:
                  print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
