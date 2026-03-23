@@ -286,6 +286,7 @@ if __name__=="__main__":
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
         ciTester.hash("read_variable",variables,loop=True,flatten=True)
 
+    ##############GENERATION OF REFERENCE DATA###############
     if generate_path:
         if ciTester.hashes_dict_python:
             ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
@@ -294,6 +295,7 @@ if __name__=="__main__":
             ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
             os.system(f"cat {os.path.join(generate_path,'hashdump_rust.txt')}")
 
+    ##############COMPARISON AGAINST REFERENCE ###############
     if compare_path:
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
@@ -309,16 +311,44 @@ if __name__=="__main__":
                 continue
 
             if refDict!=1:
-               if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
-                   diff=set([(hashi[0],hashi[1][0]) for hashi in refDict.items()])^set([(hashi[0],hashi[1][0]) for hashi in hashdict.items()])
-                   raise SystemError(f"Hashes differ:\n {diff}")
-               elif refDict==hashdict:
-                   print("Hash dictionaries match")
+                if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
+                    unique_hash=set(hashdict.keys())-set(refDict.keys())
+                    if unique_hash:
+                        print(f"::warning::Generated hashset has file entries {unique_hash} which are not found in the reference set.")
+
+                    for file in refDict.keys():
+                        if file not in hashdict:
+                           print(f"::error::Reference has entry for {file} but could not find entry for this file in generated hashset.")
+                           retval=1
+                           continue
+
+                        uniq_func_gen=set(hashdict[file].keys())-set(refDict[file].keys())
+                        if uniq_func_gen:
+                           print(f"::warning::Generated hashset has function entries {uniq_func_gen} which are not found in reference set.")
+
+                        for func,argdict in refDict[file].items():
+                            if func not in hashdict[file]:
+                               retval=1
+                               print(f"::error::Call to func {func} missing from generated hashes.")
+                               continue 
+
+                            diff_ref=set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])-set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])
+                            diff_gen=set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])-set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])
+
+                            if diff_gen and not diff_ref:
+                                print(f"::warning:: Generated hashset contains unique entries {diff_gen}!")
+
+                            if diff_ref:
+                                retval=1
+                                print(f"::error:: Difference in the hashes or args!\n reference: {diff_ref} \n generated: {diff_gen}!")
+                elif refDict==hashdict:
+                    print("Hash dictionaries match")
             else:
-               retval=1
+                retval=1
 
     quit()
 #Should not be used yet
+    ##############COMPARISON BETWEEN VLVSRS AND VLSVREADER###############
     if retval!=1:
         retval=0
     key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
