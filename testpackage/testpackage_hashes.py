@@ -97,7 +97,7 @@ class Tester:
         else:
             print("None set, give valid backend")
 
-    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=True,sort=False,argkey_name=None,novlsv=False):
+    def hash(self,func,args,op=None,opargs=None,both=False,loop=False,flatten=False,sort=False,argkey_name=None,novlsv=False):
             
         def update(vlsvobj,op,opargs,args,hashdict,loop=False):
             #If we want to repeat same function func with different arguments
@@ -261,8 +261,8 @@ if __name__=="__main__":
             rustlist=ciTester.vlsvobj_rust.list_variables()
             variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
             nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
-            ciTester.hash("read_variable_raw",variables,loop=True)
-            ciTester.hash("read_variable",nonraw_vars,loop=True)
+            ciTester.hash("read_variable_raw",variables,loop=True,flatten=True)
+            ciTester.hash("read_variable",nonraw_vars,loop=True,flatten=True)
 
         #Make hash python
         ciTester.setHashTarget("python")
@@ -284,7 +284,7 @@ if __name__=="__main__":
                 "variable":"vg_connection"},novlsv=True,argkey_name="vg_connection",flatten=False)
 
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
-        ciTester.hash("read_variable",variables,loop=True)
+        ciTester.hash("read_variable",variables,loop=True,flatten=True)
 
     if generate_path:
         if ciTester.hashes_dict_python:
@@ -298,6 +298,8 @@ if __name__=="__main__":
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
             refDict=ciTester.loadFromFile(hashdump)
+            if not refDict:
+                continue
             if ciTester.hashes_dict_python and i==0:
                 hashdict=ciTester.hashes_dict_python
             elif ciTester.hashes_dict_rust and i==1:
