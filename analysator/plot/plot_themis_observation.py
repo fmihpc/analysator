@@ -47,12 +47,16 @@ proton_mass = 1.67e-27      # in kg
 themis_colors=[(0,0,0),(.5,0,.5),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0)]
 themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
 
-def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), pop="proton"):
+def themis_plot_detector(vlsvReader, cellID,outputfile="./themis_plot_detector.png",nooverwrite=False,draw=True, detector_axis=np.array([0,1,0]), pop="proton"):
     ''' Plots a view of the detector countrates using matplotlib
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
     :param detector_axis:     detector axis direction (note: this is not spacecraft spin axis!)
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
+    
     '''
 
     matrix = vsc.spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
@@ -74,13 +78,20 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), po
     cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        plt.savefig(outputpath)
+    else:
+        plt.show()
 
-def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
+def themis_plot_phasespace_contour(vlsvReader, cellID,outputfile='./themis_plot_phasespace_contour.png', nooverwrite=False, draw=True, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
     ''' Plots a contour view of phasespace, as seen by a themis detector, at the given cellID
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
@@ -117,14 +128,21 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     cax = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        plt.savefig(outputpath)
+    else:
+        plt.show()
 
-def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy"):
+def themis_plot_phasespace_helistyle(vlsvReader, cellID,outputfile='./themis_plot_phasespace_helistyle',plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy",draw=True,nooverwrite=False):
     ''' Plots a view of phasespace, as seen by a themis detector, at the given cellID, in the style that heli likes.
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
     :param smooth:            Smooth re-gridded phasespace before plotting
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
@@ -159,12 +177,16 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.set_ylabel(ylabel+" (km/s)")
     cmapuse=pt.plot.get_cmap("Blues")
 
-    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse, shading='flat')
+    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=cmapuse)
     cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse)
     #cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap("binary"))
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        fig.savefig(outputpath)
+    else:
+        plt.show()
 def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.],pop='proton'):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
