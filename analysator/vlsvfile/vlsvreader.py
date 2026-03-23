@@ -327,7 +327,6 @@ class VlsvReader(object):
       return s
 
    def get_linked_readers(self, reload=False):
-      # self.__linked_files = self.__metadata_cache.get_metadata("linked_reader_files", set())
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
@@ -1430,7 +1429,12 @@ class VlsvReader(object):
                data=data.reshape(result_size, vector_size)
 
             if not isinstance(cellids, numbers.Number):
-               data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               if np.issubdtype(data.dtype, np.floating):
+                  data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               elif np.issubdtype(data.dtype, np.integer):
+                  data_out = np.full_like(data, np.iinfo(data.dtype).min, shape=(len(cellids),*data.shape[1:]))
+               else:
+                  raise ValueError("unexpected dtype encountered in read ("+str(data.dtype)+")")
                data_out[cellids!=0,...] = data
                data = data_out
             
@@ -2085,7 +2089,7 @@ class VlsvReader(object):
             logging.info("Did not find FsGrid decomposition from vlsv file.")
       
       if self.__fsGridDecomposition is None:
-         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(self,("MESH_DECOMPOSITION","fsgrid"),None)
          if self.__fsGridDecomposition is not None:
             logging.info("Found FsGrid decomposition from metadata file: " + str(self.__fsGridDecomposition))
             return self.__fsGridDecomposition
@@ -2098,7 +2102,7 @@ class VlsvReader(object):
          logging.info("Calculating fsGrid decomposition from the file")
          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-         self.__metadata_cache.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+         self.__metadata_cache.add_metadata(self,("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
          return self.__fsGridDecomposition
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
@@ -2245,8 +2249,8 @@ class VlsvReader(object):
       ''' Prints the contents of the metadata cache file.
       '''
 
-      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename()+":")
-      self.__metadata_cache.get_metadata("dummy",None) # Dummy call to read in the metadata file
+      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename(self)+":")
+      self.__metadata_cache.get_metadata(self,"dummy",None) # Dummy call to read in the metadata file
       for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
          print(k, v)
 
