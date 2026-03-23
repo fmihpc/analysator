@@ -233,6 +233,7 @@ class Tester:
 # 
 #
 if __name__=="__main__":
+    retval=0
     ciTester = Tester()
     for file in files:
 
