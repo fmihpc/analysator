@@ -39,7 +39,7 @@ EOF
   singularity build container.sif container.def
 else
   export PYTHONNOUSERSITE=1
-  singularity exec container.def bash
+  singularity exec container.sif bash
 fi
 
 
