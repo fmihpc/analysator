@@ -346,24 +346,25 @@ if __name__=="__main__":
             else:
                 retval=1
 
-    quit()
 #Should not be used yet
+
     ##############COMPARISON BETWEEN VLVSRS AND VLSVREADER###############
     if retval!=1:
         retval=0
-    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
-    for file in ciTester.hashes_dict_rust.keys():
-        print(f"------{file}------")
-        for key in ciTester.hashes_dict_rust[file].keys():
-            py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
-            rust_dict=ciTester.hashes_dict_rust[file][key]
-            for argcall in rust_dict.keys():
-                if rust_dict[argcall][0]!=py_dict[argcall][0]:
-                    print(rust_dict[argcall][0],py_dict[argcall][0])
-                    print(f"Hashes do not match for call {argcall}!")
-                    retval=1
-                else:
-                    continue
+    if False:
+        key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
+        for file in ciTester.hashes_dict_rust.keys():
+            print(f"------{file}------")
+            for key in ciTester.hashes_dict_rust[file].keys():
+                py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
+                rust_dict=ciTester.hashes_dict_rust[file][key]
+                for argcall in rust_dict.keys():
+                    if rust_dict[argcall][0]!=py_dict[argcall][0]:
+                        print(rust_dict[argcall][0],py_dict[argcall][0])
+                        print(f"Hashes do not match for call {argcall}!")
+                        retval=1
+                    else:
+                        continue
 
     if retval==1:
         raise SystemError("Some hashes did not match")
