@@ -39,6 +39,7 @@ jobs:
             module load Python/3.10.4-GCCcore-11.3.0
             uv venv CI_env
             . CI_env/bin/activate
+            uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Produce plots
           id: run_cl
