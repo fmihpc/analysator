@@ -9,7 +9,7 @@ class CustomBuildHook(BuildHookInterface):
             file.write(f"commithash='{commithash.strip('\n')}'\n")
             file.close()
        
-    def finalize(self, version: str, build_data: dict[str, Any], artifact_path: str)->None:
+    def finalize(self, *param,**kwargs)->None:
         out=subprocess.run([sys.executable, "-m", "pip", "install", "-r","requirements-backend.txt","-v"],capture_output=True,check=True)
         #logger.error("TESTINGTESTING ALERTA"+out.stdout.decode('utf-8')) #Doesnt work
         #print(out) #Also doesnt work
