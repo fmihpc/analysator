@@ -345,6 +345,7 @@ if __name__=="__main__":
                 elif refDict==hashdict:
                     print("Hash dictionaries match")
             else:
+                print("Loading from file failed")
                 retval=1
 
 #Should not be used yet
