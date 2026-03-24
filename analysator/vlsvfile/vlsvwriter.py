@@ -117,6 +117,7 @@ class VlsvWriter(object):
       tags['CellID'] = ''
       tags['MESH_BBOX'] = ''
       tags['COORDS'] = ''
+      tags['CONFIG'] = ''
 
       xml_mesh_tags = {}
       # Copy the xml root
