@@ -4,7 +4,7 @@ from packaging.version import Version
 # import logging
 # logger = logging.getLogger(__name__)
 import platform
-if Version(platform.python_version()) <= Version("3.7"):
+if Version(platform.python_version()) < Version("3.8"):
     quit()
 class CustomBuildHook(BuildHookInterface):
     def initialize(self,*param,**kwargs):
