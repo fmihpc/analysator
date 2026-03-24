@@ -40,6 +40,7 @@ jobs:
             . CI_env/bin/activate
             uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
+            uv pip install -r requirements-backend.txt 
         - name: Trial imports
           run: |
             export TMPDIR=$RUNNER_TEMP
