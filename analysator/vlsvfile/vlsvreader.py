@@ -226,6 +226,7 @@ class VlsvReader(object):
 
       # Start calling functions only after initializing trivial members
       self.get_linked_readers()
+      # self.add_linked_readers()
       self.__read_xml_footer()
 
       # Check if the file is using new or old vlsv format
@@ -320,35 +321,52 @@ class VlsvReader(object):
       return self.__grid_epsilon
 
    def get_linked_readers_filename(self):
-      '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
+      ''' Fetch the path to linked readers file, using the cache folder path schema.
+      '''
       pth, base = os.path.split(self.file_name)
       
       s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
+      ''' Get the linked readers from the cache file and return the set of linked readers.
+      By default, will not read the cache line if there are already linked files in the index.
+
+      :param reload: Reload the cache file linked readers [False]
+      '''
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
                l = f.readlines()
-               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+               
+               l = [line.strip() for line in l]
                self.__linked_files.update(l)
-               print(l)
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename()+":\n"+str(self.__linked_files))
+               
 
-      else:
          self.add_linked_readers()
-         # self.__metadata_cache.add_metadata("linked_reader_files",self.__linked_files)
 
       return self.__linked_readers
 
 
    def add_linked_file(self, fname):
+      ''' Add a linked file path for the reader to the link file index.
+
+      :param fname: Path to a vlsv file
+      '''
       if os.path.exists(fname):
-         self.__linked_files.add(VlsvReader(fname))
+         self.__linked_files.add(fname)
       else:
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_reader(self, fname):
+      ''' Add a new linked reader object from filename.
+      Note: This will not add the reader object for storing, but can be used to
+      create temporary links.
+
+      :param fname: Path to a vlsv file
+      '''
+      fname=fname.strip()
       if os.path.exists(fname):
          for reader in self.__linked_readers:
             if fname == reader.file_name:
@@ -358,10 +376,17 @@ class VlsvReader(object):
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_readers(self):
+      ''' Load linked reader files as VlsvReader objects for linked read features.
+      '''
       for fname in self.__linked_files:
          self.add_linked_reader(fname)
 
    def save_linked_readers_file(self, overwrite = False):
+      ''' Save linked reader paths from the current fileindex to a cache file. If 
+      `overwrite == False`, new files will be appended to the cache.
+
+      :param overwrite: Overwrite an existing cache file [False]
+      '''
       fn = self.get_linked_readers_filename()
       if not overwrite: # Load existing linked reader to not overwrite everything
          self.get_linked_readers()
@@ -369,7 +394,7 @@ class VlsvReader(object):
       logging.info("Saving linked readers to "+fn)
       dn = os.path.dirname(fn)
       if not os.path.isdir(dn):
-            os.mkdir(dn)
+            os.makedirs(dn)
       with open(fn,'w') as f:
          lines = []
          for line in self.__linked_files:
@@ -377,10 +402,15 @@ class VlsvReader(object):
          f.writelines(lines)
 
    def clear_linked_readers(self):
+      ''' Clear the list for linked readers from memory. Use to disable linked
+      files if needed.
+      '''
       self.__linked_files.clear()
       self.__linked_readers.clear()
 
    def clear_linked_readers_file(self):
+      ''' Delete the linked readers cache file.
+      '''
       fn = self.get_linked_readers_filename()
       if os.path.exists(fn):
          os.remove(fn)
@@ -775,7 +805,7 @@ class VlsvReader(object):
             name = child.attrib["name"]
             varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
    
    def get_reducers(self):
 
@@ -802,7 +832,7 @@ class VlsvReader(object):
                else:
                   varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -825,9 +855,16 @@ class VlsvReader(object):
                print("   ", child.attrib["name"])
       if variable:
          print("tag = VARIABLE")
+         varset = set()
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
+               varset.add(child.attrib["name"])
                print("   ", child.attrib["name"])
+         varset_linked = set(self.get_variables()).difference(varset)
+         if (len(varset_linked) > 0):
+             print(" from linked readers:")
+             for v in sorted(list(varset_linked)):
+                 print("   ", v)
       if mesh:
          print("tag = MESH")
          for child in self.__xml_root:
