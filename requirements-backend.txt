@@ -1,9 +1,2 @@
-numpy
-scipy
-matplotlib
-packaging
-scikit-image
-vtk>=9.2
-yt
 --index-url https://version.helsinki.fi/api/v4/projects/5244/packages/pypi/simple
 vlsvrs
