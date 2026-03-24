@@ -2,6 +2,9 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 import sys, subprocess
 # import logging
 # logger = logging.getLogger(__name__)
+import platform
+if Version(platform.python_version()) <= Version("3.7"):
+    quit()
 class CustomBuildHook(BuildHookInterface):
     def initialize(self,*param,**kwargs):
         with open("./analysator/miscellaneous/_commithash.py","w") as file:
