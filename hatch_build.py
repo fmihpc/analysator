@@ -1,11 +1,11 @@
 import sys, subprocess
+from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 from packaging.version import Version
 # import logging
 # logger = logging.getLogger(__name__)
 import platform
 if not Version(platform.python_version()) < Version("3.8"):
         
-    from hatchling.builders.hooks.plugin.interface import BuildHookInterface
     class CustomBuildHook(BuildHookInterface):
         def initialize(self,*param,**kwargs):
             with open("./analysator/miscellaneous/_commithash.py","w") as file:
@@ -19,3 +19,6 @@ if not Version(platform.python_version()) < Version("3.8"):
             #logger.error("TESTINGTESTING ALERTA"+out.stdout.decode('utf-8')) #Doesnt work
             #print(out) #Also doesnt work
             # self.app.display_error(out.stdout.decode('utf-8')) #Does not work
+else:
+    class CustomBuildHook(BuildHookInterface):
+        print("eh")
