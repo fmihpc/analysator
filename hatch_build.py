@@ -6,7 +6,8 @@ class CustomBuildHook(BuildHookInterface):
     def initialize(self,*param,**kwargs):
         with open("./analysator/miscellaneous/_commithash.py","w") as file:
             commithash=subprocess.run(["git","rev-parse","HEAD"],capture_output=True).stdout.decode('utf-8')
-            file.write(f"commithash='{commithash.strip('\n')}'"+"\n")
+            commithash=commithash.strip("\n")
+            file.write(f"commithash='{commithash}'"+"\n")
             file.close()
        
     def finalize(self, *param,**kwargs)->None:
