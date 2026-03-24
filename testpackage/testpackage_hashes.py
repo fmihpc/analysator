@@ -1,6 +1,6 @@
 import analysator as pt
 import numpy as np
-# import vlsvrs
+import vlsvrs
 import os
 import hashlib
 import pickle
@@ -84,8 +84,8 @@ class Tester:
         return outdict
 
     def loadobj(self,backend=None):
-        #if not backend or backend.lower()=="rust":
-        #     self.vlsvobj_rust=vlsvrs.VlsvFile(self.filename)
+        if not backend or backend.lower()=="rust":
+             self.vlsvobj_rust=vlsvrs.VlsvFile(self.filename)
         if not backend or backend.lower()=="python":
             self.vlsvobj_python=pt.vlsvfile.VlsvReader(self.filename)
 
@@ -236,17 +236,18 @@ if __name__=="__main__":
     retval=0
     ciTester = Tester()
     for file in files:
-
         #Load data 
         filename=os.path.join(datalocation,file)
 
+        print(filename)
         ciTester.changeFile(filename)
         ciTester.loadobj()
         
         #Test compare
-        # cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([0,0,0]))
-        # ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
-        
+        #cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([-7e7,-7e7,0]))
+        cid=1
+        ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
+
         variables_to_test=["CellID","vg_rhom","vg_v","vg_rhoq","proton/vg_rho","proton/vg_v"] #fg_variable read issue with read_variable
         variables_to_test_nonraw=["fg_b","fg_v"]
         
@@ -254,11 +255,10 @@ if __name__=="__main__":
         variables=[[var] for var in variables_to_test if (var in pylist)] 
         nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist)] 
 
-        if False: #Currently vlsvrs is not being used, this will be updated later when that is dependency to analysator 
-            #Make hash rust
-            ciTester.setHashTarget("rust")
-            #ciTester.hash("read_variable",{"variable":"CellID","op":0},op=["reshape","astype","numpy.sort"],opargs=[[tuple([-1])],[int],[]],sort=False,flatten=False)
-            pylist=ciTester.vlsvobj_python.get_variables()
+        #Make hash rust
+        ciTester.setHashTarget("rust")
+        #ciTester.hash("read_variable",{"variable":"CellID","op":0},op=["reshape","astype","numpy.sort"],opargs=[[tuple([-1])],[int],[]],sort=False,flatten=False)
+        if "3D" in filename:
             rustlist=ciTester.vlsvobj_rust.list_variables()
             variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
             nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
@@ -352,20 +352,21 @@ if __name__=="__main__":
     ##############COMPARISON BETWEEN VLVSRS AND VLSVREADER###############
     if retval!=1:
         retval=0
-    if False:
-        key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
-        for file in ciTester.hashes_dict_rust.keys():
-            print(f"------{file}------")
-            for key in ciTester.hashes_dict_rust[file].keys():
-                py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
-                rust_dict=ciTester.hashes_dict_rust[file][key]
-                for argcall in rust_dict.keys():
-                    if rust_dict[argcall][0]!=py_dict[argcall][0]:
-                        print(rust_dict[argcall][0],py_dict[argcall][0])
-                        print(f"Hashes do not match for call {argcall}!")
-                        retval=1
-                    else:
-                        continue
+    
+    print("comparing hashesh between vlsvrs and vlsvreader")
+    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
+    for file in ciTester.hashes_dict_rust.keys():
+        print(f"------{file}------")
+        for key in ciTester.hashes_dict_rust[file].keys():
+            py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
+            rust_dict=ciTester.hashes_dict_rust[file][key]
+            for argcall in rust_dict.keys():
+                if rust_dict[argcall][0]!=py_dict[argcall][0]:
+                    print(rust_dict[argcall][0],py_dict[argcall][0])
+                    print(f"Hashes do not match for call {argcall}!")
+                    retval=1
+                else:
+                    continue
 
     if retval==1:
         raise SystemError("Some hashes did not match")
