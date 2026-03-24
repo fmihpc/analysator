@@ -805,7 +805,7 @@ class VlsvReader(object):
             name = child.attrib["name"]
             varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
    
    def get_reducers(self):
 
@@ -832,7 +832,7 @@ class VlsvReader(object):
                else:
                   varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -855,9 +855,16 @@ class VlsvReader(object):
                print("   ", child.attrib["name"])
       if variable:
          print("tag = VARIABLE")
+         varset = set()
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
+               varset.add(child.attrib["name"])
                print("   ", child.attrib["name"])
+         varset_linked = set(self.get_variables()).difference(varset)
+         if (len(varset_linked) > 0):
+             print(" from linked readers:")
+             for v in sorted(list(varset_linked)):
+                 print("   ", v)
       if mesh:
          print("tag = MESH")
          for child in self.__xml_root:
