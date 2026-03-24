@@ -29,7 +29,7 @@ source my_analysating_environment/bin/activate
 pip install --editable ./analysator
 pip install -r ./analysator/requirements-backend.txt
 ```
-The last line is for the optional high-performance backend that includes [Asterix](https://github.com/fmihpc/asterix) decompression support.
+The last line is for the optional high-performance backend that includes [Asterix](https://github.com/fmihpc/asterix) decompression support. `pip install analysator[vlsvrs_build]` will build the backend from source, but this requires additional dependencies, such as Rust.
 
 ### Updating
 
