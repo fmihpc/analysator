@@ -35,7 +35,7 @@ class Tester:
     def dumpPickle(self,file):
         pickle.dump(self.hashes_dict,file)
 
-    def dumpIntoFile(self,indict,dumpname):
+    def dumpIntoFile(self,indict,dumpname,generate_path):
         path_to_file=os.path.join(generate_path,dumpname)
         if os.path.isfile(path_to_file):
             print(f"::warning:: {dumpname} found in {generate_path}, overwriting!")
@@ -51,7 +51,7 @@ class Tester:
             file.close()
         assert(self.loadFromFile(dumpname,generate_path)==indict)
 
-    def loadFromFile(self,dumpname,compare_path=compare_path):
+    def loadFromFile(self,dumpname,compare_path):
         outdict={}
         path_to_file=os.path.join(compare_path,dumpname)
         if not os.path.isfile(path_to_file):
@@ -164,7 +164,6 @@ class Tester:
             hashdict[self.filename][funname][argkey]=[hashlib.sha256(bytedata).hexdigest(),opsname]
 
         if not both:
-            #of course fails if one or the other is not defined
             if self.vlsvobj==self.vlsvobj_python:
                 hashdict=self.hashes_dict_python
             elif self.vlsvobj==self.vlsvobj_rust:
@@ -196,6 +195,8 @@ class Tester:
                     raise SystemError("returned dictionary values between vlsvreader and vlsvrs do not match")
             if len(stack)!=0:
                 raise KeyError("returned dictionry from vlsvrs contains keys not present in dictonary returned by python.") 
+
+            self.hash(list,[retval_py.items()],novlsv=True,both=True,flatten=True,argkey_name='read_velocity_cells') 
             return True
         else:
             raise NotImplementedError 
@@ -214,24 +215,83 @@ class Tester:
                             np.reshape(Z,(ncoords))[:,np.newaxis]))
 
         self.hash("read_interpolated_variable",[varname,coords],argkey_name=varname,flatten=False)
-    def interpolationtest3(self):
+    def interpolationtest3d(self):
         RE=6371e3
         coords=[[5*RE,RE,0.5*RE],np.array([[10*RE,RE,0.5*RE],[5*RE,RE,0.1*RE]]),np.array([[5*RE,RE,0.5*RE],[8*RE,RE,0.1*RE]])]
         for i,coord in enumerate(coords):
             self.hash("read_interpolated_variable",["proton/vg_rho", coord],argkey_name=f"proton/vg_rho_{i}",flatten=False)
             self.hash("read_interpolated_variable",["proton/vg_v", coord],argkey_name=f"proton/vg_v_{i}",flatten=False)
             self.hash("read_interpolated_variable",["proton/vg_ptensor",coord],argkey_name=f"proton/vg_ptensor_{i}",flatten=False) 
-#read ref from file
-#(Cellid as variable) reading single cellid ,reading cellid list, (input and output cellid should be same assertion).
+    def compareReaders(self):
+        ##############COMPARISON BETWEEN VLVSRS AND VLSVREADER###############
+        retval=0
+        print("comparing hashes between vlsvrs and vlsvreader")
+        key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable","list":"list"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
+        for file in self.hashes_dict_rust.keys():
+            print(f"------{file}------")
+            for key in self.hashes_dict_rust[file].keys():
+                py_dict=self.hashes_dict_python[file][key_map_rust_to_py[key]]
+                rust_dict=self.hashes_dict_rust[file][key]
+                for argcall in rust_dict.keys():
+                    if rust_dict[argcall][0]!=py_dict[argcall][0]:
+                        print(rust_dict[argcall][0],py_dict[argcall][0])
+                        print(f"Hashes do not match for call {argcall}!")
+                        retval=1
+                    else:
+                        continue
+        return retval
+    def compareAgainstRef(self,hashdump,compare_path,hashdict=None):
+        refDict=self.loadFromFile(hashdump,compare_path)
+        retval=0
+        if not hashdict:
+            if hashdump=="hashdump_python.txt":
+                hashdict=self.hashes_dict_python
+            elif hashdump=="hashdump_rust.txt":
+                hashdict=self.hashes_dict_rust 
+            else:
+                print(f"::error:: ciTester does not have hash dictionary to compare against {hashdump}.")
+                return 1 
+        if refDict==1:
+            print(f"::error::Loading dict from file {hashdump} failed")
+            return 1
+
+        if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
+            unique_hash=set(hashdict.keys())-set(refDict.keys())
+            if unique_hash:
+                print(f"::warning::Generated hashset has file entries {unique_hash} which are not found in the reference set.")
+
+            for file in refDict.keys():
+                if file not in hashdict:
+                    print(f"::error::Reference has entry for {file} but could not find entry for this file in generated hashset.")
+                    retval=1
+
+                uniq_func_gen=set(hashdict[file].keys())-set(refDict[file].keys())
+                if uniq_func_gen:
+                    print(f"::warning::Generated hashset has function entries {uniq_func_gen} which are not found in reference set.")
+
+                for func,argdict in refDict[file].items():
+                    if func not in hashdict[file]:
+                        retval=1
+                        print(f"::error::Call to func {func} missing from generated hashes.")
+
+                    diff_ref=set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])-set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])
+                    diff_gen=set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])-set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])
+
+                    if diff_gen and not diff_ref:
+                        print(f"::warning:: Generated hashset contains unique entries {diff_gen}!")
+
+                    if diff_ref:
+                        retval=1
+                        print(f"::error:: Difference in the hashes or args!\n reference: {diff_ref} \n generated: {diff_gen}!")
+        elif refDict==hashdict:
+            print("Hash dictionaries match")
+
+        return retval
+
 #vector (tensor variables from datareduction), read_variable, cellid 0 is nonexistant, error check.
 #some datareduction
 #read_vdf() (vlsvrs)
 # read_variable, compare against fsgird, vg 
-# read_velocitycells (vlsvreader)
-
-# read_vdf_spares 
-# 
-#
 if __name__=="__main__":
     retval=0
     ciTester = Tester()
@@ -244,32 +304,33 @@ if __name__=="__main__":
         ciTester.loadobj()
         
         #Test compare
-        #cid=ciTester.vlsvobj_python.get_cellid_with_vdf(np.array([-7e7,-7e7,0]))
         cid=1
         ciTester.compare("read_velocity_cells",{"cellid":cid,"pop":"proton"},"read_vdf_sparse",{"cid":cid,"pop":"proton"})
 
+        #Handle input variables and filter them for the calls used later
         variables_to_test=["CellID","vg_rhom","vg_v","vg_rhoq","proton/vg_rho","proton/vg_v"] #fg_variable read issue with read_variable
         variables_to_test_nonraw=["fg_b","fg_v"]
         
         pylist=ciTester.vlsvobj_python.get_variables()
-        variables=[[var] for var in variables_to_test if (var in pylist)] 
-        nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist)] 
+        rustlist=ciTester.vlsvobj_rust.list_variables()
 
+        variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
+        nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
+    
         #Make hash rust
         ciTester.setHashTarget("rust")
-        #ciTester.hash("read_variable",{"variable":"CellID","op":0},op=["reshape","astype","numpy.sort"],opargs=[[tuple([-1])],[int],[]],sort=False,flatten=False)
         if "3D" in filename:
-            rustlist=ciTester.vlsvobj_rust.list_variables()
-            variables=[[var] for var in variables_to_test if (var in pylist and var in rustlist)] 
-            nonraw_vars=[[var,0] for var in variables_to_test_nonraw if (var in pylist and var in rustlist)] 
             ciTester.hash("read_variable_raw",variables,loop=True,flatten=True)
             ciTester.hash("read_variable",nonraw_vars,loop=True,flatten=True)
 
         #Make hash python
         ciTester.setHashTarget("python")
+        #read_interpolated_variable
         if "proton/vg_v" in pylist:
             ciTester.interpolationtest2d("proton/vg_v")
-            ciTester.interpolationtest3();
+            ciTester.interpolationtest3d();
+
+        #Cut3d
         if "3D" in ciTester.filename:
             RE = 6371.0E+3
             box = [-45,+20,-30,+30,-1,+1]
@@ -284,90 +345,27 @@ if __name__=="__main__":
                 "zmax":zmax,
                 "variable":"vg_connection"},novlsv=True,argkey_name="vg_connection",flatten=False)
 
+        #read_variable
         variables.extend([[var[0]] for var in nonraw_vars]) #prob some prettier way than looping through it all but it's not a big list
         ciTester.hash("read_variable",variables,loop=True,flatten=True)
 
     ##############GENERATION OF REFERENCE DATA###############
     if generate_path:
         if ciTester.hashes_dict_python:
-            ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt")
+            ciTester.dumpIntoFile(ciTester.hashes_dict_python,"hashdump_python.txt",generate_path)
             os.system(f"cat {os.path.join(generate_path,'hashdump_python.txt')}")
         if ciTester.hashes_dict_rust:
-            ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt")
+            ciTester.dumpIntoFile(ciTester.hashes_dict_rust,"hashdump_rust.txt",generate_path)
             os.system(f"cat {os.path.join(generate_path,'hashdump_rust.txt')}")
 
     ##############COMPARISON AGAINST REFERENCE ###############
     if compare_path:
         dumps=["hashdump_python.txt","hashdump_rust.txt"]
         for i,hashdump in enumerate(dumps):
-            refDict=ciTester.loadFromFile(hashdump)
-            if not refDict:
-                continue
-            if ciTester.hashes_dict_python and i==0:
-                hashdict=ciTester.hashes_dict_python
-            elif ciTester.hashes_dict_rust and i==1:
-                hashdict=ciTester.hashes_dict_rust 
-            else:
-                print(f"::warning:: ciTester does not have hash dictionary to compare against {hashdump}.")
-                continue
+            ciTester.compareAgainstRef(hashdump,compare_path)
 
-            if refDict!=1:
-                if refDict!=hashdict: #ordering should not matter for comparison of dictionaries 
-                    unique_hash=set(hashdict.keys())-set(refDict.keys())
-                    if unique_hash:
-                        print(f"::warning::Generated hashset has file entries {unique_hash} which are not found in the reference set.")
-
-                    for file in refDict.keys():
-                        if file not in hashdict:
-                           print(f"::error::Reference has entry for {file} but could not find entry for this file in generated hashset.")
-                           retval=1
-                           continue
-
-                        uniq_func_gen=set(hashdict[file].keys())-set(refDict[file].keys())
-                        if uniq_func_gen:
-                           print(f"::warning::Generated hashset has function entries {uniq_func_gen} which are not found in reference set.")
-
-                        for func,argdict in refDict[file].items():
-                            if func not in hashdict[file]:
-                               retval=1
-                               print(f"::error::Call to func {func} missing from generated hashes.")
-                               continue 
-
-                            diff_ref=set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])-set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])
-                            diff_gen=set([(hashi[0],hashi[1][0]) for hashi in hashdict[file][func].items()])-set([(hashi[0],hashi[1][0]) for hashi in argdict.items()])
-
-                            if diff_gen and not diff_ref:
-                                print(f"::warning:: Generated hashset contains unique entries {diff_gen}!")
-
-                            if diff_ref:
-                                retval=1
-                                print(f"::error:: Difference in the hashes or args!\n reference: {diff_ref} \n generated: {diff_gen}!")
-                elif refDict==hashdict:
-                    print("Hash dictionaries match")
-            else:
-                print("Loading from file failed")
-                retval=1
-
-#Should not be used yet
-
-    ##############COMPARISON BETWEEN VLVSRS AND VLSVREADER###############
-    if retval!=1:
-        retval=0
-    
-    print("comparing hashesh between vlsvrs and vlsvreader")
-    key_map_rust_to_py={"read_variable_raw":"read_variable","read_variable":"read_variable"} #function calls may not match, can be used to map from rust vlsvrs calls to py calls
-    for file in ciTester.hashes_dict_rust.keys():
-        print(f"------{file}------")
-        for key in ciTester.hashes_dict_rust[file].keys():
-            py_dict=ciTester.hashes_dict_python[file][key_map_rust_to_py[key]]
-            rust_dict=ciTester.hashes_dict_rust[file][key]
-            for argcall in rust_dict.keys():
-                if rust_dict[argcall][0]!=py_dict[argcall][0]:
-                    print(rust_dict[argcall][0],py_dict[argcall][0])
-                    print(f"Hashes do not match for call {argcall}!")
-                    retval=1
-                else:
-                    continue
+    #Compare vlsvreader and vlsvrs hashes
+    retval=ciTester.compareReaders() 
 
     if retval==1:
         raise SystemError("Some hashes did not match")
