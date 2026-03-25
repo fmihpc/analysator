@@ -105,7 +105,6 @@ jobs:
             python -c 'import analysator as pt;pt.calculations.__dict__'
             python -c 'import analysator as pt;pt.vlsvfile.__dict__'
             python -c 'import analysator as pt;pt.miscellaneous.__dict__'
-            python -c 'import vlsvrs'
 
       
 
