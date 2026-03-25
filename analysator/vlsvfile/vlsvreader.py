@@ -178,6 +178,10 @@ class VlsvReader(object):
          raise e
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
+
+      self.query_cellids_exist = self.__query_cellid_exists_dict
+      self.get_cellids_fileindices = self.__get_cellids_fileindices_dict
+
       self.__fileindex_for_cellid={}
       self.__full_fileindex_for_cellid = False
       self.__cellid_spatial_index=None
@@ -2746,6 +2750,20 @@ class VlsvReader(object):
                # print("Fallback")
                self.__read_fileindex_for_cellid()
 
+   def __query_cellid_exists_sorted(self):
+      pass
+
+   def __query_cellid_exists_dict(self):
+      pass
+
+   def __get_cellids_fileindices_dict(self, cellids):
+      self.__read_fileindex_for_cellid()
+      return itemgetter(*cellids)(self.__fileindex_for_cellid)
+      
+   def __get_cellids_fileindices_dict(self, cellids):
+      self.__read_fileindex_for_cellid()
+      return itemgetter(*cellids)(self.__fileindex_for_cellid)
+      
 
    def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
