@@ -31,9 +31,10 @@ class Tester:
     def changeFile(self,filename):
         self.filename=filename
     def loadPickle(self,file):
-        self.pickled = pickle.load(file)
+        return pickle.load(file)
     def dumpPickle(self,file):
-        pickle.dump(self.hashes_dict,file)
+        hashdict={"python":self.hashes_dict_python,"rust":self.hashes_dict_rust}
+        pickle.dump(hashdict,file)
 
     def dumpIntoFile(self,indict,dumpname,generate_path):
         path_to_file=os.path.join(generate_path,dumpname)
