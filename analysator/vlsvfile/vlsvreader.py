@@ -179,10 +179,12 @@ class VlsvReader(object):
       
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
 
-      self.query_cellids_exist = self.__query_cellid_exists_dict
-      self.get_cellids_fileindices = self.__get_cellids_fileindices_dict
+      self.query_cellid_exist = self.__query_cellid_exists_dict
+      self.get_cellid_fileindices = self.__get_cellid_fileindices_dict
 
       self.__fileindex_for_cellid={}
+      self.__cellids_ordered = np.array([],dtype=np.int64)
+      self.__cellid_fileindices_ordered = np.array([],dtype=np.int64)
       self.__full_fileindex_for_cellid = False
       self.__cellid_spatial_index=None
       self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
@@ -314,8 +316,53 @@ class VlsvReader(object):
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
-
       self.__fptr.close()
+
+   def __set_cellid_indices_ordered(self):
+      cids = self.read_variable("CellID")
+      index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
+      ids = np.argsort(cids)
+      self.__cellids_ordered = cids[ids]
+      self.__cellid_fileindices_ordered = index[ids]
+
+
+   def __query_cellid_exists_ordered(self, cellids):
+      if len(self.__cellids_ordered) == 0:
+         self.__set_cellid_indices_ordered()
+      qi = np.searchsorted(self.__cellids_ordered, cellids)
+      mask = qi < len(self.__cellids_ordered)
+      mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
+      return mask
+
+   def __query_cellid_exists_dict(self, cellids):
+      self.__read_fileindex_for_cellid()
+      return dict_keys_exist(self.__fileindex_for_cellid, cellids)
+
+   def __get_cellid_fileindices_ordered(self, cellids):
+      if len(self.__cellids_ordered) == 0:
+         self.__set_cellid_indices_ordered()
+      qi = np.searchsorted(self.__cellids_ordered, cellids)
+      mask = qi < len(self.__cellids_ordered)
+      mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
+      return self.__cellid_fileindices_ordered[qi[mask]]
+
+   def __get_cellid_fileindices_dict(self, cellids):
+      self.__read_fileindex_for_cellid()
+      return itemgetter(*cellids)(self.__fileindex_for_cellid)
+
+   def set_cellid_mapping_method(self, method="dict"):
+      ''' Set the methods for querying cellid existence and file index.
+
+      :kwarg method: string, method to use (default "dict", "dict" and "ordered" available)
+      '''
+      if method == "dict":
+         self.query_cellid_exist = self.__query_cellid_exists_dict
+         self.get_cellid_fileindices = self.__get_cellid_fileindices_dict
+      elif method == "ordered":
+         self.query_cellid_exist = self.__query_cellid_exists_ordered
+         self.get_cellid_fileindices = self.__get_cellid_fileindices_ordered
+      else:
+         raise ValueError("Unknown method (" + method +") given for set_cellid_mapping_method")
 
    def get_grid_epsilon(self):
       if self.__grid_epsilon is None:
@@ -991,7 +1038,7 @@ class VlsvReader(object):
       return varlist
 
    def get_cellid_locations(self):
-      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
+      ''' Unused. Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
       '''
       # if len( self.__fileindex_for_cellid ) == 0:
       self.__read_fileindex_for_cellid()
@@ -2749,21 +2796,6 @@ class VlsvReader(object):
             else: # Fallback: read everything
                # print("Fallback")
                self.__read_fileindex_for_cellid()
-
-   def __query_cellid_exists_sorted(self):
-      pass
-
-   def __query_cellid_exists_dict(self):
-      pass
-
-   def __get_cellids_fileindices_dict(self, cellids):
-      self.__read_fileindex_for_cellid()
-      return itemgetter(*cellids)(self.__fileindex_for_cellid)
-      
-   def __get_cellids_fileindices_dict(self, cellids):
-      self.__read_fileindex_for_cellid()
-      return itemgetter(*cellids)(self.__fileindex_for_cellid)
-      
 
    def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
