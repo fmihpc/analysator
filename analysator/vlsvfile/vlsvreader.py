@@ -185,7 +185,8 @@ class VlsvReader(object):
       self.__fileindex_for_cellid={}
       self.__cellids_ordered = np.array([],dtype=np.int64)
       self.__cellid_fileindices_ordered = np.array([],dtype=np.int64)
-      self.__full_fileindex_for_cellid = False
+      self.set_cellid_mapping_method("ordered")
+      self.__full_fileindex_for_cellid = False # to be deprecated?
       self.__cellid_spatial_index=None
       self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
       self.__loaded_fileindex_ranks = set()
@@ -319,11 +320,15 @@ class VlsvReader(object):
       self.__fptr.close()
 
    def __set_cellid_indices_ordered(self):
-      cids = self.read_variable("CellID")
-      index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
-      ids = np.argsort(cids)
-      self.__cellids_ordered = cids[ids]
-      self.__cellid_fileindices_ordered = index[ids]
+      if self.check_variable("CellID_ordered") and self.check_variable("CellID_fileindex_ordered"):
+         self.__cellids_ordered = self.read_variable("CellID_ordered")
+         self.__cellid_fileindices_ordered =  self.read_variable("CellID_fileindex_ordered")
+      else:
+         cids = self.read_variable("CellID")
+         index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
+         ids = np.argsort(cids)
+         self.__cellids_ordered = cids[ids]
+         self.__cellid_fileindices_ordered = index[ids]
 
 
    def __query_cellid_exists_ordered(self, cellids):
@@ -1347,41 +1352,44 @@ class VlsvReader(object):
             try:
                result_size = len(cellids)
                read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+               # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+               read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
             except:
                self.__read_fileindex_for_cellid()
                result_size = len(cellids)
                read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+               # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+               read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
       else: # single cell or all cells
          if cellids < 0: # -1, read all cells
             result_size = array_size
             read_size = array_size
             read_offsets = [0]
          else: # single cell id
-            if self.__full_fileindex_for_cellid: # Fileindex already exists, we might as well use it
-               result_size = 1
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-            elif self.__cellid_spatial_index != None:
-               # Here a faster alternative
-               result_size = 1
-               read_size = 1
-               eps = self.get_grid_epsilon()
-               qp = self.get_cell_coordinates(cellids)
-               qqp = np.hstack((qp-eps,qp+eps))
-               pq = np.array([qqp[0],qqp[3],qqp[1],qqp[4],qqp[2],qqp[5]])
-               rankids = self.__cellid_spatial_index.intersection()
-               read_offsets = None
-               for rankid in rankids:
-                  indexdict = self.get_cellid_locations_rank(rankid)
-                  if cellids in indexdict.keys():
-                     read_offsets = [indexdict[cellids]*element_size*vector_size]
-            else:
-               self.__read_fileindex_for_cellid()
-               result_size = 1
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            # if self.__full_fileindex_for_cellid: # Fileindex already exists, we might as well use it
+            result_size = 1
+            read_size = 1
+            # read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            read_offsets = self.get_cellid_fileindices([cellids])*element_size*vector_size
+            # elif self.__cellid_spatial_index != None:
+            #    # Here a faster alternative
+            #    result_size = 1
+            #    read_size = 1
+            #    eps = self.get_grid_epsilon()
+            #    qp = self.get_cell_coordinates(cellids)
+            #    qqp = np.hstack((qp-eps,qp+eps))
+            #    pq = np.array([qqp[0],qqp[3],qqp[1],qqp[4],qqp[2],qqp[5]])
+            #    rankids = self.__cellid_spatial_index.intersection()
+            #    read_offsets = None
+            #    for rankid in rankids:
+            #       indexdict = self.get_cellid_locations_rank(rankid)
+            #       if cellids in indexdict.keys():
+            #          read_offsets = [indexdict[cellids]*element_size*vector_size]
+            # else:
+            #    self.__read_fileindex_for_cellid()
+            #    result_size = 1
+            #    read_size = 1
+            #    read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
 
       return read_size, read_offsets, result_size, reorder_data
 
@@ -1465,11 +1473,13 @@ class VlsvReader(object):
                if vector_size > 1:
                   arraydata=arraydata.reshape(-1, vector_size)
 
-               mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
+               # mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
+               mask = ~self.query_cellid_exist(cellids_nonzero)
                
-               self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
+               # self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
 
-               append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
+               # append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
+               append_offsets = self.get_cellid_fileindices(cid)
                data = arraydata[append_offsets,...]
                data = np.squeeze(data)
 
@@ -2857,7 +2867,8 @@ class VlsvReader(object):
 
 
       while AMR_count < refmax +1:
-         drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+         # drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+         drop = ~self.query_cellid_exist(cellids[mask])
 
          mask[mask] = mask[mask] & drop
          
@@ -2873,7 +2884,8 @@ class VlsvReader(object):
          # Get the cell id:
          cellids[mask] = ncells_lowerlevel + cellindices[mask,0] + 2**(AMR_count)*cellindices[mask,1] * self.__xcells + 4**(AMR_count) * cellindices[mask,2] * self.__xcells * self.__ycells + 1
 
-      drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+      # drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+      drop = ~self.query_cellid_exist(cellids[mask])
       mask[mask] = mask[mask] & drop
       cellids[mask] = 0 # set missing cells to null cell
       if stack:
