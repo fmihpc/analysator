@@ -90,8 +90,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
 
    def buildDescriptor(self):
       f = self.__reader
-      f._VlsvReader__read_fileindex_for_cellid()
-      fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
+      fileindex_for_cellid = f.get_cellid_locations()
       xc = f._VlsvReader__xcells
       yc = f._VlsvReader__ycells
       zc = f._VlsvReader__zcells
@@ -187,7 +186,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def getCellIDtoIdxMap(self):
       if len(self.__cellIDtoIdx) == 0:
          FileIndexToID = {v:k for k,v in self.getDescriptor()[1].items()}
-         for c,fi in self.__reader._VlsvReader__fileindex_for_cellid.items():
+         for c,fi in self.__reader.get_cellid_locations().items():
             self.__cellIDtoIdx[c] = FileIndexToID[fi]
 
       return self.__cellIDtoIdx

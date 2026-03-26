@@ -184,7 +184,7 @@ class VlsvReader(object):
 
       self.__fileindex_for_cellid={}
       self.__cellids_ordered = np.array([],dtype=np.int64)
-      self.__cellid_fileindices_ordered = np.array([],dtype=np.int64)
+      self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
       self.set_cellid_mapping_method("ordered")
       self.__full_fileindex_for_cellid = False # to be deprecated?
       self.__cellid_spatial_index=None
@@ -322,13 +322,13 @@ class VlsvReader(object):
    def __set_cellid_indices_ordered(self):
       if self.check_variable("CellID_ordered") and self.check_variable("CellID_fileindex_ordered"):
          self.__cellids_ordered = self.read_variable("CellID_ordered")
-         self.__cellid_fileindices_ordered =  self.read_variable("CellID_fileindex_ordered")
+         self.__cellid_fileindex_ordered =  self.read_variable("CellID_fileindex_ordered")
       else:
          cids = self.read_variable("CellID")
          index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
          ids = np.argsort(cids)
          self.__cellids_ordered = cids[ids]
-         self.__cellid_fileindices_ordered = index[ids]
+         self.__cellid_fileindex_ordered = index[ids]
 
 
    def __query_cellid_exists_ordered(self, cellids):
@@ -349,7 +349,7 @@ class VlsvReader(object):
       qi = np.searchsorted(self.__cellids_ordered, cellids)
       mask = qi < len(self.__cellids_ordered)
       mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
-      return self.__cellid_fileindices_ordered[qi[mask]]
+      return self.__cellid_fileindex_ordered[qi[mask]]
 
    def __get_cellid_fileindices_dict(self, cellids):
       self.__read_fileindex_for_cellid()
@@ -1043,7 +1043,7 @@ class VlsvReader(object):
       return varlist
 
    def get_cellid_locations(self):
-      ''' Unused. Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
+      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
       '''
       # if len( self.__fileindex_for_cellid ) == 0:
       self.__read_fileindex_for_cellid()
@@ -4318,6 +4318,8 @@ class VlsvReader(object):
          .. note:: This should only be used for optimization purposes.
       '''
       self.__fileindex_for_cellid = {}
+      self.__cellids_ordered = np.array([],dtype=np.int64)
+      self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
 
    def get_mesh_domain_extents(self, mesh):
       if (mesh == 'fsgrid'):
