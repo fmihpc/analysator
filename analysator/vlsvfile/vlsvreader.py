@@ -356,7 +356,8 @@ class VlsvReader(object):
       return itemgetter(*cellids)(self.__fileindex_for_cellid)
 
    def set_cellid_mapping_method(self, method="dict"):
-      ''' Set the methods for querying cellid existence and file index.
+      ''' Set the methods for querying cellid existence and file index. "dict" is the usual Python 
+      dict implementation, which is slow to construct but fast for repeated accesses.
 
       :kwarg method: string, method to use (default "dict", "dict" and "ordered" available)
       '''
@@ -1479,7 +1480,7 @@ class VlsvReader(object):
                # self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
 
                # append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
-               append_offsets = self.get_cellid_fileindices(cid)
+               append_offsets = self.get_cellid_fileindices(cellids_nonzero)
                data = arraydata[append_offsets,...]
                data = np.squeeze(data)
 
