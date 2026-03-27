@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "analysator"
-version = "0.9.7"
+version = "0.9.8"
 authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
 ]
-maintainters = [
+maintainers = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
 ]
 description = "Tools for reading and analysing Vlasiator .vlsv output files."
@@ -26,20 +26,21 @@ dependencies = [
     "matplotlib",
     "packaging",
     "scikit-image",
+    "vtk>=9.2",
+    "yt",
 ]
 [project.optional-dependencies]
 none = [
 ]
-vtk = [
-    "vtk>=9.2",
-]
 all = [
-    "analysator[vtk]",
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",
 ]
-
+testpackage = [
+    "opencv-python",
+]
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"

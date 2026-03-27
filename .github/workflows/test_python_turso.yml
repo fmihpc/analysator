@@ -15,9 +15,9 @@ on:
 jobs:
 
   turso_system:
-        # env:
+        env:
           # UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
-          # UV_CACHE_DIR: /wrk-kappa/group/spacephysics/analysator/CI/.cache/uv
+          UV_CACHE_DIR: /turso/group/spacephysics/analysator/CI/.cache/uv
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
         strategy:
@@ -26,8 +26,10 @@ jobs:
             extras: ["none", "all", "bvtk"]
         steps:
         - uses: actions/checkout@v4
+          timeout-minutes: 5
         - name: Install uv
           uses: astral-sh/setup-uv@v6
+          timeout-minutes: 5
         # - name: Restore uv cache
         #   uses: actions/cache@v4
         #   with:
@@ -36,8 +38,12 @@ jobs:
         #     restore-keys: |
         #       uv-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
         #       uv-${{ runner.os }}
-            
+        - name: check uv
+          run: |
+            which uv
+
         - name: Install dependencies
+          timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
             uv venv CI_env
