@@ -346,9 +346,9 @@ class VlsvReader(object):
    def __get_cellid_fileindices_ordered(self, cellids):
       if len(self.__cellids_ordered) == 0:
          self.__set_cellid_indices_ordered()
-      qi = np.searchsorted(self.__cellids_ordered, cellids)
+      qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
       mask = qi < len(self.__cellids_ordered)
-      mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
+      mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
       return self.__cellid_fileindex_ordered[qi[mask]]
 
    def __get_cellid_fileindices_dict(self, cellids):
@@ -1371,7 +1371,7 @@ class VlsvReader(object):
             result_size = 1
             read_size = 1
             # read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-            read_offsets = self.get_cellid_fileindices([cellids])*element_size*vector_size
+            read_offsets = self.get_cellid_fileindices(np.array([cellids],dtype=np.int64))*element_size*vector_size
             # elif self.__cellid_spatial_index != None:
             #    # Here a faster alternative
             #    result_size = 1
@@ -1475,7 +1475,7 @@ class VlsvReader(object):
                   arraydata=arraydata.reshape(-1, vector_size)
 
                # mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
-               mask = ~self.query_cellid_exist(cellids_nonzero)
+               # mask = ~self.query_cellid_exist(cellids_nonzero)
                
                # self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
 
