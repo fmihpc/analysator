@@ -444,7 +444,7 @@ def plot_vdf(filename=None,
     :kwarg cellids:     LIST of cell IDs to plot VDF for
     :kwarg coordinates: LIST of 3-element spatial coordinate lusts to plot VDF for (given in metres)
     :kwarg coordre:     LIST of 3-element spatial coordinate lists to plot VDF for (given in Earth radii)
-    :kwarg pop:         Population to plot, default proton
+    :kwarg pop:         Population to plot, default proton. Can be any species of the ParticlePopulations
 
     :kwarg colormap:    colour scale for plot, use e.g. hot_desaturated, jet, viridis, plasma, inferno,
                         magma, parula, nipy_spectral, RdBu, bwr
