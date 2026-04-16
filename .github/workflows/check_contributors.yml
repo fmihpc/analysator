@@ -23,7 +23,7 @@ jobs:
         echo "test"
         n_current=$(echo "$current_gitlog" | wc -l)
         echo "test diff"
-        git diff --name-only origin/master...
+        git diff --name-only origin/master... | grep -Po 'CITATION.cff'
         git_diff=$(git diff --name-only origin/master... | grep -Po 'CITATION.cff') 
         echo "test"
         git checkout origin/master
