@@ -16,6 +16,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Check contributor changes
       run: |
+        cd $GITHUB_WORKSPACE
         current_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
         n_current=$(echo "$current_gitlog" | wc -l)
         git_diff=$(git diff --name-only origin/master.. | grep -Po 'CITATION.cff') 
