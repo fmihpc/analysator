@@ -20,18 +20,14 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         current_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
-        echo "test"
         n_current=$(echo "$current_gitlog" | wc -l)
         echo "test diff"
-        git diff --name-only origin/master... | grep -Po 'CITATION.cff'
-        git_diff=$(git diff --name-only origin/master... | grep -Po 'CITATION.cff') 
+        diff_raw=$(git diff --name-only origin/master...)
+        git_diff=$(echo "$diff_raw" | grep -Po 'CITATION.cff') 
         echo "test"
         git checkout origin/master
-        echo "test"
         previous_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
-        echo "test"
         n_prev=$(echo "$previous_gitlog" | wc -l)
-        echo "test"
         if [ ! $git_diff ]; then 
           if [ $n_current -ne $n_prev ]; then
             echo "$current_gitlog" >current_gitlog.txt
