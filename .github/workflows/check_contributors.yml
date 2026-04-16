@@ -25,7 +25,7 @@ jobs:
         git checkout origin/master
         previous_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
         n_prev=$(echo "$previous_gitlog" | wc -l)
-        if [ ! $git_diff ]; then 
+        if [[ ! $git_diff ]]; then 
           if [ $n_current -ne $n_prev ]; then
             echo "$current_gitlog" >current_gitlog.txt
             echo "$previous_gitlog" >previous_gitlog.txt
