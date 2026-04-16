@@ -1,5 +1,5 @@
 
-name: Turso compare all images
+name: Contributors check 
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         cd $GITHUB_WORKSPACE
         current_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
         n_current=$(echo "$current_gitlog" | wc -l)
-        git_diff=$(git diff --name-only origin/master.. | grep -Po 'CITATION.cff') 
+        git_diff=$(git diff --name-only origin/master... | grep -Po 'CITATION.cff') 
         git checkout origin/master
         previous_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
         n_prev=$(echo "$previous_gitlog" | wc -l)
