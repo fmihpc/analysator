@@ -22,8 +22,9 @@ jobs:
         current_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
         echo "test"
         n_current=$(echo "$current_gitlog" | wc -l)
-        echo "test"
-        git_diff=$(git diff --name-only origin/master.. | grep -Po 'CITATION.cff') 
+        echo "test diff"
+        git diff --name-only origin/master...
+        git_diff=$(git diff --name-only origin/master... | grep -Po 'CITATION.cff') 
         echo "test"
         git checkout origin/master
         echo "test"
