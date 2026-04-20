@@ -3900,8 +3900,10 @@ class VlsvReader(object):
 
             if datatype == "float" and element_size == 4:
                data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
-            if datatype == "float" and element_size == 8:
+            elif datatype == "float" and element_size == 8:
                data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
+            else:
+               raise TypeError("Error! Bad data type in blocks! datatype found was "+datatype)
             data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
