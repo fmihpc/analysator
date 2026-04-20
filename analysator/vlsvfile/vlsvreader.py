@@ -160,48 +160,74 @@ class VlsvReader(object):
    class FileIndexer(ABC):
       @abstractmethod
       def __init__(self, reader):
-         pass
+         ''' Set the reader object and initialization flags (defer index construction until required)
+         '''
+         self.reader = weakref.ref(reader) # Store as a weak reference so that
+         self.index = False
 
       @abstractmethod
       def query_cellid_exists(self, cellids):
+         ''' Query for the existence of some cellids.
+         :param cellids:   A list/1-D numpy array of cellids
+         '''
          pass
 
       @abstractmethod
       def get_cellid_fileindices(self, cellids):
+         ''' Get the file indices for given cellids.
+         :param cellids:   A list/1-D numpy array of cellids
+         '''
          pass
+
+      @abstractmethod
+      def clear(self):
+         ''' Clear the file index to conesrve memory and set the initialization flag.
+         '''
+         # clear stuff
+         self.index = False
 
    class FileIndexerOrdered(FileIndexer):
       def __init__(self, reader):
          self.reader = weakref.ref(reader)
+         self.index = False
 
-         if self.reader().check_variable("CellID_ordered") and self.reader().check_variable("CellID_fileindex_ordered"):
-            self.__cellids_ordered = self.reader().read_variable("CellID_ordered")
-            self.__cellid_fileindex_ordered =  self.reader().read_variable("CellID_fileindex_ordered")
+      def set_cellid_indices_ordered(self):
+         reader = self.reader()
+         if reader is None:
+            raise RuntimeError("File indexer object could not anymore find the reader object via stored weak reference")
+
+         print("set_cellid_indices_ordered")
+         if reader.check_variable("CellID_ordered") and reader.check_variable("CellID_fileindex_ordered"):
+            self.__cellids_ordered = reader.read_variable("CellID_ordered")
+            self.__cellid_fileindex_ordered =  reader.read_variable("CellID_fileindex_ordered")
          else:
-            cids = self.reader().read_variable("CellID")
+            cids = reader.read_variable("CellID")
             index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
             ids = np.argsort(cids)
             self.__cellids_ordered = cids[ids]
             self.__cellid_fileindex_ordered = index[ids]
+         self.index = True
 
-      def __set_cellid_indices_ordered(self):
-         if self.check_variable("CellID_ordered") and self.check_variable("CellID_fileindex_ordered"):
-            self.__cellids_ordered = self.read_variable("CellID_ordered")
-            self.__cellid_fileindex_ordered =  self.read_variable("CellID_fileindex_ordered")
-         else:
-            cids = self.read_variable("CellID")
-            index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
-            ids = np.argsort(cids)
-            self.__cellids_ordered = cids[ids]
-            self.__cellid_fileindex_ordered = index[ids]
+      def clear(self):
+         self.index = False
+         del self.__cellids_ordered
+         del self.__cellid_fileindex_ordered
 
       def query_cellid_exists(self, cellids):
+         if not self.index:
+            print("redo 1")
+            self.set_cellid_indices_ordered()
+
          qi = np.searchsorted(self.__cellids_ordered, cellids)
          mask = qi < len(self.__cellids_ordered)
          mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
          return mask
 
       def get_cellid_fileindices(self, cellids):
+         if not self.index:
+            print("redo 2")
+            self.set_cellid_indices_ordered()
+
          qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
          mask = qi < len(self.__cellids_ordered)
          mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
@@ -212,7 +238,7 @@ class VlsvReader(object):
       def __init__(self, reader):
          self.reader = weakref.ref(reader)
          self.__fileindex_for_cellid = {}
-         self.__full_fileindex_for_cellid = False
+         self.index = False
          pass
 
       def get_cellid_locations(self):
@@ -224,8 +250,12 @@ class VlsvReader(object):
       def __read_fileindex_for_cellid(self):
          """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
          """
-         if self.__full_fileindex_for_cellid:
+         if self.index:
             return
+
+         reader = self.reader()
+         if reader is None:
+            raise RuntimeError("File indexer object could not anymore find the reader object via stored weak reference")
 
          cellids=self.reader().read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
@@ -235,28 +265,34 @@ class VlsvReader(object):
          # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
          for index,cellid in enumerate(cellids):
             self.__fileindex_for_cellid[cellid] = index
-         self.__full_fileindex_for_cellid = True
+         self.index = True
+
+      def clear(self):
+         self.index = False
+         del self.__fileindex_for_cellid
+         self.__fileindex_for_cellid = {}
 
       def query_cellid_exists(self, cellids):
-         self.__fileindex_for_cellid = self.get_cellid_locations()
-         return dict_keys_exist(self.__fileindex_for_cellid, cellids)
+         return dict_keys_exist(self.get_cellid_locations(), cellids)
 
       def get_cellid_fileindices(self, cellids):
-         self.__fileindex_for_cellid = self.get_cellid_locations()
-         return itemgetter(*cellids)(self.__fileindex_for_cellid)
+         return itemgetter(*cellids)(self.get_cellid_locations())
 
    file_name=""
    def __del__(self):
       if (hasattr(self, "__fptr")) and self.__fptr is not None:
          self.__fptr.close()
 
-   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0):
+   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0, indexer = "ordered"):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
           :kwarg fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
           :kwarg file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
+          :kwarg indexer:       String, ["ordered"] | "dict" - which file layout indexer to use. "ordered" is new default - faster to initialize
+                                    especially from L1 files. "dict" is the legacy mode, which is slow to initialize but may be faster with frequent small
+                                    queries. :seealso:: :func:`set_cellid_indexer`
       '''
       # Make sure the path is set in file name:
       file_name = os.path.abspath(file_name)
@@ -409,60 +445,25 @@ class VlsvReader(object):
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
-      self.FileIndex = self.set_cellid_mapping_method("ordered")
+      self.FileIndex = None#self.set_cellid_indexer(indexer)
 
       self.__fptr.close()
 
-   def __set_cellid_indices_ordered(self):
-      if self.check_variable("CellID_ordered") and self.check_variable("CellID_fileindex_ordered"):
-         self.__cellids_ordered = self.read_variable("CellID_ordered")
-         self.__cellid_fileindex_ordered =  self.read_variable("CellID_fileindex_ordered")
-      else:
-         cids = self.read_variable("CellID")
-         index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
-         ids = np.argsort(cids)
-         self.__cellids_ordered = cids[ids]
-         self.__cellid_fileindex_ordered = index[ids]
-
-
-   def __query_cellid_exists_ordered(self, cellids):
-      if len(self.__cellids_ordered) == 0:
-         self.__set_cellid_indices_ordered()
-      qi = np.searchsorted(self.__cellids_ordered, cellids)
-      mask = qi < len(self.__cellids_ordered)
-      mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
-      return mask
-
-
-   def __get_cellid_fileindices_ordered(self, cellids):
-      if len(self.__cellids_ordered) == 0:
-         self.__set_cellid_indices_ordered()
-      qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
-      mask = qi < len(self.__cellids_ordered)
-      mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
-      return self.__cellid_fileindex_ordered[qi[mask]]
-
-
-   def __query_cellid_exists_dict(self, cellids):
-      self.__read_fileindex_for_cellid()
-      return dict_keys_exist(self.__fileindex_for_cellid, cellids)
-
-   def __get_cellid_fileindices_dict(self, cellids):
-      self.__read_fileindex_for_cellid()
-      return itemgetter(*cellids)(self.__fileindex_for_cellid)
-
-   def set_cellid_mapping_method(self, method="dict"):
+   def set_cellid_indexer(self, method="dict", reset = False):
       ''' Set the methods for querying cellid existence and file index. "dict" is the usual Python
       dict implementation, which is slow to construct but fast for repeated accesses.
 
       :kwarg method: string, method to use (default "dict", "dict" and "ordered" available)
+      :kwarg reset:  Boolean [False], True forces creation of a fresh indexer
       '''
       if method == "dict":
-         self.FileIndex = self.FileIndexerDict(self)
+         if reset or (type(self.FileIndex) is not type(self.FileIndexerDict)):
+            self.FileIndex = self.FileIndexerDict(self)
       elif method == "ordered":
-         self.FileIndex = self.FileIndexerOrdered(self)
+         if reset or (type(self.FileIndex) is not type(self.FileIndexerOrdered)):
+            self.FileIndex = self.FileIndexerOrdered(self)
       else:
-         raise ValueError("Unknown method (" + method +") given for set_cellid_mapping_method")
+         raise ValueError("Unknown method (" + method +") given for set_cellid_indexer")
       self.query_cellid_exists = self.FileIndex.query_cellid_exists
       self.get_cellid_fileindices = self.FileIndex.get_cellid_fileindices
 
@@ -1448,17 +1449,10 @@ class VlsvReader(object):
             read_size = array_size
             read_offsets = [0]
          else: # Read multiple cell ids one-by-one
-            try:
-               result_size = len(cellids)
-               read_size = 1
-               # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
-               read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
-            except:
-               self.__read_fileindex_for_cellid()
-               result_size = len(cellids)
-               read_size = 1
-               # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
-               read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
+            result_size = len(cellids)
+            read_size = 1
+            # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+            read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
       else: # single cell or all cells
          if cellids < 0: # -1, read all cells
             result_size = array_size
@@ -4416,9 +4410,11 @@ class VlsvReader(object):
 
          .. note:: This should only be used for optimization purposes.
       '''
-      self.__fileindex_for_cellid = {}
-      self.__cellids_ordered = np.array([],dtype=np.int64)
-      self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
+      if self.FileIndex is not None:
+         self.FileIndex.clear()
+      # self.__fileindex_for_cellid = {}
+      # self.__cellids_ordered = np.array([],dtype=np.int64)
+      # self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
 
    def get_mesh_domain_extents(self, mesh):
       if (mesh == 'fsgrid'):
