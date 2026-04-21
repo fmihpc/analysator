@@ -196,7 +196,6 @@ class VlsvReader(object):
          if reader is None:
             raise RuntimeError("File indexer object could not anymore find the reader object via stored weak reference")
 
-         print("set_cellid_indices_ordered")
          if reader.check_variable("CellID_ordered") and reader.check_variable("CellID_fileindex_ordered"):
             self.__cellids_ordered = reader.read_variable("CellID_ordered")
             self.__cellid_fileindex_ordered =  reader.read_variable("CellID_fileindex_ordered")
@@ -215,7 +214,6 @@ class VlsvReader(object):
 
       def query_cellid_exists(self, cellids):
          if not self.index:
-            print("redo 1")
             self.set_cellid_indices_ordered()
 
          qi = np.searchsorted(self.__cellids_ordered, cellids)
@@ -225,7 +223,6 @@ class VlsvReader(object):
 
       def get_cellid_fileindices(self, cellids):
          if not self.index:
-            print("redo 2")
             self.set_cellid_indices_ordered()
 
          qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
@@ -450,6 +447,21 @@ class VlsvReader(object):
       self.FileIndex = self.set_cellid_indexer(indexer)
 
       self.__fptr.close()
+
+   def copy_cellid_indexer_handle(self, indexer=None):
+      '''Copy the FileIndexer handles from another reader. NB clear the references via calling
+      the function with default values once done (or feel free to implement weak referencing!)
+
+      :param indexer: FileIndexer [none], FileIndex handle to use for the reader. Default None clears references.
+      '''
+      if indexer is None:
+         self.FileIndex = None
+         self.query_cellid_exists = None
+         self.get_cellid_fileindices = None
+      else:
+         self.FileIndex = indexer
+         self.query_cellid_exists = self.FileIndex.query_cellid_exists
+         self.get_cellid_fileindices = self.FileIndex.get_cellid_fileindices
 
    def set_cellid_indexer(self, method="dict", reset = False):
       ''' Set the methods for querying cellid existence and file index. "dict" is the usual Python
@@ -2504,8 +2516,10 @@ class VlsvReader(object):
 
       for reader in self.__linked_readers:
          try:
+            reader.copy_cellid_indexer_handle(self.FileIndex) # For now we assume linked readers have the same layout, so reuse our indexer.
             res = reader.read_variable(name=name, cellids=cellids, operator=operator)
-            print(self.file_name, 'read_variable', name, res)
+            logging.debug(self.file_name + ' read_variable ' + name+ ' from ' + reader.file_name + ', result ' + str(res))
+            reader.copy_cellid_indexer_handle(None) # Clear the handles from the linked reader, so we don't have dangling references.
             return res
          except:
             pass
