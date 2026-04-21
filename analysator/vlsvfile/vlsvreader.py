@@ -446,6 +446,7 @@ class VlsvReader(object):
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
+      self.FileIndex = None
       self.FileIndex = self.set_cellid_indexer(indexer)
 
       self.__fptr.close()
@@ -458,10 +459,10 @@ class VlsvReader(object):
       :kwarg reset:  Boolean [False], True forces creation of a fresh indexer
       '''
       if method == "dict":
-         if reset or (type(self.FileIndex) is not type(self.FileIndexerDict)):
+         if self.FileIndex is None or reset or (type(self.FileIndex) is not type(self.FileIndexerDict)):
             self.FileIndex = self.FileIndexerDict(self)
       elif method == "ordered":
-         if reset or (type(self.FileIndex) is not type(self.FileIndexerOrdered)):
+         if self.FileIndex is None or reset or (type(self.FileIndex) is not type(self.FileIndexerOrdered)):
             self.FileIndex = self.FileIndexerOrdered(self)
       else:
          raise ValueError("Unknown method (" + method +") given for set_cellid_indexer")
@@ -480,7 +481,7 @@ class VlsvReader(object):
       ''' Fetch the path to linked readers file, using the cache folder path schema.
       '''
       pth, base = os.path.split(self.file_name)
-      
+
       s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
@@ -494,11 +495,11 @@ class VlsvReader(object):
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
                l = f.readlines()
-               
+
                l = [line.strip() for line in l]
                self.__linked_files.update(l)
                logging.info("Loaded linked readers from "+self.get_linked_readers_filename()+":\n"+str(self.__linked_files))
-               
+
 
          self.add_linked_readers()
 
@@ -538,7 +539,7 @@ class VlsvReader(object):
          self.add_linked_reader(fname)
 
    def save_linked_readers_file(self, overwrite = False):
-      ''' Save linked reader paths from the current fileindex to a cache file. If 
+      ''' Save linked reader paths from the current fileindex to a cache file. If
       `overwrite == False`, new files will be appended to the cache.
 
       :param overwrite: Overwrite an existing cache file [False]
@@ -962,7 +963,7 @@ class VlsvReader(object):
             varlist.add(name)
 
       return sorted(list(varlist))
-   
+
    def get_reducers(self):
 
       varlist = set()
@@ -4553,7 +4554,7 @@ class VlsvReader(object):
    def get_cellid_spatial_index(self, force=False):
       return None
       if not force:
-         if self.__cellid_spatial_index is None:   
+         if self.__cellid_spatial_index is None:
             self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(self, force)
          else:
             pass
