@@ -445,7 +445,7 @@ class VlsvReader(object):
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
-      self.FileIndex = None#self.set_cellid_indexer(indexer)
+      self.FileIndex = self.set_cellid_indexer(indexer)
 
       self.__fptr.close()
 
