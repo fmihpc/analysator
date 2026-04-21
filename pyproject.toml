@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling","pip"]
 build-backend = "hatchling.build"
 
 
@@ -51,6 +51,8 @@ vlsvrs_build = [
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"
+
+[tool.hatch.build.hooks.custom]
 
 [tool.hatch.build.targets.wheel]
 packages = ["./analysator","./pytools"]
