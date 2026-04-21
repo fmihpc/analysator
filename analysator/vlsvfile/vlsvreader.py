@@ -337,7 +337,7 @@ class VlsvReader(object):
       self.__order_for_cellid_blocks = {} # per-pop
       self.__vg_indexes_on_fg = np.array([]) # SEE: map_vg_onto_fg(self)
 
-      self.__variable_cache = vlsvcache.VariableCache(self) # {(varname, operator):data}
+      self.__variable_cache = vlsvcache.VariableCache() # {(varname, operator):data}
       self.__params_cache = {} # {name:data}
 
       self.__pops_init = False
@@ -361,6 +361,7 @@ class VlsvReader(object):
 
       # Start calling functions only after initializing trivial members
       self.get_linked_readers()
+      # self.add_linked_readers()
       self.__read_xml_footer()
 
       # Check if the file is using new or old vlsv format
@@ -476,36 +477,52 @@ class VlsvReader(object):
       return self.__grid_epsilon
 
    def get_linked_readers_filename(self):
-      '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
+      ''' Fetch the path to linked readers file, using the cache folder path schema.
+      '''
       pth, base = os.path.split(self.file_name)
-
-      s = os.path.join(self.__metadata_cache.get_cache_folder(),"linked_readers.txt")
+      
+      s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
-      # self.__linked_files = self.__metadata_cache.get_metadata("linked_reader_files", set())
+      ''' Get the linked readers from the cache file and return the set of linked readers.
+      By default, will not read the cache line if there are already linked files in the index.
+
+      :param reload: Reload the cache file linked readers [False]
+      '''
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
                l = f.readlines()
-               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
+               
+               l = [line.strip() for line in l]
                self.__linked_files.update(l)
-               print(l)
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename()+":\n"+str(self.__linked_files))
+               
 
-      else:
          self.add_linked_readers()
-         # self.__metadata_cache.add_metadata("linked_reader_files",self.__linked_files)
 
       return self.__linked_readers
 
 
    def add_linked_file(self, fname):
+      ''' Add a linked file path for the reader to the link file index.
+
+      :param fname: Path to a vlsv file
+      '''
       if os.path.exists(fname):
-         self.__linked_files.add(VlsvReader(fname))
+         self.__linked_files.add(fname)
       else:
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_reader(self, fname):
+      ''' Add a new linked reader object from filename.
+      Note: This will not add the reader object for storing, but can be used to
+      create temporary links.
+
+      :param fname: Path to a vlsv file
+      '''
+      fname=fname.strip()
       if os.path.exists(fname):
          for reader in self.__linked_readers:
             if fname == reader.file_name:
@@ -515,10 +532,17 @@ class VlsvReader(object):
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_readers(self):
+      ''' Load linked reader files as VlsvReader objects for linked read features.
+      '''
       for fname in self.__linked_files:
          self.add_linked_reader(fname)
 
    def save_linked_readers_file(self, overwrite = False):
+      ''' Save linked reader paths from the current fileindex to a cache file. If 
+      `overwrite == False`, new files will be appended to the cache.
+
+      :param overwrite: Overwrite an existing cache file [False]
+      '''
       fn = self.get_linked_readers_filename()
       if not overwrite: # Load existing linked reader to not overwrite everything
          self.get_linked_readers()
@@ -526,7 +550,7 @@ class VlsvReader(object):
       logging.info("Saving linked readers to "+fn)
       dn = os.path.dirname(fn)
       if not os.path.isdir(dn):
-            os.mkdir(dn)
+            os.makedirs(dn)
       with open(fn,'w') as f:
          lines = []
          for line in self.__linked_files:
@@ -534,10 +558,15 @@ class VlsvReader(object):
          f.writelines(lines)
 
    def clear_linked_readers(self):
+      ''' Clear the list for linked readers from memory. Use to disable linked
+      files if needed.
+      '''
       self.__linked_files.clear()
       self.__linked_readers.clear()
 
    def clear_linked_readers_file(self):
+      ''' Delete the linked readers cache file.
+      '''
       fn = self.get_linked_readers_filename()
       if os.path.exists(fn):
          os.remove(fn)
@@ -705,7 +734,7 @@ class VlsvReader(object):
       # print("fileindex!")
       cellids=self.read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
 
-      #Check if it is not iterable. If it is a scale then make it a list
+      #Check if it is not iterable. If it is a scalar then make it a list (single-cell runs?)
       if(not isinstance(cellids, Iterable)):
          cellids=[ cellids ]
       # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
@@ -932,8 +961,8 @@ class VlsvReader(object):
             name = child.attrib["name"]
             varlist.add(name)
 
-      return list(varlist)
-
+      return sorted(list(varlist))
+   
    def get_reducers(self):
 
       varlist = set()
@@ -959,7 +988,7 @@ class VlsvReader(object):
                else:
                   varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -982,9 +1011,16 @@ class VlsvReader(object):
                print("   ", child.attrib["name"])
       if variable:
          print("tag = VARIABLE")
+         varset = set()
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
+               varset.add(child.attrib["name"])
                print("   ", child.attrib["name"])
+         varset_linked = set(self.get_variables()).difference(varset)
+         if (len(varset_linked) > 0):
+             print(" from linked readers:")
+             for v in sorted(list(varset_linked)):
+                 print("   ", v)
       if mesh:
          print("tag = MESH")
          for child in self.__xml_root:
@@ -1584,7 +1620,12 @@ class VlsvReader(object):
                data=data.reshape(result_size, vector_size)
 
             if not isinstance(cellids, numbers.Number):
-               data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               if np.issubdtype(data.dtype, np.floating):
+                  data_out = np.full_like(data, np.nan, shape=(len(cellids),*data.shape[1:]))
+               elif np.issubdtype(data.dtype, np.integer):
+                  data_out = np.full_like(data, np.iinfo(data.dtype).min, shape=(len(cellids),*data.shape[1:]))
+               else:
+                  raise ValueError("unexpected dtype encountered in read ("+str(data.dtype)+")")
                data_out[cellids!=0,...] = data
                data = data_out
 
@@ -2239,7 +2280,7 @@ class VlsvReader(object):
             logging.info("Did not find FsGrid decomposition from vlsv file.")
 
       if self.__fsGridDecomposition is None:
-         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(("MESH_DECOMPOSITION","fsgrid"),None)
+         self.__fsGridDecomposition = self.__metadata_cache.get_metadata(self,("MESH_DECOMPOSITION","fsgrid"),None)
          if self.__fsGridDecomposition is not None:
             logging.info("Found FsGrid decomposition from metadata file: " + str(self.__fsGridDecomposition))
             return self.__fsGridDecomposition
@@ -2252,7 +2293,7 @@ class VlsvReader(object):
          logging.info("Calculating fsGrid decomposition from the file")
          self.__fsGridDecomposition = fsDecompositionFromGlobalIds(self)
          logging.info("Computed FsGrid decomposition to be: " + str(self.__fsGridDecomposition))
-         self.__metadata_cache.add_metadata(("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
+         self.__metadata_cache.add_metadata(self,("MESH_DECOMPOSITION","fsgrid"), self.__fsGridDecomposition)
          return self.__fsGridDecomposition
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
@@ -2399,8 +2440,8 @@ class VlsvReader(object):
       ''' Prints the contents of the metadata cache file.
       '''
 
-      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename()+":")
-      self.__metadata_cache.get_metadata("dummy",None) # Dummy call to read in the metadata file
+      print("Metadata cache at "+self.__metadata_cache.get_metadata_filename(self)+":")
+      self.__metadata_cache.get_metadata(self,"dummy",None) # Dummy call to read in the metadata file
       for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
          print(k, v)
 
@@ -2844,8 +2885,11 @@ class VlsvReader(object):
       if coords.shape[0] == 0:
          return
 
-      if self.get_cellid_spatial_index() == None:
+      # We already know everything, do nothing and return
+      if self.__full_fileindex_for_cellid:
+         return
 
+      if self.get_cellid_spatial_index() == None:
          self.__read_fileindex_for_cellid()
          return
 
@@ -3257,8 +3301,6 @@ class VlsvReader(object):
          for x in [-1,1]:
             for y in [-1,1]:
                for z  in [-1,1]:
-                  if x == 0 and y == 0 and z == 0:
-                     continue
                   vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cids[mask])/2))
                   ii += 1
 
@@ -4506,17 +4548,17 @@ class VlsvReader(object):
             self.__neighbors_cache_loaded = True
 
    def set_cellid_spatial_index(self, force=False):
-      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
    def get_cellid_spatial_index(self, force=False):
       return None
       if not force:
-         if self.__cellid_spatial_index is None:
-            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(force)
+         if self.__cellid_spatial_index is None:   
+            self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(self, force)
          else:
             pass
       else:
-         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(force)
+         self.__cellid_spatial_index =  self.__metadata_cache.set_cellid_spatial_index(self, force)
 
       return self.__cellid_spatial_index
 
@@ -4529,4 +4571,4 @@ class VlsvReader(object):
       ''' Create cached optimization files for this reader object (e.g. spatial index)
 
       '''
-      self.__metadata_cache.set_cellid_spatial_index(force)
+      self.__metadata_cache.set_cellid_spatial_index(self, force)
