@@ -51,14 +51,3 @@ jobs:
             python -c 'import analysator as pt;pt.vlsvfile.__dict__'
             python -c 'import analysator as pt;pt.miscellaneous.__dict__'
 
-        - name: Testing backend and vlsvreader 
-          run: |
-            . CI_env/bin/activate
-            verf_loc="/turso/group/spacephysics/analysator/CI/verification_sets_hashes/"
-            verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
-
-            if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
-              echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
-              exit 1
-            fi
-            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10; . CI_env/bin/activate; python ./testpackage/testpackage_hashes.py -c '$verf_loc/$verfset/'"

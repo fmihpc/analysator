@@ -13,9 +13,55 @@ concurrency:
 
 jobs:
 
+  hashes_test:
+        if: github.repository_owner == 'fmihpc'
+        runs-on: carrington
+        strategy:
+          fail-fast: false
+          matrix:
+            extras: ["none", "all", "bvtk"]
+        steps:
+        - uses: actions/checkout@v4
+          timeout-minutes: 5
+        - name: Install uv
+          uses: astral-sh/setup-uv@v6
+          timeout-minutes: 5
+        - name: Install dependencies
+          timeout-minutes: 5
+          run: |
+            module load GCCcore/11.3.0
+            export TMPDIR=$RUNNER_TEMP
+            uv venv CI_env
+            . CI_env/bin/activate
+            uv pip install cmake
+            uv pip install --editable ../analysator[${{ matrix.extras }}]
+            uv pip install -r requirements-backend.txt 
+        - name: Trial imports
+          run: |
+            export TMPDIR=$RUNNER_TEMP
+            . CI_env/bin/activate
+            python -c 'import analysator as pt'
+            python -c 'import analysator as pt;pt.plot.__dict__'
+            python -c 'import analysator as pt;pt.calculations.__dict__'
+            python -c 'import analysator as pt;pt.vlsvfile.__dict__'
+            python -c 'import analysator as pt;pt.miscellaneous.__dict__'
+
+        - name: Testing backend and vlsvreader 
+          run: |
+            . CI_env/bin/activate
+            verf_loc="/turso/group/spacephysics/analysator/CI/verification_sets_hashes/"
+            verfset=$(ls -lth $verf_loc | grep ^d | head -n1 | grep -Po '\w+$')
+
+            if [[ -f $verf_loc/$verfset/.lockfile ]]; then 
+              echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
+              exit 1
+            fi
+            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10;
+
   turso_system:
         if: github.repository_owner == 'fmihpc'
         runs-on: carrington
+        needs: hashes_test
         timeout-minutes: 120
         strategy:
           fail-fast: false
