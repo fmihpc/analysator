@@ -4462,7 +4462,7 @@ class VlsvReader(object):
       '''
       if self.FileIndex is not None:
          self.FileIndex.clear()
-      # self.__fileindex_for_cellid = {}
+      self.__fileindex_for_cellid = {}
       # self.__cellids_ordered = np.array([],dtype=np.int64)
       # self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
 
