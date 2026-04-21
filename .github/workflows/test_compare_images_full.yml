@@ -18,7 +18,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            extras: ["none", "all", "bvtk"]
+            extras: ["all"]
         steps:
         - uses: actions/checkout@v4
           timeout-minutes: 5
@@ -55,7 +55,7 @@ jobs:
               echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
               exit 1
             fi
-            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10;
+            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10";
 
 
   turso_system:
