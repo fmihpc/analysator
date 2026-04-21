@@ -209,8 +209,8 @@ class VlsvReader(object):
 
       def clear(self):
          self.index = False
-         del self.__cellids_ordered
-         del self.__cellid_fileindex_ordered
+         self.__cellids_ordered = None
+         self.__cellid_fileindex_ordered = None
 
       def query_cellid_exists(self, cellids):
          if not self.index:
@@ -307,10 +307,7 @@ class VlsvReader(object):
 
       # self.query_cellid_exist = self.__query_cellid_exists_dict
       # self.get_cellid_fileindices = self.__get_cellid_fileindices_dict
-
-      self.__fileindex_for_cellid={}
-      self.__cellids_ordered = np.array([],dtype=np.int64)
-      self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
+      self.__fileindex_for_cellid = {} # to be deprecated, some function like get_cellid_locations are still widely used
       self.__full_fileindex_for_cellid = False # to be deprecated?
       self.__cellid_spatial_index=None
       self.__rankwise_fileindex_for_cellid = {} # {<mpi-rank> : {cellid: offset}}
@@ -2887,7 +2884,7 @@ class VlsvReader(object):
       return cidsout
 
    def do_partial_fileindex_update(self, coords):
-      ''' Ensure the cellids corresponding to coords or within query_window are mapped in the __fileindex_for_cellid dict.
+      ''' Obsolete. Ensure the cellids corresponding to coords or within query_window are mapped in the __fileindex_for_cellid dict.
 
       Tries to minimize the additional construction of the fileindex hashtable by spatial indexing.
       '''
@@ -2975,10 +2972,10 @@ class VlsvReader(object):
 
       # If needed, read the file index for cellid
       # if len(self.__fileindex_for_cellid) == 0:
-      if hasattr(self,"skipread"):
-         pass
-      else:
-         self.do_partial_fileindex_update(coordinates)
+      # if hasattr(self,"skipread"):
+      #    pass
+      # else:
+      #    self.do_partial_fileindex_update(coordinates)
 
 
       #good_ids = self.read_variable("CellID")
