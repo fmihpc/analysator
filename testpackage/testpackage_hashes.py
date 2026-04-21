@@ -231,7 +231,8 @@ class Tester:
 
             if len(stack) != 0:
                 raise KeyError("returned dictionry from vlsvrs contains keys not present in dictonary returned by python.")
-
+            
+            #Make a hash of the returned value if they are the same, this is in case both vlsvrs and analysator read_velocity_cells changes to differ from reference
             self.hash(
                 list,
                 [retval_py.items()],
