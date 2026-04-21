@@ -56,7 +56,7 @@ jobs:
               echo ".lockfile found in $verf_loc/$verfset, not comparing, something probably went wrong removing the lockfile"
               exit 1
             fi
-            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10";
+            srun --constraint="carrington" --mem=5G -c 1 bash -c  "ml purge; ml Python/3.10; . CI_env/bin/activate; python ./testpackage/testpackage_hashes.py -c '$verf_loc/$verfset/'"
 
   turso_system:
         if: github.repository_owner == 'fmihpc'
