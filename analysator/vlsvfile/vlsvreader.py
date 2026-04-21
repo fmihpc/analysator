@@ -1464,7 +1464,7 @@ class VlsvReader(object):
 
       # Close file pointer again if it was closed to begin with
       if fptr_was_closed:
-         self.__fptr.close()
+         fptr.close()
 
       return data
 
@@ -1767,10 +1767,6 @@ class VlsvReader(object):
       tag="VARIABLE"
       name="cellid"
       mesh="SpatialGrid"
-      if self.__fptr.closed:
-         fptr = open(self.file_name,"rb")
-      else:
-         fptr = self.__fptr
 
     # Seek for requested data in VLSV file
       for child in self.__xml_root:
