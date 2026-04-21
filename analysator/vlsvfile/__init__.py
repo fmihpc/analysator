@@ -46,7 +46,7 @@ __all__ = ["reducer",
 
 import logging
 from .vlsvreader import VlsvReader
-from .vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex
+from .vlsvreader import fsDecompositionFromGlobalIds,fsReadGlobalIdsPerRank,fsGlobalIdToGlobalIndex,dict_keys_exist
 from .vlsvwriter import VlsvWriter
 from .vlasiatorreader import VlasiatorReader
 try:
