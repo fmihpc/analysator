@@ -32,7 +32,7 @@ jobs:
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
-        - name: Produce plots
+        - name: Produce reference hashes
           run: |
             export TMPDIR=$RUNNER_TEMP
             module purge
