@@ -31,7 +31,7 @@ From: docker.io/opensuse/leap:15.6
 
         export PYTHONNOUSERSITE=1
         pip install --extra-index-url https://version.helsinki.fi/api/v4/projects/5244/packages/pypi/simple vlsvrs
-        pip install --editable git+https://github.com/fmihpc/analysator#egg=analysator"
+        pip install --editable git+"https://github.com/fmihpc/analysator#egg=analysator"
 EOF
 
   #Build the container
