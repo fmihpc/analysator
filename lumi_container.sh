@@ -8,7 +8,7 @@ else
   PY_PACKAGE="312"
 fi
 
-if [ ! -f ./container.def ]; then 
+if [ ! -f ./container.sif ]; then 
   cat << EOF > container.def
 Bootstrap: docker
 From: docker.io/opensuse/leap:15.6
