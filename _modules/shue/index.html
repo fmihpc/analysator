@@ -1,0 +1,247 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>shue &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../about/" />
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../" class="icon icon-home">
+            analysator
+              <img src="../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../">Module code</a></li>
+      <li class="breadcrumb-item active">shue</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for shue</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">    See Shue et al. (1997): &quot;A new functional form to study the solar wind control of the magnetopause size and shape&quot;</span>
+
+<span class="sd">    They describe a model where the radial magnetopause position r is treated as a function of angle wrt x-GSE axis</span>
+
+<span class="sd">        r(theta) = r_0 * (2 / (1+ cos(theta)))^alpha</span>
+
+<span class="sd">    r_0 is the subsolar standoff distance [in earth radii], alpha is a dimensionless parameter</span>
+
+<span class="sd">    The parameters r_0, alpha depend on the solar wind parameters:</span>
+<span class="sd">        B_z: z-component (GSE) of the magnetic field [nT]</span>
+<span class="sd">        n_p: number density [cm^-3]</span>
+<span class="sd">        v_sw: solar wind speed [km/sec]</span>
+
+<span class="sd">    Different Vlasiator runs had </span>
+
+<span class="sd">Example usage (plot magnetopause for run &#39;EGI&#39;):</span>
+
+<span class="sd">    import numpy as np</span>
+<span class="sd">    import matplotlib.pyplot as plt</span>
+
+<span class="sd">    theta = np.linspace(0,np.pi / 2, 1000)</span>
+<span class="sd">    r, r0, alpha = f_shue(theta, run=&#39;EGI&#39;)</span>
+<span class="sd">    x = r*np.cos(theta)</span>
+<span class="sd">    y = r*np.sin(theta)</span>
+<span class="sd">    plt.plot(x,y)</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_f_shue_parametrized</span><span class="p">(</span><span class="n">theta_polar</span><span class="p">,</span> <span class="n">r_0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        returns r as a function of theta,</span>
+<span class="sd">        parameters: r_0, alpha ()</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">r_0</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta_polar</span><span class="p">)))</span><span class="o">**</span><span class="n">alpha</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_f_shue_parameters</span><span class="p">(</span><span class="n">run</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Lookup function for Vlasiator run parameters, to be input into Shue model</span>
+
+<span class="sd">        Inputs:</span>
+<span class="sd">            run [string]: the name of the Vlasiator run</span>
+<span class="sd">        Outputs:</span>
+<span class="sd">            Solar wind driving parameters: B_z [nT], n_p [cm^-3], v_sw [km/s]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGI&#39;</span><span class="p">):</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5</span>                  <span class="c1"># nT</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">1</span>                   <span class="c1"># cm^-3</span>
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">750</span>                <span class="c1"># km/sec</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGK&#39;</span><span class="p">):</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>                  <span class="c1"># &quot;&quot;</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">1</span>                   
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">750</span>                
+    <span class="k">elif</span> <span class="p">(</span><span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGL&#39;</span><span class="p">):</span>          <span class="c1"># note: initialized with EGI conditions</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">750</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGM&#39;</span><span class="p">):</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">750</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">run</span> <span class="o">==</span> <span class="s1">&#39;EGP&#39;</span><span class="p">):</span>          <span class="c1"># note: B_x = -0.5 for this run</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">B_z</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_p</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">v_sw</span> <span class="o">=</span> <span class="mi">500</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;VLASIATOR RUN NOT SPECIFIED!!!&#39;</span><span class="p">)</span>     <span class="c1"># error message</span>
+    <span class="k">return</span> <span class="n">B_z</span><span class="p">,</span> <span class="n">n_p</span><span class="p">,</span> <span class="n">v_sw</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_r_0_alpha_shue</span><span class="p">(</span><span class="n">B_z</span><span class="p">,</span> <span class="n">n_p</span><span class="p">,</span> <span class="n">v_sw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Calculate r_0, alpha, depending on the input solar wind parameters.</span>
+
+<span class="sd">        Inputs:</span>
+<span class="sd">            B_z [nT], n_p [cm^-3], v_sw [km/s], as described above</span>
+<span class="sd">        Output:</span>
+<span class="sd">            r_0 [R_E], alpha [dimensionless]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">m_p</span>  <span class="o">=</span> <span class="mf">1.67262158e-27</span>              <span class="c1"># proton mass [kg]</span>
+    <span class="n">n_p_SI</span> <span class="o">=</span> <span class="n">n_p</span> <span class="o">*</span> <span class="mf">1e6</span>             <span class="c1"># m^-3</span>
+    <span class="n">v_sw_SI</span> <span class="o">=</span> <span class="n">v_sw</span> <span class="o">*</span> <span class="mf">1e3</span>           <span class="c1"># m/sec</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">n_p_SI</span> <span class="o">*</span> <span class="n">m_p</span>
+    <span class="n">D_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">rho</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">v_sw_SI</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e9</span>  <span class="c1"># dynamic pressure, in nanoPAscals</span>
+    <span class="k">if</span> <span class="n">B_z</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">r_0</span> <span class="o">=</span> <span class="p">(</span><span class="mf">11.4</span> <span class="o">+</span> <span class="mf">0.013</span> <span class="o">*</span> <span class="n">B_z</span><span class="p">)</span> <span class="o">*</span> <span class="n">D_p</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">6.6</span><span class="p">)</span>              <span class="c1"># Eq. 12, Shue 1997</span>
+    <span class="k">elif</span> <span class="n">B_z</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">r_0</span> <span class="o">=</span> <span class="p">(</span><span class="mf">11.4</span> <span class="o">+</span> <span class="mf">0.14</span> <span class="o">*</span> <span class="n">B_z</span><span class="p">)</span> <span class="o">*</span> <span class="n">D_p</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">6.6</span><span class="p">)</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="p">(</span> <span class="mf">0.58</span> <span class="o">-</span> <span class="p">(</span><span class="mf">0.010</span> <span class="o">*</span> <span class="n">B_z</span><span class="p">)</span> <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="mf">0.010</span> <span class="o">*</span> <span class="n">D_p</span><span class="p">))</span>         <span class="c1"># Eq. 13, Shue 1997</span>
+    <span class="k">return</span> <span class="n">r_0</span><span class="p">,</span> <span class="n">alpha</span>
+
+
+<div class="viewcode-block" id="f_shue">
+<a class="viewcode-back" href="../../shue/#shue.f_shue">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">f_shue</span><span class="p">(</span><span class="n">theta_polar</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">B_z</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_p</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">v_sw</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">     Shue et al. (1997): &#39;A new functional form to study the solar wind control of the magnetopause size and shape&#39;`</span>
+
+<span class="sd">     Inputs:</span>
+<span class="sd">        theta_polar: 1D numpy array [radians], angle wrt x-GSE axis</span>
+<span class="sd">            0 &lt; theta_polar &lt; 2pi</span>
+
+<span class="sd">        keyword run: string containing Vlasiator run name (e.g. &#39;EGI&#39;) </span>
+<span class="sd">            If set, look up the solar wind parameters B_z, n_p, v_sw for this run</span>
+
+<span class="sd">     Output:</span>
+<span class="sd">        magnetopause position r(theta) [R_E]</span>
+
+<span class="sd">     TODO: instead of using _f_shue_parameters(), use VlsvReader object&#39;s get_config() method to look up parameters.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">B_z</span><span class="p">,</span> <span class="n">n_p</span><span class="p">,</span> <span class="n">v_sw</span> <span class="o">=</span> <span class="n">_f_shue_parameters</span><span class="p">(</span><span class="n">run</span><span class="p">)</span>
+    <span class="n">r_0</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="n">_r_0_alpha_shue</span><span class="p">(</span> <span class="n">B_z</span><span class="p">,</span> <span class="n">n_p</span><span class="p">,</span> <span class="n">v_sw</span> <span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">_f_shue_parametrized</span><span class="p">(</span><span class="n">theta_polar</span><span class="p">,</span> <span class="n">r_0</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">r_0</span><span class="p">,</span> <span class="n">alpha</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
