@@ -2,24 +2,24 @@
 # This file is part of Analysator.
 # Copyright 2013-2016 Finnish Meteorological Institute
 # Copyright 2017-2024 University of Helsinki
-# 
+#
 # For details of usage, see the COPYING file and read the "Rules of the Road"
 # at http://www.physics.helsinki.fi/vlasiator/
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-# 
+#
 
 import logging
 import struct
@@ -30,12 +30,14 @@ import os
 import sys
 import re
 import numbers
-import pickle
 try:
    import vlsvrs
    HAS_VLSVRS = True
 except ImportError:
    HAS_VLSVRS = False
+import pickle # for caching linked readers, switch to VLSV/XML at some point - h5py?
+from abc import ABC, abstractmethod
+import weakref
 
 from . import vlsvvariables,vlsvcache
 from .reduction import datareducers,multipopdatareducers,data_operators,v5reducers,multipopv5reducers,deprecated_datareducers
@@ -109,7 +111,7 @@ def fsReadGlobalIdsPerRank(reader):
       rankIds[i] = np.array([min(taskIds),max(taskIds)])
       rankIndices[i] = fsGlobalIdToGlobalIndex(rankIds[i], bbox)
       currentOffset += int(sizes[i,0])
-      
+
    return rankIds, rankIndices
 
 # Read global ID bboxes per rank and figure out the decomposition from
@@ -133,7 +135,7 @@ def map_vg_onto_fg_loop(arr, vg_cellids, refined_ids_start, refined_ids_end):
 
 def get_test_variable_length(test_variable):
    ''' Check the size and dimensions of a test variable.
-   Returns number of elements and shape of an np.ndarray, 
+   Returns number of elements and shape of an np.ndarray,
    '''
    if isinstance(test_variable,np.ma.core.MaskedConstant):
       value_length=1
@@ -149,7 +151,7 @@ def get_test_variable_length(test_variable):
 
 class VlsvReader(object):
    ''' Class for reading VLSV files
-   ''' 
+   '''
 
 
    ''' Meshinfo is an information container for multiple meshes.
@@ -158,20 +160,143 @@ class VlsvReader(object):
    class MeshInfo:
       pass
 
+   ''' Abstract base class for providing the fileindex interface.
+   '''
+   class FileIndexer(ABC):
+      @abstractmethod
+      def __init__(self, reader):
+         ''' Set the reader object and initialization flags (defer index construction until required)
+         '''
+         self.reader = weakref.ref(reader) # Store as a weak reference so that
+         self.index = False
+
+      @abstractmethod
+      def query_cellid_exists(self, cellids):
+         ''' Query for the existence of some cellids.
+         :param cellids:   A list/1-D numpy array of cellids
+         '''
+         pass
+
+      @abstractmethod
+      def get_cellid_fileindices(self, cellids):
+         ''' Get the file indices for given cellids.
+         :param cellids:   A list/1-D numpy array of cellids
+         '''
+         pass
+
+      @abstractmethod
+      def clear(self):
+         ''' Clear the file index to conesrve memory and set the initialization flag.
+         '''
+         # clear stuff
+         self.index = False
+
+   class FileIndexerOrdered(FileIndexer):
+      def __init__(self, reader):
+         self.reader = weakref.ref(reader)
+         self.index = False
+
+      def set_cellid_indices_ordered(self):
+         reader = self.reader()
+         if reader is None:
+            raise RuntimeError("File indexer object could not anymore find the reader object via stored weak reference")
+
+         if reader.check_variable("CellID_ordered") and reader.check_variable("CellID_fileindex_ordered"):
+            self.__cellids_ordered = reader.read_variable("CellID_ordered")
+            self.__cellid_fileindex_ordered =  reader.read_variable("CellID_fileindex_ordered")
+         else:
+            cids = reader.read_variable("CellID")
+            index = np.array([i for i,c in enumerate(cids)],dtype=np.int64)
+            ids = np.argsort(cids)
+            self.__cellids_ordered = cids[ids]
+            self.__cellid_fileindex_ordered = index[ids]
+         self.index = True
+
+      def clear(self):
+         self.index = False
+         self.__cellids_ordered = None
+         self.__cellid_fileindex_ordered = None
+
+      def query_cellid_exists(self, cellids):
+         if not self.index:
+            self.set_cellid_indices_ordered()
+
+         qi = np.searchsorted(self.__cellids_ordered, cellids)
+         mask = qi < len(self.__cellids_ordered)
+         mask[mask] = self.__cellids_ordered[qi[mask]] == cellids[mask]
+         return mask
+
+      def get_cellid_fileindices(self, cellids):
+         if not self.index:
+            self.set_cellid_indices_ordered()
+
+         qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
+         mask = qi < len(self.__cellids_ordered)
+         mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
+         return self.__cellid_fileindex_ordered[qi[mask]]
+
+   class FileIndexerDict(FileIndexer):
+
+      def __init__(self, reader):
+         self.reader = weakref.ref(reader)
+         self.__fileindex_for_cellid = {}
+         self.index = False
+         pass
+
+      def get_cellid_locations(self):
+         ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. The index is used to locate the cell id's values in the arrays that this reader returns
+         '''
+         self.__read_fileindex_for_cellid()
+         return self.__fileindex_for_cellid
+
+      def __read_fileindex_for_cellid(self):
+         """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
+         """
+         if self.index:
+            return
+
+         reader = self.reader()
+         if reader is None:
+            raise RuntimeError("File indexer object could not anymore find the reader object via stored weak reference")
+
+         cellids=self.reader().read(mesh="SpatialGrid",name="CellID", tag="VARIABLE")
+
+         #Check if it is not iterable. If it is a scale then make it a list
+         if(not isinstance(cellids, Iterable)):
+            cellids=[ cellids ]
+         # self.__fileindex_for_cellid = {cellid:index for index,cellid in enumerate(cellids)}
+         for index,cellid in enumerate(cellids):
+            self.__fileindex_for_cellid[cellid] = index
+         self.index = True
+
+      def clear(self):
+         self.index = False
+         del self.__fileindex_for_cellid
+         self.__fileindex_for_cellid = {}
+
+      def query_cellid_exists(self, cellids):
+         return dict_keys_exist(self.get_cellid_locations(), cellids)
+
+      def get_cellid_fileindices(self, cellids):
+         return itemgetter(*cellids)(self.get_cellid_locations())
+
    file_name=""
    def __del__(self):
       if (hasattr(self, "__fptr")) and self.__fptr is not None:
          self.__fptr.close()
 
-   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0):
+   def __init__(self, file_name, fsGridDecomposition=None, file_cache = 0, indexer = "ordered"):
       ''' Initializes the vlsv file (opens the file, reads the file footer and reads in some parameters)
 
           :param file_name:     Name of the vlsv file
           :kwarg fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
           :kwarg file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
+          :kwarg indexer:       String, ["ordered"] | "dict" - which file layout indexer to use. "ordered" is new default - faster to initialize
+                                    especially from L1 files. "dict" is the legacy mode, which is slow to initialize but may be faster with frequent small
+                                    queries. :seealso:: :func:`set_cellid_indexer`
       '''
-      # Make sure the path is set in file name: 
+      # Make sure the path is set in file name:
       file_name = os.path.abspath(file_name)
 
       self.file_name = file_name
@@ -181,7 +306,7 @@ class VlsvReader(object):
       except FileNotFoundError as e:
          logging.info("File not found: " + self.file_name)
          raise e
-      
+
       self.__xml_root = ET.fromstring("<VLSV></VLSV>")
       self.__fileindex_for_cellid={}
       if HAS_VLSVRS:
@@ -194,8 +319,8 @@ class VlsvReader(object):
       self.__metadata_cache = vlsvcache.FileCache(self)
 
       self.__linked_files = set()
-      self.__linked_readers = set()      
-      
+      self.__linked_readers = set()
+
       self.__mesh_domain_sizes = {}
       self.__max_spatial_amr_level = -1
       self.__grid_epsilon = None
@@ -218,7 +343,7 @@ class VlsvReader(object):
       self.__unavailable_reducers = set() # Set of strings of datareducer names
       self.__current_reducer_tree_nodes = set() # Set of strings of datareducer names
 
-      
+
                               # vertex-indices is a 3-tuple of integers
       self.__dual_cells = {(0,0,0):(1,1,1,1,1,1,1,1)} # vertex-indices : 8-tuple of cellids at each corner (for x for y for z)
       self.__dual_bboxes = {} # vertex-indices : 6-list of (xmin, ymin, zmin, xmax, ymax, zmax) for the bounding box of each dual cell
@@ -233,6 +358,7 @@ class VlsvReader(object):
 
       # Start calling functions only after initializing trivial members
       self.get_linked_readers()
+      # self.add_linked_readers()
       self.__read_xml_footer()
 
       # Check if the file is using new or old vlsv format
@@ -274,10 +400,10 @@ class VlsvReader(object):
 
 
       else:
-         #new style vlsv file with 
-         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)   
-         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)   
-         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)   
+         #new style vlsv file with
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=meshName)
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=meshName)
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=meshName)
          self.__xcells = bbox[0]
          self.__ycells = bbox[1]
          self.__zcells = bbox[2]
@@ -305,57 +431,111 @@ class VlsvReader(object):
       if self.check_parameter("j_per_b_modifier"):
          vlsvvariables.J_per_B_modifier = self.read_parameter("j_per_b_modifier")
 
-      # This does not incur extra reads from disk -> list and store all populations by iterating 
+      # This does not incur extra reads from disk -> list and store all populations by iterating
       # through the XML tree and IDing populations by BLOCKIDS
       for child in self.__xml_root:
           if child.tag == "BLOCKIDS":
               if "name" in child.attrib:
-                  popname = child.attrib["name"] 
+                  popname = child.attrib["name"]
               else:
                   popname = "avgs"
-              
+
               # Update list of active populations
               if not popname in self.active_populations: self.active_populations.append(popname)
 
+      self.FileIndex = None
+      self.FileIndex = self.set_cellid_indexer(indexer)
 
       self.__fptr.close()
+
+   def copy_cellid_indexer_handle(self, indexer=None):
+      '''Copy the FileIndexer handles from another reader. NB clear the references via calling
+      the function with default values once done (or feel free to implement weak referencing!)
+
+      :param indexer: FileIndexer [none], FileIndex handle to use for the reader. Default None clears references.
+      '''
+      if indexer is None:
+         self.FileIndex = None
+         self.query_cellid_exists = None
+         self.get_cellid_fileindices = None
+      else:
+         self.FileIndex = indexer
+         self.query_cellid_exists = self.FileIndex.query_cellid_exists
+         self.get_cellid_fileindices = self.FileIndex.get_cellid_fileindices
+
+   def set_cellid_indexer(self, method="dict", reset = False):
+      ''' Set the methods for querying cellid existence and file index. "dict" is the usual Python
+      dict implementation, which is slow to construct but fast for repeated accesses.
+
+      :kwarg method: string, method to use (default "dict", "dict" and "ordered" available)
+      :kwarg reset:  Boolean [False], True forces creation of a fresh indexer
+      '''
+      if method == "dict":
+         if self.FileIndex is None or reset or (type(self.FileIndex) is not type(self.FileIndexerDict)):
+            self.FileIndex = self.FileIndexerDict(self)
+      elif method == "ordered":
+         if self.FileIndex is None or reset or (type(self.FileIndex) is not type(self.FileIndexerOrdered)):
+            self.FileIndex = self.FileIndexerOrdered(self)
+      else:
+         raise ValueError("Unknown method (" + method +") given for set_cellid_indexer")
+      self.query_cellid_exists = self.FileIndex.query_cellid_exists
+      self.get_cellid_fileindices = self.FileIndex.get_cellid_fileindices
+
+      return self.FileIndex
 
    def get_grid_epsilon(self):
       if self.__grid_epsilon is None:
          # one-thousandth of the max refined cell; self.get_max_refinement_level() however reads all cellids, so just temp here by assuming 8 refinement levels.. which is plenty for now
-         self.__grid_epsilon = 1e-3*np.array([self.__dx, self.__dy, self.__dz])/2**8 
+         self.__grid_epsilon = 1e-3*np.array([self.__dx, self.__dy, self.__dz])/2**8
       return self.__grid_epsilon
 
    def get_linked_readers_filename(self):
-      '''Need to go to a consolidated metadata handler - keeping human-readable for now'''
+      ''' Fetch the path to linked readers file, using the cache folder path schema.
+      '''
       pth, base = os.path.split(self.file_name)
-      
+
       s = os.path.join(self.__metadata_cache.get_cache_folder(self),"linked_readers.txt")
       return s
 
    def get_linked_readers(self, reload=False):
+      ''' Get the linked readers from the cache file and return the set of linked readers.
+      By default, will not read the cache line if there are already linked files in the index.
+
+      :param reload: Reload the cache file linked readers [False]
+      '''
       if len(self.__linked_files)==0 or reload:
          if(os.path.isfile(self.get_linked_readers_filename())):
             with open(self.get_linked_readers_filename(), 'r') as f:
                l = f.readlines()
-               logging.info("Loaded linked readers from "+self.get_linked_readers_filename())
-               self.__linked_files.update(l)
-               print(l)
 
-      else:
+               l = [line.strip() for line in l]
+               self.__linked_files.update(l)
+               logging.info("Loaded linked readers from "+self.get_linked_readers_filename()+":\n"+str(self.__linked_files))
+
+
          self.add_linked_readers()
-         # self.__metadata_cache.add_metadata("linked_reader_files",self.__linked_files)
 
       return self.__linked_readers
 
 
    def add_linked_file(self, fname):
+      ''' Add a linked file path for the reader to the link file index.
+
+      :param fname: Path to a vlsv file
+      '''
       if os.path.exists(fname):
-         self.__linked_files.add(VlsvReader(fname))
+         self.__linked_files.add(fname)
       else:
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_reader(self, fname):
+      ''' Add a new linked reader object from filename.
+      Note: This will not add the reader object for storing, but can be used to
+      create temporary links.
+
+      :param fname: Path to a vlsv file
+      '''
+      fname=fname.strip()
       if os.path.exists(fname):
          for reader in self.__linked_readers:
             if fname == reader.file_name:
@@ -365,10 +545,17 @@ class VlsvReader(object):
          logging.warning("Could not link "+fname+" (path does not exist)")
 
    def add_linked_readers(self):
+      ''' Load linked reader files as VlsvReader objects for linked read features.
+      '''
       for fname in self.__linked_files:
          self.add_linked_reader(fname)
 
    def save_linked_readers_file(self, overwrite = False):
+      ''' Save linked reader paths from the current fileindex to a cache file. If
+      `overwrite == False`, new files will be appended to the cache.
+
+      :param overwrite: Overwrite an existing cache file [False]
+      '''
       fn = self.get_linked_readers_filename()
       if not overwrite: # Load existing linked reader to not overwrite everything
          self.get_linked_readers()
@@ -376,7 +563,7 @@ class VlsvReader(object):
       logging.info("Saving linked readers to "+fn)
       dn = os.path.dirname(fn)
       if not os.path.isdir(dn):
-            os.mkdir(dn)
+            os.makedirs(dn)
       with open(fn,'w') as f:
          lines = []
          for line in self.__linked_files:
@@ -384,10 +571,15 @@ class VlsvReader(object):
          f.writelines(lines)
 
    def clear_linked_readers(self):
+      ''' Clear the list for linked readers from memory. Use to disable linked
+      files if needed.
+      '''
       self.__linked_files.clear()
       self.__linked_readers.clear()
 
    def clear_linked_readers_file(self):
+      ''' Delete the linked readers cache file.
+      '''
       fn = self.get_linked_readers_filename()
       if os.path.exists(fn):
          os.remove(fn)
@@ -418,7 +610,7 @@ class VlsvReader(object):
 
       bbox = self.read(tag="MESH_BBOX", mesh=popname)
       pop = self.MeshInfo()
-      
+
       if bbox is None:
          if self.read_parameter("vxblocks_ini") is not None:
             #read in older vlsv files where the mesh is defined with
@@ -441,7 +633,7 @@ class VlsvReader(object):
             pop.__dvz = ((pop.__vzmax - pop.__vzmin) / (float)(pop.__vzblocks)) / (float)(pop.__vzblock_size)
 
          else:
-            #no velocity space in this file, e.g., file not written by Vlasiator 
+            #no velocity space in this file, e.g., file not written by Vlasiator
             pop.__vxblocks = 0
             pop.__vyblocks = 0
             pop.__vzblocks = 0
@@ -461,9 +653,9 @@ class VlsvReader(object):
 
       else:
          #new style vlsv file with bounding box
-         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)   
-         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)   
-         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)   
+         nodeCoordinatesX = self.read(tag="MESH_NODE_CRDS_X", mesh=popname)
+         nodeCoordinatesY = self.read(tag="MESH_NODE_CRDS_Y", mesh=popname)
+         nodeCoordinatesZ = self.read(tag="MESH_NODE_CRDS_Z", mesh=popname)
          pop.__vxblocks = bbox[0]
          pop.__vyblocks = bbox[1]
          pop.__vzblocks = bbox[2]
@@ -484,7 +676,7 @@ class VlsvReader(object):
       self.__meshes[popname]=pop
       if not os.getenv('PTNONINTERACTIVE'):
          logging.info("Found population " + popname)
-      
+
       # Precipitation energy bins
       i = 0
       energybins = []
@@ -500,7 +692,7 @@ class VlsvReader(object):
          vlsvvariables.speciesprecipitationenergybins[popname] = energybins
 
       return self.__meshes[popname]
-      
+
 
    def __init_populations(self):
       ''' Initialize all populations contained in the file.
@@ -510,7 +702,7 @@ class VlsvReader(object):
 
       if self.__pops_init:
          return
-      
+
       for popname in self.active_populations:
          pop = self.__init_population(popname)
 
@@ -520,7 +712,7 @@ class VlsvReader(object):
 
    def __read_xml_footer(self):
       ''' Reads in the XML footer of the VLSV file and store all the content
-      ''' 
+      '''
       #(endianness,) = struct.unpack("c", fptr.read(1))
       if self.__fptr.closed:
          fptr = open(self.file_name,"rb")
@@ -565,7 +757,7 @@ class VlsvReader(object):
 
    def __read_blocks(self, cellid, pop="proton"):
       ''' Read raw velocity block data from the open file.
-      
+
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and their data
       '''
@@ -581,7 +773,7 @@ class VlsvReader(object):
       else:
          # Uses arrays (much faster to initialize)
          if not pop in self.__cells_with_blocks:
-            self.__set_cell_offset_and_blocks_nodict(pop) 
+            self.__set_cell_offset_and_blocks_nodict(pop)
          # Check that cells has vspace
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
@@ -656,7 +848,7 @@ class VlsvReader(object):
       if pop in self.__fileindex_for_cellid_blocks:
          # There's stuff already saved into the dictionary, don't save it again
          return
-      #these two arrays are in the same order: 
+      #these two arrays are in the same order:
       #list of cells for which dist function is saved
       cells_with_blocks = self.read(mesh="SpatialGrid",tag="CELLSWITHBLOCKS", name=pop)
       #number of blocks in each cell for which data is stored
@@ -782,8 +974,8 @@ class VlsvReader(object):
             name = child.attrib["name"]
             varlist.add(name)
 
-      return list(varlist)
-   
+      return sorted(list(varlist))
+
    def get_reducers(self):
 
       varlist = set()
@@ -792,11 +984,11 @@ class VlsvReader(object):
          varlist.update(reader.get_reducers())
 
       reducer_max_len = 0
-      
+
       for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
          for k in reducer_reg.keys():
             reducer_max_len = max(reducer_max_len, len(k))
-      
+
 
 
       for reducer_reg in [datareducers, multipopdatareducers, v5reducers, multipopv5reducers]:
@@ -809,7 +1001,7 @@ class VlsvReader(object):
                else:
                   varlist.add(name)
 
-      return list(varlist)
+      return sorted(list(varlist))
 
 
    def list(self, parameter=True, variable=True, mesh=False, datareducer=False, operator=False, other=False):
@@ -818,11 +1010,11 @@ class VlsvReader(object):
 
          Default and supported keywords:
 
-         parameter=True 
+         parameter=True
          variable=True
          mesh=False
-         datareducer=False 
-         operator=False 
+         datareducer=False
+         operator=False
          other=False
       '''
       if parameter:
@@ -832,9 +1024,16 @@ class VlsvReader(object):
                print("   ", child.attrib["name"])
       if variable:
          print("tag = VARIABLE")
+         varset = set()
          for child in self.__xml_root:
             if child.tag == "VARIABLE" and "name" in child.attrib:
+               varset.add(child.attrib["name"])
                print("   ", child.attrib["name"])
+         varset_linked = set(self.get_variables()).difference(varset)
+         if (len(varset_linked) > 0):
+             print(" from linked readers:")
+             for v in sorted(list(varset_linked)):
+                 print("   ", v)
       if mesh:
          print("tag = MESH")
          for child in self.__xml_root:
@@ -896,7 +1095,7 @@ class VlsvReader(object):
 
    def linked_readers_check_variable(self, name):
       ''' Test all linked variables if any of them returns True on test function
-      
+
       :param fun: Function to pass to linked readers (VlsvReader member function/first param VlsvReader)
       :param args: arguments to pass to fun
       :param kwargs: keyword arguments to pass to fun
@@ -996,7 +1195,7 @@ class VlsvReader(object):
       if mesh not in self.__mesh_domain_sizes.keys():
          self.__mesh_domain_sizes[mesh] = self.read(name="", tag="MESH_DOMAIN_SIZES", mesh=mesh)
       return self.__mesh_domain_sizes[mesh]
-      
+
    def get_numWritingRanks(self, mesh):
       ''' Get the number of writing ranks. This does not exist for all outputfiles eerywhere.
       '''
@@ -1004,14 +1203,14 @@ class VlsvReader(object):
       if "numWritingRanks" in self.__params_cache.keys():
          return self.__params_cache["numWritingRanks"]
       else:
-         try: 
+         try:
             ranks = self.read_parameter("numWritingRanks")
          except:
             ranks = self.read_attribute(mesh=mesh, attribute="arraysize", tag="MESH_DOMAIN_SIZES")
             self.__params_cache["numWritingRanks"] = ranks
 
          return ranks
-      
+
 
    def __read_fileindex_for_cellid_rank(self, rank):
       """ Read in the cell ids and create an internal dictionary to give the index of an arbitrary cellID
@@ -1020,10 +1219,10 @@ class VlsvReader(object):
 
       if rank > self.get_numWritingRanks("SpatialGrid"):
          raise ValueError("Tried to read rank "+rank+" out of "+self.get_numWritingRanks("SpatialGrid"))
-         
+
       if not self.__rankwise_fileindex_for_cellid.get(rank,{}) == {}:
          return
-      
+
       mesh_domain_sizes = self.get_mesh_domain_sizes("SpatialGrid")
       n_domain_cells = mesh_domain_sizes[:,0]-mesh_domain_sizes[:,1]
       domain_offsets = np.cumsum(np.hstack((np.array([0]),n_domain_cells[:-1])))
@@ -1039,7 +1238,7 @@ class VlsvReader(object):
 
 
    def get_cellid_locations_rank(self, rank):
-      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value. 
+      ''' Returns a dictionary with cell id as the key and the index of the cell id as the value.
          So far this pipeline will update the main fileindex, as it is not too heavy an operation - but
          moving towards handling data more rankwise may be nice some time in the future.
 
@@ -1075,7 +1274,7 @@ class VlsvReader(object):
                fptr = open(self.file_name,"rb")
             else:
                fptr = self.__fptr
-         
+
             fptr.seek(variable_offset)
             info = fptr.read(array_size).decode("utf-8")
 
@@ -1086,7 +1285,7 @@ class VlsvReader(object):
       #if we end up here the file does not contain any version info
       print("File ",self.file_name," contains no version information")
       return False
-  
+
    def get_config_string(self):
       '''
       Gets config information from VLSV file.
@@ -1123,14 +1322,14 @@ class VlsvReader(object):
 
       :returns a nested dictionary of dictionaries,
         where keys (str) are config file group headings (appearing in '[]')
-        and values are dictionaries which contain (lists of) strings 
+        and values are dictionaries which contain (lists of) strings
 
       If the same heading/parameter pair appears >once in the config file,
       the different values are appended to the list .
 
       EXAMPLE:
       if the config contains these lines:
-      
+
          [proton_precipitation]
          nChannels = 9
 
@@ -1186,8 +1385,8 @@ class VlsvReader(object):
       return self.read_attribute(name=name, mesh=mesh,attribute="vectorsize", tag="VARIABLE")
 
    def read_attribute(self, name="", mesh="", attribute="", tag=""):
-      ''' Read data from the open vlsv file. 
-      
+      ''' Read data from the open vlsv file.
+
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
@@ -1203,7 +1402,7 @@ class VlsvReader(object):
          raise ValueError()
 
       # Force lowercase name for internal checks
-      name = name.lower()       
+      name = name.lower()
 
       # Seek for requested data in VLSV file
       for child in self.__xml_root:
@@ -1219,7 +1418,7 @@ class VlsvReader(object):
          if child.tag == tag:
             # Found the requested data entry in the file
             return ast.literal_eval(child.attrib[attribute])
-         
+
       raise ValueError("Variable or attribute not found")
 
    def read_with_offset(self, datatype,variable_offset, read_size, read_offsets, element_size, vector_size):
@@ -1257,7 +1456,7 @@ class VlsvReader(object):
 
       # Close file pointer again if it was closed to begin with
       if fptr_was_closed:
-         self.__fptr.close()
+         fptr.close()
 
       return data
 
@@ -1291,50 +1490,46 @@ class VlsvReader(object):
             read_size = array_size
             read_offsets = [0]
          else: # Read multiple cell ids one-by-one
-            try:
-               result_size = len(cellids)
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
-            except:
-               self.__read_fileindex_for_cellid()
-               result_size = len(cellids)
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+            result_size = len(cellids)
+            read_size = 1
+            # read_offsets = [self.__fileindex_for_cellid[cid]*element_size*vector_size for cid in cellids]
+            read_offsets = self.get_cellid_fileindices(cellids)*element_size*vector_size
       else: # single cell or all cells
          if cellids < 0: # -1, read all cells
             result_size = array_size
             read_size = array_size
             read_offsets = [0]
          else: # single cell id
-            if self.__full_fileindex_for_cellid: # Fileindex already exists, we might as well use it
-               result_size = 1
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
-            elif self.__cellid_spatial_index != None:
-               # Here a faster alternative
-               result_size = 1
-               read_size = 1
-               eps = self.get_grid_epsilon()
-               qp = self.get_cell_coordinates(cellids)
-               qqp = np.hstack((qp-eps,qp+eps))
-               pq = np.array([qqp[0],qqp[3],qqp[1],qqp[4],qqp[2],qqp[5]])
-               rankids = self.__cellid_spatial_index.intersection()
-               read_offsets = None
-               for rankid in rankids:
-                  indexdict = self.get_cellid_locations_rank(rankid)
-                  if cellids in indexdict.keys():
-                     read_offsets = [indexdict[cellids]*element_size*vector_size]
-            else:
-               self.__read_fileindex_for_cellid()
-               result_size = 1
-               read_size = 1
-               read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            # if self.__full_fileindex_for_cellid: # Fileindex already exists, we might as well use it
+            result_size = 1
+            read_size = 1
+            # read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
+            read_offsets = self.get_cellid_fileindices(np.array([cellids],dtype=np.int64))*element_size*vector_size
+            # elif self.__cellid_spatial_index != None:
+            #    # Here a faster alternative
+            #    result_size = 1
+            #    read_size = 1
+            #    eps = self.get_grid_epsilon()
+            #    qp = self.get_cell_coordinates(cellids)
+            #    qqp = np.hstack((qp-eps,qp+eps))
+            #    pq = np.array([qqp[0],qqp[3],qqp[1],qqp[4],qqp[2],qqp[5]])
+            #    rankids = self.__cellid_spatial_index.intersection()
+            #    read_offsets = None
+            #    for rankid in rankids:
+            #       indexdict = self.get_cellid_locations_rank(rankid)
+            #       if cellids in indexdict.keys():
+            #          read_offsets = [indexdict[cellids]*element_size*vector_size]
+            # else:
+            #    self.__read_fileindex_for_cellid()
+            #    result_size = 1
+            #    read_size = 1
+            #    read_offsets = [self.__fileindex_for_cellid[cellids]*element_size*vector_size]
 
       return read_size, read_offsets, result_size, reorder_data
 
    def read(self, name="", tag="", mesh="", operator="pass", cellids=-1):
-      ''' Read data from the open vlsv file. 
-      
+      ''' Read data from the open vlsv file.
+
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
@@ -1357,8 +1552,8 @@ class VlsvReader(object):
       if tag == "VARIABLE":
          if (name,operator) in self.__variable_cache.keys():
             return self.read_variable_from_cache(name, cellids, operator)
-        
-      # Get population and variable names from data array name 
+
+      # Get population and variable names from data array name
       if '/' in name:
          popname = name.split('/')[0]
          if popname in self.active_populations:
@@ -1402,7 +1597,7 @@ class VlsvReader(object):
                cellids_nonzero = cellids
 
             read_size, read_offsets, result_size, reorder_data = self.get_read_offsets(cellids_nonzero, array_size, element_size, vector_size)
-            
+
             data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
 
             if len(read_offsets)==1 and reorder_data:
@@ -1412,11 +1607,13 @@ class VlsvReader(object):
                if vector_size > 1:
                   arraydata=arraydata.reshape(-1, vector_size)
 
-               mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
-               
-               self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
+               # mask = ~dict_keys_exist(self.__fileindex_for_cellid, cellids_nonzero)
+               # mask = ~self.query_cellid_exists(cellids_nonzero)
 
-               append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
+               # self.do_partial_fileindex_update(self.get_cell_coordinates(cellids_nonzero[mask]))
+
+               # append_offsets = [self.__fileindex_for_cellid[cid] for cid in cellids_nonzero]
+               append_offsets = self.get_cellid_fileindices(cellids_nonzero)
                data = arraydata[append_offsets,...]
                data = np.squeeze(data)
 
@@ -1436,7 +1633,7 @@ class VlsvReader(object):
                   raise ValueError("unexpected dtype encountered in read ("+str(data.dtype)+")")
                data_out[cellids!=0,...] = data
                data = data_out
-            
+
             # If variable vector size is 1, and requested magnitude, change it to "absolute"
             if vector_size == 1 and operator=="magnitude":
                logging.info("Data variable with vector size 1: Changed magnitude operation to absolute")
@@ -1446,7 +1643,7 @@ class VlsvReader(object):
                return data_operators[operator](data[0])
             else:
                return data_operators[operator](data)
-      
+
       # Check which set of datareducers to use
       if '/' in name and popname in self.active_populations:
          checkname = 'pop/'+varname
@@ -1463,8 +1660,8 @@ class VlsvReader(object):
          reducer_reg = datareducers
          reducer_multipop = multipopdatareducers
 
-         
-            
+
+
       # If this is a variable that can be summed over the populations (Ex. rho, PTensorDiagonal, ...)
       if hasattr(self, 'active_populations') and len(self.active_populations) > 0 and self.check_variable(self.active_populations[0]+'/'+name):
          self.__init_populations()  # verify all populations have been initialized
@@ -1501,7 +1698,7 @@ class VlsvReader(object):
                output[index] = reducer.operation( tmp_vars , velocity_cell_data, velocity_coordinates )
                index+=1
                logging.info(str(index)+"/"+str(len(actualcellids)))
-            
+
             if reducer.useReader:
                logging.info("Combined useVspace and useReader reducers not implemented!")
                raise NotImplementedError()
@@ -1526,7 +1723,7 @@ class VlsvReader(object):
             operator="absolute"
 
          if reducer.useVspace:
-            raise NotImplementedError("Error: useVspace flag is not implemented for multipop datareducers!") 
+            raise NotImplementedError("Error: useVspace flag is not implemented for multipop datareducers!")
             return
 
          # sum over populations
@@ -1555,17 +1752,13 @@ class VlsvReader(object):
             return data_operators[operator](reducer.operation( tmp_vars ))
 
       if name!="":
-         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name) 
+         raise ValueError("Error: variable "+name+"/"+tag+"/"+mesh+"/"+operator+" not found in .vlsv file or in data reducers!\n Reader file "+self.file_name)
 
    def read_cellids_with_offset(self, start, ncells):
       import ast
       tag="VARIABLE"
       name="cellid"
       mesh="SpatialGrid"
-      if self.__fptr.closed:
-         fptr = open(self.file_name,"rb")
-      else:
-         fptr = self.__fptr
 
     # Seek for requested data in VLSV file
       for child in self.__xml_root:
@@ -1594,14 +1787,14 @@ class VlsvReader(object):
             result_size = ncells
             read_size = ncells
             read_offsets = [start*element_size*vector_size]
-                  
+
             data = self.read_with_offset(datatype, variable_offset, read_size, read_offsets, element_size, vector_size)
 
             return data
 
    def read_metadata(self, name="", tag="", mesh=""):
-      ''' Read variable metadata from the open vlsv file. 
-      
+      ''' Read variable metadata from the open vlsv file.
+
       :param name: Name of the data array
       :param tag:  Tag of the data array.
       :param mesh: Mesh for the data array
@@ -1609,7 +1802,7 @@ class VlsvReader(object):
                 the unit of the variable as a regular string
                 the unit of the variable as a LaTeX-formatted string
                 the description of the variable as a LaTeX-formatted string
-                the conversion factor to SI units as a string                  
+                the conversion factor to SI units as a string
       '''
 
       if tag == "" and name == "":
@@ -1622,9 +1815,9 @@ class VlsvReader(object):
 
       # Force lowercase name for internal checks
       name = name.lower()
-      
+
       # Seek for requested data in VLSV file
-      for child in self.__xml_root:         
+      for child in self.__xml_root:
          if tag != "":
             if child.tag != tag:
                continue
@@ -1650,16 +1843,16 @@ class VlsvReader(object):
          except:
             variableLaTeX = ""
          try:
-            unitConversion = child.attrib["unitConversion"] 
+            unitConversion = child.attrib["unitConversion"]
          except:
             unitConversion = ""
          return unit, unitLaTeX, variableLaTeX, unitConversion
-            
+
       if name!="":
          raise IOError("Error: variable "+name+"/"+tag+"/"+mesh+" not found in .vlsv file!" )
       fptr.close()
       return -1
-   
+
 
 
    def read_interpolated_fsgrid_variable(self, name, coordinates, operator="pass",periodic=[True,True,True], method="linear"):
@@ -1667,7 +1860,7 @@ class VlsvReader(object):
       Note that this does not account for varying centerings of fsgrid data.
       Arguments:
       :param name: Name of the (FSgrid) variable
-      :param coords: Coordinates from which to read data 
+      :param coords: Coordinates from which to read data
       :param periodic: Periodicity of the system. Default is periodic in all dimension
       :param operator: Datareduction operator. "pass" does no operation on data
       :returns: numpy array with the data
@@ -1677,12 +1870,12 @@ class VlsvReader(object):
 
       if method != "Linear":
          raise NotImplementedError("interpolation method "+method+" not implemented for read_interpolated_fsgrid_variable, only linear supported so far.")
-      
+
       warnings.warn("read_interpolated_fsgrid_variable: face- vs. edge- centered variables not accounted for!")
 
       if name[0:3] != 'fg_':
          raise ValueError("Interpolation of FsGrid called on non-FsGrid data; exiting.")
-      
+
       if (len(periodic)!=3):
          raise ValueError("Periodic must be a list of 3 booleans.")
 
@@ -1697,7 +1890,7 @@ class VlsvReader(object):
       dz=abs((zmax-zmin)/nz)
 
       def getFsGridIndices(indices):
-         ''' 
+         '''
          Returns indices based on boundary conditions
          '''
          ind=-1*np.ones((3))
@@ -1716,16 +1909,16 @@ class VlsvReader(object):
                 #If we end up here then something is really wrong
                 raise ValueError("FsGrid interpolation ran into a failure and could not locate all neighbors.","Indices in question= ",indices)
 
-         return int(ind[0]),int(ind[1]),int(ind[2]) 
+         return int(ind[0]),int(ind[1]),int(ind[2])
 
 
 
       def interpolateSingle(r):
-         ''' 
-         Simple trilinear routine for interpolating fsGrid quantities 
+         '''
+         Simple trilinear routine for interpolating fsGrid quantities
          at arbitrary coordinates r.
          Inputs:
-             r: array of coordinates at which to perform the interpolation. 
+             r: array of coordinates at which to perform the interpolation.
                 Example: r=[x,y,z] in meters
          Outputs:
              Numpy array with interpolated data at r. Can be scalar or vector.
@@ -1738,12 +1931,12 @@ class VlsvReader(object):
          xl=int(np.floor((x-xmin)/dx))
          yl=int(np.floor((y-ymin)/dy))
          zl=int(np.floor((z-zmin)/dz))
-    
-         #Normalize distances in a unit cube 
+
+         #Normalize distances in a unit cube
          xd=(x-xmin)/dx - xl
          yd=(y-ymin)/dy - yl
          zd=(z-zmin)/dz - zl
-       
+
          # Calculate Neighbors' Weights
          w=np.zeros(8)
          w[0] = (1.0-xd)*(1.0-yd)*(1.0-zd)
@@ -1774,7 +1967,7 @@ class VlsvReader(object):
       ''' Read a linearly interpolated ionosphere variable value from the open vlsv file.
       Arguments:
       :param name: Name of the (ionosphere) variable
-      :param coords: Coordinates (x,y,z) from which to read data 
+      :param coords: Coordinates (x,y,z) from which to read data
       :param operator: Datareduction operator. "pass" does no operation on data
       :param method: Interpolation method. Not implemented; barycentric interp would fall under linear.
       :returns: numpy array with the data
@@ -1788,12 +1981,12 @@ class VlsvReader(object):
    # These are the 8 cells that span the upper corner vertex on a regular grid
    def get_vg_regular_interp_neighbors(self, cellids, periodic = [True, True, True]):
 
-      
+
       len_cellids = np.atleast_1d(cellids).shape[0]
       cellid_neighbors = np.zeros((len_cellids, 8))
 
       in_cache = dict_keys_exist(self.__regular_neighbor_cache, cellids)
-      
+
       if(np.any(in_cache)):
          cellid_neighbors[in_cache,:] = np.array(itemgetter(*cellids[in_cache])(self.__regular_neighbor_cache), dtype=np.int64)
       n_not_in_cache = np.sum(~in_cache)
@@ -1813,18 +2006,18 @@ class VlsvReader(object):
          cellid_neighbors_new = cellid_neighbors_new.reshape((-1,8))
          self.__regular_neighbor_cache.update( {c:cellid_neighbors_new[i,:] for i,c in enumerate(cellids[~in_cache])})
          cellid_neighbors[~in_cache,:] = cellid_neighbors_new
-      
+
       return cellid_neighbors
 
    def read_interpolated_variable(self, name, coords, operator="pass",periodic=[True, True, True], method="linear"):
       ''' Read a linearly interpolated variable value from the open vlsv file.
       Arguments:
       :param name: Name of the variable
-      :param coords: Coordinates from which to read data 
+      :param coords: Coordinates from which to read data
       :param periodic: Periodicity of the system. Default is periodic in all dimension
       :param operator: Datareduction operator. "pass" does no operation on data
       :param method: Interpolation method, default "linear", options: ["nearest", "linear"]
-                     
+
       :returns: numpy array with the data
 
       .. seealso:: :func:`read` :func:`read_variable_info`
@@ -1849,7 +2042,7 @@ class VlsvReader(object):
 
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
-      
+
       stack = True
       if len(np.shape(coordinates)) == 1:
          stack = False
@@ -1880,7 +2073,7 @@ class VlsvReader(object):
          raise NotImplementedError(method + ' is not a valid interpolation method')
 
       batch_closest_cell_coordinates=self.get_cell_coordinates(closest_cell_ids)
-      
+
       offsets = np.zeros(coordinates.shape,dtype=np.int32)
       offsets[coordinates <= batch_closest_cell_coordinates] = -1
 
@@ -1893,7 +2086,7 @@ class VlsvReader(object):
       cellid_neighbors = np.zeros((lower_cell_ids_unique.shape[0],8))
       cellid_neighbors[lower_cell_ids_unique != 0, :] = self.get_vg_regular_interp_neighbors(lower_cell_ids_unique[lower_cell_ids_unique != 0], periodic)
       cellid_neighbors = cellid_neighbors.reshape((-1))
-   
+
 
       lower_cell_coordinatess=self.get_cell_coordinates(lower_cell_ids_unique)
 
@@ -1932,7 +2125,7 @@ class VlsvReader(object):
       if np.any(cellid_neighbors==0):
          warnings.warn("Coordinate in interpolation out of domain, output contains nans",UserWarning)
 
-      
+
       refs0 = np.reshape(self.get_amr_level(cellid_neighbors),(-1,8))
       if np.any(np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)):
          irregs = np.any(refs0 != refs0[:,0][:,np.newaxis],axis =1)[unique_cell_indices]
@@ -1971,7 +2164,7 @@ class VlsvReader(object):
 
       :param name:         Name of the variable
 
-      :param coords:       Coordinates from which to read data 
+      :param coords:       Coordinates from which to read data
 
       :param periodic:     Periodicity of the system. Default is periodic in all dimension
 
@@ -1999,7 +2192,7 @@ class VlsvReader(object):
       if method.lower() in interp_method_aliases.keys():
          warnings.warn("Updated alias " +method+" -> "+interp_method_aliases[method])
          method = interp_method_aliases[method]
-      
+
 
       # First test whether the requested variable is on the FSgrid or ionosphre, and redirect to the dedicated function if needed
       if name[0:3] == 'fg_':
@@ -2012,7 +2205,7 @@ class VlsvReader(object):
       coordinates = get_data(coords)
       coordinates = np.array(coordinates)
 
-      
+
       ncoords = coordinates.shape[0]
       if(coordinates.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
@@ -2045,7 +2238,7 @@ class VlsvReader(object):
       cells_set.discard(0)
       intp_wrapper = AMRInterpolator(self,cellids=np.array(list(cells_set)))
       intp = intp_wrapper.get_interpolator(name,operator, coords, method=method.lower(), methodargs=methodargs)
-      
+
       final_values = intp(coords, cellids=cellids)[:,np.newaxis]
 
       if stack:
@@ -2086,7 +2279,7 @@ class VlsvReader(object):
             return self.__fsGridDecomposition
          else:
             logging.info("Did not find FsGrid decomposition from vlsv file.")
-      
+
       if self.__fsGridDecomposition is None:
          self.__fsGridDecomposition = self.__metadata_cache.get_metadata(self,("MESH_DECOMPOSITION","fsgrid"),None)
          if self.__fsGridDecomposition is not None:
@@ -2106,13 +2299,13 @@ class VlsvReader(object):
       else:
          # Decomposition is a list (or fail assertions below) - use it instead
          pass
-      
+
       numWritingRanks = self.get_numWritingRanks("SpatialGrid")
       assert len(self.__fsGridDecomposition) == 3, "Manual FSGRID decomposition should have three elements, but is "+str(self.__fsGridDecomposition)
       assert np.prod(self.__fsGridDecomposition) == numWritingRanks, "Manual FSGRID decomposition should have a product of numWritingRanks ("+str(numWritingRanks)+"), but is " + str(np.prod(self.__fsGridDecomposition)) + " for decomposition "+str(self.__fsGridDecomposition)
 
       return self.__fsGridDecomposition
-               
+
 
    def read_fsgrid_variable(self, name, operator="pass"):
        ''' Reads fsgrid variables from the open vlsv file.
@@ -2160,22 +2353,22 @@ class VlsvReader(object):
            x = (i // self.__fsGridDecomposition[2]) // self.__fsGridDecomposition[1]
            y = (i // self.__fsGridDecomposition[2]) % self.__fsGridDecomposition[1]
            z = i % self.__fsGridDecomposition[2]
- 	   
+
            thatTasksSize = [calcLocalSize(bbox[0], self.__fsGridDecomposition[0], x), \
                             calcLocalSize(bbox[1], self.__fsGridDecomposition[1], y), \
                             calcLocalSize(bbox[2], self.__fsGridDecomposition[2], z)]
            thatTasksStart = [calcLocalStart(bbox[0], self.__fsGridDecomposition[0], x), \
                              calcLocalStart(bbox[1], self.__fsGridDecomposition[1], y), \
                              calcLocalStart(bbox[2], self.__fsGridDecomposition[2], z)]
-           
+
            thatTasksEnd = np.array(thatTasksStart) + np.array(thatTasksSize)
            totalSize = int(thatTasksSize[0]*thatTasksSize[1]*thatTasksSize[2])
-           # Extract datacube of that task... 
+           # Extract datacube of that task...
            if len(rawData.shape) > 1:
                thatTasksData = rawData[currentOffset:currentOffset+totalSize,:]
                thatTasksData = thatTasksData.reshape([thatTasksSize[0],thatTasksSize[1],thatTasksSize[2],rawData.shape[1]],order='F')
 
-               # ... and put it into place 
+               # ... and put it into place
                orderedData[thatTasksStart[0]:thatTasksEnd[0],thatTasksStart[1]:thatTasksEnd[1],thatTasksStart[2]:thatTasksEnd[2],:] = thatTasksData
            else:
                # Special case for scalar data
@@ -2210,7 +2403,7 @@ class VlsvReader(object):
          except KeyError:
             logging.info("A variable ("+name+") with unknown centering! Aborting.")
             return False
-         
+
       #vector variable
       if fgdata.shape[-1] == 3:
          if centering=="face":
@@ -2264,8 +2457,8 @@ class VlsvReader(object):
       '''
 
       return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
-         
-         
+
+
    def read_variable_to_cache(self, name, operator="pass"):
       ''' Read variable from vlsv file to cache, for the whole grid and after applying
           operator.
@@ -2281,7 +2474,7 @@ class VlsvReader(object):
       return self.__variable_cache[(name,operator)]
 
    def read_variable(self, name, cellids=-1,operator="pass"):
-      ''' Read variables from the open vlsv file. 
+      ''' Read variables from the open vlsv file.
       Arguments:
       :param name: Name of the variable
       :param cellids: a value of -1 reads all data
@@ -2307,12 +2500,14 @@ class VlsvReader(object):
             logging.warning("CellID requests not supported for ionosphere variables! Aborting.")
             return False
          return self.read_ionosphere_variable(name=name, operator=operator)
-      
+
 
       for reader in self.__linked_readers:
          try:
+            reader.copy_cellid_indexer_handle(self.FileIndex) # For now we assume linked readers have the same layout, so reuse our indexer.
             res = reader.read_variable(name=name, cellids=cellids, operator=operator)
-            print(self.file_name, 'read_variable', name, res)
+            logging.debug(self.file_name + ' read_variable ' + name+ ' from ' + reader.file_name + ', result ' + str(res))
+            reader.copy_cellid_indexer_handle(None) # Clear the handles from the linked reader, so we don't have dangling references.
             return res
          except:
             pass
@@ -2335,7 +2530,7 @@ class VlsvReader(object):
       # Force lowercase
       name = name.lower()
 
-      # Get population and variable names from data array name 
+      # Get population and variable names from data array name
       if '/' in name:
          popname = name.split('/')[0]
          if popname in self.active_populations:
@@ -2364,7 +2559,7 @@ class VlsvReader(object):
       elif (self.check_variable(name) and (name in vlsvvariables.unitsdict)):
          units = vlsvvariables.unitsdict[name]
          latex = vlsvvariables.latexdict[name]
-         latexunits = vlsvvariables.latexunitsdict[name]            
+         latexunits = vlsvvariables.latexunitsdict[name]
       elif name in reducer_reg:
          units = reducer_reg[name].units
          latex = reducer_reg[name].latex
@@ -2420,22 +2615,64 @@ class VlsvReader(object):
             while (maxcellid > 0):
                maxcellid -= 2**(3*(AMR_count))*(self.__xcells*self.__ycells*self.__zcells)
                AMR_count += 1
-               
+
             self.__max_spatial_amr_level = AMR_count - 1
 
       return self.__max_spatial_amr_level
 
+   def wrap_array(dimensions):
+      '''Wrapper for consolidating inputs as numpy arrays.
+         
+         Putting @wrap_array(dimension) before a function will use this automatically.
+         
+         When making a function that uses this, remember to return whatever variable it calculates
+
+
+         :param dimensions:   int or list of int in same order as the arguments, 0 in the list will skip an argument, self is automatically skipped.
+      '''
+      #Check if integer
+
+      if type(dimensions)==type(1):
+         dimensions=[dimensions]
+      
+      def wrap_array_inner(func):
+         def wrap(*args, **kwargs):
+            stack = True
+            for i,d in enumerate(dimensions):
+               #Offset since self is always the first argument
+               i=i+1
+               if d!=0:
+                  arg=np.array(args[i])
+                  if arg.ndim!=d:
+                     #Make sure that the scalar argument is turned into np.array of dimension d
+                     while arg.ndim<d:
+                        arg=arg[np.newaxis]
+                     #Make sure to return scalar if value was given as scalar
+                     stack = False
+
+                  #Update args
+                  args = (*args[0:i],arg,*args[i+1:]) 
+
+
+            #Call the function
+            variable = func(*args, **kwargs)
+
+            if stack:
+               return variable
+            else:
+               variable=np.squeeze(variable,axis=0)
+               return variable
+         
+         return wrap
+      return wrap_array_inner
+
+   @wrap_array(dimensions=1)
    def get_amr_level(self,cellid):
       '''Returns the AMR level of a given cell defined by its cellid
-      
+
       :param cellid:        The cell's cellid
       :returns:             The cell's refinement level in the AMR
       '''
-      stack = True
-      if not hasattr(cellid,"__len__"):
-         cellid = np.atleast_1d(cellid)
-         stack = False
-
       AMR_count = np.zeros(np.array(cellid).shape, dtype=np.int64)
       cellids = cellid.astype(np.int64)
       iters = 0
@@ -2448,24 +2685,15 @@ class VlsvReader(object):
          if(iters > self.get_max_refinement_level()+1):
             logging.info("Can't have that large refinements. Something broke.")
             break
+      return AMR_count-1
 
-      if stack:
-         return AMR_count - 1 
-      else:
-         return (AMR_count - 1)[0]
-
+   @wrap_array(dimensions=1)
    def get_cell_dx(self, cellid):
       '''Returns the dx of a given cell defined by its cellid
-      
+
       :param cellid:        The cell's cellid
       :returns:             The cell's size [dx, dy, dz]
       '''
-
-      stack = True
-      if not hasattr(cellid,"__len__"):
-         cellid = np.atleast_1d(cellid)
-         stack = False
-
       cellid = np.array(cellid, dtype=np.int64)
 
       dxs = np.array([[self.__dx,self.__dy,self.__dz]])
@@ -2477,19 +2705,15 @@ class VlsvReader(object):
       amrs[amrs < 0] = 0
 
       ret = dxs/2**amrs
-
-      if stack:
-         return ret
-      else:
-         return ret[0]
+      return ret
 
    def get_cell_bbox(self, cellid):
       '''Returns the bounding box of a given cell defined by its cellid
-      
+
       :param cellid:        The cell's cellid
       :returns:             The cell's bbox [xmin,ymin,zmin],[xmax,ymax,zmax]
       '''
-      
+
       hdx = self.get_cell_dx(cellid)*0.5
       mid = self.get_cell_coordinates(cellid)
       return mid-hdx, mid+hdx
@@ -2549,7 +2773,7 @@ class VlsvReader(object):
       '''Returns a mean value of fsgrid values underlying the SpatialGrid cellid.
       '''
       fsarr = self.get_cell_fsgrid_subarray(cellid, array)
-      
+
       n = fsarr.size
       if fsarr.ndim == 4:
          n = n/3
@@ -2606,7 +2830,7 @@ class VlsvReader(object):
          for dim in singletons:
             value=np.expand_dims(value, dim)
             array=np.expand_dims(array, dim)
-         
+
       if array.ndim == 4:
          array[lowi[0]:upi[0]+1,lowi[1]:upi[1]+1,lowi[2]:upi[2]+1,:] = value
       else:
@@ -2647,7 +2871,7 @@ class VlsvReader(object):
          cell_indices = np.array(self.get_cell_indices(vg_cellids,amr_levels),dtype=np.int64)
          refined_ids_start = np.array(cell_indices * 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
          refined_ids_end = np.array(refined_ids_start + 2**(max_amr_level-amr_levels[:,np.newaxis]), dtype=np.int64)
-            
+
          self.__vg_indexes_on_fg = map_vg_onto_fg_loop(self.__vg_indexes_on_fg,vg_cellids, refined_ids_start, refined_ids_end)
 
       return self.__vg_indexes_on_fg
@@ -2682,9 +2906,9 @@ class VlsvReader(object):
       #choose unique cids, keep ordering. This requires a bit of OrderedDict magic (python 2.7+)
       cidsout = np.array(list(OrderedDict.fromkeys(cids)))
       return cidsout
-   
+
    def do_partial_fileindex_update(self, coords):
-      ''' Ensure the cellids corresponding to coords or within query_window are mapped in the __fileindex_for_cellid dict.
+      ''' Obsolete. Ensure the cellids corresponding to coords or within query_window are mapped in the __fileindex_for_cellid dict.
 
       Tries to minimize the additional construction of the fileindex hashtable by spatial indexing.
       '''
@@ -2723,7 +2947,7 @@ class VlsvReader(object):
       full_domain_mins = full_domain_extents[0:3]
       full_domain_maxs = full_domain_extents[3:6]
       full_domain_volume = np.prod(full_domain_maxs-full_domain_mins)
-      
+
       if query_volume < volume_threshold*full_domain_volume: # If we are querying a small volume, it is fast to do a partial update.
          rankids = set(self.__cellid_spatial_index.intersection(query_window))
          rankids = rankids - self.__loaded_fileindex_ranks
@@ -2752,7 +2976,6 @@ class VlsvReader(object):
                # print("Fallback")
                self.__read_fileindex_for_cellid()
 
-
    def get_cellid(self, coords):
       ''' Returns the cell ids at given coordinates
 
@@ -2773,10 +2996,10 @@ class VlsvReader(object):
 
       # If needed, read the file index for cellid
       # if len(self.__fileindex_for_cellid) == 0:
-      if hasattr(self,"skipread"):
-         pass
-      else:
-         self.do_partial_fileindex_update(coordinates)
+      # if hasattr(self,"skipread"):
+      #    pass
+      # else:
+      #    self.do_partial_fileindex_update(coordinates)
 
 
       #good_ids = self.read_variable("CellID")
@@ -2796,8 +3019,8 @@ class VlsvReader(object):
       cell_lengths = np.array([self.__dx, self.__dy, self.__dz])
 
       cellindices = np.zeros(coordinates.shape, dtype=np.int64)
-      
-      
+
+
 
       # Get cell indices:
       cellindices[mask,0] = (coordinates[mask,0] - self.__xmin)/cell_lengths[0]
@@ -2813,11 +3036,12 @@ class VlsvReader(object):
 
 
       while AMR_count < refmax +1:
-         drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+         # drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+         drop = ~self.query_cellid_exists(cellids[mask])
 
          mask[mask] = mask[mask] & drop
-         
-         ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl             
+
+         ncells_lowerlevel += 2**(3*AMR_count)*(self.__xcells*self.__ycells*self.__zcells) # Increment of cellID from lower lvl
          AMR_count += 1
          # Get cell lengths:
          cell_lengths = np.array([self.__dx, self.__dy, self.__dz]) / 2**AMR_count # Check next AMR level
@@ -2829,7 +3053,8 @@ class VlsvReader(object):
          # Get the cell id:
          cellids[mask] = ncells_lowerlevel + cellindices[mask,0] + 2**(AMR_count)*cellindices[mask,1] * self.__xcells + 4**(AMR_count) * cellindices[mask,2] * self.__xcells * self.__ycells + 1
 
-      drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+      # drop = ~dict_keys_exist(self.__fileindex_for_cellid, cellids[mask])
+      drop = ~self.query_cellid_exists(cellids[mask])
       mask[mask] = mask[mask] & drop
       cellids[mask] = 0 # set missing cells to null cell
       if stack:
@@ -2863,7 +3088,7 @@ class VlsvReader(object):
          raise ValueError("Error: No velocity distributions found!")
 
 
-      # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells, 
+      # Boolean array flag_empty_in indicates if queried points (coords_in) don't already lie within vdf-containing cells,
       output = self.get_cellid(coords_in)
       flag_empty_in = np.array( [cid not in self.__order_for_cellid_blocks[pop] for cid in output] )
       N_empty_in = sum(flag_empty_in)
@@ -2873,12 +3098,12 @@ class VlsvReader(object):
             return output
          else:
             return output[0]
-      
+
       # Direct search: calculate distances for each pair points (test <--> vdf cells)
-      # Only calculate nearest distance if there is no VDF already in the cell (using flag_empty_in) 
+      # Only calculate nearest distance if there is no VDF already in the cell (using flag_empty_in)
       '''
       try:
-         # Vectorized approach: 
+         # Vectorized approach:
          dist2 = np.nansum((coords_in[flag_empty_in, None, :] - coords_w_vdf[None, :, :])**2, axis = -1)   # distance^2, shape [N_empty_in, N_w_vdf]
          output[flag_empty_in] = cid_w_vdf[np.argmin(dist2, axis = 1)]
       except MemoryError:
@@ -2896,11 +3121,11 @@ class VlsvReader(object):
          return output
       else:
          return output[0]
-      
+
    def cellid_has_vdf(self, cid, pop = 'proton')->bool:
       ''' Returns whether the cid in question has a vdf or not
       :param coords:    the cellid to test for
-      :returns: bool 
+      :returns: bool
       '''
       self.__set_cell_offset_and_blocks_nodict(pop)
       cid_w_vdf = self.__cells_with_blocks[pop]
@@ -2908,7 +3133,7 @@ class VlsvReader(object):
 
    def get_vertex_indices(self, coordinates):
       ''' Get dual grid vertex indices for all coordinates.
-      
+
       Works by truncation to integer indices at fsgrid resolution, for cell low-corners.
       :param coordinates: np.array of coordinates, shaped either (3,) or (N,3)
       '''
@@ -2931,7 +3156,7 @@ class VlsvReader(object):
       else:
          coordinates = coordinates[0,:]
          return tuple(indices[0,:])
-      
+
    def get_vertex_coordinates_from_indices(self, indices):
       ''' Convert vertex indices to physical coordinates.
       :param indices: numpy array of vertex indices, either (3,) or (N,3)
@@ -2957,7 +3182,7 @@ class VlsvReader(object):
    # this should then do the proper search instead of intp for in which dual of the cell the point lies
    def get_dual(self, pts, cellids=None):
       ''' Find the duals that contain the coordinate points pts. This will call the iterative find_ksi function
-      to see if the resulting interpolation weights for the coordinate are in the range [0,1]; if not, it will iterate 
+      to see if the resulting interpolation weights for the coordinate are in the range [0,1]; if not, it will iterate
       through neighbouring duals until a dual is found.
       :parameter pts: numpy array of coordinates (N,3)
 
@@ -2966,14 +3191,14 @@ class VlsvReader(object):
 
       from analysator.calculations.interpolator_amr import find_ksi
 
-      # start the search from the vertices 
+      # start the search from the vertices
       if cellids is None:
          cid = self.get_cellid(np.atleast_2d(pts))
       else:
          cid = cellids
 
       self.build_cell_vertices(np.atleast_1d(cid),prune_unique=True)
-      
+
       vverts = [self.__cell_vertices[c] for c in cid]
       set_of_verts = set()
       # Loops over duals indexed by vertex tuple
@@ -3028,13 +3253,13 @@ class VlsvReader(object):
       duals[found_pts] = dduals[inds]
 
       return duals.astype(object), ksis
-      
+
    # For now, combined caching accessor and builder
    def build_cell_vertices(self, cid, prune_unique=False):
       ''' Builds, caches and returns the vertices that lie on the surfaces of CellIDs cid.
-      
+
       :parameter cid: numpy array of CellIDs
-      :parameter prune_unique: bool [False], if you suspect you might be calling the function many times with the 
+      :parameter prune_unique: bool [False], if you suspect you might be calling the function many times with the
                                same CellID in the list, it might be beneficial to enable this and not repeat the operation for duplicate entries.
 
       :returns: Dictionary of cell c (int) : set of vertex indices (3-tuple) that touch the cell c.
@@ -3045,7 +3270,7 @@ class VlsvReader(object):
 
       mask = ~dict_keys_exist(self.__cell_vertices,cid,prune_unique=False)
       # {cid : 8-tuple of vertex_inds}
-      
+
       cell_neighbors = self.build_cell_neighborhoods(cid[mask])
       corner_vertices = self.get_cell_corner_vertices(cid[mask])
 
@@ -3054,7 +3279,7 @@ class VlsvReader(object):
       # find irregular cells
       # irregular_mask = np.array([np.any(levels[i] != self.get_amr_level(np.array(list(cell_neighbors[c])))) for i,c in enumerate(cid[mask])],dtype=bool)
       mask[mask] = mask[mask] #& irregular_mask # beautiful
-      
+
       cell_hanging_nodes = {c: () for c in cid[mask]}
 
       if(len(cid[mask])==1):
@@ -3073,7 +3298,7 @@ class VlsvReader(object):
          # Possible hanging nodes are those that are the vertices of finer neighbours.
          for vertex_inds_set in ncorners:#.values():
             hanging_set.update(set(vertex_inds_set) - set(corner_vertices[c])) # no need to add current corners
-         
+
          cmin = np.min(corners,axis=0)
          cmax = np.max(corners,axis=0)
 
@@ -3082,10 +3307,10 @@ class VlsvReader(object):
 
       vertices = {c: corner_vertices[c]+cell_hanging_nodes[c] for c in cid[mask]}
       self.__cell_vertices.update(vertices)
-      
+
       for c in cid[~mask]:
          vertices[c] = self.__cell_vertices[c]
-      
+
       return vertices
 
    def get_cell_corner_vertices(self, cids):
@@ -3097,10 +3322,10 @@ class VlsvReader(object):
       '''
 
       mask = ~dict_keys_exist(self.__cell_corner_vertices,cids,prune_unique=False)
-      
+
       cell_vertex_sets = {}
 
-      if(len(cids[mask]) > 0): 
+      if(len(cids[mask]) > 0):
          coords = self.get_cell_coordinates(cids[mask])
          vertices = np.zeros((len(cids[mask]), 8, 3),dtype=int)
 
@@ -3108,8 +3333,6 @@ class VlsvReader(object):
          for x in [-1,1]:
             for y in [-1,1]:
                for z  in [-1,1]:
-                  if x == 0 and y == 0 and z == 0:
-                     continue
                   vertices[:,ii,:] = np.array(self.get_vertex_indices(coords + np.array((x,y,z))[np.newaxis,:]*self.get_cell_dx(cids[mask])/2))
                   ii += 1
 
@@ -3117,7 +3340,7 @@ class VlsvReader(object):
             vlist = vertices[i,:,:]
             vtuple = tuple([tuple(inds) for inds in vlist])
             cell_vertex_sets[c] = vtuple
-            
+
          self.__cell_corner_vertices.update(cell_vertex_sets)
 
       for c in cids[~mask]:
@@ -3130,9 +3353,9 @@ class VlsvReader(object):
    def build_cell_neighborhoods(self, cids):
 
       mask = ~dict_keys_exist(self.__cell_neighbours, cids, prune_unique=False)
-      
+
       cell_neighbor_sets = {}
-      
+
       if len(cids[mask]) > 0:
          cell_vertex_sets = self.get_cell_corner_vertices(cids[mask]) # these are enough to fetch the neighbours
          cell_neighbor_sets = {c: set() for c in cell_vertex_sets.keys()}
@@ -3142,7 +3365,7 @@ class VlsvReader(object):
             # neighbor_tuples = self.build_dual_from_vertices(verts)
             # cell_neighbor_sets[c].update(set().union(*neighbor_tuples.values()))
             cell_neighbor_sets[c].update(set().union(*itemgetter(*cell_vertex_sets[c])(neighbor_tuples_dict)))
-         
+
          self.__cell_neighbours.update(cell_neighbor_sets)
 
       for c in cids[~mask]:
@@ -3171,13 +3394,13 @@ class VlsvReader(object):
       # todo = [tuple(v) for v in vertices[~mask]]
 
       dual_sets_done   = {v : self.__dual_cells[v] for v in done}
-      
+
       dual_sets = {}
 
       len_todo = len(todo)
 
       if len_todo > 0:#np.sum(mask) > 0:
-         
+
          dual_bboxes = {}
          eps = 1
          v_cells = np.zeros((len_todo, 8),dtype=int)
@@ -3210,45 +3433,45 @@ class VlsvReader(object):
 
    # build a dual coverage to enable interpolation to each coordinate
    def build_duals_from_coordinates(self, coordinates):
-      
+
       coordinates = np.atleast_2d(coordinates)
       cid = self.get_unique_cellids(coordinates)
       coords = self.get_cell_coordinates(cid)
-      
+
       ncoords = coords.shape[0]
       if(coords.shape[1] != 3):
          raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-      
+
       vertices = set()
       vsets = self.build_cell_vertices(cid,prune_unique=False)
       vertices = vertices.union(*vsets.values())
-      
+
       return self.build_dual_from_vertices(list(vertices))
 
    # build a dual coverage to enable interpolation to each coordinate
    def build_duals(self, cid):
-      
+
       cid = np.atleast_1d(cid)
 
       mask = ~dict_keys_exist(self.__cell_duals, cid, prune_unique=False)
 
       if(np.sum(mask) > 0):
          coords = self.get_cell_coordinates(cid[mask])
-         
+
          ncoords = coords.shape[0]
          if(coords.shape[1] != 3):
             raise IndexError("Coordinates are required to be three-dimensional (coords.shape[1]==3 or convertible to such))")
-         
+
          vertices = set()
          vsets = self.build_cell_vertices(cid[mask])
          vertices = vertices.union(*vsets.values())
          for c in cid[mask]:
             self.__cell_duals[c] = vsets[c]
-         
+
          self.build_dual_from_vertices(list(vertices))
 
 
-
+   @wrap_array(dimensions=1)
    def get_cell_coordinates(self, cellids):
       ''' Returns a given cell's coordinates as a numpy array
 
@@ -3260,10 +3483,6 @@ class VlsvReader(object):
       .. note:: The cell ids go from 1 .. max not from 0
       '''
 
-      stack = True
-      if not hasattr(cellids,"__len__"):
-         cellids = np.atleast_1d(cellids)
-         stack = False
 
       # Get cell lengths:
       xcells = np.zeros((self.get_max_refinement_level()+1), dtype=np.int64)
@@ -3283,12 +3502,11 @@ class VlsvReader(object):
                                (self.__zmax - self.__zmin)/(zcells[reflevels])]).T
       mins = np.array([self.__xmin,self.__ymin,self.__zmin])
       cellcoordinates = mins + (cellindices + 0.5)*cell_lengths
-      # Return the coordinates:
-      if stack:
-         return np.array(cellcoordinates)
-      else:
-         return np.array(cellcoordinates)[0,:]
 
+      # Return the coordinates:
+      return cellcoordinates
+
+   @wrap_array(dimensions=1)
    def get_cell_indices(self, cellids, reflevels=None):
       ''' Returns a given cell's indices as a numpy array
 
@@ -3300,12 +3518,6 @@ class VlsvReader(object):
 
       .. note:: The cell ids go from 1 .. max not from 0
       '''
-
-      stack = True
-      if not hasattr(cellids,"__len__"):
-         cellids = np.atleast_1d(cellids)
-         stack = False
-
       if reflevels is None:
          reflevels = self.get_amr_level(cellids)
       else:
@@ -3327,12 +3539,10 @@ class VlsvReader(object):
       cellindices[mask,1] = ((cellids[mask])//(np.power(2,reflevels[mask])*self.__xcells))%(np.power(2,reflevels[mask])*self.__ycells)
       cellindices[mask,2] = (cellids[mask])//(np.power(4,reflevels[mask])*self.__xcells*self.__ycells)
 
-      # Return the indices:
-      if stack:
-         return np.array(cellindices)
-      else:
-         return np.array(cellindices)[0]
+      return cellindices
 
+
+   @wrap_array(dimensions=[1,2]) 
    def get_cell_neighbor(self, cellidss, offsetss, periodic, prune_uniques=False):
       ''' Returns a given cells neighbor at offset (in indices)
 
@@ -3344,12 +3554,8 @@ class VlsvReader(object):
       .. note:: Returns 0 if the offset is out of bounds!
 
       '''
-      stack = True
-      if not hasattr(cellidss,"__len__"):
-         cellidss = np.atleast_1d(cellidss)
-         offsetss = np.atleast_2d(offsetss)
-         stack = False
-
+  
+      
       if prune_uniques:
          fullargs = np.array(np.hstack((cellidss[:,np.newaxis],offsetss)))
          uniqueargs, inverse_indices = np.unique(fullargs,axis=0, return_inverse=True)
@@ -3359,7 +3565,6 @@ class VlsvReader(object):
          cellids = cellidss
          offsets = offsetss
          inverse_indices = np.indices((len(cellids),))
-
 
       reflevel = self.get_amr_level(cellids)
       indices = self.get_cell_indices(cellids, reflevel)
@@ -3382,13 +3587,13 @@ class VlsvReader(object):
             ngbr_indices[lowmask,i] = ngbr_indices[lowmask,i] % sys_sizes[lowmask,i]
             himask = mask & (ngbr_indices[:,i] >= sys_sizes[:,i])
             ngbr_indices[himask,i] = ngbr_indices[himask,i] % sys_sizes[himask,i]
-   
+
          elif np.any((ngbr_indices[mask, i] < 0) or (ngbr_indices[mask,i] >= sys_sizes[mask,i])):
             raise ValueError("Error in Vlsvreader get_cell_neighbor: neighbor out of bounds")
 
       coord_neighbor = np.zeros(ngbr_indices.shape, dtype=np.float64)
       coord_neighbor[mask,:] = np.array([self.__xmin,self.__ymin,self.__zmin]) + (ngbr_indices[mask,:] + np.array((0.5,0.5,0.5))) * np.array([self.__dx,self.__dy,self.__dz])/2**np.repeat(np.atleast_2d(reflevel[mask]).T,3,axis=1)
-      
+
       cellid_neighbors[mask] = self.get_cellid(coord_neighbor[mask,:])
       cellid_neighbors[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)] = cellids[(offsets[:,0]==0) & (offsets[:,1]==0) & (offsets[:,2]==0)]
 
@@ -3396,10 +3601,7 @@ class VlsvReader(object):
       #    warnings.warn("A neighboring cell found at a different refinement level. Behaviour is janky, and results will vary.")
 
       # Return the neighbor cellids/cellid:
-      if stack:
-         return np.array(cellid_neighbors[inverse_indices])
-      else:
-         return np.array(cellid_neighbors)[0]
+      return cellid_neighbors[inverse_indices]
 
    def get_WID(self):
       # default WID=4
@@ -3628,7 +3830,7 @@ class VlsvReader(object):
          nodeIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,0])
          nodeIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,1])
          nodeIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(nodesPerBlock).astype(np.uint16)) * cellsPerDirection + nodeIndices_local[:,2])
-   
+
          nodeIndices = np.transpose(np.array([nodeIndicesX, nodeIndicesY, nodeIndicesZ], copy=False))
 
          # Transform indices into unique keys
@@ -3660,7 +3862,7 @@ class VlsvReader(object):
          globalCellIndicesX = np.ravel(np.outer(blockIndicesX, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesX)
          globalCellIndicesY = np.ravel(np.outer(blockIndicesY, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesY)
          globalCellIndicesZ = np.ravel(np.outer(blockIndicesZ, np.ones(cellsPerBlock * nodesPerCell).astype(np.uint16)) * cellsPerDirection + cellNodeIndicesZ)
-   
+
          globalCellIndices = np.array([globalCellIndicesX, globalCellIndicesY, globalCellIndicesZ], copy=False)
          globalCellIndices = np.transpose(globalCellIndices)
          # Transform cell indices into unique keys
@@ -3689,7 +3891,7 @@ class VlsvReader(object):
       nodeCoordinatesX = np.remainder(nodeKeys, (int)(cellsPerDirection*popmesh.__vxblocks+1)).astype(np.float32) * popmesh.__dvx + popmesh.__vxmin
       nodeCoordinatesY = np.remainder(nodeKeys//(int)(cellsPerDirection*popmesh.__vxblocks+1), cellsPerDirection*popmesh.__vyblocks+1).astype(np.float32) * popmesh.__dvy + popmesh.__vymin
       nodeCoordinatesZ = ( nodeKeys // (int)((cellsPerDirection*popmesh.__vxblocks+1) * (cellsPerDirection*popmesh.__vyblocks+1)) ).astype(np.float32) * popmesh.__dvz + popmesh.__vzmin
-      
+
       # Nodekeyss is no longer needed
       del nodeKeys
 
@@ -3729,7 +3931,7 @@ class VlsvReader(object):
    def read_velocity_distribution_dense(self, cellid, pop="proton", regularize=True, setThreshold=None):
       '''
       Read the velocity space of a given cell and return a dense VDF as a numpy array (along with datacube edges)
-      
+
       :param cellid:       Cell ID of the cell whose velocity distribution the function will read
       :kwarg pop:          Population to read ["proton"]
       :kwarg regularize:   replace negative values (fringing effects) with zeros [True]
@@ -3759,7 +3961,7 @@ class VlsvReader(object):
       vmin = np.array([popmesh.__vxmin, popmesh.__vymin, popmesh.__vzmin])
       vmax = np.array([popmesh.__vxmax, popmesh.__vymax, popmesh.__vzmax])
 
-      
+
       lowcorner_indices = np.min(velocity_cell_indices, axis = 0)
       highcorner_indices = np.max(velocity_cell_indices, axis = 0)
       dv = self.get_velocity_mesh_dv(pop)
@@ -3771,7 +3973,7 @@ class VlsvReader(object):
 
       da, edges=np.histogramdd(velocity_cell_coordinates, shape, list(zip(lowcorner_coords,highcorner_coords)),weights=velocity_cell_values)
 
-      # 
+      #
       if regularize:
          da[da<0] = 0
 
@@ -3811,7 +4013,7 @@ class VlsvReader(object):
 
    def read_velocity_cells(self, cellid, pop="proton"):
       ''' Read velocity cells from a spatial cell
-      
+
       :param cellid: Cell ID of the cell whose velocity cells the function will read
       :kwarg pop:    Population to read ["proton"]
       :returns: Map of velocity cell ids (unique for every velocity cell) and corresponding value
@@ -3847,7 +4049,7 @@ class VlsvReader(object):
            
       if self.use_dict_for_blocks: # old deprecated version, uses dict for blocks data
          if not pop in self.__fileindex_for_cellid_blocks:
-            self.__set_cell_offset_and_blocks(pop) 
+            self.__set_cell_offset_and_blocks(pop)
          # Check that cells has vspace
          if not cellid in self.__fileindex_for_cellid_blocks[pop]:
             warnings.warn("Cell(s) does not have velocity distribution")
@@ -3858,7 +4060,7 @@ class VlsvReader(object):
 
       else:  # Uses arrays (much faster to initialize)
          if not pop in self.__cells_with_blocks:
-            self.__set_cell_offset_and_blocks_nodict(pop) 
+            self.__set_cell_offset_and_blocks_nodict(pop)
          # Check that cells has vspace
          try:
             cells_with_blocks_index = self.__order_for_cellid_blocks[pop][cellid]
@@ -3888,15 +4090,12 @@ class VlsvReader(object):
             fptr.seek(offset_avgs)
 
             if datatype == "float" and element_size == 4:
-                data_avgs = np.fromfile(
-                    fptr, dtype=np.float32, count=vector_size * num_of_blocks
-                )
+               data_avgs = np.fromfile(fptr, dtype = np.float32, count = vector_size*num_of_blocks) 
             elif datatype == "float" and element_size == 8:
-                data_avgs = np.fromfile(
-                    fptr, dtype=np.float64, count=vector_size * num_of_blocks
-                )
-
-            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)            
+               data_avgs = np.fromfile(fptr, dtype = np.float64, count = vector_size*num_of_blocks) 
+            else:
+               raise TypeError("Error! Bad data type in blocks! datatype found was "+datatype)
+            data_avgs = data_avgs.reshape(num_of_blocks, vector_size)
          # Read in block coordinates:
          if ("name" in child.attrib) and (child.attrib["name"] == pop) and (child.tag == "BLOCKIDS"):
             vector_size = ast.literal_eval(child.attrib["vectorsize"])
@@ -3969,21 +4168,21 @@ class VlsvReader(object):
 
    def get_spatial_mesh_size(self):
       ''' Read spatial mesh size
-      
+
       :returns: Size of mesh in number of blocks, array with three elements
       '''
       return np.array([self.__xcells, self.__ycells, self.__zcells])
 
    def get_spatial_block_size(self):
       ''' Read spatial mesh block size
-      
+
       :returns: Size of block in number of cells, array with three elements
       '''
       return np.array([self.__xblock_size, self.__yblock_size, self.__zblock_size])
 
    def get_spatial_mesh_extent(self):
       ''' Read spatial mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
@@ -3996,11 +4195,11 @@ class VlsvReader(object):
       amr = self.get_max_refinement_level()
 
       return dxs/2**amr
-      
+
 
    def get_fsgrid_mesh_size(self):
       ''' Read fsgrid mesh size
-      
+
       :returns: Size of mesh in number of cells, array with three elements
       '''
       # Get fsgrid domain size (this can differ from vlasov grid size if refined)
@@ -4013,14 +4212,14 @@ class VlsvReader(object):
 
    def get_fsgrid_mesh_extent(self):
       ''' Read fsgrid mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [xmin, ymin, zmin, xmax, ymax, zmax]
       '''
       return np.array([self.__xmin, self.__ymin, self.__zmin, self.__xmax, self.__ymax, self.__zmax])
 
    def get_fsgrid_cell_size(self):
       ''' Read fsgrid cell size
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [dx, dy, dz]
       '''
       size = self.get_fsgrid_mesh_size()
@@ -4063,11 +4262,11 @@ class VlsvReader(object):
       loweri = self.get_fsgrid_indices(lower+eps)
       upperi = self.get_fsgrid_indices(upper-eps)
       return loweri, upperi
-      
+
 
    def get_velocity_mesh_size(self, pop="proton"):
       ''' Read velocity mesh size
-      
+
       :returns: Size of mesh in number of blocks, array with three elements
       '''
       popmesh = self.__popmesh(pop)
@@ -4075,7 +4274,7 @@ class VlsvReader(object):
 
    def get_velocity_block_size(self, pop="proton"):
       ''' Read velocity mesh block size
-      
+
       :returns: Size of block in number of cells, array with three elements
       '''
       popmesh = self.__popmesh(pop)
@@ -4083,7 +4282,7 @@ class VlsvReader(object):
 
    def get_velocity_mesh_extent(self, pop="proton"):
       ''' Read velocity mesh extent
-      
+
       :returns: Maximum and minimum coordinates of the mesh, [vxmin, vymin, vzmin, vxmax, vymax, vzmax]
       '''
       popmesh = self.__popmesh(pop)
@@ -4091,7 +4290,7 @@ class VlsvReader(object):
 
    def get_velocity_mesh_dv(self, pop="proton"):
       ''' Read velocity mesh cell size
-      
+
       :returns: Velocity mesh cell size, array with three elements [dvx, dvy, dvz]
       '''
       popmesh = self.__popmesh(pop)
@@ -4192,7 +4391,7 @@ class VlsvReader(object):
 
    def read_blocks(self, cellid, pop="proton"):
       ''' Read raw block data from the open file and return the data along with block ids
-      
+
       :param cellid: Cell ID of the cell whose velocity blocks are read
       :returns: A numpy array with block ids and data eg [array([2, 5, 6, 234, 21]), array([1.0e-8, 2.1e-8, 2.1e-8, 0, 4.0e-8])]
 
@@ -4291,7 +4490,11 @@ class VlsvReader(object):
 
          .. note:: This should only be used for optimization purposes.
       '''
+      if self.FileIndex is not None:
+         self.FileIndex.clear()
       self.__fileindex_for_cellid = {}
+      # self.__cellids_ordered = np.array([],dtype=np.int64)
+      # self.__cellid_fileindex_ordered = np.array([],dtype=np.int64)
 
    def get_mesh_domain_extents(self, mesh):
       if (mesh == 'fsgrid'):
@@ -4304,7 +4507,7 @@ class VlsvReader(object):
          cids_all = self.read_variable("CellID")
          lowcorners_all = self.read_variable("vg_coordinates_cell_lowcorner")
          dxs_all = self.read_variable("vg_dx")
-         
+
 
          extents = np.zeros((MESH_DOMAIN_SIZES.shape[0],6))
          start = 0
@@ -4323,10 +4526,10 @@ class VlsvReader(object):
             start = end
 
          return extents.reshape((-1),order="C")
-         
+
       else:
          raise ValueError
-   
+
    def get_cache_folder(self):
 
       fn = self.file_name
@@ -4358,7 +4561,7 @@ class VlsvReader(object):
    def cache_neighbor_stencils(self):
       self.load_neighbor_stencils_from_filecache()
       path = self.get_cache_folder()
-      os.makedirs(path,exist_ok=True) 
+      os.makedirs(path,exist_ok=True)
       cache_file_neighbors = os.path.join(path, "neighbors_cache.pkl")
       with open(cache_file_neighbors,'wb') as cache:
             pickle.dump({
@@ -4374,7 +4577,7 @@ class VlsvReader(object):
          if(os.path.isfile(cache_file_neighbors)):
             with open(cache_file_neighbors,'rb') as cache:
                loaded = pickle.load(cache)
-               
+
                self.__cell_neighbours.update(loaded["cell_neighbours"])
                self.__cell_vertices.update(loaded["cell_vertices"])
                self.__cell_corner_vertices.update(loaded["cell_corner_vertices"])
@@ -4388,7 +4591,7 @@ class VlsvReader(object):
    def get_cellid_spatial_index(self, force=False):
       return None
       if not force:
-         if self.__cellid_spatial_index is None:   
+         if self.__cellid_spatial_index is None:
             self.__cellid_spatial_index = self.__metadata_cache.get_cellid_spatial_index(self, force)
          else:
             pass
@@ -4404,6 +4607,6 @@ class VlsvReader(object):
 
    def cache_optimization_files(self, force=False):
       ''' Create cached optimization files for this reader object (e.g. spatial index)
-      
+
       '''
       self.__metadata_cache.set_cellid_spatial_index(self, force)
