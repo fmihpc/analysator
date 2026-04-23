@@ -198,9 +198,9 @@ class FileCache:
 
    def save_metadata(self, reader):
       fn = self.get_metadata_filename(reader)
-      if not os.path.exists(self.get_cache_folder(reader)):
-         os.makedirs(self.get_cache_folder(reader))
       try:
+         if not os.path.exists(self.get_cache_folder(reader)):
+            os.makedirs(self.get_cache_folder(reader))
          with open(fn,'wb') as f:
             pickle.dump(self.__metadata_dict,f)
       except Exception as e:
