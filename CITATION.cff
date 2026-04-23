@@ -11,8 +11,6 @@ authors:
   given-names: "Otto"
 - family-names: "Sihvonen"
   given-names: "Lasse"
-- family-names: "Koskela"
-  given-names: "Otto"
 - family-names: "Pfau-Kempf"
   given-names: "Yann"
   orcid: "https://orcid.org/0000-0001-5793-7070"
@@ -56,8 +54,10 @@ authors:
   orcid: "https://orcid.org/0000-0002-7576-3251"
 - family-names: "Ala-Lahti"
   given-names: "Matti"
+  orcid: "https://orcid.org/0000-0001-9574-339X"
 - family-names: "Kilian"
   given-names: "Patrick"
+  orcid: "https://orcid.org/0000-0002-8906-7783"
 - family-names: "Tesema"
   given-names: "Fasil Kebede"
   orcid: "https://orcid.org/0000-0002-5978-6955"
@@ -69,6 +69,7 @@ authors:
   orcid: "https://orcid.org/0000-0002-9542-5866"
 - family-names: "Hoilijoki"
   given-names: "Sanni"
+  orcid: "https://orcid.org/0000-0001-5709-2346"
 - family-names: "Brito"
   given-names: "Thiago"
   orcid: "https://orcid.org/0000-0002-2531-5848"
@@ -82,7 +83,7 @@ authors:
 - family-names: "Greguš"
   given-names: "Jakub"
 title: "Analysator"
-version: 0.9.9
+version: 0.9.8
 doi: 10.5281/zenodo.4462514
 date-released: 2024-11-26
 url: "https://github.com/fmihpc/analysator"
