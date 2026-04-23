@@ -1,12 +1,18 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Battarbee"
-  given-names: "Markus"
-  orcid: "https://orcid.org/0000-0001-7055-551X"
 - family-names: "Alho"
   given-names: "Markku"
   orcid: "https://orcid.org/0000-0001-9762-6795"
+- family-names: "Battarbee"
+  given-names: "Markus"
+  orcid: "https://orcid.org/0000-0001-7055-551X"
+- family-names: "Hannuksela"
+  given-names: "Otto"
+- family-names: "Sihvonen"
+  given-names: "Lasse"
+- family-names: "Koskela"
+  given-names: "Otto"
 - family-names: "Pfau-Kempf"
   given-names: "Yann"
   orcid: "https://orcid.org/0000-0001-5793-7070"
@@ -48,6 +54,10 @@ authors:
 - family-names: "Turc"
   given-names: "Lucile"
   orcid: "https://orcid.org/0000-0002-7576-3251"
+- family-names: "Ala-Lahti"
+  given-names: "Matti"
+- family-names: "Kilian"
+  given-names: "Patrick"
 - family-names: "Tesema"
   given-names: "Fasil Kebede"
   orcid: "https://orcid.org/0000-0002-5978-6955"
@@ -57,6 +67,8 @@ authors:
 - family-names: "Honkonen"
   given-names: "Ilja"
   orcid: "https://orcid.org/0000-0002-9542-5866"
+- family-names: "Hoilijoki"
+  given-names: "Sanni"
 - family-names: "Brito"
   given-names: "Thiago"
   orcid: "https://orcid.org/0000-0002-2531-5848"
@@ -67,8 +79,10 @@ authors:
   given-names: "Sameli"
 - family-names: "Reimi"
   given-names: "Johanna"
+- family-names: "Greguš"
+  given-names: "Jakub"
 title: "Analysator"
-version: 0.9.6
+version: 0.9.9
 doi: 10.5281/zenodo.4462514
 date-released: 2024-11-26
 url: "https://github.com/fmihpc/analysator"
