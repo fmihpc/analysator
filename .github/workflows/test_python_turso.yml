@@ -12,6 +12,10 @@ on:
     - cron: '0 8 * * MON'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
 
   turso_system:
@@ -36,6 +40,7 @@ jobs:
             . CI_env/bin/activate
             uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
+            uv pip install -r requirements-backend.txt 
         - name: Trial imports
           run: |
             export TMPDIR=$RUNNER_TEMP
