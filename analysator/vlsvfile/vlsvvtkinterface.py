@@ -129,9 +129,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             subdivided[0].append(c)
          idx += 1
 
-      # @jit(nopython=True)
       def children(cid, level):
-         # cellind = get_cell_indices(cid, level) # get_cellind here for compilation
          cellids = cid - 1 - cid_offsets[level]
          cellind = np.full(3, -1,dtype=np.int32)
          cellind[0] = (cellids)%(xcells[level])
@@ -170,7 +168,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
             raise Exception("reinit = True")
          with open(self.__metafile,'rb') as mfile:
             data = pickle.load(mfile)
-            # print(data)
             self.__idxToFileIndex = data['idxToFileIndexMap']
             self.__descriptor = data['descr']
       except Exception as e:
@@ -206,8 +203,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       src.SetGridScale(f._VlsvReader__dx,f._VlsvReader__dy,f._VlsvReader__dz)
       src.SetBranchFactor(2)
       
-      #descr = src.ConvertDescriptorStringToBitArray(descr)
-      #src.SetDescriptorBits(descr)
+
       src.SetDescriptor(descr)
 
       src.Update()
@@ -268,8 +264,7 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
    def RequestInformation(self, request, inInfo, outInfo):
 
       info = outInfo.GetInformationObject(0)
-      # print("VlsvVtkReader RequestInformation:")
-      # print(info)
+
       if self.__htg is None:
          print("Creating htg via RequestInformation")
          self.__htg = self.getHTG()
@@ -280,9 +275,6 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
                self._arrayselection.AddArray(name)
                self._arrayselection.DisableArray(name)
                self.__cellarrays.append(name)
-         # self.__htg.addArrayFromVlsv("vg_beta_star")
-         # self.__htg.GetCellData().SetActiveScalars("vg_beta_star")
-
       dims = self.__htg.GetExtent()
       info.Set(vtk.vtkStreamingDemandDrivenPipeline.WHOLE_EXTENT(), *dims)
 
@@ -396,8 +388,7 @@ def __main__():
    # This initializes a hypertreegrid from the given reader.
    reader = VlsvVtkReader()
    reader.SetFileName("/home/mjalho/Downloads/bulk.0002189.vlsv")
-   # reader.SetFileName("/home/mjalho/bulk1.0001418.vlsv")
-   # reader.ReadAllScalarsOn()
+
    reader.Update()
    cf = vtk.vtkHyperTreeGridContour()
    cf.SetInputConnection(reader.GetOutputPort())
@@ -417,19 +408,9 @@ def __main__():
    renWin.AddRenderer(ren)
    renWin.SetSize(600, 600)
 
-   # renWin.Render()
-   
-   # time.sleep(10)
-   
+
    htg = reader.GetOutputDataObject(0)
-   # print(htg)
-   # htg.__vtkVlsvHyperTreeGrid_VlsvAddArray('vg_b_vol')
-   # htg = reader.GetOutputData()
-   # print(htg)
-   # These functions grab one SpatialGrid variable and map that to 
-   # the hypertreegrid. Variable vector sizes of 1,2,3,4,9 supported.
-   # htg.addArrayFromVlsv("vg_b_vol")
-   # htg.addArrayFromVlsv("vg_beta_star")
+
 
    writer = vtk.vtkXMLHyperTreeGridWriter()
    writer.SetFileName("output_FID.htg")
