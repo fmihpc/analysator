@@ -27,7 +27,7 @@ import numpy as np
 import sys
 import logging
 
-def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 ):
+def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, point1, point2 ):
    ''' Calculates coordinates to be used in the cut_through. The coordinates are calculated so that every cell gets picked in the coordinates.
        :param vlsvReader:       Some open VlsvReader
        :type vlsvReader:        :class:`vlsvfile.VlsvReader`
@@ -62,8 +62,9 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       if cellid == 0:
          raise ValueError("invalid cell id!")
       # Get the max and min boundaries:
-      min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_lengths
-      max_bounds = np.array([min_bounds[i] + cell_lengths[i] for i in range(0,3)])
+      cell_length = vlsvReader.get_cell_dx(cellid)
+      min_bounds = vlsvReader.get_cell_coordinates(cellid) - 0.5 * cell_length
+      max_bounds = np.array([min_bounds[i] + cell_length[i] for i in range(0,3)])
       # Check which boundary we hit first when we move in the unit_vector direction:
       coefficients_min = np.divide((min_bounds - iterator), unit_vector, out=np.full(min_bounds.shape, sys.float_info.max), where=np.logical_not(unit_vector==0.0))
       coefficients_max = np.divide((max_bounds - iterator), unit_vector, out=np.full(min_bounds.shape, sys.float_info.max), where=np.logical_not(unit_vector==0.0))
@@ -107,8 +108,8 @@ def get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymi
       if min((point2 - iterator)* unit_vector) < 0:
          break
    # Return the coordinates, cellids and distances for processing
-   from output import output_1d
-   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   from analysator.calculations.output import output_1d
+   return output_1d( [np.asarray(cellids), np.asarray(distances), np.asarray(coordinates)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
 
 
 def cut_through( vlsvReader, point1, point2 ):
@@ -159,7 +160,7 @@ def cut_through( vlsvReader, point1, point2 ):
    cell_lengths = np.array([(xmax - xmin)/(float)(xcells), (ymax - ymin)/(float)(ycells), (zmax - zmin)/(float)(zcells)])
 
    # Get list of coordinates for the cells:
-   return get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2 )
+   return get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, point1, point2 )
 
 
 def cut_through_swath(vlsvReader, point1, point2, width, normal):
@@ -259,8 +260,8 @@ def cut_through_step( vlsvReader, point1, point2 ):
          break
       
    # Return the coordinates, cellids and distances for processing
-   from output import output_1d
-   return output_1d( [np.array(cellids, copy=False), np.array(distances, copy=False), np.array(coordinates, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   from analysator.calculations.output import output_1d
+   return output_1d( [np.asarray(cellids), np.asarray(distances), np.asarray(coordinates)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
      
 
 # Take a curve (list of 3-coords), return cells and distances along curve as with cut_through.
@@ -318,7 +319,7 @@ def cut_through_curve(vlsvReader, curve):
        raise ValueError('point1 in cut_through_curve out of bounds')
      if vlsvReader.get_cellid(point2) == 0:
        raise ValueError('point1 in cut_through_curve out of bounds')
-     cut = get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, cell_lengths, point1, point2)
+     cut = get_cellids_coordinates_distances( vlsvReader, xmax, xmin, xcells, ymax, ymin, ycells, zmax, zmin, zcells, point1, point2)
      ccid = cut[0].data
      cedges = cut[1].data
      try:
@@ -355,5 +356,5 @@ def cut_through_curve(vlsvReader, curve):
      rCellIds = cellIds
      rEdges = edges
      rCoords = coords
-   from output import output_1d
-   return output_1d( [np.array(rCellIds, copy=False), np.array(rEdges, copy=False), np.array(rCoords, copy=False)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )
+   from analysator.calculations.output import output_1d
+   return output_1d( [np.asarray(rCellIds), np.asarray(rEdges), np.asarray(rCoords)], ["CellID", "distances", "coordinates"], ["", "m", "m"] )

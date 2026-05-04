@@ -8,7 +8,7 @@ fi
 #   first with srun (in case the file has not yet updated on the front end)
 #   second if srun fails (in case communication failure) it tries to cat it on the frontend (may be empty if file has not been updated pyproject)
 
-sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || srun cat $1 || cat $1 || echo "cat failed exit code $?"
+sbatch -W --array=1-$ARRAY_SIZE -o "$1" ./testpackage/$1.sh $2 > jobid_$1 || true
 
 #in case we do exit 0 successfully
 LOG=$(srun cat $1 || cat $1)
@@ -25,7 +25,7 @@ if [[ $? -ne 0 ]] || [[ ! $JOBID ]]; then
   echo "::error::Jobid could not be found, exiting. Exit code $?" 
   exit 1
 fi
-SACCT_LOG=$(sacct -j $JOBID -o job,state,node | grep FAILED) 
+SACCT_LOG=$(sacct -j $JOBID -o job,state,node,exit | grep FAILED) 
 if [[ $SACCT_LOG ]]; then
   echo "::error::Some job failed on a node, try to take a look at the slurm log."
   echo "$SACCT_LOG" 

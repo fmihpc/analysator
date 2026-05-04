@@ -36,7 +36,10 @@
 #for usage with "from (package) import *"
 __all__ = ['plot_colormap', 'plot_vdf', 'plot_vdfdiff', 'plot_vdf_profiles', 'plot_colormap3dslice',
            'plot_threeslice', 'plot_ionosphere', 'plot_isosurface', 'plot_neutral_sheet',
-           'plot_variables','colormaps', 'plot_helpers']
+           'plot_variables','colormaps', 'plot_helpers'
+            'themis_plot_phasespace_contour','themis_plot_detector','themis_observation_from_file'
+           'themis_plot_phasespace_helistyle',"themis_observation"
+           ]
 
 from .plot_variables import plot_variables, plot_multiple_variables
 
@@ -46,7 +49,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib
 from . import colormaps
-
+from .plot_themis_observation import themis_plot_detector,themis_plot_phasespace_contour,themis_plot_phasespace_helistyle,themis_observation,themis_observation_from_file
 from . import plot_helpers
 from .plot_colormap import plot_colormap
 from .plot_vdf import plot_vdf
@@ -290,9 +293,10 @@ def cell_edgecontours(ax,XmeshPass,YmeshPass,heightmap,threshold=0,linewidth=0.5
         hlines = np.array(list(zip(np.stack((x[l[:, 0]], y[l[:, 1] + 1])).T,
                                     np.stack((x[l[:, 0] + 1], y[l[:, 1] + 1])).T)))
         lines = np.vstack((vlines, hlines))
-
-        ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
-
+        if np.shape(lines)[1]!=0:
+            ax.add_collection(matplotlib.collections.LineCollection(lines, lw=linewidth, colors=colors, linestyle=linestyle,zorder=2,antialiased=antialiased))
+    else:
+       return 1
     
     return 0
 def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
@@ -333,8 +337,8 @@ def output_path(outputfile,outputfile_default,outputdir,nooverwrite):
             except FileExistsError: 
                 #Parallel jobs might try to create dir simultaneously.
                 pass
-            except:
-                raise IOError("Could not create output directory "+outputdir+" Exiting.")
+            except Exception as e:
+                raise IOError("Could not create output directory "+outputdir+": "+str(e))
         if not os.access(outputdir, os.W_OK):
             raise IOError("No write access for directory "+outputdir+" Exiting.")
 

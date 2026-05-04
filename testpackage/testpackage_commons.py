@@ -31,7 +31,7 @@ if "pass" in funcs_to_use:
     print("No significant changes made, the testpackage will not be run!")
     quit()
 
-datalocation = "/wrk-kappa/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
+datalocation = "/turso/group/spacephysics/analysator/CI/analysator-test-data/vlasiator"
 runs = []
 
 
@@ -460,6 +460,7 @@ for j in range(start,end):
 
             traceback.print_exc()
             print("END TRACE for call",j,"\n----------------------------")
+            raise e
         elif "nooverwrite" in call:
             #Should be same but also doesnt hurt to be exact
             print("----------------------------\nNOOVERWRITE CALL SUCCESSFULLY DONE ",j, runname," \n```\n"+call+"```\n", repr(e))
