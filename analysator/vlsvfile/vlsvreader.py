@@ -2275,7 +2275,7 @@ class VlsvReader(object):
       if self.__fsGridDecomposition is None:
          self.__fsGridDecomposition = self.read(tag="MESH_DECOMPOSITION",mesh='fsgrid')
          if self.__fsGridDecomposition is not None:
-            logging.info("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
+            logging.debug("Found FsGrid decomposition from vlsv file: " + str(self.__fsGridDecomposition))
             return self.__fsGridDecomposition
          else:
             logging.info("Did not find FsGrid decomposition from vlsv file.")
