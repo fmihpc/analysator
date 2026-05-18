@@ -434,7 +434,7 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
    elif (vlsvTObject is not None) and (files_list is not None):
       raise ValueError("Please only provide one source of files")
    if (seed_points is None):
-      raise ValueError("Provide seed points for streaklines")
+      raise ValueError("Please provide seed points")
   
    #number of time steps
    if files_list is not None: 
@@ -447,9 +447,9 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
 
    if direction == "both":
       
-      M_plus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", integration_steps=integration_steps)
-      M_minus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", integration_steps=integration_steps)
-      M_both =  np.nansum(np.stack([M_plus,M_minus], axis = 0), axis = 0)
+      M_plus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", integration_steps = integration_steps)
+      M_minus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", integration_steps = integration_steps)
+      M_both =  np.nansum(np.stack([M_plus, M_minus], axis = 0), axis = 0)
 
       #fix diagonal
       for t in range(T):
@@ -457,11 +457,11 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
       return M_both
 
    #Full matrix to be filled with coordinates 
-   M = np.full((N,T,T,3), np.nan)
+   M = np.full((N, T, T, 3), np.nan)
 
    sign = 1 if direction == "+" else -1
    #records the current positions of the tracked plasma
-   current_pos = np.full((N,T,3), np.nan)
+   current_pos = np.full((N, T, 3), np.nan)
 
    file_indices = list(range(T)) if direction == "+" else list(range(T - 1, -1, -1))
 
@@ -470,7 +470,7 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
       if i == 0:
          #initial file read and timestep
          
-         vlsvfile  =vlsvTObject.readers[file_index]
+         vlsvfile  = vlsvTObject.readers[file_index]
          t_0 = vlsvTObject.ts[file_index]
 
       for n in range(N):
@@ -479,11 +479,11 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
          M[n, file_index, file_index,:] = seed_points[n]
       
       if direction == "+":
-         current_cols = range(0,file_index+1)
+         current_cols = range(0, file_index+1)
       
       elif direction == "-":
          #negative direction
-         current_cols = range(file_index,T)
+         current_cols = range(file_index, T)
       
       #record current positions
       for n in range(N):
@@ -498,10 +498,10 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
 
       #first record the current velocities 
       if direction == "+":
-         js = np.arange(0,file_index+1)
+         js = np.arange(0, file_index + 1)
       else:
          #negative direction
-         js = np.arange(file_index,T)
+         js = np.arange(file_index, T)
          
       ns = np.arange(N)
       n_idx, j_idx = np.meshgrid(ns,js,indexing = "ij")
@@ -514,29 +514,21 @@ def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, dir
       next_vlsv = vlsvTObject.readers[next_file]
       t_1 = vlsvTObject.ts[next_file]
 
+      #time between files
       dt = abs(t_1-t_0)
 
-      if integration_steps == 1:
+      #reads interpolated time between vlsvfiles
+      #dt*dt_step is integration step size 
+      dt_step = dt/integration_steps
 
-         #possibly (most likely) unnecessary and does the same as the else case if integration steps is 1
-         #should be deleted
-         positions = current_pos[n_idx,j_idx, :]
-         velocities = vlsvfile.read_interpolated_variable(var, positions)
-         #calculate new positions 
-         current_pos[n_idx, j_idx, :] += sign*velocities*dt
+      for step in range(integration_steps):
 
-      else: 
-         #reads interpolated time between vlsvfiles
-         dt_step = dt/integration_steps
-
-         for step in range(integration_steps):
-
-            t_step = t_0 + dt_step*step*sign
-            positions = current_pos[n_idx,j_idx, :]
-            
-            velocities = vlsvTObject(t_step, positions, var)
-            
-            current_pos[n_idx,j_idx, :] += sign*velocities*dt_step
+         t_step = t_0 + dt_step*step*sign
+         positions = current_pos[n_idx, j_idx, :]
+         
+         velocities = vlsvTObject(t_step, positions, var)
+         
+         current_pos[n_idx, j_idx, :] += sign*velocities*dt_step
 
       #set next points as current points for the next looping
       t_0 = t_1
