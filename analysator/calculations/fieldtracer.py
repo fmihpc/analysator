@@ -407,9 +407,9 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
    return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
 
 
-def streaklines_3D(files_list: list, seed_points: list, direction="+", is_test= False, integration_steps = 1):
+def streaklines_3D(vlsvTObject= None, files_list = None, seed_points = None, direction="+", integration_steps = 10, var = "vg_v"):
    """
-   form a (N, T, T, 3) matrix where N: number of seed points, T: number of timesteps, and 3D coordinates
+   forms a (N, T, T, 3) matrix where N: number of seed points, T: number of timesteps, and 3D coordinates
    Each seed gives a (i,j,3) matrix where the i-axis is the coordinate time, and j-axis is the release time of the particles
    i=j gives the seed point/release point where particles are started to track 
    algorithm forward: 
@@ -420,22 +420,43 @@ def streaklines_3D(files_list: list, seed_points: list, direction="+", is_test= 
          -current_pos += velocity*dt
       loop till end
    keep track of current position using current_pos = (N,T,3)
-   """
 
-   if direction == "both":
-      M_plus = streaklines_3D(files_list, seed_points, direction="+", is_test=is_test)
-      M_minus = streaklines_3D(files_list, seed_points, direction="-", is_test=is_test)
-      M_both =  np.nansum(np.stack([M_plus,M_minus], axis = 0),axis = 0)
-      #fix diagonal
-      for t in range(len(files_list)):
-         M_both[:,t,t,:] = M_plus[:,t,t,:]
-      return M_both
+      param files_list:    List containing paths to VLSV files
+      param seed_points:   list of seed points for streaklines (meters)
+      param direction:     direction of integration (+,-, both)
+      param integration_steps:   number of integration steps between each timestep
+      param var:           integration variable
+
+   """
+  
+   if (vlsvTObject is None) and (files_list is None):
+      raise ValueError("Provide either a VlsvTInterpolator object or a list of vlsv file paths")
+   elif (vlsvTObject is not None) and (files_list is not None):
+      raise ValueError("Please only provide one source of files")
+   if (seed_points is None):
+      raise ValueError("Provide seed points for streaklines")
+  
    #number of time steps
-   T = len(files_list)
+   if files_list is not None: 
+      vlsvTObject = pt.calculations.VlsvTInterpolator(files_list)
+
+   T = len(vlsvTObject.files)
+  
    #number of seed points
    N = len(seed_points)
 
-   #Full matrix that is filled with coordinates 
+   if direction == "both":
+      
+      M_plus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", integration_steps=integration_steps)
+      M_minus = streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", integration_steps=integration_steps)
+      M_both =  np.nansum(np.stack([M_plus,M_minus], axis = 0), axis = 0)
+
+      #fix diagonal
+      for t in range(T):
+         M_both[:,t,t,:] = M_plus[:,t,t,:]
+      return M_both
+
+   #Full matrix to be filled with coordinates 
    M = np.full((N,T,T,3), np.nan)
 
    sign = 1 if direction == "+" else -1
@@ -448,14 +469,11 @@ def streaklines_3D(files_list: list, seed_points: list, direction="+", is_test= 
 
       if i == 0:
          #initial file read and timestep
-         if is_test:
-            print("test")
-            t_0 = 0
-         else:   
-            vlsvfile = pt.vlsvfile.VlsvReader(files_list[file_index])
-            t_0 = vlsvfile.read_parameter("time")
-      for n in range(N):
+         
+         vlsvfile  =vlsvTObject.readers[file_index]
+         t_0 = vlsvTObject.ts[file_index]
 
+      for n in range(N):
          current_pos[n, file_index,:] = seed_points[n]
          #Diagonal point so initial point
          M[n, file_index, file_index,:] = seed_points[n]
@@ -471,11 +489,13 @@ def streaklines_3D(files_list: list, seed_points: list, direction="+", is_test= 
       for n in range(N):
          for j in current_cols:
             M[n,file_index,j,:] = current_pos[n,j,:] 
+
       if i == T-1:
          #On last step return the matrix and dont continue the integration
-         return M
+         return M #matrix of form shape = (N, T, T, 3)
 
-      #INTEGRATION STARTS HERE
+      #INTEGRATION
+
       #first record the current velocities 
       if direction == "+":
          js = np.arange(0,file_index+1)
@@ -483,41 +503,44 @@ def streaklines_3D(files_list: list, seed_points: list, direction="+", is_test= 
          #negative direction
          js = np.arange(file_index,T)
          
-
       ns = np.arange(N)
-      n_idx, j_idx = np.meshgrid(ns,js, indexing = "ij")
+      n_idx, j_idx = np.meshgrid(ns,js,indexing = "ij")
       n_idx = n_idx.ravel()
       j_idx = j_idx.ravel()
 
       #read next vlsvfile for time
       next_file = file_index + 1 if direction == "+" else file_index - 1
-      next_vslv = pt.vlsvfile.VlsvReader(files_list[next_file])
-      t_1 = next_vslv.read_parameter("time")
       
+      next_vlsv = vlsvTObject.readers[next_file]
+      t_1 = vlsvTObject.ts[next_file]
+
       dt = abs(t_1-t_0)
 
       if integration_steps == 1:
 
+         #possibly (most likely) unnecessary and does the same as the else case if integration steps is 1
+         #should be deleted
          positions = current_pos[n_idx,j_idx, :]
-
-         velocities = vlsvfile.read_interpolated_variable("vg_v",positions)
-
+         velocities = vlsvfile.read_interpolated_variable(var, positions)
          #calculate new positions 
          current_pos[n_idx, j_idx, :] += sign*velocities*dt
+
       else: 
-         #reads interpolated time between vlsvfiles for more accurate integration
+         #reads interpolated time between vlsvfiles
          dt_step = dt/integration_steps
 
          for step in range(integration_steps):
 
-            t_step = t_0 + dt_step*step
+            t_step = t_0 + dt_step*step*sign
             positions = current_pos[n_idx,j_idx, :]
-            velocities = pt.calculations.timeevolution.get_interpolated_variable(vlsvfile,next_vslv, "vg_v", positions,t_step)
+            
+            velocities = vlsvTObject(t_step, positions, var)
+            
             current_pos[n_idx,j_idx, :] += sign*velocities*dt_step
 
       #set next points as current points for the next looping
       t_0 = t_1
-      vlsvfile = next_vslv 
+      vlsvfile = next_vlsv 
       
 
    
