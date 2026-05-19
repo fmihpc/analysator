@@ -2461,7 +2461,7 @@ class VlsvReader(object):
          .. seealso:: :func:`read_variable`
       '''
 
-      return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
+      return self.__variable_cache.read_variable_from_cache(self,name,cellids,operator)
 
 
    def read_variable_to_cache(self, name, operator="pass"):
@@ -2490,7 +2490,7 @@ class VlsvReader(object):
       '''
       cellids = get_data(cellids)
       if((name,operator) in self.__variable_cache.keys()):
-         return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
+         return self.__variable_cache.read_variable_from_cache(self,name,cellids,operator)
 
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
