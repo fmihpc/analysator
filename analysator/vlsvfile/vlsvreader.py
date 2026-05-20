@@ -2451,7 +2451,7 @@ class VlsvReader(object):
       for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
          print(k, v)
 
-   def read_variable_from_cache(self, name, cellids, operator):
+   def read_variable_from_cache(self, name, cellids=-1, operator="pass"):
       ''' Read variable from cache instead of the vlsv file.
          :param name: Name of the variable
          :param cellids: a value of -1 reads all data
