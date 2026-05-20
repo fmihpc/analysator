@@ -273,7 +273,7 @@ class VlsvReader(object):
          return dict_keys_exist(self.get_cellid_locations(), cellids)
 
       def get_cellid_fileindices(self, cellids):
-         return itemgetter(*cellids)(self.get_cellid_locations())
+         return np.atleast_1d(np.array(itemgetter(*cellids)(self.get_cellid_locations()),dtype=np.int64))
 
    file_name=""
    def __del__(self):
@@ -287,7 +287,7 @@ class VlsvReader(object):
           :kwarg fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
           :kwarg file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
-          :kwarg indexer:       String, ["ordered"] | "dict" - which file layout indexer to use. "ordered" is new default - faster to initialize
+          :kwarg indexer:       String, ["ordered" | "dict" ] - which file layout indexer to use. "ordered" is new default - faster to initialize
                                     especially from L1 files. "dict" is the legacy mode, which is slow to initialize but may be faster with frequent small
                                     queries. :seealso:: :func:`set_cellid_indexer`
       '''
