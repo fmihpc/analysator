@@ -2475,7 +2475,7 @@ class VlsvReader(object):
       # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
       self.__variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
       # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
-      self.__read_fileindex_for_cellid()
+      # self.__read_fileindex_for_cellid()
       return self.__variable_cache[(name,operator)]
 
    def read_variable(self, name, cellids=-1,operator="pass"):
