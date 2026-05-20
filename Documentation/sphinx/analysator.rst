@@ -18,11 +18,6 @@ You shall learn how to open a .vlsv file in Analysator, how to view file content
 plotting of Vlasiator spatial data in 2D and 3D. You will practice accessing Vlasov grid, FSgrid, and
 ionospheric grid data. You will learn about some of the most useful Analysator plotting options.
 
-Timing
-------
-
-
-
 Preparing exercises
 -------------------
 
@@ -36,10 +31,21 @@ For cloning, you can use the SSH or the HTTP method.
 
    cd $HOME
    git clone https://github.com/fmihpc/analysator.git
+
+or
+
+.. code-block:: bash
+
+   cd $HOME
    git clone git@github.com:fmihpc/analysator.git
 
-Next, you should set your ``PYTHONPATH`` variable to include your Analysator install directory. One way is to add this line to your startup script:
-``export PYTHONPATH=$PYTHONPATH:$HOME/analysator``
+Next, you can install Analysator into your Python environment via e.g. ``pip``
+
+.. code-block:: bash
+   
+   pip install --editable ./analysator
+
+The ``--editable`` handle lets you edit your Analysator install... and further contribute to the toolset!
 
 Analysator on LUMI with jupyterhub
 ----------------------------------
