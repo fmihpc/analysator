@@ -241,6 +241,8 @@ class AMRInterpolator(object):
    def __init__(self, reader, method = "linear", cellids=np.array([1,2,3,4,5],dtype=np.int64)):
       self.__reader = reader
       self.__cellids = np.array(list(set(cellids)),dtype=np.int64)
+      if(len(self.__cellids) == 0):
+         raise RuntimeError("Tried to initialize an interpolator with empty CellIDs")
       self.duals = {}
       # Cannot initialize an empty Delaunay
       #self.__Delaunay = Delaunay(reader.get_cell_coordinates(self.__cellids), incremental = True, qhull_options="QJ Qc Q12")
@@ -278,4 +280,3 @@ class AMRInterpolator(object):
             return HexahedralTrilinearInterpolator(pts, vals, **methodargs["linear"])
       elif method == "linear":
          return HexahedralTrilinearInterpolator(pts, vals, **methodargs[method])
-
