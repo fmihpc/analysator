@@ -2153,9 +2153,10 @@ class VlsvReader(object):
       '''
 
       fo = {c: self.__cell_duals[c] for c in cids}
-      vset = set()
-      vset.union(*fo.values())
-      return {v: self.__dual_cells[v] for v in vset}
+      vset = set().union(*fo.values())
+      
+      ret = {v: self.__dual_cells[v] for v in vset}
+      return ret
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
