@@ -441,6 +441,9 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
    if files_list is not None: 
       vlsvTObject = pt.calculations.VlsvTInterpolator(files_list)
 
+   if integration_steps % points_per != 0:
+      raise ValueError("Number of integration steps must be divisible by the number of points recorded between timesteps")
+
    T = len(vlsvTObject.files)
   
    #number of seed points
@@ -449,13 +452,19 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
    T_eff = T*points_per-points_per+1
    record_point = integration_steps//points_per
 
-   #Also just prefill diagonal with seed points.
-   #No need to have it in the actual loops
-   #prepping functions for polishing code
-   def active_indices():
-      return
-   def inject_record():
-      return
+   #helper functions
+   def active_indices(idx):
+      if direction =="+":
+         return range(0, idx+1)
+      return range(idx, T_eff)
+   
+   def inject_record(idx):
+      for n in range(N):
+         current_pos[n,idx, :] = seed_points[n]
+         M[n,idx, idx, :] = seed_points[n]
+      for n in range(N):
+         for j in active_indices(idx):
+            M[n, idx, j, :] = current_pos[n, j, :]
 
    if direction == "both":
       
@@ -483,28 +492,10 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
 
       if i == 0:
          #initial file read and timestep
-         
-         vlsvfile  = vlsvTObject.readers[file_index]
          t_0 = vlsvTObject.ts[file_index]
 
       #INJECTING ON DIAGONAL POINTS AT TIMESTEPS 
-      #injecting points
-      for n in range(N):
-         current_pos[n, eff_file_index,:] = seed_points[n]
-         #Diagonal point so initial point
-         M[n, eff_file_index, eff_file_index,:] = seed_points[n]
-
-      if direction == "+":
-         current_cols = range(0, eff_file_index+1)
-      
-      elif direction == "-":
-         #negative direction
-         current_cols = range(eff_file_index, T_eff)
-      
-      #record current positions
-      for n in range(N):
-         for j in current_cols:
-            M[n,eff_file_index,j,:] = current_pos[n,j,:] 
+      inject_record(eff_file_index)
 
       if i == T-1:
          #On last step return the matrix and dont continue the integration
@@ -515,7 +506,6 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
       #read next vlsvfile for time
       next_file = file_index + 1 if direction == "+" else file_index - 1
       
-      next_vlsv = vlsvTObject.readers[next_file]
       t_1 = vlsvTObject.ts[next_file]
 
       #time between files
@@ -526,12 +516,9 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
       dt_step = dt/integration_steps
 
       #first record the current velocities 
-      if direction == "+":
-         js = np.arange(0, eff_file_index + 1)
-      else:
-         #negative direction
-         js = np.arange(eff_file_index, T_eff)
-          
+      
+      #indexing
+      js = np.array(list(active_indices(eff_file_index)))    
       ns = np.arange(N)
       n_idx, j_idx = np.meshgrid(ns,js,indexing = "ij")
       n_idx = n_idx.ravel()
@@ -548,46 +535,25 @@ def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, di
 
          if (step+1)% record_point == 0:
             record_idx = (step+1)//record_point
-            eff_idx = eff_file_index + record_idx if direction == "+" else eff_file_index - record_idx
-            print(t_step)
+            
             if record_idx == points_per:
                #skip here since recorded at the beginning of the next loop
-               #structure could be improved? 
                continue
-               
+            
+            eff_idx = eff_file_index + record_idx if direction == "+" else eff_file_index - record_idx   
+            
             #adding seed points between timesteps 
-            for n in range(N):
-               current_pos[n,eff_idx,:] = seed_points[n]
-               M[n,eff_idx, eff_idx, :] = seed_points[n]
-            
-            if direction == "+":
-               js = np.arange(0,eff_idx+1)
+            inject_record(eff_idx)
 
-            elif direction == "-":
-               #negative direction
-               js = np.arange(eff_idx, T_eff)
-            
             #preps indeces for next loop
+            js = np.array(list(active_indices(eff_idx)))  
             n_idx, j_idx = np.meshgrid(ns,js, indexing="ij")
             n_idx = n_idx.ravel()
             j_idx = j_idx.ravel()
             
-            if direction == "+":
-               rec_cols = range(0, eff_idx+1)
-            elif direction == "-":
-               rec_cols = range(eff_idx, T_eff)
-            
-            #record current positions between timesteps 
-            for n in range(N):
-               for j in rec_cols:
-                  M[n,eff_idx,j,:] = current_pos[n,j,:] 
-
       #set next points as current points for the next looping
       t_0 = t_1
-      vlsvfile = next_vlsv 
       
-
-   
    #Back up return M 
-   return M #matrix of form shape = (N, T, T, 3)
+   return M #matrix of form shape = (N, T_eff, T_eff, 3)
 
