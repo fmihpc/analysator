@@ -90,16 +90,22 @@ class VariableCache:
          if cellids == -1:
             return var_data
          else:
-            return var_data[reader.get_cellid_locations()[cellids]]
+            return var_data[reader.get_cellid_fileindices(np.array([cellids],dtype=np.int64))][0,...]
       else:
          if(len(cellids) > 0):
-            indices = np.array(itemgetter(*cellids)(reader.get_cellid_locations()),dtype=np.int64)
+            indices = reader.get_cellid_fileindices(np.array(cellids,dtype=np.int64))
          else:
             indices = np.array([],dtype=np.int64)
-         if value_len == 1:
-            return var_data[indices]
+         if(len(cellids) == 1):
+            if value_len == 1:
+               return var_data[indices][0]
+            else:
+               return var_data[indices,:][0,:]
          else:
-            return var_data[indices,:]
+            if value_len == 1:
+               return var_data[indices]
+            else:
+               return var_data[indices,:]
 
 class FileCache:
    ''' Top-level class for caching to file.
