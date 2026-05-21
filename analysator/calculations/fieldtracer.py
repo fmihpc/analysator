@@ -408,13 +408,35 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
 
 
 class streaklines: 
+   """
+   Class to analyze temporal pathlines and streaklines between a range of Vlasiator time steps
 
-   def __init__(self):
-      self.M = "matrix here"
+   Use: 
+   seed = [1e8, 0, 0]
+   files_list = ["./bulk1.0001300.vlsv","./bulk1.00013005.vlsv"]
+   streakline_object = pt.calculations.streaklines(files_list = files_list, seed_points = seed)
+   #extract pathline
+   pathline = streakline_object.get_pathline(seed_idx = 0, time = 1303)
+   """
+
+   def __init__(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_per = 10, integration_steps = 10, var = "vg_v"):
+
+      if files_list is not None: 
+         #adding as readers since VlsvTInterpolator has no caching 
+         readers = [pt.vlsvfile.VlsvReader(f, indexer = "dict") for f in files_list]
+         vlsvTObject = pt.calculations.VlsvTInterpolator(vlsvReaders_list = readers)
+
+
+      self.M = self.streaklines_3D(vlsvTObject=vlsvTObject, 
+                                   seed_points=seed_points, direction=direction,points_per=points_per,
+                                   integration_steps=integration_steps,var = var)
+      
+      self.time_range = [min(vlsvTObject.ts), max(vlsvTObject.ts)]
+
       pass
 
-
-   def streaklines_3D(vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_per = 10, integration_steps = 10, var = "vg_v"):
+   
+   def streaklines_3D(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_per = 10, integration_steps = 10, var = "vg_v"):
       """
       Streaklines 3D() integrates along dynamic field-grid vector field to calculate a final position. 
       Code uses forward Euler method to conduct the tracing.
@@ -446,13 +468,17 @@ class streaklines:
       if (seed_points is None):
          raise ValueError("Please provide seed points")
    
-      #number of time steps
+     
       if files_list is not None: 
-         vlsvTObject = pt.calculations.VlsvTInterpolator(files_list)
+         #adding as readers since VlsvTInterpolator has no caching 
+         readers = [pt.vlsvfile.VlsvReader(f, indexer = "dict") for f in files_list]
+         vlsvTObject = pt.calculations.VlsvTInterpolator(vlsvReaders_list = readers)
+         #vlsvTObject = pt.calculations.VlsvTInterpolator(files_list)
 
       if integration_steps % points_per != 0:
          raise ValueError("Number of integration steps must be divisible by the number of points recorded between timesteps")
 
+      #number of time steps
       T = len(vlsvTObject.files)
    
       #number of seed points
@@ -564,13 +590,43 @@ class streaklines:
          t_0 = t_1
          
       #Back up return M 
+      
       return M #matrix of form shape = (N, T_eff, T_eff, 3)
 
 
-   def get_pathline(self):
-      pathline = np.array([])
+   def _time_to_idx(self, time):
+      """
+      From know dt, t range, and record_dt can determine 
+      for a given time the index in M  
+      """
+      if (time < self.time_range[0]) or (time> self.time_range[1]):
+         raise ValueError(f"Time not with the analyzed time range of {self.time_range[0]}-{self.time_range[1]}")
+      idx = None
+      return idx
+
+   def get_pathline(self, seed_idx, time):
+      """
+      Get the pathline of a seed point released at a given time (release idx)
+      TODO currently this assumes that you know the index of a random time
+      --> make time be a input --> return closest pathline  
+      """
+      release_idx = self._time_to_idx(time=time)
+      
+      pathline = self.M[seed_idx, :, release_idx, :]
+      
       return pathline
    
-   def get_streakline(self):
-      streakline = np.array([])
-      return streakline
+   def get_streakline(self, seed_idx, time):
+      """
+      Get the streakline between the start time and a given time (time_idx)
+      TODO currently this assumes that you know the index of a random time
+      --> make time be a input --> return closest streakline 
+      the last time is interesting so letting -1 be option
+      """
+      if time == -1:
+         time_idx = -1
+      else:
+         time_idx = self._time_to_idx(time=time)
+      streakline = self.M[seed_idx, time_idx, :, : ]
+
+      return streakline 
