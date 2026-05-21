@@ -175,9 +175,10 @@ class VlsvReader(object):
       @abstractmethod
       def get_cellid_fileindices(self, cellids):
          ''' Get the file indices for given cellids.
-         :param cellids:   A list/1-D numpy array of cellids. Must handle empty lists.
+         :param cellids:   A list/1-D numpy array of cellids. Must handle empty arrays.
 
-         :returns a np.ndarray(dtype=np.int64) of fileindices.
+         :returns a np.ndarray(dtype=np.int64) of fileindices. Return empty array for 
+         empty arrays.
          '''
          pass
 
