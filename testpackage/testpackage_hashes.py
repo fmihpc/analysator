@@ -202,6 +202,8 @@ class Tester:
                 hashdict = self.hashes_dict_python
             elif self.vlsvobj == self.vlsvobj_rust:
                 hashdict = self.hashes_dict_rust
+            else:
+                raise SystemError("vlsvobj was not loaded, something went wrong")
             update(self.vlsvobj, op, opargs, args, hashdict, loop)
         else:
             update(self.vlsvobj_rust, op, opargs, args, self.hashes_dict_rust, loop)
@@ -297,7 +299,7 @@ class Tester:
                 flatten=False,
             )
 
-    def compareReaders(self):
+    def compareReaders(self,variable_map=None):
         print("comparing hashes between vlsvrs and vlsvreader")
         
         # function calls may not match, can be used to map from rust vlsvrs calls to py calls
@@ -309,11 +311,18 @@ class Tester:
         for file in self.hashes_dict_rust.keys():
             print(f"------{file}------")
             for key in self.hashes_dict_rust[file].keys():
-                py_dict = self.hashes_dict_python[file][key_map_rust_to_py[key]]
+                if key in key_map_rust_to_py:
+                    py_key = key_map_rust_to_py[key]
+                else:
+                    py_key = key
+                py_dict = self.hashes_dict_python[file][py_key]
                 rust_dict = self.hashes_dict_rust[file][key]
                 for argcall in rust_dict.keys():
-                    if rust_dict[argcall][0] != py_dict[argcall][0]:
-                        print(rust_dict[argcall][0], py_dict[argcall][0])
+                    py_argcall = argcall
+                    if variable_map and argcall in variable_map:
+                        py_argcall = variable_map[argcall]
+                    if rust_dict[argcall][0] != py_dict[py_argcall][0]:
+                        print(rust_dict[argcall][0], py_dict[py_argcall][0])
                         raise SystemError(f"Hashes do not match for call {argcall}!")
                     else:
                         continue
@@ -413,6 +422,7 @@ if __name__ == "__main__":
 
         ############ Make hash rust###########
         ciTester.setHashTarget("rust")
+        nonraw_to_raw_map = {str(var): str([var[0]]) for var in nonraw_vars}
         if "3D" in filename:
             ciTester.hash("read_variable_raw", variables, loop=True, flatten=True)
             ciTester.hash("read_variable", nonraw_vars, loop=True, flatten=True)
@@ -475,4 +485,4 @@ if __name__ == "__main__":
                 raise SystemError("Compare failed, see the logs")
 
     ##############Compare vlsvreader and vlsvrs hashes###############
-    ciTester.compareReaders()
+    ciTester.compareReaders(nonraw_to_raw_map)
