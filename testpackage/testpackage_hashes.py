@@ -221,6 +221,14 @@ class Tester:
             raise e
 
         if type(retval_py) is dict and type(retval_rust) is dict:
+            print(
+                "Checking dictionaries between vlsvrs and python from function call",
+                "\n     (python):",
+                str(funcpy),
+                "\n     (rust):",
+                str(funcrust),
+                "\nThis may take a moment!",
+            )
             stack = list(retval_rust.keys())
             if (len(retval_py) != len(retval_rust)) and len(list(retval_py.keys())) != 0:
                 raise SystemError("one or both of the dictionaries returned by the readers are empty")
@@ -380,6 +388,7 @@ class Tester:
 
 if __name__ == "__main__":
     ciTester = Tester()
+    nonraw_to_raw_map=None
     for file in files:
         # Load data
         filename = os.path.join(datalocation, file)
