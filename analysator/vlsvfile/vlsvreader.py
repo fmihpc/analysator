@@ -175,7 +175,10 @@ class VlsvReader(object):
       @abstractmethod
       def get_cellid_fileindices(self, cellids):
          ''' Get the file indices for given cellids.
-         :param cellids:   A list/1-D numpy array of cellids
+         :param cellids:   A list/1-D numpy array of cellids. Must handle empty arrays.
+
+         :returns a np.ndarray(dtype=np.int64) of fileindices. Return empty array for 
+         empty arrays.
          '''
          pass
 
@@ -225,6 +228,9 @@ class VlsvReader(object):
          if not self.index:
             self.set_cellid_indices_ordered()
 
+         if(cellids.size == 0):
+            return np.array([],dtype=np.int64)
+            
          qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
          mask = qi < len(self.__cellids_ordered)
          mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
@@ -273,7 +279,13 @@ class VlsvReader(object):
          return dict_keys_exist(self.get_cellid_locations(), cellids)
 
       def get_cellid_fileindices(self, cellids):
-         return np.atleast_1d(np.array(itemgetter(*cellids)(self.get_cellid_locations()),dtype=np.int64))
+         if(cellids.size == 0):
+            return np.array([],dtype=np.int64)
+         try:
+            return np.atleast_1d(np.array(itemgetter(*cellids)(self.get_cellid_locations()),dtype=np.int64))
+         except Exception as e:
+            print(e, cellids)
+            raise e
 
    file_name=""
    def __del__(self):
