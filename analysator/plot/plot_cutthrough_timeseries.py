@@ -1,12 +1,10 @@
 
-
-
-
-
-
 import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm,LogNorm
+from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import LogLocator
 from scipy.ndimage import uniform_filter1d
 import os
 from analysator.calculations.lineout import lineout
@@ -23,6 +21,10 @@ def jplots(
     point2,
     outputname,
     outputdir=None,
+    title=None,
+    lin=True,
+    vmin=None,
+    vmax=None,
     filt=-1,
     op="pass",
     cmap="viridis",
@@ -42,6 +44,10 @@ def jplots(
     :kwarg bulkprefix: Starting string of bulk file name (e.g. bulk, bulk1, bulk5)
     :kwarg point1: First point on the line to plot
     :kwarg point2: Last point on the line to plot
+    :kwarg lin: Whether to use linear or logarithmic scaling? (True: Use linear with 7 ticks, False: Logarithmic, int: Number of ticks for linear case )
+    :kwarg vmin: Min value for the colormap scaling. 
+    :kwarg vmax: Max value for the colormap scaling.
+    :kwarg title: Custom title, default None which then uses title=var.
     :kwarg outputname: Name of output file
     :kwarg outputdir: Path to output directory
     :kwarg filt: Filter out temporally slowly changing signal? (<=0: no filtering, >0: filter with specified window size), default=-1
@@ -115,12 +121,41 @@ def jplots(
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 12), constrained_layout=True)
 
+    if not lin and lin != 0:
+        lin = None
+    if lin is True and lin!=1:
+        lin = 7
+
+    if vmin is not None:
+        vminuse=vmin
+    else: 
+        vminuse=np.ma.amin(data_arr)
+    if vmax is not None:
+        vmaxuse=vmax
+    else:
+        vmaxuse=np.ma.amax(data_arr)
+
+    # If both values are zero, we have an empty array
+    if vmaxuse==vminuse==0:
+        raise ValueError("requested array is zero everywhere. Exiting.")
+
+    cmapuse = pt.plot.get_cmap(cmap)
+
+    if not lin:
+        norm = LogNorm(vmin=vminuse,vmax=vmaxuse)
+        ticks = LogLocator(base=10,subs=list(range(10))) # where to show labels
+    else:
+        levels = MaxNLocator(nbins=255).tick_values(vminuse,vmaxuse)
+        norm = BoundaryNorm(levels, ncolors=cmapuse.N, clip=True)
+        ticks = np.linspace(vminuse,vmaxuse,num=lin)            
+
     im = ax.pcolormesh(
         XmeshXY,
         YmeshXY,
         data_arr,
         shading="gouraud",
         cmap=cmap,
+        norm=norm,
         rasterized=True,
     )
 
@@ -128,9 +163,9 @@ def jplots(
     ax.set_ylim(t_arr[0], t_arr[-1])
     ax.set_xlabel("Distance along cut [RE]", labelpad=10, fontsize=16)
     ax.set_ylabel("Time [s]", labelpad=10, fontsize=16)
-    ax.set_title(var, pad=10, fontsize=16)
+    ax.set_title(title if title else var, pad=10, fontsize=16)
 
-    cb = fig.colorbar(im, ax=ax)
+    cb = fig.colorbar(im, ax=ax,ticks=ticks)
 
     if not draw:
         outputpath=pt.plot.output_path(outputname,None,outputdir,nooverwrite)
