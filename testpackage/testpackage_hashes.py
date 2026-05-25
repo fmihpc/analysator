@@ -347,7 +347,7 @@ class Tester:
             else:
                 raise IOError(f"::error:: ciTester does not have hash dictionary to compare against {hashdump}.")
 
-        if refDict == 1:
+        if not refDict:
             raise IOError(f"::error::Loading dict from file {hashdump} failed")
 
         if ( refDict != hashdict ):  # ordering should not matter for comparison of dictionaries
