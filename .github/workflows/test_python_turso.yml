@@ -31,7 +31,10 @@ jobs:
           timeout-minutes: 5
           run: |
             export TMPDIR=$RUNNER_TEMP
-            uv venv CI_env
+            export UV_LINK_MODE=copy
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            uv venv --python=3.10.4 CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
