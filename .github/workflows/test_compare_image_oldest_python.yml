@@ -49,6 +49,7 @@ jobs:
             done
             echo "::warning::Found $VERSIONS_MATCH"
             echo "PYTHON=$VERSIONS_MATCH" >> $GITHUB_OUTPUT
+            echo "PY_VERSION=$PYTHON" >> $GITHUB_OUTPUT
             module load $VERSIONS_MATCH
             module list Python
         - name: Install dependencies
@@ -59,7 +60,7 @@ jobs:
             module purge
             module load ${{ steps.pyversion.outputs.PYTHON }}
             module list
-            uv venv CI_env
+            uv venv --python=${{ steps.pyversion.outputs.PY_VERISON }} CI_env
             . CI_env/bin/activate
             uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]

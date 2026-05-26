@@ -180,7 +180,10 @@ class VlsvReader(object):
       @abstractmethod
       def get_cellid_fileindices(self, cellids):
          ''' Get the file indices for given cellids.
-         :param cellids:   A list/1-D numpy array of cellids
+         :param cellids:   A list/1-D numpy array of cellids. Must handle empty arrays.
+
+         :returns a np.ndarray(dtype=np.int64) of fileindices. Return empty array for 
+         empty arrays.
          '''
          pass
 
@@ -230,6 +233,9 @@ class VlsvReader(object):
          if not self.index:
             self.set_cellid_indices_ordered()
 
+         if(cellids.size == 0):
+            return np.array([],dtype=np.int64)
+            
          qi = np.atleast_1d(np.searchsorted(self.__cellids_ordered, cellids))
          mask = qi < len(self.__cellids_ordered)
          mask[mask] = self.__cellids_ordered[qi[mask]] == np.atleast_1d(cellids[mask])
@@ -278,7 +284,13 @@ class VlsvReader(object):
          return dict_keys_exist(self.get_cellid_locations(), cellids)
 
       def get_cellid_fileindices(self, cellids):
-         return itemgetter(*cellids)(self.get_cellid_locations())
+         if(cellids.size == 0):
+            return np.array([],dtype=np.int64)
+         try:
+            return np.atleast_1d(np.array(itemgetter(*cellids)(self.get_cellid_locations()),dtype=np.int64))
+         except Exception as e:
+            print(e, cellids)
+            raise e
 
    file_name=""
    def __del__(self):
@@ -292,7 +304,7 @@ class VlsvReader(object):
           :kwarg fsGridDecomposition: Either None or a len-3 list of ints [None].
                                        List (length 3): Use this as the decomposition directly. Product needs to match numWritingRanks.
           :kwarg file_cache:    Boolean, [False]: cache slow-to-compute data to disk (:seealso get_cache_folder)
-          :kwarg indexer:       String, ["ordered"] | "dict" - which file layout indexer to use. "ordered" is new default - faster to initialize
+          :kwarg indexer:       String, ["ordered" | "dict" ] - which file layout indexer to use. "ordered" is new default - faster to initialize
                                     especially from L1 files. "dict" is the legacy mode, which is slow to initialize but may be faster with frequent small
                                     queries. :seealso:: :func:`set_cellid_indexer`
       '''
@@ -2148,9 +2160,10 @@ class VlsvReader(object):
       '''
 
       fo = {c: self.__cell_duals[c] for c in cids}
-      vset = set()
-      vset.union(*fo.values())
-      return {v: self.__dual_cells[v] for v in vset}
+      vset = set().union(*fo.values())
+      
+      ret = {v: self.__dual_cells[v] for v in vset}
+      return ret
 
 
    def read_interpolated_variable_irregular(self, name, coords, operator="pass",periodic=[True, True, True],
@@ -2446,7 +2459,7 @@ class VlsvReader(object):
       for k,v in self.__metadata_cache._FileCache__metadata_dict.items():
          print(k, v)
 
-   def read_variable_from_cache(self, name, cellids, operator):
+   def read_variable_from_cache(self, name, cellids=-1, operator="pass"):
       ''' Read variable from cache instead of the vlsv file.
          :param name: Name of the variable
          :param cellids: a value of -1 reads all data
@@ -2456,7 +2469,7 @@ class VlsvReader(object):
          .. seealso:: :func:`read_variable`
       '''
 
-      return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
+      return self.__variable_cache.read_variable_from_cache(self,name,cellids,operator)
 
 
    def read_variable_to_cache(self, name, operator="pass"):
@@ -2470,7 +2483,7 @@ class VlsvReader(object):
       # add data to dict, use a tuple of (name,operator) as the key [tuples are immutable and hashable]
       self.__variable_cache[(name,operator)] = self.read_variable(name, cellids=-1,operator=operator)
       # Also initialize the fileindex dict at the same go because it is very likely something you want to have for accessing cached values
-      self.__read_fileindex_for_cellid()
+      # self.__read_fileindex_for_cellid()
       return self.__variable_cache[(name,operator)]
 
    def read_variable(self, name, cellids=-1,operator="pass"):
@@ -2485,7 +2498,7 @@ class VlsvReader(object):
       '''
       cellids = get_data(cellids)
       if((name,operator) in self.__variable_cache.keys()):
-         return self.__variable_cache.read_variable_from_cache(name,cellids,operator)
+         return self.__variable_cache.read_variable_from_cache(self,name,cellids,operator)
 
       # Wrapper, check if requesting an fsgrid variable
       if (self.check_variable(name) and (name.lower()[0:3]=="fg_")):
