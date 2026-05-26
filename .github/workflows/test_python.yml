@@ -19,6 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        extras: ["none", "all", "bvtk"]
+        exclude:
+          - extras: bvtk
+            python-version: ["3.12","3.13","3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -47,13 +53,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         extras: ["none", "all", "bvtk"]
         exclude:
           - extras: bvtk
-            python-version: "3.12"
-          - extras: bvtk
-            python-version: "3.13"
+            python-version: ["3.12","3.13","3.14"]
 
     steps:
     - uses: actions/checkout@v4
@@ -110,6 +114,13 @@ jobs:
     #continue-on-error: true
     strategy:
       fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        extras: ["none", "all", "bvtk"]
+        exclude:
+          - extras: bvtk
+            python-version: ["3.12","3.13","3.14"]
+
 
     steps:
     - uses: actions/checkout@v4
