@@ -19,6 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        extras: ["none", "all", "bvtk"]
 
     steps:
     - uses: actions/checkout@v4
@@ -41,6 +44,31 @@ jobs:
         python -c 'import analysator as pt;pt.vlsvfile.__dict__'
         python -c 'import analysator as pt;pt.miscellaneous.__dict__'
 
+  latest_default:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        uv venv CI_env
+        . CI_env/bin/activate
+        uv pip install --editable ../analysator[all]
+    - name: Trial imports
+      run: |
+        . CI_env/bin/activate
+        python -c 'import analysator as pt'
+        python -c 'import analysator as pt;pt.plot.__dict__'
+        python -c 'import analysator as pt;pt.calculations.__dict__'
+        python -c 'import analysator as pt;pt.vlsvfile.__dict__'
+        python -c 'import analysator as pt;pt.miscellaneous.__dict__'
+
 
   ubuntu_22_04_versions_3_9:
 
@@ -48,13 +76,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         extras: ["none", "all", "bvtk"]
-        exclude:
-          - extras: bvtk
-            python-version: "3.12"
-          - extras: bvtk
-            python-version: "3.13"
 
     steps:
     - uses: actions/checkout@v4
@@ -112,6 +135,9 @@ jobs:
     #continue-on-error: true
     strategy:
       fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        extras: ["none", "all", "bvtk"]
 
     steps:
     - uses: actions/checkout@v4

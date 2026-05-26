@@ -18,11 +18,6 @@ You shall learn how to open a .vlsv file in Analysator, how to view file content
 plotting of Vlasiator spatial data in 2D and 3D. You will practice accessing Vlasov grid, FSgrid, and
 ionospheric grid data. You will learn about some of the most useful Analysator plotting options.
 
-Timing
-------
-
-
-
 Preparing exercises
 -------------------
 
@@ -36,10 +31,21 @@ For cloning, you can use the SSH or the HTTP method.
 
    cd $HOME
    git clone https://github.com/fmihpc/analysator.git
+
+or
+
+.. code-block:: bash
+
+   cd $HOME
    git clone git@github.com:fmihpc/analysator.git
 
-Next, you should set your ``PYTHONPATH`` variable to include your Analysator install directory. One way is to add this line to your startup script:
-``export PYTHONPATH=$PYTHONPATH:$HOME/analysator``
+Next, you can install Analysator into your Python environment via e.g. ``pip``
+
+.. code-block:: bash
+   
+   pip install --editable ./analysator
+
+The ``--editable`` handle lets you edit your Analysator install... and further contribute to the toolset!
 
 Analysator on LUMI with jupyterhub
 ----------------------------------
@@ -151,8 +157,8 @@ Within python, you can list available variables as a concise list, or as a list 
    f.list()
    f.list(datareducer=True,operator=True)
 
-Reading in vlasov grid (MPIgrid) variables
-******************************************
+Reading in vlasov grid (MPIgrid) variables (2D runs)
+****************************************************
 
 In older Vlasiator versions (before 5.0, simulation identifier second letter A through F) most
 variables are saved on the MPIgrid and there is no identifying naming convention. Since version
@@ -186,13 +192,37 @@ For vector data, use
    bvol = f.read_variable('vg_b_vol')
    bvol_shaped = bvol[cellids.argsort()].reshape([ysize,xsize,3])
 
-Reading in vlasov grid (MPIgrid) AMR variables
-**********************************************
+The above can be extended for the case of uniform-grid 3D runs.
+
+Reading in vlasov grid (MPIgrid) AMR variables (3D runs)
+********************************************************
 
 Since the AMR mesh is not refined in blocks but rather as an octree-mesh, the cells
-from which the refined mesh consists of does not directly translate to a 2D array.
-Re-sampling the input data is a somewhat involved process, and the interested reader can
-peruse the contents of e.g. the ``pyPlots/plot_colormap3dslice.py`` file for a working example.
+from which the refined mesh consists of does not directly translate to a 2D array. Plain 
+``VlsvReader.read_variable`` calls will return an np.array with the last dimension(s) corresponding
+to the output variable/datarecuder dimensions. The first dimension corresponds to the ``CellID``
+query list or the ``CellID`` in file layout ordering. Singleton dimensions are removed for scalar queries.
+
+In general, if you don't want to get into the nitty-gritty, you might want to avoid using ``read_variable``
+on the AMR mesh, and prefer using helper functions instead.
+
+Sampling a 3D volume
+^^^^^^^^^^^^^^^^^^^^
+
+``read_interpolated_variable`` is queried by coordinate, not ``CellID``, and the kwarg 
+``method=["nearest", "linear"]`` can be used to control sampling order.
+To sample a 3D volume, defining your sampling grid coordinates and calling ``read_interpolated_variable``
+on those is one option.
+
+Another useful tool here is ``calculations.cut3d`` for obtaining a 3D grid from a bounding box,
+with the grid automatically matching the highest AMR refinement level within the bounding box.
+The data will be filled with nearest-neighbor values for each point.
+
+.. code-block:: python
+
+   f = pt.vlsvfile.VlsvReader("some.vlsv")
+   xmin, xmax, ymin, ymax, zmin, zmax = 45000e3, 105000e3, -37510e3, -7510e3, -37510e3, -17510e3
+   data = pt.calculations.cut3d(f, xmin, xmax, ymin, ymax, zmin, zmax, "vg_b_vol")
 
 Reading in field solver grid (FSgrid) variables
 ***********************************************

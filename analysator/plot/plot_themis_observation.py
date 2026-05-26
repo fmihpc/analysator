@@ -25,11 +25,10 @@ import numpy as np
 import analysator as pt
 import matplotlib.pyplot as plt
 import matplotlib
-from .rotation import rotateVectorToVector
 from scipy.interpolate import griddata
 from scipy.signal import sepfir2d
-from packaging.version import Version
 import logging
+from analysator.calculations import virtual_observations as vsc
 
 # Detector data obtained from the Themis ESA instrument paper
 # http://dx.doi.org/10.1007/s11214-008-9440-2
@@ -48,73 +47,19 @@ proton_mass = 1.67e-27      # in kg
 themis_colors=[(0,0,0),(.5,0,.5),(0,0,1),(0,1,1),(0,1,0),(1,1,0),(1,0,0)]
 themis_colormap = matplotlib.colors.LinearSegmentedColormap.from_list("themis",themis_colors)
 
-def get_dv(vlsvReader,pop="proton"):
-   # Get velocity grid sizes:
-   vel_mesh_size = vlsvReader.get_velocity_mesh_size(pop=pop)
-   vel_block_size = vlsvReader.get_velocity_block_size(pop=pop)
-   vxcells = vel_mesh_size[0]*vel_block_size[0]
-   vycells = vel_mesh_size[1]*vel_block_size[1]
-   vzcells = vel_mesh_size[2]*vel_block_size[2]
-   
-   vel_mesh_limits = vlsvReader.get_velocity_mesh_extent(pop=pop)
-   vxmin = vel_mesh_limits[0]
-   vymin = vel_mesh_limits[1]
-   vzmin = vel_mesh_limits[2]
-   vxmax = vel_mesh_limits[3]
-   vymax = vel_mesh_limits[4]
-   vzmax = vel_mesh_limits[5]
-
-   dvx = (vxmax - vxmin) / (float)(vxcells)
-   dvy = (vymax - vymin) / (float)(vycells)
-   dvz = (vzmax - vzmin) / (float)(vzcells)
-   return [dvx,dvy,dvz]
-
-def simulation_to_spacecraft_frame(spinvector, detector_axis, phi=0):
-    ''' Builds a matrix to transform coordinates from simulation frame into spaceraft frame
-    :param spinvector  Spacecraft spin axis, in simulation coordinates
-    :param detector_axis Detector plane normal axis
-    :param phi         Rotate spacecraft around spin axis after setting up coordinate system
-    '''
-    # TODO: Normalize vectors?
-    y = np.cross(detector_axis,spinvector)
-    z = np.cross(spinvector, y)
-    yr = np.cos(phi)*y - np.sin(phi)*z
-    zr = np.sin(phi)*y + np.cos(phi)*z
-    m = np.array([spinvector, yr, zr])
-
-    return m
-
-def spacecraft_to_simulation_frame(spinvector, detector_axis, phi=0):
-    ''' Builds a matrix to transform coordinates from spaceraft frame back to simulation frame
-    :param spinvector  Spacecraft spin axis, in simulation coordinates
-    :param detector_axis Detector plane normal axis
-    :param phi         Rotate spacecraft around spin axis after setting up coordinate system
-    '''
-    return simulation_to_spacecraft_frame(spinvector,detector_axis,phi).T
-
-def simulation_to_observation_frame(x_axis,y_axis):
-    ''' Builds a 3x3 matrix to transform velocities into an observation plane
-    :param x_axis:  x-axis of the observation plane (in simulation coordinates)
-    :param y_axis:  y-axis of the observation plane (gets orthonormalized)
-    '''
-    xn = np.linalg.norm(x_axis)
-    x_axis /= xn
-    p = x_axis.dot(y_axis)
-    y_axis -= p*x_axis
-    yn = np.linalg.norm(y_axis)
-    y_axis /= yn
-    z_axis = np.cross(x_axis,y_axis)
-    return np.array([x_axis,y_axis,z_axis])
-
-def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), pop="proton"):
+def themis_plot_detector(vlsvReader, cellID,outputfile="./themis_plot_detector.png",nooverwrite=False,draw=True, detector_axis=np.array([0,1,0]), pop="proton"):
     ''' Plots a view of the detector countrates using matplotlib
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
     :param detector_axis:     detector axis direction (note: this is not spacecraft spin axis!)
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
+    
     '''
 
-    matrix = spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
+    matrix = vsc.spacecraft_to_simulation_frame(np.cross(np.array([1.,0,0]),detector_axis),detector_axis)
 
     logging.info("Getting phasespace data...")
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader,
@@ -133,17 +78,24 @@ def themis_plot_detector(vlsvReader, cellID, detector_axis=np.array([0,1,0]), po
     cax = ax.pcolormesh(grid_theta,grid_r,values, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=themis_colormap)
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        plt.savefig(outputpath)
+    else:
+        plt.show()
 
-def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
+def themis_plot_phasespace_contour(vlsvReader, cellID,outputfile='./themis_plot_phasespace_contour.png', nooverwrite=False, draw=True, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=False, xlabel="Vx", ylabel="Vy", pop="proton"):
     ''' Plots a contour view of phasespace, as seen by a themis detector, at the given cellID
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
-    matrix = simulation_to_observation_frame(plane_x,plane_y)
+    matrix = vsc.simulation_to_observation_frame(plane_x,plane_y)
 
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix,pop=pop)
 
@@ -176,18 +128,25 @@ def themis_plot_phasespace_contour(vlsvReader, cellID, plane_x=np.array([1.,0,0]
     cax = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax))
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        plt.savefig(outputpath)
+    else:
+        plt.show()
 
-def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy"):
+def themis_plot_phasespace_helistyle(vlsvReader, cellID,outputfile='./themis_plot_phasespace_helistyle',plane_x=np.array([1.,0,0]), plane_y=np.array([0,0,1.]), smooth=True, xlabel="Vx", ylabel="Vy",draw=True,nooverwrite=False):
     ''' Plots a view of phasespace, as seen by a themis detector, at the given cellID, in the style that heli likes.
     :param vlsvReader:        Some VlsvReader class with a file open
     :type vlsvReader:         :class:`vlsvfile.VlsvReader`
     :param cellid:            The cell id where the distribution is supposet to be sampled NOTE: The cell id must have a velocity distribution!
     :param smooth:            Smooth re-gridded phasespace before plotting
+    :param draw:              Set to false to save to file instead of drawing on screen
+    :kward outputfile:        File to output the image to if Draw=False
+    :kward nooverwrite:       Whether to allow overwriting of files when saving, Default False
     :param plane_x and plane_y: x and y direction of the resulting plot plane
     '''
 
-    matrix = simulation_to_observation_frame(plane_x,plane_y)
+    matrix = vsc.simulation_to_observation_frame(plane_x,plane_y)
 
     angles, energies, vmin, vmax, values = themis_observation_from_file( vlsvReader=vlsvReader, cellid=cellID, matrix=matrix, countrates=False)
     if vmin == 0:
@@ -218,12 +177,16 @@ def themis_plot_phasespace_helistyle(vlsvReader, cellID, plane_x=np.array([1.,0,
     ax.set_ylabel(ylabel+" (km/s)")
     cmapuse=pt.plot.get_cmap("Blues")
 
-    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse, shading='flat')
+    cax = ax.pcolormesh(xi,yi,vi.T, norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=cmapuse)
     cax2 = ax.contourf(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), vmin=vmin, vmax=vmax, cmap=cmapuse)
     #cax3 = ax.contour(xi,yi,vi.T, levels=np.logspace(np.log10(vmin),np.log10(vmax),20), norm=matplotlib.colors.LogNorm(vmin=vmin,vmax=vmax), cmap=pl.get_cmap("binary"))
     ax.grid(True)
     fig.colorbar(cax)
-    plt.show()
+    if not draw:
+        outputpath=pt.plot.output_path(outputfile,None,None,nooverwrite)
+        fig.savefig(outputpath)
+    else:
+        plt.show()
 def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[0,1,0],[0,0,1]]), countrates=True, interpolate=True,binOffset=[0.,0.],pop='proton'):
    ''' Calculates artificial THEMIS EMS observation from the given cell
    :param vlsvReader:        Some VlsvReader class with a file open
@@ -248,7 +211,7 @@ def themis_observation_from_file( vlsvReader, cellid, matrix=np.array([[1,0,0],[
       pl.show()
    '''
    # Get velocity space resolution
-   dvx,dvy,dvz = get_dv(vlsvReader,pop=pop)
+   dvx,dvy,dvz = vlsvReader.get_velocity_mesh_dv(pop=pop)
 
    # Read the velocity cells:
    velocity_cell_data = vlsvReader.read_velocity_cells(cellid,pop=pop)
