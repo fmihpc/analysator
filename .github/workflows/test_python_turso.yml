@@ -33,7 +33,9 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             export UV_LINK_MODE=copy
             module purge
+            module list
             module load Python/3.10.4-GCCcore-11.3.0
+            which python
             uv venv CI_env
             . CI_env/bin/activate
             uv pip install --editable ../analysator[${{ matrix.extras }}]
