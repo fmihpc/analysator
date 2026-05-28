@@ -1,5 +1,9 @@
 #!/bin/bash
 #Make container.def
+#Usage:
+# Simply run this bash script to build the container, be sure to export PY_VERSION to set the python version desired, for example PY_VERSION=3.12
+# After building one can run the script again to launch the container, alternatively call the .sif file directly with singularity
+# For binding folders export SINGULARITY_BIND see for example below in # Running:
 
 if [[ "$PY_VERSION" ]]; then
   PY_PACKAGE=$(echo "$PY_VERSION" | sed 's/\.//g' )
