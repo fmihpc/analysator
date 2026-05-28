@@ -21,6 +21,9 @@ From: docker.io/opensuse/leap:15.6
    # Running:
        # For example launching python (one can also launch bash for example)
        # singularity exec container.sif python
+       # to bind folders once can use --bind /opt,/data:/mnt
+       # this will bind /opt to /opt and /data to /mnt, alternatively one can use environment variables
+       # export SINGULARITY_BIND="/opt,/data:/mnt"
 
         zypper -n --no-gpg-checks install python$PY_PACKAGE python$PY_PACKAGE-pip python$PY_PACKAGE-setuptools python$PY_PACKAGE-devel git
 
@@ -39,6 +42,9 @@ EOF
   singularity build container.sif container.def
 else
   export PYTHONNOUSERSITE=1
+  if [[ ! $SINGULARITY_BIND ]]; then
+     echo "Friendly reminder: no folders binded to the container, please use SINGULARITY_BIND environment variable"
+  fi 
   singularity exec container.sif bash
 fi
 
