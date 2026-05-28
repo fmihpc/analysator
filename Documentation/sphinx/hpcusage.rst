@@ -1,9 +1,9 @@
 Usage in HPC environment
-=================
+========================
 
 
 LUMI Container
-------------------
+--------------
 Script for building and running a container on LUMI can be found in ``containerization/lumi_container.sh``. 
 
 Simply execute the bash script to build the container, afterwards the same script can be used for launching the container.
