@@ -26,9 +26,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from scipy import optimize
-from cutthrough import cut_through
-from variable import VariableInfo
-from plot import plot_variables
+from ..calculations.cutthrough import cut_through
+from ..calculations.variable import VariableInfo
 
 
 
@@ -120,6 +119,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
 
    :returns: matplotlib figure
    '''
+   from ..plot import plot_variables
    # Get spatial grid sizes:
    xcells = (int)(vlsvReader.read_parameter("xcells_ini"))
    ycells = (int)(vlsvReader.read_parameter("ycells_ini"))
@@ -203,7 +203,7 @@ def plot_rankine( vlsvReader, point1, point2 ):
          rho_rankine.append(rankine_conditions[5])
 
    # Plot the variables:
-   from plot import plot_multiple_variables
+   from analysator.plot import plot_multiple_variables
    variables = []
    #VariableInfo(self, data_array, name="", units="")
    variables.append( VariableInfo(rho_data, "rho", "m^-3" ) )

@@ -1,7 +1,9 @@
 numpy
 scipy
 matplotlib
-scikit-image
 packaging
+scikit-image
 vtk>=9.2
-rtree
+yt
+--index-url https://version.helsinki.fi/api/v4/projects/5244/packages/pypi/simple
+vlsvrs

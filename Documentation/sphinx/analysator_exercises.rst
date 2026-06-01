@@ -95,15 +95,15 @@ Setting the keword ``fsaved=True`` will add contours delienating all spatial cel
 Vector quantities can be overplotted as streamlines or vector maps. Give some a go!
 .. code-block:: python
 
-   :kword vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
-   :kword vectordensity: Aim for how many vectors to show in plot window (default 100)
-   :kword vectorcolormap: Colormap to use for overplotted vectors (default: gray)
-   :kword vectorsize:  Scaling of vector sizes
+   :kwarg vectors:     Set to a vector variable to overplot (unit length vectors, color displays variable magnitude)
+   :kwarg vectordensity: Aim for how many vectors to show in plot window (default 100)
+   :kwarg vectorcolormap: Colormap to use for overplotted vectors (default: gray)
+   :kwarg vectorsize:  Scaling of vector sizes
 
-   :kword streamlines: Set to a vector variable to overplot as streamlines
-   :kword streamlinedensity: Set streamline density (default 1)
-   :kword streamlinecolor: Set streamline color (default white)
-   :kword streamlinethick: Set streamline thickness
+   :kwarg streamlines: Set to a vector variable to overplot as streamlines
+   :kwarg streamlinedensity: Set streamline density (default 1)
+   :kwarg streamlinecolor: Set streamline color (default white)
+   :kwarg streamlinethick: Set streamline thickness
 
 If a pre-generated fluxfunction file is available (only for 5D simulations), magnetic field lines can be plotted
 with greater accuracy than via streamlines. Flux functions are generated with the fluxfunction tool distributed as part of Vlasiator. A plotting example:
@@ -119,21 +119,21 @@ Several keywords exist for fine-tuning Analysator plot properties. As usual, the
 
 .. code-block:: python
 
-   :kword noborder:    Plot figure edge-to-edge without borders (default off)
-   :kword noxlabels:   Suppress x-axis labels and title
-   :kword noylabels:   Suppress y-axis labels and title
-   :kword scale:       Scale text size (default=1.0)
-   :kword thick:       line and axis thickness, default=1.0
-   :kword nocb:        Set to suppress drawing of colourbar
-   :kword internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
+   :kwarg noborder:    Plot figure edge-to-edge without borders (default off)
+   :kwarg noxlabels:   Suppress x-axis labels and title
+   :kwarg noylabels:   Suppress y-axis labels and title
+   :kwarg scale:       Scale text size (default=1.0)
+   :kwarg thick:       line and axis thickness, default=1.0
+   :kwarg nocb:        Set to suppress drawing of colourbar
+   :kwarg internalcb:  Set to draw colorbar inside plot instead of outside. If set to a text
                        string, tries to use that as the location, e.g. "NW","NE","SW","SW"
-   :kword highres:     Creates the image in high resolution, scaled up by this value (suitable for print).
-   :kword tickinterval: Interval at which to have ticks on axes (not colorbar)
-   :kword title:       string to use as plot title instead of time.
+   :kwarg highres:     Creates the image in high resolution, scaled up by this value (suitable for print).
+   :kwarg tickinterval: Interval at which to have ticks on axes (not colorbar)
+   :kwarg title:       string to use as plot title instead of time.
                        Special case: Set to "msec" to plot time with millisecond accuracy or "musec"
                        for microsecond accuracy. "sec" is integer second accuracy.
-   :kword cbtitle:     string to use as colorbar title instead of map name
-   :kword nooverwrite: Set to only perform actions if the target output file does not yet exist                  
+   :kwarg cbtitle:     string to use as colorbar title instead of map name
+   :kwarg nooverwrite: Set to only perform actions if the target output file does not yet exist                  
    
 Plotting 3D/6D simulation data
 ------------------------------

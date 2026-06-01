@@ -1,10 +1,11 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling","pip"]
 build-backend = "hatchling.build"
+
 
 [project]
 name = "analysator"
-version = "0.9.7"
+version = "0.9.8"
 authors = [
     { name = "Markku Alho", email = "markku.alho@helsinki.fi"},
     { name = "Et al"},
@@ -20,6 +21,7 @@ classifiers = [
     "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "numpy",
     "scipy",
@@ -28,12 +30,13 @@ dependencies = [
     "scikit-image",
     "vtk>=9.2",
     "yt",
-    "rtree"
 ]
+
 [project.optional-dependencies]
 none = [
 ]
 all = [
+    "rtree",
 ]
 bvtk = [
     "vtk==9.2.6",
@@ -41,12 +44,21 @@ bvtk = [
 testpackage = [
     "opencv-python",
 ]
+vlsvrs_build = [
+       "vlsvrs @ git+https://version.helsinki.fi/vlasiator/analysator-backends.git@master#recursive=1 ; python_version > '3.9'",
+]
+
 [project.urls]
 Homepage = "https://github.com/fmihpc/analysator"
 Issues = "https://github.com/fmihpc/analysator/issues"
+
+[tool.hatch.build.hooks.custom]
 
 [tool.hatch.build.targets.wheel]
 packages = ["./analysator","./pytools"]
 
 [tool.hatch.build.targets.sdist]
 packages = ["./analysator","./pytools"]
+
+[tool.hatch.metadata]
+allow-direct-references = true

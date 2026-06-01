@@ -30,9 +30,14 @@ jobs:
         - name: Install dependencies
           timeout-minutes: 5
           run: |
+            module load GCCcore/11.3.0
             export TMPDIR=$RUNNER_TEMP
-            uv venv CI_env
+            export UV_LINK_MODE=copy
+            module purge
+            module load Python/3.10.4-GCCcore-11.3.0
+            uv venv --python=3.10.4 CI_env
             . CI_env/bin/activate
+            uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Trial imports
           run: |
@@ -42,6 +47,5 @@ jobs:
             python -c 'import analysator as pt;pt.plot.__dict__'
             python -c 'import analysator as pt;pt.calculations.__dict__'
             python -c 'import analysator as pt;pt.vlsvfile.__dict__'
-            python -c 'import analysator as pt;pt.miscellaneous.__dict__'
+            python -c 'import analysator as pt;pt.miscellaneous.__dict__;import analysator.miscellaneous._commithash as chash; print(chash.commithash)'
 
-            

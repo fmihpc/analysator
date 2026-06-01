@@ -26,8 +26,13 @@ Here's a full example of setting up a virtual environment with analysator:
 git clone https://github.com/fmihpc/analysator.git
 python -m venv my_analysating_environment
 source my_analysating_environment/bin/activate
-pip install --editable ./analysator
+cd ./analysator
+git checkout dev
+pip install --editable .
+pip install -r ./requirements-backend.txt
+cd ..
 ```
+The last line is for the optional high-performance backend that includes [Asterix](https://github.com/fmihpc/asterix) decompression support. `pip install analysator[vlsvrs_build]` will build the backend from source, but this requires additional dependencies, such as Rust.
 
 ### Updating
 
@@ -135,4 +140,4 @@ For more information visit the wiki: https://github.com/fmihpc/analysator/wiki
 
 Analysator reference: https://fmihpc.github.io/analysator/
 
-For citations, use the DOI https://doi.org/10.5281/zenodo.4462514 or the ready-made button the the right in GitHub!
+For citations, use the DOI https://doi.org/10.5281/zenodo.4462514 or the ready-made button on the right in GitHub!

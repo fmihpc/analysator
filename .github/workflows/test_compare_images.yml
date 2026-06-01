@@ -37,8 +37,9 @@ jobs:
             export UV_LINK_MODE=copy
             module purge
             module load Python/3.10.4-GCCcore-11.3.0
-            uv venv CI_env
+            uv venv --python=3.10.4 CI_env
             . CI_env/bin/activate
+            uv pip install cmake
             uv pip install --editable ../analysator[${{ matrix.extras }}]
         - name: Produce plots
           id: run_cl
@@ -67,6 +68,8 @@ jobs:
               ARRAY_SIZE=$MAX_ARRAY
             fi
             export ARRAY_SIZE=$ARRAY_SIZE
+            
+            echo "ARRAY_SIZE=$ARRAY_SIZE" >> $GITHUB_OUTPUT
             echo "Running $DIFFRESULT, ARRAY_SIZE $ARRAY_SIZE"
             .github/workflows/make_sbatch_job.sh run_testpackage_workflow $DIFFRESULT 
 
@@ -76,6 +79,8 @@ jobs:
             export TMPDIR=$RUNNER_TEMP
             module load Python/3.10.4-GCCcore-11.3.0
             . CI_env/bin/activate
+            export ARRAY_SIZE=${{ steps.run_cl.outputs.ARRAY_SIZE }}
+            echo "ARRAY_SIZE $ARRAY_SIZE"
             .github/workflows/make_sbatch_job.sh run_compare ${{ steps.run_cl.outputs.DIFFRESULT }}
 
         - name: scancel dangling job upon cancellation

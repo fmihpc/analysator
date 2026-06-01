@@ -1,3 +1,4 @@
+============================
 plot
 ============================
 
@@ -5,4 +6,4 @@ plot
    :members:
    :exclude-members: Version
    :imported-members:
-   
+   :ignore-module-all:   

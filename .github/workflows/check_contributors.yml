@@ -1,0 +1,39 @@
+
+name: Contributors check 
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Check contributor changes
+      run: |
+        cd $GITHUB_WORKSPACE
+        current_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
+        n_current=$(echo "$current_gitlog" | wc -l)
+        git_diff=$(git diff --name-only origin/master... | grep -Po 'CITATION.cff' || echo "Citations not modified") 
+        git checkout origin/master
+        previous_gitlog=$(git shortlog -s -n | sed -En "s/^\W*[0-9]+\W//p")
+        n_prev=$(echo "$previous_gitlog" | wc -l)
+        if [[ ! $git_diff ]]; then 
+          if [ $n_current -ne $n_prev ]; then
+            echo "$current_gitlog" >current_gitlog.txt
+            echo "$previous_gitlog" >previous_gitlog.txt
+             
+            echo "::warning::Found new contributors, check the citations file!"
+            sort current_gitlog.txt previous_gitlog.txt | uniq -u
+            
+            exit 1;
+
+          fi
+        fi
