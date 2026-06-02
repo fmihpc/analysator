@@ -67,6 +67,27 @@ def vtkDelaunay3d_SDF(query_points, coordinates, alpha=None):
     return surface, convexhull_sdf
 
 
+def vtkSDF(query_points, dualgrid):
+    ''' Obtain the SDF in relation to a waterproof volumetric grid "dualgrid"
+    '''
+
+    # print(dualgrid)
+    surface = vtk.vtkDataSetSurfaceFilter()
+    surface.SetInputData(dualgrid)
+    surface.Update()
+
+    # print(surface.GetOutput())
+
+
+    implicitPolyDataDistance = vtk.vtkImplicitPolyDataDistance()
+    implicitPolyDataDistance.SetInput(surface.GetOutput())
+    import sys
+    convexhull_sdf = np.zeros(len(query_points))
+    for i,coord in enumerate(query_points):
+        convexhull_sdf[i] = implicitPolyDataDistance.EvaluateFunction(coord)
+        # sys.exit()
+    
+    return surface.GetOutputDataObject(0), convexhull_sdf
 
 
 def treshold_mask(data_array, value):
@@ -347,9 +368,9 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
         if magnetopause_kwargs:
             __, magnetopause_SDF = magnetopause.magnetopause(datafile, **magnetopause_kwargs)
         else:
-            __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=None)  # default magnetopause: beta*+ B connectivity convex hull 
-        write_flags(writer, magnetopause_SDF, 'SDF_magnetopause')
-        write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "flag_magnetopause")
+            __, magnetopause_SDF = magnetopause.magnetopause(datafile, method="beta_star_with_connectivity", Delaunay_alpha=2e6, )  # default magnetopause: beta*+ B connectivity convex hull 
+        write_flags(writer, magnetopause_SDF, 'vg_SDF_magnetopause')
+        write_flags(writer, np.where(np.abs(magnetopause_SDF) < 5e6, 1, 0), "vg_flag_magnetopause")
 
         # save some magnetopause values for later
         magnetopause_density = np.mean(variables["density"][np.abs(magnetopause_SDF) < 5e6])
@@ -361,7 +382,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     # magnetosphere from magnetopause SDF
     if "magnetosphere" in regions:
         magnetosphere = np.where(magnetopause_SDF<0, 1, 0)
-        write_flags(writer, magnetosphere, 'flag_magnetosphere')
+        write_flags(writer, magnetosphere, 'vg_flag_magnetosphere')
 
 
     ## BOW SHOCK ## #TODO: similar kwargs system as magnetopause?
@@ -371,8 +392,8 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
             bowshock = bowshock_SDF(f, variables, all_points, own_condition_dict=region_conditions["bowshock"])
         else:
             bowshock = bowshock_SDF(f, variables, all_points) # default upstream rho method, might fail with foreshock
-        write_flags(writer, bowshock, 'SDF_bowshock')
-        write_flags(writer, np.where(np.abs(bowshock) < 5e6, 1, 0), "flag_bowshock")
+        write_flags(writer, bowshock, 'vg_SDF_bowshock')
+        write_flags(writer, np.where(np.abs(bowshock) < 5e6, 1, 0), "vg_flag_bowshock")
 
         # magnetosphere+magnetosheath -area
         inside_bowshock = np.where(bowshock<0, 1, 0)
@@ -381,7 +402,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     if "magnetosheath" in regions:
         # magnetosheath from bow shock-magnetosphere difference
         magnetosheath_flags = np.where((inside_bowshock & 1-magnetosphere), 1, 0)
-        write_flags(writer, magnetosheath_flags, 'flag_magnetosheath')
+        write_flags(writer, magnetosheath_flags, 'vg_flag_magnetosheath')
 
         # save magnetosheath density and temperature for further use
         #magnetosheath_density = np.mean(variables["density"][magnetosheath_flags == 1])
@@ -392,7 +413,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     ## UPSTREAM ##
     if "upstream" in regions:
         # upstream from !bowshock
-        write_flags(writer, 1-inside_bowshock, 'flag_upstream')
+        write_flags(writer, 1-inside_bowshock, 'vg_flag_upstream')
         #write_flags(writer, inside_bowshock, 'flag_inside_bowshock')
 
 
@@ -423,7 +444,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
                             }
 
         cusp_flags = make_region_flags(variables, cusp_conditions, flag_type=region_flag_type, mask=mask_inMagnetosphere)
-        write_flags(writer, cusp_flags, 'flag_cusps', mask_inMagnetosphere)
+        write_flags(writer, cusp_flags, 'vg_flag_cusps', mask_inMagnetosphere)
 
  
     # magnetotail lobes 
@@ -453,11 +474,11 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
                                 }
             lobe_S_flags = make_region_flags(variables, lobe_S_conditions, flag_type=region_flag_type)
 
-            write_flags(writer, lobe_N_flags, 'flag_lobe_N')
-            write_flags(writer, lobe_S_flags, 'flag_lobe_S')
+            write_flags(writer, lobe_N_flags, 'vg_flag_lobe_N')
+            write_flags(writer, lobe_S_flags, 'vg_flag_lobe_S')
 
         lobes_flags = make_region_flags(variables, lobes_conditions, flag_type=region_flag_type)
-        write_flags(writer, lobes_flags, 'flag_lobes')
+        write_flags(writer, lobes_flags, 'vg_flag_lobes')
 
 
         # lobe density from median densities?
@@ -477,7 +498,7 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
                                              }
         
         central_plasma_sheet_flags = make_region_flags(variables, central_plasma_sheet_conditions,flag_type=region_flag_type, mask=mask_inMagnetosphere)
-        write_flags(writer, central_plasma_sheet_flags, 'flag_central_plasma_sheet', mask_inMagnetosphere)
+        write_flags(writer, central_plasma_sheet_flags, 'vg_flag_central_plasma_sheet', mask_inMagnetosphere)
 
 
     ## Other boundary layers, PSBL sometimes works
@@ -495,10 +516,16 @@ def RegionFlags(datafile, outfilen, regions=["all"], ignore_boundaries=True, reg
     
 def main():
 
-    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/EGE/bulk/bulk.0002000.vlsv"
-    outfilen = "EGE_regions_t2000.vlsv"
+    import sys
 
-    RegionFlags(datafile, outfilen, regions=["all"])
+    try:
+        fileid = int(sys.argv[1])
+    except Exception as e:
+        print("Need fileid")
+    datafile = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/bulk1/bulk1.{:07d}.vlsv".format(fileid) 
+    outfilen = "/wrk-vakka/group/spacephysics/vlasiator/3D/FID/postprocessing/magnetopause_sdfs/FID_mpause_{:07d}.vlsv".format(fileid) 
+
+    RegionFlags(datafile, outfilen, regions=["magnetopause"])
 
 
 if __name__ == "__main__":
