@@ -24,6 +24,7 @@ analysator documentation
    analysator
    analysator_exercises
    analysator_supported
+   hpcusage
 
 .. toctree::
    :maxdepth: 2 
