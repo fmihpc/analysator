@@ -549,7 +549,7 @@ class VlsvReader(object):
          for reader in self.__linked_readers:
             if fname == reader.file_name:
                return
-         self.__linked_readers.add(VlsvReader(fname))
+         self.__linked_readers.add(VlsvReader(fname.strip()))
       else:
          logging.warning("Could not link "+fname+" (path does not exist)")
 
