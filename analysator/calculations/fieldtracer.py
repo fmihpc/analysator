@@ -439,7 +439,7 @@ class streaklines:
    
    """
 
-   def __init__(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_recorded = None, points_per = 10, dt_step = 0.1, var = "vg_v", method = "euler"):
+   def __init__(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_recorded = None, points_per = 10, dt_step = 0.1, var = "vg_v", method = "euler", tracked_vars = None):
 
       self.dt_step = dt_step
       self.method = method
@@ -465,15 +465,15 @@ class streaklines:
          raise ValueError("Trying to record more points than there are integration steps. Consider lowering recorded points or decreasing dt_step")
       
       self.time_range = [min(vlsvTObject.ts), max(vlsvTObject.ts)]
-      self.M = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, 
+      self.M, self.tracked_objs = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, 
                                    direction = direction, points_per = self.points_per,
-                                   dt_step = dt_step, var = var, method = method)
+                                   dt_step = dt_step, var = var, method = method, tracked_vars=tracked_vars)
       
 
       pass
 
    
-   def streaklines_3D(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", dt_step=0.1, max_dx = 1e5, method = "euler", points_per = 10, var = "vg_v"):
+   def streaklines_3D(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", dt_step=0.1, max_dx = 1e5, method = "euler", points_per = 10, var = "vg_v", tracked_vars = None):
       """
       Streaklines 3D() integrates along dynamic field-grid vector field to calculate a final position. 
       Code uses Euler or RK4  method to conduct the tracing.
@@ -513,6 +513,24 @@ class streaklines:
       #effective number of time steps due to inbetween recordings
       T_eff = T*points_per-points_per+1
 
+      #Tracked variables
+      tracked_objs = {}
+      tracked_objs["Time"] = np.full((T_eff),np.nan)
+      if tracked_vars is not None:
+         for tracked_var in tracked_vars:
+            test_val = np.array(vlsvTObject(vlsvTObject.ts[0], seed_points, tracked_var))
+            if test_val.ndim == 0:
+               test_val = test_val.reshape(1)
+            if test_val.shape[0] !=N:
+               test_val = test_val.reshape(N,-1)
+            var_shape = test_val.shape[1:]
+            tracked_objs[tracked_var] = np.full((N,T_eff, T_eff) + var_shape, np.nan)
+         tracked_vars  = list(tracked_vars) + ["Time"]
+      else:
+         tracked_vars = ["Time"]
+      
+      logging.info(f"Tracked variables: {tracked_vars}")
+
       #helper functions
       def active_indices(idx):
          if direction =="+":
@@ -528,10 +546,27 @@ class streaklines:
             for j in js:
                M[n, i_idx, j, :] = current_pos[n, j, :]
 
-      def _get_var(t, positions):
-         return vlsvTObject(t, positions, var)
+      def record_tracked(i_idx, js, t):
+         for tracked_var in tracked_vars:
+            if tracked_var == "Time":
+               tracked_objs["Time"][i_idx] = t
+            else:
+               for j in js:
+                  positions = current_pos[:,j,:]
+                  vals = _get_var(t, positions, tracked_var)
+                  tracked_objs[tracked_var][:,i_idx, j] = vals
+               
+      #if no variable explicitally set uses the streaklines class var
+      def _get_var(t, positions, var = var):
+         result = vlsvTObject(t, positions, var)
+         n_pos = len(positions)
+         if result.ndim == 0:
+            result = result.reshape(1)
+         if result.shape[0] !=n_pos:
+            result = result.reshape(n_pos,-1)
+         return result
 
-      #function trivialize change of integration method
+      #function to ease change of integration method
       def integration_step(t_step, dt_s, n_idx, j_idx, method = method):
          #dt_s*v is the displacement amount in a integration step
          """
@@ -573,14 +608,14 @@ class streaklines:
 
       if direction == "both":
          
-         M_plus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", points_per = points_per, var = var, method=method, dt_step= dt_step)
-         M_minus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", points_per = points_per, var = var,method=method, dt_step = dt_step)
+         M_plus, tracked_plus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", points_per = points_per, var = var, method=method, dt_step= dt_step,tracked_vars=tracked_vars)
+         M_minus, tracked_minus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", points_per = points_per, var = var,method=method, dt_step = dt_step, tracked_vars=tracked_vars)
          M_both =  np.nansum(np.stack([M_plus, M_minus], axis = 0), axis = 0)
-
+         tracked_both = tracked_plus # TODO Implement tracked variables in both directions
          #fix diagonal
          for t in range(T_eff):
             M_both[:,t,t,:] = M_plus[:,t,t,:]
-         return M_both
+         return M_both, tracked_both
 
       #Full matrix to be filled with coordinates 
       M = np.full((N, T_eff, T_eff, 3), np.nan)
@@ -600,15 +635,17 @@ class streaklines:
          if i == 0:
             #initial file read and timestep
             t_0 = vlsvTObject.ts[file_index]
-
+         
+         logging.info(f"Current timestep: {t_0}")
          #INJECTING ON DIAGONAL POINTS AT TIMESTEPS 
          inject_particles(eff_file_index)
          js = np.array(list(active_indices(eff_file_index)))
          record_particles(eff_file_index,js)
+         record_tracked(eff_file_index, js, t_0)
 
          if i == T-1:
             #On last step return the matrix and dont continue the integration
-            return M #matrix of form shape = (N, T, T, 3)
+            return M, tracked_objs #matrix of form shape = (N, T, T, 3)
 
          #INTEGRATION
 
@@ -648,7 +685,6 @@ class streaklines:
             
             #integration step
             integration_step(t_step, actual_dt, n_idx, j_idx)
-            
             #keeping track of the elapsed time
             t_elapsed += actual_dt
 
@@ -666,7 +702,7 @@ class streaklines:
                inject_particles(eff_idx)
                js = np.array(list(active_indices(eff_idx)))
                record_particles(eff_idx, js)
-
+               record_tracked(eff_idx,js, t_0 + t_elapsed*sign)
                #preps indeces for next loop  
                n_idx, j_idx = np.meshgrid(ns,js, indexing="ij")
                n_idx = n_idx.ravel()
@@ -677,7 +713,7 @@ class streaklines:
          
       #Back up return M 
       
-      return M #matrix of form shape = (N, T_eff, T_eff, 3)
+      return M, tracked_objs #matrix of form shape = (N, T_eff, T_eff, 3) and dictonary of tracked object matrices
 
    def _time_to_idx(self, time):
       """
