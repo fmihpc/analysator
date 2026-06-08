@@ -51,9 +51,16 @@ R_E = 6371000
     
 
 def write_vtk_surface_to_file(vtkSurface, outfilen):
-    writer = vtk.vtkXMLPolyDataWriter() 
-    writer.SetInputConnection(vtkSurface.GetOutputPort())
+    
+    writer = vtk.vtkXMLPolyDataWriter()
     writer.SetFileName(outfilen)
+    
+    try:
+        writer.SetInputConnection(vtkSurface.GetOutputPort())
+    except:
+        writer.SetInputData(vtkSurface)
+    
+    
     writer.Write()
     logging.info("wrote ", outfilen)
 
@@ -79,7 +86,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
     :kwarg return_SDF: True/False, return array of distances in m to SDF_points in point input order, negative distance inside the surface
     :kwarg SDF_points: optionally give array of own points to calculate signed distances to. If not given, distances will be to cell centres in the order of f.read_variable("CellID") output
     :kwarg Delaunay_alpha: alpha (float) to give to vtkDelaunay3d, None -> convex hull, alpha=__: surface egdes longer than __ will be excluded
-    :kwarg beta_star_range: [min, max] treshold rage to use with methods "beta_star" and "beta_star_with_connectivity"
+    :kwarg beta_star_range: [min, max] treshold range to use with methods "beta_star" and "beta_star_with_connectivity"
     :kwarg method_args: dict of keyword arguments to be passed down to external functions (for streamlines and shue)
     :returns: vtkDataSetSurfaceFilter object of convex hull or alpha shape if return_surface=True, signed distance field of convex hull or alpha shape of magnetopause if return_SDF=True
     """
@@ -120,7 +127,7 @@ def magnetopause(datafilen, method="beta_star_with_connectivity", own_tresholds=
         # magnetopause from beta_star, with connectivity if possible
         vg_beta_star =f.read_variable("vg_beta_star")
         vg_conn = f.read_variable("vg_connection")
-        vg_classifier = vg_beta_star*np.min(vg_conn,1) # if closed-closed fieldlines, set var to zero
+        vg_classifier = vg_beta_star*np.minimum(vg_conn,1) # if closed-closed fieldlines, set var to zero
         if True:
             
             vtkreader = pt.vlsvfile.VlsvVtkReader()
