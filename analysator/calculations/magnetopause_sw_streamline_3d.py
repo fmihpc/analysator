@@ -245,7 +245,7 @@ def make_streamlines(vlsvfile, streamline_seeds=None, seeds_n=25, seeds_x0=20*63
     f = pt.vlsvfile.VlsvReader(file_name=vlsvfile)
 
     # Create streamline starting points if needed
-    if streamline_seeds == None:
+    if not np.any(streamline_seeds):
         streamline_seeds = np.zeros([seeds_n**2, 3])
 
         t = np.linspace(seeds_range[0], seeds_range[1], seeds_n)
