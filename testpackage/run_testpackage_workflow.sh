@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH -t 01:00:00
 #SBATCH -J analysator_testpackage
-#SBATCH --constraint="carrington|ukko"
+#SBATCH --constraint="amd"
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=1-14
