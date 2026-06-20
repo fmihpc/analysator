@@ -129,7 +129,7 @@ def get_spectrum_energy(vlsvReader,
    #Ekin[Ekin > max(EkinBinEdges)] = max(EkinBinEdges)
 
    # compute histogram
-   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw)
+   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw,density=False)
 
    if (bindifferential): # finish differential flux per d(eV)
       nhist = np.divide(nhist,dE)
