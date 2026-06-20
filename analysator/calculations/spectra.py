@@ -41,7 +41,12 @@ def get_spectrum_energy(vlsvReader,
 
    EkinBinEdges = np.logspace(np.log10(EMin),np.log10(EMax),nBins+1, endpoint=True)
    dE = EkinBinEdges[1:] - EkinBinEdges[:-1]
-   vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
+
+   # initialize a new vlsvReader if passed a str filename of a .vlsv
+   if isinstance(vlsvReader,str):
+      vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
+   # else keep the already initialized vlsvReader if obj supplied
+
    # check if velocity space exists in this cell
    if not vlsvReader.check_variable("moments"): # restart files have VDFs everywhere
       if vlsvReader.check_variable("fSaved"):
@@ -124,7 +129,7 @@ def get_spectrum_energy(vlsvReader,
    #Ekin[Ekin > max(EkinBinEdges)] = max(EkinBinEdges)
 
    # compute histogram
-   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw,normed=0)
+   (nhist,edges) = np.histogram(Ekin,bins=EkinBinEdges,weights=fw)
 
    if (bindifferential): # finish differential flux per d(eV)
       nhist = np.divide(nhist,dE)
