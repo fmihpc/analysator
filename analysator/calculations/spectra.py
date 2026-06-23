@@ -45,7 +45,10 @@ def get_spectrum_energy(vlsvReader,
    # initialize a new vlsvReader if passed a str filename of a .vlsv
    if isinstance(vlsvReader,str):
       vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
-   # else keep the already initialized vlsvReader if obj supplied
+   # ensure it is a VlsvReader obj instance otherwise
+   elif not isinstance(vlsvReader,analysator.vlsvfile.VlsvReader):
+      raise TypeError("Supplied vlsvReader must be either a VlsvReader obj instance or a filename str")
+   # else: keep the already initialized VlsvReader obj
 
    # check if velocity space exists in this cell
    if not vlsvReader.check_variable("moments"): # restart files have VDFs everywhere
@@ -156,7 +159,13 @@ def get_spectrum_alongaxis_vel(vlsvReader,
                                bindifferential=False, # weigh by d(velocity)
                                restart=True):
 
-   vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
+   # initialize a new vlsvReader if passed a str filename of a .vlsv
+   if isinstance(vlsvReader,str):
+      vlsvReader = analysator.vlsvfile.VlsvReader(vlsvReader)
+   # ensure it is a VlsvReader obj instance otherwise
+   elif not isinstance(vlsvReader,analysator.vlsvfile.VlsvReader):
+      raise TypeError("Supplied vlsvReader must be either a VlsvReader obj instance or a filename str")
+   # else: keep the already initialized VlsvReader obj
 
    if vectorVar is not None and vector is None:
       if vlsvReader.check_variable(vectorVar):
@@ -235,7 +244,7 @@ def get_spectrum_alongaxis_vel(vlsvReader,
       latex=r'$f(\vec{r},v)$'
       weight = 'particles'
 
-   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,normed=0)
+   (nhist,edges) = np.histogram(Vproj,bins=VBinEdges,weights=fw,density=False)
    # normalization
    dv = abs(VBinEdges[1:] - VBinEdges[:-1])
    if (differential): # differential flux per [m/s]
