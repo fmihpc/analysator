@@ -64,3 +64,5 @@ from .non_maxwellianity import epsilon_M
 from .null_lines import LMN_null_lines_FOTE
 from .interpolator_amr import AMRInterpolator, supported_amr_interpolators
 from .virtual_observations import spacecraft_to_simulation_frame,simulation_to_spacecraft_frame,simulation_to_observation_frame
+from .magnetopause_sw_streamline_2d import find_magnetopause_sw_streamline_2d
+from .magnetopause_sw_streamline_3d import find_magnetopause_sw_streamline_3d
