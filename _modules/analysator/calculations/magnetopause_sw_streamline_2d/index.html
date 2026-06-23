@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>analysator.calculations.magnetopause_sw_streamline_2d &mdash; analysator  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=187304be"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="../../../../about/" />
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../" class="icon icon-home">
+            analysator
+              <img src="../../../../_static/logo_color.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search/" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Introduction</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator/">Introduction to Analysator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_exercises/">Analysator exercises</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../analysator_supported/">Analysator supported data reducers and vlasiator variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../hpcusage/">Usage in HPC environment</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Analysator reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../plot/">plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../calculations/">calculations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../vlsvfile/">vlsvfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../miscellaneous/">miscellaneous</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../scripts/">scripts</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contribution guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_code/">Contributing code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution_doc/">Contributing to documentation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">About</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../about/">Credits</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../">analysator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../">analysator</a></li>
+      <li class="breadcrumb-item active">analysator.calculations.magnetopause_sw_streamline_2d</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for analysator.calculations.magnetopause_sw_streamline_2d</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Finds the magnetopause position by tracing streamlines of the plasma flow for two-dimensional Vlasiator runs. Needs the yt package.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">analysator</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">yt</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="n">streamline</span><span class="p">,</span> <span class="n">x_points</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolates a single streamline for make_magnetopause().</span>
+
+<span class="sd">        :param streamline: a single streamline to be interpolated</span>
+<span class="sd">        :param x_points: points in the x-axis to use for interpolation</span>
+<span class="sd">        :returns: the streamline as numpy array of x,z coordinate points where the x-axis coordinates are the points given to the function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">streamline</span><span class="p">)</span>
+
+    <span class="c1"># set arrays for interpolation</span>
+    <span class="n">xp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">zp</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[:,</span><span class="mi">2</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1">#interpolate z coordinates</span>
+    <span class="n">z_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x_points</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">zp</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_points</span><span class="p">,</span> <span class="n">z_points</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_streamlines</span><span class="p">(</span><span class="n">vlsvfile</span><span class="p">,</span> <span class="n">streamline_seeds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">seeds_n</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">seeds_x0</span><span class="o">=</span><span class="mi">20</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="n">seeds_range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">],</span> <span class="n">streamline_length</span><span class="o">=</span><span class="mi">40</span><span class="o">*</span><span class="mi">6371000</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Traces streamlines of velocity field using the yt package.</span>
+
+<span class="sd">        :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader</span>
+<span class="sd">        :kwarg streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)</span>
+<span class="sd">        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced </span>
+<span class="sd">        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points </span>
+<span class="sd">        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates</span>
+<span class="sd">        :kwarg streamline_length: streamline length</span>
+
+<span class="sd">        :returns: streamlines as numpy array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+     
+    <span class="c1"># bulk file</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pt</span><span class="o">.</span><span class="n">vlsvfile</span><span class="o">.</span><span class="n">VlsvReader</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">vlsvfile</span><span class="p">)</span>
+
+    <span class="c1"># get box coordinates from data</span>
+    <span class="p">[</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">zmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">,</span> <span class="n">zmax</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_extent</span><span class="p">()</span>
+    <span class="p">[</span><span class="n">xsize</span><span class="p">,</span> <span class="n">ysize</span><span class="p">,</span> <span class="n">zsize</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">()</span>
+    <span class="n">simext</span> <span class="o">=</span><span class="p">[</span><span class="n">xmin</span><span class="p">,</span><span class="n">xmax</span><span class="p">,</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">,</span><span class="n">zmin</span><span class="p">,</span><span class="n">zmax</span><span class="p">]</span>
+    <span class="n">sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xsize</span><span class="p">,</span><span class="n">ysize</span><span class="p">,</span><span class="n">zsize</span><span class="p">])</span>
+    <span class="n">boxcoords</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">simext</span><span class="p">)</span>
+
+    <span class="n">cellids</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;CellID&quot;</span><span class="p">)</span>
+
+    <span class="c1">#Read the data from vlsv-file</span>
+    <span class="n">Vx</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+    <span class="n">Vz</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read_variable</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">)</span>
+
+
+    <span class="c1">#Re-shape variable data</span>
+    <span class="n">Vxs</span><span class="o">=</span><span class="n">Vx</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">cellids</span><span class="p">)]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">(),</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+    <span class="n">Vys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">Vxs</span><span class="p">)</span>
+    <span class="n">Vzs</span><span class="o">=</span><span class="n">Vz</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">cellids</span><span class="p">)]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">get_spatial_mesh_size</span><span class="p">(),</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">Vx</span><span class="o">=</span><span class="n">Vxs</span><span class="p">,</span><span class="n">Vy</span><span class="o">=</span><span class="n">Vys</span><span class="p">,</span><span class="n">Vz</span><span class="o">=</span><span class="n">Vzs</span><span class="p">)</span>
+
+    <span class="c1">#Create starting points for streamlines if they are not given</span>
+    <span class="k">if</span> <span class="n">streamline_seeds</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">streamline_seeds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">seeds_x0</span><span class="p">,</span> <span class="mi">0</span> <span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>  <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">seeds_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">seeds_range</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">seeds_n</span><span class="p">)])</span>
+
+    <span class="c1">#streamline_seeds = np.array(streamline_seeds)</span>
+    <span class="c1">#dataset in yt-form</span>
+    <span class="n">yt_dataset</span> <span class="o">=</span> <span class="n">yt</span><span class="o">.</span><span class="n">load_uniform_grid</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">sizes</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boxcoords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                    <span class="p">[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span>
+                    <span class="p">[</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">boxcoords</span><span class="p">[</span><span class="mi">5</span><span class="p">]]]))</span>
+                                    
+
+    <span class="c1">#data, seeds, dictionary positions, step size</span>
+    <span class="n">streamlines</span> <span class="o">=</span> <span class="n">yt</span><span class="o">.</span><span class="n">visualization</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">Streamlines</span><span class="p">(</span><span class="n">yt_dataset</span><span class="p">,</span> <span class="n">streamline_seeds</span><span class="p">,</span>
+                                                    <span class="s2">&quot;Vx&quot;</span><span class="p">,</span> <span class="s2">&quot;Vy&quot;</span><span class="p">,</span> <span class="s2">&quot;Vz&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">streamline_length</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1">#trace the streamlines with yt</span>
+    <span class="n">streamlines</span><span class="o">.</span><span class="n">integrate_through_volume</span><span class="p">()</span>
+    <span class="c1"># return streamline positions</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">streamlines</span><span class="o">.</span><span class="n">streamlines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_magnetopause</span><span class="p">(</span><span class="n">streamlines</span><span class="p">,</span> <span class="n">end_x</span><span class="o">=-</span><span class="mi">15</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="n">x_point_n</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the mangetopause location based on streamlines.</span>
+
+<span class="sd">        :param streams: streamlines (coordinates in m)</span>
+<span class="sd">        :kwarg end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)</span>
+<span class="sd">        :kwarg x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail</span>
+<span class="sd">        </span>
+<span class="sd">        :returns:   the magnetopause position as coordinate points in numpy array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">RE</span> <span class="o">=</span> <span class="mi">6371000</span>
+
+    <span class="n">streampoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">streamlines</span><span class="p">,</span> <span class="p">(</span><span class="n">streamlines</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">streamlines</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">3</span><span class="p">))</span> <span class="c1">#all the points in one array</span>
+
+    <span class="c1">## find the subsolar dayside point in the positive x-axis</span>
+    <span class="c1">## do this by finding a stremline point on positive x axis closest to the Earth</span>
+    <span class="n">x_axis_points</span> <span class="o">=</span> <span class="n">streampoints</span><span class="p">[(</span><span class="n">streampoints</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">&lt;</span> <span class="n">RE</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">streampoints</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">&gt;</span> <span class="o">-</span><span class="n">RE</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">streampoints</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]</span>
+    <span class="n">subsolar_x</span> <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x_axis_points</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1">## define points in the x axis where to find magnetopause points on the yz-plane</span>
+    <span class="n">x_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">subsolar_x</span><span class="p">,</span> <span class="n">end_x</span><span class="p">,</span> <span class="n">x_point_n</span><span class="p">)</span>
+    
+    <span class="c1">## interpolate more exact points for streamlines at exery x_point</span>
+    <span class="n">new_streampoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">streamlines</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span> <span class="c1"># new array for keeping interpolated streamlines in form streamlines_new[x_point, streamline, z-coordinate] </span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">stream</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">streamlines</span><span class="p">):</span>
+        <span class="n">interpolated_streamline</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">x_points</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">)):</span>
+            <span class="n">new_streampoints</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">interpolated_streamline</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+
+
+    <span class="c1">## start making the magnetopause</span>
+    <span class="c1">## in each x_point, find the closest streamline to x-axis in the positive and negative z-axis</span>
+
+    <span class="n">pos_z_mpause</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">neg_z_mpause</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">x_points</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x_point</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x_points</span><span class="p">):</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">new_streampoints</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">new_streampoints</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">neg</span> <span class="o">=</span> <span class="n">new_streampoints</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">new_streampoints</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No streamlines found for x axis point, try adding streamlines or checking the x_points&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># find points closest to x-axis and save found points</span>
+        <span class="n">pos_z_mpause</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_point</span><span class="p">,</span> <span class="n">pos</span><span class="p">[</span><span class="n">pos</span><span class="o">.</span><span class="n">argmin</span><span class="p">()]]</span>
+        <span class="n">neg_z_mpause</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_point</span><span class="p">,</span> <span class="n">neg</span><span class="p">[</span><span class="n">neg</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]]</span>
+
+    <span class="n">magnetopause</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pos_z_mpause</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">subsolar_x</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]),</span>  <span class="n">neg_z_mpause</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">magnetopause</span>
+
+
+<div class="viewcode-block" id="find_magnetopause_sw_streamline_2d">
+<a class="viewcode-back" href="../../../../calculations/#analysator.calculations.find_magnetopause_sw_streamline_2d">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_magnetopause_sw_streamline_2d</span><span class="p">(</span><span class="n">vlsvfile</span><span class="p">,</span> <span class="n">streamline_seeds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seeds_n</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">seeds_x0</span><span class="o">=</span><span class="mi">20</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="n">seeds_range</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="mi">5</span><span class="o">*</span><span class="mi">6371000</span><span class="p">],</span> <span class="n">streamline_length</span><span class="o">=</span><span class="mi">45</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="n">end_x</span><span class="o">=-</span><span class="mi">15</span><span class="o">*</span><span class="mi">6371000</span><span class="p">,</span> <span class="n">x_point_n</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finds the magnetopause position by tracing streamlines of the velocity field for 2d runs.</span>
+
+<span class="sd">        :param vlsvfile: directory and file name of .vlsv data file to use for VlsvReader</span>
+<span class="sd">        :kwarg streamline_seeds: optional streamline starting points in numpy array (coordinates in meters including the y-coordinate 0.0)</span>
+<span class="sd">        :kwarg seeds_n: instead of streamline_seeds provide a number of streamlines to be traced </span>
+<span class="sd">        :kwarg seeds_x0: instead of streamline_seeds provide an x-coordinate for streamline starting points </span>
+<span class="sd">        :kwarg seeds_range: instead of streamline_seeds provide [min, max] range to use for streamline starting point z-coordinates</span>
+<span class="sd">        :kwarg streamline_length: streamline length for tracing</span>
+<span class="sd">        :kwarg end_x: tail end x-coordinate (how far along the negative x-axis the magnetopause is calculated)</span>
+<span class="sd">        :kwarg x_point_n: integer, how many x-axis points the magnetopause will be divided in between the subsolar point and tail</span>
+
+<span class="sd">        :returns:   the magnetopause position as coordinate points in numpy array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">streamlines</span> <span class="o">=</span> <span class="n">make_streamlines</span><span class="p">(</span><span class="n">vlsvfile</span><span class="p">,</span> <span class="n">streamline_seeds</span><span class="p">,</span> <span class="n">seeds_n</span><span class="p">,</span> <span class="n">seeds_x0</span><span class="p">,</span> <span class="n">seeds_range</span><span class="p">,</span> <span class="n">streamline_length</span><span class="p">)</span>
+    <span class="n">magnetopause</span> <span class="o">=</span> <span class="n">make_magnetopause</span><span class="p">(</span><span class="n">streamlines</span><span class="p">,</span> <span class="n">end_x</span><span class="p">,</span> <span class="n">x_point_n</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">magnetopause</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, University of Helsinki.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
