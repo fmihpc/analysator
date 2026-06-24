@@ -4,7 +4,7 @@
 #SBATCH -p short
 #SBATCH -n 1
 #SBATCH --array=0-10
-#SBATCH --constraint="carrington|ukko"
+#SBATCH --constraint="amd"
 #SBATCH --no-requeue
 #SBATCH --mem-per-cpu=16000
 
