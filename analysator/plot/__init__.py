@@ -52,6 +52,7 @@ from . import colormaps
 from .plot_themis_observation import themis_plot_detector,themis_plot_phasespace_contour,themis_plot_phasespace_helistyle,themis_observation,themis_observation_from_file
 from . import plot_helpers
 from .plot_colormap import plot_colormap
+from .plot_cutthrough_timeseries import jplots
 from .plot_vdf import plot_vdf
 from .plot_vdfdiff import plot_vdfdiff
 from .plot_vdf_profiles import plot_vdf_profiles
