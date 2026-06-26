@@ -406,3 +406,345 @@ def static_field_tracer_3d( vlsvReader, seed_coords, max_iterations, dx, directi
 
    return points_traced       # list for fg; 3d numpy array(N,maxiterations,3) for vg
 
+
+class streaklines: 
+   """
+   Class to analyze temporal pathlines and streaklines between a range of Vlasiator time steps
+
+   param vlsvTObject:   A callable object that can be used to interpolate values in time and space from the given files
+   param files_list:    List containing paths to VLSV files
+   param seed_points:   list of seed points for streaklines (meters)
+   param direction:     direction of integration (+,-, both)
+   param dt_step:       time step size of integration 
+   param var:           integration variable
+   param method:        integration step method (euler, RK4)
+   param point_recorded:Number of total recorded points
+   param points_per:    Alternative to points_recorded. Number of points recorded per time step
+
+   Example Use to create plot showing pathline of an released particle 
+   and the streakline of the fluid over the entire time period: 
+
+   seed = [1e8, 0, 0]
+   files_list = ["./bulk1.0001300.vlsv","./bulk1.00013005.vlsv"]
+   streakline_object = pt.calculations.streaklines(files_list = files_list, seed_points = seed)
+   #extract pathline
+   pathline = streakline_object.get_pathline(seed_idx = 0, time = 1303)
+   #extracting full matrix
+   M = streakline_object.M
+   #extract pathline of particle released at 1303 and plotting x-y plane of path
+   pathline = streakline_object.get_pathline(seed_idx = 0, time = 1300)
+   plt.plot(pathline[:,0], pathline[:,1], linestyle = "--")
+   streakline = streakline_object.get_streakline(seed_idx = 0, time = 1305, label= "streakline")
+   plt.plot(streakline[:,0], streakline[:,1])
+   
+   """
+
+   def __init__(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", points_recorded = None, points_per = 10, dt_step = 0.1, var = "vg_v", method = "euler", tracked_vars = None):
+
+      self.dt_step = dt_step
+      self.method = method
+      self.seed_points = seed_points
+      self.var = var
+      import math
+      self.math = math
+      self.requested_vars = tracked_vars
+      
+      if files_list is not None: 
+         #adding as readers since VlsvTInterpolator has no caching 
+         readers = [pt.vlsvfile.VlsvReader(f, indexer = "dict") for f in files_list]
+         vlsvTObject = pt.calculations.VlsvTInterpolator(vlsvReaders_list = readers)
+
+      #Defining the amount of point recorded per timestep as the total wanted recorded points 
+      #divided by the amount of time steps
+      if points_recorded is not None:
+         self.points_per = int(self.math.ceil(points_recorded/len(vlsvTObject.ts)))
+      else:
+         self.points_per = points_per
+      
+      #initial sanity check to make sure integration steps > points recorded per time step:
+      if self.points_per > self.math.ceil(abs(vlsvTObject.ts[1]-vlsvTObject.ts[0])/dt_step):
+         raise ValueError("Trying to record more points than there are integration steps. Consider lowering recorded points or decreasing dt_step")
+      
+      self.time_range = [min(vlsvTObject.ts), max(vlsvTObject.ts)]
+      self.M, self.tracked_objs = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, 
+                                   direction = direction, points_per = self.points_per,
+                                   dt_step = dt_step, var = var, method = method, tracked_vars=tracked_vars)
+      
+
+      pass
+
+   
+   def streaklines_3D(self, vlsvTObject = None, files_list = None, seed_points = None, direction="+", dt_step=0.1, max_dx = 1e5, method = "euler", points_per = 10, var = "vg_v", tracked_vars = None):
+      """
+      Streaklines 3D() integrates along dynamic field-grid vector field to calculate a final position. 
+      Code uses Euler or RK4  method to conduct the tracing.
+      Each seed gives a (i,j,3) matrix where the i-axis is the coordinate time, and j-axis is the release time of the particles
+      i=j gives the seed point/release point where particles are started to track. For consistent logic keep integrations steps divisible by points_per
+      Current position of particles kept track using current_pos = (N,T*P,3)
+         
+         param vlsvTObject:   A callable object that can be used to interpolate values in time and space from the given files
+         param files_list:    List containing paths to VLSV files
+         param seed_points:   list of seed points for streaklines (meters)
+         param direction:     direction of integration (+,-, both)
+         param dt_step:       time step size of integration 
+         param var:           integration variable
+         param method:        integration step method (euler, RK4)
+         param points_per     number of points recorded between time steps
+
+      returns: (N, T*P+1-P, T*P+1-P, 3) matrix where N: number of seed points, T: number of timesteps, P: points per timestep, and 3D coordinates
+      """
+
+      #Initial input checks
+      if (vlsvTObject is None) and (files_list is None):
+         raise ValueError("Provide either a VlsvTInterpolator object or a list of vlsv file paths")
+      elif (vlsvTObject is not None) and (files_list is not None):
+         raise ValueError("Please only provide one source of files")
+      if (seed_points is None):
+         raise ValueError("Please provide seed points")
+
+      if files_list is not None: 
+         #adding as readers since VlsvTInterpolator has no caching 
+         readers = [pt.vlsvfile.VlsvReader(f, indexer = "dict") for f in files_list]
+         vlsvTObject = pt.calculations.VlsvTInterpolator(vlsvReaders_list = readers)
+
+      #number of time steps
+      T = len(vlsvTObject.files)
+      #number of seed points
+      N = len(seed_points)
+      #effective number of time steps due to inbetween recordings
+      T_eff = T*points_per-points_per+1
+
+      #Tracked variables
+      tracked_objs = {}
+      tracked_objs["Time"] = np.full((T_eff),np.nan)
+      if tracked_vars is not None:
+         for tracked_var in tracked_vars:
+            test_val = np.array(vlsvTObject(vlsvTObject.ts[0], seed_points, tracked_var))
+            if test_val.ndim == 0:
+               test_val = test_val.reshape(1)
+            if test_val.shape[0] !=N:
+               test_val = test_val.reshape(N,-1)
+            var_shape = test_val.shape[1:]
+            tracked_objs[tracked_var] = np.full((N,T_eff, T_eff) + var_shape, np.nan)
+         tracked_vars  = list(tracked_vars) + ["Time"]
+      else:
+         tracked_vars = ["Time"]
+      
+      logging.info(f"Tracked variables: {tracked_vars}")
+
+      #helper functions
+      def active_indices(idx):
+         if direction =="+":
+            return range(0, idx+1)
+         return range(idx, T_eff)
+      
+      def inject_particles(idx):
+          for n in range(N):
+            current_pos[n,idx, :] = seed_points[n]
+        
+      def record_particles(i_idx, js):
+         for n in range(N):
+            for j in js:
+               M[n, i_idx, j, :] = current_pos[n, j, :]
+
+      def record_tracked(i_idx, js, t):
+         for tracked_var in tracked_vars:
+            if tracked_var == "Time":
+               tracked_objs["Time"][i_idx] = t
+            else:
+               for j in js:
+                  positions = current_pos[:,j,:]
+                  vals = _get_var(t, positions, tracked_var)
+                  tracked_objs[tracked_var][:,i_idx, j] = vals
+               
+      #if no variable explicitally set uses the streaklines class var
+      def _get_var(t, positions, var = var):
+         result = vlsvTObject(t, positions, var)
+         n_pos = len(positions)
+         if result.ndim == 0:
+            result = result.reshape(1)
+         if result.shape[0] !=n_pos:
+            result = result.reshape(n_pos,-1)
+         return result
+
+      #function to ease change of integration method
+      def integration_step(t_step, dt_s, n_idx, j_idx, method = method):
+         #dt_s*v is the displacement amount in a integration step
+         """
+         pram t_step: time step is taken
+         pram dt_s:   size of the integration step
+         pram n_idx:  seed point index array
+         pram j_idx:  release time index array
+
+         """
+
+         positions = current_pos[n_idx, j_idx]
+
+         if method == "euler":
+            #classic euler step method of integration
+            v =  _get_var(t_step, positions)
+         elif method == "RK4":
+            #runge-kutta 4 integration method, see: https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
+            k1 = _get_var(t_step, positions)
+            k2 = _get_var(t_step + sign*dt_s/2, positions + sign*k1*dt_s/2)
+            k3 = _get_var(t_step + sign*dt_s/2, positions + sign*k2*dt_s/2)
+            k4 = _get_var(t_step + sign*dt_s, positions + sign*dt_s*k3)
+            v = 1/6*(k1 + 2*k2 + 2*k3 + k4)
+         else:
+            raise ValueError("not a valid integrations type")
+             
+         v = v.reshape(-1,3)
+         
+         #Limit max step size taken in one integration step
+         if np.any(np.linalg.norm(dt_s*v,axis=1)>max_dx):
+            #recursively add additional two half sized integration steps 
+            integration_step(t_step, dt_s/2, n_idx, j_idx, method=method)
+            integration_step(t_step+sign*dt_s/2, dt_s/2, n_idx, j_idx, method = method)
+            
+            return
+         
+         #update current particle positions according to the step
+         current_pos[n_idx, j_idx, :] += sign*dt_s*v
+
+
+      if direction == "both":
+         
+         M_plus, tracked_plus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", points_per = points_per, var = var, method=method, dt_step= dt_step,tracked_vars=self.requested_vars)
+         M_minus, tracked_minus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", points_per = points_per, var = var,method=method, dt_step = dt_step, tracked_vars=self.requested_vars)
+         M_both =  np.nansum(np.stack([M_plus, M_minus], axis = 0), axis = 0)
+         tracked_both = tracked_plus # TODO Implement tracked variables in both directions
+         #fix diagonal
+         for t in range(T_eff):
+            M_both[:,t,t,:] = M_plus[:,t,t,:]
+         return M_both, tracked_both
+
+      #Full matrix to be filled with coordinates 
+      M = np.full((N, T_eff, T_eff, 3), np.nan)
+      #records the current positions of the tracked plasma
+      current_pos = np.full((N, T_eff, 3), np.nan)
+
+      #sign keeps track of integration direction
+      sign = 1 if direction == "+" else -1
+
+      file_indices = list(range(T)) if direction == "+" else list(range(T - 1, -1, -1))
+
+      #MAIN LOOP
+      for i, file_index in enumerate(file_indices):
+
+         eff_file_index = file_index*points_per
+
+         if i == 0:
+            #initial file read and timestep
+            t_0 = vlsvTObject.ts[file_index]
+         
+         logging.info(f"Current timestep: {t_0}")
+         #INJECTING ON DIAGONAL POINTS AT TIMESTEPS 
+         inject_particles(eff_file_index)
+         js = np.array(list(active_indices(eff_file_index)))
+         record_particles(eff_file_index,js)
+         record_tracked(eff_file_index, js, t_0)
+
+         if i == T-1:
+            #On last step return the matrix and dont continue the integration
+            return M, tracked_objs #matrix of form shape = (N, T, T, 3)
+
+         #INTEGRATION
+
+         #read next vlsvfile for time
+         next_file = file_index + 1 if direction == "+" else file_index - 1
+         t_1 = vlsvTObject.ts[next_file]
+
+         #time between files
+         dt = abs(t_1-t_0)
+         
+         #indexing
+         ns = np.arange(N)
+         n_idx, j_idx = np.meshgrid(ns,js,indexing = "ij")
+         n_idx = n_idx.ravel()
+         j_idx = j_idx.ravel()
+         
+         """
+         How integration step size is determined 
+         bulk_n        dt        bulk_n+1
+         |----------------------------|
+          dt_step dt_step dt_step (dt-t_elapsed)
+         |-------|-------|-------|----|
+         """
+         #number of integration steps
+         steps = self.math.ceil(dt/dt_step) 
+         t_elapsed = 0.0
+         prev_record_idx = 0
+
+         #integration loop
+         for step in range(steps):
+            
+            #t_0: current file time, t_elapsed*sign: elapsed time toward next file
+            t_step = t_0 + t_elapsed*sign
+            
+            #determining dt_step size
+            actual_dt = min(dt_step, dt-t_elapsed)
+            
+            #integration step
+            integration_step(t_step, actual_dt, n_idx, j_idx)
+            #keeping track of the elapsed time
+            t_elapsed += actual_dt
+
+            #this leaves nans if points_per too big and dt_step is too big relative to dt
+            record_idx = int((t_elapsed)/dt*points_per)
+           
+            #checking when to record particles
+            if record_idx != prev_record_idx and record_idx < points_per:
+         
+               prev_record_idx = record_idx
+
+               eff_idx = eff_file_index + record_idx*sign  
+
+               #adding seed points between timesteps 
+               inject_particles(eff_idx)
+               js = np.array(list(active_indices(eff_idx)))
+               record_particles(eff_idx, js)
+               record_tracked(eff_idx,js, t_0 + t_elapsed*sign)
+               #preps indeces for next loop  
+               n_idx, j_idx = np.meshgrid(ns,js, indexing="ij")
+               n_idx = n_idx.ravel()
+               j_idx = j_idx.ravel()
+               
+         #set next points as current points for the next looping
+         t_0 = t_1
+         
+      #Back up return M 
+      
+      return M, tracked_objs #matrix of form shape = (N, T_eff, T_eff, 3) and dictonary of tracked object matrices
+
+   def _time_to_idx(self, time):
+      """
+      From know dt, t range, and points_per can determine 
+      for a given time the index in M  
+      """
+      if (time < self.time_range[0]) or (time> self.time_range[1]):
+         raise ValueError(f"Time not with the analyzed time range of {self.time_range[0]}-{self.time_range[1]}")
+      T_eff = self.M.shape[1]
+      frac = (time-self.time_range[0])/(self.time_range[1]-self.time_range[0])
+      idx = int(round(frac*(T_eff-1)))
+      return idx
+
+   def get_pathline(self, seed_idx, time):
+      """
+      Get the pathline of a seed point released at a given time
+      time input --> return closest pathline  
+      """
+      release_idx = self._time_to_idx(time=time)
+      pathline = self.M[seed_idx, :, release_idx, :]
+      
+      return pathline
+   
+   def get_streakline(self, seed_idx, time):
+      """
+      Get the streakline between the start time and a given time
+      time input --> return closest streakline 
+      """
+      time_idx = self._time_to_idx(time=time)
+      streakline = self.M[seed_idx, time_idx, :, : ]
+
+      return streakline 
+
