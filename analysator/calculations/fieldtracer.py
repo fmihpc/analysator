@@ -447,6 +447,7 @@ class streaklines:
       self.var = var
       import math
       self.math = math
+      self.requested_vars = tracked_vars
       
       if files_list is not None: 
          #adding as readers since VlsvTInterpolator has no caching 
@@ -585,9 +586,9 @@ class streaklines:
          elif method == "RK4":
             #runge-kutta 4 integration method, see: https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods
             k1 = _get_var(t_step, positions)
-            k2 = _get_var(t_step + dt_s/2, positions + sign*k1*dt_s/2)
-            k3 = _get_var(t_step + dt_s/2, positions + sign*k2*dt_s/2)
-            k4 = _get_var(t_step + dt_s, positions + sign*dt_s*k3)
+            k2 = _get_var(t_step + sign*dt_s/2, positions + sign*k1*dt_s/2)
+            k3 = _get_var(t_step + sign*dt_s/2, positions + sign*k2*dt_s/2)
+            k4 = _get_var(t_step + sign*dt_s, positions + sign*dt_s*k3)
             v = 1/6*(k1 + 2*k2 + 2*k3 + k4)
          else:
             raise ValueError("not a valid integrations type")
@@ -608,8 +609,8 @@ class streaklines:
 
       if direction == "both":
          
-         M_plus, tracked_plus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", points_per = points_per, var = var, method=method, dt_step= dt_step,tracked_vars=tracked_vars)
-         M_minus, tracked_minus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", points_per = points_per, var = var,method=method, dt_step = dt_step, tracked_vars=tracked_vars)
+         M_plus, tracked_plus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "+", points_per = points_per, var = var, method=method, dt_step= dt_step,tracked_vars=self.requested_vars)
+         M_minus, tracked_minus = self.streaklines_3D(vlsvTObject = vlsvTObject, seed_points = seed_points, direction = "-", points_per = points_per, var = var,method=method, dt_step = dt_step, tracked_vars=self.requested_vars)
          M_both =  np.nansum(np.stack([M_plus, M_minus], axis = 0), axis = 0)
          tracked_both = tracked_plus # TODO Implement tracked variables in both directions
          #fix diagonal
