@@ -89,6 +89,20 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
       return self.__FileName
 
    def buildDescriptor(self):
+        import cpphelpers
+        f = self.__reader
+        f._VlsvReader__read_fileindex_for_cellid()
+        fileindex_for_cellid = f._VlsvReader__fileindex_for_cellid
+        xc= f._VlsvReader__xcells
+        yc= f._VlsvReader__ycells
+        zc= f._VlsvReader__zcells
+        max_ref_level = f.get_max_refinement_level()     
+        
+        ret=cpphelpers.buildDescriptor(fileindex_for_cellid,xc,yc,zc,max_ref_level)
+        #returns descriptor as first value and second is the idxToFileIndex
+        return ret[0],ret[1]
+
+   def buildDescriptorPython(self):
       f = self.__reader
       fileindex_for_cellid = f.get_cellid_locations()
       xc = f._VlsvReader__xcells
