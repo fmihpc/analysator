@@ -132,6 +132,7 @@ jobs:
         - name: scancel dangling job upon cancellation
           if: cancelled()
           run: |
+            scancel -n "TP_${{ steps.run_cl.outputs.TP_PID }}" --user $(whoami) 
             scancel ${{ steps.run_cl.outputs.SLURM_JOB_ID }}
             
   
