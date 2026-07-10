@@ -296,7 +296,7 @@ class VlsvTInterpolator:
          self.activeReaders['low'] = self.readers[max(rti-1,0)]
 
       if self.activeReaders['hi']:
-         if lower_t == self.activeReaders['hi'].read_parameter('time'):
+         if upper_t == self.activeReaders['hi'].read_parameter('time'):
                pass
          else:
                self.activeReaders['hi'] = self.readers[min(rti,len(self.ts)-1)]

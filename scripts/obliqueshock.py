@@ -7,6 +7,10 @@ import numpy as np
 import math
 import scipy.optimize
 import logging
+logging.basicConfig(
+    level=logging.INFO, # Increase level to disable messages
+    format="%(message)s"
+)
 
 mu0 = 4*math.pi*1.e-7
 mp = 1.67e-27
