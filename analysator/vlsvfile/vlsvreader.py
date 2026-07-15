@@ -31,7 +31,7 @@ import sys
 import re
 import numbers
 try:
-   import vlsvrs
+   from analysator_backends import vlsvrs
    HAS_VLSVRS = True
 except ImportError:
    HAS_VLSVRS = False

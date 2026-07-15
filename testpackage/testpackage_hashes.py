@@ -1,6 +1,6 @@
 import analysator as pt
 import numpy as np
-import vlsvrs
+from analysator_backends import vlsvrs
 import os
 import hashlib
 import pickle
