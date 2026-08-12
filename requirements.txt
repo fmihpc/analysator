@@ -4,4 +4,5 @@ matplotlib
 scikit-image
 packaging
 vtk>=9.2
+yt
 rtree
