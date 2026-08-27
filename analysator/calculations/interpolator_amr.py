@@ -175,20 +175,24 @@ class HexahedralTrilinearInterpolator(object):
          duals, ksis = self.reader.get_dual(pts, cellids)
          duals_corners = np.array(itemgetter(*duals)(self.reader._VlsvReader__dual_cells))
          fi = self.reader.read_variable(self.var, duals_corners.reshape(-1), operator=self.operator)
-         if(fi.ndim == 2):
-            val_len = fi.shape[1]
+         scalar = fi.ndim == 1
+         if(scalar):
+            val_len = [1]
          else:
-            val_len = 1
+            val_len = np.atleast_1d(fi.shape[1:])
+            
          ksis = np.array(ksis).squeeze() # n x 1 x 3 ...... fix
-         # logging.info(ksis.shape, fi.shape)
-         if(val_len == 1):
+         
+         if(scalar):
             fi = fi.reshape((-1,8))
          else:
-            fi = fi.reshape((-1,8,val_len))
-         # logging.info('fi reshaped', fi.shape)
+            fi = fi.reshape((-1,8,np.prod(val_len)))
+
          vals = f(ksis, fi)
-         # logging.info("irregular interpolator __call__ done in", time()-t0,"s")
-         return vals
+         if(scalar):
+            return vals
+         else:
+            return vals.reshape((-1,*val_len))
       
          # the following loop is not reached, kept for reference
          for i,p in enumerate(pts):
