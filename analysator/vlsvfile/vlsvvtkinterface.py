@@ -251,8 +251,8 @@ class VlsvVtkReader(VTKPythonAlgorithmBase):
          htg.fileIndexArray.InsertTuple1(idx, fileIndex)
       htg.GetCellData().AddArray(htg.fileIndexArray)
 
-
-      return htg
+      self.__htg = htg
+      return self.__htg
 
    '''
    def FillOutputPortInformation(self, port, info):
