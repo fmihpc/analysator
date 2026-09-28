@@ -3387,7 +3387,6 @@ class VlsvReader(object):
       return cell_neighbor_sets
 
 
-
    def build_dual_from_vertices(self, vertices):
 
       vertices = list(set(vertices))
@@ -3418,19 +3417,20 @@ class VlsvReader(object):
          eps = 1
          v_cells = np.zeros((len_todo, 8),dtype=int)
          v_cellcoords = np.zeros((len_todo, 8,3))
-         ii = 0
          vcoords = self.get_vertex_coordinates_from_indices(todo)
 
-         # TODO get rid of the loop
-         offsets = []
-         for x in [-1,1]:
-            for y in [-1,1]:
-               for z  in [-1,1]:
-                  offsets.append([x,y,z])
-                  v_cellcoords[:,ii,:] = eps*np.array((x,y,z))[np.newaxis,:] + vcoords
-                  v_cells[:,ii] = self.get_cellid(v_cellcoords[:,ii])
-                  ii += 1
-
+         offsets=np.array([
+                     [-1.,-1.,-1.],
+                     [-1.,-1.,1.],
+                     [-1.,1.,-1.],
+                     [-1.,1.,1.],
+                     [1.,-1.,-1.],
+                     [1.,-1.,1.],
+                     [1.,1.,-1.],
+                     [1.,1.,1.],
+                 ])
+         v_cellcoords=np.swapaxes(vcoords+eps*offsets[:,np.newaxis],0,1) 
+         v_cells=self.get_cellid(v_cellcoords.reshape((-1,3))).reshape((-1,8))
          v_cellcoords = self.get_cell_coordinates(v_cells.reshape((-1))).reshape((-1,8,3))
 
          dual_sets.update({vinds: tuple(v_cells[i,:]) for i,vinds in enumerate(todo)})
