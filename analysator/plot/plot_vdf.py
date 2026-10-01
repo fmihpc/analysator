@@ -47,7 +47,6 @@ from packaging.version import Version
 
 # Resample reducer flag - set to True to perform resampling in log-scaled values
 # Retained for reference, if the large differences in VDF values come back to haunt
-logspaceResample = False
 
 # Verify that given cell has a saved vspace
 def verifyCellWithVspace(vlsvReader,cid):
@@ -132,6 +131,8 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
         R = np.stack((NY, NX, NZ)).T
     elif slicetype=="vecperp":
         R = np.stack((NY, NX, NZ)).T
+    else:
+        R = np.eye(3)
     #logging.info(R)
     vmins = np.amin(V,axis=0)
     vmaxs = np.amax(V,axis=0)
@@ -144,11 +145,10 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
             [vmaxs[0], vmaxs[1], vmins[2]],
             [vmaxs[0], vmins[1], vmins[2]]]
 
-    vextsR = np.array([np.matmul(R, v) for v in vexts])
+    vextsR = np.array([np.matmul(R.T, v) for v in vexts])
     vexts = np.array(vexts) # also needs the initial extent, so a thin box isn't rotated out of the initial box
 
     vminsR,vmaxsR = np.minimum(np.amin(vextsR, axis=0),np.amin(vexts, axis=0)), np.maximum(np.amax(vextsR, axis=0),np.amax(vexts, axis=0))
-
     leftpads = (np.abs(vmins/inputcellsize - vminsR/inputcellsize)).astype(int)
     rightpads = (np.abs(vmaxs/inputcellsize - vmaxsR/inputcellsize)).astype(int)
 
@@ -169,22 +169,14 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     nonzero = basearray > 0
 
 
-    if logspaceResample:
-        newarray = np.ones_like(basearray)
-        newarray = newarray*np.log(sys.float_info.min)
-        np.log(basearray, where=nonzero, out=newarray)
-    else:
-        newarray = np.zeros_like(basearray)
-        newarray[nonzero] = basearray[nonzero]
+    newarray = np.zeros_like(basearray)
+    newarray[nonzero] = basearray[nonzero]
 
     newarray = scipy.ndimage.affine_transform(newarray,R,
-                                            mode='constant',cval=np.log(setThreshold/10),
+                                            mode='constant',cval=0.0,
                                             order=1,
                                             offset=pivot-np.matmul(R,pivot),
                                             )
-    if logspaceResample:
-        newarray = np.exp(newarray)
-        newarray[np.logical_not(np.isfinite(newarray))] = 0
 
     newarray[newarray<setThreshold*inputcellsize**3] = 0
     #better not to force conservation - values under threshold get folded into the distribution!
@@ -194,7 +186,6 @@ def resampleReducer(V,f, inputcellsize, setThreshold, normvect, normvectX, slice
     #indexes = [(abs(Voutofslice) <= 0.5*vthick) in doHistogram
     if slicethick!=0:
         dnew = newedges[1][1]-newedges[1][0]
-        zeroInd = int(-newedges[1][0]/dnew)
         zeroIndLow = int((-newedges[1][0]-slicethick/2)/dnew)
         zeroIndHi = int((-newedges[1][0]+slicethick/2)/dnew)
         if zeroIndHi <= zeroIndLow:
