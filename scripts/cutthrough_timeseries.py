@@ -91,6 +91,7 @@ def jplots(
             bulkpath + bulkprefix + ".{}.vlsv".format(str(fnr).zfill(7))
         )
         t_arr[idx] = vlsvobj.read_parameter("time")
+        vlsvobj.set_cellid_indexer(method='dict')
 
         linecut = lineout(
             vlsvobj,
