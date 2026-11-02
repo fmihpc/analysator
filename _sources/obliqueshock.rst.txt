@@ -1,0 +1,5 @@
+obliqueshock
+------------
+
+.. automodule:: obliqueshock
+	:members:
