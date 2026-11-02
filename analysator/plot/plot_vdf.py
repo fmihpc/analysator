@@ -418,7 +418,7 @@ def plot_vdf(filename=None,
              biglabel=None, biglabloc=None,
              noxlabels=None, noylabels=None,
              axes=None, cbaxes=None, cb_horizontal=False,
-             contours=None,figsize=None
+             contours=None,figsize=None,useimshow=False,imshowinterp='none'
              ):
 
     ''' Plots a coloured 2D plot of a VDF (a slice of given thickness or fully projected) with axes and a colour bar.
@@ -513,6 +513,9 @@ def plot_vdf(filename=None,
     :kwarg scale_label: Big label text additional scale factor (default=12.0)
     :kwarg thick:       line and axis thickness, default=1.0
     :kwarg figsize:     Set figure size, default=None which will use [4.0,3.15*ratio]
+
+    :kwarg useimshow:   Use imshow for raster background instead (default: False)
+    :kwarg imshowinterp: Use this matplotlib interpolation for imshow (default: 'none')
 
     :returns:           Outputs an image to a file or to the screen.
 
@@ -1088,7 +1091,18 @@ def plot_vdf(filename=None,
 
         else:
             ax1=axes
-        fig1 = ax1.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
+            
+        if(not useimshow):
+            fig1 = ax1.pcolormesh(XmeshXY,YmeshXY,binsXY, cmap=colormap,norm=norm)
+        else:
+            fig1 = ax1.imshow(binsXY,
+                            cmap=colormap,
+                            norm=norm,
+                            interpolation=imshowinterp,
+                            origin='lower',
+                            extent=(np.min(XmeshXY), np.max(XmeshXY), np.min(YmeshXY), np.max(YmeshXY))
+                            )
+            
         ax1.set_xlim([val/velUnit for val in xvalsrange])
         ax1.set_ylim([val/velUnit for val in yvalsrange])
         ax1.set_aspect('equal')
